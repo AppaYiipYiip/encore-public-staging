@@ -1,0 +1,14 @@
+name: encore_session
+description: "The rules and state of Encore's Devices and Sessions. Pure Dart."
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  meta: ^1.19.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

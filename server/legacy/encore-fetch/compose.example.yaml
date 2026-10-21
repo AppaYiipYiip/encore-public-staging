@@ -1,0 +1,29 @@
+# Add this service to the media stack's compose file (next to `lidatube`).
+#
+#   docker compose build encore-fetch && docker compose up -d encore-fetch
+#
+# Remove it again with:  docker compose rm -sf encore-fetch
+# Nothing else changes: the library only gains the songs people asked for.
+services:
+  encore-fetch:
+    build: ./encore-fetch          # a copy of this folder
+    container_name: encore-fetch
+    restart: unless-stopped
+    user: "1000:1000"              # the owner of the music library
+    environment:
+      - TZ=Etc/UTC
+      - NAVIDROME_URL=http://navidrome:4533
+      # Stop fetching when the library volume has less than this free.
+      - MIN_FREE_GB=150
+      # Optional - lets the service ask for a library scan when the person's
+      # own account may not (Navidrome restricts scanning in some versions).
+      # - NAVIDROME_ADMIN_USER=
+      # - NAVIDROME_ADMIN_PASSWORD=
+      # Optional - cookies.txt of a YouTube account when YouTube asks the
+      # server to "sign in to confirm you are not a bot".
+      # - YT_COOKIES_FILE=/work/cookies.txt
+    volumes:
+      - /data/media/music:/music           # the same library LidaTube writes
+      - /opt/appdata/encore-fetch:/work    # scratch space + yt-dlp updates
+    ports:
+      - 8701:8701

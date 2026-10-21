@@ -1,0 +1,572 @@
+# Encore reference music server (docs/26-reference-server-setup.md).
+#
+#   cp .env.example .env      # set MUSIC_DIR, at least
+#   docker compose up -d      # Level 0: Navidrome, your music read-only (database backups are optional, see .env)
+#
+# Optional pieces are Compose "profiles", so they are off until asked for:
+#
+#   docker compose --profile funnel up -d  # Level 1: a public https:// address, no router change (Tailscale Funnel, docs/33)
+#   docker compose --profile https up -d   # Level 1b (advanced): your own name + forwarded ports (Caddy)
+#   docker compose --profile kit up -d     # Level 3: "play any song" (encore-fetch)
+#   docker compose --profile admin up -d   # the admin website on port 8800 (home network only; docs/45-docs/50)
+#
+# Remove everything again with `docker compose down` (add `-v` only if you also
+# want the database gone). Your music files are never touched: they are mounted
+# read-only into Navidrome.
+#
+# Every value below that the guide recommends is also listed in
+# tests/check_reference.py, which proves it against a real Navidrome and checks
+# that this file still says the same. Change them together.
+
+name: encore-server
+
+services:
+  # Runs once before Navidrome and exits. Docker creates a missing bind-mounted folder as root, and
+  # Navidrome (which is not root) then cannot open its database ("unable to open database file"),
+  # so a plain `docker compose up -d` on a clean machine would fail. This hands the two folders
+  # Navidrome writes to (its data, and the backup folder) to PUID:PGID. Nothing else is touched.
+  navidrome-init:
+    image: busybox:1.37.0
+    container_name: navidrome-init
+    restart: "no"
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    # Not recursive: only the folder Docker may have created. A network share that refuses chown is
+    # reported and left as it is (its owner comes from its mount options), not a reason to stop.
+    #
+    # The guard: a proxy that Navidrome trusts (to see each guest's real address, docs/33 T5) could also log people in
+    # by a header, so the header must have a long secret name. Trusted proxy without one = do not start (proved in
+    # tests/check_reference.py: with the default header `Remote-User: <name>` was enough to log in with no password).
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$$PROXY_TRUSTED_SOURCES" ]; then
+          h=$$(printf '%s' "$$PROXY_USER_HEADER" | tr 'A-Z' 'a-z')
+          if [ "$${#h}" -lt 24 ] || [ "$$h" = "remote-user" ]; then
+            echo "NOT STARTING: PROXY_TRUSTED_SOURCES is set but PROXY_USER_HEADER is not a long secret name." >&2
+            echo "Without one, anyone who can reach the proxy could log in as any user. Run 'FUNNEL=1 bash setup.sh' (it makes one)" >&2
+            echo "or set PROXY_USER_HEADER=X-Encore- followed by 32 random letters and digits in .env." >&2
+            exit 1
+          fi
+        fi
+        chown "$$PUID:$$PGID" /data /backup || echo "could not change the owner of /data or /backup; continuing"
+    environment:
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+      PROXY_TRUSTED_SOURCES: "${PROXY_TRUSTED_SOURCES:-}"
+      PROXY_USER_HEADER: "${PROXY_USER_HEADER:-}"
+    volumes:
+      - ${DATA_DIR:-./data}/navidrome:/data
+      - ${BACKUP_DIR:-${DATA_DIR:-./data}/backups}:/backup
+
+  navidrome:
+    # Pinned: `latest` can change the API the app talks to between two restarts.
+    # Update on purpose (change NAVIDROME_VERSION, read the release notes, run
+    # `docker compose pull && docker compose up -d`).
+    image: deluan/navidrome:${NAVIDROME_VERSION:-0.64.2}
+    container_name: navidrome
+    restart: unless-stopped
+    depends_on:
+      navidrome-init:
+        condition: service_completed_successfully
+    # The owner of the music files, never root.
+    user: "${PUID:-1000}:${PGID:-1000}"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      # 0.0.0.0 = reachable on the home network. With the https profile set
+      # NAVIDROME_BIND=127.0.0.1 so that only Caddy can reach it.
+      - "${NAVIDROME_BIND:-0.0.0.0}:4533:4533"
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      # The first library. One person: leave it. Several people: /music/_shared, so
+      # that nobody's own folder sits inside it (docs/26, encore_user.py).
+      ND_MUSICFOLDER: ${SHARED_LIBRARY_PATH:-/music}
+      ND_DATAFOLDER: /data
+      # A scan is cheap when nothing changed; hourly is plenty (the Encore app
+      # also asks for one whenever it adds a song).
+      ND_SCANSCHEDULE: "@every 1h"
+      ND_LOGLEVEL: info
+      # Stay signed in for a month on a phone.
+      ND_SESSIONTIMEOUT: 720h
+      # Nothing leaves the server unasked.
+      ND_ENABLEINSIGHTSCOLLECTOR: "false"
+      ND_ENABLESHARING: "false"
+      # Transcoding profiles are fixed (mp3/opus), not editable by any admin
+      # account: a transcoding command is a shell command.
+      ND_ENABLETRANSCODINGCONFIG: "false"
+      # Backups of Navidrome's database (accounts, playlists, likes - a few MB, not your
+      # music). On by default because it costs nothing; every part is your choice, see
+      # .env: BACKUP_DIR (any folder, another disk, a share), BACKUP_COUNT, BACKUP_SCHEDULE
+      # (empty = off).
+      ND_BACKUP_PATH: /data/backup
+      ND_BACKUP_SCHEDULE: "${BACKUP_SCHEDULE-0 3 * * *}"
+      ND_BACKUP_COUNT: "${BACKUP_COUNT:-7}"
+      # Synced lyrics: a .lrc file next to the song first, then the tags.
+      ND_LYRICSPRIORITY: ".lrc,embedded"
+      # Behind a proxy (the funnel or https profile) every guest arrives from the proxy's address, and Navidrome's login limit
+      # (5 per 20 s per address) would be shared by all of them: one stranger's wrong guesses lock the owner out too. Trusting
+      # the proxy lets Navidrome read each guest's real address; the secret header name keeps that trust from becoming a way
+      # in (docs/33 section 6, T5). Both are empty unless setup.sh turns a proxy profile on; the helper above refuses
+      # one without the other.
+      ND_EXTAUTH_TRUSTEDSOURCES: "${PROXY_TRUSTED_SOURCES:-}"
+      ND_EXTAUTH_USERHEADER: "${PROXY_USER_HEADER:-}"
+    volumes:
+      # Read-only: Navidrome only ever reads your files.
+      - ${MUSIC_DIR:?Set MUSIC_DIR in .env to the folder that holds your music}:/music:ro
+      - ${DATA_DIR:-./data}/navidrome:/data
+      # Where the database backups go. Default: next to the data. A different disk or a share
+      # protects against more, but it is your choice and nothing here requires it.
+      - ${BACKUP_DIR:-${DATA_DIR:-./data}/backups}:/data/backup
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4533/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # --- Level 1: https:// from anywhere, no router change, nothing to install on phones ---
+  # Tailscale Funnel as a sidecar (docs/33, ADR-083). It only makes an outbound connection, so it works
+  # behind carrier-grade NAT and with no name to buy. Userspace mode: no /dev/net/tun, no NET_ADMIN, no
+  # host network. What is public is exactly what tailscale/serve.json says: Navidrome, nothing else.
+  tailscale:
+    profiles: ["funnel"]
+    # Pinned. Update on purpose (docs/33 section 6).
+    image: tailscale/tailscale:${TAILSCALE_VERSION:-v1.104.1}
+    container_name: encore-tailscale
+    hostname: ${TS_HOSTNAME:-music}
+    restart: unless-stopped
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      TS_USERSPACE: "true"
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_HOSTNAME: ${TS_HOSTNAME:-music}
+      TS_SERVE_CONFIG: /config/serve.json
+      # Optional. Empty = the first start prints a sign-in link in the log (`docker compose logs tailscale`).
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_ENABLE_HEALTH_CHECK: "true"
+      TS_LOCAL_ADDR_PORT: 127.0.0.1:9002
+    volumes:
+      # Where the machine keeps its identity. Lose it and the server becomes a new machine with a new address.
+      - ${DATA_DIR:-./data}/tailscale:/var/lib/tailscale
+      # A folder, not a single file, so a changed file is noticed.
+      - ./tailscale:/config:ro
+    # Red when it is not connected, and also 14 days before the machine's key ends (180 days by default):
+    # tailscale/healthcheck.sh says which, in words. See docs/33 section 6.
+    healthcheck:
+      test: ["CMD", "sh", "/config/healthcheck.sh"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 60s
+
+  # --- People: invitations and friend activity (docs/35, ADR-087) ------------------
+  # Needs the funnel profile (an invitation is a link on the public address) and the administrator's Navidrome login, which only
+  # this service holds: it creates the account of an invited person. Publishes no port: the Tailscale sidecar reaches it by name.
+  encore-people:
+    profiles: ["people"]
+    build:
+      context: ..
+      dockerfile: encore-people/Dockerfile
+    container_name: encore-people
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      kit-init:
+        condition: service_completed_successfully
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      NAVIDROME_URL: http://navidrome:4533
+      NAVIDROME_ADMIN_USER: "${PEOPLE_ADMIN_USER:-}"
+      NAVIDROME_ADMIN_PASSWORD: "${PEOPLE_ADMIN_PASSWORD:-}"
+      PUBLIC_URL: "${PUBLIC_URL:-}"
+      SERVER_NAME: "${SERVER_NAME:-Encore}"
+      # The other parts, asked for the one "what can this server do?" answer (GET /people/api/server). A part that is not running
+      # is shown as not answering, and the app hides what depends on it.
+      FETCH_URL: http://encore-fetch:8701
+      HUB_URL: http://encore-hub:8703
+      QUALITY_URL: http://encore-quality:8704
+      RECS_URL: http://encore-recs:8705
+      # Founding owners besides the music server's administrators (comma-separated names): see .env.example.
+      # PEOPLE_INVITERS is the name this setting had before roles existed; it still works.
+      PEOPLE_OWNERS: "${PEOPLE_OWNERS:-${PEOPLE_INVITERS:-}}"
+      MUSIC_DIR: /music
+      MUSIC_ROOT: /music
+      DATA_DIR: /data
+    volumes:
+      # Writable: it makes the folder of each person who accepts an invitation (the music server still reads it read-only).
+      - ${MUSIC_DIR:?Set MUSIC_DIR in .env to the folder that holds your music}:/music
+      - ${DATA_DIR:-./data}/encore-people:/data
+
+  # --- Jam: listening together (docs/30, ADR-080, ADR-095) ---------------------------------------------
+  # Holds the listening sessions in memory and tells every phone the new state. It has no accounts: a phone sends its music-server login
+  # and the hub asks Navidrome. Publishes no port: the Tailscale sidecar reaches it by name and shows it at /hub. Built from source here
+  # (a Dart image at build time only; what runs is one small program in an empty image).
+  encore-hub:
+    profiles: ["hub"]
+    build:
+      context: ../hub
+      additional_contexts:
+        session: ../../../packages/encore_session
+    container_name: encore-hub
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    environment:
+      NAVIDROME_URL: http://navidrome:4533
+      PORT: "8703"
+
+  # --- Level 1b (advanced): https:// with your own name, ports forwarded in your router -------------
+  caddy:
+    profiles: ["https"]
+    image: caddy:2.10
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Needed only when you use this profile. (Not `:?`-required: Compose checks
+      # required variables even for services that are switched off, which would
+      # break the plain `docker compose up -d` of Level 0.)
+      DOMAIN: ${DOMAIN:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-./data}/caddy:/data
+
+  # --- Level 3: "play any song" -------------------------------------------------
+  # The same clean-machine trap as Navidrome's data folder (ADR-082): Docker creates the scratch folder as root, the service runs as an
+  # ordinary user and the first song fails with "PermissionError" (found on the owner's server). This hands that one folder to PUID:PGID.
+  kit-init:
+    profiles: ["kit", "people", "admin", "recs"]
+    image: busybox:1.37.0
+    container_name: kit-init
+    restart: "no"
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    command:
+      - sh
+      - -c
+      - 'chown "$$PUID:$$PGID" /work /people-data /admin-data /recs-data || echo "could not change the owner of /work, /people-data or /admin-data; continuing"'
+    environment:
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+    volumes:
+      - ${DATA_DIR:-./data}/encore-fetch:/work
+      - ${DATA_DIR:-./data}/encore-people:/people-data
+      - ${DATA_DIR:-./data}/encore-admin:/admin-data
+      - ${DATA_DIR:-./data}/encore-recs:/recs-data
+
+  encore-fetch:
+    profiles: ["kit"]
+    build: ../encore-fetch
+    container_name: encore-fetch
+    restart: unless-stopped
+    depends_on:
+      kit-init:
+        condition: service_completed_successfully
+    user: "${PUID:-1000}:${PGID:-1000}"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      NAVIDROME_URL: http://navidrome:4533
+      MIN_FREE_GB: ${MIN_FREE_GB:-20}
+      # One library per person (docs/26): 1 when you use the multi-person layout (SHARED_LIBRARY_PATH in .env), so a song somebody
+      # asks for lands in THEIR folder. PERSON_FOLDERS maps a person whose folder is called differently ("owner=owner-added").
+      PEOPLE: "${PEOPLE:-0}"
+      PERSON_FOLDERS: "${PERSON_FOLDERS:-}"
+    volumes:
+      # The one place that is writable: the library gains the songs people ask for.
+      - ${MUSIC_DIR}:/music
+      - ${DATA_DIR:-./data}/encore-fetch:/work
+    ports:
+      - "${NAVIDROME_BIND:-0.0.0.0}:8701:8701"
+
+  # --- The admin website (docs/45-docs/50): the server's front door, owner-only ----------------------------------
+  # Sign in with the same name and password as the app; today it holds the YouTube page (sign in to Google in a browser window shown
+  # in the page, several accounts, sign out). Reachable at home and on the tailnet only: the Tailscale sidecar's serve.json does not
+  # list it, so it is never on the public address. It opens one kind of container, the sign-in browser, through Docker's socket: that
+  # socket is as powerful as root on this machine, so it is mounted into this service and no other, and the service can only do what
+  # encore_admin/docker_api.py allows (one image, one name pattern, a fixed template; tests/test_site.py proves it).
+  encore-admin:
+    profiles: ["admin"]
+    build:
+      context: ..
+      dockerfile: encore-admin/Dockerfile
+    container_name: encore-admin
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    # Lets the unprivileged user read Docker's socket: the group id of `docker` on this machine (setup.sh writes it to .env).
+    group_add:
+      - "${DOCKER_GID:-999}"
+    depends_on:
+      kit-init:
+        condition: service_completed_successfully
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      NAVIDROME_URL: http://navidrome:4533
+      PEOPLE_URL: http://encore-people:8702
+      FETCH_URL: http://encore-fetch:8701
+      QUALITY_URL: http://encore-quality:8704
+      RECS_URL: http://encore-recs:8705
+      SERVER_NAME: "${SERVER_NAME:-Encore}"
+      SIGNIN_IMAGE: "${SIGNIN_IMAGE:-jlesage/firefox:v26.09.1}"
+      # The sign-in browser joins this stack's own network (it publishes no port): the admin shows it, inside its page, to the owner only.
+      SIGNIN_NETWORK: "${COMPOSE_PROJECT_NAME:-encore-server}_default"
+      TLS_NAMES: "${ADMIN_TLS_NAMES:-}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR:-./data}/encore-admin:/data
+    ports:
+      - "${ADMIN_BIND:-0.0.0.0}:8800:8800"
+
+  # --- The quality tier (docs/46): the better copy of a song, found on the Soulseek network ------------------------------------
+  # Off until chosen: COMPOSE_PROFILES gains `quality` (QUALITY=1 ./setup.sh does it and makes the keys). Even then nothing is sent to
+  # the network until the owner switches Soulseek on in the admin website: slskd starts disconnected (SLSKD_NO_CONNECT) and the quality
+  # service connects it, or disconnects it, to match the owner's choice. Nothing is shared with the network (no shared folder).
+  # One mount for everything that moves files (the music folder), so that a better copy can be a second NAME for a file in the pool
+  # instead of a second copy (a hard link cannot cross a mount): Lidarr files albums into /music/.encore/pool, slskd downloads into
+  # /music/.encore/downloads, the quick copy a swap replaces waits 14 days in /music/.encore/replaced. The music server ignores
+  # dot-folders. None of the three programs publishes a port: only the quality service (and through it the admin website) talks to them.
+  quality-init:
+    profiles: ["quality"]
+    image: busybox:1.37.0
+    container_name: quality-init
+    restart: "no"
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+    command:
+      - sh
+      - -c
+      - 'mkdir -p /music/.encore/pool /music/.encore/downloads/.incomplete /music/.encore/replaced && chown "$$PUID:$$PGID" /music/.encore /music/.encore/pool /music/.encore/downloads /music/.encore/downloads/.incomplete /music/.encore/replaced /quality-data /slskd-data /soularr-data /lidarr-data || echo "could not change the owner of the quality folders; continuing"'
+    environment:
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+    volumes:
+      - ${MUSIC_DIR:?Set MUSIC_DIR in .env to the folder that holds your music}:/music
+      - ${DATA_DIR:-./data}/encore-quality:/quality-data
+      - ${DATA_DIR:-./data}/slskd:/slskd-data
+      - ${DATA_DIR:-./data}/soularr:/soularr-data
+      - ${DATA_DIR:-./data}/lidarr:/lidarr-data
+
+  lidarr:
+    profiles: ["quality"]
+    image: lscr.io/linuxserver/lidarr:version-3.1.0.4875
+    container_name: encore-lidarr
+    restart: unless-stopped
+    depends_on:
+      quality-init:
+        condition: service_completed_successfully
+    environment:
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+      TZ: ${TZ:-Etc/UTC}
+      # The key is given before the first start, so nothing has to be copied out of its web page. Its own sign-in page is off: it is
+      # reachable by the other containers only, never published.
+      LIDARR__AUTH__APIKEY: "${LIDARR_API_KEY:?Run QUALITY=1 ./setup.sh to make the keys}"
+      LIDARR__AUTH__METHOD: External
+      LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+    volumes:
+      - ${DATA_DIR:-./data}/lidarr:/config
+      - ${MUSIC_DIR}:/music
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8686/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  slskd:
+    profiles: ["quality"]
+    image: slskd/slskd:0.26.1
+    container_name: encore-slskd
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      quality-init:
+        condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      SLSKD_REMOTE_CONFIGURATION: "false"
+      SLSKD_NO_CONNECT: "true"
+      SLSKD_SLSK_USERNAME: "${SOULSEEK_USER:?Run QUALITY=1 ./setup.sh to make the keys}"
+      SLSKD_SLSK_PASSWORD: "${SOULSEEK_PASSWORD:?Run QUALITY=1 ./setup.sh to make the keys}"
+      SLSKD_USERNAME: admin
+      SLSKD_PASSWORD: "${SLSKD_WEB_PASSWORD:?Run QUALITY=1 ./setup.sh to make the keys}"
+      SLSKD_API_KEY: "role=ReadWrite;cidr=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16;${SLSKD_API_KEY:?Run QUALITY=1 ./setup.sh to make the keys}"
+      SLSKD_DOWNLOADS_DIR: /music/.encore/downloads
+      SLSKD_INCOMPLETE_DIR: /music/.encore/downloads/.incomplete
+      SLSKD_SLSK_LISTEN_PORT: "50300"
+    volumes:
+      - ${DATA_DIR:-./data}/slskd:/app
+      - ${MUSIC_DIR}:/music
+
+  soularr:
+    profiles: ["quality"]
+    image: mrusse08/soularr:v1.2.2
+    container_name: encore-soularr
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      encore-quality:
+        condition: service_started
+      slskd:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      SCRIPT_INTERVAL: "300"
+    volumes:
+      # Its settings file is written by the quality service (it holds the two keys); Soularr only reads it.
+      - ${DATA_DIR:-./data}/soularr:/data
+      - ${MUSIC_DIR}:/music
+
+  encore-quality:
+    profiles: ["quality"]
+    build:
+      context: ..
+      dockerfile: encore-quality/Dockerfile
+    container_name: encore-quality
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      quality-init:
+        condition: service_completed_successfully
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      NAVIDROME_URL: http://navidrome:4533
+      # The same administrator login the people service uses: only an administrator can see where a song's file is.
+      NAVIDROME_ADMIN_USER: "${QUALITY_ADMIN_USER:-${PEOPLE_ADMIN_USER:-}}"
+      NAVIDROME_ADMIN_PASSWORD: "${QUALITY_ADMIN_PASSWORD:-${PEOPLE_ADMIN_PASSWORD:-}}"
+      PEOPLE_URL: http://encore-people:8702
+      LIDARR_URL: http://lidarr:8686
+      LIDARR_API_KEY: "${LIDARR_API_KEY:?Run QUALITY=1 ./setup.sh to make the keys}"
+      SLSKD_URL: http://slskd:5030
+      SLSKD_API_KEY: "${SLSKD_API_KEY:?Run QUALITY=1 ./setup.sh to make the keys}"
+      MUSIC_DIR: /music
+      DATA_DIR: /data
+      SOULARR_CONFIG: /soularr/config.ini
+      DAILY_CAP: "${QUALITY_DAILY_CAP:-40}"
+      MIN_FREE_GB: "${MIN_FREE_GB:-5}"
+    volumes:
+      - ${MUSIC_DIR}:/music
+      - ${DATA_DIR:-./data}/encore-quality:/data
+      - ${DATA_DIR:-./data}/soularr:/soularr
+    # Like the songs service (8701): the app on the home network reaches it here, away from home through the public address (/quality).
+    # Every call needs the person's music login; the three programs behind it publish nothing.
+    ports:
+      - "${NAVIDROME_BIND:-0.0.0.0}:8704:8704"
+
+  # --- Suggestions (docs/47): what each person might like next ----------------------------------------------------
+  # Off until chosen: `RECS=1 ./setup.sh` adds the profile. Each night it reads, from a private COPY of the music server's database, what each
+  # person plays and likes (read-only mount: it never writes there), asks MusicBrainz, ListenBrainz and Deezer about the artists (names only: no person,
+  # no history, no account) and leaves a few lists per person; the app draws them. The owner can switch it off in the admin website and never
+  # sees what anyone's list holds. The app reaches it on the home network at port 8705 and away from home through the public address (/recs); the admin website by name.
+  encore-recs:
+    profiles: ["recs"]
+    build:
+      context: ..
+      dockerfile: encore-recs/Dockerfile
+    container_name: encore-recs
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    depends_on:
+      kit-init:
+        condition: service_completed_successfully
+      navidrome:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      NAVIDROME_URL: http://navidrome:4533
+      PEOPLE_URL: http://encore-people:8702
+      NAVIDROME_DB_DIR: /navidrome
+      DATA_DIR: /data
+    volumes:
+      - ${DATA_DIR:-./data}/navidrome:/navidrome:ro
+      - ${DATA_DIR:-./data}/encore-recs:/data
+    # Like the songs service (8701): the app on the home network reaches it here, away from home through the public address (/recs).
+    ports:
+      - "${NAVIDROME_BIND:-0.0.0.0}:8705:8705"

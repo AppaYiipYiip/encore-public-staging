@@ -1,0 +1,15 @@
+# Code generation scope. Only the database layer is generated; restricting
+# drift_dev keeps `build_runner` fast (the 89k-line l10n sources are skipped).
+targets:
+  $default:
+    builders:
+      drift_dev:
+        generate_for:
+          include:
+            - lib/data/db/**
+        options:
+          # The app database is opened on a background isolate; generated code
+          # must not assume a particular executor.
+          store_date_time_values_as_text: false
+      mockito:mockBuilder:
+        enabled: false

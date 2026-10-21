@@ -1,0 +1,15 @@
+name: encore_hub
+description: "The session hub (docs/29, docs/30, ADR-080): holds listening sessions, applies commands in order and tells everybody the new state."
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  encore_session:
+    path: ../../../packages/encore_session
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

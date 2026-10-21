@@ -1,0 +1,443 @@
+{
+ "query": "Instant Crush Daft Punk",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "khnokW3Mw24",
+   "title": "Instant Crush (feat. Julian Casablancas)",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    },
+    {
+     "name": "Julian Casablancas",
+     "id": "UCWhpbdGLnR8XtXLr0yl2nYA"
+    }
+   ],
+   "album": {
+    "name": "Random Access Memories",
+    "id": "MPREb_K8qWMWVqXGi"
+   },
+   "duration": "5:38",
+   "duration_seconds": 338,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.2B"
+  },
+  {
+   "videoId": "Nrv5IhE-Q54",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Sweet Little Band",
+     "id": "UCoGRFkzgwmjmzgZKy3qCkvA"
+    }
+   ],
+   "album": {
+    "name": "Babies Go Daft Punk",
+    "id": "MPREb_zVV5y15CPYR"
+   },
+   "duration": "3:30",
+   "duration_seconds": 210,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "562"
+  },
+  {
+   "videoId": "5y_pB9YmbiI",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Vinsmoker",
+     "id": "UC2scVlnljSasclboMtcpVBA"
+    },
+    {
+     "name": "Rachel Leycroft",
+     "id": "UCkF9m7J_BHZwK9gO5tgog6g"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_wvrtzyXFuje"
+   },
+   "duration": "2:46",
+   "duration_seconds": 166,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "15K"
+  },
+  {
+   "videoId": "l4Gb0ViuJGw",
+   "title": "falling",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "falling",
+    "id": "MPREb_QvWQvPKqs0r"
+   },
+   "duration": "3:17",
+   "duration_seconds": 197,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "XdUHViB4bjQ",
+   "title": "Instant Crush (Slowed + Reverb)",
+   "artists": [
+    {
+     "name": "Glaceo",
+     "id": "UCaey79wnXhbpHjzNBpdQ9rg"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Fe7ghUANaLQ"
+   },
+   "duration": "3:48",
+   "duration_seconds": 228,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.4K"
+  },
+  {
+   "videoId": "-hTofpvU-P8",
+   "title": "Instant Crush (Extended Mix)",
+   "artists": [
+    {
+     "name": "K.Beverly",
+     "id": "UC4tWhE7Ndu5vsLEJO2pCmbw"
+    },
+    {
+     "name": "Saxado",
+     "id": "UCUzgYGyXfoKdAedPVFR0f9Q"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Ldd7U2ueVin"
+   },
+   "duration": "6:06",
+   "duration_seconds": 366,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "525"
+  },
+  {
+   "videoId": "ZBZao3_hcQw",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Casey Cassette",
+     "id": "UCrs_eBpWETg6vLHx4HTzYyg"
+    }
+   ],
+   "album": {
+    "name": "Echoes",
+    "id": "MPREb_L4j2N21wKFR"
+   },
+   "duration": "5:37",
+   "duration_seconds": 337,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.2K"
+  },
+  {
+   "videoId": "zKSsP2084nU",
+   "title": "Give Life Back to Music",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    }
+   ],
+   "album": {
+    "name": "Random Access Memories",
+    "id": "MPREb_K8qWMWVqXGi"
+   },
+   "duration": "4:36",
+   "duration_seconds": 276,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "54M"
+  },
+  {
+   "videoId": "vUVmyqM8cJI",
+   "title": "karma (is patient)",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "karma (is patient)",
+    "id": "MPREb_6JpOEpOsoN8"
+   },
+   "duration": "3:27",
+   "duration_seconds": 207,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.8K"
+  },
+  {
+   "videoId": "NkZoNhkktB8",
+   "title": "Instant Crush (Karaoke Version) (Originally Performed By Daft Punk & Julian Casabla)",
+   "artists": [
+    {
+     "name": "La-Le-Lu",
+     "id": "UCPWAQ1MC0kp9DYXrANrZ24Q"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush (Karaoke Version)",
+    "id": "MPREb_HsJBg81rbnY"
+   },
+   "duration": "5:59",
+   "duration_seconds": 359,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "395"
+  },
+  {
+   "videoId": "zSXsaW3UXs8",
+   "title": "Instant Crush (feat. Nino, Dwight & Samz)",
+   "artists": [
+    {
+     "name": "Luk",
+     "id": "UCbMjfVsZJLdw36OUBIT3tMw"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_NRUQRtmstl4"
+   },
+   "duration": "5:42",
+   "duration_seconds": 342,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.7K"
+  },
+  {
+   "videoId": "28BnWVNPbNk",
+   "title": "Instant Crush (In the Style of Daft Punk and Julian Casablancas) [Karaoke Version]",
+   "artists": [
+    {
+     "name": "Ameritz Karaoke Planet",
+     "id": "UCRKXh0dGLgIOc2lbzZG2pmg"
+    }
+   ],
+   "album": {
+    "name": "Karaoke - Modern Classics for Men",
+    "id": "MPREb_TQ8dLx3ek0G"
+   },
+   "duration": "5:37",
+   "duration_seconds": 337,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "SDEPa5sv8Ls",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Shawn Hook",
+     "id": "UCSNvXa3it4fsaJSUAyjCPGQ"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_RlhHQloFxUY"
+   },
+   "duration": "4:58",
+   "duration_seconds": 298,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "23K"
+  },
+  {
+   "videoId": "WQQ5QTBKwmE",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "The Stairwells",
+     "id": "UCVMAc4nKyncAjzfiyMKZg6g"
+    }
+   ],
+   "album": {
+    "name": "Push It Further",
+    "id": "MPREb_V89zL906EA2"
+   },
+   "duration": "2:54",
+   "duration_seconds": 174,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "963"
+  },
+  {
+   "videoId": "BYS2dYQFJKY",
+   "title": "Instant Crush (In the Style of Daft Punk and Julian Casablancas) [Karaoke Version]",
+   "artists": [
+    {
+     "name": "Ameritz Karaoke Planet",
+     "id": "UCt0n9tnUH2OPFgMJLn42bZA"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush (In the Style of Daft Punk and Julian Casablancas) [Karaoke Version]",
+    "id": "MPREb_KIrQ4yfdScb"
+   },
+   "duration": "5:37",
+   "duration_seconds": 337,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "_1zZqEbCpvk",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Redcarpetpops",
+     "id": "UCDamUSiwc5A26oftwzVIFIA"
+    }
+   ],
+   "album": {
+    "name": "Crazy and Fancy",
+    "id": "MPREb_jIjqmzgwBsw"
+   },
+   "duration": "5:38",
+   "duration_seconds": 338,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1M"
+  },
+  {
+   "videoId": "NthvLi4G8x0",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Paul Spencer",
+     "id": "UCThcZbBhQxhVy9NIVz4OOYg"
+    }
+   ],
+   "album": {
+    "name": "The Whole Shebang",
+    "id": "MPREb_IlYJEKMSZ0h"
+   },
+   "duration": "2:05",
+   "duration_seconds": 125,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "319"
+  },
+  {
+   "videoId": "B3uH_r-bxDk",
+   "title": "REDEMPTION ARC",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "REDEMPTION ARC",
+    "id": "MPREb_L3c9DgEcyu9"
+   },
+   "duration": "3:13",
+   "duration_seconds": 193,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "flBs3v4WtiY",
+   "title": "Instant Crush (In the Style of Daft Punk & Julian Casablancas) (Karaoke Backing Track)",
+   "artists": [
+    {
+     "name": "Sunfly Karaoke",
+     "id": "UCEJqiEo_IXTP_qFku4qcd8w"
+    }
+   ],
+   "album": {
+    "name": "Sunfly Hits - January 2014",
+    "id": "MPREb_XBLKCwP2bFU"
+   },
+   "duration": "5:43",
+   "duration_seconds": 343,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "650"
+  },
+  {
+   "videoId": "E_P_Dyyod5I",
+   "title": "Instant Crush (Radio Edit)",
+   "artists": [
+    {
+     "name": "K.Beverly",
+     "id": "UC4tWhE7Ndu5vsLEJO2pCmbw"
+    },
+    {
+     "name": "Saxado",
+     "id": "UCUzgYGyXfoKdAedPVFR0f9Q"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Ldd7U2ueVin"
+   },
+   "duration": "3:20",
+   "duration_seconds": 200,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "52"
+  }
+ ]
+}

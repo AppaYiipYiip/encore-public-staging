@@ -1,0 +1,61 @@
+# Secrets and credentials: never commit
+*.env
+.env
+.env.local
+*login*.txt
+CREDENTIALS*
+*credentials*.txt
+*credentials*.md
+*credentials*.json
+*cookies*.txt
+*.keystore
+*.jks
+key.properties
+*.pem
+
+# Installable binaries and releases (they go to GitHub Releases)
+*.apk
+*.aab
+*.zip
+*.tar.gz
+*.bundle
+releases/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/build/
+app/lib/data/**/*.g.dart
+app/lib/**/*.drift.dart
+coverage/
+.idea/
+*.iml
+local.properties
+**/android/.gradle/
+**/android/.kotlin/
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/gradle-wrapper.jar
+GeneratedPluginRegistrant.*
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+
+# Local tooling output
+tools/journeys/shots/
+perf-traces/
+/test/**/failures/
+.DS_Store
+Thumbs.db

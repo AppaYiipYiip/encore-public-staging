@@ -1,0 +1,2 @@
+# Strict rules for new code - see analysis_options_strict.yaml.
+include: ../../analysis_options_strict.yaml

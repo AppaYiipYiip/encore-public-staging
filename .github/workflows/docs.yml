@@ -1,0 +1,29 @@
+name: Hygiene
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  forbidden-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: No logins, keys, cookies, environment files or binaries
+        run: |
+          bad=$(git ls-files | grep -Ei '(login[^/]*\.txt$|(^|/)credentials?[^/]*\.(txt|md|json)$|cookies[^/]*\.txt$|(^|/)\.env$|\.(apk|aab|keystore|jks|pem)$)' | grep -vi '\.example$' || true)
+          if [ -n "$bad" ]; then echo "Forbidden files are tracked:"; echo "$bad"; exit 1; fi

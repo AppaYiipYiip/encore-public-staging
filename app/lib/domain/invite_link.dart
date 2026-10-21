@@ -1,0 +1,78 @@
+import 'package:meta/meta.dart';
+
+import '../core/network_policy.dart';
+
+/// The link a person is sent to join somebody's server (docs/39 F3):
+/// `https://<server>/people/join/<code>`. The code works once and for a few
+/// days; the page behind the link makes the account for a person without the
+/// app, and the app makes it itself with the same two calls (`info`, `redeem`).
+///
+/// It carries no password and nothing that outlives the invitation.
+@immutable
+class InviteLink {
+  const InviteLink({
+    required this.server,
+    required this.code,
+    this.behindPeoplePrefix = true,
+  });
+
+  /// The front door of the server: scheme, host, port and any path in front of
+  /// `/people`.
+  final Uri server;
+
+  /// The one-time code.
+  final String code;
+
+  /// Behind the public address the people service sits under `/people`; on its
+  /// own port at home (`http://192.168.1.10:8702/join/<code>`) it does not.
+  /// The calls go to the same place the link came from.
+  final bool behindPeoplePrefix;
+
+  /// Who invited, what the server is called, until when: asked before the
+  /// person chooses a name.
+  Uri get infoUrl => _join('$code/info');
+
+  /// Makes the account.
+  Uri get redeemUrl => _join('$code/redeem');
+
+  Uri _join(String tail) {
+    final front = server.path.replaceAll(RegExp(r'/+$'), '');
+    final people = behindPeoplePrefix ? '/people' : '';
+    return server.replace(path: '$front$people/join/$tail');
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is InviteLink &&
+      other.server == server &&
+      other.code == code &&
+      other.behindPeoplePrefix == behindPeoplePrefix;
+
+  @override
+  int get hashCode => Object.hash(server, code, behindPeoplePrefix);
+
+  @override
+  String toString() => 'InviteLink($server, $code)';
+}
+
+// `scheme://host[:port][/some/path]` then the join path, then the code.
+const _front = r'(https?)://([^\s/?#]+)((?:/[^\s/?#]+)*?)';
+const _code = r'([A-Za-z0-9_-]+)';
+final RegExp _publicForm = RegExp('$_front/people/join/$_code');
+final RegExp _homeForm = RegExp('$_front/join/$_code');
+
+/// The invitation link inside [text] (a pasted message, a shared link, a link
+/// that was tapped), or `null`. A link over plain http to an address on the
+/// internet is refused: the page takes a password.
+InviteLink? findInviteLink(String text) {
+  for (final (pattern, prefixed) in [(_publicForm, true), (_homeForm, false)]) {
+    final m = pattern.firstMatch(text);
+    if (m == null) continue;
+    final server = Uri.tryParse('${m.group(1)}://${m.group(2)}${m.group(3)}');
+    if (server == null || server.host.isEmpty) continue;
+    if (cleartextProblem(server) != null) return null;
+    return InviteLink(
+        server: server, code: m.group(4)!, behindPeoplePrefix: prefixed);
+  }
+  return null;
+}

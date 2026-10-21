@@ -1,0 +1,464 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/providers.dart';
+import '../../core/network_policy.dart';
+import '../../data/catalogue/catalogue_models.dart';
+import '../../data/db/app_database.dart';
+import '../../data/fetch/fetch_client.dart';
+import '../../data/repos/downloads_repository.dart';
+import '../../data/repos/request_repository.dart';
+import '../../data/sync/endpoint_resolver.dart';
+import '../catalogue/catalogue_providers.dart';
+import '../downloads/download_providers.dart';
+import '../jam/jam_providers.dart' show jamControllerProvider;
+import '../player/playback_facade.dart';
+import '../providers.dart';
+import '../settings/settings_controller.dart';
+import 'instant_play.dart';
+
+/// The instant-play service's usual port.
+const int kFetchPort = 8701;
+
+/// Where to look for the instant-play service, most likely first (ADR-094): the
+/// address saved earlier (path and all); then, for each address the music server
+/// has, the service's own port on that host (home) and, behind an https
+/// address, `/fetch` (away from home: the public address has one door,
+/// and the service sits behind it the way the people service does at `/people`).
+/// The public door that exists is asked before the port that usually does not.
+List<Uri> fetchServiceCandidates(Iterable<Uri> serverEndpoints, {Uri? saved}) {
+  final out = <Uri>[];
+  final seen = <String>{};
+  void add(Uri uri) {
+    if (uri.host.isEmpty) return;
+    final text = uri.toString().replaceAll(RegExp(r'/+$'), '');
+    if (seen.add(text)) out.add(Uri.parse(text));
+  }
+
+  if (saved != null) add(saved);
+  for (final endpoint in serverEndpoints) {
+    final scheme = isPrivateHost(endpoint.host) ? 'http' : 'https';
+    // An address typed as https is the public door (a Tailscale name is "private"
+    // for the cleartext rule yet is the Funnel's public address too).
+    if (endpoint.scheme == 'https') {
+      final basePath = endpoint.path.replaceAll(RegExp(r'/+$'), '');
+      add(Uri(
+        scheme: 'https',
+        host: endpoint.host,
+        port: endpoint.hasPort ? endpoint.port : null,
+        path: '$basePath/fetch',
+      ));
+    }
+    add(Uri(scheme: scheme, host: endpoint.host, port: kFetchPort));
+  }
+  return out;
+}
+
+/// How many songs a play run keeps waiting behind the one that is playing. A
+/// whole album is not fetched at once: a home line is slow, the service has a
+/// disk and YouTube does not like bursts. Two songs ahead is minutes of music.
+const int kRunLookahead = 2;
+
+/// Where the instant-play service is, or `null`: the address saved earlier,
+/// then the music server's own host (home and away) on its usual port. The
+/// answer is remembered so later starts do not ask again (ADR-057).
+final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
+  final settings = ref.watch(settingsProvider);
+  if (!settings.instantPlayEnabled) return null;
+  final server = await ref.watch(activeServerProvider.future);
+  if (server == null) return null;
+
+  final saved = Uri.tryParse(settings.fetchServiceUrl ?? '');
+  final endpoints = <Uri>[];
+  try {
+    for (final e in (jsonDecodeEndpoints(server.endpointsJson))) {
+      endpoints.add(e.url);
+    }
+  } on Object {
+    // No usable endpoint list: only the saved address can be tried.
+  }
+  final candidates = fetchServiceCandidates(
+    endpoints,
+    saved: saved != null && saved.host.isNotEmpty ? saved : null,
+  );
+  if (candidates.isEmpty) return null;
+  final infos = await Future.wait([
+    for (final uri in candidates) EncoreFetchClient.probe(uri),
+  ]);
+  for (var i = 0; i < candidates.length; i++) {
+    final info = infos[i];
+    if (info != null && info.canPlayNow) {
+      final found = candidates[i];
+      if (found.toString() != saved?.toString()) {
+        // Remembered outside this provider's build.
+        scheduleMicrotask(() => ref
+            .read(settingsProvider.notifier)
+            .setFetchServiceUrl(found.toString()));
+      }
+      return found;
+    }
+  }
+  return null;
+});
+
+/// The backend, once the service answered and a music-server session exists.
+final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
+  final uri = await ref.watch(fetchServiceProvider.future);
+  if (uri == null) return null;
+  final session = await ref.watch(sessionProvider.future);
+  if (session == null) return null;
+  return EncoreFetchClient(baseUrl: uri, auth: session.client.authQuery);
+});
+
+/// Whether rows may offer "play now" (service found and switched on).
+final instantAvailableProvider = Provider<bool>(
+  (ref) => ref.watch(instantBackendProvider).value != null,
+);
+
+final instantPlayServiceProvider =
+    FutureProvider<InstantPlayService?>((ref) async {
+  final backend = await ref.watch(instantBackendProvider.future);
+  final repo = ref.watch(libraryRepositoryProvider);
+  final serverId = ref.watch(activeServerIdProvider).value;
+  final session = await ref.watch(sessionProvider.future);
+  if (backend == null || repo == null || serverId == null || session == null) {
+    return null;
+  }
+  final db = ref.watch(databaseProvider);
+
+  Future<TrackRow?> load(String songId) async {
+    final result = await session.client.getSong(songId);
+    final song = result.valueOrNull;
+    if (song == null) return repo.trackOnce(songId);
+    final album = song.albumId == null
+        ? null
+        : (await session.client.getAlbum(song.albumId!)).valueOrNull;
+    await repo.ingest([song], album: album);
+    return repo.trackOnce(song.id);
+  }
+
+  return InstantPlayService(
+    backend: backend,
+    matcher: LibraryMatcher(db, serverId),
+    loadSong: load,
+    findSongId: (artist, title) async {
+      final page = await session.client.search3(query: title, songCount: 20);
+      final songs = page.valueOrNull?.songs ?? const [];
+      for (final s in songs) {
+        if (s.title.toLowerCase() == title.toLowerCase() &&
+            (s.artist ?? '').toLowerCase().contains(artist.toLowerCase())) {
+          return s.id;
+        }
+      }
+      return null;
+    },
+  );
+});
+
+/// State of every song being fetched, keyed by the catalogue track id.
+class InstantController extends Notifier<Map<String, InstantStatus>> {
+  /// Bumped whenever a new play run starts, so an older run stops queueing.
+  int _generation = 0;
+
+  /// The run that is still fetching songs (`-1`: none).
+  int _runningGeneration = -1;
+
+  /// Whether more songs of the current run are still on their way to the queue
+  /// (the player uses it: Next on the last song waits for the next one instead
+  /// of stopping the music).
+  bool get fetchingMore => _runningGeneration == _generation;
+
+  @override
+  Map<String, InstantStatus> build() => const {};
+
+  void _set(String trackId, InstantStatus status) =>
+      state = {...state, trackId: status};
+
+  final Map<String, Future<InstantStatus?>> _inFlight = {};
+  final Set<String> _prepared = {};
+
+  /// Looks [track] up on the service ahead of a tap (the first song of a
+  /// page that was just opened). Once per song and session; never an error.
+  Future<void> prepare(CatalogueTrack track) async {
+    if (!_prepared.add(track.id)) return;
+    final service = await ref.read(instantPlayServiceProvider.future);
+    await service?.prepare(track);
+  }
+
+  /// Fetches [track]; the result is its last status (`ready` carries the
+  /// library row and/or the stream address, `failed` the reason). Plays
+  /// nothing by itself. Asking again while a fetch of the same song is on
+  /// its way joins that fetch.
+  ///
+  /// [bulk] marks a song nobody is waiting for (the rest of an album being
+  /// added): the service takes the songs people are waiting for first.
+  Future<InstantStatus?> fetch(CatalogueTrack track, {bool bulk = false}) =>
+      _inFlight.putIfAbsent(
+        track.id,
+        // The callback must not return the removed future: `whenComplete`
+        // would wait for it, and it is that very future.
+        () => _fetch(track, bulk: bulk).whenComplete(() {
+          _inFlight.remove(track.id);
+        }),
+      );
+
+  Future<InstantStatus?> _fetch(CatalogueTrack track,
+      {bool bulk = false}) async {
+    final service = await ref.read(instantPlayServiceProvider.future);
+    if (service == null) {
+      const unavailable =
+          InstantStatus.failed('Instant play is not available here.');
+      _set(track.id, unavailable);
+      return unavailable;
+    }
+    InstantStatus? last;
+    await for (final status in service.fetch(track, bulk: bulk)) {
+      last = status;
+      _set(track.id, status);
+      if (status.isFailed && status.error == null) {
+        // Possibly the service moved (the phone changed network): look again
+        // the next time.
+        ref.invalidate(fetchServiceProvider);
+      }
+    }
+    return last;
+  }
+
+  /// A queue item for a song that has no library row (it plays from the
+  /// service's stream).
+  static PreviewTrack _streamItem(CatalogueTrack t, Uri uri) => PreviewTrack(
+        id: t.id,
+        title: t.title,
+        uri: uri,
+        artist: t.artistName,
+        catalogueArtistId: t.artistId,
+        album: t.albumTitle,
+        imageUrl: t.coverUrl,
+        duration: t.duration,
+        fullSong: true,
+      );
+
+  /// In a Jam the song that was tapped plays in the Jam, by name, at once: it is
+  /// not fetched on this phone (the phone that makes the sound gets it, and the
+  /// music server already has it for the next person). `false` outside a Jam.
+  Future<bool> _intoTheJam(PlaybackFacade facade, CatalogueTrack t) async {
+    if (!ref.read(jamControllerProvider).inJam) return false;
+    await facade.playPreviews([_streamItem(t, Uri.parse('jam:${t.id}'))]);
+    return true;
+  }
+
+  /// "Play this": fetches the song and starts it as soon as it is ready,
+  /// unless the person started something else in the meantime.
+  ///
+  /// In a Jam a tapped song goes into the Jam. [onThisPhone] is for the phone
+  /// that makes the sound, asked by the Jam to play a song it does not have:
+  /// it fetches it and plays it itself (adding it to the Jam again would ask it
+  /// to play it again, for ever).
+  Future<void> play(CatalogueTrack track,
+      {String? sourceName, String? sourceId, bool onThisPhone = false}) async {
+    final facade = ref.read(
+        onThisPhone ? enginePlaybackFacadeProvider : playbackFacadeProvider);
+    if (!onThisPhone && await _intoTheJam(facade, track)) return;
+    final before = ++_generation;
+    final status = await fetch(track);
+    if (status == null || !status.isReady || before != _generation) return;
+    final name = sourceName ?? track.albumTitle ?? track.artistName;
+    final id = sourceId ?? 'instant:${track.id}';
+    final row = status.track;
+    if (row != null) {
+      await facade.playTracks([row], sourceName: name, sourceId: id);
+    } else if (status.streamUri != null) {
+      await facade.playPreviews(
+        [_streamItem(track, status.streamUri!)],
+        sourceName: name,
+        sourceId: id,
+      );
+    }
+  }
+
+  /// Plays [tracks] from [startIndex]: the first song starts when it arrives,
+  /// the rest are fetched one after the other, [lookahead] songs ahead of
+  /// the one playing, and appended in order as they come in. Stops when the
+  /// person starts something else or trims the queue.
+  Future<void> playRun(
+    List<CatalogueTrack> tracks, {
+    required int startIndex,
+    required String sourceName,
+    required String sourceId,
+    int lookahead = kRunLookahead,
+  }) async {
+    if (tracks.isEmpty) return;
+    final facade = ref.read(playbackFacadeProvider);
+    if (await _intoTheJam(
+        facade, tracks[startIndex.clamp(0, tracks.length - 1)])) {
+      return;
+    }
+    final generation = ++_generation;
+    _runningGeneration = generation;
+    try {
+      await _run(tracks, startIndex, sourceName, sourceId, lookahead, facade,
+          generation);
+    } finally {
+      if (_runningGeneration == generation) _runningGeneration = -1;
+    }
+  }
+
+  Future<void> _run(
+    List<CatalogueTrack> tracks,
+    int startIndex,
+    String sourceName,
+    String sourceId,
+    int lookahead,
+    PlaybackFacade facade,
+    int generation,
+  ) async {
+    String? firstId; // what the queue starts with once the run has begun
+    var inQueue = 0; // how many songs the run has put there
+    bool live() {
+      if (generation != _generation) return false;
+      if (firstId == null) return true;
+      final items = facade.queue.items;
+      // Not loaded yet: give it the benefit of the doubt.
+      if (items.isEmpty) return true;
+      // Someone else started something, or took songs out of the queue.
+      return items.first.id == firstId && items.length >= inQueue;
+    }
+
+    final order = [...tracks.skip(startIndex), ...tracks.take(startIndex)];
+    final results = List<InstantStatus?>.filled(order.length, null);
+    final done = List<bool>.filled(order.length, false);
+    var appended = 0; // how many leading entries are already in the queue
+    var started = false;
+
+    Future<void> drain() async {
+      while (appended < order.length && done[appended]) {
+        final index = appended++;
+        final status = results[index];
+        if (status == null || !status.isReady || !live()) continue;
+        final row = status.track;
+        final stream = status.streamUri;
+        if (row == null && stream == null) continue;
+        if (!started) {
+          started = true;
+          firstId = row?.id ?? order[index].id;
+          inQueue = 1;
+          if (row != null) {
+            await facade
+                .playTracks([row], sourceName: sourceName, sourceId: sourceId);
+          } else {
+            await facade.playPreviews(
+              [_streamItem(order[index], stream!)],
+              sourceName: sourceName,
+              sourceId: sourceId,
+            );
+          }
+        } else {
+          inQueue++;
+          if (row != null) {
+            await facade.addToQueue(row);
+          } else {
+            await facade.addStreamToQueue(_streamItem(order[index], stream!));
+          }
+        }
+      }
+    }
+
+    // The song that was asked for gets the whole line to itself; the rest
+    // follow one at a time, only as far ahead as the queue needs them.
+    results[0] = await fetch(order[0]);
+    done[0] = true;
+    await drain();
+
+    for (var i = 1; i < order.length; i++) {
+      await _untilQueueNeedsSongs(facade, live, lookahead);
+      if (!live()) return;
+      results[i] = await fetch(order[i], bulk: true);
+      done[i] = true;
+      await drain();
+    }
+  }
+
+  /// Completes once fewer than [lookahead] songs wait behind the one playing
+  /// (or the run is no longer wanted). Event driven, with a slow safety tick
+  /// for a player that is paused.
+  static Future<void> _untilQueueNeedsSongs(
+    PlaybackFacade facade,
+    bool Function() live,
+    int lookahead,
+  ) async {
+    bool needed() {
+      final q = facade.queue;
+      if (q.items.isEmpty || q.currentIndex < 0) return true;
+      return q.items.length - 1 - q.currentIndex < lookahead;
+    }
+
+    if (needed() || !live()) return;
+    final done = Completer<void>();
+    void check() {
+      if (!done.isCompleted && (needed() || !live())) done.complete();
+    }
+
+    final sub = facade.queueStream.listen((_) => check());
+    final tick = Timer.periodic(const Duration(seconds: 10), (_) => check());
+    try {
+      await done.future;
+    } finally {
+      tick.cancel();
+      await sub.cancel();
+    }
+  }
+
+  /// "Download": gets every song into the library, then keeps the album on
+  /// the phone (ADR-067). Lives here, not in the page, so it finishes even if
+  /// the person has left the page. `pinnedAlbumId` is `null` when nothing was
+  /// kept (no song arrived, or the library does not list the album yet).
+  Future<({int added, String? pinnedAlbumId})> addAndKeepOffline(
+    List<CatalogueTrack> tracks, {
+    required String artist,
+    required String albumTitle,
+  }) async {
+    final added = await addAll(tracks);
+    if (added == 0) return (added: 0, pinnedAlbumId: null);
+    final album =
+        await ref.read(libraryMatcherProvider)?.findAlbum(artist, albumTitle);
+    if (album == null) return (added: added, pinnedAlbumId: null);
+    await ref.read(downloadActionsProvider).pin(PinTargetType.album, album.id);
+    return (added: added, pinnedAlbumId: album.id);
+  }
+
+  /// Gets every song into the library without playing any.
+  Future<int> addAll(List<CatalogueTrack> tracks) async {
+    var ok = 0;
+    var next = 0;
+    Future<void> worker() async {
+      while (true) {
+        final i = next++;
+        if (i >= tracks.length) return;
+        if ((await fetch(tracks[i], bulk: true))?.isReady ?? false) ok++;
+      }
+    }
+
+    await Future.wait([worker(), worker()]);
+    return ok;
+  }
+}
+
+final instantControllerProvider =
+    NotifierProvider<InstantController, Map<String, InstantStatus>>(
+  InstantController.new,
+);
+
+/// One row's status.
+final instantStatusProvider = Provider.family<InstantStatus?, String>(
+  (ref, trackId) =>
+      ref.watch(instantControllerProvider.select((m) => m[trackId])),
+);
+
+/// Endpoints stored in a server row (kept here so the feature does not depend
+/// on the session being up).
+List<ServerEndpoint> jsonDecodeEndpoints(String json) => [
+      for (final e in jsonDecode(json) as List)
+        ServerEndpoint.fromJson((e as Map).cast<String, dynamic>()),
+    ];

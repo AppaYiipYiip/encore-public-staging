@@ -1,0 +1,9 @@
+# The programs are built with this folder as the context (compose: `context: ..`). Not part of any image:
+reference/data
+reference/.env
+**/data
+**/.env
+**/__pycache__
+**/tests
+migrate
+portal-patches

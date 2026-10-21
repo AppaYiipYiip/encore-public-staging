@@ -1,0 +1,41 @@
+# Strict rule set for all new code (docs/05-testing-and-quality.md section 3).
+#
+# Applied by a one-line `analysis_options.yaml` that `include:`s this file in
+# lib/{app,core,data,design,domain,features} and the matching test folders.
+# Inherited code under lib/{models,providers,screens,services,widgets,utils,l10n}
+# keeps the lenient root configuration until it is replaced.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Promote the classes of bug that hurt most.
+    unawaited_futures: error
+    cancel_subscriptions: error
+    close_sinks: error
+    avoid_print: error
+    invalid_use_of_protected_member: error
+    # Generated code is not ours.
+    todo: ignore
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - avoid_print
+    - avoid_returning_null_for_future
+    - avoid_slow_async_io
+    - cancel_subscriptions
+    - close_sinks
+    - directives_ordering
+    - literal_only_boolean_expressions
+    - no_adjacent_strings_in_list
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - sort_child_properties_last
+    - unawaited_futures
+    - use_build_context_synchronously
+    - use_super_parameters

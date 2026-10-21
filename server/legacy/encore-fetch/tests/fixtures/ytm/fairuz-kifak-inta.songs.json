@@ -1,0 +1,431 @@
+{
+ "query": "Fairuz Kifak Inta",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "RYUsdVmMxxc",
+   "title": "Kifak Inta",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Kifak Inta",
+    "id": "MPREb_3s3j8cmCx1b"
+   },
+   "duration": "3:32",
+   "duration_seconds": 212,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "186M"
+  },
+  {
+   "videoId": "nezexwxrbCM",
+   "title": "Ams Intahena",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Shat Iskandaria (Chat Iskandaria)",
+    "id": "MPREb_HzIcMsSbXlb"
+   },
+   "duration": "5:09",
+   "duration_seconds": 309,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "25M"
+  },
+  {
+   "videoId": "5DtF_qs-QqU",
+   "title": "Sallimleh Alayh",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Mish Kayan Hayek T'Koun",
+    "id": "MPREb_rd404B6Fu0h"
+   },
+   "duration": "5:51",
+   "duration_seconds": 351,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "153M"
+  },
+  {
+   "videoId": "Im1qSIhsEQ4",
+   "title": "Baldati Ghabaton Jamila",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Rajioun",
+    "id": "MPREb_QFn2WwoF2tM"
+   },
+   "duration": "2:38",
+   "duration_seconds": 158,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "423K"
+  },
+  {
+   "videoId": "hEehjYu9ueQ",
+   "title": "Nattarouna Ktir",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "The Music Of Fairuz Operettas By Rahbani Brothers 2",
+    "id": "MPREb_7AtC6A4taXw"
+   },
+   "duration": "3:46",
+   "duration_seconds": 226,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "13M"
+  },
+  {
+   "videoId": "we87riFoixQ",
+   "title": "Al Bint El Shalabiya",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "The Very Best of Feiruz",
+    "id": "MPREb_enmf15VYoH9"
+   },
+   "duration": "3:09",
+   "duration_seconds": 189,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "25M"
+  },
+  {
+   "videoId": "N97OVyPkV-c",
+   "title": "Kifak Enta",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Fairuz At Beiteddine 2000",
+    "id": "MPREb_OunoUogfNoE"
+   },
+   "duration": "3:53",
+   "duration_seconds": 233,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "3.1M"
+  },
+  {
+   "videoId": "wHu-SRjKPF8",
+   "title": "Wa Habibi",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Good Friday Eastern Sacred Songs",
+    "id": "MPREb_DIbC9LrVV2H"
+   },
+   "duration": "2:50",
+   "duration_seconds": 170,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.7M"
+  },
+  {
+   "videoId": "tUHBiwyRj1k",
+   "title": "Oummi",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Ya Tara Nessina",
+    "id": "MPREb_1YoxATWOa82"
+   },
+   "duration": "2:50",
+   "duration_seconds": 170,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "58K"
+  },
+  {
+   "videoId": "RUeGhvO3zcQ",
+   "title": "Wahdon",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "The Soul of Lebanon",
+    "id": "MPREb_45IWbqXneKM"
+   },
+   "duration": "6:13",
+   "duration_seconds": 373,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "56M"
+  },
+  {
+   "videoId": "esawSyiFe6U",
+   "title": "Enta Wana",
+   "artists": [
+    {
+     "name": "Fairouz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Damascus Festival (Live at Damascus Festival 1966)",
+    "id": "MPREb_LNgSrOuM1Dx"
+   },
+   "duration": "2:07",
+   "duration_seconds": 127,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "433K"
+  },
+  {
+   "videoId": "bXGzbtepvo4",
+   "title": "Ya Tair",
+   "artists": [
+    {
+     "name": "Fairouz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Safarbarlek (From \"Safarbarlek\")",
+    "id": "MPREb_12BldYhzMf5"
+   },
+   "duration": "4:29",
+   "duration_seconds": 269,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.4M"
+  },
+  {
+   "videoId": "877K6ohWFKk",
+   "title": "Kan Endena Tahoun Sahar El Laialy",
+   "artists": [
+    {
+     "name": "Fairouz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Loulou (From the Play)",
+    "id": "MPREb_cmXcbCEQugL"
+   },
+   "duration": "2:50",
+   "duration_seconds": 170,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "68M"
+  },
+  {
+   "videoId": "l_XlTGhF-6o",
+   "title": "Habbeytak Bessayf",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "The Very Best of Feiruz",
+    "id": "MPREb_enmf15VYoH9"
+   },
+   "duration": "3:37",
+   "duration_seconds": 217,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.6M"
+  },
+  {
+   "videoId": "gA7-_S7zzm8",
+   "title": "Malekna Wassal",
+   "artists": [
+    {
+     "name": "Fairouz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    },
+    {
+     "name": "Nasry Shams El Din",
+     "id": "UCe4rdRHx7dtV7w5hsnQ8WMw"
+    }
+   ],
+   "album": {
+    "name": "Petra",
+    "id": "MPREb_T7hWvH1LSxB"
+   },
+   "duration": "5:50",
+   "duration_seconds": 350,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "63K"
+  },
+  {
+   "videoId": "iFjpppO0wiQ",
+   "title": "Ya Rabee",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Reminiscing With Fairuz",
+    "id": "MPREb_iLT2bFvfsR6"
+   },
+   "duration": "3:08",
+   "duration_seconds": 188,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "62K"
+  },
+  {
+   "videoId": "TUkEY9gSZQw",
+   "title": "Le Beirut",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Maarifti Feek",
+    "id": "MPREb_hVz5JnPkgxB"
+   },
+   "duration": "4:14",
+   "duration_seconds": 254,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "15M"
+  },
+  {
+   "videoId": "ZBlPZBC9dwY",
+   "title": "Mich Farqa",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Kifak Inta",
+    "id": "MPREb_4BLUfxhJnqo"
+   },
+   "duration": "1:16",
+   "duration_seconds": 76,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "149K"
+  },
+  {
+   "videoId": "_DShnBLY_5Q",
+   "title": "Ma Tezaal Mennee",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Bebalee",
+    "id": "MPREb_mWL3Z0jlrP7"
+   },
+   "duration": "5:04",
+   "duration_seconds": 304,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "73K"
+  },
+  {
+   "videoId": "g3c8boVbfsw",
+   "title": "Ishtatillak (Live)",
+   "artists": [
+    {
+     "name": "Fairuz",
+     "id": "UCzixfFiEFMjhSB3R9UdUdsA"
+    }
+   ],
+   "album": {
+    "name": "Live At Beitedienne (Vol.1 & 2)",
+    "id": "MPREb_6T6Pbgcf1xe"
+   },
+   "duration": "2:45",
+   "duration_seconds": 165,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "45K"
+  }
+ ]
+}

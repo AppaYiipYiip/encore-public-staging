@@ -1,0 +1,28 @@
+#!/bin/sh
+# Pre-commit gate. Runs the quick gate (format, analyze, the fast test folders) when app code,
+# tests, lints or tooling are staged, and refuses anything that looks like a secret or a binary.
+# Docs-only commits skip the gate. Install once per clone:  git config core.hooksPath tools/hooks
+
+changed=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# 1. Never commit logins, keys, cookies, environment files or installable binaries.
+blocked=$(printf "%s\n" "$changed" | grep -Eiv '\.example$' | grep -Ei '(login[^/]*\.txt$|(^|/)credentials?[^/]*\.(txt|md|json)$|cookies[^/]*\.txt$|(^|/)\.env$|\.(apk|aab|keystore|jks|pem|key)$)')
+if [ -n "$blocked" ]; then
+  echo "pre-commit: these files must never be committed:" >&2
+  printf "%s\n" "$blocked" >&2
+  exit 1
+fi
+
+# 2. The quick gate for code changes.
+if ! printf "%s\n" "$changed" | grep -Eq "^(app/|packages/|tools/|server/)"; then
+  echo "pre-commit: no code/test/tooling staged - gate skipped"
+  exit 0
+fi
+
+echo "pre-commit: running the quick gate (tools/check.ps1 -Quick) ..."
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1 -Quick
+status=$?
+if [ $status -ne 0 ]; then
+  echo "pre-commit: the gate failed - fix it, then commit again." >&2
+  exit 1
+fi

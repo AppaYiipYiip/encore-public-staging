@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resource shrinking removes drawables nothing references by id; the
+     notification glyph is looked up by NAME at run time (the notification
+     plugin and audio_service take a resource name), so keep it. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_encore" />

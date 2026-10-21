@@ -1,0 +1,6 @@
+.dart_tool
+pubspec.lock
+test
+.packages
+Dockerfile.prebuilt
+hub-linux

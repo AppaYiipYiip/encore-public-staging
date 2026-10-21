@@ -1,0 +1,435 @@
+{
+ "query": "Nas N.Y. State of Mind",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "izhKFB0_2w0",
+   "title": "N.Y. State of Mind",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Illmatic",
+    "id": "MPREb_NA9bTHvhFmF"
+   },
+   "duration": "4:54",
+   "duration_seconds": 294,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "155M"
+  },
+  {
+   "videoId": "cVNRjPpo68I",
+   "title": "N.Y. State of Mind, Pt. ll",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "I Am...",
+    "id": "MPREb_22c5JVJjkDO"
+   },
+   "duration": "3:37",
+   "duration_seconds": 217,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "9.6M"
+  },
+  {
+   "videoId": "4K3B04hhj-M",
+   "title": "Shootouts",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "It Was Written",
+    "id": "MPREb_VMY4230PUxe"
+   },
+   "duration": "3:47",
+   "duration_seconds": 227,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "9M"
+  },
+  {
+   "videoId": "Zb5mbTolPtU",
+   "title": "Jerz State of Mind",
+   "artists": [
+    {
+     "name": "E-Illa",
+     "id": null
+    }
+   ],
+   "album": {
+    "name": "100 Degreez Deep Vol.1",
+    "id": "MPREb_9DOPVH5HnBK"
+   },
+   "duration": "4:32",
+   "duration_seconds": 272,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "75"
+  },
+  {
+   "videoId": "eDtA8LDNWwo",
+   "title": "Talk Of New York",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Funkmaster Flex Car Show Tour",
+    "id": "MPREb_0yZ34r3AzzW"
+   },
+   "duration": "3:56",
+   "duration_seconds": 236,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "296K"
+  },
+  {
+   "videoId": "_nZ1HHpP0w4",
+   "title": "NY State Of Mind Pt. 3",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    },
+    {
+     "name": "DJ Premier",
+     "id": "UCrWGuJPZpTT0UYL6NXQcBtA"
+    }
+   ],
+   "album": {
+    "name": "Light-Years",
+    "id": "MPREb_l2gr45DKHYy"
+   },
+   "duration": "3:13",
+   "duration_seconds": 193,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "1.3M"
+  },
+  {
+   "videoId": "-Pc4m0ee-ZM",
+   "title": "N.Y. State of Mind (Live) (feat. National Symphony Orchestra)",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Illmatic: Live from the Kennedy Center with the National Symphony Orchestra",
+    "id": "MPREb_vzGEqkXJCjs"
+   },
+   "duration": "6:39",
+   "duration_seconds": 399,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "165K"
+  },
+  {
+   "videoId": "y_BSRvnfXs4",
+   "title": "State Of Mind",
+   "artists": [
+    {
+     "name": "Clint Black",
+     "id": "UCl7NAmOqGFkHuHWx1um650g"
+    }
+   ],
+   "album": {
+    "name": "No Time To Kill",
+    "id": "MPREb_RMCdRXRbzBJ"
+   },
+   "duration": "3:54",
+   "duration_seconds": 234,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "7.3M"
+  },
+  {
+   "videoId": "JUTGD7rg_es",
+   "title": "NYC",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "QB 2 Compton Ringtones",
+    "id": "MPREb_th0lrWsSq2L"
+   },
+   "duration": "0:30",
+   "duration_seconds": 30,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.3K"
+  },
+  {
+   "videoId": "sUG7EILTPsM",
+   "title": "N.Y. State of Mind, Pt. ll",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "I Am...",
+    "id": "MPREb_y4MloFEBKnU"
+   },
+   "duration": "3:37",
+   "duration_seconds": 217,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "9.6M"
+  },
+  {
+   "videoId": "_ydMlTassYc",
+   "title": "Empire State Of Mind (feat. Alicia Keys)",
+   "artists": [
+    {
+     "name": "JAŸ-Z",
+     "id": "UCbJG1HvzgzaMe_15xfiUyWw"
+    }
+   ],
+   "album": {
+    "name": "The Blueprint 3",
+    "id": "MPREb_ZbWqeKbKuK5"
+   },
+   "duration": "4:37",
+   "duration_seconds": 277,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "971M"
+  },
+  {
+   "videoId": "pNcxy51eP_Q",
+   "title": "N.Y. State of Mind, Pt. 3",
+   "artists": [
+    {
+     "name": "Chello",
+     "id": "UCWNSFwy0eGcBqw3DEU_NFNw"
+    }
+   ],
+   "album": {
+    "name": "Light Years re:imagined instrumentals",
+    "id": "MPREb_k7F7BHD4FFJ"
+   },
+   "duration": "3:08",
+   "duration_seconds": 188,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "25"
+  },
+  {
+   "videoId": "RhRYq2k8ksU",
+   "title": "Rewind",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Stillmatic",
+    "id": "MPREb_lydhFg4E149"
+   },
+   "duration": "2:14",
+   "duration_seconds": 134,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "6.3M"
+  },
+  {
+   "videoId": "2Mt0VXj6xYE",
+   "title": "N.Y. State of Mind (Live at Webster Hall, NYC - Dec. 17, 2002)",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Made You Look: God's Son Live 2002",
+    "id": "MPREb_6IcSp3hjb77"
+   },
+   "duration": "1:45",
+   "duration_seconds": 105,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "397K"
+  },
+  {
+   "videoId": "c2VuqIqHR2g",
+   "title": "One Time 4 Your Mind",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Illmatic",
+    "id": "MPREb_QKCjPQOQIoU"
+   },
+   "duration": "3:19",
+   "duration_seconds": 199,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "5.2M"
+  },
+  {
+   "videoId": "wrfM6J1oexc",
+   "title": "N.Y. State of Mind",
+   "artists": [
+    {
+     "name": "Steven Chera",
+     "id": "UCLgU522t_OBJlWDmgYyqJdA"
+    }
+   ],
+   "album": {
+    "name": "New York State of Mind",
+    "id": "MPREb_6Rd91oH1EV5"
+   },
+   "duration": "3:27",
+   "duration_seconds": 207,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "96"
+  },
+  {
+   "videoId": "_rhhHWT1Tyg",
+   "title": "New York State of Mind",
+   "artists": [
+    {
+     "name": "Najjee",
+     "id": "UCwrYc4e9oPbhkXCjS6EcgaA"
+    }
+   ],
+   "album": {
+    "name": "New York State of Mind",
+    "id": "MPREb_6bWGyjUpkvu"
+   },
+   "duration": "2:23",
+   "duration_seconds": 143,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "3K"
+  },
+  {
+   "videoId": "51bwaSAPpV8",
+   "title": "NY State of Mind",
+   "artists": [
+    {
+     "name": "Sir Mega",
+     "id": "UCQJPrCWn2ImsHtMvWyJmTbA"
+    },
+    {
+     "name": "Kapacity",
+     "id": "UCRZXFxe7Lfco_BxLC2h5m4w"
+    }
+   ],
+   "album": {
+    "name": "The Hit FactoOo",
+    "id": "MPREb_qukvGp05loj"
+   },
+   "duration": "3:37",
+   "duration_seconds": 217,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "125"
+  },
+  {
+   "videoId": "bcVETPbrYM8",
+   "title": "New York State of Mind",
+   "artists": [
+    {
+     "name": "dandotc",
+     "id": "UCTfKH0IGVXP_7nrZlwB6PjA"
+    }
+   ],
+   "album": {
+    "name": "Here Today",
+    "id": "MPREb_5kG1scF4uP3"
+   },
+   "duration": "1:47",
+   "duration_seconds": 107,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "39"
+  },
+  {
+   "videoId": "sIBW9sZ9u48",
+   "title": "One Mic",
+   "artists": [
+    {
+     "name": "Nas",
+     "id": "UCPoQYATXIYvN5WB0c4f6jfQ"
+    }
+   ],
+   "album": {
+    "name": "Stillmatic",
+    "id": "MPREb_lydhFg4E149"
+   },
+   "duration": "4:29",
+   "duration_seconds": 269,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "60M"
+  }
+ ]
+}

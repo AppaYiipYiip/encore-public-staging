@@ -1,0 +1,447 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
+
+import '../../core/clock.dart';
+import '../../core/logger.dart';
+import '../../domain/audio_quality.dart';
+import '../../domain/storage_guard.dart';
+import '../db/app_database.dart';
+import '../repos/downloads_repository.dart';
+import 'disk_space.dart';
+import 'download_planner.dart';
+import 'download_transport.dart';
+import 'download_verify.dart';
+
+/// Builds the URL for a track at a quality (original -> `download`).
+typedef DownloadUrlBuilder = Future<Uri> Function(
+  String trackId, {
+  AudioQuality quality,
+  String? sourceSuffix,
+  int? sourceBitRate,
+});
+
+/// Policy the manager reads each time it schedules work.
+@immutable
+class DownloadPolicy {
+  const DownloadPolicy({
+    this.wifiOnly = true,
+    this.onWifi = true,
+    // Each transfer is a server-side transcode: stay gentle on a home server.
+    this.maxInFlight = 4,
+    this.orphanGrace = const Duration(hours: 24),
+    this.limitBytes,
+    this.minFreeBytes = StorageGuard.defaultMinFreeBytes,
+  });
+
+  final bool wifiOnly;
+
+  /// The user's cap for offline music (`null` = none).
+  final int? limitBytes;
+
+  /// Free space on the phone that downloads never go below.
+  final int minFreeBytes;
+
+  /// The phone is on Wi-Fi/Ethernet right now.
+  final bool onWifi;
+  final int maxInFlight;
+  final Duration orphanGrace;
+
+  bool get mayTransfer => !wifiOnly || onWifi;
+}
+
+/// Makes the files on this phone match what the user pinned (ADR-038):
+/// reconcile (pure planner) -> apply -> hand work to the transport -> record
+/// results. Everything observable goes through the database, so the UI is
+/// just streams over `downloads`.
+class DownloadManager {
+  DownloadManager({
+    required AppDatabase db,
+    required this.serverId,
+    required DownloadsRepository repository,
+    required DownloadTransport transport,
+    required DownloadUrlBuilder urlBuilder,
+    required DownloadPolicy Function() policy,
+    DiskSpace? diskSpace,
+    Clock clock = const SystemClock(),
+  })  : _db = db,
+        _repo = repository,
+        _transport = transport,
+        _urlBuilder = urlBuilder,
+        _policy = policy,
+        _disk = diskSpace,
+        _clock = clock;
+
+  final AppDatabase _db;
+  final int serverId;
+  final DownloadsRepository _repo;
+  final DownloadTransport _transport;
+  final DownloadUrlBuilder _urlBuilder;
+  final DownloadPolicy Function() _policy;
+  final DiskSpace? _disk;
+  final Clock _clock;
+
+  final Set<String> _inFlight = <String>{};
+
+  /// Estimated size of each running transfer, for the storage guard.
+  final Map<String, int> _estimates = {};
+  StorageVerdict _verdict = StorageVerdict.ok;
+  final StreamController<StorageVerdict> _verdicts =
+      StreamController<StorageVerdict>.broadcast();
+
+  /// Fallback only: the transport reports where each task wrote (B21), which
+  /// survives a process restart; this map does not.
+  final Map<String, String> _plannedPath = {};
+  StreamSubscription<TransferUpdate>? _updates;
+  StreamSubscription<List<PinRow>>? _pins;
+  Timer? _debounce;
+  Future<void> _serial = Future<void>.value();
+  bool _disposed = false;
+
+  static String _taskId(int serverId, String trackId) =>
+      'enc:$serverId:$trackId';
+
+  String? _trackIdOf(String taskId) {
+    final prefix = 'enc:$serverId:';
+    return taskId.startsWith(prefix) ? taskId.substring(prefix.length) : null;
+  }
+
+  /// Why the queue is not moving, as of the last scheduling pass.
+  StorageVerdict get verdict => _verdict;
+
+  /// Changes of [verdict] (the UI shows "downloads paused: ...").
+  Stream<StorageVerdict> get verdicts => _verdicts.stream;
+
+  void _setVerdict(StorageVerdict value) {
+    if (value == _verdict) return;
+    _verdict = value;
+    if (!_verdicts.isClosed) _verdicts.add(value);
+  }
+
+  /// Starts listening (pins, transport). Safe to call once.
+  Future<void> start() async {
+    _updates = _transport.updates.listen(_enqueueUpdate);
+    await _transport.resume();
+    // Rows left "downloading" by a previous run whose task is gone go back
+    // to the queue.
+    final active = await _transport.activeTaskIds();
+    final stuck = await _repo.rowsInState(DownloadState.downloading);
+    for (final row in stuck) {
+      if (!active.contains(_taskId(serverId, row.trackId))) {
+        await _repo.markQueued(row.trackId);
+      } else {
+        _inFlight.add(row.trackId);
+      }
+    }
+    _pins = _repo.watchPins().listen((_) => requestReconcile());
+    requestReconcile();
+  }
+
+  Future<void> dispose() async {
+    _disposed = true;
+    _debounce?.cancel();
+    await _updates?.cancel();
+    await _pins?.cancel();
+    await _verdicts.close();
+  }
+
+  /// Coalesces bursts of triggers (pin edits, sync completions).
+  void requestReconcile({bool immediateRemoval = false}) {
+    if (_disposed) return;
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      unawaited(reconcile(immediateRemoval: immediateRemoval));
+    });
+  }
+
+  /// Transport callbacks join the same FIFO as reconciles, so a completion
+  /// can never race with a planning pass.
+  void _enqueueUpdate(TransferUpdate update) {
+    _serial = _serial.then((_) async {
+      try {
+        await _onUpdate(update);
+      } on Object catch (error, stack) {
+        Log.error('downloads', 'update handling failed', error, stack);
+      }
+    });
+  }
+
+  /// Completes when every queued reconcile/update has been handled.
+  Future<void> settled() async {
+    while (true) {
+      final current = _serial;
+      await current;
+      if (identical(current, _serial)) return;
+    }
+  }
+
+  /// One full pass. Serialised; never throws.
+  Future<void> reconcile({bool immediateRemoval = false}) {
+    _serial = _serial.then((_) => _reconcileOnce(immediateRemoval));
+    return _serial;
+  }
+
+  Future<void> _reconcileOnce(bool immediateRemoval) async {
+    if (_disposed) return;
+    try {
+      final policy = _policy();
+      final desired = await _repo.desired();
+      final existing = await _repo.existing();
+      final plan = planDownloads(
+        desired: desired,
+        existing: existing,
+        nowMs: _clock.now().millisecondsSinceEpoch,
+        graceMs: immediateRemoval ? 0 : policy.orphanGrace.inMilliseconds,
+      );
+      if (!plan.isEmpty) {
+        Log.info('downloads', 'plan: $plan');
+        await _repo.applyPlan(plan, desired);
+        await _delete(plan.toDelete, existing);
+      }
+      await _pump();
+    } on Object catch (error, stack) {
+      Log.error('downloads', 'reconcile failed', error, stack);
+    }
+  }
+
+  Future<void> _delete(
+    List<String> trackIds,
+    Map<String, DownloadRow> existing,
+  ) async {
+    for (final id in trackIds) {
+      await _transport.cancel(_taskId(serverId, id));
+      _inFlight.remove(id);
+      final path = existing[id]?.localPath;
+      if (path != null) {
+        try {
+          await _transport.deleteFile(path);
+        } on Object catch (error) {
+          Log.warn('downloads', 'could not delete $path', error);
+        }
+      }
+    }
+    await _repo.deleteRows(trackIds);
+  }
+
+  /// Starts queued rows, up to the in-flight budget and the storage guard.
+  Future<void> _pump() async {
+    final policy = _policy();
+    if (!policy.mayTransfer) return;
+    final slots = policy.maxInFlight - _inFlight.length;
+    if (slots <= 0) return;
+    // Rows already handed to the transport stay `downloading`, so the first
+    // `slots` queued rows are always fresh work.
+    final queued = await _repo.rowsInState(DownloadState.queued, limit: slots);
+    if (queued.isEmpty) {
+      _setVerdict(StorageVerdict.ok);
+      return;
+    }
+
+    final guard = StorageGuard(
+      limitBytes: policy.limitBytes,
+      minFreeBytes: policy.minFreeBytes,
+    );
+    final used = await _repo.usedBytes();
+    final free = await _disk?.freeBytes();
+    var running = 0;
+    for (final id in _inFlight) {
+      running += _estimates[id] ?? 0;
+    }
+
+    for (final row in queued) {
+      if (_disposed) return;
+      if (_inFlight.length >= policy.maxInFlight) break;
+      if (_inFlight.contains(row.trackId)) continue;
+
+      final next = await _estimateFor(row);
+      final verdict = guard.check(
+        usedBytes: used,
+        inFlightBytes: running,
+        nextBytes: next,
+        freeBytes: free,
+      );
+      if (verdict != StorageVerdict.ok) {
+        // The rest of the queue stays queued (not failed): it resumes when
+        // the limit is raised or space is freed.
+        Log.info(
+            'downloads',
+            'paused: $verdict '
+                '(used=$used running=$running free=$free)');
+        _setVerdict(verdict);
+        return;
+      }
+      await _startOne(row, policy);
+      if (_inFlight.contains(row.trackId)) {
+        _estimates[row.trackId] = next;
+        running += next;
+      }
+    }
+    _setVerdict(StorageVerdict.ok);
+  }
+
+  Future<int> _estimateFor(DownloadRow row) async {
+    final track = await (_db.select(_db.tracks)
+          ..where(
+              (t) => t.serverId.equals(serverId) & t.id.equals(row.trackId)))
+        .getSingleOrNull();
+    return estimateDownloadBytes(
+      quality: AudioQuality.byId(row.quality),
+      sourceSize: track?.size,
+      durationSec: track?.durationSec,
+      sourceBitRate: track?.bitRate,
+    );
+  }
+
+  Future<void> _startOne(DownloadRow row, DownloadPolicy policy) async {
+    final track = await (_db.select(_db.tracks)
+          ..where(
+              (t) => t.serverId.equals(serverId) & t.id.equals(row.trackId)))
+        .getSingleOrNull();
+    if (track == null || track.deletedAtMs != null) {
+      await _repo.markFailed(row.trackId, 'Track is no longer on the server');
+      return;
+    }
+    final quality = AudioQuality.byId(row.quality);
+    try {
+      final url = await _urlBuilder(
+        row.trackId,
+        quality: quality,
+        sourceSuffix: track.suffix,
+        sourceBitRate: track.bitRate,
+      );
+      // A refresh downloads next to the old copy and swaps afterwards.
+      final target = _relativeFor(row, track.suffix);
+      _plannedPath[row.trackId] = target;
+      _inFlight.add(row.trackId);
+      await _repo.markDownloading(row.trackId);
+      await _transport.start(TransferRequest(
+        taskId: _taskId(serverId, row.trackId),
+        url: url,
+        relativePath: target,
+        requiresWifi: policy.wifiOnly,
+      ));
+    } on Object catch (error) {
+      _inFlight.remove(row.trackId);
+      await _repo.markFailed(row.trackId, '$error');
+    }
+  }
+
+  /// Where a download of [row] is written: `downloads/<server>/<track>.<ext>`,
+  /// with `.new` appended while a refresh sits next to the copy it replaces.
+  String _relativeFor(DownloadRow row, String? sourceSuffix) {
+    final ext = AudioQuality.byId(row.quality)
+        .fileExtension(sourceSuffix: sourceSuffix);
+    final base = 'downloads/$serverId/${row.trackId}.$ext';
+    final isRefresh = row.localPath != null && row.localPath!.isNotEmpty;
+    return isRefresh ? '$base.new' : base;
+  }
+
+  Future<void> _onUpdate(TransferUpdate update) async {
+    final trackId = _trackIdOf(update.taskId);
+    if (trackId == null || _disposed) return;
+    switch (update.status) {
+      case TransferStatus.complete:
+        await _onComplete(trackId, update.relativePath);
+      case TransferStatus.failed:
+        _inFlight.remove(trackId);
+        await _repo.markFailed(trackId, update.error ?? 'Download failed');
+        await _pump();
+      case TransferStatus.canceled:
+        _inFlight.remove(trackId);
+      case TransferStatus.enqueued:
+      case TransferStatus.running:
+      case TransferStatus.paused:
+        break;
+    }
+  }
+
+  Future<void> _onComplete(String trackId, String? reportedPath) async {
+    _inFlight.remove(trackId);
+    final planned = _plannedPath.remove(trackId);
+    final rows = await _repo.rowsFor([trackId]);
+    final track = await (_db.select(_db.tracks)
+          ..where((t) => t.serverId.equals(serverId) & t.id.equals(trackId)))
+        .getSingleOrNull();
+    if (rows.isEmpty) {
+      // Unpinned while it was downloading: throw the file away.
+      final path = reportedPath ?? planned;
+      if (path != null) {
+        await _transport.deleteFile(await _transport.absolutePath(path));
+      }
+      return;
+    }
+    final row = rows.first;
+    // The task knows where it wrote, even after the app was killed (B21).
+    final relative =
+        reportedPath ?? planned ?? _relativeFor(row, track?.suffix);
+    final absolute = await _transport.absolutePath(relative);
+    final isRefresh = relative.endsWith('.new');
+
+    final size = await _transport.fileSize(absolute);
+    final reason = size == null
+        ? 'Downloaded file is empty'
+        : verifyDownload(
+            path: absolute,
+            size: size,
+            head: await _transport.readHead(absolute, 16),
+            expectedBytes: track?.size,
+            original: AudioQuality.byId(row.quality).isOriginal,
+          );
+    if (size == null || reason != null) {
+      await _transport.deleteFile(absolute);
+      await _giveUp(trackId, isRefresh, reason ?? 'Downloaded file is empty');
+      return;
+    }
+
+    var finalPath = absolute;
+    if (isRefresh) {
+      finalPath = absolute.substring(0, absolute.length - '.new'.length);
+      try {
+        // One step: the old copy is replaced or left alone, never missing.
+        await _transport.rename(absolute, finalPath);
+      } on Object catch (error) {
+        Log.warn('downloads', 'swap failed for $trackId', error);
+        await _transport.deleteFile(absolute);
+        await _giveUp(trackId, true, 'Could not replace the old copy');
+        return;
+      }
+      final old = row.localPath;
+      if (old != null && old != finalPath) {
+        await _transport.deleteFile(old);
+      }
+    }
+
+    await _repo.markDone(
+      trackId,
+      localPath: finalPath,
+      bytes: size,
+      audioKey: track?.audioKey ?? '',
+      quality: row.quality,
+    );
+    await _pump();
+  }
+
+  /// A finished transfer that cannot be kept. A refresh leaves the old copy
+  /// playable; a first download is a failure with a back-off.
+  Future<void> _giveUp(String trackId, bool isRefresh, String reason) async {
+    if (isRefresh) {
+      await _repo.restoreDone(trackId, reason);
+    } else {
+      await _repo.markFailed(trackId, reason);
+    }
+    await _pump();
+  }
+
+  /// Retry failed rows now (user pressed "Try again").
+  Future<void> retryFailed() async {
+    final failed = await _repo.rowsInState(DownloadState.failed);
+    for (final row in failed) {
+      await _repo.markQueued(row.trackId);
+    }
+    await reconcile();
+  }
+
+  @visibleForTesting
+  Set<String> get debugInFlight => Set.unmodifiable(_inFlight);
+}

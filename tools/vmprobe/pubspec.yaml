@@ -1,0 +1,6 @@
+name: vmprobe
+publish_to: none
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  vm_service: any

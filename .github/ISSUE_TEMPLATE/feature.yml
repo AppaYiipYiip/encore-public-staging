@@ -1,0 +1,16 @@
+name: Feature request
+description: An idea, written as a story
+labels: [feature]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: As a ... I want ... so that ...
+      description: See docs/03a-user-stories.md for the style.
+    validations:
+      required: true
+  - type: textarea
+    id: ok
+    attributes:
+      label: How would we know it works?
+      description: What a person sees, with numbers where it matters.

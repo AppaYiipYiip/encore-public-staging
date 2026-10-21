@@ -1,0 +1,34 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: did
+    attributes:
+      label: What I did
+      description: Steps, in order.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What I expected
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: Screenshot or log if you have one. Never include a password.
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Device and setup
+      description: Phone model, Android version, navigation (3-button or gesture), font scale, network, server version, app version.
+  - type: dropdown
+    id: freq
+    attributes:
+      label: How often
+      options: [Always, Often, Sometimes, Once]

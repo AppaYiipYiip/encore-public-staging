@@ -1,0 +1,20 @@
+{
+  "TCP": {
+    "443": { "HTTPS": true }
+  },
+  "Web": {
+    "${TS_CERT_DOMAIN}:443": {
+      "Handlers": {
+        "/": { "Proxy": "http://navidrome:4533" },
+        "/people": { "Proxy": "http://encore-people:8702" },
+        "/fetch": { "Proxy": "http://encore-fetch:8701" },
+        "/hub": { "Proxy": "http://encore-hub:8703" },
+        "/quality": { "Proxy": "http://encore-quality:8704" },
+        "/recs": { "Proxy": "http://encore-recs:8705" }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "${TS_CERT_DOMAIN}:443": true
+  }
+}

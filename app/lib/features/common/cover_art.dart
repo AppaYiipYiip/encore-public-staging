@@ -1,0 +1,287 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/providers.dart';
+import '../../design/tokens.dart';
+import '../../domain/mosaic_layout.dart';
+import '../requests/request_providers.dart';
+
+/// Disk cache for artwork. The default manager keeps only 200 objects, which
+/// makes covers vanish offline in a 500-album library, so this one is sized
+/// for a real library and keeps files for a year (cover ids embed a content
+/// hash, so changed art gets a new key).
+final CacheManager coverCacheManager = CacheManager(
+  Config(
+    'encoreCovers',
+    stalePeriod: const Duration(days: 365),
+    maxNrOfCacheObjects: 8000,
+  ),
+);
+
+/// Artwork that always shows *something* sensible (R-09):
+/// the item's own picture -> a golden-ratio mosaic of related covers -> a
+/// deterministic gradient with a monogram.
+///
+/// Fills its parent; wrap in `SizedBox`/`AspectRatio` to size it.
+class CoverArt extends ConsumerWidget {
+  const CoverArt({
+    super.key,
+    this.coverArtId,
+    this.imageUrl,
+    this.mosaicIds = const [],
+    this.fallbackLabel,
+    this.fallbackArtist,
+    this.radius = Radii.art,
+    this.circular = false,
+    this.fit = BoxFit.cover,
+    this.monogram = true,
+  });
+
+  final String? coverArtId;
+
+  /// A direct artwork URL (catalogue results); used when there is no server
+  /// cover id.
+  final String? imageUrl;
+
+  /// Related cover ids used for the collage when [coverArtId] is missing or
+  /// fails to load (e.g. a playlist's albums).
+  final List<String> mosaicIds;
+
+  /// Text the gradient/monogram fallback is derived from (title).
+  final String? fallbackLabel;
+
+  /// With [fallbackLabel] (an album title), lets the catalogue supply a cover
+  /// when the server has none.
+  final String? fallbackArtist;
+  final double radius;
+  final bool circular;
+  final BoxFit fit;
+
+  /// Show initials on the gradient fallback (off inside mosaic tiles).
+  final bool monogram;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resolver = ref.watch(coverArtResolverProvider);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+
+    final Widget content = LayoutBuilder(
+      builder: (context, constraints) {
+        final logical = constraints.biggest.shortestSide.isFinite
+            ? constraints.biggest.shortestSide
+            : 160.0;
+        final px = (logical * dpr).ceil();
+
+        Widget fallback() {
+          if (mosaicIds.isNotEmpty) {
+            return CoverMosaic(coverIds: mosaicIds, label: fallbackLabel);
+          }
+          final gradient =
+              GradientFallback(label: fallbackLabel, monogram: monogram);
+          final artist = fallbackArtist;
+          final title = fallbackLabel;
+          if (artist == null || title == null || artist.isEmpty) {
+            return gradient;
+          }
+          return _CatalogueCover(
+            artist: artist,
+            title: title,
+            fit: fit,
+            px: px,
+            placeholder: gradient,
+          );
+        }
+
+        final direct = imageUrl;
+        if ((coverArtId == null || coverArtId!.isEmpty) &&
+            direct != null &&
+            direct.isNotEmpty) {
+          return CachedNetworkImage(
+            imageUrl: direct,
+            cacheKey: 'url:$direct',
+            cacheManager: coverCacheManager,
+            fit: fit,
+            memCacheWidth: CoverArtResolver.bucket(px),
+            fadeInDuration: const Duration(milliseconds: 150),
+            fadeOutDuration: Duration.zero,
+            placeholder: (_, __) =>
+                ColoredBox(color: context.colors.surfaceHigh),
+            errorWidget: (_, __, ___) => fallback(),
+          );
+        }
+
+        final id = coverArtId;
+        if (id == null || id.isEmpty || resolver == null) return fallback();
+
+        final r = resolver.resolve(id, px);
+        return CachedNetworkImage(
+          imageUrl: r.url.toString(),
+          cacheKey: r.cacheKey,
+          cacheManager: coverCacheManager,
+          fit: fit,
+          memCacheWidth: CoverArtResolver.bucket(px),
+          fadeInDuration: const Duration(milliseconds: 150),
+          fadeOutDuration: Duration.zero,
+          placeholder: (_, __) => ColoredBox(color: context.colors.surfaceHigh),
+          errorWidget: (_, __, ___) => fallback(),
+        );
+      },
+    );
+
+    if (circular) return ClipOval(child: content);
+    if (radius <= 0) return content;
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(radius), child: content);
+  }
+}
+
+/// Shows the catalogue's cover for an album the server has none for.
+class _CatalogueCover extends ConsumerWidget {
+  const _CatalogueCover({
+    required this.artist,
+    required this.title,
+    required this.fit,
+    required this.px,
+    required this.placeholder,
+  });
+
+  final String artist;
+  final String title;
+  final BoxFit fit;
+  final int px;
+  final Widget placeholder;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final url = ref.watch(coverFallbackProvider((artist, title))).value;
+    if (url == null) return placeholder;
+    return CachedNetworkImage(
+      imageUrl: url,
+      cacheKey: 'url:$url',
+      cacheManager: coverCacheManager,
+      fit: fit,
+      memCacheWidth: CoverArtResolver.bucket(px),
+      fadeInDuration: const Duration(milliseconds: 150),
+      fadeOutDuration: Duration.zero,
+      placeholder: (_, __) => placeholder,
+      errorWidget: (_, __, ___) => placeholder,
+    );
+  }
+}
+
+/// Golden-ratio collage of several covers (ADR-024).
+class CoverMosaic extends ConsumerWidget {
+  const CoverMosaic({super.key, required this.coverIds, this.label});
+
+  final List<String> coverIds;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ids = MosaicLayout.pickCovers(coverIds);
+    if (ids.isEmpty) return GradientFallback(label: label);
+    final tiles = MosaicLayout.compute(ids.length);
+    final bg = context.colors.surfaceHigh;
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth.isFinite ? c.maxWidth : 160.0;
+        final h = c.maxHeight.isFinite ? c.maxHeight : w;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: bg),
+            for (var i = 0; i < tiles.length; i++)
+              Positioned(
+                left: tiles[i].left * w,
+                top: tiles[i].top * h,
+                width: tiles[i].width * w,
+                height: tiles[i].height * h,
+                child: CoverArt(
+                  coverArtId: ids[i],
+                  radius: 0,
+                  // A failing tile shows a gradient seeded by its own id (so
+                  // tiles differ), never a nested mosaic.
+                  fallbackLabel: ids[i],
+                  monogram: false,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Deterministic gradient + monogram, derived from [label] so the same item
+/// always looks the same.
+class GradientFallback extends StatelessWidget {
+  const GradientFallback({super.key, this.label, this.monogram = true});
+
+  final String? label;
+  final bool monogram;
+
+  static const _hues = [158.0, 200.0, 262.0, 320.0, 12.0, 38.0, 96.0, 226.0];
+
+  @override
+  Widget build(BuildContext context) {
+    final text = (label ?? '').trim();
+    final seed =
+        text.isEmpty ? 0 : text.codeUnits.fold<int>(7, (a, b) => a * 31 + b);
+    final hue = _hues[seed.abs() % _hues.length];
+    final a = HSLColor.fromAHSL(1, hue, 0.50, 0.34).toColor();
+    final b = HSLColor.fromAHSL(1, (hue + 28) % 360, 0.55, 0.20).toColor();
+    final letters = monogram ? _monogram(text) : '';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [a, b],
+        ),
+      ),
+      child: LayoutBuilder(builder: (context, c) {
+        final side =
+            c.biggest.shortestSide.isFinite ? c.biggest.shortestSide : 100;
+        return Center(
+          child: letters.isEmpty
+              ? (monogram
+                  ? Icon(Icons.music_note_rounded,
+                      size: side * 0.42,
+                      color: Colors.white.withValues(alpha: 0.85))
+                  : const SizedBox.shrink())
+              : Text(
+                  letters,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: 'Figtree',
+                    fontWeight: FontWeight.w800,
+                    fontSize: side * 0.38,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+        );
+      }),
+    );
+  }
+
+  static String _monogram(String text) {
+    final words = text
+        .split(RegExp(r'\s+'))
+        .where((w) =>
+            w.isNotEmpty && RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(w))
+        .toList();
+    if (words.isEmpty) return '';
+    String first(String w) {
+      final m = RegExp(r'[\p{L}\p{N}]', unicode: true).firstMatch(w);
+      return m == null ? '' : m.group(0)!.toUpperCase();
+    }
+
+    return words.length == 1
+        ? first(words.first)
+        : '${first(words[0])}${first(words[1])}';
+  }
+}

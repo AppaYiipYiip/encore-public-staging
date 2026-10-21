@@ -1,0 +1,24 @@
+# Level 1b (advanced): a public https:// address with a name of your own (docs/33).
+#
+# Caddy gets and renews the certificate by itself. Requirements: a name that
+# points at your home (a free dynamic-DNS name works), and your router
+# forwarding ports 80 and 443 to this computer. If you do not have those, or
+# are behind carrier-grade NAT, use the `funnel` profile instead: it needs
+# neither (docs/33 section 6 says why it is the guided way).
+#
+# Want the certificate authority to email you before a certificate expires?
+# Add at the top:   { email you@example.org }
+
+{$DOMAIN} {
+	# Audio is streamed as it is read: no buffering in the proxy.
+	reverse_proxy navidrome:4533 {
+		flush_interval -1
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+}

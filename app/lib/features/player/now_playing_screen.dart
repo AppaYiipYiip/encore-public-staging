@@ -1,0 +1,651 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../app/audio_output.dart';
+import '../../app/navigation.dart';
+import '../../app/providers.dart';
+import '../../data/db/app_database.dart';
+import '../../design/tokens.dart';
+import '../../domain/artwork_color.dart';
+import '../common/artwork_color.dart';
+import '../common/cover_art.dart';
+import '../common/format.dart';
+import '../common/open_artist.dart';
+import '../common/track_menu.dart';
+import '../common/widgets.dart';
+import '../providers.dart';
+import '../settings/settings_controller.dart';
+import 'lyrics_screen.dart';
+import 'pending_likes.dart';
+import 'playback_facade.dart';
+import 'queue_sheet.dart';
+import 'scrubber.dart';
+import 'sleep_timer_sheet.dart';
+import 'speed_sheet.dart';
+import 'streamed_song.dart';
+
+/// Full-screen player (docs/06-ux-spec.md 4.6): artwork, like, scrubber,
+/// transport, quality chip, lyrics preview.
+class NowPlayingScreen extends ConsumerWidget {
+  const NowPlayingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(playbackSnapshotProvider).value;
+    final track = snapshot?.track;
+    final c = context.colors;
+
+    if (track == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Close',
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const EmptyState(
+          icon: Icons.music_note_rounded,
+          title: 'Nothing is playing',
+          message: 'Pick something from Home, Search or your Library.',
+        ),
+      );
+    }
+
+    final swatch = ref
+        .watch(artworkSwatchProvider(
+            (albumId: track.albumId, coverArtId: track.coverArt)))
+        .value;
+    final tint = swatch != null
+        ? backdropFor(swatch)
+        : tintFor(track.album ?? track.title);
+    final facade = ref.watch(playbackFacadeProvider);
+    // What like / playlists / "go to album" act on. A song the service is
+    // still putting into the library has none for a few seconds (ADR-066).
+    final libraryRow = ref.watch(playingLibraryRowProvider(track)).value;
+    final fromService = ref.watch(isServiceSongProvider(track));
+    final waiting = fromService && libraryRow == null;
+    final sample = track.imageUrl != null && !track.fullSong && !fromService;
+
+    return GestureDetector(
+      onVerticalDragEnd: (d) {
+        if ((d.primaryVelocity ?? 0) > 500) context.pop();
+      },
+      child: Scaffold(
+        body: AnimatedContainer(
+          duration: Motion.colour,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [tint, c.bg],
+              stops: const [0, 0.85],
+            ),
+          ),
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < 640;
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Space.xl),
+                      child: Column(
+                        children: [
+                          _TopBar(
+                            source: snapshot!.sourceName,
+                            // A 30-second sample has no library entry to act
+                            // on; a song on its way into the library has one
+                            // in a moment.
+                            row: libraryRow,
+                            waiting: waiting,
+                          ),
+                          SizedBox(height: compact ? Space.sm : Space.xl),
+                          _Artwork(track: track, facade: facade),
+                          SizedBox(height: compact ? Space.md : Space.xl),
+                          _TitleRow(
+                            track: track,
+                            row: libraryRow,
+                            waiting: waiting,
+                            sample: sample,
+                          ),
+                          const SizedBox(height: Space.sm),
+                          const Scrubber(),
+                          const SizedBox(height: Space.xs),
+                          _Transport(snapshot: snapshot, facade: facade),
+                          const SizedBox(height: Space.md),
+                          _BottomRow(track: track, sample: sample),
+                          const SizedBox(height: Space.lg),
+                          // The lyrics belong to the whole song, not to a
+                          // 30-second clip of it (docs/23, B34).
+                          if (!sample) _LyricsPreview(trackId: track.id),
+                          const SizedBox(height: Space.xl),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when a person acts on a song the service is still putting into the
+/// library: it can be liked and added to playlists a moment later.
+const String kWaitingForLibrary = 'Still being added to your library - you '
+    'can like it and add it to a playlist in a moment.';
+
+class _TopBar extends ConsumerWidget {
+  const _TopBar({this.source, this.row, this.waiting = false});
+
+  final String? source;
+
+  /// The library track the menu acts on; `null` hides the menu (unless the
+  /// song is [waiting] to arrive).
+  final TrackRow? row;
+  final bool waiting;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        IconButton(
+          tooltip: 'Close player',
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
+          onPressed: () => context.pop(),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              Text('PLAYING FROM',
+                  style: context.text.labelSmall
+                      ?.copyWith(color: context.colors.onBgMuted)),
+              Text(
+                source ?? 'Your library',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.titleSmall,
+              ),
+            ],
+          ),
+        ),
+        if (row == null && !waiting)
+          const SizedBox(width: 48) // balance the close button
+        else
+          IconButton(
+            tooltip: 'More options',
+            icon: const Icon(Icons.more_vert_rounded),
+            onPressed: () async {
+              final found = row;
+              if (found == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text(kWaitingForLibrary)));
+                return;
+              }
+              await showTrackMenu(context, found);
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _Artwork extends StatelessWidget {
+  const _Artwork({required this.track, required this.facade});
+
+  final NowPlayingTrack track;
+  final PlaybackFacade facade;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragEnd: (d) {
+        final v = d.primaryVelocity ?? 0;
+        if (v < -300) {
+          HapticFeedback.lightImpact();
+          facade.skipNext();
+        } else if (v > 300) {
+          HapticFeedback.lightImpact();
+          facade.skipPrevious();
+        }
+      },
+      child: AspectRatio(
+        aspectRatio: 1,
+        // No blur shadow: costly to rasterise every frame, and Spotify-style
+        // player art sits flat on the gradient.
+        child: CoverArt(
+          coverArtId: track.coverArt,
+          imageUrl: track.imageUrl,
+          fallbackArtist: track.album == null ? null : track.artist,
+          fallbackLabel: track.album ?? track.title,
+          radius: Radii.hero,
+        ),
+      ),
+    );
+  }
+}
+
+class _TitleRow extends ConsumerWidget {
+  const _TitleRow({
+    required this.track,
+    required this.row,
+    this.waiting = false,
+    this.sample = false,
+  });
+
+  final NowPlayingTrack track;
+
+  /// The library copy, once there is one.
+  final TrackRow? row;
+
+  /// A song the service is still adding to the library.
+  final bool waiting;
+
+  /// A 30-second sample: nothing to like.
+  final bool sample;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // A like waiting for its song to be listed counts as liked: the heart
+    // answers the tap now, whatever the music server is doing.
+    final waitingLike = ref.watch(
+        pendingLikesProvider.select((s) => s.waiting.containsKey(track.id)));
+    final liked = row?.starredAtMs != null || waitingLike;
+    final session = ref.watch(sessionProvider).value;
+    final c = context.colors;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                track.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.headlineSmall,
+              ),
+              InkWell(
+                // A library song opens its library artist; a song that only the
+                // catalogue knows (a sample, a song the service plays) opens the
+                // catalogue's page of the artist.
+                onTap: track.artistId != null
+                    ? () {
+                        context.pop();
+                        Nav.artist(context, track.artistId!);
+                      }
+                    : track.catalogueArtistId != null
+                        ? () {
+                            context.pop();
+                            Nav.catalogueArtist(
+                                context, track.catalogueArtistId!);
+                          }
+                        // A song with no id to open: the name is looked up, so
+                        // every artist can be tapped.
+                        : (track.artist ?? '').trim().isEmpty
+                            ? null
+                            : () => openArtistByName(
+                                  context,
+                                  ref,
+                                  track.artist!,
+                                  beforeOpen: context.pop,
+                                ),
+                child: Text(
+                  track.artist ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.bodyLarge?.copyWith(
+                      color: c.onBgMuted, fontWeight: FontWeight.w400),
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: sample
+              ? 'Add the song to your library to like it'
+              : liked
+                  ? 'Remove from Liked Songs'
+                  : 'Add to Liked Songs',
+          iconSize: 28,
+          icon: Icon(
+            liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            color: sample
+                ? c.onBgMuted
+                : liked
+                    ? c.accent
+                    : c.onBg,
+          ),
+          onPressed: session == null || sample
+              ? null
+              : () {
+                  final target = row;
+                  // Waiting to be delivered: a press takes it back.
+                  if (waitingLike || (target == null && waiting)) {
+                    HapticFeedback.mediumImpact();
+                    ref.read(pendingLikesProvider.notifier).toggle(track);
+                    return;
+                  }
+                  if (target == null) return;
+                  HapticFeedback.mediumImpact();
+                  session.mutations.setTrackStarred(target.id, !liked);
+                },
+        ),
+      ],
+    );
+  }
+}
+
+class _Transport extends StatelessWidget {
+  const _Transport({required this.snapshot, required this.facade});
+
+  final PlaybackSnapshot snapshot;
+  final PlaybackFacade facade;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final repeatIcon = snapshot.repeat == RepeatKind.one
+        ? Icons.repeat_one_rounded
+        : Icons.repeat_rounded;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          tooltip: snapshot.shuffle ? 'Shuffle on' : 'Shuffle off',
+          iconSize: 26,
+          icon: Icon(Icons.shuffle_rounded,
+              color: snapshot.shuffle ? c.accent : c.onBg),
+          onPressed: facade.toggleShuffle,
+        ),
+        IconButton(
+          tooltip: 'Previous',
+          iconSize: 44,
+          icon: const Icon(Icons.skip_previous_rounded),
+          // Always available: restarts the song, or goes to the previous one.
+          onPressed: facade.skipPrevious,
+        ),
+        snapshot.isLoading
+            ? const SizedBox.square(
+                dimension: 72,
+                child: Padding(
+                  padding: EdgeInsets.all(22),
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+              )
+            : Semantics(
+                button: true,
+                label: snapshot.isPlaying ? 'Pause' : 'Play',
+                excludeSemantics: true,
+                child: Material(
+                  color: c.onBg,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      facade.togglePlayPause();
+                    },
+                    child: SizedBox.square(
+                      dimension: 72,
+                      child: Icon(
+                        snapshot.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        size: 46,
+                        color: c.bg,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+        IconButton(
+          tooltip: 'Next',
+          iconSize: 44,
+          icon: const Icon(Icons.skip_next_rounded),
+          onPressed: snapshot.hasNext ? facade.skipNext : null,
+        ),
+        IconButton(
+          tooltip: switch (snapshot.repeat) {
+            RepeatKind.off => 'Repeat off',
+            RepeatKind.all => 'Repeat all',
+            RepeatKind.one => 'Repeat one',
+          },
+          iconSize: 26,
+          icon: Icon(repeatIcon,
+              color: snapshot.repeat == RepeatKind.off ? c.onBg : c.accent),
+          onPressed: facade.cycleRepeat,
+        ),
+      ],
+    );
+  }
+}
+
+class _BottomRow extends ConsumerWidget {
+  const _BottomRow({required this.track, required this.sample});
+
+  final NowPlayingTrack track;
+
+  /// A 30-second catalogue clip: no lyrics button (docs/23, B34).
+  final bool sample;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.colors;
+    final quality = qualityLabel(suffix: track.suffix, bitRate: track.bitRate);
+    final sleep = ref.watch(sleepTimerProvider).value;
+    final sleeping = sleep != null && sleep.mode != SleepTimerMode.off;
+    final speed = ref.watch(settingsProvider.select((s) => s.playbackSpeed));
+    final private =
+        ref.watch(settingsProvider.select((s) => s.privateListening));
+
+    // An icon with its name under it: a bare symbol (a lock, a moon) is not
+    // understood by somebody who has not seen it before.
+    Widget action(
+            IconData icon, String label, String tooltip, VoidCallback onTap,
+            {bool active = false, String? badge}) =>
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    tooltip: tooltip,
+                    icon: Icon(icon, color: active ? c.accent : c.onBg),
+                    onPressed: onTap,
+                  ),
+                  if (badge != null)
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: IgnorePointer(
+                        child: Text(badge,
+                            style: context.text.labelSmall
+                                ?.copyWith(color: c.accent, fontSize: 10)),
+                      ),
+                    ),
+                ],
+              ),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.labelSmall?.copyWith(
+                    color: active ? c.accent : c.onBgMuted, fontSize: 11),
+              ),
+            ],
+          ),
+        );
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            if (quality.isNotEmpty)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: c.onBg.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(quality, style: context.text.labelMedium),
+              ),
+            const Spacer(),
+            if (!sample)
+              TextButton.icon(
+                onPressed: () => Nav.lyrics(context),
+                icon: const Icon(Icons.lyrics_outlined),
+                label: const Text('Lyrics'),
+                style: TextButton.styleFrom(foregroundColor: c.onBg),
+              ),
+          ],
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            action(
+              Icons.speaker_group_outlined,
+              'Devices',
+              'Choose where to play',
+              () async {
+                final shown = await AudioOutput.showSwitcher();
+                if (!shown && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'Use quick settings to switch the audio output.')));
+                }
+              },
+            ),
+            action(
+              Icons.speed_rounded,
+              'Speed',
+              'Playback speed',
+              () => showSpeedSheet(context),
+              active: speed != 1.0,
+              badge: speed != 1.0 ? speedLabel(speed) : null,
+            ),
+            action(
+              Icons.bedtime_outlined,
+              'Sleep timer',
+              'Sleep timer',
+              () => showSleepTimerSheet(context),
+              active: sleeping,
+              badge: sleeping ? sleepRemainingLabel(sleep) : null,
+            ),
+            action(
+              private ? Icons.lock_rounded : Icons.lock_open_rounded,
+              'Private',
+              private
+                  ? 'Private listening is on. Tap to turn it off'
+                  : 'Private listening is off. Tap to turn it on',
+              () {
+                ref
+                    .read(settingsProvider.notifier)
+                    .setPrivateListening(!private);
+                // Said once, in words: what a lock changes is not obvious.
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(
+                    content: Text(private
+                        ? 'Private listening is off.'
+                        : 'Private listening is on: what you play is not '
+                            'shared with friends and not counted in your '
+                            'history.'),
+                  ));
+              },
+              active: private,
+            ),
+            action(
+              Icons.queue_music_rounded,
+              'Queue',
+              'Queue',
+              () => showQueueSheet(context),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Spotify-style preview card: a few lines around the current one; tap opens
+/// the full-screen lyrics. Hidden while loading and when there are no lyrics.
+class _LyricsPreview extends ConsumerWidget {
+  const _LyricsPreview({required this.trackId});
+
+  final String trackId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lyrics = ref.watch(currentLyricsProvider(trackId)).value;
+    if (lyrics == null || lyrics.isEmpty) return const SizedBox.shrink();
+
+    final active = lyrics.synced
+        ? ref.watch(playbackPositionProvider
+            .select((p) => lyrics.activeIndex(p.value?.inMilliseconds ?? 0)))
+        : -1;
+    final start = lyrics.synced ? (active < 0 ? 0 : active) : 0;
+    final shown =
+        lyrics.lines.skip(start).where((l) => !l.isBlank).take(4).toList();
+    final c = context.colors;
+
+    return Semantics(
+      button: true,
+      label: 'Lyrics preview. Open full screen lyrics',
+      child: Material(
+        color: c.onBg.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(Radii.card),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Nav.lyrics(context),
+          child: Padding(
+            padding: const EdgeInsets.all(Space.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Lyrics', style: context.text.titleSmall),
+                    ),
+                    Icon(Icons.open_in_full_rounded,
+                        size: 18, color: c.onBgMuted),
+                  ],
+                ),
+                const SizedBox(height: Space.sm),
+                for (var i = 0; i < shown.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      shown[i].text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: i == 0 && lyrics.synced
+                            ? c.onBg
+                            : c.onBg.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
