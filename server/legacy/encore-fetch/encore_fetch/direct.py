@@ -9,8 +9,10 @@ Any trouble (an expired address, a refusal, a short answer) raises [DirectFailed
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -23,6 +25,14 @@ FIRST_CHUNK = 256 * 1024
 CHUNK = 2 * 1024 * 1024
 
 Opener = Callable[..., Any]
+
+log = logging.getLogger("encore_fetch.direct")
+
+#: A freshly issued stream address of some YouTube clients (the "TV" one) answers 403 for the first two to four seconds and then works
+#: (measured on 2026-10-22 on the real server; yt-dlp's own download waits through it silently). The first request is therefore
+#: retried, for at most this long in all, before the old way is used. Later requests are never retried: an address that has worked
+#: and then fails has expired.
+OPENING_DELAYS = (0.5, 0.5, 0.75, 1.0, 1.25, 1.25)
 
 
 class DirectFailed(Exception):
@@ -39,7 +49,8 @@ def _extension(info: dict[str, Any]) -> str:
     return ext if re.fullmatch(r"[a-z0-9]{2,5}", ext) else "webm"
 
 
-def fetch(info: dict[str, Any], stem: Path, *, max_bytes: int, timeout: float = 20.0, opener: Opener | None = None) -> Path:
+def fetch(info: dict[str, Any], stem: Path, *, max_bytes: int, timeout: float = 20.0, opener: Opener | None = None,
+          sleep: Callable[[float], None] = time.sleep) -> Path:
     """Fetches the stream described by [info] (a yt-dlp info dict) into `<stem>.<ext>`; returns the finished file."""
     url = info.get("url")
     if not isinstance(url, str) or not url.startswith("https://"):
@@ -65,10 +76,23 @@ def fetch(info: dict[str, Any], stem: Path, *, max_bytes: int, timeout: float = 
                 if total is not None:
                     last = min(last, total - 1)
                 request = urllib.request.Request(url, headers={**headers, "Range": f"bytes={position}-{last}"})
-                with opener(request, timeout=timeout) as response:
-                    status = getattr(response, "status", 200)
-                    data = response.read()
-                    content_range = response.headers.get("Content-Range")
+                waits = iter(OPENING_DELAYS if position == 0 else ())
+                waited = 0.0
+                while True:
+                    try:
+                        with opener(request, timeout=timeout) as response:
+                            status = getattr(response, "status", 200)
+                            data = response.read()
+                            content_range = response.headers.get("Content-Range")
+                        break
+                    except urllib.error.HTTPError as refused:
+                        delay = next(waits, None) if refused.code == 403 else None
+                        if delay is None:
+                            raise
+                        sleep(delay)
+                        waited += delay
+                if waited:
+                    log.info("the stream address opened after %.1f s", waited)
                 if not data:
                     raise DirectFailed("the server sent no bytes")
                 if status == 200 and position > 0:

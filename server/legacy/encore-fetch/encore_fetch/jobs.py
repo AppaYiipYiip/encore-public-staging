@@ -194,6 +194,8 @@ class Job:
     stem: Path | None = field(default=None, repr=False)
     #: Which upload was chosen, and what YouTube said about its streams.
     video_id: str | None = field(default=None, repr=False)
+    #: The next best uploads of a fresh search (id, title, length), tried when the chosen one cannot be fetched.
+    alternates: list = field(default_factory=list, repr=False)
     video_title: str = field(default="", repr=False)
     video_duration_s: int | None = field(default=None, repr=False)
     info: Path | None = field(default=None, repr=False)
@@ -599,14 +601,18 @@ class JobManager:
             try:
                 self._downloader.extract(job.video_id, info)
             except DownloadError as error:
-                if not (from_memory and error.code in _GONE):
+                if error.code in _GONE and job.alternates and not from_memory:
+                    # The best upload cannot be fetched (an age gate, taken down): the next best one, and remember that one.
+                    self._extract_alternate(job, key, info, error)
+                elif not (from_memory and error.code in _GONE):
                     raise
-                # The upload that was remembered has gone: ask again, once.
-                self._resolutions.drop(key)
-                self._find_upload(job, key)
-                kept = self._files.get(job.video_id)
-                if kept is None:
-                    self._downloader.extract(job.video_id, info)
+                else:
+                    # The upload that was remembered has gone: ask again, once.
+                    self._resolutions.drop(key)
+                    self._find_upload(job, key)
+                    kept = self._files.get(job.video_id)
+                    if kept is None:
+                        self._downloader.extract(job.video_id, info)
             job.info = info if info.is_file() else None
 
         with self._lock:
@@ -715,11 +721,36 @@ class JobManager:
         r.disc = r.disc or meta.disc
         r.year = r.year or meta.year
 
+    def _extract_alternate(self, job: Job, key: str, info: Path, first: DownloadError) -> None:
+        """The chosen upload could not be fetched: try the next best ones in turn; the failure of the last one is the answer."""
+        error = first
+        while job.alternates:
+            job.video_id, job.video_title, job.video_duration_s = job.alternates.pop(0)
+            log.info("job %s: %s for the first choice; trying %s", job.id, error.code, job.video_id)
+            try:
+                self._downloader.extract(job.video_id, info)
+            except DownloadError as again:
+                if again.code not in _GONE:
+                    raise
+                error = again
+                continue
+            self._resolutions.put(key, job.video_id, job.video_title, job.video_duration_s)
+            return
+        raise error
+
     def _find_upload(self, job: Job, key: str) -> None:
         """Searches for the upload and remembers the answer."""
         r = job.request
         self._set(job, "searching")
-        found = self._resolver.resolve(Want(r.artist, r.title, r.album, r.duration_s))
+        want = Want(r.artist, r.title, r.album, r.duration_s)
+        ranked_search = getattr(self._resolver, "resolve_ranked", None)
+        job.alternates = []
+        if ranked_search is not None:
+            ranked = ranked_search(want)
+            found = ranked[0] if ranked else None
+            job.alternates = [(s.candidate.video_id, s.candidate.title, s.candidate.duration_s) for s in ranked[1:3]]
+        else:
+            found = self._resolver.resolve(want)
         if found is None:
             if r.video_id is None:
                 raise DownloadError("not_found")

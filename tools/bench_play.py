@@ -1,9 +1,13 @@
 """Times "tap a song the server does not have" through the fetch service's API, stage by stage (docs/tasks P1-01, P1-06).
 
-Run it ON the server machine (it reads the stack's .env on that machine and prints no secret):
-    python3 tools/bench_play.py /home/encore/encore-server  "Artist|Title|Album|seconds" ...
+Two ways to run it (it prints no secret either way):
+  * ON the server machine, which reads the stack's .env there and makes (or re-uses) a test person `bench`:
+        python3 tools/bench_play.py /home/encore/encore-server  "Artist|Title|Album|seconds" ...
+  * From anywhere on the network, as an existing test person, from a login file (address:, user:, password: lines):
+        python tools/bench_play.py --login ../local/logins/encore-tester-login.txt  "Artist|Title|Album|seconds" ...
+    (the song service is expected on the same host, port 8701)
 
-It makes (or re-uses) a test person `bench`, then for each song: POST /api/play and poll the job. Reports the seconds until the job
+For each song: POST /api/play and poll the job. Reports the seconds until the job
 shows each state and until the audio has a stream address (the moment the phone can start playing). Songs are real; use at most a few.
 """
 import hashlib
@@ -52,13 +56,24 @@ def make_user(admin_user: str, admin_password: str) -> str:
 
 
 def main() -> int:
-    stack = Path(sys.argv[1])
-    e = env(stack / ".env")
-    password = make_user(e["PEOPLE_ADMIN_USER"], e["PEOPLE_ADMIN_PASSWORD"])
+    args = sys.argv[1:]
+    global FETCH
+    if args and args[0] == "--login":
+        fields = {}
+        for line in Path(args[1]).read_text(encoding="utf-8").splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                fields[k.strip().lower()] = v.strip()
+        host = urllib.parse.urlparse(fields["address"]).hostname
+        FETCH = f"http://{host}:8701"
+        user, password, songs = fields["user"], fields["password"], args[2:]
+    else:
+        e = env(Path(args[0]) / ".env")
+        user, password, songs = "bench", make_user(e["PEOPLE_ADMIN_USER"], e["PEOPLE_ADMIN_PASSWORD"]), args[1:]
     salt = secrets.token_hex(6)
-    q = urllib.parse.urlencode({"u": "bench", "t": hashlib.md5((password + salt).encode()).hexdigest(), "s": salt})
+    q = urllib.parse.urlencode({"u": user, "t": hashlib.md5((password + salt).encode()).hexdigest(), "s": salt})
     print(f"{'song':36} {'search':>7} {'download':>9} {'audio-ready':>12} {'whole song':>11}")
-    for spec in sys.argv[2:]:
+    for spec in songs:
         artist, title, album, secs = spec.split("|")
         t0 = time.monotonic()
         job = http("POST", f"{FETCH}/api/play?{q}", {"artist": artist, "title": title, "album": album,

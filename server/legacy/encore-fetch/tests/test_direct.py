@@ -15,17 +15,21 @@ from encore_fetch.resolve import RunResult
 class FakeStream:
     """Behaves like the opener for googlevideo: honours Range with 206 + Content-Range, or misbehaves on request."""
 
-    def __init__(self, data: bytes, *, ignore_range=False, fail_after=None, no_content_range=False, empty_after=None):
+    def __init__(self, data: bytes, *, ignore_range=False, fail_after=None, no_content_range=False, empty_after=None,
+                 refuse_first=0):
         self.data = data
         self.ignore_range = ignore_range
         self.fail_after = fail_after
         self.no_content_range = no_content_range
         self.empty_after = empty_after
+        self.refuse_first = refuse_first
         self.requests: list[tuple[str, str]] = []
 
     def __call__(self, request, timeout=None):
         rng = request.get_header("Range")
         self.requests.append((request.full_url, rng))
+        if len(self.requests) <= self.refuse_first:
+            raise urllib.error.HTTPError(request.full_url, 403, "Forbidden", {}, io.BytesIO(b""))
         if self.fail_after is not None and len(self.requests) > self.fail_after:
             raise urllib.error.HTTPError(request.full_url, 403, "Forbidden", {}, io.BytesIO(b""))
         if self.empty_after is not None and len(self.requests) > self.empty_after:
@@ -117,9 +121,30 @@ class FetchTest(unittest.TestCase):
         path = fetch(info, self.stem, max_bytes=10**9, opener=FakeStream(data, no_content_range=True))
         self.assertEqual(path.read_bytes(), data)
 
+    def test_a_new_address_that_is_refused_at_first_is_retried_until_it_opens(self):
+        # Measured: a fresh address of the TV client answers 403 for the first 2 to 4 seconds, then works.
+        stream = FakeStream(self.data, refuse_first=3)
+        slept = []
+        path = fetch(info_for(self.data), self.stem, max_bytes=10**9, opener=stream, sleep=slept.append)
+        self.assertEqual(path.read_bytes(), self.data)
+        self.assertEqual(len(slept), 3)
+
+    def test_an_address_that_never_opens_gives_up_after_a_few_seconds(self):
+        slept = []
+        with self.assertRaises(DirectFailed):
+            fetch(info_for(self.data), self.stem, max_bytes=10**9, opener=FakeStream(self.data, refuse_first=99), sleep=slept.append)
+        self.assertLess(sum(slept), 6.0)
+        self.assertEqual(list(self.stem.parent.glob("job1*")), [])
+
+    def test_a_refusal_in_the_middle_is_an_expired_address_and_is_not_retried(self):
+        slept = []
+        with self.assertRaises(DirectFailed):
+            fetch(info_for(self.data), self.stem, max_bytes=10**9, opener=FakeStream(self.data, fail_after=1), sleep=slept.append)
+        self.assertEqual(slept, [])
+
     def test_a_refused_address_fails_cleanly_and_leaves_nothing(self):
         with self.assertRaises(DirectFailed):
-            fetch(info_for(self.data), self.stem, max_bytes=10**9, opener=FakeStream(self.data, fail_after=1))
+            fetch(info_for(self.data), self.stem, max_bytes=10**9, opener=FakeStream(self.data, fail_after=1), sleep=lambda s: None)
         self.assertEqual(list(self.stem.parent.glob("job1*")), [])
 
     def test_an_empty_answer_is_a_failure_not_an_endless_loop(self):

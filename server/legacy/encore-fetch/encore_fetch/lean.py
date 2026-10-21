@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .download import FORMAT, DownloadError, classify_failure
-from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, best
+from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, score
 from .textnorm import norm_artist, norm_title, ratio
 
 log = logging.getLogger("encore_fetch.lean")
@@ -162,11 +162,18 @@ def title_matches(want: Want, c: Candidate) -> bool:
     return ratio(norm_title(want.title), norm_title(c.track or c.title)) >= MIN_TITLE_SIMILARITY
 
 
-def choose(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> Scored | None:
-    """The best acceptable candidate. A song result is only considered when it is by the artist asked for and has a similar title:
-    a wrong song is worse than "not found"."""
+def rank(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> list[Scored]:
+    """Every acceptable candidate, best first. A song result is only considered when it is by the artist asked for and has a similar
+    title: a wrong song is worse than "not found"."""
     kept = [c for c in candidates if not c.structured or (artist_matches(want.artist, c.artists) and title_matches(want, c))]
-    return best(want, kept, max_duration_s)
+    scored = sorted((score(want, c, max_duration_s) for c in kept), key=lambda s: s.score, reverse=True)
+    return [s for s in scored if s.score >= ACCEPT]
+
+
+def choose(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> Scored | None:
+    """The best acceptable candidate (see [rank])."""
+    ranked = rank(want, candidates, max_duration_s)
+    return ranked[0] if ranked else None
 
 
 class LeanResolver:
@@ -183,6 +190,11 @@ class LeanResolver:
 
     # -- the question
     def resolve(self, want: Want) -> Scored | None:
+        ranked = self.resolve_ranked(want)
+        return ranked[0] if ranked else None
+
+    def resolve_ranked(self, want: Want) -> list[Scored]:
+        """Every acceptable upload, best first: the caller can try the next one when the best cannot be fetched (age gate, taken down)."""
         try:
             return self._resolve(want)
         except (DownloadError, FutureTimeout, OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
@@ -190,10 +202,11 @@ class LeanResolver:
             log.warning("lean search failed (%s); %s", error.__class__.__name__,
                         "using the yt-dlp search" if self._fallback else "no fallback")
             if self._fallback is not None:
-                return self._fallback.resolve(want)
+                found = self._fallback.resolve(want)
+                return [found] if found is not None else []
             raise DownloadError("unavailable", "the song search is not answering") from error
 
-    def _resolve(self, want: Want) -> Scored | None:
+    def _resolve(self, want: Want) -> list[Scored]:
         queries = queries_for(want)
         futures: list[Future] = [self._pool.submit(self._searcher.songs, q, self._limit) for q in queries]
         candidates: dict[str, Candidate] = {}
@@ -202,16 +215,16 @@ class LeanResolver:
                 c = candidate_from_song(raw)
                 if c is not None:
                     candidates.setdefault(c.video_id, c)
-        found = choose(want, list(candidates.values()), self._max)
-        if found is not None and found.score >= STRONG_SONG:
-            return found
+        ranked = rank(want, list(candidates.values()), self._max)
+        if ranked and ranked[0].score >= STRONG_SONG:
+            return ranked
         # Not clear-cut: long content (a recitation, a mix) and uploads that are not "songs" only appear as videos.
         video_future = self._pool.submit(self._searcher.videos, queries[-1], self._limit)
         for raw in video_future.result(timeout=self._timeout):
             c = candidate_from_video(raw)
             if c is not None:
                 candidates.setdefault(c.video_id, c)
-        return choose(want, list(candidates.values()), self._max)
+        return rank(want, list(candidates.values()), self._max)
 
 
 # ----------------------------------------------------------------- locating the stream in this process
@@ -263,5 +276,5 @@ class InProcessExtractor:
 
 __all__ = [
     "ACCEPT", "InProcessExtractor", "LeanResolver", "Searcher", "YtmusicApiSearcher", "candidate_from_song",
-    "artist_matches", "candidate_from_video", "choose", "queries_for", "title_matches",
+    "artist_matches", "candidate_from_video", "choose", "queries_for", "rank", "title_matches",
 ]
