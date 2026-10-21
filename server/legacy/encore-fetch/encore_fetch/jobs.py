@@ -607,12 +607,13 @@ class JobManager:
                 elif not (from_memory and error.code in _GONE):
                     raise
                 else:
-                    # The upload that was remembered has gone: ask again, once.
+                    # The upload that was remembered has gone: ask again, once (and the new search's next best uploads are
+                    # there as well when its first choice cannot be fetched either).
                     self._resolutions.drop(key)
                     self._find_upload(job, key)
                     kept = self._files.get(job.video_id)
                     if kept is None:
-                        self._downloader.extract(job.video_id, info)
+                        self._extract_choosing(job, key, info)
             job.info = info if info.is_file() else None
 
         with self._lock:
@@ -720,6 +721,16 @@ class JobManager:
         r.track = r.track or meta.track
         r.disc = r.disc or meta.disc
         r.year = r.year or meta.year
+
+    def _extract_choosing(self, job: Job, key: str, info: Path) -> None:
+        """Asks for the chosen upload's streams; when it is refused as gone or age-gated, the next best uploads are tried."""
+        try:
+            self._downloader.extract(job.video_id, info)
+        except DownloadError as error:
+            if error.code in _GONE and job.alternates:
+                self._extract_alternate(job, key, info, error)
+            else:
+                raise
 
     def _extract_alternate(self, job: Job, key: str, info: Path, first: DownloadError) -> None:
         """The chosen upload could not be fetched: try the next best ones in turn; the failure of the last one is the answer."""

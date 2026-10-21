@@ -86,6 +86,17 @@ class JobTriesTheNextUploadTest(PipelineTest):
         remembered = m._resolutions.get(song_key("Opeth", "Windowpane", 467))
         self.assertEqual(remembered["video_id"], "bbbbbbbbbbb")
 
+    def test_a_gone_remembered_upload_followed_by_a_refused_new_first_choice_still_finds_one(self):
+        # What happened on the real server: an earlier failure had left the age-gated album track as the remembered upload;
+        # the new search ranks it first again, and only the next best upload can be fetched.
+        downloader = PickyDownloader({"aaaaaaaaaaa": "age_restricted"})
+        m = self.manager(downloader=downloader)
+        m._resolver = RankedSearcher("aaaaaaaaaaa", "bbbbbbbbbbb")
+        m._resolutions.put(song_key("Opeth", "Windowpane", 467), "aaaaaaaaaaa", "Windowpane", 467)
+        job = m.submit(AUTH, self.req)
+        self.assertEqual(job.state, "ready", job.view())
+        self.assertEqual(downloader.extracted, ["aaaaaaaaaaa", "aaaaaaaaaaa", "bbbbbbbbbbb"])
+
     def test_when_every_choice_is_refused_the_last_reason_is_the_answer(self):
         downloader = PickyDownloader({"aaaaaaaaaaa": "age_restricted", "bbbbbbbbbbb": "unavailable"})
         m, job = self.run_with(RankedSearcher("aaaaaaaaaaa", "bbbbbbbbbbb"), downloader)
