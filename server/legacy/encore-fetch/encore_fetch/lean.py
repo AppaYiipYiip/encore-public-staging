@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
@@ -25,7 +26,8 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .download import FORMAT, DownloadError, classify_failure
-from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, best, score
+from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, best
+from .textnorm import norm_artist, norm_title, ratio
 
 log = logging.getLogger("encore_fetch.lean")
 
@@ -139,17 +141,31 @@ def queries_for(want: Want) -> list[str]:
     return [first] if first == second else [first, second]
 
 
-def has_artist(scored: Scored) -> bool:
-    return "artist" in scored.reasons
+#: How alike two titles must be for a song result to be "the same song" (the scoring alone let a 0.21 title through on the artist's name).
+MIN_TITLE_SIMILARITY = 0.6
+
+#: How alike two artist names must be to be the same artist ("Oum" is not "Oum Dermam Stars").
+MIN_ARTIST_SIMILARITY = 0.9
+
+_ARTIST_SPLIT = re.compile(r"\s*(?:,|&|\+|\bfeat\.?\s|\bft\.?\s|\bfeaturing\b|\bx\b|\bwith\b)\s*", re.IGNORECASE)
+
+
+def artist_matches(asked: str, names: tuple[str, ...]) -> bool:
+    """Whether the artist asked for is one of the artists the upload declares. Whole names only: "Oum" is not "Oum Dermam Stars"."""
+    # The whole name first (an artist can be called "Earth, Wind & Fire"), then the names a combined string is made of.
+    wanted = [norm_artist(asked)] + [norm_artist(part) for part in _ARTIST_SPLIT.split(asked) if part.strip()]
+    declared = [norm_artist(n) for n in names]
+    return any(w and d and ratio(w, d) >= MIN_ARTIST_SIMILARITY for w in wanted for d in declared)
+
+
+def title_matches(want: Want, c: Candidate) -> bool:
+    return ratio(norm_title(want.title), norm_title(c.track or c.title)) >= MIN_TITLE_SIMILARITY
 
 
 def choose(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> Scored | None:
-    """The best acceptable candidate. A song result by a different artist is dropped first (never a wrong song)."""
-    kept: list[Candidate] = []
-    for c in candidates:
-        if c.structured and not has_artist(score(want, c, max_duration_s)):
-            continue
-        kept.append(c)
+    """The best acceptable candidate. A song result is only considered when it is by the artist asked for and has a similar title:
+    a wrong song is worse than "not found"."""
+    kept = [c for c in candidates if not c.structured or (artist_matches(want.artist, c.artists) and title_matches(want, c))]
     return best(want, kept, max_duration_s)
 
 
@@ -190,7 +206,7 @@ class LeanResolver:
         if found is not None and found.score >= STRONG_SONG:
             return found
         # Not clear-cut: long content (a recitation, a mix) and uploads that are not "songs" only appear as videos.
-        video_future = self._pool.submit(self._searcher.videos, queries[0], self._limit)
+        video_future = self._pool.submit(self._searcher.videos, queries[-1], self._limit)
         for raw in video_future.result(timeout=self._timeout):
             c = candidate_from_video(raw)
             if c is not None:
@@ -212,8 +228,12 @@ class InProcessExtractor:
         self._cache = cache_dir
         self._local = threading.local()
 
-    def _extractor(self):
-        ydl = getattr(self._local, "ydl", None)
+    def _extractor(self, cookiefile: str | None):
+        """This thread's extractor for [cookiefile] (none = a visitor). Kept between songs, so the player code is loaded once."""
+        by_cookies = getattr(self._local, "by_cookies", None)
+        if by_cookies is None:
+            by_cookies = self._local.by_cookies = {}
+        ydl = by_cookies.get(cookiefile)
         if ydl is None:
             import yt_dlp  # imported late: the fake mode and most tests never need it
 
@@ -223,13 +243,15 @@ class InProcessExtractor:
             }
             if self._cache is not None:
                 options["cachedir"] = str(self._cache)
-            ydl = self._local.ydl = yt_dlp.YoutubeDL(options)
+            if cookiefile:
+                options["cookiefile"] = cookiefile
+            ydl = by_cookies[cookiefile] = yt_dlp.YoutubeDL(options)
         return ydl
 
-    def extract(self, video_id: str, info: Path) -> None:
+    def extract(self, video_id: str, info: Path, cookiefile: str | None = None) -> None:
         import yt_dlp
 
-        ydl = self._extractor()
+        ydl = self._extractor(cookiefile)
         try:
             data = ydl.extract_info(f"https://music.youtube.com/watch?v={video_id}", download=False)
         except yt_dlp.utils.DownloadError as error:
@@ -241,5 +263,5 @@ class InProcessExtractor:
 
 __all__ = [
     "ACCEPT", "InProcessExtractor", "LeanResolver", "Searcher", "YtmusicApiSearcher", "candidate_from_song",
-    "candidate_from_video", "choose", "queries_for",
+    "artist_matches", "candidate_from_video", "choose", "queries_for", "title_matches",
 ]

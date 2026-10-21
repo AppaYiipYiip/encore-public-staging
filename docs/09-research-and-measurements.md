@@ -112,3 +112,24 @@ and the server path is about as fast as a device fetching directly (YouTube's re
 
 Findings E1–E20 with screenshots are in `01` §E. Additional measurements: cold start 3.7 s first after install, then 0.74–1.5 s
 (emulator `encore_a07`); while stuck buffering the app rendered ~60 frames/s with 37–46 % janky frames, 16.8–17.2 ms/frame.
+
+## 7. After P1-01 (2026-10-22): the lean resolver, in-process extraction and direct download, measured
+
+All on the dev VM (4 vCPU) with the server's download cap at 15 Mbit/s, real songs never fetched there before. The VM has one YouTube
+account configured from the old sign-in feature (it adds about 1 s to each extraction; a Host without one is faster).
+
+| Measurement | Before (old resolver, one yt-dlp program per step) | After |
+|-------------|-----------------------------------------------------|-------|
+| Choosing the upload (search only), 3 songs, same machine and minute | 1.4 / 13.5 / 17.8 s (median **13.5 s**) | 0.44 / 0.50 / 1.00 s (median **0.50 s**) |
+| Picked the right recording | "Maria También": picked a random re-upload ("Disclose Beauty") | picked the album track (title, artist, album, length all match) |
+| Tap to "audio can start" (job shows a stream address), 8 songs | ~38 s in the app (33–35 s of it searching) | **4.3, 5.6, 5.9, 6.5, 8.7** s (the 4 before the direct download: 7.0–10.9 s) |
+| Whole song kept on the server | 71 s under the 3 Mbit cap | 9.4–13.3 s |
+
+Where the remaining seconds go (visitor, warm): search 0.5 s + extraction **2.0–2.4 s** (cold: 3.1–3.5 s; with an account 3.2–4.5 s) +
+first bytes 0.5 s. The extraction is YouTube's own response time. **Rejected:** `player_skip=webpage` (saves the page fetch but YouTube
+answers "Sign in to confirm you're not a bot"). The rest of the speed-up for likely taps comes from preparing ahead (task P1-04).
+
+Real-answer fixtures (`server/legacy/encore-fetch/tests/fixtures/ytm`) showed two things worth remembering: YouTube Music answers
+"artist title" and "title artist" differently (for one song only the second finds the studio recording), and a song result by a different
+artist whose name merely contains the asked one ("Oum" / "Oum Dermam Stars") scored as acceptable under the old scoring, hence the strict
+whole-name artist and title-similarity rules in `lean.py`.

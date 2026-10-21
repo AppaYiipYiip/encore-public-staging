@@ -24,6 +24,7 @@ SPECS = [
     ("Khruangbin", "Maria Tambien", "songs"),
     ("Daft Punk", "Instant Crush", "songs"),
     ("Radiohead", "Weird Fishes", "songs"),
+    ("Radiohead", "Weird Fishes / Arpeggi", "songs"),  # the title as the catalogue (Deezer) spells it: what the app sends
     ("Nas", "N.Y. State of Mind", "songs"),
     ("Fairuz", "Kifak Inta", "songs"),
     ("Oum", "Taragalte", "songs"),

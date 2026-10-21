@@ -1,6 +1,8 @@
 """Getting the audio: yt-dlp for the song, a plain HTTPS GET for the cover."""
 from __future__ import annotations
 
+import json
+import logging
 import re
 import urllib.parse
 import urllib.request
@@ -8,7 +10,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .cookies import Lease, as_source
-from .resolve import Runner, run_command
+from .resolve import Runner, RunResult, run_command
+
+log = logging.getLogger("encore_fetch.download")
 
 AUDIO_OUT = (".opus", ".m4a", ".mp3", ".ogg", ".aac", ".webm", ".flac")
 
@@ -49,6 +53,19 @@ def live_source(stem: Path) -> tuple[Path, bool] | None:
         if part.is_file():
             return part, True
     return None
+
+
+#: Marks lease arguments that are more than a cookies file (the in-process extractor cannot express them).
+_OTHER_ARGS = object()
+
+
+def cookiefile_of(args: list[str]):
+    """The cookies file a lease asks for: `None` (a visitor), the path, or [_OTHER_ARGS] when the arguments say more than that."""
+    if not args:
+        return None
+    if len(args) == 2 and args[0] == "--cookies":
+        return args[1]
+    return _OTHER_ARGS
 
 
 class DownloadError(Exception):
@@ -96,7 +113,10 @@ class YtDlpDownloader:
         ffmpeg: str = "ffmpeg",
         timeout: int = 180,
         extractor: object | None = None,
+        direct: bool = False,
     ) -> None:
+        #: Fetch the saved stream address with plain ranged requests instead of starting yt-dlp again (direct.py).
+        self._direct = direct
         #: Optional in-process extractor (lean.InProcessExtractor): used when no account cookies are involved.
         self._extractor = extractor
         self._binary = binary
@@ -133,10 +153,11 @@ class YtDlpDownloader:
             raise DownloadError("bad_request", "bad video id")
         info.parent.mkdir(parents=True, exist_ok=True)
         lease = self._cookies.lease()
-        if self._extractor is not None and not lease.args:
-            # No account is signed in: ask YouTube from inside this process (no program start, warm player code).
+        cookies = cookiefile_of(lease.args)
+        if self._extractor is not None and cookies is not _OTHER_ARGS:
+            # Ask YouTube from inside this process (no program start, warm player code), as a visitor or with the account's cookies.
             try:
-                self._extractor.extract(video_id, info)
+                self._extractor.extract(video_id, info, cookies)
             except DownloadError as error:
                 lease.done("blocked" if error.code == "blocked" else "ok")
                 raise
@@ -155,6 +176,21 @@ class YtDlpDownloader:
         lease.done("ok")
         info.write_text(text, encoding="utf-8")
 
+    def _download_direct(self, info: Path, stem: Path) -> bool:
+        """Tries the direct download; `False` (and nothing left behind) when the old way should run instead."""
+        from .direct import DirectFailed, fetch  # late: direct.py imports this module
+
+        try:
+            data = json.loads(info.read_text(encoding="utf-8"))
+            fetch(data, stem, max_bytes=self._max_mb * 1024 * 1024)
+        except DirectFailed as error:
+            log.info("direct download not used (%s); starting yt-dlp", error)
+            return False
+        except (OSError, ValueError) as error:
+            log.info("direct download not used (%s: %s); starting yt-dlp", error.__class__.__name__, error)
+            return False
+        return True
+
     def download(self, video_id: str, stem: Path,
                  duration_s: int | None = None,
                  info: Path | None = None) -> Downloaded:
@@ -164,7 +200,10 @@ class YtDlpDownloader:
         use = info if info is not None and info.is_file() else None
         # With a saved extraction the song was already counted (and asked of YouTube) by [extract].
         lease = self._cookies.lease(count=use is None)
-        result = self._run(self.argv(video_id, stem, use, lease), self._timeout)
+        if use is not None and self._direct and self._download_direct(use, stem):
+            result = RunResult(0, "", "")  # the bytes are here: carry on with the same finishing steps
+        else:
+            result = self._run(self.argv(video_id, stem, use, lease), self._timeout)
         if result.returncode != 0 and use is not None:
             # The saved extraction can go stale (its addresses expire after a
             # few hours): ask YouTube again, once.

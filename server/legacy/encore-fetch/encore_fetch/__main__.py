@@ -59,7 +59,8 @@ def build(config: Config) -> Api:
             extractor = InProcessExtractor(cache_dir=config.work_dir / "ytdlp-cache")
         downloader = YtDlpDownloader(
             config.ytdlp, cookies=accounts,
-            max_file_mb=config.max_file_mb, extractor=extractor)
+            max_file_mb=config.max_file_mb, extractor=extractor,
+            direct=config.direct_download and extractor is not None)
     config.work_dir.mkdir(parents=True, exist_ok=True)
     manager = JobManager(
         music_dir=config.music_dir,

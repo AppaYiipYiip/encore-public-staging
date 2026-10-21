@@ -1,0 +1,435 @@
+{
+ "query": "Weird Fishes / Arpeggi Radiohead",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "LUjGtyYEi90",
+   "title": "Weird Fishes / Arpeggi",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "In Rainbows",
+    "id": "MPREb_R6C9lU4QEg2"
+   },
+   "duration": "5:19",
+   "duration_seconds": 319,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "67M"
+  },
+  {
+   "videoId": "Qnk4jiWamm4",
+   "title": "Just",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "The Bends",
+    "id": "MPREb_xsmDKhqhQrG"
+   },
+   "duration": "3:55",
+   "duration_seconds": 235,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "55M"
+  },
+  {
+   "videoId": "26PTzQR2ML4",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Dune Moss",
+     "id": "UCODseyw60o6aJZcjyUCgc0g"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes",
+    "id": "MPREb_LVUAn4J63mW"
+   },
+   "duration": "5:51",
+   "duration_seconds": 351,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "6.5K"
+  },
+  {
+   "videoId": "28qka3DSK4E",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "William Haviland",
+     "id": "UC6KNz5IPR1hUlYNu_da-3_A"
+    }
+   ],
+   "album": {
+    "name": "But Beautiful",
+    "id": "MPREb_zh6CkOilgW4"
+   },
+   "duration": "5:31",
+   "duration_seconds": 331,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "314"
+  },
+  {
+   "videoId": "S8xvEUgV3s4",
+   "title": "Weird Fishes/ Arpeggi (feat. Giulia Bogdan)",
+   "artists": [
+    {
+     "name": "Alam Arezi",
+     "id": "UCXwlY_TKlRYufUkkd-CYJ_g"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes/ Arpeggi",
+    "id": "MPREb_nNYdCoBF3hn"
+   },
+   "duration": "5:08",
+   "duration_seconds": 308,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "51"
+  },
+  {
+   "videoId": "jIjTFt6XmFM",
+   "title": "(Nice Dream)",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "The Bends",
+    "id": "MPREb_xsmDKhqhQrG"
+   },
+   "duration": "3:54",
+   "duration_seconds": 234,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "16M"
+  },
+  {
+   "videoId": "WuUaBU8hRUE",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "California Guitar Trio",
+     "id": "UCwWDGD3VA-tVK4rpgMpsA_Q"
+    },
+    {
+     "name": "Montreal Guitar Trio",
+     "id": null
+    }
+   ],
+   "album": {
+    "name": "In a Landscape",
+    "id": "MPREb_MMQFZUWUNba"
+   },
+   "duration": "5:13",
+   "duration_seconds": 313,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "480"
+  },
+  {
+   "videoId": "QM6YZBAhsUs",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "Wild Rumpus",
+     "id": "UCkyduINumrpEgfA2XcvX4QQ"
+    }
+   ],
+   "album": {
+    "name": "Vestige",
+    "id": "MPREb_UlV8k0GZPWn"
+   },
+   "duration": "7:00",
+   "duration_seconds": 420,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "88"
+  },
+  {
+   "videoId": "PRc0iMRoIoc",
+   "title": "Faust Arp",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "In Rainbows",
+    "id": "MPREb_R6C9lU4QEg2"
+   },
+   "duration": "2:10",
+   "duration_seconds": 130,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "5M"
+  },
+  {
+   "videoId": "bgsmr7t8zGE",
+   "title": "15 Step",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "In Rainbows",
+    "id": "MPREb_R6C9lU4QEg2"
+   },
+   "duration": "3:58",
+   "duration_seconds": 238,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "23M"
+  },
+  {
+   "videoId": "LnIHVvEwbLk",
+   "title": "Like Spinning Plates (Live)",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "I Might Be Wrong",
+    "id": "MPREb_WHT29n5quUP"
+   },
+   "duration": "3:53",
+   "duration_seconds": 233,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.6M"
+  },
+  {
+   "videoId": "ojtWv5xK_Zw",
+   "title": "Weird Fishes / Arpeggi (Instrumental)",
+   "artists": [
+    {
+     "name": "Redlight Electrons",
+     "id": "UCNpLaBjiGPt_oEQsplXO5qA"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes / Arpeggi",
+    "id": "MPREb_fQlJKjBysml"
+   },
+   "duration": "5:51",
+   "duration_seconds": 351,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "130"
+  },
+  {
+   "videoId": "WF83_PR2EsA",
+   "title": "Videotape",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "In Rainbows",
+    "id": "MPREb_R6C9lU4QEg2"
+   },
+   "duration": "4:40",
+   "duration_seconds": 280,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "8.2M"
+  },
+  {
+   "videoId": "FapBH3j6WoA",
+   "title": "Exit Music (For A Film)",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "OK Computer OKNOTOK 1997 2017",
+    "id": "MPREb_b9Yfli6Cg79"
+   },
+   "duration": "4:26",
+   "duration_seconds": 266,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "115M"
+  },
+  {
+   "videoId": "MXg3iCYEp-Q",
+   "title": "Weird Fishes (feat. Adam Ness)",
+   "artists": [
+    {
+     "name": "Verzatile Band",
+     "id": null
+    }
+   ],
+   "album": {
+    "name": "#Three24",
+    "id": "MPREb_5IhFBxo9C5l"
+   },
+   "duration": "5:43",
+   "duration_seconds": 343,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "614"
+  },
+  {
+   "videoId": "sNzQ3nBMZKs",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Montréal Guitare Trio",
+     "id": "UCnxsSmJc7dqUO0kXz8krFLw"
+    }
+   ],
+   "album": {
+    "name": "Der Prinz",
+    "id": "MPREb_CbN0S6eALV6"
+   },
+   "duration": "4:44",
+   "duration_seconds": 284,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.5K"
+  },
+  {
+   "videoId": "LBt60dfwEBY",
+   "title": "No Surprises",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "OK Computer",
+    "id": "MPREb_yXhSI4FCUo6"
+   },
+   "duration": "3:50",
+   "duration_seconds": 230,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "627M"
+  },
+  {
+   "videoId": "2SjbsuXMqfk",
+   "title": "Faust Arp/ Weird Fishes/ Arpeggi",
+   "artists": [
+    {
+     "name": "Harbor Hammond",
+     "id": "UCNwVNtEER2ecnp_R_ENvu1A"
+    }
+   ],
+   "album": {
+    "name": "Ankle Biter",
+    "id": "MPREb_29tkGtaYmbn"
+   },
+   "duration": "7:42",
+   "duration_seconds": 462,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "113"
+  },
+  {
+   "videoId": "zTVElrJs0_k",
+   "title": "Weird Fishes / Arpeggi",
+   "artists": [
+    {
+     "name": "Cat Zodiac",
+     "id": "UCDrXGQnOJukKfKus3wvP_ug"
+    },
+    {
+     "name": "KlayThey",
+     "id": "UCqiX3NqS3zz3TeIuR_5dFqQ"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes / Arpeggi",
+    "id": "MPREb_h2oQCbIFzMI"
+   },
+   "duration": "5:38",
+   "duration_seconds": 338,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "113"
+  },
+  {
+   "videoId": "4OzU1jdjSZA",
+   "title": "The Tourist",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "OK Computer OKNOTOK 1997 2017",
+    "id": "MPREb_b9Yfli6Cg79"
+   },
+   "duration": "5:24",
+   "duration_seconds": 324,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "9.5M"
+  }
+ ]
+}

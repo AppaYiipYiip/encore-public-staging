@@ -12,6 +12,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 ---
 
 ## P1-01 — The lean resolver (server) — Size M
+* **Status 2026-10-22: implemented** in `server/legacy/encore-fetch` (`lean.py`, `direct.py`; 62 new tests incl. real recorded YouTube Music answers). Measured: search 13.5 s → 0.5 s median, tap to audio-ready 38 s → 4.3–8.7 s (`../09` §7). Left for later tasks: stream proxy without any download (P1-02), separate interactive/background pools and pacing (P1-03), preparing ahead (P1-04).
 * **Why.** B1, B2, B3: 33–35 s of "searching" per song; up to 8 `yt-dlp` processes and 5 watch-page extractions per song.
 * **Context.**
   * Today: `server/encore-fetch/encore_fetch/resolve.py` (`YtDlpResolver`: `plain_candidates` = `ytsearch8` subprocess, then

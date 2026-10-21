@@ -34,6 +34,8 @@ class Config:
     ytdlp: str = "yt-dlp"
     #: "lean" (YouTube Music search + in-process extraction) or "legacy" (one yt-dlp program per step).
     resolver: str = "lean"
+    #: Fetch a found stream with plain ranged requests instead of starting yt-dlp again (`DIRECT_DOWNLOAD=0` turns it off).
+    direct_download: bool = True
     cookies_file: str | None = None
     min_free_gb: int = 20
     #: Longest song, in seconds. 45 minutes: real songs run 25 and 35 minutes (the owner, 2026-10-18); an hour-long video is not one.
@@ -77,6 +79,7 @@ class Config:
             host=e.get("HOST", "0.0.0.0"),  # noqa: S104
             ytdlp=e.get("YTDLP", "yt-dlp"),
             resolver=e.get("RESOLVER", "lean").strip().lower(),
+            direct_download=e.get("DIRECT_DOWNLOAD", "1").strip() not in ("0", "false", "no"),
             # The file does not have to exist: when the owner puts one there, the next song uses it.
             cookies_file=e.get("YT_COOKIES_FILE") or str(Path(e.get("WORK_DIR", "/work")) / "youtube-cookies.txt"),
             min_free_gb=_int("MIN_FREE_GB", 20),
