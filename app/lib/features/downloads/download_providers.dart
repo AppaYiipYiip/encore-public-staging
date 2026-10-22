@@ -204,6 +204,17 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
         {quality = AudioQuality.original, sourceSuffix, sourceBitRate}) async {
       final session = await ref.read(sessionProvider.future);
       if (session == null) throw StateError('Not signed in to a server');
+      if (session.encoreMode) {
+        // The file to download is the server's kept copy of the song, named by the music server's id.
+        final row = await (db.select(db.tracks)
+              ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
+            .getSingleOrNull();
+        final fileId = row?.fileId;
+        if (fileId == null) {
+          throw StateError('The server does not keep this song yet');
+        }
+        id = fileId;
+      }
       final cap = quality.bitRate;
       final alreadySmall = cap != null &&
           sourceBitRate != null &&

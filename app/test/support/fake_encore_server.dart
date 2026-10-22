@@ -17,7 +17,9 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/plays'] = _plays;
     _handlers['/encore/api/v1/migrate/navidrome'] = (r) {
       migrations++;
-      return _ok({'report': migrationReport});
+      return failMigration
+          ? _error(500, 'internal')
+          : _ok({'report': migrationReport});
     };
     _handlers['/encore/api/v1/playlists'] = _playlistsRoot;
   }
@@ -44,6 +46,9 @@ class FakeEncoreServer {
 
   /// How many times the phone asked the server to bring the person's library over from the music server, and what the server says it did.
   int migrations = 0;
+
+  /// The server answers the move with an error (a test of what the phone does then).
+  bool failMigration = false;
   Map<String, Object?> migrationReport = {
     'likes': 0,
     'albums': 0,

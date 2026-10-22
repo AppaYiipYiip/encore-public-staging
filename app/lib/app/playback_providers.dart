@@ -81,6 +81,18 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
       if (s == null) {
         throw StateError('Not signed in to a server');
       }
+      if (s.encoreMode) {
+        // A song is a ref: its kept file (if the server has one) plays through the one door, any other song from the server's stream.
+        final row = await (db.select(db.tracks)
+              ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
+            .getSingleOrNull();
+        final fileId = row?.fileId;
+        if (fileId != null) {
+          return s.client
+              .streamUrl(fileId, maxBitRate: maxBitRate, format: format);
+        }
+        return (await s.encore.streamUrl(id)).getOrThrow();
+      }
       return s.client.streamUrl(id, maxBitRate: maxBitRate, format: format);
     },
     streamQuality: () {

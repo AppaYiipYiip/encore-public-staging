@@ -10,6 +10,7 @@ import '../../core/result.dart';
 import '../api/opensubsonic/models.dart';
 import '../api/opensubsonic/opensubsonic_client.dart';
 import '../db/app_database.dart';
+import '../encore/encore_sync.dart';
 import 'db_lease.dart';
 import 'fingerprint.dart';
 import 'library_writer.dart';
@@ -201,7 +202,9 @@ class SyncEngine {
     this.options = const SyncOptions(),
     OutboxProcessor? outbox,
     DbLease? lease,
-  })  : _db = db,
+    EncoreSync? encore,
+  })  : _encore = encore,
+        _db = db,
         _lease = lease ?? DbLease(db, clock: clock),
         _client = client,
         _outbox = outbox,
@@ -213,6 +216,10 @@ class SyncEngine {
   final OpenSubsonicClient _client;
   final Clock _clock;
   final OutboxProcessor? _outbox;
+
+  /// Set for an Encore server: the person's library, the server's files and the playlists come from its two change feeds, and the music
+  /// server is asked only for the browse index of albums and artists.
+  final EncoreSync? _encore;
   final DbLease _lease;
   final LibraryWriter _writer;
   final SyncStateStore _state;
@@ -312,6 +319,7 @@ class SyncEngine {
       // Push local intent first so the server's view includes it (and so the
       // star reconciliation below never fights a pending mutation).
       await _outbox?.flush();
+      if (_encore != null) return await _runEncore(reason, force, acceptShrink);
 
       final scanResult = await _client.getScanStatus();
       final scanFailure = scanResult.failureOrNull;
@@ -397,12 +405,72 @@ class SyncEngine {
     }
   }
 
+  /// A pass on an Encore server: the browse index (artists and albums, when the music server says it changed), then the two feeds.
+  Future<SyncOutcome> _runEncore(
+      SyncReason reason, bool force, bool acceptShrink) async {
+    final encore = _encore!;
+    _emit(const SyncProgress(SyncPhase.probing));
+    final scanResult = await _client.getScanStatus();
+    final scanFailure = scanResult.failureOrNull;
+    if (scanFailure is NetworkFailure || scanFailure is AuthFailure) {
+      await _state.set(SyncStateStore.lastError, scanFailure!.message);
+      return SyncFailed(scanFailure);
+    }
+    final scan = scanResult.valueOrNull;
+    final nowMs = _clock.now().millisecondsSinceEpoch;
+    final needLibrary = force ||
+        scan == null ||
+        await _libraryDue(scan, ignoreGap: reason == SyncReason.manual);
+
+    var stats = const SyncStats();
+    if (needLibrary) {
+      final outcome = await _libraryPhase(
+          scan: scan, nowMs: nowMs, acceptShrink: acceptShrink, songs: false);
+      switch (outcome) {
+        case _Cancelled():
+          return const SyncCancelled();
+        case _Failed(:final failure):
+          await _state.set(SyncStateStore.lastError, failure.message);
+          return SyncFailed(failure);
+        case _Done(stats: final s):
+          stats = s;
+      }
+    }
+    if (_cancelled) return const SyncCancelled();
+
+    _emit(const SyncProgress(SyncPhase.songs));
+    final pulled = await encore.pull();
+    if (pulled case Err(:final failure)) {
+      await _state.set(SyncStateStore.lastError, failure.message);
+      return SyncFailed(failure);
+    }
+    await _keepLease();
+    await _homeListsPhase();
+
+    _emit(const SyncProgress(SyncPhase.finishing));
+    final stale = await _writer.markStaleDownloads(
+        serverId: serverId, nowMs: _clock.now().millisecondsSinceEpoch);
+    await _state.setInt(
+        SyncStateStore.lastRunAtMs, _clock.now().millisecondsSinceEpoch);
+    await _state.set(SyncStateStore.lastError, null);
+    final got = pulled.getOrThrow();
+    return SyncCompleted(SyncStats(
+      artists: stats.artists,
+      albums: stats.albums,
+      tracks: got.files,
+      playlistsFetched: got.playlists,
+      staleDownloads: stale,
+      libraryPhaseRan: needLibrary,
+    ));
+  }
+
   // ----------------------------------------------------------- library dump
 
   Future<_LibraryOutcome> _libraryPhase({
     required SsScanStatus? scan,
     required int nowMs,
     required bool acceptShrink,
+    bool songs = true,
   }) async {
     final runId = ((await _state.getInt(SyncStateStore.lastRunId)) ?? 0) + 1;
     await _state.setInt(SyncStateStore.lastRunId, runId);
@@ -434,9 +502,9 @@ class SyncEngine {
       if (_cancelled) return const _Cancelled();
     }
 
-    // Songs (paged empty-query dump).
+    // Songs (paged empty-query dump). An Encore server brings its own list of files instead.
     var songCount = 0;
-    for (var offset = 0;; offset += options.pageSize) {
+    for (var offset = 0; songs; offset += options.pageSize) {
       _emit(SyncProgress(SyncPhase.songs, done: songCount, total: scan?.count));
       final page = await _client.search3(
         songCount: options.pageSize,
@@ -455,7 +523,7 @@ class SyncEngine {
     final seen = await _writer.seenCounts(serverId, runId);
     bool shrunk(int was, int now, int min) =>
         was >= min && now < was * options.shrinkGuardRatio;
-    final tracksShrunk =
+    final tracksShrunk = songs &&
         shrunk(before.tracks, seen.tracks, options.shrinkGuardMinTracks);
     final albumsShrunk =
         shrunk(before.albums, seen.albums, options.shrinkGuardMinGroups);
@@ -502,8 +570,8 @@ class SyncEngine {
         serverId: serverId,
         runId: runId,
         nowMs: nowMs,
-        // A guarded table keeps its rows; the others follow the server.
-        tracks: believe || !tracksShrunk,
+        // A guarded table keeps its rows; the others follow the server. (Without a song dump the songs are not this pass's to retire.)
+        tracks: songs && (believe || !tracksShrunk),
         albums: believe || !albumsShrunk,
         artists: believe || !artistsShrunk,
       );
@@ -574,6 +642,15 @@ class SyncEngine {
         if (await _libraryDue(scanResult.valueOrNull)) {
           return const ProbeNeedsFullPass();
         }
+        final encore = _encore;
+        if (encore != null) {
+          final pulled = await encore.pullChanges();
+          if (pulled case Err(:final failure)) return ProbeFailed(failure);
+          final changed = pulled.getOrThrow().changed;
+          return changed == 0
+              ? const ProbeUnchanged()
+              : ProbeUpdated(pulled.getOrThrow().playlists);
+        }
         final list = await _client.getPlaylists();
         if (list case Err(:final failure)) return ProbeFailed(failure);
         final applied = await _applyPlaylists(list.getOrThrow());
@@ -627,6 +704,14 @@ class SyncEngine {
   /// user opens a playlist that was skipped by the lazy policy and by the
   /// download reconciler for pinned playlists.
   Future<Result<void>> refreshPlaylist(String playlistId) async {
+    final encore = _encore;
+    if (encore != null) {
+      // On an Encore server a playlist's songs come with its change feed: a pull is all that "refresh" can mean.
+      final pulled = await encore.pullChanges();
+      return pulled.isErr
+          ? Result.err(pulled.failureOrNull!)
+          : const Result.ok(null);
+    }
     // Edits made on this phone and not delivered yet are newer than the
     // server's copy; the outbox delivers them first (ADR-046).
     if (PlaylistMutations.isLocalId(playlistId) ||

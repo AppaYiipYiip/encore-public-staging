@@ -65,6 +65,7 @@ final _sessionServerProvider = StreamProvider<ServerRow?>((ref) {
       .distinct((a, b) =>
           a?.id == b?.id &&
           a?.endpointsJson == b?.endpointsJson &&
+          a?.capabilitiesJson == b?.capabilitiesJson &&
           a?.username == b?.username);
 });
 
