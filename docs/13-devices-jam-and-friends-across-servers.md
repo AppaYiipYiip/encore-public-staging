@@ -14,7 +14,7 @@ his server, and songs none of us have?"* All of this is in the **first version**
 | **V3** Untagged songs (everything fetched from YouTube) get 0 dB; tagged ones are moved; streams from YouTube carry no tags at all | same | Inconsistent loudness between sources |
 | **V4** The Jam protocol has a host `volume` (0–100) that **no phone applies** (`encore_session` `SetVolume`; no use in `lib/features/jam`) | code | A Jam "volume" that does nothing ("sometimes works") |
 | **V5** The sleep-timer fade writes the internal player volume; an interrupted fade restores it in most paths, but internal volume is a second volume the person cannot see | code | Another source of "volume not in sync" |
-| **Old report F12** "The volume slider is bugged, not in sync with my phone's slider, sometimes works" | `old-app/docs/39` | Never reproduced or answered |
+| **Old report F12** "The volume slider is bugged, not in sync with my phone's slider, sometimes works" | `old docs/39` | Never reproduced or answered |
 
 **Rule from now on:** there is **one volume per device: Android's media volume** (the one the phone's buttons and system panel
 control). Encore never uses the player's internal volume as "volume". Loudness levelling is a separate, gentle, consistent correction

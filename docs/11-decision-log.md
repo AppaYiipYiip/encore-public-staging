@@ -1,18 +1,18 @@
 # 11 — Decision log (the reset decisions, ADR-R1 …)
 
 Format: Context → Options → Decision → Why it beats the others → Consequences → Revisit when. In the new repository each becomes
-`docs/adr/00NN-*.md`. The 109 old ADRs (`old-app/docs/03`) are history; where one is reversed, it is named.
+`docs/adr/00NN-*.md`. The 109 old ADRs (`old docs/03`) are history; where one is reversed, it is named.
 
 ---
 
-### ADR-R1 — A fresh repository; no old-app
-* **Context.** Old repo: passwords in history (on GitHub), 50 APKs (238 MB), old-app's 900+ commits, tags, name, icon, licence; owner:
-  "drop anything related to old-app".
+### ADR-R1 — A fresh repository; nothing from the old project
+* **Context.** Old repo: passwords in history (on GitHub), 50 APKs (238 MB), the upstream project's 900+ commits, tags, name, icon, licence; owner:
+  "drop anything related to [the old project]".
 * **Options.** Clean in place; rewrite history with `git filter-repo`; **new repository from a cleaned tree**.
 * **Decision.** New repository `encore`, one initial commit, layout of `05` §2; old repo archived as `old-repo`, deleted on the
   owner's go after password rotation.
-* **Why.** Only a new history guarantees no secrets/binaries/old-app; rewriting is error-prone; cleaning in place keeps all three.
-* **Consequences.** Line history of 5 days lives only in the archive/bundle. Must check no old-app-derived file remains (icon, Android
+* **Why.** Only a new history guarantees no secrets/binaries/upstream history; rewriting is error-prone; cleaning in place keeps all three.
+* **Consequences.** Line history of 5 days lives only in the archive/bundle. Must check no upstream-derived file remains (icon, Android
   files, vendored plugin) before dropping the credit.
 * **Revisit when.** Never.
 
@@ -23,7 +23,7 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   switch; the product must work without it.
 * **Why.** The only option meeting "free" and "plays anything" while protecting the Host.
 * **Revisit when.** YouTube blocks server-side resolution broadly (then X-3 on-device fallback), or a free licensed catalogue appears.
-* **Reverses** ADR-103's account sign-in direction and the admin Google sign-in (`old-app/docs/50`).
+* **Reverses** ADR-103's account sign-in direction and the admin Google sign-in (`old docs/50`).
 
 ### ADR-R3 — One Encore server program, one port
 * **Context.** Seven programs, six ports, duplicated clients and auth (C1, C2).

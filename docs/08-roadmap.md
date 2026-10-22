@@ -8,7 +8,7 @@ comes before the public release (P5); the core (P1–P3) comes first so those fe
 
 | Phase | Goal in one line | Why at this point |
 |-------|------------------|-------------------|
-| **P0 Reset** | A clean, safe, honest repository and process | Everything later lands in it; secrets and old-app leave before anything is pushed again |
+| **P0 Reset** | A clean, safe, honest repository and process | Everything later lands in it; secrets and the old project's leftovers leave before anything is pushed again |
 | **P1 Instant play, stop the worst bugs** | A song you don't own plays in ~2–3 s; the player never gets stuck; offline and covers work | The core promise is broken today (38 s); the fixes are reusable in the new design |
 | **P2 Songs as references (the new library)** | Like/playlist/import/resume any song, owned or not; imports in seconds; one device at a time | Removes the root cause of the spaghetti (C3); delivers resume-anywhere and single-device playback |
 | **P3 One server, one-command install** | One Encore server program, one port, device logins, published images, installer + browser wizard | Makes Encore installable by strangers and maintainable by agents |
@@ -19,10 +19,10 @@ comes before the public release (P5); the core (P1–P3) comes first so those fe
 ## P0 — Reset (no product changes)
 
 Tasks: P0-01 secrets out of git · P0-02 homelab out · P0-03 workspace clutter · P0-04 the new repository (clean tree, new layout,
-old-app removed) · P0-05 rename, re-icon, licence · P0-06 CI for app and server · P0-07 GitHub set-up · P0-08 agent files ·
+nothing of the old project) · P0-05 rename, re-icon, licence · P0-06 CI for app and server · P0-07 GitHub set-up · P0-08 agent files ·
 P0-09 environments as code · P0-10 licence inventory and checks.
 **Exit:** the new repo `encore` on GitHub with `main` protected, CI green on the moved code, no secret or binary in history
-(`gitleaks` clean), `git grep -i old-app` empty outside `docs/history/`, the old repo renamed `old-repo` and archived.
+(`gitleaks` clean), no trace of the old project's name in the repository, the old repo renamed `old-repo` and archived.
 
 ## P1 — Instant play, stop the worst bugs
 

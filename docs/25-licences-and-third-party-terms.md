@@ -22,7 +22,7 @@ P5-06 and this table corrected.
 | Lidarr | GPL-3.0 | optional container (quality tier), unmodified | link source |
 | slskd | AGPL-3.0 (*verify*) | optional container, unmodified | link source; unmodified use triggers no extra duty |
 | Soularr | *verify* | optional container | as its licence requires |
-| NewPipeExtractor (only if X-3 is adopted) | GPL-3.0 | would be linked into the app | fine with GPL-3.0; impossible under old-app's old CC BY-NC-SA |
+| NewPipeExtractor (only if X-3 is adopted) | GPL-3.0 | would be linked into the app | fine with GPL-3.0; impossible under the old CC BY-NC-SA licence |
 | Illustrations | in-house or CC0 (`16` §2) | app and admin | licence file next to each |
 | Test music in the repository | Creative Commons (*per album*) | test assets (`24` §2) | credit per licence (CC-BY needs attribution; avoid NC/ND for anything redistributed) |
 

@@ -25,7 +25,7 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 * GitHub repository creation, rename of the old one and the first push: **blocked on the owner's permission lines** (`git push`, `gh pr ...`,
   `gh release create` in `~/.claude/settings.json`). Nothing has ever been pushed; the CI workflows have therefore never run on GitHub (they pass
   locally: app gate, server unit tests, the integration suite with a real Navidrome in Docker on the dev VM).
-* P0-09 environments as code, P0-10 licence checks: not done. `git grep -il old-app` still finds the history in 14 docs.
+* P0-09 environments as code, P0-10 licence checks: not done.
 * Android build tooling warns that Gradle 8.14, AGP 8.11 and Kotlin 2.2.20 "will soon be dropped" by Flutter: upgrade before the first release.
 
 ## P1 — instant play and the worst bugs

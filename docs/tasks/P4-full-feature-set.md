@@ -3,7 +3,7 @@
 Goal: the features that make Encore more than a player, built **on the new design** (song refs, the Encore server modules, the
 live channel), not as wrappers around the old one. Stories: US-60 … US-64 (`../03a`). Old code to learn from (not to copy blindly)
 is in `server/legacy/` (`encore-recs`, `hub`, `encore-quality`) and the app's `lib/features/jam`, `lib/features/year`,
-`packages/encore_session`; their old designs: `old-app/docs/47` (recommendations), `30` (Jam), `46` (two-speed library), `35` (people
+`packages/encore_session`; their old designs: `old docs/47` (recommendations), `30` (Jam), `46` (two-speed library), `35` (people
 and activity).
 
 ---

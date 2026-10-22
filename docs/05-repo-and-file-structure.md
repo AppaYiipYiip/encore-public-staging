@@ -2,51 +2,34 @@
 
 Owner (2026-10-21): "the files and folders here are messy … the homelab folder shouldn't be here at all … the GitHub is shit,
 confusing and weird". This page lists what exists, what each thing becomes, the target layout, and how GitHub must look.
-The work itself is tasks **P0-01 … P0-08** in [`tasks/P0-reset.md`](tasks/P0-reset.md).
+The work itself was tasks **P0-01 … P0-08** in [`tasks/P0-reset.md`](tasks/P0-reset.md).
 
-## 1. What exists today (2026-10-21)
+## 1. Where it started (2026-10-21)
 
-### 1.1 The workspace folder `C:\Users\you\Desktop\encore-workspace\`
+The first five days of work lived in another repository: a fork of an existing player, with the owner's homelab folder, six committed
+login files, 50 APK files (the reason `.git` was 238 MB), a vendored plugin and platform folders nothing used, a website, store
+listings, the fork's own licence (CC BY-NC-SA 4.0), name and 900+ upstream commits. P0-04 made this repository from a cleaned tree.
 
-| Item | What it is | Becomes |
-|------|-----------|---------|
-| `old-app/` | The git repository (branch `work/eng-review`, 46 commits not on GitHub, uncommitted app work: `lib/data/server/`, `lib/features/server/`, tests, `docs/53`, a change to `instant_controller.dart`) | Source for the **new** repository `encore/` (P0-04); then kept read-only as `archive/old-repo/` until the new one is proven, then deleted (owner's go) |
-| `baseline-wt/` | A git worktree of the old baseline commit `8842441` (detached) | Remove with `git worktree remove` (recoverable from the tag) |
-| `releases/encore-server.{zip,tar.gz}` | An old packed server kit (2026-10-17) | Delete (superseded; future kits are GitHub Release assets) |
-| `.claude/settings.local.json` | Claude Code project settings | Keep (owner's) |
-| `encore-plan/` | This plan | Becomes `docs/` of the new repo (P0-04) |
-| `CLAUDE.md` | Pointer for agents (written by the planning agent) | Keep at the workspace level; a repo-level `AGENTS.md`/`CLAUDE.md` is added in P0-04 |
+| Carried over | Became |
+|--------------|--------|
+| The Flutter app: `lib/`, `test/`, `android/`, `assets/`, `drift_schemas/`, `pubspec.*`, the analysis files | `app/` (Android package `app.encore.player`) |
+| `packages/encore_session/` (Jam engine) | `packages/encore_session/` (dormant until Jam returns) |
+| The Python services (fetch, people, admin, quality, recs, hub, the reference kit) | `server/legacy/`, moved into `server/encore_server/` module by module (P2, P3, P4) |
+| The check script, hooks, journeys, profiling scripts | `tools/` |
+| The plan | `docs/` |
 
-### 1.2 Inside the repository (tracked files per top-level item)
+| Left behind (never copied) | Why |
+|----------------------------|-----|
+| The owner's homelab notes and scripts, one of them `CREDENTIALS.md` | A separate project; an identical copy lives in `Desktop\homelab` |
+| `encore-*-login.txt` and one-off helper scripts | Passwords never enter git; logins live in `..\local\logins\` |
+| 50 APK files | APKs go to GitHub Releases; local copies are in `..\releases-archive\` |
+| A vendored Chromecast plugin, the other platforms (iOS, macOS, Windows, Linux, web, Tizen), the old UI "kept for reference", the website, store listings, promo, translation and release helpers | Not used by an Android-only first version |
+| The old README, changelog, privacy policy, credits and licence | Replaced by Encore's own (GPL-3.0) |
+| The 60 old documents | History; they exist only in the archive bundle |
 
-| Item | Tracked files | What it is | Verdict |
-|------|--------------:|-----------|---------|
-| `lib/` | 197 | The Encore app (rewritten; 1 path left from old-app: `main.dart`) | **Keep** → `app/lib/` |
-| `test/` | 166 | App tests | **Keep** → `app/test/` |
-| `android/` | 95 | Android project; `namespace com.example.old-app`, `OldAppApplication.kt`, old-app launcher icons in `res/mipmap-*` (from `flutter_launcher_icons.yaml` → `"old-app Icon.png"`) | **Keep, rename and re-icon** → `app/android/` (P0-05) |
-| `assets/` | 6 | Figtree fonts + OFL licence | **Keep** → `app/assets/` |
-| `drift_schemas/` | 5 | Database schema history (needed for migrations) | **Keep** → `app/drift_schemas/` |
-| `packages/encore_session/` | 12 | Jam engine shared by app and hub | **Keep** → `packages/encore_session/` (dormant until Jam returns) |
-| `packages/flutter_chrome_cast/` | 167 | old-app's vendored Chromecast plugin; **not referenced** by `pubspec.yaml` or `lib/` | **Delete** |
-| `server/encore-fetch, -people, -admin` | ~110 | Python services | **Move into the new single server** `server/encore_server/` modules (P3-01); old folders deleted after the move |
-| `server/encore-quality, encore-recs, hub` | ~60 | Quality tier, recommendations, Jam hub | **Keep** → `server/legacy/`; rebuilt as modules in phase P4 (owner: everything in the first version) |
-| `server/reference/` | ~30 | Compose kit, `setup.sh`, `encore_user.py`, checks, VM test scripts | **Rework** → `server/deploy/` (compose, install script, `encore` CLI) + `server/tests/` |
-| `server/migrate/owner-server/` | 10 | Scripts for the owner's homelab containers | **Delete from the product** (homelab-specific); copy to the owner's homelab folder if he wants them |
-| `server/portal-patches/` | 1 | Patch for the owner's private request portal | **Delete** (homelab) |
-| `tool/` | 28 | Check script, hooks, journeys, profiling, kit packer | **Keep, tidy** → `tools/` (one folder); journeys get the new test harness (`07`) |
-| `tools/`, `packaging/` | 2 | old-app's macOS DMG background generator | **Delete** |
-| `docs/` | 101 | 60 old documents + resource samples | **Archive**: move to `docs/archive/2026-10/` in the old repo only; the new repo starts with this plan as `docs/` |
-| `homelab/` | 270 | The owner's homelab notes, scripts **and `CREDENTIALS.md`** (identical copy at `Desktop\homelab`, verified) | **Delete from the repo**; never in the new one |
-| `legacy_archive/` | 260 | old-app's old UI and workflows "kept for reference" | **Delete** |
-| `releases/` | 51 | **50 APK files committed into git** (the main reason `.git` is 238 MB) + README | **Delete from git**; APKs go to **GitHub Releases** (P0-07); the local archive stays outside the repo (`..\releases-archive\`) |
-| `react-website/`, `fastlane/`, `screenshots/`, `old-app-promo.gif`, `CNAME`, `.htaccess`, `_headers`, `.well-known/` | ~90 | old-app's website, store listings, promo | **Delete** (the Encore website is a new `website/`, P5-05) |
-| `ios/`, `macos/`, `windows/`, `linux/`, `web/`, `tizen/` | ~170 | Other platforms from old-app | **Delete** (Android only for v1; Flutter regenerates platform folders when iOS/web/desktop start: `flutter create --platforms=web .`) |
-| `README.md`, `CHANGELOG.md`, `PRIVACY_POLICY.md`, `CREDITS.md`, `LICENSE` | 5 | **old-app's** README, changelog, privacy policy, credits, CC BY-NC-SA licence | **Replace** with Encore's (P0-04, P0-05) |
-| `.github/ISSUE_TEMPLATE/*`, `.github/workflows/ci.yml` | 3 | old-app's issue forms; CI on the wrong branch | **Replace** (P0-06) |
-| `encore-*-login.txt` (6), `APPLY-CLAUDE-AUTONOMY.bat`, `RUN-ENCORE-*.bat` (3), `claude-*.PROPOSED.json` (2), `HOW-TO-GIVE-CLAUDE-AUTONOMY.md` | 13 | **Passwords** and one-off helpers for the owner | **Out of git.** Login files → `..\local\logins\` (never committed); helpers deleted (their steps are done) |
-| `Gemfile`, `installer.nsi`, `Dockerfile.release`, `build_release.ps1`, `build-release-apk.sh`, `run_with_env.ps1`, `analysis_report.txt`, `devtools_options.yaml`, `crowdin.yml`, `l10n.yaml` | ~10 | old-app build/release/translation helpers | **Delete** (CI builds releases, P0-06/P5-01) |
-| `pubspec.yaml`, `pubspec.lock`, `analysis_options*.yaml`, `build.yaml`, `dart_test.yaml`, `.metadata`, `.gitattributes`, `.gitignore`, `.vscode/` | | Flutter project files | **Keep** → `app/` (rename `name: old-app` → `encore`, real description) |
-| `offline_music/`, `libCachedImageData/`, `build/`, `.dart_tool/` | 0 | Untracked local folders created by builds/runs | Ignore (`.gitignore`) |
+The old repository's full history is `..\releases-archive\old-repo-2026-10-22.bundle` (checked with `git bundle verify`); its
+uncommitted service-finder work, which the reset superseded, sits next to it in two `wip-` files. The old working folder itself was
+deleted on 2026-10-22 (owner: "we are no longer related to that project").
 
 ## 2. Target layout (the new repository `encore`)
 
@@ -102,9 +85,9 @@ Desktop\homelab\                 the owner's homelab project (separate, already 
 
 | Option | For | Against | Verdict |
 |--------|-----|---------|---------|
-| Clean in place (delete folders, rename, new commits) | Keeps history and blame | Passwords, 50 APKs, old-app's 900+ commits and tags stay in history forever; repo stays 238 MB; still a "fork" | Rejected |
-| Rewrite history in place (`git filter-repo`) | Keeps Encore's own commits, removes secrets/binaries | Complex; every clone breaks; old-app history is intertwined with the first commits; easy to miss a secret | Rejected |
-| **New repository, one initial commit from the cleaned tree, old repo archived then deleted** | No secrets, no old-app, no binaries, small; a clear `main`; the owner's wish "drop anything old-app" is met exactly | Loses line-level history of the last 5 days (kept in the archived old repo and a `git bundle` until the owner deletes it) | **Chosen** |
+| Clean in place (delete folders, rename, new commits) | Keeps history and blame | Passwords, 50 APKs, the upstream project's 900+ commits and tags stay in history forever; repo stays 238 MB; still a "fork" | Rejected |
+| Rewrite history in place (`git filter-repo`) | Keeps Encore's own commits, removes secrets/binaries | Complex; every clone breaks; The upstream history is intertwined with the first commits; easy to miss a secret | Rejected |
+| **New repository, one initial commit from the cleaned tree, old repo archived then deleted** | No secrets, no upstream history, no binaries, small; a clear `main`; the owner's wish "drop anything from the old project" is met exactly | Loses line-level history of the last 5 days (kept in the archived old repo and a `git bundle` until the owner deletes it) | **Chosen** |
 
 ## 4. How GitHub must look (P0-07)
 
@@ -115,7 +98,7 @@ Desktop\homelab\                 the owner's homelab project (separate, already 
 * **README** that a stranger understands in 30 s: one sentence, three screenshots, "Install in 3 steps", status badge, links.
 * **Releases** (not files in git): `vX.Y.Z` with the APK (signed with the release key), the server image tag, release notes in plain
   words. Pre-releases `vX.Y.Z-beta.N` for testers.
-* **Tags** only Encore's: `v0.2.0` … (semantic versioning). No old-app tags.
+* **Tags** only Encore's: `v0.2.0` … (semantic versioning). No upstream tags.
 * **Branch protection on `main`**: PR required, CI green required, 1 approving review (the reviewing agent or the owner), no force push.
 * **Issues** as the only bug/feature tracker, with labels: `bug`, `S1`/`S2`/`S3`, `app`, `server`, `docs`, `good-first-task`;
   a Project board: Backlog → Ready → In progress → Review → Done.

@@ -143,9 +143,9 @@ Verdicts: **Keep**, **Change**, **Drop**, **Later** (park, do not build now), **
   the server's API is client-agnostic anyway.
 * **Verdict: Keep.**
 
-## Q13. "Fork of old-app."
+## Q13. "A fork of an existing player."
 
-* **Verdict: Drop** (owner, 2026-10-21: "drop anything related to old-app, name, reference or anything"). A fresh repository with
+* **Verdict: Drop** (owner, 2026-10-21: "drop anything related to [the old project], name, reference or anything"). A fresh repository with
   only Encore's own files, after checking nothing copied remains (P0-04). Only 1 of 197 `lib/` paths even exists upstream.
 
 ## Q14. "Spotify import through a Spotify developer app (OAuth)."

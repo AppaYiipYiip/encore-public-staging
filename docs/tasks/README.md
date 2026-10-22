@@ -28,8 +28,7 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 
 ## Before any task
 
-* Work in the **new** repository once P0-04 is done; until then, P0 tasks work in `old-app/`.
-* **Do not `git add -A` in `old-app/` before P0-01 is done**: login files with passwords are tracked there.
+* Work in the repository `encore/`.
 * The test servers: dev VM `encore-dev` (yours to change), CT 104 (read-only except test accounts). The owner's homelab: hands off.
-* Test accounts' login files: `old-app/encore-*-login.txt` today, `..\local\logins\` after P0-01. Type passwords only with
+* Test accounts' login files: `..\local\logins\`. Type passwords only with
   `evidence/scripts/typepw.py` (copy into `tools/journeys/`), never print them, never screenshot a visible password field.

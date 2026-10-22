@@ -9,8 +9,8 @@
 * **Acceptance.** `apksigner verify --print-certs` shows the release certificate; a tag produces a Release with APK + notes + images.
 
 ## P5-02 — In-app update check — Size S
-* **Why.** A website-distributed APK has no store updates; YouTube changes make updates urgent sometimes. ADR-018 removed old-app's
-  updater (it pointed at old-app's releases); this one points at Encore's.
+* **Why.** A website-distributed APK has no store updates; YouTube changes make updates urgent sometimes. ADR-018 removed the inherited
+  updater (it pointed at the upstream project's releases); this one points at Encore's.
 * **Do.** Once a day (and on Settings → About) read the latest Release; if newer, a quiet card "Update available" → download the APK →
   Android's installer (`REQUEST_INSTALL_PACKAGES`); never nag more than once a week; a "beta" channel switch for testers.
 * **Acceptance.** From build N, the app finds N+1, installs it in two taps, keeps all data.

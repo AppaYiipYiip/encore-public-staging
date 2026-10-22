@@ -1,7 +1,7 @@
 # Encore: the reset plan (start here)
 
 Written 2026-10-21 by the planning agent after reviewing the repository, the 60 old documents, the live server, the dev VM and
-the app on an emulator, with measurements on the real line. **This folder replaces `old-app/docs/` as the source of truth.** The old
+the app on an emulator, with measurements on the real line. **This folder replaces the old documents as the source of truth.** The old
 documents are history; read one only when a task links it.
 
 ## What happened, in six lines
@@ -13,7 +13,7 @@ documents are history; read one only when a task links it.
    reaches audio in **1.6–4 s**, even for a 2-hour recording; a 189-song playlist's list reads in **2–3 s**.
 4. Side features (Jam, Year in Music, an admin site running a Firefox container to sign into Google, a Soulseek "quality tier", a
    recommendation engine) were built before the core worked; a walk through the app found 20+ problems the 1,430 tests missed.
-5. The repository mixes in the owner's homelab, committed passwords, 50 APK files and old-app's name, icon, licence and history.
+5. The repository mixes in the owner's homelab, committed passwords, 50 APK files and another project's name, icon, licence and history.
 6. Nobody wrote down what the product *is*, so every session re-decided it. `03` now does.
 
 ## The roles from now on
@@ -30,7 +30,7 @@ documents are history; read one only when a task links it.
 | # | File | What it is |
 |---|------|-----------|
 | 01 | [What is wrong, and why](01-what-is-wrong.md) | Every finding with evidence, root cause and the task that fixes it |
-| 02 | [Questioning the premises](02-questioning-the-premises.md) | YouTube, server-side fetching, per-person folders, six services, Google sign-in, Soulseek, old-app… each: why, does it hold, verdict |
+| 02 | [Questioning the premises](02-questioning-the-premises.md) | YouTube, server-side fetching, per-person folders, six services, Google sign-in, Soulseek, the inherited fork… each: why, does it hold, verdict |
 | 03 | [The product](03-product.md) | Who it is for, positioning vs Spotify/Plexamp/free YouTube clients, promises with numbers, v1 scope, principles |
 | 03a | [User stories](03a-user-stories.md) | v1 stories with acceptance criteria a tester can check |
 | 04 | [Target architecture](04-architecture.md) | What runs where and why; the song-reference model; the fast play path; YouTube safety; many users at once; install design |
@@ -65,7 +65,7 @@ documents are history; read one only when a task links it.
 
 * **Encore is a public product** (website with the guide, server download and APK). Nothing about the owner's homelab (addresses,
   container numbers, scripts, his request portal, his dashboard at `:8687`) belongs in Encore's code, docs or defaults.
-* **No trace of old-app** (owner, 2026-10-21), done through a fresh repository (P0-04), after checking nothing copied remains.
+* **No trace of the old project** (owner, 2026-10-21), done through a fresh repository (P0-04), after checking nothing copied remains.
 * **Free for the user**: no feature depends on a paid account (no Tidal, no Spotify Premium, no Plex Pass).
 * **For everyone**: other countries, weak PCs, slow or shared lines, flagged or blocked addresses, non-Latin text. Nothing may only
   work on the owner's setup. Never put a Host's internet address or accounts at risk.
@@ -80,9 +80,9 @@ documents are history; read one only when a task links it.
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
 | Server download cap on the owner's homelab | Raised from 3 to **15 Mbit/s** with the owner's permission (dashboard file `/var/lib/libdash/server-down-limit.json`; backup of the old value in `/root/server-down-limit.json.before-encore-test` on the Proxmox host) |
-| `tester` password (leaked into a session log during testing) | Rotated and verified; the new one is only in `old-app/encore-tester-login.txt` (tracked by git: do not commit before P0-01) |
+| `tester` password (leaked into a session log during testing) | Rotated and verified; the new one is only in `local/logins/encore-tester-login.txt` (never committed) |
 | Owner decisions | **Decided in chat 2026-10-21:** one copy per song with personal libraries/profiles (D-2); keep on save, download or plays on 2 days (D-3); everything in the first version (D-4); name/website not now (D-5, D-9); new repo, no password changes (D-7). **Open (defaults apply):** licence GPL-3.0 (D-1), YouTube on by default (D-6), allow agents to push (D-8), quality tier off until switched on (D-12) |
 | P0 tasks | Ready; pushing needs D-8 |
 | Roadmap | P0 → P1 → P2 → P3 → **P4 full feature set** → P5 public release → P6 later |
 | P1 tasks | Ready after P0-04 |
-| Old docs `old-app/docs/` | History; a pointer to this plan was added at the top of `STATUS.md` and `README.md` |
+| The old documents | History, kept only in the old repository's archive |

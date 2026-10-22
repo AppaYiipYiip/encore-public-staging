@@ -4,7 +4,7 @@ Goal: a song you don't own is audible in ~2–3 s (≤ 10 s worst) and the playe
 This phase changes today's architecture as little as possible: the YouTube code is written as a **reusable package** that P3
 moves into the single server unchanged.
 
-Paths below are in the **old layout** (`old-app/…`); after P0-04 prefix app paths with `app/` and server paths with `server/legacy/`.
+Paths below are in the **old layout** (app files at the repository root); after P0-04 prefix app paths with `app/` and server paths with `server/legacy/`.
 
 Three lanes can run in parallel: **Server** (P1-01 → P1-02 → P1-03, P1-05), **Player** (P1-08, P1-09, P1-11), **UI** (P1-07,
 P1-10, P1-12). P1-04 and P1-06 connect them.
