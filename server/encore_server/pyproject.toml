@@ -1,0 +1,41 @@
+[project]
+name = "encore-server"
+version = "0.1.0"
+description = "The Encore server: one program for a person's music library, playback state, imports and streaming (docs/04)."
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-or-later" }
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+youtube = ["yt-dlp", "ytmusicapi", "mutagen"]
+dev = ["pytest>=8", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+include = ["encore_server*"]
+
+[tool.setuptools.package-data]
+encore_server = ["migrations/*.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
