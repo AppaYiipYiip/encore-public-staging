@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart';
 import 'jam_providers.dart';
@@ -15,11 +16,8 @@ import 'jam_providers.dart';
 /// knows, from which a tap puts a song in the Jam. The song carries its title and
 /// artist, because the phone that plays finds it in its own library (or has the
 /// server fetch it): the id in one person's library means nothing in another's.
-Future<void> showAddSongsSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
+Future<void> showAddSongsSheet(BuildContext context) => showEncoreSheet<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
       builder: (_) => const _AddSongsSheet(),
     );
 

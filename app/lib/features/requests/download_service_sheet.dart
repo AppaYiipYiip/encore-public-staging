@@ -11,15 +11,15 @@ import '../../data/db/app_database.dart';
 import '../../data/requests/portal_discovery.dart';
 import '../../data/sync/endpoint_resolver.dart';
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../settings/settings_controller.dart';
 import 'request_providers.dart';
 
 /// Opens the connection sheet; completes with `true` once a download service
 /// is connected (ADR-052).
 Future<bool> showDownloadServiceSheet(BuildContext context) async {
-  final done = await showModalBottomSheet<bool>(
+  final done = await showEncoreSheet<bool>(
     context: context,
-    isScrollControlled: true,
     builder: (_) => const DownloadServiceSheet(),
   );
   return done ?? false;

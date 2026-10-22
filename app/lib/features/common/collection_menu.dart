@@ -8,6 +8,7 @@ import '../../app/navigation.dart';
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
 import '../providers.dart';
+import 'encore_sheet.dart';
 import 'format.dart';
 import 'playlist_actions.dart';
 
@@ -23,7 +24,7 @@ Future<void> showCollectionMenu(
   PlaylistRow? playlist,
   bool leaveAfterDelete = false,
 }) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
     builder: (sheet) => _CollectionMenu(
       title: title,

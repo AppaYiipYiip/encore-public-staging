@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../requests/request_providers.dart';
 import '../requests/request_ui.dart';
 import '../settings/settings_controller.dart';
@@ -13,10 +14,8 @@ import '../settings/settings_controller.dart';
 /// is the one place that explains ours, in four short lines.
 Future<void> showAddingMusicHelp(BuildContext context,
     {required bool instant}) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => _AddingMusicHelp(instant: instant),
   );
 }

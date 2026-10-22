@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../providers.dart';
 import 'playback_facade.dart';
 
@@ -31,10 +32,8 @@ String sleepRemainingLabel(SleepTimerStatus s) {
 }
 
 Future<void> showSleepTimerSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
     builder: (_) => const _SleepSheet(),
   );
 }

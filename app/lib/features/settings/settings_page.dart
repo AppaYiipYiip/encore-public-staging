@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 import '../../domain/audio_quality.dart';
+import '../common/encore_sheet.dart';
 
 /// Scaffold shared by every settings sub-page: title, one-line description,
 /// then the rows (docs/06-ux-spec.md 4.9).
@@ -84,7 +85,7 @@ class QualityTile extends StatelessWidget {
       subtitle: Text(subtitle ?? value.detail),
       trailing: Text(value.label, style: context.text.labelLarge),
       onTap: () async {
-        final picked = await showModalBottomSheet<AudioQuality>(
+        final picked = await showEncoreSheet<AudioQuality>(
           context: context,
           builder: (sheet) => SafeArea(
             child: Column(

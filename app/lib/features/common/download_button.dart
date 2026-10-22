@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
 import '../downloads/download_providers.dart';
+import 'encore_sheet.dart';
 import 'format.dart';
 
 /// Spotify-style "Download" toggle for an album / playlist / liked songs.
@@ -134,7 +135,7 @@ class DownloadButton extends ConsumerWidget {
       return;
     }
 
-    final remove = await showModalBottomSheet<bool>(
+    final remove = await showEncoreSheet<bool>(
       context: context,
       builder: (sheet) => _RemoveSheet(name: name, state: state),
     );

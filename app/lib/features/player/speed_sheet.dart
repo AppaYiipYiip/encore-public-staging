@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 
@@ -23,7 +24,7 @@ String speedLabel(double speed) {
 }
 
 Future<void> showSpeedSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
     builder: (_) => const _SpeedSheet(),
   );

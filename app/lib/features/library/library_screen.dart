@@ -12,6 +12,7 @@ import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
 import '../../domain/household.dart';
 import '../common/cover_art.dart';
+import '../common/encore_sheet.dart';
 import '../common/format.dart';
 import '../common/playlist_actions.dart';
 import '../common/widgets.dart';
@@ -230,9 +231,8 @@ class LibraryScreen extends ConsumerWidget {
 /// "+" in Your Library: a new playlist, or bring music over from another
 /// service.
 Future<void> _showCreateSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
-    showDragHandle: true,
     builder: (sheet) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,

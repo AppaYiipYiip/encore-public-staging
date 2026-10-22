@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../design/tokens.dart';
 import '../../playback/queue_model.dart';
 import '../common/cover_art.dart';
+import '../common/encore_sheet.dart';
 import '../common/format.dart';
 import '../common/playlist_actions.dart';
 import '../providers.dart';
@@ -25,11 +26,8 @@ final queueSnapshotProvider = StreamProvider.autoDispose<QueueSnapshot>((ref) {
 /// "Up next": what is playing, what comes next, drag to reorder, swipe to
 /// remove (docs/06-ux-spec.md section 4.6).
 Future<void> showQueueSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showEncoreSheet<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (_) => const FractionallySizedBox(
       heightFactor: 0.9,
       child: _QueueSheet(),

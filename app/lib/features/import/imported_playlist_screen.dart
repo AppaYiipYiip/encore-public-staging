@@ -9,6 +9,7 @@ import '../../data/fetch/import_models.dart';
 import '../../design/tokens.dart';
 import '../catalogue/catalogue_widgets.dart';
 import '../common/cover_art.dart';
+import '../common/encore_sheet.dart';
 import '../common/format.dart';
 import '../common/widgets.dart';
 import '../detail/hero_header.dart';
@@ -220,13 +221,11 @@ class ImportedPlaylistScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, ImportJob job, int index) async {
     final song = job.songs[index];
     final messenger = ScaffoldMessenger.of(context);
-    await showModalBottomSheet<void>(
+    await showEncoreSheet<void>(
       context: context,
-      showDragHandle: true,
       // Above the mini-player and the tab bar: the last row sat under them and was hidden (2026-10-18).
       useRootNavigator: true,
       // The default sheet is at most a little over half the screen high and clipped its last row (2026-10-18).
-      isScrollControlled: true,
       builder: (sheet) => SafeArea(
         child: SingleChildScrollView(
           child: Column(

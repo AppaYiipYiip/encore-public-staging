@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/navigation.dart';
 import '../../data/fetch/import_models.dart';
 import '../../design/tokens.dart';
+import '../common/encore_sheet.dart';
 import '../common/format.dart';
 import 'import_providers.dart';
 
@@ -205,10 +206,8 @@ class ImportCard extends ConsumerWidget {
     final full = await ref.read(importsProvider.notifier).details(job.id);
     if (!context.mounted) return;
     final songs = full?.missingSongs ?? const <MissingSong>[];
-    await showModalBottomSheet<void>(
+    await showEncoreSheet<void>(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
       builder: (sheet) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.7,
