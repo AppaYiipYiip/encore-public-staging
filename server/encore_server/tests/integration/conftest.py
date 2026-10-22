@@ -80,7 +80,10 @@ def accounts() -> dict[str, str]:
     native = Native(URL)
     made = native.call("POST", "/auth/createAdmin", {"username": admin, "password": admin_pw})
     native.token = made["token"]
-    native.call("POST", "/api/user", {"userName": person, "name": person, "password": person_pw, "isAdmin": False})
+    made_person = native.call("POST", "/api/user", {"userName": person, "name": person, "password": person_pw, "isAdmin": False})
+    libraries = [lib["id"] for lib in native.call("GET", "/api/library")]
+    if libraries:  # an ordinary account is given the library, as the Encore server does for the people it makes
+        native.call("PUT", f"/api/user/{made_person['id']}/library", {"libraryIds": libraries})
     return {"admin": admin, "admin_pw": admin_pw, "person": person, "person_pw": person_pw}
 
 

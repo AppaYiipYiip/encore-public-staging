@@ -13,7 +13,7 @@ import logging
 import secrets
 import sqlite3
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,6 +47,7 @@ from .imports.service import ImportService
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import Hub
+from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
 from .scanner import LibraryLinker
@@ -74,6 +75,7 @@ class Services:
     imports: ImportService | None = None
     accounts: Accounts | None = None
     limiter: Limiter | None = None
+    music_as: Callable[[str, str, str], SubsonicUser] | None = None
 
 
 def services(request: Request) -> Services:
@@ -407,6 +409,23 @@ def update_me(request: Request, body: dict[str, Any] = Depends(json_body), p: Pr
         with services(request).db.tx() as conn:
             conn.execute(f"UPDATE person SET {', '.join(sets)} WHERE id = ?", (*values, p.person_id))  # noqa: S608 - column names are fixed above
     return me(request, p)
+
+
+@router.post("/migrate/navidrome")
+def migrate_navidrome(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """Brings the person's likes, saved albums, followed artists and playlists over from the music server, asked as them with the sign-in the
+    phone sends in the body (`u`, `t`, `s`). Safe to run again, and from a second phone."""
+    svc = services(request)
+    user, token, salt = str(body.get("u", "")), str(body.get("t", "")), str(body.get("s", ""))
+    if user.lower() != p.navidrome_user.lower() or not svc.verifier.verify(user, token, salt):
+        raise ApiError("unauthorized", "The music server did not accept that login.")
+    make = svc.music_as or (lambda u, t, s: SubsonicUser(svc.settings.navidrome_url, u, t, s))
+    report = migrate_from_navidrome(svc.db, p.person_id, p.navidrome_user, make(user, token, salt))
+    with svc.db.read() as conn:
+        _changed(svc, p, library.latest_cursor(conn, p.person_id))
+    return _ok({"report": report})
 
 
 # ------------------------------------------------------------------------------------------------ song refs

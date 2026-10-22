@@ -249,6 +249,7 @@ def playlist_json(conn: sqlite3.Connection, row: sqlite3.Row, *, with_entries: b
         "name": row["name"],
         "cover": row["cover"],
         "collaborative": bool(row["collaborative"]),
+        "sourceId": row["source_id"],
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
         "deleted": row["deleted_at"] is not None,

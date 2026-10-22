@@ -286,3 +286,48 @@ def test_an_invited_person_gets_a_real_account_with_the_library_and_can_reset_an
     removed = rig.client.delete(f"/encore/api/v1/people/{person['id']}", params=rig.creds())
     assert removed.status_code == 200
     assert ping(name, fresh)["status"] == "failed", "the account is gone from the music server"
+
+
+def test_the_stars_and_playlists_a_person_had_in_the_music_server_come_over_as_likes_and_a_playlist(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
+    from encore_server.auth import subsonic_token
+
+    artist = unique("Moved Artist")
+    for n in (1, 2, 3):
+        make_audio(
+            MUSIC / "Collection" / artist / "Old Album" / f"0{n} - Old {n}.flac",
+            title=f"Old {n}",
+            artist=artist,
+            album="Old Album",
+            track=str(n),
+        )
+    scan_and_wait(navidrome)
+    ids = {s["title"]: s["id"] for s in (navidrome.songs(0, 500) or []) if s.get("artist") == artist}
+    assert len(ids) == 3
+    salt = secrets.token_hex(6)
+    auth = {
+        "u": rig.accounts["person"],
+        "t": subsonic_token(rig.accounts["person_pw"], salt),
+        "s": salt,
+        "v": "1.16.1",
+        "c": "it",
+        "f": "json",
+    }
+
+    assert rig.client.get("/rest/star.view", params={**auth, "id": ids["Old 2"]}).json()["subsonic-response"]["status"] == "ok"
+    made = rig.client.get(
+        "/rest/createPlaylist.view", params={**auth, "name": "From before", "songId": [ids["Old 3"], ids["Old 1"]]}
+    )
+    assert made.json()["subsonic-response"]["status"] == "ok"
+
+    report = rig.post("/migrate/navidrome", auth)["report"]
+
+    assert report["likes"] == 1 and report["playlists"] == 1 and report["entries"] == 2 and report["unmatched"] == 0
+    changes = rig.get("/library/changes", since="0")
+    titles = {r["id"]: r["title"] for r in changes["refs"]}
+    assert [titles[like["ref"]] for like in changes["likes"]] == ["Old 2"]
+    mine = next(p for p in changes["playlists"] if p["name"] == "From before")
+    detail = rig.get(f"/playlists/{mine['id']}")
+    assert [titles[e["ref"]] for e in detail["entries"]] == ["Old 3", "Old 1"]
+    assert rig.post("/migrate/navidrome", auth)["report"]["playlists"] == 0, "again: nothing twice"
