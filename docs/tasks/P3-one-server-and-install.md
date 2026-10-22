@@ -47,6 +47,15 @@ installer and a browser wizard that a person who never used Docker can follow. R
   at `encore.local`; prints the address and a terminal QR code. `encore` CLI: `status`, `update`, `logs`, `backup`, `restore`,
   `uninstall` (keeps the music unless `--everything`). Idempotent re-runs. Works without an interactive TTY (`--yes`, flags).
 * **Don't.** Print secrets; touch existing Docker containers of the machine; open firewall ports to the internet.
+* **Also a design constraint (owner, 2026-10-22, "keep in mind for the future"): trying Encore on a machine that already has a setup.**
+  Somebody who already runs Plex, Navidrome, Tailscale and their own music folder just wants to *try* Encore. The install must not make
+  them install again what they have, nor disturb it: it **finds and reuses** an existing Tailscale (asks before enabling Funnel for one
+  more service; never logs the machine in again or changes its other serve rules), an existing Navidrome (asks for its address and an
+  account instead of starting a second one, and says what Encore will add: songs it keeps go into one folder it owns, the rest stays
+  read-only), an existing music folder (mounted read-only, scanned, never moved or retagged), and runs **beside** Plex and anything else
+  on free ports with its own containers. It must also be removable in one command that leaves everything else as it was. To be designed
+  on paper (`../15`) before code; acceptance journey: a machine with Plex + Tailscale + Navidrome + a music folder, Encore tried in under
+  10 minutes with none of them touched (checked by comparing their configs before and after).
 * **Acceptance.** On a fresh Ubuntu 26.04 VM (x86-64) and an ARM64 VM: one command → wizard reachable at `http://encore.local` from a
   phone on the same Wi-Fi in ≤ 10 minutes (download speed noted).
 
