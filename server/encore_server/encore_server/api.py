@@ -44,6 +44,7 @@ from .ids import is_id, now_ms
 from .keeper.keeper import Keeper, KeepSettings
 from .live import Hub
 from .navidrome import NavidromeClient
+from .scanner import LibraryLinker
 from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
 from .sources.youtube.source import YoutubeSource, wanted_from_ref
@@ -63,6 +64,7 @@ class Services:
     youtube: YoutubeSource | None = None
     scheduler: Scheduler | None = None
     keeper: Keeper | None = None
+    linker: LibraryLinker | None = None
 
 
 def services(request: Request) -> Services:
@@ -604,15 +606,12 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
 
 
 def _keeping(
-    settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, navidrome: NavidromeClient | None
+    settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, client: NavidromeClient
 ) -> tuple[Scheduler | None, Keeper | None]:
     """The background work and the keeper. Without a way to fetch songs and a music-server account that can find what was kept, nothing
     is queued: every song still plays by streaming, and the server says in its log why it keeps nothing."""
     if not settings.keep:
         return None, None
-    client = navidrome or NavidromeClient(
-        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
-    )
     if youtube is None or not client.configured:
         log.warning(
             "keeping is off: %s",
@@ -651,15 +650,28 @@ def create_app(
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
     hub = Hub()
-    scheduler, keeper = _keeping(settings, database, hub, youtube, navidrome)
+    client = navidrome or NavidromeClient(
+        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
+    )
+    scheduler, keeper = _keeping(settings, database, hub, youtube, client)
+    linker = (
+        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0)
+        if client.configured and settings.scan_every_min > 0
+        else None
+    )
 
     @contextlib.asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        if scheduler is not None and settings.workers:
-            scheduler.start()
+        if settings.workers:
+            if scheduler is not None:
+                scheduler.start()
+            if linker is not None:
+                linker.start()
         try:
             yield
         finally:
+            if linker is not None:
+                linker.stop()
             if scheduler is not None:
                 scheduler.stop()
 
@@ -672,6 +684,7 @@ def create_app(
         youtube=youtube,
         scheduler=scheduler,
         keeper=keeper,
+        linker=linker,
     )
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])

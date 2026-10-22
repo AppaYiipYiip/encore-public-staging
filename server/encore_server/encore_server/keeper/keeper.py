@@ -196,7 +196,7 @@ class Keeper:
         codec = {".opus": "opus", ".ogg": "opus", ".m4a": "aac", ".aac": "aac", ".mp3": "mp3", ".flac": "flac"}.get(
             path.suffix.lower(), path.suffix.lower().lstrip(".")
         )
-        navidrome_id = self._wait_for_music_server(ref, relative)
+        navidrome_id = self._wait_for_music_server(ref, relative, size)
         with self._db.tx() as conn:
             refs.attach_file(
                 conn, ref["id"], navidrome_song_id=navidrome_id, path=relative, codec=codec, bitrate_kbps=kbps, source="youtube"
@@ -207,13 +207,13 @@ class Keeper:
         if touched and self._on_changed is not None:
             self._on_changed(touched)
 
-    def _wait_for_music_server(self, ref: dict[str, Any], relative: str) -> str | None:
+    def _wait_for_music_server(self, ref: dict[str, Any], relative: str, size: int) -> str | None:
         s = self._settings
         deadline = self._clock() + s.scan_wait_s
         asked = False
         while True:
             found = self._navidrome.find_song(
-                artist=ref["artists"][0], title=ref["title"], album=ref.get("album"), relative_path=relative
+                artist=ref["artists"][0], title=ref["title"], album=ref.get("album"), relative_path=relative, size=size
             )
             if found is not None:
                 return found

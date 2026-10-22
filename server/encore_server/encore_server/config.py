@@ -28,6 +28,8 @@ class Settings:
     min_free_gb: float = 10.0
     #: A song nobody saved is kept once it was played on this many different days.
     keep_after_play_days: int = 2
+    #: How often the server looks at the music server's songs to give them refs (0 turns it off).
+    scan_every_min: int = 60
     extras: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -53,4 +55,5 @@ class Settings:
             navidrome_admin_password=e.get("ENCORE_NAVIDROME_ADMIN_PASSWORD", ""),
             min_free_gb=float(e.get("ENCORE_MIN_FREE_GB", "10")),
             keep_after_play_days=int(e.get("ENCORE_KEEP_AFTER_PLAY_DAYS", "2")),
+            scan_every_min=int(e.get("ENCORE_SCAN_EVERY_MIN", "60")),
         )

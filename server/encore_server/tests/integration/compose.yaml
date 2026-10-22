@@ -1,0 +1,33 @@
+# The proof against a real music server (docs/tasks P2-01): `docker compose -f tests/integration/compose.yaml up --build --abort-on-container-exit --exit-code-from tests`
+# Run from server/encore_server. A throwaway Navidrome and the tests, sharing one music folder. Nothing here touches a real library.
+name: encore-it
+services:
+  navidrome:
+    image: deluan/navidrome:0.64.2
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      ND_SCANSCHEDULE: "0"
+      ND_SCANNER_WATCHERWAIT: 2s
+      ND_LOGLEVEL: info
+      ND_ENABLEUSEREDITING: "true"
+    volumes:
+      - music:/music
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4533/ping"]
+      interval: 3s
+      retries: 20
+  tests:
+    build:
+      context: ../..
+      dockerfile: tests/integration/Dockerfile
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    environment:
+      IT_NAVIDROME_URL: http://navidrome:4533
+      IT_MUSIC_DIR: /music
+    volumes:
+      - music:/music
+volumes:
+  music:

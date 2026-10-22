@@ -38,7 +38,7 @@ jobs:
           python-version: '3.12'
       - name: Install
         working-directory: server/encore_server
-        run: pip install -e '.[dev]'
+        run: pip install -e '.[youtube,dev]'
       - name: Lint, types, tests
         working-directory: server/encore_server
         run: |
@@ -46,6 +46,16 @@ jobs:
           ruff format --check .
           mypy encore_server
           pytest
+
+  encore-server-navidrome:
+    # The keeper, the scanner link and the refs against a real Navidrome (docs/tasks P2-01 acceptance).
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real music server, real ffmpeg
+        working-directory: server/encore_server
+        run: docker compose -f tests/integration/compose.yaml up --build --abort-on-container-exit --exit-code-from tests
 
   hub:
     runs-on: ubuntu-latest

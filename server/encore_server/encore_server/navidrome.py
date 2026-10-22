@@ -56,23 +56,36 @@ class NavidromeClient:
     def start_scan(self, *, full: bool = False) -> bool:
         return self._call("startScan", fullScan="true" if full else "false") is not None
 
+    def scan_status(self) -> dict[str, Any] | None:
+        """`{scanning, lastScan, count}` of the music server's scanner; `None` when it cannot say."""
+        body = self._call("getScanStatus")
+        return None if body is None else dict(body.get("scanStatus") or {})
+
     def scanning(self) -> bool | None:
         """Whether a scan is running now; `None` when the music server cannot say."""
-        body = self._call("getScanStatus")
-        return None if body is None else bool((body.get("scanStatus") or {}).get("scanning"))
+        status = self.scan_status()
+        return None if status is None else bool(status.get("scanning"))
 
-    def find_song(self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None) -> str | None:
-        """The library's id for the song, or `None` (not scanned yet, or not there)."""
-        body = self._call("search3", query=title, songCount=40, artistCount=0, albumCount=0)
-        if body is None:
-            return None
-        return pick_song(
-            _as_list((body.get("searchResult3") or {}).get("song")),
-            artist=artist,
-            title=title,
-            album=album,
-            relative_path=relative_path,
-        )
+    def find_song(
+        self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None, size: int | None = None
+    ) -> str | None:
+        """The library's id for the song, or `None` (not scanned yet, or not there). [size] is the file's size in bytes: of several
+        songs with the same words it picks the file that is ours (Navidrome's own `path` is built from the tags, not the real one)."""
+        for query in (f"{artist} {title}", title):
+            body = self._call("search3", query=query, songCount=40, artistCount=0, albumCount=0)
+            if body is None:
+                return None
+            found = pick_song(
+                _as_list((body.get("searchResult3") or {}).get("song")),
+                artist=artist,
+                title=title,
+                album=album,
+                relative_path=relative_path,
+                size=size,
+            )
+            if found is not None:
+                return found
+        return None
 
     def songs(self, offset: int, size: int = 500) -> list[dict[str, Any]] | None:
         """A page of every song in the library (an empty search lists them all); `None` when the music server did not answer."""
@@ -89,7 +102,13 @@ def _as_list(value: object) -> list[dict[str, Any]]:
 
 
 def pick_song(
-    songs: list[dict[str, Any]], *, artist: str, title: str, album: str | None, relative_path: str | None
+    songs: list[dict[str, Any]],
+    *,
+    artist: str,
+    title: str,
+    album: str | None,
+    relative_path: str | None,
+    size: int | None = None,
 ) -> str | None:
     """The song among [songs] that is the one asked for: by its path when the path is known, else the same title, the same version
     ("(Live)", "(Remix)" are other recordings), a close artist, and the album as a tie-break."""
@@ -112,6 +131,8 @@ def pick_song(
         if closeness < 0.8:
             continue
         score = closeness + (0.2 if album and norm_title(str(s.get("album") or "")) == norm_title(album) else 0.0)
+        if size is not None and s.get("size") == size:
+            score += 1.0  # the same number of bytes: the very file that was just kept
         if best is None or score > best[0]:
             best = (score, str(s.get("id")))
     return best[1] if best else None

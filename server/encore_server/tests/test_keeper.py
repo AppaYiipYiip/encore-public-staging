@@ -48,7 +48,9 @@ class FakeNavidrome:
         self.scans += 1
         return True
 
-    def find_song(self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None) -> str | None:
+    def find_song(
+        self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None, size: int | None = None
+    ) -> str | None:
         if relative_path in self.known:
             return self.known[relative_path]
         if self.scans and self.finds_after_scan and relative_path and (self.music / relative_path).is_file():

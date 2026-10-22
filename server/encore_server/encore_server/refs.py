@@ -234,7 +234,7 @@ def attach_file(
     ).fetchone()
     if existing is not None:
         conn.execute(
-            "UPDATE song_file SET navidrome_song_id = COALESCE(?, navidrome_song_id), path = COALESCE(?, path),"
+            "UPDATE song_file SET navidrome_song_id = COALESCE(?, navidrome_song_id), path = COALESCE(path, ?),"
             " codec = COALESCE(?, codec), bitrate_kbps = COALESCE(?, bitrate_kbps) WHERE id = ?",
             (navidrome_song_id, path, codec, bitrate_kbps, existing["id"]),
         )
