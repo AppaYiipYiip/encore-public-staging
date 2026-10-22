@@ -133,3 +133,26 @@ Real-answer fixtures (`server/legacy/encore-fetch/tests/fixtures/ytm`) showed tw
 "artist title" and "title artist" differently (for one song only the second finds the studio recording), and a song result by a different
 artist whose name merely contains the asked one ("Oum" / "Oum Dermam Stars") scored as acceptable under the old scoring, hence the strict
 whole-name artist and title-similarity rules in `lean.py`.
+
+### 7.1 In the app, on the emulator against the real test server (CT 104, a visitor, no account), 2026-10-22
+
+`tools/journeys/play_timing.py`: search as a person would, tap the song, time until the player says PLAYING and the audio system has a
+started track. Every song was a genuine fresh fetch (checked in the server log), never fetched on that server before.
+
+| Song (search -> tap) | Tap to audible |
+|----------------------|----------------|
+| Gorillaz - Feel Good Inc. | 1.6 s |
+| Arctic Monkeys - Do I Wanna Know? | 2.0 s |
+| Lorde - Royals | 2.0 s |
+| Billie Eilish - bad guy | 2.7 s |
+| Tame Impala - Let It Happen | 4.1 s |
+| The Weeknd - Blinding Lights (Remix) | 6.4 s |
+| Cigarettes After Sex - Apocalypse | 7.4 s |
+
+Median 2.7 s, slowest 7.4 s (was **38 s**). The fast ones are songs the app had already asked the server to *prepare* (search + extraction
+done, 2.3-3.3 s) while the person looked at the results; the slow ones were tapped before that finished. The old build 40 app was used
+unchanged: all of this comes from the server.
+
+Two app findings while doing it (not yet in the plan's findings list): after the account's password changed, the app kept showing Home
+and "Synced 3 d ago" with no prompt, and a song row said only "The instant-play service did not accept your music server login"; and
+the only way to fix it was Sign out, which deletes all downloaded music (790 MB here) from the phone.

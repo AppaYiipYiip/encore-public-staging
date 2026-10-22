@@ -173,3 +173,9 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   removed at the source unless the person changed them here (then ask); a quiet line "3 new songs from the original"; works for YouTube
   Music and Spotify links (Spotify ≤ 100 songs, said plainly).
 * **Acceptance.** A real public playlist that changes during a week stays in step; a person's own additions are never removed.
+
+## P2-18 — A changed or expired login is a normal event (app + server) — Size M
+* **Why.** `../01` E23, H30, `../21` §4 (device tokens): today a stale password breaks sync silently, produces a cryptic row message, and the only fix deletes the person's downloads.
+* **Do.** One place that sees every authentication failure (any service, the live channel, streaming) and turns it into one state "Sign in again": a quiet banner on Home and a full-screen prompt on the next action, never a per-row sentence. **Sign in again** keeps the library, downloads and queue (only the credential is replaced; if the person signs in as someone else, then the old data is removed after asking). Sign out is separate and says plainly what it removes. With device tokens (P3-03) a password change on the server revokes devices explicitly and the app shows who revoked it.
+* **Acceptance.** Rotate a test account's password on the server: within one app launch the person sees "Sign in again", signs in with the new password, and everything (downloads, queue, likes) is still there; journey J-21 (add to `../14` section 3).
+
