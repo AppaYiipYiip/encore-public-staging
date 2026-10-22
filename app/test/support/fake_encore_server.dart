@@ -15,6 +15,10 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/library/changes'] = _changes;
     _handlers['/encore/api/v1/library/files'] = _files;
     _handlers['/encore/api/v1/plays'] = _plays;
+    _handlers['/encore/api/v1/migrate/navidrome'] = (r) {
+      migrations++;
+      return _ok({'report': migrationReport});
+    };
     _handlers['/encore/api/v1/playlists'] = _playlistsRoot;
   }
 
@@ -37,6 +41,17 @@ class FakeEncoreServer {
 
   /// How many requests of each route were made (`PUT /likes/...` is counted under `PUT likes`).
   final Map<String, int> calls = {};
+
+  /// How many times the phone asked the server to bring the person's library over from the music server, and what the server says it did.
+  int migrations = 0;
+  Map<String, Object?> migrationReport = {
+    'likes': 0,
+    'albums': 0,
+    'artists': 0,
+    'playlists': 0,
+    'entries': 0,
+    'unmatched': 0
+  };
 
   int _refCount = 0;
 
@@ -74,6 +89,36 @@ class FakeEncoreServer {
     };
     if (fileId != null) attachFile(id, fileId, meta: meta);
     return id;
+  }
+
+  /// A playlist the server already holds for the person (what bringing it over from the music server leaves): its songs, in order.
+  void addPlaylist(String id, String name, List<String> refIds,
+      {String? sourceId}) {
+    playlists[id] = {
+      'id': id,
+      'name': name,
+      'cover': null,
+      'collaborative': false,
+      'createdAt': clockMs,
+      'updatedAt': clockMs,
+      'deleted': false,
+      'sourceId': sourceId,
+    };
+    entries[id] = [
+      for (var i = 0; i < refIds.length; i++)
+        {
+          'id': 'pe_${id.substring(3, 8)}${i.toString().padLeft(21, '0')}',
+          'playlist': id,
+          'ref': refIds[i],
+          'position': i + 1.0,
+          'addedAt': clockMs,
+          'deleted': false,
+        },
+    ];
+    _touch('playlist', id);
+    for (final e in entries[id]!) {
+      _touch('entry', e['id']! as String);
+    }
   }
 
   void attachFile(String refId, String fileId,

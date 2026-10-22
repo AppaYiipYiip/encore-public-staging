@@ -162,6 +162,7 @@ class EncorePlaylist {
     this.updatedAtMs,
     this.deleted = false,
     this.entries = const [],
+    this.sourceId,
   });
 
   factory EncorePlaylist.fromJson(Map<String, dynamic> json) => EncorePlaylist(
@@ -176,10 +177,14 @@ class EncorePlaylist {
           for (final e in readObjectList(json['entries']))
             EncoreEntry.fromJson(e)
         ],
+        sourceId: readString(json['sourceId']),
       );
 
   final String id;
   final String name;
+
+  /// Where the playlist came from (`nd:<the music server's playlist id>` for one brought over from it).
+  final String? sourceId;
   final String? cover;
   final bool collaborative;
   final int? createdAtMs;
@@ -327,6 +332,36 @@ class EncoreInfo {
   final int youtubeResumesInSec;
 
   bool get hasRefs => features.contains('refs');
+}
+
+/// What bringing a person's library over from the music server did on the Encore server.
+@immutable
+class EncoreMigrationReport {
+  const EncoreMigrationReport({
+    this.likes = 0,
+    this.albums = 0,
+    this.artists = 0,
+    this.playlists = 0,
+    this.entries = 0,
+    this.unmatched = 0,
+  });
+
+  factory EncoreMigrationReport.fromJson(Map<String, dynamic> json) =>
+      EncoreMigrationReport(
+        likes: readInt(json['likes']) ?? 0,
+        albums: readInt(json['albums']) ?? 0,
+        artists: readInt(json['artists']) ?? 0,
+        playlists: readInt(json['playlists']) ?? 0,
+        entries: readInt(json['entries']) ?? 0,
+        unmatched: readInt(json['unmatched']) ?? 0,
+      );
+
+  final int likes;
+  final int albums;
+  final int artists;
+  final int playlists;
+  final int entries;
+  final int unmatched;
 }
 
 /// The device token a sign-in returns (the live channel authenticates with it).

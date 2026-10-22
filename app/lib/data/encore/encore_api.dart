@@ -223,6 +223,18 @@ class EncoreApi {
       guard(() async => _send('PUT', '/playlists/$playlistId/order',
           body: {'entryIds': entryIds}));
 
+  // ------------------------------------------------------------------ moving over
+
+  /// Asks the server to bring this person's stars and playlists over from the music server, as them (the sign-in rides in the body).
+  /// Safe to repeat.
+  Future<Result<EncoreMigrationReport>> migrateFromNavidrome() =>
+      guard(() async {
+        final body =
+            await _send('POST', '/migrate/navidrome', body: {..._auth()});
+        return EncoreMigrationReport.fromJson(
+            readMap(body['report']) ?? const {});
+      });
+
   // ------------------------------------------------------------------ plays
 
   /// One listening, for history, "recently played", Year in Music and recommendations. [id] is made by the phone: a retried report is one play.
