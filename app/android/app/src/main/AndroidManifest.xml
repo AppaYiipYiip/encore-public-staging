@@ -49,6 +49,14 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- The app reads a tapped invitation itself (MainActivity hands
+                 the link to Dart as a share). Flutter's own deep-link handling
+                 would also push the same address to the router, which has no
+                 such page: "Page Not Found". -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -61,7 +69,8 @@
                 <data android:mimeType="text/plain"/>
             </intent-filter>
             <!-- A link in a message that invites the person to a server
-                 (https://<server>/people/join/<code>): offered "Open with
+                 (https://<server>/people/join/<code>, or on an Encore server
+                 https://<server>/encore/join/<code>): offered "Open with
                  Encore" next to the browser, which stays for people without
                  the app. -->
             <intent-filter>
@@ -71,6 +80,18 @@
                 <data android:scheme="https"
                       android:host="*"
                       android:pathPrefix="/people/join/"/>
+                <data android:pathPrefix="/encore/join/"/>
+            </intent-filter>
+            <!-- The same invitation on a home network, where the address has
+                 no certificate (http://192.168.1.20:4540/encore/join/<code>).
+                 Only this one path: no other http link is offered to Encore. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"
+                      android:host="*"
+                      android:pathPrefix="/encore/join/"/>
             </intent-filter>
         </activity>
 

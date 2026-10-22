@@ -10,6 +10,7 @@ import '../instant/instant_controller.dart';
 import '../providers.dart';
 import '../requests/download_service_sheet.dart';
 import '../requests/request_providers.dart';
+import 'encore_play_section.dart';
 import 'invite_someone.dart';
 import 'server_addresses.dart';
 import 'settings_controller.dart';
@@ -39,6 +40,8 @@ class YourServerScreen extends ConsumerWidget {
     final serviceUrl = settings.requestPortalUrl;
     final connected = serviceUrl != null && serviceUrl.isNotEmpty;
     final instantReady = ref.watch(fetchServiceProvider).value != null;
+    // An Encore server plays songs itself: nothing to find, nothing to install next to it.
+    final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final now = ref.watch(clockProvider).now();
     final synced = sync.isSyncing
         ? 'syncing now'
@@ -82,7 +85,7 @@ class YourServerScreen extends ConsumerWidget {
         // server) is shown only to somebody who uses it or has no "play any
         // song": a friend on a server with the instant-play service was told
         // "Not set up - Find it" for something that server does not have.
-        if (connected || !instantReady) ...[
+        if (!encore && (connected || !instantReady)) ...[
           const SettingsSection('Adding music'),
           if (!settings.requestsEnabled)
             ListTile(
@@ -119,7 +122,7 @@ class YourServerScreen extends ConsumerWidget {
             ),
         ],
         const SettingsSection('Play any song'),
-        const _InstantPlaySection(),
+        if (encore) const EncorePlaySection() else const _InstantPlaySection(),
         const SettingsSection('Lyrics'),
         ListTile(
           leading: const Icon(Icons.lyrics_outlined),
@@ -127,36 +130,36 @@ class YourServerScreen extends ConsumerWidget {
               ? 'Your server can serve lyrics'
               : 'Lyrics come from the web'),
           subtitle: Text(serverLyrics
-              ? 'Encore asks your server first and falls back to LRCLIB on '
-                  'the web for songs it has none for. A lyrics plugin on the '
-                  'server (Navidrome 0.63 or newer) fills the gaps for every '
-                  'app at once.'
-              : 'This server does not offer lyrics, so Encore asks LRCLIB '
+              ? 'Encore asks your server first and looks on the web for '
+                  'songs it has none for.'
+              : 'This server does not offer lyrics, so Encore looks for them '
                   'on the web and keeps what it finds on the phone.'),
         ),
-        const SettingsSection('What does my server need?'),
-        const _Need(
-          icon: Icons.dns_outlined,
-          title: 'A music server - required',
-          text: 'Navidrome, or any server that speaks the Subsonic API. It '
-              'keeps the library; Encore keeps a copy on the phone so '
-              'everything works offline.',
-        ),
-        const _Need(
-          icon: Icons.download_for_offline_outlined,
-          title: 'A download service - optional',
-          text: 'The part that finds and downloads music your server does '
-              'not have (for example Lidarr with Soulseek, torrents or '
-              'YouTube behind a request page). Without it Encore is a '
-              'complete player; with it you can Request albums and import '
-              'Spotify or YouTube Music playlists.',
-        ),
-        const _Need(
-          icon: Icons.language_rounded,
-          title: 'A second address - optional',
-          text: 'Add your Tailscale address when you sign in and the '
-              'library works away from home too.',
-        ),
+        if (!encore) ...[
+          const SettingsSection('What does my server need?'),
+          const _Need(
+            icon: Icons.dns_outlined,
+            title: 'A music server - required',
+            text: 'Navidrome, or any server that speaks the Subsonic API. It '
+                'keeps the library; Encore keeps a copy on the phone so '
+                'everything works offline.',
+          ),
+          const _Need(
+            icon: Icons.download_for_offline_outlined,
+            title: 'A download service - optional',
+            text: 'The part that finds and downloads music your server does '
+                'not have (for example Lidarr with Soulseek, torrents or '
+                'YouTube behind a request page). Without it Encore is a '
+                'complete player; with it you can Request albums and import '
+                'Spotify or YouTube Music playlists.',
+          ),
+          const _Need(
+            icon: Icons.language_rounded,
+            title: 'A second address - optional',
+            text: 'Add your Tailscale address when you sign in and the '
+                'library works away from home too.',
+          ),
+        ],
       ],
     );
   }

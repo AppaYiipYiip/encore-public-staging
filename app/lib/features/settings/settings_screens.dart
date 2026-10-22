@@ -352,7 +352,7 @@ class LyricsSettingsScreen extends ConsumerWidget {
     final ctrl = ref.read(settingsProvider.notifier);
     return _Page(
       title: 'Lyrics',
-      description: 'Lyrics come from your server first, then LRCLIB.',
+      description: 'Lyrics come from your server first, then from the web.',
       children: [
         ListTile(
           title: const Text('Text size'),
