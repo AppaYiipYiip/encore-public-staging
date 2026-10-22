@@ -31,8 +31,18 @@ class FakeEncoreServer {
           'federationOk': true,
         });
     _handlers['/encore/api/v1/invites'] = _invitesRoot;
+    _handlers['/encore/api/v1/imports'] = _importsRoot;
     _handlers['/encore/api/v1/people'] = (r) => _ok({'items': people});
   }
+
+  /// What the server's reader finds behind any link it is given (title, artist), and the picture it gives the playlist.
+  List<(String, String)> linkSongs = [
+    ('Song A', 'Artist'),
+    ('Song B', 'Artist'),
+    ('Song C', 'Artist'),
+  ];
+  String? linkPicture;
+  final List<Map<String, Object?>> importRows = [];
 
   /// This person's role on the server (`owner` or `member`).
   String myRole = 'owner';
@@ -269,6 +279,66 @@ class FakeEncoreServer {
     if (likes.containsKey(ref)) return;
     likes[ref] = atMs ?? clockMs++;
     _touch('like', ref);
+  }
+
+  FakeResponse _importsRoot(RecordedRequest r) {
+    if (r.method != 'POST') return _ok({'imports': importRows});
+    final body = jsonDecode(r.body) as Map;
+    final id = '${body['id']}';
+    final again = importRows.where((i) => i['id'] == id).firstOrNull;
+    if (again != null) {
+      return _ok({'import': again, 'playlistId': again['playlistId']},
+          status: 201);
+    }
+    final songs = body['songs'] is List
+        ? [
+            for (final s
+                in (body['songs'] as List).cast<Map<String, Object?>>())
+              ('${s['title']}', '${(s['artists'] as List).first}')
+          ]
+        : linkSongs;
+    final made = [
+      for (final (title, artist) in songs) refs[_resolveOne(title, artist)]!
+    ];
+    final liked = body['liked'] == true;
+    String? playlistId;
+    if (liked) {
+      for (final ref in made) {
+        _like(ref['id']! as String);
+      }
+    } else {
+      playlistId = 'pl_${(++_importPlaylists).toString().padLeft(26, '0')}';
+      addPlaylist(playlistId, '${body['name'] ?? 'Imported playlist'}',
+          [for (final ref in made) ref['id']! as String]);
+      playlists[playlistId]!['cover'] = linkPicture;
+    }
+    final row = <String, Object?>{
+      'id': id,
+      'source': body['source'] ?? 'youtube',
+      'name': '${body['name'] ?? 'Imported playlist'}',
+      'state': 'running',
+      'playlistId': playlistId,
+      'total': made.length,
+      'matched': 0,
+      'unmatched': 0,
+      'pending': made.length,
+      'kept': 0,
+      'truncated': false,
+      'createdAt': clockMs,
+    };
+    importRows.add(row);
+    return _ok({'import': row, 'playlistId': playlistId}, status: 201);
+  }
+
+  int _importPlaylists = 0;
+
+  String _resolveOne(String title, String artist) {
+    final found = refs.values
+        .where((r) =>
+            '${r['title']}' == title &&
+            ((r['artists'] as List).first as String) == artist)
+        .firstOrNull;
+    return found == null ? addRef(title, artist) : found['id']! as String;
   }
 
   FakeResponse _invitesRoot(RecordedRequest r) {

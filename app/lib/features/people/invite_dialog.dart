@@ -100,6 +100,8 @@ class _ServiceInviteState extends ConsumerState<ServiceInviteDialog> {
     final c = context.colors;
     final made = _made;
     final owner = ref.watch(peopleProvider).value?.canManage ?? false;
+    // An Encore server has owners and members: the second choice is another owner, who can invite and manage.
+    final encore = ref.watch(encorePeopleApiProvider).value != null;
     return AlertDialog(
       title: const Text('Invite someone'),
       content: SingleChildScrollView(
@@ -118,21 +120,27 @@ class _ServiceInviteState extends ConsumerState<ServiceInviteDialog> {
               const SizedBox(height: Space.xs),
               SegmentedButton<PersonRole>(
                 showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(
+                segments: [
+                  const ButtonSegment(
                       value: PersonRole.guest, label: Text('A guest')),
-                  ButtonSegment(
-                      value: PersonRole.inviter,
-                      label: Text('Someone who can invite')),
+                  if (encore)
+                    const ButtonSegment(
+                        value: PersonRole.owner, label: Text('Another owner'))
+                  else
+                    const ButtonSegment(
+                        value: PersonRole.inviter,
+                        label: Text('Someone who can invite')),
                 ],
                 selected: {_role},
                 onSelectionChanged: (s) => setState(() => _role = s.single),
               ),
               const SizedBox(height: Space.xs),
               Text(
-                _role == PersonRole.inviter
-                    ? 'They can bring their own friends in as guests.'
-                    : 'They listen. They cannot invite anyone.',
+                _role == PersonRole.owner
+                    ? 'They can invite people and look after this server.'
+                    : _role == PersonRole.inviter
+                        ? 'They can bring their own friends in as guests.'
+                        : 'They listen. They cannot invite anyone.',
                 style: context.text.bodySmall?.copyWith(color: c.onBgMuted),
               ),
             ],

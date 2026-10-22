@@ -278,6 +278,45 @@ class EncoreApi {
   Future<Result<void>> removePerson(String id) =>
       guard(() async => _send('DELETE', '/people/$id'));
 
+  // ------------------------------------------------------------------ imports
+
+  /// Brings a playlist over: [url] is read by the server, or [songs] (a file the phone parsed) are given with a [name]. The playlist exists
+  /// when this answers, every song with its ref; finding and keeping the songs carries on in the background. [id] is made by the phone, so
+  /// a retried request is one import. With [liked] every song is liked and no playlist is made.
+  Future<Result<EncoreImportMade>> createImport({
+    required String id,
+    String? url,
+    String? name,
+    String? source,
+    List<Map<String, Object?>>? songs,
+    bool liked = false,
+  }) =>
+      guard(() async => EncoreImportMade.fromJson(await _send(
+            'POST',
+            '/imports',
+            body: {
+              'id': id,
+              if (url != null) 'url': url,
+              if (name != null) 'name': name,
+              if (source != null) 'source': source,
+              if (songs != null) 'songs': songs,
+              if (liked) 'liked': true,
+            },
+          )));
+
+  Future<Result<List<EncoreImport>>> imports() => guard(() async {
+        final body = await _send('GET', '/imports');
+        return [
+          for (final i in readObjectList(body['imports']))
+            EncoreImport.fromJson(i)
+        ];
+      });
+
+  Future<Result<EncoreImport>> stopImport(String id) =>
+      guard(() async => EncoreImport.fromJson(
+          readMap((await _send('POST', '/imports/$id/stop'))['import']) ??
+              const {}));
+
   // ------------------------------------------------------------------ plays
 
   /// One listening, for history, "recently played", Year in Music and recommendations. [id] is made by the phone: a retried report is one play.

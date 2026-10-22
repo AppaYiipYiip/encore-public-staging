@@ -200,6 +200,23 @@ def test_a_list_of_songs_from_a_file_is_an_import_too(rig: Rig) -> None:
     assert [e["ref"] for e in made["playlist"]["entries"]] == [r["id"] for r in made["refs"]]
 
 
+def test_a_list_can_be_liked_instead_of_made_a_playlist_and_keeps_its_order(rig: Rig) -> None:
+    songs = [{"title": f"Liked {n}", "artists": ["Someone"], "durationMs": 200000 + n} for n in range(3)]
+
+    response = rig.post("marwa", {"name": "Liked from Spotify", "source": "file", "songs": songs, "liked": True})
+
+    assert response.status_code == 201
+    made = response.json()
+    assert made["playlistId"] is None and made["playlist"] is None
+    assert made["import"]["total"] == 3 and made["import"]["playlistId"] is None
+    assert rig.get("marwa", "/playlists")["items"] == []
+    changes = rig.get("marwa", "/library/changes?since=0")
+    by_ref = {like["ref"]: like["at"] for like in changes["likes"]}
+    titles = {r["id"]: r["title"] for r in made["refs"]}
+    newest_first = [titles[ref] for ref, _ in sorted(by_ref.items(), key=lambda kv: -kv[1])]
+    assert newest_first == ["Liked 0", "Liked 1", "Liked 2"], "the first song of the list is the newest like"
+
+
 def test_a_file_import_needs_a_name_and_a_list_needs_a_link_or_songs(rig: Rig) -> None:
     assert rig.post("marwa", {"songs": [{"title": "T", "artists": ["A"]}]}).status_code == 400
     assert rig.post("marwa", {}).status_code == 400

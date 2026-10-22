@@ -96,8 +96,9 @@ class ImportService:
         import_id = body.get("id")
         if import_id is not None and not is_id(import_id, "im"):
             raise ApiError("validation", "An import id looks like im_ followed by 26 characters.")
-        playlist_id = body.get("playlistId") or new_id("pl")
-        if not is_id(playlist_id, "pl"):
+        liked = body.get("liked") is True
+        playlist_id = None if liked else body.get("playlistId") or new_id("pl")
+        if playlist_id is not None and not is_id(playlist_id, "pl"):
             raise ApiError("validation", "A playlist id looks like pl_ followed by 26 characters.")
         if import_id is not None:
             with self._db.read() as conn:
@@ -109,12 +110,17 @@ class ImportService:
         import_id = import_id or new_id("im")
         with self._db.tx() as conn:
             made = [refs.resolve(conn, song) for song in songs]
-            library.create_playlist(conn, person, playlist_id, name, cover)
-            entry_ids: list[str] = []
-            for start in range(0, len(made), library.MAX_ENTRIES_PER_CALL):
-                chunk = made[start : start + library.MAX_ENTRIES_PER_CALL]
-                entry_ids += library.add_entries(conn, person, playlist_id, [{"ref": r["id"]} for r in chunk])
             now = now_ms()
+            if liked:
+                # Every song is liked and no playlist is made; the first of the list is the newest like, so Liked Songs reads the way the list did.
+                for position, ref in enumerate(made):
+                    library.set_item(conn, person, "like", ref["id"], at=now - position * 1000)
+            else:
+                assert playlist_id is not None
+                library.create_playlist(conn, person, playlist_id, name, cover)
+                for start in range(0, len(made), library.MAX_ENTRIES_PER_CALL):
+                    chunk = made[start : start + library.MAX_ENTRIES_PER_CALL]
+                    library.add_entries(conn, person, playlist_id, [{"ref": r["id"]} for r in chunk])
             conn.execute(
                 "INSERT INTO import (id, person, source, url, name, playlist, truncated, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (import_id, person, source, url, name, playlist_id, 1 if truncated else 0, now, now),
@@ -139,8 +145,12 @@ class ImportService:
             want_kept(self._scheduler, conn, person, [r["id"] for r in made])
             self._settle(conn, str(import_id))
             record = self._record(conn, person, str(import_id))
-            playlist = library.playlist_json(
-                conn, conn.execute("SELECT * FROM playlist WHERE id = ?", (playlist_id,)).fetchone(), with_entries=True
+            playlist = (
+                None
+                if playlist_id is None
+                else library.playlist_json(
+                    conn, conn.execute("SELECT * FROM playlist WHERE id = ?", (playlist_id,)).fetchone(), with_entries=True
+                )
             )
             cursor = library.latest_cursor(conn, person)
         self._hub.publish(person, {"type": "library.changed", "cursor": str(cursor)})

@@ -488,3 +488,79 @@ class EncorePerson {
   final int devices;
   final int? lastSeenMs;
 }
+
+/// One import as the server counts it: every number comes from the server and from nowhere else.
+@immutable
+class EncoreImport {
+  const EncoreImport({
+    required this.id,
+    required this.name,
+    required this.source,
+    required this.state,
+    required this.total,
+    required this.matched,
+    required this.unmatched,
+    required this.pending,
+    required this.kept,
+    this.playlistId,
+    this.truncated = false,
+    this.createdAtMs = 0,
+  });
+
+  factory EncoreImport.fromJson(Map<String, dynamic> json) => EncoreImport(
+        id: readString(json['id']) ?? '',
+        name: readString(json['name']) ?? '',
+        source: readString(json['source']) ?? '',
+        state: readString(json['state']) ?? 'running',
+        total: readInt(json['total']) ?? 0,
+        matched: readInt(json['matched']) ?? 0,
+        unmatched: readInt(json['unmatched']) ?? 0,
+        pending: readInt(json['pending']) ?? 0,
+        kept: readInt(json['kept']) ?? 0,
+        playlistId: readString(json['playlistId']),
+        truncated: readBool(json['truncated']),
+        createdAtMs: readInt(json['createdAt']) ?? 0,
+      );
+
+  final String id;
+  final String name;
+
+  /// `youtube`, `spotify` or `file`.
+  final String source;
+
+  /// `running`, `done`, `stopped` or `failed`.
+  final String state;
+  final int total;
+
+  /// Songs found, songs not found, songs not looked at yet.
+  final int matched;
+  final int unmatched;
+  final int pending;
+
+  /// Songs the server has a copy of by now.
+  final int kept;
+
+  /// `null` for a list that was liked instead of made a playlist.
+  final String? playlistId;
+
+  /// The list was longer than what could be read.
+  final bool truncated;
+  final int createdAtMs;
+
+  bool get isRunning => state == 'running';
+}
+
+/// The answer to starting an import: the import, and the playlist it made.
+@immutable
+class EncoreImportMade {
+  const EncoreImportMade({required this.import, this.playlistId});
+
+  factory EncoreImportMade.fromJson(Map<String, dynamic> json) =>
+      EncoreImportMade(
+        import: EncoreImport.fromJson(readMap(json['import']) ?? const {}),
+        playlistId: readString(json['playlistId']),
+      );
+
+  final EncoreImport import;
+  final String? playlistId;
+}
