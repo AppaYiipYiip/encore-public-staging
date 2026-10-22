@@ -11,12 +11,20 @@ back before every run. The server image came from GitHub's container registry (p
 | 1 | From clean, unattended (`--yes`, password from a file) | **370 s** (6 min 10 s) |
 | 2 | The same again from clean | **330 s** (5 min 30 s) |
 | 3 | Installer run again on the installed machine | **4 s**, `.env` byte for byte unchanged, containers kept running |
-| 4 | From clean, **interactive**, every question answered as a person would, the password typed at hidden prompts | see the table below |
+| 4 | From clean, **interactive**, the guide followed as written (`ref=main`, no tag): `gh` installed and signed in, `install.sh` downloaded, every question answered in the order asked, the password typed at hidden prompts | **577 s** (9 min 37 s) for the installer, 10 min with the `gh` steps; exit 0 |
+| 4b | The same machine, `encore uninstall` then the installer again over the kept data | **12 s**; the owner signs in with the same password; `.env` still mode 600 |
 | app | Fresh sign-in on a phone to the new server | 6 s |
 | app | The first song on a brand-new server (cold) | about 8 s from the tap to sound |
 
 The two slow parts are Docker's own installation (about 2 minutes) and the download of the two images (about 1.2 GB on disk, roughly 500 MB
-over the wire). Acceptance in `docs/tasks/P3-05` is "10 minutes at most": met with room to spare on this line.
+over the wire). Acceptance in `docs/tasks/P3-05` is "10 minutes at most": **met, but only just on the interactive run** (9 min 37 s against
+5 min 30 s and 6 min 10 s on the two unattended runs earlier the same day). The extra four minutes were all before the containers started
+(Docker and the image downloads), so it is the line, not the installer; on a slower line the 10 minutes will be missed, and the installer's
+own "about 500 MB" line and the guide's "about 10 minutes" say so. The first interactive attempt did not finish because the test driver
+answered the questions in the wrong order (it waited for the Docker question first); the installer itself was waiting correctly. Fixed in the
+driver, not in the installer.
+On the fresh install the app signed in in about 2 s, the empty Home said what to do next, a song the server did not have (searched as
+"Beach House Space Song") played from the top result.
 
 ## The `encore` command, every verb, from an ordinary user
 
