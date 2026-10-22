@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from encore_server import library, refs
@@ -340,3 +342,34 @@ class TestChangeFeed:
             second = library.changes(conn, me, int(first["cursor"]))
         assert first["more"] is True and len(first["savedAlbums"]) == library.CHANGES_PAGE
         assert second["more"] is False and len(second["savedAlbums"]) == 20
+
+
+class TestLikeTime:
+    def test_a_like_keeps_the_time_the_person_gave_it_when_that_is_in_the_past(self, db: Database) -> None:
+        me = person(db)
+        refs_ = [make_ref(db, n) for n in range(3)]
+        with db.tx() as conn:
+            library.set_item(conn, me, "like", refs_[0], at=1_700_000_000_000)
+            library.set_item(conn, me, "like", refs_[1], at=1_600_000_000_000)
+            library.set_item(conn, me, "like", refs_[2])
+        with db.read() as conn:
+            likes = {like["ref"]: like["at"] for like in library.changes(conn, me, 0)["likes"]}
+        assert likes[refs_[0]] == 1_700_000_000_000 and likes[refs_[1]] == 1_600_000_000_000
+        assert likes[refs_[2]] > 1_700_000_000_000
+
+    @pytest.mark.parametrize("at", [None, "yesterday", -5, 0, True, 10**15])
+    def test_anything_else_is_now(self, db: Database, at: object) -> None:
+        me, ref = person(db), make_ref(db, 1)
+        with db.tx() as conn:
+            library.set_item(conn, me, "like", ref, at=at)
+        with db.read() as conn:
+            stamp = library.changes(conn, me, 0)["likes"][0]["at"]
+        assert 1_700_000_000_000 < stamp < 2_000_000_000_000
+
+    def test_the_http_like_takes_the_time_in_its_body(self, client: Any) -> None:
+        from tests.conftest import creds, resolve, song
+
+        ref = str(resolve(client, "marwa", song())[0]["id"])
+        client.put(f"/encore/api/v1/likes/{ref}", params=creds("marwa"), json={"at": 1_650_000_000_000})
+        likes = client.get("/encore/api/v1/library/changes", params={**creds("marwa"), "since": "0"}).json()["likes"]
+        assert likes[0]["at"] == 1_650_000_000_000

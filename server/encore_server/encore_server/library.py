@@ -68,12 +68,17 @@ def touch_ref_holders(conn: sqlite3.Connection, ref_id: str) -> dict[str, int]:
 # ----------------------------------------------------------------------------------------------- likes and the other sets
 
 
-def set_item(conn: sqlite3.Connection, person: str, kind: str, target: str) -> bool:
-    """Adds to a person's set (like, saved album, followed artist). `True` when it was not there before."""
+def set_item(conn: sqlite3.Connection, person: str, kind: str, target: str, *, at: object = None) -> bool:
+    """Adds to a person's set (like, saved album, followed artist). `True` when it was not there before.
+
+    [at] is when the person did it, when that is earlier than now (a phone bringing over the likes it already had keeps their order, so Liked
+    Songs reads the way it did); anything else is now."""
     if kind == "like" and not refs.ref_exists(conn, target):
         raise ApiError("not_found", "That song is not known to this server.")
+    now = now_ms()
+    when = at if isinstance(at, int) and not isinstance(at, bool) and 0 < at <= now else now
     cursor = conn.execute(
-        "INSERT OR IGNORE INTO library_item (person, kind, target, at) VALUES (?,?,?,?)", (person, kind, target, now_ms())
+        "INSERT OR IGNORE INTO library_item (person, kind, target, at) VALUES (?,?,?,?)", (person, kind, target, when)
     )
     if cursor.rowcount:
         _touch(conn, person, kind, target)

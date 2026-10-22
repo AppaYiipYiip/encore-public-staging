@@ -357,11 +357,24 @@ def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: lis
     _want_kept(svc.scheduler, conn, person, ref_ids)
 
 
-def _item_route(kind: str, request: Request, target: str, p: Principal, *, add: bool) -> JSONResponse:
+async def optional_body(request: Request) -> dict[str, Any]:
+    """The JSON body when there is one (a like needs none); anything else is no body."""
+    try:
+        data = await request.json()
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _item_route(
+    kind: str, request: Request, target: str, p: Principal, *, add: bool, body: dict[str, Any] | None = None
+) -> JSONResponse:
     svc = services(request)
     with svc.db.tx() as conn:
         changed = (
-            library.set_item(conn, p.person_id, kind, target) if add else library.clear_item(conn, p.person_id, kind, target)
+            library.set_item(conn, p.person_id, kind, target, at=(body or {}).get("at"))
+            if add
+            else library.clear_item(conn, p.person_id, kind, target)
         )
         if changed and add and kind == "like":
             want_kept(svc, conn, p.person_id, [target])
@@ -372,8 +385,10 @@ def _item_route(kind: str, request: Request, target: str, p: Principal, *, add: 
 
 
 @router.put("/likes/{ref_id}")
-def like(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
-    return _item_route("like", request, ref_id, p, add=True)
+def like(
+    ref_id: str, request: Request, body: dict[str, Any] = Depends(optional_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    return _item_route("like", request, ref_id, p, add=True, body=body)
 
 
 @router.delete("/likes/{ref_id}")
