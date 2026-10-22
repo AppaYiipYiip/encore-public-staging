@@ -156,3 +156,16 @@ unchanged: all of this comes from the server.
 Two app findings while doing it (not yet in the plan's findings list): after the account's password changed, the app kept showing Home
 and "Synced 3 d ago" with no prompt, and a song row said only "The instant-play service did not accept your music server login"; and
 the only way to fix it was Sign out, which deletes all downloaded music (790 MB here) from the phone.
+
+## 7.2 Reading a playlist and importing a small one (2026-10-22)
+
+| What | Before | Now |
+|---|---|---|
+| Read a 149-song YouTube Music playlist (server) | yt-dlp flat listing, video titles taken apart (several seconds) | `ytmusicapi` 1.5 s on the server, 2.0 s through the public address; real artist/title/album/length/video id for 147 of 149 |
+| Paste link, list on screen (app, emulator) | not measured | 1.1 s (10-song album) |
+| Tap Import, playlist open and playable (app) | the list of what had arrived | 1.3 s, every row "play now" |
+| Save 10 songs to the server | | about 2.5 min (about 9 s a song, two at a time; 0 missing); no title search in the server log |
+
+A 150-song playlist therefore saves in about half an hour in the background at the same pace; that number is the pacing and
+YouTube's mood, not something the person waits for (the playlist is playable at once).
+
