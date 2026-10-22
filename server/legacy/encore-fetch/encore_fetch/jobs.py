@@ -751,6 +751,34 @@ class JobManager:
             return
         raise error
 
+    def stream_candidates(self, request: Request) -> list[tuple[str, str, int | None]]:
+        """The uploads that may be the song, best first (video id, title, length): for playing it by streaming (stream.py). The upload
+        a person was last given, or the one a playlist pointed at, comes first; otherwise a search."""
+        if request.video_id and (request.video_first or not request.artist):
+            return [(request.video_id, "", request.duration_s)]
+        key = song_key(request.artist, request.title, request.duration_s)
+        remembered = self._resolutions.get(key)
+        found: list[tuple[str, str, int | None]] = []
+        if remembered is not None:
+            found.append((remembered["video_id"], remembered.get("title", ""), remembered.get("duration_s")))
+        else:
+            want = Want(request.artist, request.title, request.album, request.duration_s)
+            ranked_search = getattr(self._resolver, "resolve_ranked", None)
+            if ranked_search is not None:
+                found = [(s.candidate.video_id, s.candidate.title, s.candidate.duration_s) for s in ranked_search(want)[:3]]
+            else:
+                one = self._resolver.resolve(want)
+                found = [(one.candidate.video_id, one.candidate.title, one.candidate.duration_s)] if one else []
+            if found:
+                self._resolutions.put(key, *found[0])
+        if not found and request.video_id:
+            found = [(request.video_id, "", request.duration_s)]
+        return found
+
+    def extract_streams(self, video_id: str, info: Path) -> None:
+        """What YouTube says about a video's streams, written to [info] (the same file a download starts from)."""
+        self._downloader.extract(video_id, info)
+
     def _find_upload(self, job: Job, key: str) -> None:
         """Searches for the upload and remembers the answer."""
         r = job.request

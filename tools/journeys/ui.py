@@ -21,7 +21,7 @@ SHOTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shots")
 
 
 def adb(*a, text=True, check=False):
-    return subprocess.run([ADB, *DEV, *a], capture_output=True, text=text, check=check)
+    return subprocess.run([ADB, *DEV, *a], capture_output=True, text=text, encoding="utf-8" if text else None, errors="replace" if text else None, check=check)
 
 
 def dump():

@@ -17,6 +17,7 @@ from .identity import account_identity
 from .navidrome import Auth, Navidrome
 from .owners import OwnerCheck
 from .playlists import read_playlist, ytdlp_reader, ytmusic_reader
+from .stream import StreamProxy
 from .profile import ProfileStore
 from .resolve import YtDlpResolver
 from .server import Api, serve
@@ -89,7 +90,9 @@ def build(config: Config) -> Api:
                           gap_s=0.0 if config.fake else config.import_gap_s,
                           max_per_hour=config.import_max_per_hour, max_song_s=config.max_duration_s,
                           account_ceiling=accounts.capacity)
-    return Api(manager, nd, store,
+    streams = None if config.fake else StreamProxy(
+        candidates=manager.stream_candidates, extract=manager.extract_streams, work_dir=config.work_dir, fault=config.fault)
+    return Api(manager, nd, store, streams=streams,
                playlist_reader=lambda url: read_playlist(url, ytdlp=flat, ytmusic=listing), imports=imports,
                owner_check=OwnerCheck(config.people_url if config.people else None, nd),
                accounts=accounts, visitor_per_hour=config.import_max_per_hour,

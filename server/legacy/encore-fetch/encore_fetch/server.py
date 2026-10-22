@@ -31,6 +31,7 @@ from . import cookies as youtube_login
 from .accounts import PACES, Accounts
 from .navidrome import Auth, Navidrome
 from .playlists import Playlist, PlaylistError, Track
+from .stream import StreamError, StreamProxy, Upstream
 from .profile import Conflict, ProfileError, ProfileStore
 
 _USER = re.compile(r"^[A-Za-z0-9._@+-]{1,64}$")
@@ -49,6 +50,13 @@ class FileBody:
 
     path: Path
     mime: str
+
+
+@dataclass(frozen=True)
+class ProxyBody:
+    """A song that is passed on from YouTube as it arrives (stream.py): `open` takes the player's `Range` header."""
+
+    open: Callable[[str | None], Upstream]
 
 
 @dataclass(frozen=True)
@@ -211,8 +219,10 @@ class Api:
                  owner_check: Callable[[Auth], bool] | None = None,
                  accounts: Accounts | None = None,
                  account_tester: Callable[[Path], dict] | None = None,
-                 visitor_per_hour: int = 200) -> None:
+                 visitor_per_hour: int = 200,
+                 streams: StreamProxy | None = None) -> None:
         self._manager = manager
+        self._streams = streams
         self._nd = navidrome
         self._profile = profile
         self._read_playlist = playlist_reader
@@ -262,6 +272,37 @@ class Api:
             "count": len(playlist.tracks), "truncated": playlist.truncated,
             "tracks": [_track_json(t) for t in playlist.tracks],
         }
+
+    def _stream(self, method: str, query: Mapping[str, str], headers: Mapping[str, str]) -> tuple[int, dict | ProxyBody]:
+        """`GET /api/stream?videoId=...` or `?artist=&title=&album=&durationSec=`: the song's audio, passed on as it arrives."""
+        if method not in ("GET", "HEAD"):
+            return 405, {"error": "method not allowed"}
+        if self._streams is None:
+            return 501, {"error": "unsupported", "message": "This server cannot stream songs."}
+        auth = auth_from(query, headers)
+        if auth is None or not self._nd.verify(auth):
+            return 401, {"error": "sign in with your music login"}
+        try:
+            data: dict[str, object] = {"artist": query.get("artist", ""), "title": query.get("title", "")}
+            for key in ("album", "videoId"):
+                if key in query:
+                    data[key] = query[key]
+            if "durationSec" in query:
+                data["durationSec"] = int(query["durationSec"])
+            data["official"] = query.get("official") in ("1", "true")
+            video = _video_id(data)
+            # A song of any length streams (a recitation of two hours); only keeping a song has a limit.
+            duration = _int(data, "durationSec", 5, 6 * 3600)
+            if video is None and not (data["artist"] and data["title"]):
+                raise BadRequest("a song needs a videoId, or an artist and a title")
+            request = Request(
+                artist=_text(data, "artist", required=False) or "", title=_text(data, "title", required=False) or "",
+                album=_text(data, "album", required=False), duration_s=duration, video_id=video,
+                video_first=data["official"] is True and video is not None)
+        except (ValueError, BadRequest) as error:
+            return 400, {"error": str(error) or "bad request"}
+        streams = self._streams
+        return 200, ProxyBody(lambda range_header: streams.open(request, range_header))
 
     def _admin_route(self, method: str, path: str, query: Mapping[str, str], headers: Mapping[str, str],
                      body: bytes) -> tuple[int, dict]:
@@ -475,7 +516,7 @@ class Api:
         raw_path: str,
         headers: Mapping[str, str],
         body: bytes = b"",
-    ) -> tuple[int, dict | FileBody | LiveBody]:
+    ) -> tuple[int, dict | FileBody | LiveBody | ProxyBody]:
         url = urllib.parse.urlparse(raw_path)
         query = {k: v[0] for k, v in urllib.parse.parse_qs(url.query).items()}
         path = url.path.rstrip("/") or "/"
@@ -487,6 +528,7 @@ class Api:
                 "service": "encore-fetch", "version": 1,
                 "build": __version__,
                 "features": ["play-now", "prepare"]
+                + (["stream"] if self._streams is not None else [])
                 + (["playlist"] if self._read_playlist is not None else [])
                 + (["import"] if self._imports is not None else [])
                 + (["youtube-login"] if self._owner_check is not None and self._accounts is not None else [])
@@ -508,6 +550,9 @@ class Api:
 
         if path.startswith("/api/admin/"):
             return self._admin_route(method, path, query, headers, body)
+
+        if path == "/api/stream":
+            return self._stream(method, query, headers)
 
         if path == "/api/prepare":
             if method != "POST":
@@ -619,6 +664,30 @@ def make_handler(api: Api, max_body: int = 8192):
                 # phone left the network): not an error.
                 self.close_connection = True
 
+        def _send_proxy(self, body: ProxyBody) -> None:
+            try:
+                upstream = body.open(self.headers.get("Range"))
+            except StreamError as error:
+                self._send(error.status, {"error": error.code, "message": error.message})
+                return
+            self.send_response(upstream.status)
+            for name, value in upstream.headers.items():
+                self.send_header(name, value)
+            self.send_header("Cache-Control", "no-store")
+            if "Content-Length" not in upstream.headers:
+                self.send_header("Connection", "close")
+                self.close_connection = True
+            self.end_headers()
+            try:
+                if self.command != "HEAD":
+                    for piece in upstream.body:
+                        self.wfile.write(piece)
+            except (ConnectionResetError, BrokenPipeError):
+                # A player stops reading when it has what it wants (a seek, a skip): not an error.
+                self.close_connection = True
+            finally:
+                upstream.close()
+
         def _send_live(self, body: LiveBody) -> None:
             path, _ = body.job.stream_snapshot()
             suffix = path.suffix.lower() if path else ".webm"
@@ -655,7 +724,9 @@ def make_handler(api: Api, max_body: int = 8192):
             body = self.rfile.read(length) if length else b""
             status, payload = api.handle(
                 method, self.path, dict(self.headers.items()), body)
-            if isinstance(payload, LiveBody):
+            if isinstance(payload, ProxyBody):
+                self._send_proxy(payload)
+            elif isinstance(payload, LiveBody):
                 self._send_live(payload)
             elif isinstance(payload, FileBody):
                 self._send_file(payload)
