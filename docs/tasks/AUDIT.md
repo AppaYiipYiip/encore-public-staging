@@ -16,7 +16,7 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 | F3 | No download button on an imported playlist page | **Fixed on an Encore server:** an import (paste or share) opens the ordinary playlist page, with the ordinary play and download buttons; the download of the 10-song import finished in 4 s. A download that cannot move now says "Waiting for Wi-Fi" (it said "Downloading 0 of 10" for ever when Wi-Fi only was on and the phone on mobile data; found by walking), and turning Wi-Fi only off starts it. |
 | F4 | "Downloaded" shows one heap of songs, not playlists; same offline | **Fixed** (`5399414`): Library > Downloaded lists the playlists/albums/Liked Songs that were downloaded with their progress; offline the Library opens there. Walked on the emulator (build 101). |
 | F5 | "Only my music" should be the default; "Show everything" makes no sense | **Fixed** (`5399414`): scope is mine / everything, default mine, wording "Show the whole server". |
-| F6 | Offline shows every download, mine or not; shared tablets and TVs need switching users on a trusted device | Open. Downloads are per server profile, so separate profiles solve it; the **profiles** feature (switch user without signing out, trusted device, picker) is not built — see P4-16 below. |
+| F6 | Offline shows every download, mine or not; shared tablets and TVs need switching users on a trusted device | **Built, first slice (build 108):** Who's listening? lists the people who signed in on the device, picking one needs no password and nothing of the others is touched, Add someone (sign in or invitation), Remove from this device, sign-out with others present returns to the picker (schema v7 stamps the profile used last). Walked on the emulator: a second person signed in on the same device, each has their own Home/library; switching is instant. Downloads are per profile (their folder is the profile's id). Still open from P4-16: the optional "ask who is listening when the app opens" switch for tablets/TVs, a PIN per profile, Guest, D-pad focus on a TV, two-profile offline walk with real downloads, stopping or handing over the player when switching. |
 | F7 | Test with two phones: an import on one must appear on the other (same account) | **Partly proved:** a like and a new playlist made through the API as a second phone appeared on the open app within seconds (the open app asks for changes every few seconds). Open: the live channel in the app (events instead of asking), and the same walk with two real emulators signed in as one account (journey 4). |
 | F8 | Test like a new user, end to end, everything | Open: the journeys at the end of this page, to be run when P3/P4 are in; each earlier slice is walked on the emulator as it lands. |
 
@@ -77,7 +77,7 @@ nets, the Tinkerer's door.
 
 Not started: recommendations, Jam on the live channel, friend activity, the quality tier on refs, Year in Music from the server, walking the whole
 app, Encore Connect (devices, handover, remote volume), the home-server relay, federation, Jam across servers, tablets and large screens,
-Spotify-class extras, problem reports, "wrong song?", browse and history, **profiles for shared devices (new, F6)**.
+Spotify-class extras, problem reports, "wrong song?", browse and history. **Profiles for shared devices (F6): first slice built, see the table.**
 
 ## P5 — public release
 
