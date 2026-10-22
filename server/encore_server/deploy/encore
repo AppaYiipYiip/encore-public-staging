@@ -253,8 +253,11 @@ After=docker.service
 
 [Service]
 Type=oneshot
+Environment=ENCORE_DIR=@DIR@
 ExecStart=/usr/local/bin/encore backup --quiet
 UNIT
+            # An install in another folder than /opt/encore must be backed up from there.
+            sed -i "s|@DIR@|$DIR|" /etc/systemd/system/encore-backup.service
             cat >/etc/systemd/system/encore-backup.timer <<'UNIT'
 [Unit]
 Description=Encore: nightly backup
