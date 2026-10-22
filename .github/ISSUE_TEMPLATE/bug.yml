@@ -27,6 +27,15 @@ body:
     attributes:
       label: Device and setup
       description: Phone model, Android version, navigation (3-button or gesture), font scale, network, server version, app version.
+  - type: textarea
+    id: details
+    attributes:
+      label: Technical details from the app
+      description: >-
+        In Encore: Settings > Help & about > Report a problem or idea. Write your message, tap Send, choose any app that lets you copy
+        text, and paste it here. It holds the app version, your phone and the last lines of what the app did; no passwords, and server
+        addresses are replaced.
+      render: text
   - type: dropdown
     id: freq
     attributes:

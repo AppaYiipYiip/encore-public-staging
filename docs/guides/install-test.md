@@ -71,9 +71,15 @@ proven end to end yet**; tell me exactly what it printed.
 encore status                  is it running, at which address
 encore logs                    what the server says (Ctrl-C to stop)
 encore update                  the newest version
+encore backup                  a copy of your accounts, playlists and likes, now (also made every night)
+encore restore FILE            put such a copy back (what is there now is set aside, not deleted)
 encore uninstall               remove Encore; your music and Encore's data stay
 encore uninstall --everything  remove Encore's data too (never your music)
 ```
+
+Backups are in `/opt/encore/backups` (the newest 7, readable by the administrator only; each holds a login that Encore needs, so keep copies
+private). Your **music** is not in them: it is your own folder, which Encore only reads. A backup is also what moves Encore to another
+computer: install there, then `encore restore` the file.
 
 Running the installer again is safe: what is there is kept and brought up to date.
 
@@ -84,7 +90,7 @@ file and what you saw. To start over completely: `encore uninstall --everything`
 
 ## What is not in this test
 
-The browser setup wizard (questions are asked in the terminal instead), the admin pages, backups and restore, update with rollback, ARM
+The browser setup wizard (questions are asked in the terminal instead), the admin pages, update with rollback, ARM
 computers (Raspberry Pi), `encore.local` (use the numbers address), and everything in phases P3 to P5 of `docs/tasks`. The decisions
 behind what is here are `docs/11-decision-log.md`, ADR-R19 to R32.
 

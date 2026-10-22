@@ -307,3 +307,20 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
 * **Consequences.** Reports arrive wherever the friend sends them, not in one place; a "my reports" list on the server stays a later idea
   (P4). Addresses are removed by pattern, so an address written in an odd form could slip through: the person still reads the text in the chat or e-mail before
   sending it.
+
+### ADR-R36 — How somebody the owner does not know reports a problem
+* **Context.** The first friend messages the owner directly (R33, R35). Once the repository is public, strangers will install Encore, run their own
+  servers and meet bugs. The owner asked how a stranger could tell him, and whether it should be e-mail.
+* **Options.** A public e-mail address (spam, and the owner's address is published for ever); a server endpoint in Encore (the owner would run an
+  inbox for other people's servers, and a stranger's app has no server of his to send to); a chat or forum (one more place to watch); **GitHub
+  Issues** (the stranger needs a free GitHub account; the owner is e-mailed about every new issue by GitHub's default notifications; issues have
+  forms, labels and a history; the project already has bug and feature forms and `SECURITY.md`).
+* **Decision.** Two kinds of report, two places. A person on **somebody's server** reports to that server's owner through the app's share
+  sheet (R35): it is that owner's server and data, and only he can look at it. A bug in **Encore itself** is a GitHub issue; vulnerabilities go
+  through GitHub's private reporting (`SECURITY.md`). No published e-mail address. The issue form asks for the technical details the app's report
+  screen produces, so the two fit together; the report screen gets a line pointing at the issue page when the repository is public (P5-06).
+* **Why.** It costs nothing, notifies the owner without any new service, keeps reports structured and public (one report helps every later
+  reader), and keeps the owner's inbox private. Strangers without a GitHub account can still reach their own server's owner; they only cannot
+  reach the project, which is acceptable for a free project.
+* **Consequences.** Nothing to build before the repository goes public. At P5-06: Issues on, notification e-mail checked, private vulnerability
+  reporting on. Reports that contain a stranger's server details are theirs to redact; the app already removes addresses.

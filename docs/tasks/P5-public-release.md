@@ -37,6 +37,10 @@
 
 ## P5-06 — Go public — Size S
 * **Do.** Repo public (GPL-3.0), images public, first release `v0.9.0` (beta) then `v1.0.0` after P5-03; announce where the owner wants.
+* **Reports from people the owner does not know (ADR-R36).** Issues switched on; the owner's GitHub notification e-mail for new issues checked (it
+  is on by default for the owner of a repository); "private vulnerability reporting" switched on (`SECURITY.md` already asks for it); the issue form
+  asks for the app's technical details; the in-app report screen gets one more line for people whose server's owner is not somebody they can
+  message ("A bug in Encore itself: open an issue at github.com/<owner>/encore/issues", with the message already copied).
 * **Acceptance.** `gitleaks` clean on the full history; no homelab or personal data anywhere (`git grep -iE "192\.168\.|tail[0-9a-f]{6}|appayiip"` reviewed).
 
 ## P5-07 — Android developer verification and how people install the APK — Size M
