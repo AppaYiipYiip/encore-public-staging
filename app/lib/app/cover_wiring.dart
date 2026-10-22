@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter_cache_manager/flutter_cache_manager.dart'
+    show HttpExceptionWithStatus;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/cover_sizes.dart';
 import '../core/logger.dart';
 import '../data/covers/cover_prefetcher.dart';
-import '../features/common/cover_art.dart' show coverCacheManager;
+import '../features/common/cover_art.dart'
+    show coverCacheManager, retireOldCoverCache;
 import 'providers.dart';
 
 /// The covers of the signed-in server's library, fetched into the disk cache in the background (null before sign-in).
@@ -18,10 +21,15 @@ final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {
     isCached: (key) async =>
         await coverCacheManager.getFileFromCache(key) != null,
     fetch: (id, size) async {
-      await coverCacheManager.downloadFile(
-        session.coverArtUrl(id, size: size).toString(),
-        key: CoverSize.key(serverId, id, size),
-      );
+      try {
+        await coverCacheManager.downloadFile(
+          session.coverArtUrl(id, size: size).toString(),
+          key: CoverSize.key(serverId, id, size),
+        );
+      } on HttpExceptionWithStatus catch (error) {
+        // The server has no picture for this one: nothing to keep, and not a sign that the network is gone.
+        if (error.statusCode != 404) rethrow;
+      }
     },
   );
 });
@@ -33,6 +41,7 @@ const _mobileLimit = 120;
 /// Keeps the covers of what a person is likely to see in the disk cache, so that offline shows covers and not letters (E3):
 /// when the app starts, after every library sync and when the network comes back. Watched once by the app widget.
 final coverPrefetchProvider = Provider<void>((ref) {
+  unawaited(retireOldCoverCache());
   final prefetcher = ref.watch(coverPrefetcherProvider);
   final repo = ref.watch(libraryRepositoryProvider);
   if (prefetcher == null || repo == null) return;

@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../app/providers.dart';
+import '../../core/logger.dart';
+import '../../data/covers/cover_file_service.dart';
 import '../../design/tokens.dart';
 import '../../domain/mosaic_layout.dart';
 import '../requests/request_providers.dart';
@@ -12,13 +17,32 @@ import '../requests/request_providers.dart';
 /// makes covers vanish offline in a 500-album library, so this one is sized
 /// for a real library and keeps files for a year (cover ids embed a content
 /// hash, so changed art gets a new key).
+///
+/// Its name says which kind of cover it holds: `encoreCovers` held the music server's blank record for every album without art (see
+/// [CoverFileService]); that cache is thrown away ([retireOldCoverCache]) and this one never stores it.
 final CacheManager coverCacheManager = CacheManager(
   Config(
-    'encoreCovers',
+    'encoreCovers2',
     stalePeriod: const Duration(days: 365),
     maxNrOfCacheObjects: 8000,
+    fileService: CoverFileService(),
   ),
 );
+
+bool _oldCoverCacheRetired = false;
+
+/// Deletes the cover cache this app used before pictures with no art were refused; once per run (it costs nothing when it is gone).
+Future<void> retireOldCoverCache() async {
+  if (_oldCoverCacheRetired) return;
+  _oldCoverCacheRetired = true;
+  try {
+    final base = await getTemporaryDirectory();
+    final old = Directory('${base.path}/encoreCovers');
+    if (old.existsSync()) await old.delete(recursive: true);
+  } on Object catch (error) {
+    Log.debug('covers', 'the old cover cache was not deleted: $error');
+  }
+}
 
 /// Artwork that always shows *something* sensible (R-09):
 /// the item's own picture -> a golden-ratio mosaic of related covers -> a
