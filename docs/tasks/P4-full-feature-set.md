@@ -124,6 +124,12 @@ and activity).
   20 log lines without personal data), an admin "Problems" page with export; detect aggressive battery savers by manufacturer and show
   a one-time guide.
 * **Acceptance.** A forced crash on the emulator appears in the admin within 1 minute; nothing is sent anywhere else (network capture).
+* **Idea to engineer first (owner, 2026-10-22): a message to the server owner, for any user of any server.** A person types a note in the app
+  (a problem, a request "please add this album", a question); it goes to the server he signed in to and the owner sees it in an inbox in Your
+  server, with a live-channel nudge; the technical details are an opt-in tick; the owner can answer in the app. It replaces "message him on
+  WhatsApp" only where the owner is not somebody you can message, so it is worth building when a server has more than a few people. Open: spam
+  and abuse limits per account, what the owner may read (never listening, R33), whether answers are shared. A share-sheet-only version was
+  built and put on hold (`parked/in-app-report`, ADR-R35): it did not need a server, but it did not help anybody who can already message the owner.
 
 ## P4-14 — "Wrong song?" and the Host's metadata fixes (server + app + admin) — Size M
 * **Why.** `../19` §5, H23: wrong versions will happen and today nothing can fix them.

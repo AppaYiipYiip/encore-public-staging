@@ -114,14 +114,10 @@ installer and a browser wizard that a person who never used Docker can follow. R
 * **Why.** Owner, 2026-10-22: a friend will use Encore daily from outside the owner's home and report bugs and dislikes (`../11` ADR-R33).
 * **Do.** (1) Prove `encore funnel on` end to end on the real deployment and that an invitation made there opens for somebody who is not on the
   home network. (2) `encore backup` and a nightly backup of the Encore database (SQLite online backup, seven kept, outside the container's
-  own volume), `encore restore`, and a restore tried on a clean machine. (3) In the app, Settings > "Report a problem or tell us what you
-  think": a text box, then the phone's share sheet with the message and the diagnostics report (no passwords, the server address left out)
-  addressed to nobody in particular, so it can go by any app. (4) A one-page friend's guide (`docs/guides/friend.md`): get the app, tap the
+  own volume), `encore restore`, and a restore tried on a clean machine. (3) *On hold (R35):* an in-app report; the friend messages the owner and can paste Diagnostics > Copy report. (4) A one-page friend's guide (`docs/guides/friend.md`): get the app, tap the
   link, sign in, what to expect, how to report. (5) Measure what two daily users do to the single home address YouTube sees: count the
   look-ups per day per person; the pacing and the rest already protect it; write the next step (a cookie or another way out, `../04` §5).
-* **Done so far.** Item (3): Settings > Help & about > "Report a problem or idea" (`report_problem_screen.dart`): the person's own words, a switch for the
-  technical details (on by default, explained in plain words), server addresses replaced by `<address>`, the share sheet, and the message copied if the
-  phone has none. Item (3) is not yet walked on a phone.
+* **Done so far.** Item (2): `encore backup`, `encore restore`, `encore autobackup` and the Python copy tool are written with tests; not yet run on a machine. Item (3): built, then put on hold (branch `parked/in-app-report`). Item (4): `docs/guides/friend.md` is a draft.
 * **Don't.** Show the owner what the friend listens to. Update the server while he is likely to be listening without saying so.
 * **Acceptance.** The friend installs the app, joins by the link from outside the owner's home, listens for a week; a backup of his data is
   restored on a second machine and his playlists are all there; his first problem report reaches the owner with the report attached.

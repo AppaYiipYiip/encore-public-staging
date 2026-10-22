@@ -32,9 +32,9 @@ body:
     attributes:
       label: Technical details from the app
       description: >-
-        In Encore: Settings > Help & about > Report a problem or idea. Write your message, tap Send, choose any app that lets you copy
-        text, and paste it here. It holds the app version, your phone and the last lines of what the app did; no passwords, and server
-        addresses are replaced.
+        In Encore: Settings > About & credits > Diagnostics > the copy icon at the top right, then paste it here. It holds the app version,
+        your phone and the last lines of what the app did. Look it over first: it names your server, and lines of the log can hold an
+        address; remove what you do not want to share.
       render: text
   - type: dropdown
     id: freq

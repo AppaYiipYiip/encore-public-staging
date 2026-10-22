@@ -35,9 +35,10 @@ If the link opens a web page and not the app, copy it, open Encore, and paste it
 
 ## When something is wrong, or you do not like something
 
-Open Encore > *Settings* > *Help & about* > *Report a problem or idea*. Write what happened in your own words, leave *Include technical
-details* on (it holds your phone model, the app version and the last lines of what the app did; no password, no server address), and
-*Send*: your phone's share sheet opens, so pick the chat or e-mail you use with the owner.
+Message the owner, in your own words: what you did, what you expected, what happened. A screenshot helps. When he asks for details, open
+Encore > *Settings* > *About & credits* > *Diagnostics* and tap the copy icon at the top right, then paste it into the chat. It holds your
+phone model, the app version and the last lines of what the app did; it never holds a password, but it does name the server, so read it
+over before you send it.
 
 **Small things count.** "This button is hard to hit", "I expected this to be here", "it felt slow at about 6 pm" are exactly what makes
 the app better. You do not need to say why.

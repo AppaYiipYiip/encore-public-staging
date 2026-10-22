@@ -86,8 +86,8 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 
 **Built and proved (2026-10-22): the installer, first slice (P3-05, PR #1).** One command on a clean Ubuntu 26.04 VM: 5.5 to 6 minutes, a re-run 4 s, every
 `encore` verb used, the music folder byte for byte untouched; a second person joined by link; `docs/evidence/c01-installer-clean-vm.md`. The image is private
-and published by CI. **The first outside user (P3-12):** the friend's server is the owner's own, decided in ADR-R34; the in-app "Report a problem or idea"
-(Settings > Help & about) is built and tested (message, technical details with addresses removed, the share sheet; 9 tests); not yet walked on a phone.
+and published by CI. **The first outside user (P3-12):** the friend's server is the owner's own, decided in ADR-R34; an in-app "Report a problem" was built, walked on an
+emulator and then **put on hold** by the owner (the friend messages him; branch `parked/in-app-report`, ADR-R35, idea kept in P4-13).
 
 Also from P2: the gateway, the accounts module (invites, join, reset, lock, rate limits), device tokens, the music-server administrator client.
 **Open:** `encore funnel on` proven with a real Tailscale sign-in, `encore backup`/`restore` (P3-12 item 2), the friend's guide (P3-12 item 4), the browser wizard

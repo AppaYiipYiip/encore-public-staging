@@ -25,7 +25,6 @@ import '../features/settings/equalizer_screen.dart';
 import '../features/settings/household_settings_screen.dart';
 import '../features/settings/notifications_screen.dart';
 import '../features/settings/playback_settings_screen.dart';
-import '../features/settings/report_problem_screen.dart';
 import '../features/settings/requests_screen.dart';
 import '../features/settings/settings_screens.dart';
 import '../features/settings/your_server_screen.dart';
@@ -252,10 +251,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'about',
             builder: (_, __) => const AboutSettingsScreen(),
-          ),
-          GoRoute(
-            path: 'report',
-            builder: (_, __) => const ReportProblemScreen(),
           ),
         ],
       ),

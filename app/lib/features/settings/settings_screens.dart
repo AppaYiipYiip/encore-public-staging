@@ -105,10 +105,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         '/settings/appearance', 'theme dark light amoled black colour color'),
     _Group(
         Icons.info_outline_rounded,
-        'Help & about',
-        'Report a problem, version, credits',
+        'About & credits',
+        'Version, credits, diagnostics',
         '/settings/about',
-        'help report problem bug feedback idea tell us about credits licence license open source version diagnostics log'),
+        'about credits licence license open source version diagnostics log'),
   ];
 
   @override
@@ -649,15 +649,8 @@ class AboutSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Page(
-      title: 'Help & about',
+      title: 'About & credits',
       children: [
-        ListTile(
-          leading: const Icon(Icons.feedback_outlined),
-          title: const Text('Report a problem or idea'),
-          subtitle: const Text('Tell us what went wrong or what you did not '
-              'like.'),
-          onTap: () => context.push('/settings/report'),
-        ),
         ListTile(
           title: Text(AppBranding.name),
           subtitle: Text('Version ${AppBranding.version}'),

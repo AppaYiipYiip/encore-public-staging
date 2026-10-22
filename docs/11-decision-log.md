@@ -264,7 +264,7 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
 * **Options.** Carry on in the planned order (the full feature set first); give him a copy of the test install with no promises; **move a
   small set of "a second person depends on this" items ahead of the rest** (chosen).
 * **Decision.** Ahead of other P3/P4 work, as task P3-12: the public address proven end to end; a nightly backup of the Encore data with a
-  restore that has been tried; an in-app "Report a problem" that uses the phone's share sheet; a friend's guide; a look at what two daily
+  restore that has been tried; (an in-app "Report a problem" was planned and then put on hold, R35); a friend's guide; a look at what two daily
   users do to the one home address that YouTube sees. The wizard, admin pages and the rest of P3 stay later.
 * **Why.** His playlists and likes live only in the server's database (today only the music server keeps its own nightly copy); he cannot reach a
   home-network address; a person who is not technical will not find a developer screen; and one refused address (YouTube) stops both people.
@@ -281,7 +281,7 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   installed it himself from the guide and uses it; (2) `encore funnel on` works there and an invitation opens on a phone on mobile data (the
   Tailscale machine name is chosen now and kept when the owner later moves to the real server, so the friend's address never changes);
   (3) his data can come back: a nightly Proxmox backup of the VM now, then `encore backup`/`restore` with a restore tried on a throwaway VM
-  (the later move to the real server is the same restore); (4) "Report a problem" in the app and the friend's guide; (5) five days of the
+  (the later move to the real server is the same restore); (4) the friend's guide (the in-app "Report a problem" is on hold, R35: he messages the owner); (5) five days of the
   owner's own use. Not a fixed date.
 * **Why.** A server a person depends on must not be the one that is rolled back, redeployed and tested; a VM of its own is a smaller change
   than moving the friend later, and the move to the real server becomes a rehearsed restore instead of a surprise. Gates are things that can
@@ -291,7 +291,12 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   the same YouTube budget: YouTube is switched off on the dev VM except during a test run.
 
 
-### ADR-R35 — How a person tells us what went wrong (the in-app report)
+### ADR-R35 — How a person tells us what went wrong (the in-app report) — ON HOLD
+* **Status.** **On hold since 2026-10-22, not shipped.** Owner: "if my friend can just message me about it, what is the point?" The first friend has
+  the owner's number, so a screen that opens a share sheet adds nothing for him; it would only earn its place if it worked for every user of
+  every server, which is a different feature (a message to the server owner, P4-13). The finished code and its 9 tests are kept on the branch
+  `parked/in-app-report`; the app's shipping code does not contain it. The friend sends the owner the text of Settings > About & credits >
+  Diagnostics > Copy report when a problem needs details (that screen already exists).
 * **Context.** The first outside user will report bugs and dislikes (ADR-R33). He has no way to reach the owner from inside the app, and the
   owner promised not to see what anybody listens to (R33).
 * **Options.** A "send" button that posts to a server endpoint (needs an address, an inbox and a store of reports on the owner's server, and the
@@ -315,10 +320,10 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   inbox for other people's servers, and a stranger's app has no server of his to send to); a chat or forum (one more place to watch); **GitHub
   Issues** (the stranger needs a free GitHub account; the owner is e-mailed about every new issue by GitHub's default notifications; issues have
   forms, labels and a history; the project already has bug and feature forms and `SECURITY.md`).
-* **Decision.** Two kinds of report, two places. A person on **somebody's server** reports to that server's owner through the app's share
-  sheet (R35): it is that owner's server and data, and only he can look at it. A bug in **Encore itself** is a GitHub issue; vulnerabilities go
-  through GitHub's private reporting (`SECURITY.md`). No published e-mail address. The issue form asks for the technical details the app's report
-  screen produces, so the two fit together; the report screen gets a line pointing at the issue page when the repository is public (P5-06).
+* **Decision.** Two kinds of report, two places. A person on **somebody's server** reports to that server's owner (today by messaging him; an in-app
+  message to the owner is the idea in P4-13): it is that owner's server and data, and only he can look at it. A bug in **Encore itself** is a GitHub issue; vulnerabilities go
+  through GitHub's private reporting (`SECURITY.md`). No published e-mail address. The issue form asks for the technical details that Diagnostics > Copy
+  report produces; a line in the app pointing at the issue page waits for the in-app report (R35, on hold) and for the repository to be public (P5-06).
 * **Why.** It costs nothing, notifies the owner without any new service, keeps reports structured and public (one report helps every later
   reader), and keeps the owner's inbox private. Strangers without a GitHub account can still reach their own server's owner; they only cannot
   reach the project, which is acceptable for a free project.
