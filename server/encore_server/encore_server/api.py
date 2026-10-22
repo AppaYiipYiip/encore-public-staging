@@ -54,6 +54,7 @@ from .navidrome_admin import NavidromeAdmin
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
+from .sources.youtube.pace import Pacer
 from .sources.youtube.rest import DbRestStore, Rest
 from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
@@ -883,6 +884,7 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
         fault=settings.fault,
         remember_video=remember,
         rest=Rest(store=DbRestStore(database)),
+        pace=Pacer(settings.youtube_pace_s) if settings.youtube_pace_s > 0 else None,
     )
 
 

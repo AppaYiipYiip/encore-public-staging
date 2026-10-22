@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .lean import InProcessExtractor, LeanResolver, YtmusicApiSearcher
+from .pace import Pacer
 from .rest import Guarded, Rest
 from .scoring import Want
 from .stream import StreamProxy, Upstream
@@ -44,7 +45,9 @@ class YoutubeSource:
         fault: str = "",
         remember_video: Any | None = None,
         rest: Rest | None = None,
+        pace: Pacer | None = None,
     ) -> None:
+        self._pace = pace
         self._remember = remember_video
         self.rest = rest if rest is not None else Rest()
         self._resolver = resolver or LeanResolver(YtmusicApiSearcher(), max_duration_s=6 * 3600)
@@ -81,12 +84,16 @@ class YoutubeSource:
 
     def find(self, wanted: Wanted) -> str | None:
         """The upload of the song (searching YouTube Music if the ref does not know it yet, and remembering what is found), or `None`.
-        Nothing is extracted or downloaded: this is what imports use to say "found" or "not found"."""
+        Nothing is extracted or downloaded: this is what imports use to say "found" or "not found". Background work: it waits its turn."""
+        if self._pace is not None and not wanted.video_id:
+            self._pace.wait_turn()
         found = self._candidates(wanted)
         return found[0][0] if found else None
 
     def download(self, wanted: Wanted, stem: Path, *, max_bytes: int) -> Path:
-        """The whole audio of the song, for keeping: `<stem>.<ext>`."""
+        """The whole audio of the song, for keeping: `<stem>.<ext>`. Background work: it waits its turn."""
+        if self._pace is not None:
+            self._pace.wait_turn()
         return self._proxy.download(wanted, stem, max_bytes=max_bytes)
 
 

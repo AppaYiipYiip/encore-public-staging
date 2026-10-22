@@ -17,6 +17,8 @@ class Settings:
     server_name: str = "My music server"
     log_level: str = "INFO"
     youtube: bool = True
+    #: Mean seconds between the background look-ups and downloads at YouTube (0: no pacing, for tests).
+    youtube_pace_s: float = 12.0
     fault: str = ""
     #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
     keep: bool = True
@@ -48,6 +50,7 @@ class Settings:
             server_name=e.get("ENCORE_SERVER_NAME", "My music server"),
             log_level=e.get("ENCORE_LOG_LEVEL", "INFO").upper(),
             youtube=e.get("ENCORE_YOUTUBE", "1").strip().lower() not in ("0", "false", "no"),
+            youtube_pace_s=float(e.get("ENCORE_YOUTUBE_PACE_S", "12")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
