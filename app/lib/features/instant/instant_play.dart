@@ -173,7 +173,7 @@ class InstantPlayService {
     }
     final first = started.valueOrNull;
     if (first == null) {
-      yield InstantStatus.failed(_failureText(started.failureOrNull!));
+      yield _failed(started.failureOrNull!);
       return;
     }
 
@@ -204,7 +204,7 @@ class InstantPlayService {
       if (next == null) {
         // A blip on a phone's network is not a failed song.
         if (++errors >= 4) {
-          yield InstantStatus.failed(_failureText(polled.failureOrNull!));
+          yield _failed(polled.failureOrNull!);
           return;
         }
         continue;
@@ -271,11 +271,15 @@ class InstantPlayService {
         failure.code != 'daily_limit';
   }
 
+  /// A refused login is its own code (`login`): the app asks the person to sign in again instead of showing a sentence on a row.
+  static InstantStatus _failed(AppFailure failure) =>
+      InstantStatus.failed(_failureText(failure),
+          error: failure is AuthFailure ? 'login' : null);
+
   static String _failureText(AppFailure failure) => switch (failure) {
         NetworkFailure() =>
           'Cannot reach your server\'s instant-play service right now.',
-        AuthFailure() => 'The instant-play service did not accept your '
-            'music server login.',
+        AuthFailure() => 'Sign in again to play songs that are not downloaded.',
         _ => failure.message,
       };
 }

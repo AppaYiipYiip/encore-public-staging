@@ -401,6 +401,18 @@ void main() {
     });
   });
 
+  test('a refused login is its own code and says what to do (P2-18)', () async {
+    final events = await InstantPlayService(
+      backend: _Broken(failure: const AuthFailure('refused')),
+      matcher: null,
+      loadSong: (id) async => null,
+    ).fetch(_t('1', 'X')).toList();
+
+    expect(events.last.isFailed, isTrue);
+    expect(events.last.error, 'login');
+    expect(events.last.message, contains('Sign in again'));
+  });
+
   group('InstantController', () {
     Future<_Opened> open(WidgetTester tester, _FakeBackend backend,
         {List<Override> more = const []}) async {
@@ -752,16 +764,18 @@ class _Opened {
 }
 
 class _Broken implements InstantPlayBackend {
+  _Broken({this.failure = const NetworkFailure('no route')});
+
+  final AppFailure failure;
+
   @override
   Future<void> prepare(FetchRequest request) async {}
 
   @override
-  Future<Result<FetchJob>> start(FetchRequest request) async =>
-      const Err(NetworkFailure('no route'));
+  Future<Result<FetchJob>> start(FetchRequest request) async => Err(failure);
 
   @override
-  Future<Result<FetchJob>> status(String id) async =>
-      const Err(NetworkFailure('no route'));
+  Future<Result<FetchJob>> status(String id) async => Err(failure);
 
   @override
   Uri? streamUri(FetchJob job) => null;

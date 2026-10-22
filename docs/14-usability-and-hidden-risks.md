@@ -74,3 +74,8 @@ risk (H1–H10 are in `13` §6).
   music continues; if the system kills it anyway, reopening restores the song at the right second.
 * **J-20 Call during playback.** Simulated incoming call (`adb emu gsm call 5551234`), accept, hang up. Expect: pause on ring, resume
   after hang-up.
+* **J-21 The password was changed.** Change the test account's password on the server (`rotate_tester.py`-style: Navidrome's own API, as the
+  account), open the app. Expect: within that launch Home shows the card "Sign in again" (no per-row sentence, no cryptic message); tapping
+  it asks only for the password (the account is shown); a wrong password says so and stays; the right one returns to Home, the card is gone,
+  and the library, playlists, downloads and the queue are still there. "Use a different account" is the only path that removes anything,
+  and it says what it removes. Walked on the emulator 2026-10-22 (`evidence/2026-10-22-e23-sign-in-again-card.png`).

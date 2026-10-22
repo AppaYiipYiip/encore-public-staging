@@ -10,6 +10,7 @@ import '../design/scroll_behavior.dart';
 import '../design/theme.dart';
 import '../design/tokens.dart';
 import '../domain/invite_link.dart';
+import '../features/auth/login_problem.dart';
 import '../features/downloads/download_providers.dart';
 import '../features/downloads/lyrics_for_downloads.dart';
 import '../features/import/import_providers.dart';
@@ -268,6 +269,12 @@ class _SessionLifecycleState extends ConsumerState<_SessionLifecycle>
     ref.listen(sessionProvider, (_, next) {
       final session = next.value;
       if (session != null) unawaited(_attach(session));
+    });
+    // Something the person did was refused because the login stopped working: the prompt opens (P2-18).
+    ref.listen(loginProblemProvider.select((s) => s.prompts), (previous, next) {
+      if (next > (previous ?? 0)) {
+        unawaited(ref.read(routerProvider).push('/sign-in-again'));
+      }
     });
     // Mobile data is probed less often than Wi-Fi.
     ref.listen(networkKindProvider, (_, next) {

@@ -11,6 +11,7 @@ import '../../data/fetch/fetch_client.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../data/repos/request_repository.dart';
 import '../../data/sync/endpoint_resolver.dart';
+import '../auth/login_problem.dart';
 import '../catalogue/catalogue_providers.dart';
 import '../downloads/download_providers.dart';
 import '../jam/jam_providers.dart' show jamControllerProvider;
@@ -217,7 +218,9 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
     await for (final status in service.fetch(track, bulk: bulk)) {
       last = status;
       _set(track.id, status);
-      if (status.isFailed && status.error == null) {
+      if (status.isFailed && status.error == 'login') {
+        ref.read(loginProblemProvider.notifier).rejected(fromAction: true);
+      } else if (status.isFailed && status.error == null) {
         // Possibly the service moved (the phone changed network): look again
         // the next time.
         ref.invalidate(fetchServiceProvider);

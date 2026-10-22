@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/catalogue/catalogue_models.dart';
 import '../domain/invite_link.dart';
+import '../features/auth/login_problem.dart';
 import '../features/catalogue/catalogue_screens.dart';
 import '../features/catalogue/genre_screen.dart';
 import '../features/detail/detail_screens.dart';
@@ -135,6 +136,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         builder: (_, __) => const ConnectScreen(),
+      ),
+      GoRoute(
+        path: '/sign-in-again',
+        builder: (_, __) => const SignInAgainScreen(),
       ),
       GoRoute(
         path: '/join',

@@ -8,6 +8,7 @@ import '../../data/db/app_database.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
 import '../../domain/household.dart';
+import '../auth/login_problem.dart';
 import '../common/cover_art.dart';
 import '../common/format.dart';
 import '../common/widgets.dart';
@@ -80,6 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   chip: _chip,
                   chips: _chips,
                   onChip: (v) => setState(() => _chip = v))),
+          const SliverToBoxAdapter(child: LoginProblemBanner()),
           const SliverToBoxAdapter(child: ImportsHomeCards()),
           if (tracks == 0)
             SliverFillRemaining(

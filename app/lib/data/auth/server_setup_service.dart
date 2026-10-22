@@ -163,6 +163,25 @@ class ServerSetupService {
     return id;
   }
 
+  /// A new password for an account this phone already has (it was changed on the server): checked against the server first, then
+  /// stored. Nothing else changes: the library, the downloads and the queue stay (P2-18). The account is the same one: only its
+  /// password is replaced.
+  Future<Result<void>> replacePassword(
+      ServerRow server, String password) async {
+    final endpoints = [
+      for (final e in jsonDecode(server.endpointsJson) as List)
+        ServerEndpoint.fromJson((e as Map).cast<String, dynamic>()),
+    ];
+    final checked = await check(
+      endpoints: endpoints,
+      username: server.username,
+      password: password,
+    );
+    if (checked case Err(:final failure)) return Result.err(failure);
+    await _credentials.writePassword(server.id, password);
+    return const Result.ok(null);
+  }
+
   /// Replaces the address list of a saved server. At least one address is
   /// kept; the network session is rebuilt by the change.
   Future<void> updateEndpoints(
