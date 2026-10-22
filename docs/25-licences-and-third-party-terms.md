@@ -44,3 +44,14 @@ a short list of the server-side parts.
 
 "Encore" is a working name (D-5, not now). Before the public release: a trademark and app-name search, and no use of other brands'
 logos (Spotify, YouTube) beyond plain words like "Import from Spotify".
+
+## Provenance of the app code (checked 2026-10-22)
+
+The app began as a fork of another player and was rewritten; its licence (CC BY-NC-SA 4.0) is not a software licence and is why Encore is
+GPL-3.0 (D-1). Facts, measured against the original project's `lib/` in the archived history (`releases-archive/`, not in this repository):
+
+* The only app file at the same path is `app/lib/main.dart` (every Flutter app has one): 4 lines here, 762 there, no line in common.
+* Lines of 40 or more characters (comments and imports left out): 14,915 in `app/lib`, of which 200 (1.3%) also appear in the original,
+  spread over many files at one to eight lines each (the most in a single file: 8 of 138).
+* This says nothing about ideas or structure, and a line-by-line match is not a legal test. Whether credit or a licence notice is still due
+  for those lines is the owner's decision; if it is, it goes in `THIRD_PARTY_NOTICES` (P0-10).

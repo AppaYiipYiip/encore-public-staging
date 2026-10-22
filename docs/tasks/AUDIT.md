@@ -65,7 +65,9 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
   * The `/encore/join/<code>` link is an Android app link (https, and http for a home network; no other http link is offered to Encore). Walking it found
     "Page Not Found" over the app (Flutter also routed the address itself): that is switched off in the manifest and guarded by a test. Walked on the emulator:
     Android offers Encore for the link and the app opens on its own screen; on a phone that already has an account on that server it says so.
-    **Not walked yet:** a fresh install tapping the link and joining.
+    **Walked on a fresh install (second emulator):** tapped the link, "newtester invited you", chose a name and password, landed on Home with a
+    library of its own, searched, and streamed a full 5:12 song. Found on the way: right after the emulator booted the join screen said
+    "Can't reach ..." once (no network yet) and worked on "Try again"; the app does not retry by itself.
   * The Your server page on an Encore server no longer speaks of a helper service: it says songs are fetched as they play, that playing does not save, shows
     "Taking a short rest" with the time left when the web asked the server to slow down, and hides the old "What does my server need?" block. The lyrics text no
     longer names LRCLIB or the music server. Walked on the emulator (9 tests).

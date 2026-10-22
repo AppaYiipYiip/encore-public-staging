@@ -6,7 +6,7 @@
   tapxy X Y               tap a point
   swipe X1 Y1 X2 Y2 [ms]  swipe
   type "some text"        type into the focused field
-  typefile PATH           type the contents of a local file (a password): pushed, typed, deleted; never printed
+  typefile PATH           type a password: the `password:` line of a login file, or the whole of a file that holds only the password; pushed, typed, deleted; never printed
   key BACK|TAB|ENTER|HOME|DOWN|UP|PLAY_PAUSE|MEDIA_NEXT|MEDIA_PREVIOUS
   shot NAME               save a screenshot to scratchpad/shots/NAME.png (never while a password is on screen)
   wait "text" [seconds]   wait until the text is on screen (default 20 s); exit 1 if it never shows
@@ -73,7 +73,10 @@ def main():
     elif cmd == "type":
         adb("shell", "input", "text", args[0].replace(" ", "%s"))
     elif cmd == "typefile":
-        secret = open(args[0], encoding="utf-8").read().strip()
+        raw = open(args[0], encoding="utf-8").read()
+        # A login file (address / user / password lines) types only its password; any other file is typed whole.
+        lines = [l for l in raw.splitlines() if l.lower().startswith("password:")]
+        secret = lines[0].split(":", 1)[1].strip() if lines else raw.strip()
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt", encoding="utf-8") as f:
             f.write(secret); tmp = f.name
         adb("push", tmp, "/data/local/tmp/_t.txt"); os.unlink(tmp)
