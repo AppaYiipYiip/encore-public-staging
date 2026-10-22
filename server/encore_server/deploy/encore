@@ -62,9 +62,12 @@ last_backup_text() {
     if [ -z "$file" ]; then printf 'none yet (encore backup)'; return; fi
     date -d "@$(stat -c %Y "$file")" '+%Y-%m-%d %H:%M'
 }
-# Runs the database tool of the Encore image in a throwaway container: no network, root inside (the data belongs to other users).
+# Runs the database tool of the Encore image in a throwaway container with no network, as USER (uid:gid): a copy of a live database must be
+# made by the account that owns it, or the -wal and -shm files it may briefly create next to the database would belong to somebody else.
 backup_tool() {
-    docker run --rm --user 0 --network none --entrypoint python "$@"
+    local user="$1"
+    shift
+    docker run --rm --user "$user" --network none --entrypoint python "$@"
 }
 
 cmd_status() {
@@ -163,9 +166,19 @@ cmd_backup() {
     # shellcheck disable=SC2064
     trap "rm -rf -- '$work'" EXIT
     if [ "$quiet" != 1 ]; then say ""; say "  … Copying the databases"; fi
-    backup_tool -v "$DIR/data:/data" -v "$DIR/navidrome:/nd" -v "$work:/out" "$(image_ref)" \
-        -m encore_server backup --encore-db /data/encore.db --navidrome-db /nd/navidrome.db --out /out >"$work/tool.log" 2>&1 \
-        || die "The databases could not be copied: $(sed -n 's/^backup: //p' "$work/tool.log" | head -1)"
+    # One run per database, each as the account that owns it, writing into a folder that account may write to.
+    local owner
+    owner="$(stat -c %u:%g "$DIR/data/encore.db")"
+    chown "$owner" "$work"
+    backup_tool "$owner" -v "$DIR/data:/data" -v "$work:/out" "$(image_ref)" \
+        -m encore_server backup --encore-db /data/encore.db --out /out >"$work/tool.log" 2>&1 \
+        || die "The Encore database could not be copied: $(sed -n 's/^backup: //p' "$work/tool.log" | head -1)"
+    owner="$(stat -c %u:%g "$DIR/navidrome/navidrome.db")"
+    chown "$owner" "$work"
+    backup_tool "$owner" -v "$DIR/navidrome:/nd" -v "$work:/out" "$(image_ref)" \
+        -m encore_server backup --navidrome-db /nd/navidrome.db --out /out >"$work/tool.log" 2>&1 \
+        || die "The music server's database could not be copied: $(sed -n 's/^backup: //p' "$work/tool.log" | head -1)"
+    chown 0:0 "$work"
     rm -f "$work/tool.log"
     # The settings file holds the music server's administrator login, which the copied database needs to be opened again.
     cp -p "$DIR/.env" "$work/env"
@@ -201,7 +214,7 @@ cmd_restore() {
     tar -C "$work" -xzf "$file" 2>/dev/null || die "$file is not a backup this command can read."
     grep -q '^format=1$' "$work/manifest.txt" 2>/dev/null || die "$file is not an Encore backup (or comes from a newer version: run  encore update  first)."
     [ -f "$work/env" ] || die "$file has no settings file."
-    backup_tool -v "$work:/in" "$(image_ref)" -m encore_server backup --verify /in >"$work/verify.log" 2>&1 \
+    backup_tool 0:0 -v "$work:/in" "$(image_ref)" -m encore_server backup --verify /in >"$work/verify.log" 2>&1 \
         || die "This backup is damaged: $(sed -n 's/^backup: //p' "$work/verify.log" | head -1)"
     made="$(sed -n 's/^made=//p' "$work/manifest.txt")"
     keep="$(grep -E '^ENCORE_NAVIDROME_ADMIN_(USER|PASSWORD)=' "$work/env" || true)"
@@ -222,8 +235,11 @@ cmd_restore() {
     cp -p "$DIR/.env" "$aside/env"
     cp -- "$work/encore.db" "$DIR/data/encore.db"
     cp -- "$work/navidrome.db" "$DIR/navidrome/navidrome.db"
-    # The same owner as the file it replaces (the Encore image makes its own folder writable when it starts).
-    if [ -e "$aside/navidrome/navidrome.db" ]; then chown --reference="$aside/navidrome/navidrome.db" "$DIR/navidrome/navidrome.db"; fi
+    # The same owner as the files they replace (the copies were made by root; the Encore server runs as an ordinary user and could not write to
+    # its own database otherwise). The folder's owner is the fallback when there was nothing to replace.
+    for f in data/encore.db navidrome/navidrome.db; do
+        if [ -e "$aside/$f" ]; then chown --reference="$aside/$f" "$DIR/$f"; else chown --reference="$DIR/$(dirname "$f")" "$DIR/$f"; fi
+    done
     # Only the music server's administrator login comes from the backup: the rest of the settings (port, music folder, name) belong to this computer.
     { grep -vE '^ENCORE_NAVIDROME_ADMIN_(USER|PASSWORD)=' "$DIR/.env"; printf '%s\n' "$keep"; } >"$DIR/.env.new"
     chmod 600 "$DIR/.env.new"
@@ -303,7 +319,7 @@ cmd_uninstall() {
     done
     say ""
     if [ "$everything" = 1 ]; then
-        say "  This removes Encore and ${BOLD}everything it remembers${OFF}: accounts, playlists, likes, the music server's database."
+        say "  This removes Encore and ${BOLD}everything it remembers${OFF}: accounts, playlists, likes, the music server's database, and the backups made so far."
         say "  Your music folder ($(env_value ENCORE_MUSIC_DIR)) is not touched, including the songs Encore kept in its Encore/ folder."
     else
         say "  This stops and removes Encore. Its data stays in $DIR, so installing again brings everything back. Your music is not touched."

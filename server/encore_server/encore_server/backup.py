@@ -56,6 +56,11 @@ def copy_database(source: Path, target: Path) -> int:
             copy = sqlite3.connect(target)
             try:
                 origin.backup(copy)
+                # The copy keeps the original's write-ahead-log mode: leave it as one self-contained file, with no -wal or -shm beside it
+                # to be forgotten when the file is copied or packed. The server turns the log mode back on when it opens it.
+                mode = copy.execute("PRAGMA journal_mode=DELETE").fetchone()
+                if mode is None or str(mode[0]).lower() != "delete":
+                    raise BackupError(f"{source.name} could not be copied as one file.")
             finally:
                 copy.close()
         finally:
@@ -83,7 +88,7 @@ def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: Te
     try:
         args = parser.parse_args(argv if argv is not None else sys.argv[2:])
     except SystemExit:
-        print("backup: use --encore-db FILE [--navidrome-db FILE] --out DIR, or --verify DIR", file=err)
+        print("backup: use --encore-db FILE and/or --navidrome-db FILE with --out DIR, or --verify DIR", file=err)
         return 2
     try:
         if args.verify is not None:
@@ -94,10 +99,14 @@ def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: Te
                 verify_database(args.verify / name)
                 print(f"{name} whole", file=out)
             return 0
-        if args.encore_db is None or args.out is None:
-            raise BackupError("Say where the Encore database is and where the copies go (--encore-db, --out).")
+        if args.out is None or (args.encore_db is None and args.navidrome_db is None):
+            raise BackupError(
+                "Say which database to copy and where the copy goes (--encore-db and/or --navidrome-db, and --out)."
+            )
         args.out.mkdir(parents=True, exist_ok=True)
-        copied = [(ENCORE_DB, copy_database(args.encore_db, args.out / ENCORE_DB))]
+        copied: list[tuple[str, int]] = []
+        if args.encore_db is not None:
+            copied.append((ENCORE_DB, copy_database(args.encore_db, args.out / ENCORE_DB)))
         if args.navidrome_db is not None:
             copied.append((MUSIC_SERVER_DB, copy_database(args.navidrome_db, args.out / MUSIC_SERVER_DB)))
         for name, size in copied:

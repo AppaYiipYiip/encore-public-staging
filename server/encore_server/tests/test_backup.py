@@ -37,6 +37,25 @@ def test_a_copy_has_everything_the_database_had(tmp_path: Path) -> None:
     assert names(source) == names(tmp_path / "copy.db")
 
 
+def test_a_copy_is_one_file_with_nothing_beside_it(tmp_path: Path) -> None:
+    """A database in write-ahead-log mode is copied as a single file: a -wal or -shm left beside it would be lost when only the file is kept."""
+    source = tmp_path / "live.db"
+    make_db(source, rows=3)
+    keep_open = sqlite3.connect(
+        source
+    )  # a connection of the running server: the original keeps its -wal and -shm while it is open
+    try:
+        copy_database(source, tmp_path / "copy.db")
+    finally:
+        keep_open.close()
+    assert sorted(p.name for p in tmp_path.glob("copy.db*")) == ["copy.db"]
+    conn = sqlite3.connect(tmp_path / "copy.db")
+    try:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
+    finally:
+        conn.close()
+
+
 def test_a_copy_is_whole_while_the_server_is_writing(tmp_path: Path) -> None:
     """A writer that is mid-transaction (WAL) does not make the copy half a change."""
     source = tmp_path / "live.db"
@@ -97,6 +116,16 @@ def test_command_without_the_music_server_database(tmp_path: Path) -> None:
     )
     assert status == 0
     assert not (tmp_path / "out" / MUSIC_SERVER_DB).exists()
+
+
+def test_command_copies_only_the_music_server_database_when_that_is_all_it_is_given(tmp_path: Path) -> None:
+    make_db(tmp_path / "nd.db", rows=2)
+    status = command(
+        ["--navidrome-db", str(tmp_path / "nd.db"), "--out", str(tmp_path / "out")], out=io.StringIO(), err=io.StringIO()
+    )
+    assert status == 0
+    assert (tmp_path / "out" / MUSIC_SERVER_DB).exists()
+    assert not (tmp_path / "out" / ENCORE_DB).exists()
 
 
 def test_command_says_what_went_wrong_in_a_sentence(tmp_path: Path) -> None:

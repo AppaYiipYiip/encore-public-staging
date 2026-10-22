@@ -79,7 +79,8 @@ encore uninstall --everything  remove Encore's data too (never your music)
 
 Backups are in `/opt/encore/backups` (the newest 7, readable by the administrator only; each holds a login that Encore needs, so keep copies
 private). Your **music** is not in them: it is your own folder, which Encore only reads. A backup is also what moves Encore to another
-computer: install there, then `encore restore` the file.
+computer: copy the backup file **and your music folder** (with the `Encore/` folder inside it, where songs Encore kept are), install Encore there
+pointing at that folder, then `encore restore FILE`. `encore uninstall --everything` also deletes the backups, so copy them away first if you want to keep them.
 
 Running the installer again is safe: what is there is kept and brought up to date.
 

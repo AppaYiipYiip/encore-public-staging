@@ -288,7 +288,8 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   be checked; a date is not.
 * **Consequences.** Future installer proofs use a separate throwaway VM (the host has little memory to spare). While the friend's data is on
   it: no rollbacks, no `uninstall --everything`, no test runs, updates only after telling the owner. Every server on the home address spends
-  the same YouTube budget: YouTube is switched off on the dev VM except during a test run.
+  the same YouTube budget. *Amended 2026-10-23:* the dev server is left switched on (it only asks YouTube when somebody plays or imports on it, and
+  nobody does between test runs); every test run still keeps to 10 look-ups, and the real use is on the owner's server.
 
 
 ### ADR-R35 — How a person tells us what went wrong (the in-app report) — ON HOLD
@@ -329,3 +330,31 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   reach the project, which is acceptable for a free project.
 * **Consequences.** Nothing to build before the repository goes public. At P5-06: Issues on, notification e-mail checked, private vulnerability
   reporting on. Reports that contain a stranger's server details are theirs to redact; the app already removes addresses.
+
+### ADR-R37 — How Encore backs itself up, and what a restore puts back
+* **Context.** A friend will depend on the owner's server (R33, R34). Everything a person cannot recreate lives in two SQLite databases: the Encore
+  server's (accounts, devices, playlists, likes, saved items, imports, the key it signs addresses with) and the music server's (its accounts and
+  their playlists, play counts). The music itself is the owner's own folder.
+* **Options.** (a) Only the hypervisor's whole-machine backup (Proxmox `daily-ssd`): exists already, but is the owner's setup, restores a whole
+  machine to a past state, and does not exist for anybody on a plain computer. (b) The music server's own nightly copy (`ND_BACKUP_*`, already
+  switched on): covers only its half. (c) Copying the database files with `cp`/`tar` while the servers run: can catch a file mid-write. (d) Stopping
+  both servers for a minute every night and copying: always consistent, but a nightly outage. (e) **SQLite's online backup, run by a throwaway
+  container of the Encore image, one run per database, each as the account that owns the database**, then packed with the settings file.
+* **Decision.** (e), plus (a) and (b) left as they are (they are different layers). `encore backup` writes `encore-backup-<time>.tar.gz` into
+  `/opt/encore/backups` (mode 700, files 600; the folder can be changed with `ENCORE_BACKUP_DIR` in `.env`, e.g. to another disk), keeping the newest 7. It
+  holds the two databases (each a single file, checked with SQLite's integrity check), `manifest.txt` and a copy of `.env`, because `.env` holds the
+  music server administrator's login that the copied music-server database needs, and without it a restore on a new computer could not get back in.
+  A systemd timer runs it every night about 03:30 (after the music server's own 03:00 copy; up to ten minutes later by chance), and the installer
+  switches it on and makes the first one at once; `encore autobackup off` is remembered across re-installs. `encore restore FILE` checks the file,
+  asks, stops the servers, **sets the current files aside** in `before-restore-<time>/` (never deletes them), puts the two databases back with the
+  owner of the files they replace, takes only the administrator login from the archived settings (the port, the music folder and the name belong to
+  the computer it is restored on), starts again and waits until it answers.
+* **Why.** It is the only option that is consistent, needs no outage, works the same on any computer with Docker, and is built from the image the
+  installer already put there (nothing more to install). The copy runs as the owner of each database because a root-owned `-wal` or `-shm` file
+  left next to a live database would stop the server writing to it. Each copy is converted to one self-contained file because the first run of this
+  proved otherwise: the archive held `-wal` and `-shm` files that are lost when only the database file is put back.
+* **Consequences.** The archive holds a login: it is private, and the guide says so. **The music is not in it**, nor the songs Encore kept in
+  `Encore/` inside the music folder: moving to another computer means moving that folder too, or playlist entries pointing at kept songs break.
+  `encore uninstall --everything` removes the backups with the rest (said in its question). A restore needs the same Encore version or a newer one
+  (`encore update` first). Not covered yet: a second copy off the computer (a different disk or a cloud folder), which is the owner's choice
+  (ADR-077); the hypervisor's backup is that today.
