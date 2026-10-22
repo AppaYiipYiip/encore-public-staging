@@ -271,3 +271,22 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
 * **Consequences.** The 5-day own-testing rule applies before he starts. The owner's privacy promise stays: the owner sees who is on the server,
   never what anybody listens to.
 
+### ADR-R34 — Which server the first friend uses, and when (decided by the stronger model, the owner delegated it)
+* **Context.** The owner will install Encore himself on a fresh VM first and later on his real Proxmox server (ADR-R19, R22); a friend will use
+  the owner's server daily from outside (ADR-R33). Open: which machine, and from when.
+* **Options.** The dev VM (redeployed all the time); the VM the installer was proven on, handed over as it is; the real Proxmox server (not
+  installed yet, "all a mess"); **a VM of its own, installed by the owner from the guide, which then is never rolled back or used for tests**.
+* **Decision.** The test VM `encore-ubuntu-test`-style VM 107 is cleaned one last time after the last proof run and becomes the owner's:
+  autostart on, a fixed address, renamed `encore-home`. The friend starts on **that** server once these gates hold, in order: (1) the owner
+  installed it himself from the guide and uses it; (2) `encore funnel on` works there and an invitation opens on a phone on mobile data (the
+  Tailscale machine name is chosen now and kept when the owner later moves to the real server, so the friend's address never changes);
+  (3) his data can come back: a nightly Proxmox backup of the VM now, then `encore backup`/`restore` with a restore tried on a throwaway VM
+  (the later move to the real server is the same restore); (4) "Report a problem" in the app and the friend's guide; (5) five days of the
+  owner's own use. Not a fixed date.
+* **Why.** A server a person depends on must not be the one that is rolled back, redeployed and tested; a VM of its own is a smaller change
+  than moving the friend later, and the move to the real server becomes a rehearsed restore instead of a surprise. Gates are things that can
+  be checked; a date is not.
+* **Consequences.** Future installer proofs use a separate throwaway VM (the host has little memory to spare). While the friend's data is on
+  it: no rollbacks, no `uninstall --everything`, no test runs, updates only after telling the owner. Every server on the home address spends
+  the same YouTube budget: YouTube is switched off on the dev VM except during a test run.
+

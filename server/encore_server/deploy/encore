@@ -57,7 +57,7 @@ cmd_status() {
     say ""
     say "        On your home network:  $(host_ip):${PORT}"
     away="$(funnel_address)"
-    if [ -n "$away" ]; then say "        Away from home:        $away"; else say "        Away from home:        not set up (sudo encore funnel on)"; fi
+    if [ -n "$away" ]; then say "        Away from home:        $away"; else say "        Away from home:        not set up (encore funnel on)"; fi
     say "        Music folder:          $(env_value ENCORE_MUSIC_DIR)"
     say ""
 }
@@ -117,9 +117,9 @@ cmd_funnel() {
             ok "Encore is no longer reachable from outside (Funnel is off)"
             ;;
         status)
-            if [ -n "$(funnel_address)" ]; then ok "Away from home: $(funnel_address)"; else say "  Not set up (sudo encore funnel on)"; fi
+            if [ -n "$(funnel_address)" ]; then ok "Away from home: $(funnel_address)"; else say "  Not set up (encore funnel on)"; fi
             ;;
-        *) die "Use:  sudo encore funnel on | off | status" ;;
+        *) die "Use:  encore funnel on | off | status" ;;
     esac
 }
 
@@ -140,6 +140,8 @@ cmd_uninstall() {
         read -r -p "  Type  remove  to go on: " answer </dev/tty || answer=""
         [ "$answer" = remove ] || die "Nothing was changed."
     fi
+    local image_ref
+    image_ref="$(env_value ENCORE_IMAGE):$(env_value ENCORE_TAG)"
     dc down >/dev/null 2>&1 || true
     if [ "$everything" = 1 ]; then
         # Never remove a short or odd path: only a folder like /opt/encore that holds this install's own files.
@@ -147,7 +149,7 @@ cmd_uninstall() {
         if [ ! -f "$DIR/compose.yaml" ] || [ ! -f "$DIR/.env" ]; then die "Refusing to remove '$DIR': it does not hold an Encore install."; fi
         cd /
         rm -rf -- "$DIR"
-        docker rmi "$(env_value ENCORE_IMAGE):$(env_value ENCORE_TAG)" >/dev/null 2>&1 || true
+        docker rmi "$image_ref" >/dev/null 2>&1 || true
     fi
     rm -f /usr/local/bin/encore
     ok "Encore is removed"
