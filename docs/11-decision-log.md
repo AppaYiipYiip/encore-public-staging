@@ -290,3 +290,20 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   it: no rollbacks, no `uninstall --everything`, no test runs, updates only after telling the owner. Every server on the home address spends
   the same YouTube budget: YouTube is switched off on the dev VM except during a test run.
 
+
+### ADR-R35 — How a person tells us what went wrong (the in-app report)
+* **Context.** The first outside user will report bugs and dislikes (ADR-R33). He has no way to reach the owner from inside the app, and the
+  owner promised not to see what anybody listens to (R33).
+* **Options.** A "send" button that posts to a server endpoint (needs an address, an inbox and a store of reports on the owner's server, and the
+  reports would reach the owner without the friend deciding each time); an e-mail address built into the app (a fixed address, only works with a
+  mail app); **the phone's own share sheet with the text prepared** (Messages, WhatsApp, e-mail: whatever the friend already uses).
+* **Decision.** The share sheet. Settings > Help & about > "Report a problem or idea": the person's words, a switch for the technical details
+  (on by default; the switch says in plain words what goes with it: phone, app version, server name, the song that was playing, the last few
+  lines of what the app did, no passwords), server addresses replaced by `<address>` in the details, and the message copied if the phone has no
+  share sheet. It lives under the renamed group "Help & about" so Settings keeps its nine groups (docs/06).
+* **Why.** Nothing leaves the phone unless the person taps a share target he chose; no new server code, account or address; it works the same
+  for every server (the friend's, the owner's, a stranger's), which a built-in inbox would not. The song that was playing stays in by default
+  because bugs are nearly always about one song (lyrics, wrong match); it is named on the switch, so it is a visible choice.
+* **Consequences.** Reports arrive wherever the friend sends them, not in one place; a "my reports" list on the server stays a later idea
+  (P4). Addresses are removed by pattern, so an address written in an odd form could slip through: the person still reads the text in the chat or e-mail before
+  sending it.

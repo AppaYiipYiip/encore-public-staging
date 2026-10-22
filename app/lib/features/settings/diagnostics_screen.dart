@@ -41,6 +41,68 @@ String buildDiagnosticsReport({
   return b.toString();
 }
 
+/// The plain-text report of this phone and app (no passwords: log lines are scrubbed at the source). The Diagnostics screen shows it and
+/// "Report a problem" attaches it to a message.
+final diagnosticsReportProvider = Provider.autoDispose<String>((ref) {
+  final server = ref.watch(activeServerProvider).value;
+  final sync = ref.watch(syncStatusProvider).value;
+  final tracks = ref.watch(trackCountProvider).value;
+  final network = ref.watch(networkKindProvider).value;
+  final snapshot = ref.watch(playbackSnapshotProvider).value;
+  final queue = ref.watch(playbackFacadeProvider).queue;
+  final storage = ref.watch(storageSummaryProvider).value;
+  final settings = ref.watch(settingsProvider);
+  final perf = PerfMonitor.instance;
+  final background = ref.watch(_backgroundRunProvider).value;
+  final listening = ref.watch(listeningSessionsProvider).value;
+
+  String mode() => kReleaseMode
+      ? 'release'
+      : kProfileMode
+          ? 'profile'
+          : 'debug';
+
+  final spans = perf.spans.reversed
+      .take(12)
+      .map((s) => '${s.name}: ${s.duration.inMilliseconds} ms'
+          '${s.detail == null ? '' : ' (${s.detail})'}')
+      .join('\n');
+
+  final sections = <String, String>{
+    'App': '${AppBranding.name} ${AppBranding.version} (${mode()})\n'
+        '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+    'Server': 'name: ${server?.name ?? '-'}\n'
+        'tracks in library: ${tracks ?? '-'}\n'
+        'network: ${network?.name ?? '-'}\n'
+        'last sync: ${sync?.lastSuccessAt?.toIso8601String() ?? 'never'}\n'
+        'syncing: ${sync?.isSyncing ?? false}\n'
+        'background sync: ${backgroundSyncLabel(settings.backgroundSyncHours)}'
+        ', last pass: ${background ?? 'never'}'
+        '${sync?.lastFailure == null ? '' : '\nlast failure: ${sync!.lastFailure!.message}'}',
+    'Playback': 'track: ${snapshot?.track?.title ?? '-'}\n'
+        'playing: ${snapshot?.isPlaying ?? false}\n'
+        'queue: ${queue.items.length} items, position ${queue.currentIndex}\n'
+        'shuffle: ${snapshot?.shuffle ?? false}  repeat: ${snapshot?.repeat.name ?? '-'}\n'
+        'stream quality: wifi=${settings.streamQualityWifi.id} '
+        'mobile=${settings.streamQualityMobile.id}\n'
+        'replay gain: ${settings.replayGainMode.name}',
+    'Downloads': 'downloaded: ${storage?.tracks ?? 0} songs, '
+        '${formatBytes(storage?.bytes ?? 0)}\n'
+        'quality: ${settings.downloadQuality.id}  '
+        'wifi only: ${settings.wifiOnlyDownloads}',
+    'Alerts': 'new on your server: ${settings.alertsOnServer}\n'
+        'new releases: ${settings.alertsReleases}\n'
+        'imports: ${settings.alertsImports}\n'
+        'private listening: ${settings.privateListening}',
+    'Battery while listening': _listeningSummary(listening),
+    'Performance (since start)': perf.lifetimeSummary(),
+    'Latencies': spans.isEmpty ? 'none recorded yet' : spans,
+  };
+
+  final log = Log.recent.reversed.take(120).map((r) => r.toString()).toList();
+  return buildDiagnosticsReport(sections: sections, log: log);
+});
+
 /// Everything the owner needs to attach to a bug report, no passwords
 /// (log lines are scrubbed at the source).
 class DiagnosticsScreen extends ConsumerWidget {
@@ -48,63 +110,8 @@ class DiagnosticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final server = ref.watch(activeServerProvider).value;
-    final sync = ref.watch(syncStatusProvider).value;
-    final tracks = ref.watch(trackCountProvider).value;
-    final network = ref.watch(networkKindProvider).value;
-    final snapshot = ref.watch(playbackSnapshotProvider).value;
-    final queue = ref.watch(playbackFacadeProvider).queue;
-    final storage = ref.watch(storageSummaryProvider).value;
     final settings = ref.watch(settingsProvider);
-    final perf = PerfMonitor.instance;
-    final background = ref.watch(_backgroundRunProvider).value;
-    final listening = ref.watch(listeningSessionsProvider).value;
-
-    String mode() => kReleaseMode
-        ? 'release'
-        : kProfileMode
-            ? 'profile'
-            : 'debug';
-
-    final spans = perf.spans.reversed
-        .take(12)
-        .map((s) => '${s.name}: ${s.duration.inMilliseconds} ms'
-            '${s.detail == null ? '' : ' (${s.detail})'}')
-        .join('\n');
-
-    final sections = <String, String>{
-      'App': '${AppBranding.name} ${AppBranding.version} (${mode()})\n'
-          '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-      'Server': 'name: ${server?.name ?? '-'}\n'
-          'tracks in library: ${tracks ?? '-'}\n'
-          'network: ${network?.name ?? '-'}\n'
-          'last sync: ${sync?.lastSuccessAt?.toIso8601String() ?? 'never'}\n'
-          'syncing: ${sync?.isSyncing ?? false}\n'
-          'background sync: ${backgroundSyncLabel(settings.backgroundSyncHours)}'
-          ', last pass: ${background ?? 'never'}'
-          '${sync?.lastFailure == null ? '' : '\nlast failure: ${sync!.lastFailure!.message}'}',
-      'Playback': 'track: ${snapshot?.track?.title ?? '-'}\n'
-          'playing: ${snapshot?.isPlaying ?? false}\n'
-          'queue: ${queue.items.length} items, position ${queue.currentIndex}\n'
-          'shuffle: ${snapshot?.shuffle ?? false}  repeat: ${snapshot?.repeat.name ?? '-'}\n'
-          'stream quality: wifi=${settings.streamQualityWifi.id} '
-          'mobile=${settings.streamQualityMobile.id}\n'
-          'replay gain: ${settings.replayGainMode.name}',
-      'Downloads': 'downloaded: ${storage?.tracks ?? 0} songs, '
-          '${formatBytes(storage?.bytes ?? 0)}\n'
-          'quality: ${settings.downloadQuality.id}  '
-          'wifi only: ${settings.wifiOnlyDownloads}',
-      'Alerts': 'new on your server: ${settings.alertsOnServer}\n'
-          'new releases: ${settings.alertsReleases}\n'
-          'imports: ${settings.alertsImports}\n'
-          'private listening: ${settings.privateListening}',
-      'Battery while listening': _listeningSummary(listening),
-      'Performance (since start)': perf.lifetimeSummary(),
-      'Latencies': spans.isEmpty ? 'none recorded yet' : spans,
-    };
-
-    final log = Log.recent.reversed.take(120).map((r) => r.toString()).toList();
-    final report = buildDiagnosticsReport(sections: sections, log: log);
+    final report = ref.watch(diagnosticsReportProvider);
 
     return Scaffold(
       appBar: AppBar(

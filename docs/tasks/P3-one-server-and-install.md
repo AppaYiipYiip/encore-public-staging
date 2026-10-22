@@ -119,6 +119,9 @@ installer and a browser wizard that a person who never used Docker can follow. R
   addressed to nobody in particular, so it can go by any app. (4) A one-page friend's guide (`docs/guides/friend.md`): get the app, tap the
   link, sign in, what to expect, how to report. (5) Measure what two daily users do to the single home address YouTube sees: count the
   look-ups per day per person; the pacing and the rest already protect it; write the next step (a cookie or another way out, `../04` §5).
+* **Done so far.** Item (3): Settings > Help & about > "Report a problem or idea" (`report_problem_screen.dart`): the person's own words, a switch for the
+  technical details (on by default, explained in plain words), server addresses replaced by `<address>`, the share sheet, and the message copied if the
+  phone has none. Item (3) is not yet walked on a phone.
 * **Don't.** Show the owner what the friend listens to. Update the server while he is likely to be listening without saying so.
 * **Acceptance.** The friend installs the app, joins by the link from outside the owner's home, listens for a week; a backup of his data is
   restored on a second machine and his playlists are all there; his first problem report reaches the owner with the report attached.
