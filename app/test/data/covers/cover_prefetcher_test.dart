@@ -160,6 +160,23 @@ void main() {
       expect(ids.length, ids.toSet().length, reason: 'each cover once');
     });
 
+    test(
+        "a song row's own cover id is fetched too when it differs from its album's",
+        () async {
+      // The row of a song shows `mf-...`; the collage and the album page show the album's id. Offline the row was a letter (E3).
+      await (db.update(db.tracks)..where((t) => t.id.equals('al3-t1')))
+          .write(const TracksCompanion(coverArt: Value('mf-al3-t1')));
+      await (db.update(db.tracks)..where((t) => t.id.equals('al3-t2'))).write(
+          const TracksCompanion(
+              coverArt:
+                  Value('al-al3'))); // the same id as the album's: not twice
+
+      final ids = await repo.coverIdsToKeepOffline();
+
+      expect(ids, contains('mf-al3-t1'));
+      expect(ids.where((id) => id == 'al-al3'), hasLength(1));
+    });
+
     test('the list is cut at the limit', () async {
       expect(await repo.coverIdsToKeepOffline(limit: 2), hasLength(2));
     });

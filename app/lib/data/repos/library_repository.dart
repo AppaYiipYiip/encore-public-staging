@@ -473,6 +473,10 @@ class LibraryRepository {
   Future<List<String>> coverIdsToKeepOffline({int limit = 600}) async {
     const cover = 'COALESCE(a.cover_art, t.cover_art)';
     const live = 't.deleted_at_ms IS NULL AND $cover IS NOT NULL';
+    // A song's row shows the song's own cover id (`mf-...`), the collage and the album page the album's: the same picture under two
+    // names, and offline a row without it is a letter. So the song's own id is fetched too when it differs.
+    const own =
+        't.deleted_at_ms IS NULL AND t.cover_art IS NOT NULL AND t.cover_art IS NOT a.cover_art';
     final rows = await _db.customSelect(
       'SELECT cover FROM ('
       // 0: the picture a playlist has of its own
@@ -485,16 +489,30 @@ class LibraryRepository {
       'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
       'WHERE e.server_id = ?1 AND e.position < 12 AND $live '
       'UNION ALL '
+      'SELECT t.cover_art, 1, e.position FROM playlist_entries e '
+      'JOIN tracks t ON t.server_id = e.server_id AND t.id = e.track_id '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE e.server_id = ?1 AND e.position < 60 AND $own '
+      'UNION ALL '
       // 2: songs on the phone
       'SELECT $cover, 2, 0 FROM downloads d '
       'JOIN tracks t ON t.server_id = d.server_id AND t.id = d.track_id '
       'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
       'WHERE d.server_id = ?1 AND d.state = 2 AND $live '
       'UNION ALL '
+      'SELECT t.cover_art, 2, 0 FROM downloads d '
+      'JOIN tracks t ON t.server_id = d.server_id AND t.id = d.track_id '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE d.server_id = ?1 AND d.state = 2 AND $own '
+      'UNION ALL '
       // 3: liked songs
       'SELECT $cover, 3, 0 FROM tracks t '
       'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
       'WHERE t.server_id = ?1 AND t.starred_at_ms IS NOT NULL AND $live '
+      'UNION ALL '
+      'SELECT t.cover_art, 3, 0 FROM tracks t '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE t.server_id = ?1 AND t.starred_at_ms IS NOT NULL AND $own '
       'UNION ALL '
       // 4: the newest albums
       'SELECT cover, 4, ord FROM (SELECT cover_art AS cover, -COALESCE(created_at_ms, 0) AS ord FROM albums '
