@@ -1,11 +1,12 @@
 name: Server image
 
 # Builds the Encore server image and publishes it to GitHub's container registry (private while the repository is private):
-# `ghcr.io/appayiipyiip/encore-server:main` for the newest main, and `:sha-<commit>` for every build. The installer
+# `ghcr.io/appayiipyiip/encore-server:main` for the newest main, `:<branch>` for a task branch (`/` becomes `-`) and `:sha-<commit>` for every build. The installer
 # (server/encore_server/deploy/install.sh) pulls it. 64-bit Intel/AMD only for now; arm64 comes later.
 on:
   push:
-    branches: [main]
+    # A task branch also publishes (as `:task-<name>`), so an installer under development can be tried on a clean machine before it is merged.
+    branches: [main, 'task/**']
     paths: ['server/encore_server/**', '.github/workflows/server-image.yml']
   workflow_dispatch:
 
@@ -33,7 +34,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/encore-server
           tags: |
-            type=raw,value=main
+            type=raw,value=main,enable={{is_default_branch}}
+            type=ref,event=branch
             type=sha,prefix=sha-
           labels: |
             org.opencontainers.image.title=Encore server

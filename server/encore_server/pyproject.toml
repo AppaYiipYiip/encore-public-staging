@@ -22,6 +22,8 @@ encore_server = ["migrations/*.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# `pytest` (not `python -m pytest`) does not put the project folder on the path, and the tests import each other as `tests.<name>`.
+pythonpath = ["."]
 addopts = "-q -m 'not integration'"
 markers = ["integration: needs a real Navidrome (tests/integration/compose.yaml)"]
 

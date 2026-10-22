@@ -32,7 +32,10 @@ server_version() { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>
 host_ip() { ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}'; }
 state_of() { dc ps --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null | awk -v s="$1" '$1 == s {print $2 (NF > 2 && $3 != "" ? " (" $3 ")" : "")}'; }
 
-funnel_address() { command -v tailscale >/dev/null 2>&1 && tailscale funnel status 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+(:[0-9]+)?' | head -1 || true; }
+funnel_address() {
+    command -v tailscale >/dev/null 2>&1 || return 0
+    tailscale funnel status 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+(:[0-9]+)?' | head -1 || true
+}
 
 cmd_status() {
     local version away
@@ -135,7 +138,7 @@ cmd_uninstall() {
     if [ "$everything" = 1 ]; then
         # Never remove a short or odd path: only a folder like /opt/encore that holds this install's own files.
         case "$DIR" in /*/*) ;; *) die "Refusing to remove '$DIR': it does not look like an Encore folder." ;; esac
-        [ -f "$DIR/compose.yaml" ] && [ -f "$DIR/.env" ] || die "Refusing to remove '$DIR': it does not hold an Encore install."
+        if [ ! -f "$DIR/compose.yaml" ] || [ ! -f "$DIR/.env" ]; then die "Refusing to remove '$DIR': it does not hold an Encore install."; fi
         cd /
         rm -rf -- "$DIR"
         docker rmi "$(env_value ENCORE_IMAGE):$(env_value ENCORE_TAG)" >/dev/null 2>&1 || true

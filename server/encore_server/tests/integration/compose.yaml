@@ -11,6 +11,8 @@ services:
       ND_SCANNER_WATCHERWAIT: 2s
       ND_LOGLEVEL: info
       ND_ENABLEUSEREDITING: "true"
+      # The tests sign in many times within seconds; the music server's default limit (a few per 20 s) would answer 429.
+      ND_AUTHREQUESTLIMIT: "0"
     volumes:
       - music:/music
     healthcheck:
