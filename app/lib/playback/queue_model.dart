@@ -410,6 +410,11 @@ class QueueModel {
         'cursor': _cursor,
         'shuffle': _shuffle,
         'repeat': _repeat.name,
+        'named': {
+          for (final i in _items)
+            if (i.directUri != null && i.artist != null)
+              i.id: {'artist': i.artist, 'title': i.title, 'album': i.album},
+        },
       };
 
   /// Rebuilds the queue from [json] and the resolved [tracksById]. Entries

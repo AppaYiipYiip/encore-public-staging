@@ -96,6 +96,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     resolver: resolver,
     store: DbPlaybackStateStore(SyncStateStore(db, serverId)),
     lookupTracks: (ids) => _lookupTracks(db, serverId, ids),
+    // A song that was streamed from the catalogue is found again in the library by what it is, when the queue is restored.
+    findByName: (artist, title, album) async {
+      final resolver = ref.read(libraryResolverProvider);
+      if (resolver == null) return null;
+      return resolver
+          .find(artist: artist, title: title, album: album)
+          .onError((_, __) => null);
+    },
     recorder: SessionPlayRecorder(
       db: db,
       serverId: serverId,
@@ -120,6 +128,9 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     // Next on the last song while an album's songs are still being fetched
     // waits for the next one instead of stopping the music.
     moreComing: () => ref.read(instantControllerProvider.notifier).fetchingMore,
+    // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
+    canReachServer: () =>
+        ref.read(networkKindProvider).value != NetworkKind.none,
     replayGain: () {
       final s = ref.read(settingsProvider);
       return ReplayGainSettings(
@@ -130,6 +141,12 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
   );
   await engine.restore();
   unawaited(backend.warmUp());
+  // A song that waited for the connection plays by itself when it returns.
+  ref.listen(
+    networkKindProvider,
+    (_, next) => unawaited(
+        engine.networkChanged(online: next.value != NetworkKind.none)),
+  );
   // The preferred speed applies to everything, including after a restart.
   unawaited(engine.setSpeed(ref.read(settingsProvider).playbackSpeed));
   ref.listen(

@@ -93,10 +93,16 @@ class Harness {
   /// Whether more songs of an instant-play run are still being fetched.
   bool moreComing = false;
 
+  /// Whether the server can be reached (the phone has a network). Songs that are not downloaded need it.
+  bool reachable = true;
+
   static Future<Harness> start({
     int tracks = 5,
     MemoryPlaybackStateStore? store,
     Map<String, TrackRow>? library,
+    Duration loadTimeout = const Duration(seconds: 12),
+    Future<TrackRow?> Function(String artist, String title, String? album)?
+        findByName,
   }) async {
     final h = Harness._();
     h.backend = FakeAudioBackend();
@@ -119,6 +125,9 @@ class Harness {
       effects: h.effects,
       replayGain: () => h.replayGain,
       moreComing: () => h.moreComing,
+      loadTimeout: loadTimeout,
+      canReachServer: () => h.reachable,
+      findByName: findByName,
       clock: h.clock,
       random: Random(1),
       periodicTimer: (period, callback) {
@@ -1242,6 +1251,256 @@ void main() {
 
   // docs/23, B11: unchecked casts on the saved queue threw inside the command
   // queue, which failed the whole engine provider: no playback at every launch.
+  group('a load that never ends, and no connection (E1, E2)', () {
+    test('a load that never finishes gives up, says so, and the next tap works',
+        () async {
+      // The network went away in the middle of a load: it neither finishes nor fails.
+      final h =
+          await Harness.start(loadTimeout: const Duration(milliseconds: 80));
+      h.backend.setSourcesGate = Completer<void>();
+
+      await h.engine.playTracks(h.tracks.sublist(0, 2)).timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => fail('the stuck load held the engine for good'));
+      expect(h.notices.any((n) => n.isError), isTrue,
+          reason: 'the person is told');
+      expect(h.backend.state.playing, isFalse);
+
+      h.backend.setSourcesGate = null; // the network is back
+      await h.engine.playTracks(h.tracks.sublist(2, 4));
+
+      expect(h.currentId, 't3');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test('after a load gave up, Play tries again', () async {
+      final h =
+          await Harness.start(loadTimeout: const Duration(milliseconds: 80));
+      h.backend.setSourcesGate = Completer<void>();
+      await h.engine.playTracks(h.tracks.sublist(0, 2));
+      h.backend.setSourcesGate = null;
+
+      await h.engine.play();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.backend.setSourcesCount, 2);
+      await h.dispose();
+    });
+
+    test(
+        'offline, a song that is not downloaded is not tried and nothing is skipped',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.backend.setSourcesCount, 0,
+          reason: 'it cannot play: do not try');
+      expect(h.currentId, 't1', reason: 'and do not hop to the next one');
+      expect(h.backend.state.playing, isFalse);
+      expect(h.notices, hasLength(1));
+      expect(h.notices.single.message, contains('downloaded'));
+      await h.dispose();
+    });
+
+    test('offline, a downloaded song plays', () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      h.resolver.local.add('t1');
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.notices, isEmpty);
+      await h.dispose();
+    });
+
+    test(
+        'offline, the next song to play is not preloaded when it is not downloaded',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t1', 't3']);
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      expect(h.window, ['t1', 't2'], reason: 'online it is preloaded as usual');
+
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.window, ['t1'],
+          reason: 'offline t2 cannot play, so it is not queued behind t1');
+      await h.dispose();
+    });
+
+    test('offline, Next skips songs that are not downloaded', () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t1', 't3']);
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      await h.engine.skipNext();
+
+      expect(h.currentId, 't3');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'offline, when no later song is downloaded Next says so and keeps playing nothing new',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.add('t1');
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.notices.clear();
+
+      await h.engine.skipNext();
+
+      expect(h.currentId, isNot('t2'),
+          reason: 'never moves onto a song that cannot play');
+      expect(h.notices, hasLength(1));
+      await h.dispose();
+    });
+
+    test('a song that failed while the network is down is not skipped',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.reachable = false; // the network goes away while the song streams
+
+      h.backend.failCurrent();
+      await h.settle();
+      h.backend.failCurrent();
+      await h.settle();
+
+      expect(h.currentId, 't1',
+          reason: 'it is waiting for the network, not broken');
+      expect(h.notices.where((n) => n.isError).length, lessThanOrEqualTo(1));
+      await h.dispose();
+    });
+
+    test('when the network returns, the song that was waiting plays by itself',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      expect(h.backend.setSourcesCount, 0);
+
+      h.reachable = true;
+      await h.engine.networkChanged(online: true);
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.backend.setSourcesCount, 1);
+      await h.dispose();
+    });
+
+    test(
+        'the network returning does not restart what the person paused meanwhile',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      await h.engine.pause(); // "stop the music": the person changed their mind
+
+      h.reachable = true;
+      await h.engine.networkChanged(online: true);
+      await h.settle();
+
+      expect(h.backend.state.playing, isFalse);
+      expect(h.backend.setSourcesCount, 0);
+      await h.dispose();
+    });
+  });
+
+  group(
+      'a queue of songs that came from the catalogue survives a kill (E6, H39)',
+      () {
+    final stream = Uri.parse('http://srv:8701/api/play/job1/audio');
+
+    test('a streamed song is found again in the library by what it is',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playPreviews([
+        PreviewTrack(
+            id: 'deezer:42',
+            title: 'Weird Fishes',
+            uri: stream,
+            artist: 'Radiohead',
+            album: 'In Rainbows'),
+      ]);
+      h.backend.emitPosition(const Duration(seconds: 151));
+      await h.engine.pause();
+      await h.settle();
+
+      // The app is killed; the song has become a library song meanwhile (the server kept it).
+      final kept = trackRow('t77');
+      String? askedFor;
+      final h2 = await Harness.start(
+        store: store,
+        library: {kept.id: kept},
+        findByName: (artist, title, album) async {
+          askedFor = '$artist|$title|$album';
+          return kept;
+        },
+      );
+      await h2.engine.restore();
+
+      expect(askedFor, 'Radiohead|Weird Fishes|In Rainbows');
+      expect(h2.currentId, 't77',
+          reason: 'the queue comes back, it is not empty');
+      expect(h2.engine.snapshot.position, const Duration(seconds: 151));
+      expect(h2.engine.snapshot.isPlaying, isFalse);
+      await h.dispose();
+      await h2.dispose();
+    });
+
+    test('a streamed song the library does not have is dropped, the rest stays',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks.sublist(0, 2));
+      await h.engine.addToQueue(h.tracks[2]);
+      await h.engine.pause();
+      await h.settle();
+
+      final h2 = await Harness.start(
+        store: store,
+        library: {for (final t in h.tracks) t.id: t},
+        findByName: (artist, title, album) async => null,
+      );
+      await h2.engine.restore();
+
+      expect(h2.currentId, 't1');
+      expect(h2.engine.debugQueue.items, hasLength(3));
+      await h.dispose();
+      await h2.dispose();
+    });
+
+    test('a library song is saved by its id only, a streamed one also by name',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks.sublist(0, 1));
+      await h.engine.pause();
+      await h.settle();
+      expect(store.value!.queue['named'], isEmpty);
+
+      await h.engine.playPreviews([
+        PreviewTrack(id: 'deezer:1', title: 'T', uri: stream, artist: 'A'),
+      ]);
+      await h.engine.pause();
+      await h.settle();
+      expect((store.value!.queue['named'] as Map).keys, ['deezer:1']);
+      await h.dispose();
+    });
+  });
+
   group('a damaged saved queue', () {
     Future<Harness> startWith(Map<String, Object?> queue) async {
       final store = MemoryPlaybackStateStore()

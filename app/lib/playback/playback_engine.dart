@@ -69,9 +69,15 @@ class PlaybackEngine implements PlaybackFacade {
     this.restartThreshold = const Duration(seconds: 3),
     this.persistEvery = const Duration(seconds: 15),
     this.maxConsecutiveFailures = 3,
+    this.loadTimeout = const Duration(seconds: 12),
     PeriodicTimerFactory? periodicTimer,
     bool Function()? moreComing,
+    bool Function()? canReachServer,
+    Future<TrackRow?> Function(String artist, String title, String? album)?
+        findByName,
   })  : _moreComing = moreComing ?? (() => false),
+        _canReach = canReachServer ?? (() => true),
+        _findByName = findByName,
         _backend = backend,
         _resolver = resolver,
         _store = store,
@@ -96,6 +102,8 @@ class PlaybackEngine implements PlaybackFacade {
   final SourceResolver _resolver;
   final PlaybackStateStore _store;
   final Future<Map<String, TrackRow>> Function(List<String> ids) _lookupTracks;
+  final Future<TrackRow?> Function(String artist, String title, String? album)?
+      _findByName;
   final PlayRecorder? _recorder;
   final AudioEffects? _effects;
   final ReplayGainSettings Function() _replayGain;
@@ -112,6 +120,17 @@ class PlaybackEngine implements PlaybackFacade {
 
   /// After this many tracks in a row fail, playback stops with a notice.
   final int maxConsecutiveFailures;
+
+  /// How long loading a song may take before it is given up. A load whose network went away neither finishes nor fails: without
+  /// this limit it held the command queue for good, so every later tap waited behind it and the player looked frozen (E1).
+  final Duration loadTimeout;
+
+  /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
+  final bool Function() _canReach;
+
+  /// A song that could not load for lack of a connection waits for it: the value of [_intent] when it started waiting, so that
+  /// pausing (or starting something else) since cancels the wait. `null` when nothing waits.
+  int? _waitingSince;
 
   final List<StreamSubscription<Object?>> _subscriptions = [];
   final StreamController<PlaybackSnapshot> _snapshots =
@@ -247,7 +266,8 @@ class PlaybackEngine implements PlaybackFacade {
     if (saved == null) return;
     final ids = ((saved.queue['ids'] as List?) ?? const []).cast<String>();
     if (ids.isEmpty) return;
-    final tracks = await _lookupTracks(ids);
+    final tracks = Map.of(await _lookupTracks(ids));
+    await _findCatalogueSongs(saved.queue, tracks);
     _queue.restore(saved.queue, tracks);
     if (_queue.isEmpty) return;
     _sourceName = saved.sourceName;
@@ -255,6 +275,32 @@ class PlaybackEngine implements PlaybackFacade {
     _resumePosition = Duration(milliseconds: saved.positionMs);
     _loaded = false;
     _emitAll();
+  }
+
+  /// A song that was streamed from the catalogue has no library id the next launch knows: the queue saved what it is (artist,
+  /// title, album) and the library is asked for it by that. The server keeps a song once it has been played, so most are found.
+  /// Those it does not have are left out, and the rest of the queue comes back (E6: it used to come back empty).
+  Future<void> _findCatalogueSongs(
+      Map<String, Object?> saved, Map<String, TrackRow> tracks) async {
+    final find = _findByName;
+    final named = saved['named'];
+    if (find == null || named is! Map) return;
+    for (final entry in named.entries) {
+      final id = entry.key;
+      final what = entry.value;
+      if (id is! String || what is! Map || tracks.containsKey(id)) continue;
+      final artist = what['artist'];
+      final title = what['title'];
+      final album = what['album'];
+      if (artist is! String || title is! String) continue;
+      try {
+        final row = await find(artist, title, album is String ? album : null);
+        if (row != null) tracks[id] = row;
+      } on Object catch (error) {
+        Log.warn('playback',
+            'looking up a streamed song of the saved queue failed', error);
+      }
+    }
   }
 
   /// A saved queue that cannot be read (older build, damaged data) must not
@@ -455,6 +501,18 @@ class PlaybackEngine implements PlaybackFacade {
           // Not the end: the next song is still being fetched. Keep playing,
           // and start it when it arrives.
           _nextWaitingSince = _intent;
+          return;
+        }
+        final hadNext = _queue.hasNext;
+        if (hadNext && !_canReach()) {
+          // Without a connection only downloaded songs can play: Next goes to the next one of those, or does nothing at all.
+          if (!await _stepToPlayable(_queue.skipNext)) {
+            _notify(const PlaybackNotice(
+                'The next songs are not downloaded. Connect to play them.'));
+            return;
+          }
+          _finishItem();
+          await _advanceTo(autoplay: true);
           return;
         }
         _finishItem();
@@ -699,6 +757,68 @@ class PlaybackEngine implements PlaybackFacade {
     if (!_sleepChanges.isClosed) _sleepChanges.add(status);
   }
 
+  // -------------------------------------------------- no connection
+
+  /// The network came back (or went): a song that was waiting for it plays now, unless the person has stopped the music or asked
+  /// for something else since.
+  Future<void> networkChanged({required bool online}) async {
+    if (!online) return;
+    final waiting = _waitingSince;
+    if (waiting == null) return;
+    _waitingSince = null;
+    if (waiting != _intent || _queue.current == null) return;
+    try {
+      await _run(() async {
+        if (_loaded || waiting != _intent) return;
+        await _loadCurrent(autoplay: true, position: _resumePosition);
+      });
+    } on Object catch (error) {
+      Log.warn('playback',
+          'the song that waited for the connection could not start', error);
+    }
+  }
+
+  /// Whether [item] can play right now: a file on this phone always, anything else only with a connection.
+  Future<bool> _playable(QueueItem item) async {
+    if (_canReach()) return true;
+    try {
+      return (await _resolver.resolve(item)).isLocal;
+    } on Object catch (error) {
+      Log.warn(
+          'playback',
+          'could not tell whether ${item.id} can play without a connection',
+          error);
+      return false;
+    }
+  }
+
+  /// Moves the queue forward with [step] (Next, or the song ended) and, while the song it landed on cannot play for lack of a
+  /// connection, on to the next one that can. When none can, the cursor goes back where it was and the answer is `false`.
+  Future<bool> _stepToPlayable(bool Function() step) async {
+    final from = _queue.cursor;
+    if (!step()) return false;
+    for (var tries = 0; tries < _queue.length; tries++) {
+      final item = _queue.current;
+      if (item == null || await _playable(item)) return true;
+      if (!_queue.skipNext()) break;
+    }
+    _queue.jumpTo(from);
+    return false;
+  }
+
+  /// A load that cannot happen now (no connection, or one that never finished): nothing is loaded, the person is told once,
+  /// and the song is tried again by itself when the network returns, or when the person presses play.
+  void _waitForConnection(String message,
+      {required bool isError, required Duration position}) {
+    _loaded = false;
+    _window = const [];
+    _resumePosition = position;
+    _waitingSince = _intent;
+    _notify(PlaybackNotice(message, isError: isError));
+    PerfMonitor.instance.cancel('play.tap->playing');
+    _emitAll();
+  }
+
   // ------------------------------------------------------------ internals
 
   bool get _loopOne =>
@@ -782,15 +902,43 @@ class PlaybackEngine implements PlaybackFacade {
     if (generation != null && generation != _generation) return;
     final resolveMs = timer.elapsedMilliseconds;
 
+    // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
+    if (!results.first.isLocal && !_canReach()) {
+      await _backend.pause();
+      _waitForConnection('Not downloaded. Connect to play it.',
+          isError: false, position: position);
+      return;
+    }
+    // The next song is only queued behind this one when it can play too.
+    final specs = [
+      results.first,
+      if (results.length > 1 && (results[1].isLocal || _canReach())) results[1],
+    ];
+
     _expectedIndex = 0;
     _lastIndex = 0;
     // A finished/stopped player keeps its "playing" intent; make sure a
     // load that should not start audio really does not.
     if (!autoplay) await _backend.pause();
     await _backend.setLoopOne(_loopOne);
-    await _backend.setSources(results, index: 0, position: position);
+    final load = _backend.setSources(specs, index: 0, position: position);
+    try {
+      await load.timeout(loadTimeout);
+    } on TimeoutException {
+      Log.warn('playback',
+          'loading ${item.id} took longer than ${loadTimeout.inSeconds} s; giving up for now');
+      // The platform load is still pending: its eventual end (or failure) is nobody's business now.
+      unawaited(load.then<void>((_) {}, onError: (Object _) {}));
+      unawaited(_backend
+          .stop()
+          .timeout(const Duration(seconds: 2), onTimeout: () {})
+          .onError((_, __) {}));
+      _waitForConnection('Taking too long to load. Check your connection.',
+          isError: true, position: position);
+      return;
+    }
     final loadMs = timer.elapsedMilliseconds - resolveMs;
-    _window = [for (final r in results) r.uid];
+    _window = [for (final r in specs) r.uid];
     _loadSerial++;
     _loaded = true;
     _resumePosition = Duration.zero;
@@ -855,8 +1003,10 @@ class PlaybackEngine implements PlaybackFacade {
     }
     if (next != null) {
       final spec = await _resolver.resolve(next);
-      await _backend.append(spec);
-      _window = [..._window, spec.uid];
+      if (spec.isLocal || _canReach()) {
+        await _backend.append(spec);
+        _window = [..._window, spec.uid];
+      }
     }
   }
 
@@ -952,10 +1102,10 @@ class PlaybackEngine implements PlaybackFacade {
       await _loadCurrent(autoplay: false);
       return;
     }
-    if (_queue.advanceAuto()) {
+    if (await _stepToPlayable(_queue.advanceAuto)) {
       await _loadCurrent(autoplay: true);
     } else {
-      // End of the queue: wait on the last track, ready to replay.
+      // End of the queue (or nothing ahead can play without a connection): wait on the last track, ready to replay.
       await _backend.pause();
       if (_loaded) await _backend.seek(Duration.zero);
       _emitAll();
@@ -980,6 +1130,13 @@ class PlaybackEngine implements PlaybackFacade {
       if (_handledErrorAttempt == attempt) return;
       _handledErrorAttempt = attempt;
       Log.warn('playback', 'backend error for ${item.id}: ${error.message}');
+      if (!await _playable(item)) {
+        // The network is gone, the song is not broken: wait for it, never hop on to the next song.
+        await _backend.pause();
+        _waitForConnection('Waiting for a connection.',
+            isError: false, position: _lastPosition);
+        return;
+      }
       if (_retried.add(item.uid)) {
         // One quiet retry: the endpoint may have just switched networks, or
         // the platform player hit a transient start-up failure.
