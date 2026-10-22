@@ -36,11 +36,16 @@ class ReplayGainSettings {
     this.mode = ReplayGainMode.off,
     this.preampDb = 0,
     this.untaggedDb = 0,
+    this.allowBoost = false,
   });
 
   final ReplayGainMode mode;
   final double preampDb;
   final double untaggedDb;
+
+  /// Whether a quiet song may be made louder. By default levelling only turns loud songs down: the phone's volume buttons are the
+  /// only thing that makes anything louder (P1-13).
+  final bool allowBoost;
 }
 
 typedef PeriodicTimerFactory = Timer Function(
@@ -1254,6 +1259,7 @@ class PlaybackEngine implements PlaybackFacade {
       albumPeak: item.rgAlbumPeak,
       preampDb: s.preampDb,
       untaggedDb: s.untaggedDb,
+      maxBoostDb: s.allowBoost ? 9 : 0,
     );
     _gainVolume = plan.volume;
     await _backend.setVolume(plan.volume);

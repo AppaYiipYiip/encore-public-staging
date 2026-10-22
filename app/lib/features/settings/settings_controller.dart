@@ -31,7 +31,7 @@ class AppSettings {
     this.backgroundSyncHours = 6,
     this.playbackSpeed = 1.0,
     this.replayGainMode = ReplayGainMode.track,
-    this.replayGainPreampDb = 0,
+    this.replayGainBoost = false,
     this.libraryScope = LibraryScope.automatic,
     this.showNewOnServer = true,
     this.privateListening = false,
@@ -86,7 +86,9 @@ class AppSettings {
   final ReplayGainMode replayGainMode;
 
   /// -6 .. +6 dB on top of the ReplayGain value.
-  final double replayGainPreampDb;
+  /// Quiet places: levelling may also make a quiet song louder (up to +9 dB through the loudness enhancer, which can distort).
+  /// Off by default: levelling only ever turns loud songs down, so the phone's volume buttons stay the one volume (P1-13).
+  final bool replayGainBoost;
 
   /// What Your Library lists on a server shared with other people.
   final LibraryScope libraryScope;
@@ -138,7 +140,7 @@ class AppSettings {
     int? backgroundSyncHours,
     double? playbackSpeed,
     ReplayGainMode? replayGainMode,
-    double? replayGainPreampDb,
+    bool? replayGainBoost,
     LibraryScope? libraryScope,
     bool? showNewOnServer,
     bool? privateListening,
@@ -173,7 +175,7 @@ class AppSettings {
         backgroundSyncHours: backgroundSyncHours ?? this.backgroundSyncHours,
         playbackSpeed: playbackSpeed ?? this.playbackSpeed,
         replayGainMode: replayGainMode ?? this.replayGainMode,
-        replayGainPreampDb: replayGainPreampDb ?? this.replayGainPreampDb,
+        replayGainBoost: replayGainBoost ?? this.replayGainBoost,
         libraryScope: libraryScope ?? this.libraryScope,
         showNewOnServer: showNewOnServer ?? this.showNewOnServer,
         privateListening: privateListening ?? this.privateListening,
@@ -202,7 +204,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kBackgroundSync = 'encore.backgroundSyncHours';
   static const _kSpeed = 'encore.playbackSpeed';
   static const _kReplayGain = 'encore.replayGain';
-  static const _kPreamp = 'encore.replayGainPreamp';
+  static const _kBoost = 'encore.replayGainBoost';
   static const _kScope = 'encore.libraryScope';
   static const _kShowNew = 'encore.showNewOnServer';
   static const _kPrivate = 'encore.privateListening';
@@ -255,7 +257,7 @@ class SettingsController extends Notifier<AppSettings> {
         (m) => m.name == p.getString(_kReplayGain),
         orElse: () => ReplayGainMode.track,
       ),
-      replayGainPreampDb: (p.getDouble(_kPreamp) ?? 0).clamp(-6.0, 6.0),
+      replayGainBoost: p.getBool(_kBoost) ?? false,
       libraryScope: LibraryScope.byName(p.getString(_kScope)),
       showNewOnServer: p.getBool(_kShowNew) ?? true,
       privateListening: p.getBool(_kPrivate) ?? false,
@@ -365,10 +367,9 @@ class SettingsController extends Notifier<AppSettings> {
     _save((p) => p.setString(_kReplayGain, mode.name));
   }
 
-  void setReplayGainPreamp(double db) {
-    final v = db.clamp(-6.0, 6.0);
-    state = state.copyWith(replayGainPreampDb: v);
-    _save((p) => p.setDouble(_kPreamp, v));
+  void setReplayGainBoost(bool on) {
+    state = state.copyWith(replayGainBoost: on);
+    _save((p) => p.setBool(_kBoost, on));
   }
 
   void setLibraryScope(LibraryScope scope) {

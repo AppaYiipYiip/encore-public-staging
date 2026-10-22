@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/tokens.dart';
 import '../../domain/audio_quality.dart';
 import '../../playback/replay_gain.dart';
 import 'settings_controller.dart';
@@ -77,25 +76,12 @@ class PlaybackSettingsScreen extends ConsumerWidget {
           ),
         ),
         if (s.replayGainMode != ReplayGainMode.off)
-          ListTile(
-            title: const Text('Level boost'),
-            subtitle: Slider(
-              min: -6,
-              max: 6,
-              divisions: 12,
-              value: s.replayGainPreampDb,
-              label: '${s.replayGainPreampDb.round()} dB',
-              onChanged: ctrl.setReplayGainPreamp,
-            ),
-            trailing: SizedBox(
-              width: 56,
-              child: Text(
-                '${s.replayGainPreampDb >= 0 ? '+' : ''}'
-                '${s.replayGainPreampDb.round()} dB',
-                textAlign: TextAlign.end,
-                style: context.text.labelLarge,
-              ),
-            ),
+          SwitchListTile(
+            title: const Text('Quiet places'),
+            subtitle: const Text(
+                'Also make quiet songs louder. Can sound harsh; the volume buttons on your phone are the usual way.'),
+            value: s.replayGainBoost,
+            onChanged: ctrl.setReplayGainBoost,
           ),
       ],
     );

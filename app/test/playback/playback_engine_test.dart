@@ -956,11 +956,77 @@ void main() {
     test('a quiet track is boosted through the effects layer', () async {
       final h = await Harness.start();
       h.replayGain = const ReplayGainSettings(
-          mode: ReplayGainMode.track, preampDb: 0, untaggedDb: 0);
+          mode: ReplayGainMode.track,
+          preampDb: 0,
+          untaggedDb: 0,
+          allowBoost: true);
       await h.engine
           .playTracks([trackRow('q', rgTrackGain: 4.0, rgTrackPeak: 0.3)]);
       expect(h.backend.volume, 1);
       expect(h.effects.boosts.last, closeTo(4.0, 1e-9));
+      await h.dispose();
+    });
+
+    test(
+        'by default levelling only turns loud songs down: a quiet one is not boosted',
+        () async {
+      final h = await Harness.start();
+      h.replayGain = const ReplayGainSettings(mode: ReplayGainMode.track);
+      await h.engine
+          .playTracks([trackRow('q', rgTrackGain: 4.0, rgTrackPeak: 0.3)]);
+      expect(h.backend.volume, 1);
+      expect(h.effects.boosts.last, 0,
+          reason: 'the volume buttons are the only way to louder');
+      await h.dispose();
+    });
+
+    test(
+        'with levelling off the player volume is exactly 1 through play, next, previous, seek, pause and a failing song',
+        () async {
+      final h = await Harness.start();
+      h.tracks = [
+        trackRow('t1', rgTrackGain: -9),
+        trackRow('t2', rgTrackGain: -14),
+        trackRow('t3'),
+      ];
+      await h.engine.playTracks(h.tracks);
+      expect(h.backend.volume, 1);
+      await h.engine.skipNext();
+      expect(h.backend.volume, 1);
+      await h.engine.skipPrevious();
+      expect(h.backend.volume, 1);
+      await h.engine.seek(const Duration(seconds: 30));
+      expect(h.backend.volume, 1);
+      await h.engine.pause();
+      expect(h.backend.volume, 1);
+      await h.engine.play();
+      h.backend.failCurrent();
+      await h.settle();
+      expect(h.backend.volume, 1);
+      expect(h.effects.boosts.every((b) => b == 0), isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'the volume a song was levelled to comes back after the sleep timer faded it',
+        () async {
+      final h = await Harness.start();
+      h.replayGain = const ReplayGainSettings(mode: ReplayGainMode.track);
+      await h.engine.playTracks([
+        trackRow('t1', rgTrackGain: -6.0),
+        trackRow('t2', rgTrackGain: -6.0)
+      ]);
+      final levelled = h.backend.volume;
+      expect(levelled, closeTo(0.501, 0.01));
+      await h.engine.setSleepTimer(const Duration(seconds: 12));
+      final ticker = h.timers.last;
+      for (var i = 0; i < 6; i++) {
+        ticker.fire();
+      }
+      expect(h.backend.volume, lessThan(levelled), reason: 'fading');
+      await h.engine.setSleepTimer(null);
+      expect(h.backend.volume, closeTo(levelled, 1e-9),
+          reason: 'back to the levelled volume, not 1 and not the faded one');
       await h.dispose();
     });
 

@@ -76,6 +76,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   are unchanged (≤ 10 % worse).
 
 ## P1-04 — Prepare what the person will probably tap (app + server) — Size S
+* **Status 2026-10-22: partly done.** The Top result of a search (or the first catalogue song) is prepared while the person reads (`SearchResultsView`); on the emulator a prepared Top result is audible 1.0-1.9 s after the tap. Not done: the first 3 songs of an opened album/playlist/imported playlist, the next 2 songs of the queue, cancelling stale prepares, dropping prepares first under back-off (P1-03).
 * **Why.** N3: ≤ 1 s for likely taps.
 * **Context.** `POST /api/prepare` exists (resolve + park 20 min). The app prepares the top search result and the first song of an
   open catalogue album (ADR-058/060).
@@ -103,6 +104,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 * **Acceptance.** The script reproduces today's ~38 s on build 40 (sanity check) and is used for every number in P1.
 
 ## P1-07 — Search: a Top result and one list (app) — Size M
+* **Status 2026-10-22: done and walked on the emulator.** `lib/domain/search_rank.dart` (pure ranking), `lib/features/search/search_assembly.dart`, `search_results.dart`; Top result, then songs (library and catalogue mixed, same look), artists, albums; no header about the library. Real answers recorded from Deezer (`tools/record_deezer_fixtures.py`, `test/fixtures/deezer/search.json`): the intended song is the Top result for 18 of 20 queries; the two misses are known (Deezer's eight results hold no Beach House song; an Arabic title cannot be matched with Latin letters yet, docs/19). Also fixed on the way: the server treated "(The Avener Rework)" as noise, so the plain song tapped played the library's rework (`version_signature`); covers rank below the artist's own versions; compilation repeats are folded. Not done: keystroke-to-results timing (≤ 300 ms) not measured on a device.
 * **Why.** E5: the typed song came 6th, after albums and covers; a technical header splits owned/not owned.
 * **Context.** `lib/features/search/search_screen.dart`, `lib/features/search/catalogue_section.dart` (header "Not in your library
   yet" + "It is added to your library first…"), Deezer client `lib/data/catalogue/deezer_client.dart`, local FTS search.
@@ -192,6 +194,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   play a song and add it to a playlist (screen-reader walk recorded as notes).
 
 ## P1-13 — One volume, consistent loudness (app + server) — Size M
+* **Status 2026-10-22: app part done, server part open.** Levelling now only turns loud songs down by default (the loudness enhancer is off: `ReplayGainSettings.allowBoost`, setting "Quiet places" is the only boost; the preamp slider is gone), so the phone's volume buttons are the one volume; engine tests prove the player volume is exactly 1 with levelling off through play/next/previous/seek/pause/failure and that the levelled volume comes back after a sleep-timer fade. Open: measuring loudness on the server when a file is kept (ReplayGain tags), YouTube-reported loudness for streams, the 20-song loudness measurement, and asking the owner which slider he meant.
 * **Why.** Owner's volume report (old F12 "not in sync with my phone's slider, sometimes works"; repeated 2026-10-21), `../13` §1
   findings V1–V5, H11.
 * **Context.** `lib/playback/replay_gain.dart` (`planReplayGain`: cuts through the player's internal volume, boosts up to +9 dB through

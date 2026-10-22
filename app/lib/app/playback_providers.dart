@@ -135,7 +135,7 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
       final s = ref.read(settingsProvider);
       return ReplayGainSettings(
         mode: s.replayGainMode,
-        preampDb: s.replayGainPreampDb,
+        allowBoost: s.replayGainBoost,
       );
     },
   );
