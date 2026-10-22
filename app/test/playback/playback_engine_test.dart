@@ -1274,6 +1274,25 @@ void main() {
       await h.dispose();
     });
 
+    test('a newer tap does not wait for a load that is stuck: the latest wins',
+        () async {
+      // The limit is far away on purpose: only the newer tap can end the stuck load in time.
+      final h = await Harness.start(loadTimeout: const Duration(seconds: 60));
+      h.backend.setSourcesGate = Completer<void>();
+      final first = h.engine.playTracks(h.tracks.sublist(0, 2));
+      await h.settle();
+
+      h.backend.setSourcesGate = null; // the network is back for the next load
+      await h.engine.playTracks(h.tracks.sublist(2, 4)).timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => fail('the new tap waited behind the stuck load'));
+      await first;
+
+      expect(h.currentId, 't3');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
     test('after a load gave up, Play tries again', () async {
       final h =
           await Harness.start(loadTimeout: const Duration(milliseconds: 80));

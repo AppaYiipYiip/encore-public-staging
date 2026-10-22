@@ -159,6 +159,16 @@ class PlaybackEngine implements PlaybackFacade {
 
   int _generation = 0;
 
+  /// Completed when a newer "play this" request arrives: a load still in progress is of no interest then, and must not hold the
+  /// command queue until its time limit (latest tap wins).
+  Completer<void>? _loadSuperseded;
+
+  int _newGeneration() {
+    final pending = _loadSuperseded;
+    if (pending != null && !pending.isCompleted) pending.complete();
+    return ++_generation;
+  }
+
   /// Counts the person's "stop the music" intents (each pause). A command
   /// remembers the value when it was QUEUED ([_opIntent] while it runs); if a
   /// pause happened since, it must not start audio, even though it is still
@@ -346,7 +356,7 @@ class PlaybackEngine implements PlaybackFacade {
   }) {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
-    final generation = ++_generation;
+    final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
       _finishItem();
@@ -405,7 +415,7 @@ class PlaybackEngine implements PlaybackFacade {
   }) {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
-    final generation = ++_generation;
+    final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
       _finishItem();
@@ -922,8 +932,14 @@ class PlaybackEngine implements PlaybackFacade {
     if (!autoplay) await _backend.pause();
     await _backend.setLoopOne(_loopOne);
     final load = _backend.setSources(specs, index: 0, position: position);
+    final superseded = _loadSuperseded = Completer<void>();
     try {
-      await load.timeout(loadTimeout);
+      await Future.any([load, superseded.future]).timeout(loadTimeout);
+      if (superseded.isCompleted) {
+        // Something newer was asked for while this was loading: leave the load to end by itself and let the new command run.
+        unawaited(load.then<void>((_) {}, onError: (Object _) {}));
+        return;
+      }
     } on TimeoutException {
       Log.warn('playback',
           'loading ${item.id} took longer than ${loadTimeout.inSeconds} s; giving up for now');
