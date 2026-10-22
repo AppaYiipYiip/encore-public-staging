@@ -1,0 +1,20 @@
+# The new Encore server next to the old services, on its own port (docs/tasks P2-01): `docker compose -f compose.dev.yaml up -d --build`.
+# It joins the old stack's network to reach Navidrome by name; the old services are not touched.
+services:
+  encore-server:
+    build: .
+    container_name: encore-server
+    restart: unless-stopped
+    environment:
+      ENCORE_NAVIDROME_URL: http://navidrome:4533
+      ENCORE_SERVER_NAME: Encore dev server
+      ENCORE_PORT: "4533"
+    ports:
+      - "4540:4533"
+    volumes:
+      - ./data:/data
+    networks: [stack]
+networks:
+  stack:
+    external: true
+    name: ${STACK_NETWORK:-encore-server_default}
