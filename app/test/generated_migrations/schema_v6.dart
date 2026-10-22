@@ -815,9 +815,14 @@ class PlaylistEntries extends Table with TableInfo {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       $customConstraints: 'NULL');
+  late final GeneratedColumn<double> serverPosition = GeneratedColumn<double>(
+      'server_position', aliasedName, true,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      $customConstraints: 'NULL');
   @override
   List<GeneratedColumn> get $columns =>
-      [serverId, playlistId, position, trackId, entryId];
+      [serverId, playlistId, position, trackId, entryId, serverPosition];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override

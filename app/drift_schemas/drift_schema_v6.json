@@ -1290,6 +1290,16 @@
             "default_dart": null,
             "default_client_dart": null,
             "dsl_features": []
+          },
+          {
+            "name": "server_position",
+            "getter_name": "serverPosition",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
           }
         ],
         "is_virtual": false,
@@ -2762,7 +2772,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"playlist_entries\" (\"server_id\" INTEGER NOT NULL REFERENCES servers (id) ON DELETE CASCADE, \"playlist_id\" TEXT NOT NULL, \"position\" INTEGER NOT NULL, \"track_id\" TEXT NOT NULL, \"entry_id\" TEXT NULL, PRIMARY KEY (\"server_id\", \"playlist_id\", \"position\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"playlist_entries\" (\"server_id\" INTEGER NOT NULL REFERENCES servers (id) ON DELETE CASCADE, \"playlist_id\" TEXT NOT NULL, \"position\" INTEGER NOT NULL, \"track_id\" TEXT NOT NULL, \"entry_id\" TEXT NULL, \"server_position\" REAL NULL, PRIMARY KEY (\"server_id\", \"playlist_id\", \"position\"));"
         }
       ]
     },

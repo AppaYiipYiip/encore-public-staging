@@ -214,6 +214,10 @@ class PlaylistEntries extends Table {
   /// (v6) The Encore server's id of this entry (`pe_...`): what a removal or a move names. Null for entries of a plain music server.
   TextColumn get entryId => text().nullable()();
 
+  /// (v6) Where the Encore server puts this entry: a fractional position, so two devices' moves merge. [position] above is the entry's index in
+  /// this order, counted again whenever the playlist changes; only the order of this column matters.
+  RealColumn get serverPosition => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {serverId, playlistId, position};
 }

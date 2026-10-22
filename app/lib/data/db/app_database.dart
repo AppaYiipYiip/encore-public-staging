@@ -83,6 +83,7 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(tracks, tracks.coverUrl);
             await m.addColumn(tracks, tracks.explicit);
             await m.addColumn(playlistEntries, playlistEntries.entryId);
+            await m.addColumn(playlistEntries, playlistEntries.serverPosition);
           }
         },
         beforeOpen: (details) async {

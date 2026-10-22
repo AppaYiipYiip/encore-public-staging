@@ -102,6 +102,15 @@ class FakeEncoreServer {
   /// Another device likes a song, creates a playlist, ... (what the app should see arrive).
   void otherDeviceLikes(String refId) => _like(refId);
 
+  /// What another device of the same person does, as a request to the server (for tests: `call('PUT', '/encore/api/v1/likes/sr_...')`).
+  Future<FakeResponse> call(String method, String path, [Object? body]) =>
+      _dispatch(RecordedRequest(
+        method: method,
+        uri: Uri.parse('http://fake.test$path'),
+        body: body == null ? '' : jsonEncode(body),
+        contentType: 'application/json',
+      ));
+
   // -------------------------------------------------------------- the routes
 
   Future<FakeResponse> _dispatch(RecordedRequest r) async {

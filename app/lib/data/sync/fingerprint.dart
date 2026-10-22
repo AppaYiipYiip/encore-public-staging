@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 import '../api/opensubsonic/models.dart';
+import '../encore/encore_models.dart';
 
 /// Stable content hashes used for change detection (docs/02-architecture.md
 /// section 5.3). MD5 is used for speed/portability, not for security.
@@ -70,3 +71,37 @@ String memberSetHashOf(Iterable<String> ids) {
   final sorted = ids.toList()..sort();
   return _hash(sorted);
 }
+
+/// Everything displayed about a ref (title, artists, album, what the server's file says): a change rewrites the row.
+String refFingerprint(EncoreRef r) => _hash([
+      r.title,
+      r.artists.join(''),
+      r.album,
+      r.albumArtist,
+      r.trackNo,
+      r.discNo,
+      r.year,
+      r.durationMs,
+      r.isrc,
+      r.mbid,
+      r.videoId,
+      r.coverUrl,
+      r.explicit,
+      r.file?.navidromeSongId,
+      r.file?.albumId,
+      r.file?.artistId,
+      r.file?.coverArt,
+      r.file?.genre,
+    ]);
+
+/// Only the audio of the server's file (like [audioKeyOf]): a replaced or re-encoded file changes it, a tag edit does not.
+String refAudioKey(EncoreRef r) => r.file == null
+    ? ''
+    : _hash([
+        r.file!.size,
+        r.file!.suffix,
+        r.file!.bitrateKbps,
+        r.durationSec,
+        r.file!.samplingRate,
+        r.file!.bitDepth,
+      ]);
