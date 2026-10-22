@@ -135,3 +135,25 @@ and activity).
 * **Do.** Browse: charts of the server's country (Deezer charts), moods and genres, editorial playlists (public YouTube Music/Spotify
   editorial lists imported with "Follow the original", P2-17); a full **Recently played** screen from `play_event`; playlist descriptions.
 * **Acceptance.** Browse is never empty on a brand-new server; Recently played matches the server's history for a test person.
+
+## P4-16 — Profiles on a shared device (tablet, TV, a family phone) — Size L
+* **Why.** Owner, 2026-10-22: *"In a shared tablet, Android TV, same app, same server, multiple users, we should implement switching users,
+  after signing in I mean: you can leave the session, someone else signs in, but it is a trusted device, no need to sign out."* And: offline mode
+  showed every download "mine or not".
+* **Design.** A device can hold several **profiles**, one per person who signed in on it. A profile is what a server row already is: the person's
+  account on a server, their library, their downloads, their queue, their credentials in secure storage. Today the app opens the lowest server id;
+  this task makes the active profile a choice.
+  * **Trusted device** (a switch in Settings, on by default on tablets and TVs, off on phones): the app opens on *Who's listening?* with the
+    profiles' names and pictures, "Add someone" (sign in, or join with an invitation/QR) and "Guest" (one session that leaves nothing behind).
+    Picking a profile needs no password on a trusted device (it is the sign-in that was done once); an optional 4-digit PIN per profile guards it.
+  * **Switch user** from anywhere (the profile picture in Home and Settings): stops the player of the old profile (or hands the queue to the new
+    one if it asks), swaps the session, keeps everything of the old profile exactly as it was.
+  * **Leave the session** (the old "sign out" without deleting): returns to the picker; removing a profile and its downloads is a separate, asked step.
+  * Downloads, queue, history, covers cache keys and Jam state are per profile; the files of a download live in the profile's folder; the library
+    scope "mine" is therefore automatically the active profile's. A TV shows only what is on it or on the server for that profile.
+  * Server side: nothing new is required (each profile is a person with its own device token); the owner can see a device's profile names in
+    the device list.
+* **Don't.** Share one login between people; keep a password on a trusted device after sign-in (device token only); mix two profiles' downloads.
+* **Acceptance.** J-18 (new): two people on one emulator, each with their own playlists and downloads; switching takes ≤ 2 s; offline each sees only
+  their downloads; the second person's sign-out/removal leaves the first's data; the picker works with the TV remote (D-pad focus) on the tablet AVD.
+* **Depends on.** P2-02 (the session is per server row already), P3-03 (device tokens, so no password stays); sizes of the picker for tablets: P4-11.
