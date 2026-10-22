@@ -103,6 +103,7 @@ class Harness {
     Duration loadTimeout = const Duration(seconds: 12),
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
+    Duration lookupBudget = const Duration(seconds: 4),
   }) async {
     final h = Harness._();
     h.backend = FakeAudioBackend();
@@ -128,6 +129,7 @@ class Harness {
       loadTimeout: loadTimeout,
       canReachServer: () => h.reachable,
       findByName: findByName,
+      catalogueLookupBudget: lookupBudget,
       clock: h.clock,
       random: Random(1),
       periodicTimer: (period, callback) {
@@ -1497,6 +1499,45 @@ void main() {
 
       expect(h2.currentId, 't1');
       expect(h2.engine.debugQueue.items, hasLength(3));
+      await h.dispose();
+      await h2.dispose();
+    });
+
+    test(
+        'a lookup that never answers does not hold the restore: the queue still comes back',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks.sublist(0, 2));
+      await h.engine.playPreviews([
+        PreviewTrack(id: 'deezer:9', title: 'T', uri: stream, artist: 'A'),
+      ]);
+      await h.engine.pause();
+      await h.settle();
+
+      // The saved queue is now only the streamed song; give the new phone a library song to restore as well.
+      store.value = PersistedPlayback(
+        queue: {
+          ...store.value!.queue,
+          'ids': ['t1', 'deezer:9'],
+          'order': [0, 1],
+          'cursor': 0,
+        },
+        positionMs: 0,
+      );
+      final h2 = await Harness.start(
+        store: store,
+        library: {for (final t in h.tracks) t.id: t},
+        lookupBudget: const Duration(milliseconds: 100),
+        findByName: (artist, title, album) =>
+            Completer<TrackRow?>().future, // the network is gone: never answers
+      );
+      await h2.engine.restore().timeout(const Duration(seconds: 2),
+          onTimeout: () => fail('the restore waited for the lookup'));
+
+      expect(h2.currentId, 't1');
+      expect(h2.engine.debugQueue.items, hasLength(1),
+          reason: 'the song that could not be found is left out');
       await h.dispose();
       await h2.dispose();
     });

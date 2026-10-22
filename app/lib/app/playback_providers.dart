@@ -12,7 +12,8 @@ import '../data/sync/sync_state_store.dart';
 import '../features/common/cover_art.dart' show coverCacheManager;
 import '../features/instant/instant_controller.dart'
     show instantControllerProvider;
-import '../features/instant/library_resolver.dart' show libraryResolverProvider;
+import '../features/instant/library_resolver.dart'
+    show SessionLibraryResolver, libraryResolverProvider;
 import '../features/settings/settings_controller.dart';
 import '../playback/encore_audio_handler.dart';
 import '../playback/equalizer_service.dart';
@@ -98,11 +99,10 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     lookupTracks: (ids) => _lookupTracks(db, serverId, ids),
     // A song that was streamed from the catalogue is found again in the library by what it is, when the queue is restored.
     findByName: (artist, title, album) async {
-      final resolver = ref.read(libraryResolverProvider);
-      if (resolver == null) return null;
-      return resolver
-          .find(artist: artist, title: title, album: album)
-          .onError((_, __) => null);
+      // The session is made from what is stored on the phone (no network); the library lookup needs it.
+      await ref.read(sessionProvider.future);
+      return SessionLibraryResolver(ref)
+          .find(artist: artist, title: title, album: album);
     },
     recorder: SessionPlayRecorder(
       db: db,

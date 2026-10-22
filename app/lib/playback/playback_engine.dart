@@ -73,6 +73,7 @@ class PlaybackEngine implements PlaybackFacade {
     PeriodicTimerFactory? periodicTimer,
     bool Function()? moreComing,
     bool Function()? canReachServer,
+    this.catalogueLookupBudget = const Duration(seconds: 4),
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
   })  : _moreComing = moreComing ?? (() => false),
@@ -124,6 +125,9 @@ class PlaybackEngine implements PlaybackFacade {
   /// How long loading a song may take before it is given up. A load whose network went away neither finishes nor fails: without
   /// this limit it held the command queue for good, so every later tap waited behind it and the player looked frozen (E1).
   final Duration loadTimeout;
+
+  /// How long restoring the queue may spend looking streamed songs up in the library: the player must not wait on a dead network.
+  final Duration catalogueLookupBudget;
 
   /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
   final bool Function() _canReach;
@@ -295,6 +299,7 @@ class PlaybackEngine implements PlaybackFacade {
     final find = _findByName;
     final named = saved['named'];
     if (find == null || named is! Map) return;
+    final spent = Stopwatch()..start();
     for (final entry in named.entries) {
       final id = entry.key;
       final what = entry.value;
@@ -303,9 +308,16 @@ class PlaybackEngine implements PlaybackFacade {
       final title = what['title'];
       final album = what['album'];
       if (artist is! String || title is! String) continue;
+      final left = catalogueLookupBudget - spent.elapsed;
+      if (left <= Duration.zero) break;
       try {
-        final row = await find(artist, title, album is String ? album : null);
+        final row = await find(artist, title, album is String ? album : null)
+            .timeout(left);
         if (row != null) tracks[id] = row;
+      } on TimeoutException {
+        Log.warn('playback',
+            'looking up the streamed songs of the saved queue took too long; the rest is left out');
+        break;
       } on Object catch (error) {
         Log.warn('playback',
             'looking up a streamed song of the saved queue failed', error);
