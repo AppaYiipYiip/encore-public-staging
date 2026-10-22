@@ -13,7 +13,7 @@ String _name(String key) => key.replaceAll(':', '_');
 
 void main() {
   const credentialed =
-      'http://home:4533/rest/getCoverArt?id=al1&size=512&u=marwa&t=abc123&s=salt';
+      'http://home:4533/rest/getCoverArt?id=al1&size=768&u=marwa&t=abc123&s=salt';
 
   late Map<String, File> cache;
   late List<String> downloads;
@@ -42,11 +42,22 @@ void main() {
   });
 
   test('a cached cover is a local file and nothing is downloaded', () async {
-    cache['cover:1:al1:512'] = File('/cache/al1.jpg');
+    cache['cover:1:al1:768'] = File('/cache/al1.jpg');
 
     final uri = await resolver().resolve('al1');
 
     expect(uri, Uri.file('/cache/al1.jpg'));
+    expect(downloads, isEmpty);
+  });
+
+  test('the other size of the cover stands in and nothing is downloaded',
+      () async {
+    // Seen in a row (the small size) but never in the player: good enough for the lock screen, and it works offline.
+    cache['cover:1:al1:256'] = File('/cache/al1-small.jpg');
+
+    final uri = await resolver().resolve('al1');
+
+    expect(uri, Uri.file('/cache/al1-small.jpg'));
     expect(downloads, isEmpty);
   });
 
@@ -72,7 +83,7 @@ void main() {
     expect(uri, isNull, reason: 'never the network URL instead');
     gate.complete();
     await pumpEventQueue();
-    expect(cache, contains('cover:1:al1:512'),
+    expect(cache, contains('cover:1:al1:768'),
         reason: 'the next request finds it');
   });
 
@@ -103,7 +114,7 @@ void main() {
   test('whatever happens, the result never carries credentials', () async {
     final outcomes = <Uri?>[];
     // cache hit, miss + fetched, slow, failing, empty
-    cache['cover:1:hit:512'] = File('/cache/hit.jpg');
+    cache['cover:1:hit:768'] = File('/cache/hit.jpg');
     outcomes.add(await resolver().resolve('hit'));
     outcomes.add(await resolver().resolve('miss'));
     download = (url, key) => Completer<File?>().future; // never completes

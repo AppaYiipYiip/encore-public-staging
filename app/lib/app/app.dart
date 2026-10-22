@@ -24,6 +24,7 @@ import '../features/settings/settings_controller.dart';
 import 'alerts_wiring.dart';
 import 'background_sync.dart';
 import 'branding.dart';
+import 'cover_wiring.dart';
 import 'notifications.dart';
 import 'playback_providers.dart';
 import 'power_wiring.dart';
@@ -47,6 +48,8 @@ class EncoreApp extends ConsumerWidget {
     ref.watch(lyricsPrefetchProvider);
     // Downloaded songs bring their lyrics along (works offline afterwards).
     ref.watch(lyricsForDownloadsProvider);
+    // The covers of what the person is likely to see are fetched in the background: offline shows covers, not letters.
+    ref.watch(coverPrefetchProvider);
     // Keeps pinned music in step with the server (starts after start-up).
     ref.watch(downloadManagerProvider);
     // The periodic background job follows the setting.

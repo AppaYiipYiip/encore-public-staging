@@ -466,6 +466,63 @@ class LibraryRepository {
         .map((rows) => [for (final r in rows) r.read<String>('cover')]);
   }
 
+  /// The cover ids a person is most likely to see, in the order they matter: playlists (their own picture, then the albums of
+  /// their first songs), downloaded songs, liked songs, the newest albums, the biggest artists. [limit] bounds the list; the
+  /// rest of the library's covers load when they are first shown. The input to the background cover fetch (E3: offline shows
+  /// covers, not letters).
+  Future<List<String>> coverIdsToKeepOffline({int limit = 600}) async {
+    const cover = 'COALESCE(a.cover_art, t.cover_art)';
+    const live = 't.deleted_at_ms IS NULL AND $cover IS NOT NULL';
+    final rows = await _db.customSelect(
+      'SELECT cover FROM ('
+      // 0: the picture a playlist has of its own
+      'SELECT cover_art AS cover, 0 AS rank, 0 AS ord FROM playlists '
+      'WHERE server_id = ?1 AND deleted_at_ms IS NULL AND cover_art IS NOT NULL '
+      'UNION ALL '
+      // 1: the albums of each playlist's first songs (its collage)
+      'SELECT $cover, 1, e.position FROM playlist_entries e '
+      'JOIN tracks t ON t.server_id = e.server_id AND t.id = e.track_id '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE e.server_id = ?1 AND e.position < 12 AND $live '
+      'UNION ALL '
+      // 2: songs on the phone
+      'SELECT $cover, 2, 0 FROM downloads d '
+      'JOIN tracks t ON t.server_id = d.server_id AND t.id = d.track_id '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE d.server_id = ?1 AND d.state = 2 AND $live '
+      'UNION ALL '
+      // 3: liked songs
+      'SELECT $cover, 3, 0 FROM tracks t '
+      'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE t.server_id = ?1 AND t.starred_at_ms IS NOT NULL AND $live '
+      'UNION ALL '
+      // 4: the newest albums
+      'SELECT cover, 4, ord FROM (SELECT cover_art AS cover, -COALESCE(created_at_ms, 0) AS ord FROM albums '
+      'WHERE server_id = ?1 AND deleted_at_ms IS NULL AND cover_art IS NOT NULL '
+      'ORDER BY ord LIMIT 200) '
+      'UNION ALL '
+      // 5: artists with the most albums
+      'SELECT cover, 5, ord FROM (SELECT cover_art AS cover, -album_count AS ord FROM artists '
+      'WHERE server_id = ?1 AND deleted_at_ms IS NULL AND cover_art IS NOT NULL '
+      'ORDER BY ord LIMIT 100)'
+      ') ORDER BY rank, ord',
+      variables: [Variable<int>(serverId)],
+      readsFrom: {
+        _db.playlists,
+        _db.playlistEntries,
+        _db.tracks,
+        _db.albums,
+        _db.artists,
+        _db.downloads,
+      },
+    ).get();
+    final seen = <String>{};
+    return [
+      for (final r in rows)
+        if (seen.add(r.read<String>('cover'))) r.read<String>('cover'),
+    ].take(limit).toList();
+  }
+
   /// Genres present in the library with their album counts (Search > Browse).
   ///
   /// Tags are typed by people and tools, so "Progressive Rock" and

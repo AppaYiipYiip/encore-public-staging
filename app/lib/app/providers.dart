@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
+import '../core/cover_sizes.dart';
 import '../data/auth/credential_store.dart';
 import '../data/auth/server_setup_service.dart';
 import '../data/db/app_database.dart';
@@ -159,20 +160,19 @@ class CoverArtResolver {
   final int serverId;
   final ServerSession? session;
 
-  static int bucket(int px) {
-    for (final b in const [96, 160, 256, 384, 512, 768, 1024]) {
-      if (px <= b) return b;
-    }
-    return 1200;
-  }
+  /// The size a widget of [px] device pixels fetches (two sizes only: [CoverSize]).
+  static int bucket(int px) => CoverSize.forPixels(px);
 
   ({Uri url, String cacheKey}) resolve(String coverArtId, int px) {
     final size = bucket(px);
-    final key = 'cover:$serverId:$coverArtId:$size';
     final url = session?.coverArtUrl(coverArtId, size: size) ??
         Uri.parse('https://cover-cache.invalid/$serverId/$coverArtId/$size');
-    return (url: url, cacheKey: key);
+    return (url: url, cacheKey: CoverSize.key(serverId, coverArtId, size));
   }
+
+  /// The cache key of the *other* size of the cover [resolve] would fetch: what stands in for it when it is not cached.
+  String alternateKey(String coverArtId, int px) =>
+      CoverSize.key(serverId, coverArtId, CoverSize.otherThan(bucket(px)));
 }
 
 final coverArtResolverProvider = Provider<CoverArtResolver?>((ref) {

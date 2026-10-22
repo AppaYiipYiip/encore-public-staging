@@ -3,6 +3,7 @@ import 'dart:ui' show Color;
 import 'package:drift/drift.dart' show BooleanExpressionOperators, Value;
 import 'package:drift/native.dart';
 import 'package:encore/app/providers.dart';
+import 'package:encore/core/cover_sizes.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/common/artwork_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +63,8 @@ void main() {
     final first = await swatchOf(c, key);
     expect(first, const Color(0xFF336699));
     expect(extracted, hasLength(1));
-    expect(extracted.single.cacheKey, 'cover:$serverId:mf-song-1:160',
+    expect(extracted.single.cacheKey,
+        CoverSize.key(serverId, 'mf-song-1', CoverSize.small),
         reason: 'same cache entry the cover widgets use, no new download');
 
     await pumpEventQueue();

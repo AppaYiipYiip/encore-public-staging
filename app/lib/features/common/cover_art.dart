@@ -125,7 +125,13 @@ class CoverArt extends ConsumerWidget {
           fadeInDuration: const Duration(milliseconds: 150),
           fadeOutDuration: Duration.zero,
           placeholder: (_, __) => ColoredBox(color: context.colors.surfaceHigh),
-          errorWidget: (_, __, ___) => fallback(),
+          // Offline, a cover seen at the other size (a row, then the player) still shows: only then the gradient.
+          errorWidget: (_, __, ___) => _CachedOtherSize(
+            cacheKey: resolver.alternateKey(id, px),
+            fit: fit,
+            px: px,
+            fallback: fallback,
+          ),
         );
       },
     );
@@ -134,6 +140,56 @@ class CoverArt extends ConsumerWidget {
     if (radius <= 0) return content;
     return ClipRRect(
         borderRadius: BorderRadius.circular(radius), child: content);
+  }
+}
+
+/// The cover at the size that is cached, scaled, when the size asked for could not be loaded (offline, E3). Nothing cached
+/// either: [fallback], the gradient.
+class _CachedOtherSize extends StatefulWidget {
+  const _CachedOtherSize({
+    required this.cacheKey,
+    required this.fit,
+    required this.px,
+    required this.fallback,
+  });
+
+  final String cacheKey;
+  final BoxFit fit;
+  final int px;
+  final Widget Function() fallback;
+
+  @override
+  State<_CachedOtherSize> createState() => _CachedOtherSizeState();
+}
+
+class _CachedOtherSizeState extends State<_CachedOtherSize> {
+  late Future<FileInfo?> _file =
+      coverCacheManager.getFileFromCache(widget.cacheKey);
+
+  @override
+  void didUpdateWidget(_CachedOtherSize old) {
+    super.didUpdateWidget(old);
+    if (old.cacheKey != widget.cacheKey) {
+      _file = coverCacheManager.getFileFromCache(widget.cacheKey);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<FileInfo?>(
+      future: _file,
+      builder: (context, snapshot) {
+        final file = snapshot.data?.file;
+        if (file == null) return widget.fallback();
+        return Image.file(
+          file,
+          fit: widget.fit,
+          cacheWidth: CoverArtResolver.bucket(widget.px),
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => widget.fallback(),
+        );
+      },
+    );
   }
 }
 

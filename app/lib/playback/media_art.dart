@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import '../core/cover_sizes.dart';
 import '../core/logger.dart';
 
 /// Artwork for the system media session (lock screen, notification, Bluetooth,
@@ -18,7 +19,7 @@ class MediaArtResolver {
     required Future<File?> Function(String url, String cacheKey) download,
     required String? Function(String coverArtId, int size) urlFor,
     this.wait = const Duration(seconds: 3),
-    this.size = 512,
+    this.size = CoverSize.large,
   })  : _cachedFile = cachedFile,
         _download = download,
         _urlFor = urlFor;
@@ -37,9 +38,13 @@ class MediaArtResolver {
   /// A `file:` URI for [coverArtId], or `null` (no session, still downloading,
   /// offline). Never a network URL.
   Future<Uri?> resolve(String coverArtId) async {
-    final key = 'cover:$serverId:$coverArtId:$size';
+    final key = CoverSize.key(serverId, coverArtId, size);
     final hit = await _cachedFile(key);
     if (hit != null) return Uri.file(hit.path);
+    // Seen in a row but not yet in the player (or offline): the other size will do for the lock screen.
+    final other = await _cachedFile(
+        CoverSize.key(serverId, coverArtId, CoverSize.otherThan(size)));
+    if (other != null) return Uri.file(other.path);
 
     final url = _urlFor(coverArtId, size);
     if (url == null) return null;
