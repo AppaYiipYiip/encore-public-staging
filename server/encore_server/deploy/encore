@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# The `encore` command: looks after the Encore server the installer put on this computer (docs/tasks P3-05).
+#
+#   encore status               is it running, at which address, which version
+#   encore logs [service]       what the server has been saying (Ctrl-C to stop)
+#   encore start | stop | restart
+#   sudo encore update          the newest version, then check it answers
+#   sudo encore funnel on|off|status   let phones reach it away from home (through the Tailscale on this computer)
+#   sudo encore uninstall [--everything]   remove it; the music is never touched
+set -Eeuo pipefail
+
+DIR="${ENCORE_DIR:-/opt/encore}"
+
+if [ -t 1 ]; then GREEN=$'\033[32m'; RED=$'\033[31m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'; else GREEN=""; RED=""; DIM=""; BOLD=""; OFF=""; fi
+say() { printf '%s\n' "$*"; }
+ok() { printf '  %s✓%s %s\n' "$GREEN" "$OFF" "$*"; }
+note() { printf '  %s%s%s\n' "$DIM" "$*" "$OFF"; }
+die() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$OFF" >&2; exit 1; }
+
+[ -f "$DIR/compose.yaml" ] || die "Encore is not installed here (no $DIR/compose.yaml)."
+dc() { docker compose --project-directory "$DIR" "$@"; }
+env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+PORT="$(env_value ENCORE_PORT)"; PORT="${PORT:-4533}"
+need_root() { [ "$(id -u)" = 0 ] || die "This needs the administrator: use  sudo encore $1"; }
+
+answers() { [ "$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null)" = 200 ]; }
+wait_answers() {
+    for _ in $(seq 1 90); do answers && return 0; sleep 2; done
+    return 1
+}
+server_version() { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null | sed -n 's/.*"serverVersion":"\([^"]*\)".*/\1/p' | head -1; }
+host_ip() { ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}'; }
+state_of() { dc ps --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null | awk -v s="$1" '$1 == s {print $2 (NF > 2 && $3 != "" ? " (" $3 ")" : "")}'; }
+
+funnel_address() { command -v tailscale >/dev/null 2>&1 && tailscale funnel status 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+(:[0-9]+)?' | head -1 || true; }
+
+cmd_status() {
+    local version away
+    version="$(server_version)"
+    say ""
+    say "  ${BOLD}Encore${OFF} ${version:+$version }(version ${TAG:-$(env_value ENCORE_TAG)})"
+    for service in encore-server navidrome; do
+        local label="Encore server"; [ "$service" = navidrome ] && label="Music server"
+        local state; state="$(state_of "$service")"
+        if [ -n "$state" ] && [ "${state#running}" != "$state" ]; then ok "$label: $state"; else printf '  %s✗%s %s: %s\n' "$RED" "$OFF" "$label" "${state:-not running}"; fi
+    done
+    if answers; then ok "It answers on port ${PORT}"; else printf '  %s✗%s It does not answer on port %s (try: encore logs)\n' "$RED" "$OFF" "$PORT"; fi
+    say ""
+    say "        On your home network:  $(host_ip):${PORT}"
+    away="$(funnel_address)"
+    if [ -n "$away" ]; then say "        Away from home:        $away"; else say "        Away from home:        not set up (sudo encore funnel on)"; fi
+    say "        Music folder:          $(env_value ENCORE_MUSIC_DIR)"
+    say ""
+}
+
+cmd_update() {
+    need_root update
+    local before after image tag
+    before="$(server_version)"
+    image="$(env_value ENCORE_IMAGE)"; image="${image:-ghcr.io/appayiipyiip/encore-server}"
+    tag="$(env_value ENCORE_TAG)"; tag="${tag:-main}"
+    say ""
+    say "  … Looking for a newer version"
+    dc pull encore-server >/dev/null 2>&1 || die "The newest version could not be downloaded (are you signed in to the image registry? see: encore logs, or run the installer's sign-in step again)."
+    # The deployment files travel in the image: take the ones that match what was just downloaded.
+    docker run --rm --entrypoint cat "$image:$tag" /app/deploy/compose.yaml >"$DIR/compose.yaml.new" 2>/dev/null || die "The new version has no deployment files."
+    docker run --rm --entrypoint cat "$image:$tag" /app/deploy/encore >/usr/local/bin/encore.new 2>/dev/null || die "The new version has no encore command."
+    cp -p "$DIR/compose.yaml" "$DIR/compose.yaml.before-update"
+    mv "$DIR/compose.yaml.new" "$DIR/compose.yaml"
+    chmod 755 /usr/local/bin/encore.new
+    dc up -d >/dev/null 2>&1 || die "The new version could not be started. The old files are in $DIR/compose.yaml.before-update."
+    wait_answers || die "The new version did not answer in 3 minutes. See: encore logs"
+    after="$(server_version)"
+    ok "Encore is up to date${before:+ (was $before, now $after)}"
+    # Replacing the file this is running from last: bash has read it already.
+    mv /usr/local/bin/encore.new /usr/local/bin/encore
+}
+
+cmd_funnel() {
+    need_root funnel
+    local what="${1:-status}" port="${PORT}"
+    case "$what" in
+        on)
+            if ! command -v tailscale >/dev/null 2>&1; then
+                say ""
+                say "  Tailscale is not on this computer. It is what lets your phone reach Encore from anywhere, with a proper https address."
+                read -r -p "  Install it now? [Y/n] " answer </dev/tty || answer=n
+                case "${answer:-y}" in [Yy]*) curl -fsSL https://tailscale.com/install.sh | sh >/dev/null 2>&1 || die "Tailscale could not be installed." ;; *) die "Without Tailscale there is no way in from outside; nothing was changed." ;; esac
+            fi
+            if ! tailscale status >/dev/null 2>&1; then
+                say "  This computer is not signed in to Tailscale yet. Open the link below in a browser and sign in:"
+                tailscale up || die "Signing in to Tailscale did not finish."
+            fi
+            # Another service may already own the https port 443 of this computer: use the next free public one instead of replacing it.
+            local https=443
+            if tailscale funnel status 2>/dev/null | grep -q ':443'; then https=8443; note "Port 443 is already used by something else here; using ${https}."; fi
+            local out
+            if ! out="$(tailscale funnel --bg --https="$https" "$port" 2>&1)"; then
+                printf '%s\n' "$out" | sed 's/^/    /' >&2
+                die "Tailscale would not turn Funnel on. It needs HTTPS and Funnel enabled for your tailnet (https://login.tailscale.com/admin/dns)."
+            fi
+            ok "Away from home: $(funnel_address)"
+            note "Add that address in the Encore app under Your server > Add an address, and invitations will use it."
+            ;;
+        off)
+            command -v tailscale >/dev/null 2>&1 || die "Tailscale is not on this computer."
+            tailscale funnel reset >/dev/null 2>&1 || true
+            ok "Encore is no longer reachable from outside (Funnel is off)"
+            ;;
+        status)
+            if [ -n "$(funnel_address)" ]; then ok "Away from home: $(funnel_address)"; else say "  Not set up (sudo encore funnel on)"; fi
+            ;;
+        *) die "Use:  sudo encore funnel on | off | status" ;;
+    esac
+}
+
+cmd_uninstall() {
+    need_root uninstall
+    local everything=0 yes=0
+    for arg in "$@"; do
+        case "$arg" in --everything) everything=1 ;; --yes | -y) yes=1 ;; *) die "Unknown option: $arg" ;; esac
+    done
+    say ""
+    if [ "$everything" = 1 ]; then
+        say "  This removes Encore and ${BOLD}everything it remembers${OFF}: accounts, playlists, likes, the music server's database."
+        say "  Your music folder ($(env_value ENCORE_MUSIC_DIR)) is not touched, including the songs Encore kept in its Encore/ folder."
+    else
+        say "  This stops and removes Encore. Its data stays in $DIR, so installing again brings everything back. Your music is not touched."
+    fi
+    if [ "$yes" != 1 ]; then
+        read -r -p "  Type  remove  to go on: " answer </dev/tty || answer=""
+        [ "$answer" = remove ] || die "Nothing was changed."
+    fi
+    dc down >/dev/null 2>&1 || true
+    if [ "$everything" = 1 ]; then
+        # Never remove a short or odd path: only a folder like /opt/encore that holds this install's own files.
+        case "$DIR" in /*/*) ;; *) die "Refusing to remove '$DIR': it does not look like an Encore folder." ;; esac
+        [ -f "$DIR/compose.yaml" ] && [ -f "$DIR/.env" ] || die "Refusing to remove '$DIR': it does not hold an Encore install."
+        cd /
+        rm -rf -- "$DIR"
+        docker rmi "$(env_value ENCORE_IMAGE):$(env_value ENCORE_TAG)" >/dev/null 2>&1 || true
+    fi
+    rm -f /usr/local/bin/encore
+    ok "Encore is removed"
+}
+
+case "${1:-help}" in
+    status) cmd_status ;;
+    logs) shift; dc logs --tail 200 -f "$@" ;;
+    start) dc up -d >/dev/null && ok "Started" ;;
+    stop) dc stop >/dev/null && ok "Stopped" ;;
+    restart) dc restart >/dev/null && wait_answers && ok "Restarted and answering" ;;
+    update) cmd_update ;;
+    funnel) shift; cmd_funnel "${1:-status}" ;;
+    uninstall) shift; cmd_uninstall "$@" ;;
+    version) server_version ;;
+    help | -h | --help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "Unknown command: $1. Try:  encore help" ;;
+esac

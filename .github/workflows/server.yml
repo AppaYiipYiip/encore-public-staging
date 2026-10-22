@@ -47,6 +47,18 @@ jobs:
           mypy encore_server
           pytest
 
+  install-scripts:
+    # The installer and the encore command run on other people's computers: they must at least be free of the mistakes a checker finds.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          shellcheck server/encore_server/deploy/install.sh server/encore_server/deploy/encore
+          bash -n server/encore_server/deploy/install.sh
+          bash -n server/encore_server/deploy/encore
+
   encore-server-navidrome:
     # The keeper, the scanner link and the refs against a real Navidrome (docs/tasks P2-01 acceptance).
     runs-on: ubuntu-latest

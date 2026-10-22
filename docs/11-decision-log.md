@@ -132,3 +132,128 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   illustrations; **no mascot**. Options: a mascot/brand character (tied to the undecided name, expensive to change), illustrated
   themes everywhere (generic, heavy), plain UI (lifeless). Covers make Encore personal at no cost; illustrations are cheap to redo
   when the name and logo arrive (P5-05).
+
+---
+
+## Decisions of 2026-10-22 (implementation phase; owner: "write down every decision and why")
+
+### ADR-R19 — Start the installer now, as a narrow slice (the stronger model's call; the owner delegated it)
+* **Context.** The owner wants to install Encore himself, as a user would, on a fresh VM first and on his real Proxmox server later. The
+  installer is hours to days of work; other improvements (lyrics sources, the Spotify gap list, the build-tool upgrade) were open too.
+* **Options.** Fix the small open items first and build the installer later; build the whole of P3 (wizard, admin pages, backups,
+  rollback, arm64) now; **build only the part that gets a working server onto a machine now, and leave the rest**.
+* **Decision.** The narrow slice: image, compose file, `install.sh`, the `encore` command, the first-run account step, a proof on a clean
+  VM. The other items wait until after the owner has installed.
+* **Why.** Away-from-home use, friends joining and the 5-day trial all wait on an installable server: it is the critical path. The open
+  items do not block the owner. The whole of P3 would delay the handover by weeks; the slice can be proven in a day.
+* **Consequences.** The wizard, admin pages, updates with rollback, backups, the security matrix and arm64 stay open (listed in the
+  PR). The guide tells the owner plainly that this is an install test, not the daily-driver release.
+
+### ADR-R20 — The first slice asks its questions in the terminal, not in the browser wizard
+* **Context.** `15` describes a nine-page browser wizard drawn on paper and not yet approved as drawings.
+* **Options.** Build the wizard first (large, needs the owner's OK of the drawings); no questions at all (a generated owner password
+  printed once); **terminal questions: owner name, password (hidden, asked twice), music folder, server name**.
+* **Why.** It gives the owner a real first install now; the wizard can replace the questions later without changing what the install
+  does; a generated password printed in a terminal is worse than one the person chose.
+* **Consequences.** The terminal is the only interface of this slice; unattended runs use `--yes`, `--owner` and
+  `ENCORE_OWNER_PASSWORD`. Passwords never appear on a command line (they travel on standard input from a file only root can read).
+
+### ADR-R21 — The installation files travel inside the server image
+* **Context.** The installer must put a compose file and the `encore` command on the machine, and `encore update` must replace them
+  together with the server so they never disagree.
+* **Options.** Download them from the repository at install time (needs the repository to be reachable, and the right ref); embed them in
+  one long `install.sh` (drifts from the compose file in the repository); **put them in the image (`/app/deploy`) and extract them with
+  `docker run --entrypoint cat`**.
+* **Why.** The image is already being downloaded; what runs is exactly what that version was tested with; one source of truth.
+* **Consequences.** The deployment files live in `server/encore_server/deploy/` (inside the Docker build context) and not in a top-level
+  `server/deploy/` as `05` sketched. Changing them means publishing a new image.
+
+### ADR-R22 — The first install pulls the private image with the owner's GitHub login
+* **Context.** The repository and the image are private until the full feature set is done (`05`); a fresh machine cannot download
+  from them anonymously. Owner, 2026-10-22: "I'll login, it's my GitHub account."
+* **Options.** Make the image (and a tiny installer repository) public now; copy the files and build the image on the machine (about ten
+  extra minutes, not what a user does); make the whole repository public; **keep everything private and sign in with GitHub**.
+* **Decision.** The installer is fetched with `gh api` after `gh auth login --scopes read:packages`; it signs Docker in to `ghcr.io` with
+  that token (`GH_TOKEN`, or `gh auth token`, or a pasted token) when the first pull is refused.
+* **Why.** Nothing becomes public before the owner decides; the owner already has the account; the same installer will later skip the
+  sign-in when the image is public (the first pull simply succeeds).
+* **Consequences.** The token's login stays in root's Docker configuration on that machine (acceptable for a test machine, noted in the
+  guide). `encore update` needs the same sign-in.
+
+### ADR-R23 — Where the installer runs, and how Docker gets there
+* **Options.** Support every Linux; support Ubuntu and Debian only; install Docker from the distribution's older package; **Docker's
+  own script (`get.docker.com`, which sets up Docker's apt repository), after asking**, on 64-bit Intel/AMD Ubuntu or Debian.
+* **Why.** One tested path beats five untested ones; Docker's own repository is the version the compose file was tested with; asking
+  first respects a machine that is not the installer's. arm64 under emulation in GitHub's runners is slow and eats the private
+  repository's free minutes, so it comes later (a build matrix entry).
+* **Consequences.** Other systems get a sentence that says so and nothing is changed.
+
+### ADR-R24 — The owner is the first person; the installer makes a hidden music-server administrator
+* **Context.** The Encore server signs people in through the music server's accounts and makes accounts for invited friends with the
+  music server's account API, which needs an administrator.
+* **Options.** Make the owner the music server's administrator (the owner's password then sits in the server's settings file and the
+  owner could break the library by accident); **a separate administrator `encore-admin` with a generated password that only the
+  install's `.env` knows, and the owner as an ordinary account (the first person to sign in on a server is its owner)**.
+* **Why.** Matches `15` (an administrator "made behind the scenes with a generated password that nobody types"); a leaked server
+  settings file does not give away the owner's own password; the owner's account can be reset like anyone's.
+* **Consequences.** The name `encore-admin` is reserved. The first-run step is a command inside the server (`python -m encore_server
+  setup`), so it reuses the tested account code instead of shell and `curl`; running it twice changes nothing.
+
+### ADR-R25 — Away from home: the Tailscale already on the machine, and never replace what is there
+* **Context.** `13` and ADR-083: Funnel is the guided way in. The owner also said (2026-10-22): someone who already has Tailscale,
+  Plex and a music server must be able to try Encore without reinstalling anything.
+* **Options.** A Tailscale sidecar container per install (a second node on the tailnet, needs an auth key); a reverse proxy and a
+  domain (not free, not simple); **`encore funnel on` uses the machine's own Tailscale (offering to install it if absent) and picks the
+  next free public https port instead of replacing a handler that is already there**.
+* **Why.** No second node, no secrets in the compose file, and an existing Tailscale or `serve` setup is left as it was.
+* **Consequences.** Written, not yet proven end to end: it needs the owner's Tailscale sign-in; the guide says so.
+
+### ADR-R26 — Uninstall never touches the music
+* **Options.** Remove the music folder with the install; ask each time; **`encore uninstall` keeps Encore's data, `--everything`
+  removes Encore's own data too, and neither ever deletes anything inside the music folder (including the songs Encore kept in
+  `Encore/`)**, with a typed confirmation and a refusal to delete an odd path.
+* **Why.** A person's music is not the installer's to delete; kept songs are copies of what the person saved and may be all they have.
+
+### ADR-R27 — The live channel: a device sign-in, pushes, and a slow safety net
+* **Context.** Phones asked for changes every 3 s (worst case 7.4 s). The server already pushed `library.changed` on `/encore/live`.
+* **Options.** Poll faster (battery, load); Firebase push (needs Google services, against "no cloud"); **a websocket per running app,
+  authenticated with a device token, the old check kept as a 60 s safety net**.
+* **Decision details.** The app signs in once as a device (token in secure storage, reused until the server refuses it, so the person's
+  device list does not grow with every start); reconnect with a jittered pause (1 to 30 s); closed in the background; a push that
+  arrives while a probe is working asks again right after it.
+* **Why.** Measured on two emulators: 2.4 to 2.6 s from the tap on one phone to the other (an upper bound), also after a server
+  restart; events never carry the truth, so a lost one costs at most a minute.
+
+### ADR-R28 — An invitation link uses the address a friend can reach
+* **Options.** Always the address in use; a setting the owner must fill; **the server's https address when it has one, else the one in
+  use with a warning that it works only at home**.
+* **Why.** A link with `http://192.168.x.x` cannot be opened by a friend away from home, and nobody notices until it is sent. "https"
+  counts as reachable (a certificate means it was set up for the outside, as Funnel is); plain http to a home or Tailscale address does not.
+
+### ADR-R29 — Search finds an artist's own song through the artist
+* **Context.** "Beach House Space Song" returned covers and look-alike titles; Beach House's own song was not in the catalogue's first
+  11 results (it is that artist's most popular song).
+* **Options.** Ask the catalogue for more results (it ranks by title text, so the song is not there); trust the catalogue's advanced
+  syntax (`artist:"..." track:"..."`: returned nothing); **read the typed words as artist and title in every sensible way, look the artist
+  up by name, and search its popular songs for the title**.
+* **Guards.** Only when no result is already a song by an artist at one end of the query; at least three words; the artist needs
+  1,000 fans (so "Space" the word is not a band); every title word must be found; look-ups are remembered (answers ten minutes,
+  "nothing" half a minute) so typing a long query does not repeat requests.
+
+### ADR-R30 — One artist page for every artist
+* **Context.** Owner, 2026-10-22: songs and albums were mixed, no Popular section; "Spotify does this much better".
+* **Decision.** Popular (five, then "Show more"), Albums, Singles and EPs, Compilations, for artists the library has and for ones it
+  does not; an album the person owns that the catalogue does not list stays on the page; offline the page is the library's own albums.
+* **Why.** The better layout already existed for artists the library lacked; two layouts for the same artist depending on how you
+  arrived was the bug. Play on the page plays the popular songs, as everywhere else.
+
+### ADR-R31 — Screen pictures are kept per operating system
+* **Context.** The first run on GitHub failed 12 picture tests that passed on Windows (text is drawn a few pixels apart).
+* **Options.** Tolerate a few percent difference (hides real changes); run those tests only locally (they would not guard `main`);
+  **one set per system, the Linux set drawn by a workflow and looked at before it is committed**.
+
+### ADR-R32 — Changes to the owner's homelab are logged outside the repository
+* **Decision.** Every change to the owner's Proxmox host or containers is written in `local/homelab-changes-<date>.md` with the backup
+  and the undo. Bandwidth was freed on request (2026-10-22); the number of look-ups at YouTube is **not** a bandwidth matter and stays
+  limited (about ten per test run, spaced).
+* **Why.** The homelab is the owner's separate project; the repository will be public and must not describe it.

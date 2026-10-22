@@ -1,8 +1,9 @@
-"""`python -m encore_server`: runs the server (the container's command)."""
+"""`python -m encore_server`: runs the server (the container's command); `python -m encore_server setup` does the first-install steps."""
 
 from __future__ import annotations
 
 import logging
+import sys
 
 import uvicorn
 
@@ -18,7 +19,12 @@ def configure_logging(level: str) -> None:
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else argv
+    if args[:1] == ["setup"]:
+        from .setup import command
+
+        raise SystemExit(command())
     settings = Settings.from_env()
     configure_logging(settings.log_level)
     uvicorn.run(

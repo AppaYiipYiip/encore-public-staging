@@ -1,0 +1,55 @@
+# Encore on one computer: the music server (Navidrome) and the Encore server in front of it.
+#
+# The installer writes this file to /opt/encore next to a generated `.env`; `encore update` replaces it with the copy inside the new
+# image, so the two always match. Change the settings in `.env`, not here. Only the Encore server publishes a port: the music server is
+# reached through it, never directly.
+name: encore
+
+services:
+  navidrome:
+    image: deluan/navidrome:0.64.2
+    restart: unless-stopped
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      ND_SCANSCHEDULE: "@every 1h"
+      ND_SESSIONTIMEOUT: 720h
+      ND_LOGLEVEL: info
+      ND_ENABLEUSEREDITING: "false"
+      ND_ENABLESHARING: "false"
+      # Nothing about this server is sent to anybody.
+      ND_ENABLEINSIGHTSCOLLECTOR: "false"
+      ND_LYRICSPRIORITY: ".lrc,embedded"
+      # Its own nightly copy of its database (accounts, play counts) in the data folder, seven kept.
+      ND_BACKUP_PATH: /data/backup
+      ND_BACKUP_SCHEDULE: "0 3 * * *"
+      ND_BACKUP_COUNT: "7"
+    volumes:
+      - ./navidrome:/data
+      # The person's own music is only ever read.
+      - ${ENCORE_MUSIC_DIR:?set ENCORE_MUSIC_DIR in .env}:/music:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4533/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  encore-server:
+    image: ${ENCORE_IMAGE:-ghcr.io/appayiipyiip/encore-server}:${ENCORE_TAG:-main}
+    restart: unless-stopped
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    environment:
+      ENCORE_NAVIDROME_URL: http://navidrome:4533
+      ENCORE_SERVER_NAME: ${ENCORE_SERVER_NAME:-My music server}
+      ENCORE_NAVIDROME_ADMIN_USER: ${ENCORE_NAVIDROME_ADMIN_USER:?missing in .env}
+      ENCORE_NAVIDROME_ADMIN_PASSWORD: ${ENCORE_NAVIDROME_ADMIN_PASSWORD:?missing in .env}
+      ENCORE_YOUTUBE: ${ENCORE_YOUTUBE:-1}
+    ports:
+      - "${ENCORE_PORT:-4533}:4533"
+    volumes:
+      - ./data:/data
+      # Songs Encore keeps go into one folder of their own inside it (Encore/); the rest of the library is never written to.
+      - ${ENCORE_MUSIC_DIR}:/music

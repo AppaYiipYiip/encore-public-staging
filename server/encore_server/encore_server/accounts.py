@@ -34,7 +34,9 @@ LOCK_AFTER_FAILURES = 20
 
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"  # no 0/O, 1/I/L: a code is read out and typed
 _USERNAME = re.compile(r"^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$")
-_RESERVED = frozenset({"admin", "administrator", "root", "encore", "navidrome", "system", "owner", "guest", "everyone"})
+_RESERVED = frozenset(
+    {"admin", "administrator", "root", "encore", "encore-admin", "navidrome", "system", "owner", "guest", "everyone"}
+)
 
 INVALID_CODE = "That invitation is not valid any more. Ask for a new one."
 

@@ -14,6 +14,8 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml /app/pyproject.toml
 COPY encore_server /app/encore_server
+# The installer's files travel inside the image, so what an installation runs always matches the version that was downloaded.
+COPY deploy /app/deploy
 RUN pip install --no-cache-dir ".[youtube]"
 
 # One unprivileged user; the data folder and the music folder are mounted in.
