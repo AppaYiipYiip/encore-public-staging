@@ -534,6 +534,7 @@ class Api:
                 + (["youtube-login"] if self._owner_check is not None and self._accounts is not None else [])
                 + (["profile"] if self._profile is not None else []),
                 "formats": ["opus", "m4a"],
+                "youtube": self._imports.youtube_state() if self._imports is not None else {"state": "ok"},
                 # Whether the server fetches as a signed-in YouTube account (faster, age-restricted songs): a friend's app
                 # says so when an import is slow. Nothing about which account, nothing secret.
                 "youtubeSignedIn": bool(self._accounts is not None and self._accounts.capacity() is not None),

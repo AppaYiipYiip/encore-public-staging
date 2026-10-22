@@ -66,6 +66,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 * **Depends on.** P1-01, P1-06. 
 
 ## P1-03 — Two pools, single flight, pacing and back-off (server) — Size M
+* **Status 2026-10-22: pools, single flight and the state report done; random spacing and the interactive rate limit open.** `Dispatcher` has two pools that never share a worker (interactive: taps first, then lookups ahead, at most one at a time; background: bulk songs of imports and albums); the same song asked by two people at once is fetched once (a lock per upload, the second takes the kept copy); `GET /api/info` carries `youtube: {state: ok|resting, message, resumesInSec}`; the default budget is 120 songs an hour (was 200; `IMPORT_MAX_PER_HOUR`). The back-off after a refusal (doubling, resting for all) already existed in `imports.py`. Not done: random 5-20 s spacing of background look-ups (the import gap is fixed 2 s), the doubling up to 24 h (now up to 30 min), \"interactive at most one look-up per 5 s while resting\", the J-02 comparison with an import running.
 * **Why.** ADR-R6, ADR-R8; measured: 6 shared workers made each look-up 9 s instead of 2 s.
 * **Context.** `jobs.py` has priorities `now` / `prep` / `bulk` with 3 workers and "bulk may use at most two"; imports have their own
   pacing (`IMPORT_MAX_PER_HOUR`, back-off after refusals) in `imports.py`; `classify_failure()` maps yt-dlp errors to codes.

@@ -69,7 +69,7 @@ def build(config: Config) -> Api:
         resolver=resolver,
         downloader=downloader,
         navidrome=nd,
-        executor=Dispatcher(workers=config.workers, bulk_slots=max(1, config.workers - 1)),
+        executor=Dispatcher(workers=config.workers, bulk_slots=config.import_workers),
         min_free_gb=0 if config.fake else config.min_free_gb,
         skip_index=config.fake or config.dev_local,
         watcher_wait_s=config.watcher_wait_s,

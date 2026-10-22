@@ -62,25 +62,27 @@ MESSAGES = {
 
 
 class Dispatcher(Executor):
-    """Runs jobs on a few threads, *what a person is waiting for first*.
+    """Runs jobs on two pools of threads that never share a worker (P1-03): *what a person is waiting for* and *the rest*.
 
-    Three kinds of job, in this order: `now` (a song someone just tapped),
-    `prep` (looking a song up ahead of a tap: one at a time) and `bulk` (the
-    rest of an album being added: at most [bulk_slots] at a time). A tapped
-    song therefore never waits behind a lookup or an album."""
+    The **interactive** pool (`workers` threads) serves `now` (a song someone just tapped) first and `prep` (looking a song up ahead
+    of a tap: at most [prep_slots] at a time) next. The **background** pool ([bulk_slots] threads) serves `bulk` (the songs of an
+    import or of an album being added). A tapped song therefore never waits for a worker that is busy with an album, however many
+    there are: before this a shared pool let two imports and a tap occupy all three workers and the tap waited a whole download."""
 
     def __init__(self, workers: int = 2, bulk_slots: int = 1,
                  prep_slots: int = 1) -> None:
         self._queues: dict[str, list[tuple]] = {
             "now": [], "prep": [], "bulk": []}
         self._cond = threading.Condition()
-        self._active = {"prep": 0, "bulk": 0}
-        self._slots = {"prep": max(1, min(prep_slots, workers)),
-                       "bulk": max(1, min(bulk_slots, workers))}
+        self._active = {"prep": 0}
+        self._prep_slots = max(1, min(prep_slots, max(1, workers)))
         self._closed = False
         self._threads = [
-            threading.Thread(target=self._loop, name=f"fetch-{i}", daemon=True)
+            threading.Thread(target=self._loop, args=("interactive",), name=f"fetch-{i}", daemon=True)
             for i in range(max(1, workers))
+        ] + [
+            threading.Thread(target=self._loop, args=("background",), name=f"fetch-bg-{i}", daemon=True)
+            for i in range(max(1, bulk_slots))
         ]
         for t in self._threads:
             t.start()
@@ -96,27 +98,28 @@ class Dispatcher(Executor):
                                       "bulk", False) else "now")
         with self._cond:
             self._queues[kind].append((fn, args, kwargs, future, kind))
-            self._cond.notify()
+            self._cond.notify_all()
         return future
 
-    def _next(self):
+    def _next(self, pool: str):
+        if pool == "background":
+            return self._queues["bulk"].pop(0) if self._queues["bulk"] else None
         if self._queues["now"]:
             return self._queues["now"].pop(0)
-        for kind in ("prep", "bulk"):
-            if self._queues[kind] and self._active[kind] < self._slots[kind]:
-                self._active[kind] += 1
-                return self._queues[kind].pop(0)
+        if self._queues["prep"] and self._active["prep"] < self._prep_slots:
+            self._active["prep"] += 1
+            return self._queues["prep"].pop(0)
         return None
 
-    def _loop(self) -> None:
+    def _loop(self, pool: str) -> None:
         while True:
             with self._cond:
-                item = self._next()
+                item = self._next(pool)
                 while item is None:
                     if self._closed:
                         return
                     self._cond.wait()
-                    item = self._next()
+                    item = self._next(pool)
             fn, args, kwargs, future, kind = item
             try:
                 future.set_result(fn(*args, **kwargs))
@@ -333,6 +336,7 @@ class JobManager:
         self._daily = daily_limit
         self._active_limit = active_limit
         self._index_wait = index_wait_s
+        self._video_locks: dict[str, threading.Lock] = {}
         self._watcher_wait = watcher_wait_s
         self._keep = keep_s
         self._prepare_ttl = prepare_ttl_s
@@ -594,6 +598,16 @@ class JobManager:
             else:
                 self._find_upload(job, key)
 
+        # 2b onwards, one at a time per upload (single flight): when two people ask for the same song at once, the second waits for the
+        # first and then takes the copy that is kept (`_files`) instead of asking YouTube and downloading the same audio twice.
+        with self._video_lock(job.video_id):
+            self._fetch_audio(job, r, root, key, from_memory)
+
+    def _video_lock(self, video_id: str | None) -> threading.Lock:
+        with self._lock:
+            return self._video_locks.setdefault(video_id or "", threading.Lock())
+
+    def _fetch_audio(self, job: Job, r: Request, root: Path, key: str, from_memory: bool) -> None:
         # 2b. What YouTube says about its streams: the slow part, so it is kept (and can be done before anybody taps).
         #     Not needed at all when the audio itself is already here.
         kept = self._files.get(job.video_id)

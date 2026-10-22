@@ -490,6 +490,14 @@ class ImportQueue:
     def _at_the_limit(self, now: float) -> bool:
         return self._manager.downloads_since(3600) >= self._effective_cap(now)
 
+    def youtube_state(self) -> dict:
+        """What the server can say about YouTube right now, in plain words: `ok`, or `resting` after YouTube refused the server (the
+        import queue rests, longer each time, and carries on by itself)."""
+        now = self._clock()
+        if now < self._cool_until and self._cool_reason == "cooling_off":
+            return {"state": "resting", "message": PAUSES["cooling_off"], "resumesInSec": int(self._cool_until - now)}
+        return {"state": "ok"}
+
     def _eta(self, imp: Import) -> int:
         left = imp.counts()[WAITING] + imp.counts()[WORKING]
         if left == 0:

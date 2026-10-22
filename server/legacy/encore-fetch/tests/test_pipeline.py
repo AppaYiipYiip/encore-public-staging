@@ -159,6 +159,41 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(job.song_id, "new-song-id")
         self.assertEqual(self.nd.scans, 1)
 
+    def test_the_same_song_asked_by_two_people_at_once_is_downloaded_once(self):
+        import threading
+        import time
+        from encore_fetch.jobs import Dispatcher
+        from encore_fetch.navidrome import Auth
+
+        class Slow(FakeDownloader):
+            def __init__(self):
+                super().__init__()
+                self.started = threading.Event()
+                self.release = threading.Event()
+
+            def download(self, video_id, stem, duration_s=None, info=None):
+                self.started.set()
+                self.release.wait(5)
+                return super().download(video_id, stem, duration_s, info)
+
+        slow = Slow()
+        executor = Dispatcher(workers=2, bulk_slots=1)
+        self.addCleanup(executor.shutdown)
+        m = JobManager(music_dir=self.music, work_dir=self.work, resolver=FakeSearcher([GOOD]), downloader=slow,
+                       navidrome=FakeNavidrome(), executor=executor, indexer=InlineExecutor(), cover=lambda url: None,
+                       tagger=lambda p, t, c: True, min_free_gb=0)
+        first = m.submit(AUTH, self.req)
+        self.assertTrue(slow.started.wait(3))
+        second = m.submit(Auth("friend", "b" * 32, "salt1234"), self.req)
+        time.sleep(0.2)  # the second is now waiting for the first's download
+        slow.release.set()
+        deadline = time.time() + 5
+        while (not first.done or not second.done) and time.time() < deadline:
+            time.sleep(0.02)
+
+        self.assertEqual((first.state, second.state), ("ready", "ready"), (first.view(), second.view()))
+        self.assertEqual(slow.calls, ["vid12345678"], "one download for two people: the second took the copy that was kept")
+
     def test_a_song_already_in_the_library_is_ready_without_downloading(self):
         m = self.manager(nd=FakeNavidrome(present={("opeth", "windowpane"): "42"}))
         job = m.submit(AUTH, self.req)
@@ -778,7 +813,7 @@ class DispatcherTest(unittest.TestCase):
         from encore_fetch.jobs import Dispatcher
         gate = threading.Event()
         ran = []
-        d = Dispatcher(workers=2, bulk_slots=1)
+        d = Dispatcher(workers=1, bulk_slots=1)
         self.addCleanup(d.shutdown)
 
         def work(job, label):
@@ -786,15 +821,59 @@ class DispatcherTest(unittest.TestCase):
             if label.startswith("bulk"):
                 gate.wait(5)
 
+        import time
         for i in range(3):
             d.submit(work, self._job(True), f"bulk{i}")
+        deadline = time.time() + 3
+        while "bulk0" not in ran and time.time() < deadline:
+            time.sleep(0.01)
         f = d.submit(work, self._job(False), "now")
         f.result(timeout=3)          # finished while bulk0 is still blocked
         self.assertIn("now", ran)
         self.assertEqual([r for r in ran if r.startswith("bulk")], ["bulk0"])
         gate.set()
 
-    def test_a_lookup_ahead_waits_for_tapped_songs_but_not_for_an_album(self):
+    def test_the_two_pools_never_share_a_worker(self):
+        """Every worker of the background pool busy with an import does not slow a tap, whatever the number of imports."""
+        import threading
+        import time
+        from encore_fetch.jobs import Dispatcher
+        gate = threading.Event()
+        started = []
+        d = Dispatcher(workers=1, bulk_slots=2)
+        self.addCleanup(d.shutdown)
+
+        def bulk(job, n):
+            started.append(n)
+            gate.wait(5)
+
+        for n in range(5):
+            d.submit(bulk, self._job(True), n)
+        deadline = time.time() + 3
+        while len(started) < 2 and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(len(started), 2, "only the background pool's two workers take bulk jobs")
+
+        tap = d.submit(lambda j: "done", self._job(False))
+        self.assertEqual(tap.result(timeout=3), "done", "the tap had a worker of its own")
+        gate.set()
+
+    def test_the_background_pool_serves_only_bulk_jobs(self):
+        import threading
+        from encore_fetch.jobs import Dispatcher
+        names = []
+        d = Dispatcher(workers=1, bulk_slots=1)
+        self.addCleanup(d.shutdown)
+
+        def work(job):
+            names.append((job.request.bulk, threading.current_thread().name))
+
+        d.submit(work, self._job(False)).result(timeout=3)
+        d.submit(work, self._job(True)).result(timeout=3)
+        self.assertEqual(names[0], (False, "fetch-0"))
+        self.assertEqual(names[1], (True, "fetch-bg-0"))
+
+    def test_a_lookup_ahead_waits_for_tapped_songs_in_the_interactive_pool(self):
         import threading
         from encore_fetch.jobs import Dispatcher, Job
         gate = threading.Event()
@@ -814,16 +893,15 @@ class DispatcherTest(unittest.TestCase):
             if label == "first":
                 gate.wait(5)
 
-        d.submit(work, job("now"), "first")       # occupies the only worker
+        d.submit(work, job("now"), "first")       # occupies the only interactive worker
         futures = [
-            d.submit(work, job("bulk"), "bulk"),
             d.submit(work, job("prep"), "prep"),
             d.submit(work, job("now"), "now"),
         ]
         gate.set()
         for f in futures:
             f.result(timeout=3)
-        self.assertEqual(order, ["first", "now", "prep", "bulk"])
+        self.assertEqual(order, ["first", "now", "prep"])
 
     def test_priority_is_first_in_first_out_within_a_kind(self):
         from encore_fetch.jobs import Dispatcher

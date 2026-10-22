@@ -288,6 +288,10 @@ class RouteTest(unittest.TestCase):
         self.assertEqual(data["error"], "blocked")
         self.assertIn("Try again", data["message"])
 
+    def test_the_service_says_how_youtube_is(self):
+        status, info = self.api.handle("GET", "/api/info", {})
+        self.assertEqual(info["youtube"], {"state": "ok"})
+
     def test_the_service_says_it_can_stream(self):
         status, info = self.api.handle("GET", "/api/info", {})
         self.assertIn("stream", info["features"])

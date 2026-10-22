@@ -490,6 +490,18 @@ class PacingTest(ImportTestBase):
         self.tick(3601)
         self.assertEqual(self.queue._effective_cap(self.now), 100)
 
+    def test_the_service_says_in_plain_words_when_youtube_has_the_server_resting(self):
+        self.assertEqual(self.queue.youtube_state(), {"state": "ok"})
+
+        self.queue._note_refusal()
+        state = self.queue.youtube_state()
+        self.assertEqual(state["state"], "resting")
+        self.assertIn("YouTube is refusing the server", state["message"])
+        self.assertGreater(state["resumesInSec"], 0)
+
+        self.tick(100000)
+        self.assertEqual(self.queue.youtube_state(), {"state": "ok"}, "it carries on by itself")
+
     def test_a_burst_of_refusals_is_one_event_not_six(self):
         self.queue = self.make_queue(max_per_hour=200, cool_base_s=1, cool_max_s=1)
         for _ in range(6):
