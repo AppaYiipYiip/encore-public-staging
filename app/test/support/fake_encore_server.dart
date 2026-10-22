@@ -27,6 +27,9 @@ class FakeEncoreServer {
   final String user;
   late final FakeHttpAdapter adapter;
 
+  /// What `/info` says about YouTube: `ok`, `resting` or `off`.
+  String youtubeState = 'ok';
+
   /// What a test can arrange or look at.
   final Map<String, Map<String, Object?>> refs = {};
   final Map<String, int> likes = {}; // ref -> at
@@ -232,7 +235,7 @@ class FakeEncoreServer {
         'serverVersion': '0.1.0',
         'name': 'Fake Encore',
         'features': ['library', 'playback', 'live', 'refs', 'keep'],
-        'youtube': {'state': 'ok', 'resumesInSec': 0},
+        'youtube': {'state': youtubeState, 'resumesInSec': 0},
       });
 
   FakeResponse _resolve(RecordedRequest r) {

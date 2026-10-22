@@ -4,9 +4,12 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/session.dart' show serverCapabilities;
 import '../../core/network_policy.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart';
+import '../../data/encore/encore_instant.dart';
+import '../../data/encore/encore_writer.dart';
 import '../../data/fetch/fetch_client.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../data/repos/request_repository.dart';
@@ -110,6 +113,10 @@ final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
   } on Object {
     // No usable endpoint list: only the saved address can be tried.
   }
+  // An Encore server plays songs itself, on the same address as everything else: there is nothing to look for.
+  if (serverCapabilities(server)['encore'] == true && endpoints.isNotEmpty) {
+    return endpoints.first;
+  }
   final candidates = fetchServiceCandidates(
     endpoints,
     saved: saved != null && saved.host.isNotEmpty ? saved : null,
@@ -156,6 +163,11 @@ final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
   if (uri == null) return null;
   final session = await ref.watch(sessionProvider.future);
   if (session == null) return null;
+  if (session.encoreMode) {
+    final writer = EncoreWriter(ref.watch(databaseProvider), session.server.id,
+        ownerName: session.server.username);
+    return EncoreInstantBackend(api: session.encore, ingest: writer.upsertRefs);
+  }
   final info = await ref.read(fetchProbeProvider)(uri);
   // A look that failed leaves what was known: a service that could stream can still.
   if (info != null) _knownStreaming[uri.toString()] = info.canStream;
@@ -195,7 +207,8 @@ final instantPlayServiceProvider =
   return InstantPlayService(
     backend: backend,
     matcher: LibraryMatcher(db, serverId),
-    loadSong: load,
+    // On an Encore server the song's row was made when it was resolved (its id is the ref's), so there is nothing to ask the music server.
+    loadSong: session.encoreMode ? repo.trackOnce : load,
     findSongId: (artist, title) async {
       final page = await session.client.search3(query: title, songCount: 20);
       final songs = page.valueOrNull?.songs ?? const [];

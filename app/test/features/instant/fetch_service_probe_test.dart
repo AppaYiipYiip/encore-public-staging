@@ -33,10 +33,11 @@ const _server = ServerRow(
 ProviderContainer containerWith({
   String? saved,
   required Future<FetchServiceInfo?> Function(Uri) probe,
+  ServerRow server = _server,
 }) {
   final container = ProviderContainer(overrides: [
     settingsProvider.overrideWith(() => _Settings(saved)),
-    activeServerProvider.overrideWith((ref) => Stream.value(_server)),
+    activeServerProvider.overrideWith((ref) => Stream.value(server)),
     fetchProbeProvider.overrideWithValue(probe),
     fetchProbeRetryProvider
         .overrideWithValue((misses) => const Duration(milliseconds: 50)),
@@ -51,6 +52,24 @@ ProviderContainer containerWith({
 const _canPlay = FetchServiceInfo(features: ['play-now', 'stream']);
 
 void main() {
+  test(
+      'an Encore server is its own instant-play service: nothing is looked for',
+      () async {
+    var looks = 0;
+    final container = containerWith(
+      server: _server.copyWith(capabilitiesJson: '{"encore":true}'),
+      probe: (uri) async {
+        looks++;
+        return null;
+      },
+    );
+
+    final found = await container.read(fetchServiceProvider.future);
+
+    expect(found.toString(), 'http://192.168.1.2:4533');
+    expect(looks, 0);
+  });
+
   test('a service that answers is found and remembered', () async {
     final container =
         containerWith(probe: (uri) async => uri.port == 8701 ? _canPlay : null);
