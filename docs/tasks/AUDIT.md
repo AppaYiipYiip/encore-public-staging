@@ -70,7 +70,8 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
     Android offers Encore for the link and the app opens on its own screen; on a phone that already has an account on that server it says so.
     **Walked on a fresh install (second emulator):** tapped the link, "newtester invited you", chose a name and password, landed on Home with a
     library of its own, searched, and streamed a full 5:12 song. Found on the way: right after the emulator booted the join screen said
-    "Can't reach ..." once (no network yet) and worked on "Try again"; the app does not retry by itself.
+    "Can't reach ..." once (no network yet) and worked on "Try again"; **fixed 2026-10-23**: the look at the invitation is tried again by itself
+    (after 2, 4 and 8 s, "Reaching the server...") before the failure screen; making the account is never retried by itself (3 tests).
   * The Your server page on an Encore server no longer speaks of a helper service: it says songs are fetched as they play, that playing does not save, shows
     "Taking a short rest" with the time left when the web asked the server to slow down, and hides the old "What does my server need?" block. The lyrics text no
     longer names LRCLIB or the music server. Walked on the emulator (9 tests).

@@ -26,6 +26,15 @@ class JoinScreen extends ConsumerStatefulWidget {
   ConsumerState<JoinScreen> createState() => _JoinScreenState();
 }
 
+/// How long to wait between the automatic tries to reach the server for an invitation. A phone that has just changed from Wi-Fi to mobile
+/// data (or back) often has no usable network for a few seconds when the link is tapped; trying again by itself spares the person a failure
+/// screen on the very first minute. Only the look at the invitation is repeated: making the account is never retried by itself, because the
+/// server may already have made it.
+final joinRetryDelaysProvider = Provider<List<Duration>>(
+  (ref) =>
+      const [Duration(seconds: 2), Duration(seconds: 4), Duration(seconds: 8)],
+);
+
 /// Capital letters are made small as they are typed: the first letter of a
 /// name is a capital on most keyboards, and the server takes lower case only.
 final _lowerCase = TextInputFormatter.withFunction(
@@ -40,6 +49,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   InvitationInfo? _info;
   AppFailure? _problem;
   bool _checking = true;
+  bool _reaching = false;
   bool _busy = false;
   bool _obscure = true;
   String? _step;
@@ -61,12 +71,26 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   Future<void> _check() async {
     setState(() {
       _checking = true;
+      _reaching = false;
       _problem = null;
     });
-    final result = await ref.read(peopleJoinClientProvider).info(widget.link);
+    final delays = ref.read(joinRetryDelaysProvider);
+    var result = await ref.read(peopleJoinClientProvider).info(widget.link);
+    for (final pause in delays) {
+      if (!mounted) return;
+      if (result case Err(:final failure) when failure is NetworkFailure) {
+        setState(() => _reaching = true);
+        await Future<void>.delayed(pause);
+        if (!mounted) return;
+        result = await ref.read(peopleJoinClientProvider).info(widget.link);
+      } else {
+        break;
+      }
+    }
     if (!mounted) return;
     setState(() {
       _checking = false;
+      _reaching = false;
       switch (result) {
         case Ok(:final value):
           _info = value;
@@ -159,7 +183,11 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: _checking
-                  ? _Waiting(text: 'Checking your invitation…', color: c.accent)
+                  ? _Waiting(
+                      text: _reaching
+                          ? 'Reaching the server…'
+                          : 'Checking your invitation…',
+                      color: c.accent)
                   : _info == null
                       ? _Unusable(
                           failure: _problem,

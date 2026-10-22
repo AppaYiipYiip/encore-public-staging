@@ -9,6 +9,8 @@ import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_device.dart';
 import 'package:encore/data/people/people_join_client.dart';
 import 'package:encore/domain/invite_link.dart';
+import 'package:encore/features/onboarding/join_screen.dart'
+    show joinRetryDelaysProvider;
 import 'package:encore/features/people/people_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +28,13 @@ import '../support/test_app.dart';
 /// be in.
 void main() {
   setUpAll(loadAppFonts);
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  /// No pause between the automatic tries in tests (the real app waits a few seconds).
+  var retryDelays = const <Duration>[];
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    retryDelays = const <Duration>[];
+  });
 
   String? clipboard;
   setUp(() {
@@ -89,6 +97,7 @@ void main() {
 
   Future<AppDatabase> open(WidgetTester tester) async {
     final app = await pumpApp(tester, seeded: false, overrides: [
+      joinRetryDelaysProvider.overrideWithValue(retryDelays),
       peopleJoinClientProvider
           .overrideWith((ref) => PeopleJoinClient(dio: fakeDio(adapter))),
       serverSetupServiceProvider.overrideWith((ref) => ServerSetupService(
@@ -154,6 +163,71 @@ void main() {
     expect(kept, isNotNull);
     expect(jsonDecode(kept!), {'token': 'ed_phone', 'id': 'dv_7'});
     await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'a network that is not ready yet is tried again by itself, and the '
+      'person never sees the failure', (tester) async {
+    retryDelays = const [Duration.zero, Duration.zero, Duration.zero];
+    var asked = 0;
+    adapter = FakeHttpAdapter(routes: {
+      '/people/join/Code123/info': (_) {
+        asked++;
+        return asked <= 2
+            ? const FakeResponse.connectionError()
+            : const FakeResponse.json({
+                'valid': true,
+                'inviter': 'owner',
+                'server': 'Our music',
+                'address': 'https://music.example',
+                'expiresAt': 1792000000,
+              });
+      },
+    });
+    final db = await open(tester);
+    await wait(tester);
+    await wait(tester);
+
+    expect(asked, 3);
+    expect(find.text('Join Our music'), findsOneWidget);
+    expect(find.text('This invitation did not open'), findsNothing);
+    await closeApp(tester, db);
+  });
+
+  testWidgets('a server that stays out of reach ends on the retry screen',
+      (tester) async {
+    retryDelays = const [Duration.zero, Duration.zero];
+    var asked = 0;
+    adapter = FakeHttpAdapter(routes: {
+      '/people/join/Code123/info': (_) {
+        asked++;
+        return const FakeResponse.connectionError();
+      },
+    });
+    final db = await open(tester);
+    await wait(tester);
+    await wait(tester);
+
+    expect(asked, 3, reason: 'the first try and the two that follow');
+    expect(find.text('Try again'), findsOneWidget);
+    await closeApp(tester, db);
+  });
+
+  testWidgets('an invitation that is refused is not tried again',
+      (tester) async {
+    retryDelays = const [Duration.zero, Duration.zero];
+    var asked = 0;
+    adapter = FakeHttpAdapter(routes: {
+      '/people/join/Code123/info': (_) {
+        asked++;
+        return const FakeResponse.json({'error': 'gone'}, status: 404);
+      },
+    });
+    final db = await open(tester);
+
+    expect(asked, 1);
+    expect(find.text('This invitation did not open'), findsOneWidget);
+    await closeApp(tester, db);
   });
 
   testWidgets('says who invited the person and asks for two things only',
