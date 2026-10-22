@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// Bump together with a migration step *and* a schema snapshot
   /// (`dart run drift_dev schema dump ...`) so migrations are testable.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +84,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(tracks, tracks.explicit);
             await m.addColumn(playlistEntries, playlistEntries.entryId);
             await m.addColumn(playlistEntries, playlistEntries.serverPosition);
+          }
+          if (from < 7) {
+            // v7: a device can hold several people's profiles; the one chosen last is in use.
+            await m.addColumn(servers, servers.lastUsedAtMs);
           }
         },
         beforeOpen: (details) async {

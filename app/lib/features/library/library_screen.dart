@@ -435,13 +435,16 @@ class _EntryState {
   final bool usable;
 }
 
-_EntryState _stateOf(PinState s, {required bool offline}) {
+_EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
   switch (s.phase) {
     case PinPhase.complete:
       return _EntryState('Downloaded • ${plural(s.total, 'song')}',
           complete: true);
     case PinPhase.downloading:
-      return _EntryState('Downloading ${s.done} of ${s.total}',
+      return _EntryState(
+          waiting == null
+              ? 'Downloading ${s.done} of ${s.total}'
+              : '$waiting • ${s.done} of ${s.total}',
           usable: !offline || s.done > 0);
     case PinPhase.attention:
       return _EntryState(
@@ -468,7 +471,8 @@ _EntryState _stateOf(PinState s, {required bool offline}) {
       PinState.none;
   final offline =
       ref.watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
-  final s = _stateOf(state, offline: offline);
+  final s = _stateOf(state,
+      offline: offline, waiting: ref.watch(downloadsWaitProvider));
   return (
     subtitle: '${entry.subtitle} • ${s.line}',
     complete: s.complete,

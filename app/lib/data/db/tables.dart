@@ -28,6 +28,10 @@ class Servers extends Table {
   /// extensions, native API availability).
   TextColumn get capabilitiesJson => text().withDefault(const Constant('{}'))();
   IntColumn get createdAtMs => integer()();
+
+  /// When this profile was last chosen: the profile with the largest value is the one in use (a device can hold several people's
+  /// profiles; signing in or switching stamps the one that is now listening).
+  IntColumn get lastUsedAtMs => integer().withDefault(const Constant(0))();
 }
 
 @DataClassName('ArtistRow')

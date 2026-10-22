@@ -18,6 +18,7 @@ import '../features/onboarding/join_screen.dart';
 import '../features/people/people_screen.dart';
 import '../features/player/lyrics_screen.dart';
 import '../features/player/now_playing_screen.dart';
+import '../features/profiles/profiles_screen.dart';
 import '../features/providers.dart';
 import '../features/search/search_screen.dart';
 import '../features/settings/equalizer_screen.dart';
@@ -128,8 +129,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       // sign-in.
       final onJoin = state.matchedLocation == '/join';
       if (onJoin && state.extra is! InviteLink) return '/onboarding';
+      // Who's listening: only where somebody has signed in. (Adding another person opens the sign-in screens from there.)
+      final onProfiles = state.matchedLocation.startsWith('/profiles');
       if (!configured && !onOnboarding && !onJoin) return '/onboarding';
-      if (configured && (onOnboarding || onJoin)) return '/home';
+      if (configured && onOnboarding) return '/home';
+      // An invitation opened on a device that already has somebody signed in adds that person (a shared tablet).
+      if (configured && onJoin && state.extra is! InviteLink) return '/home';
+      if (onProfiles && !configured) return '/onboarding';
       return null;
     },
     routes: [
@@ -140,6 +146,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sign-in-again',
         builder: (_, __) => const SignInAgainScreen(),
+      ),
+      GoRoute(
+        path: '/profiles',
+        builder: (_, __) => const ProfilesScreen(),
+        routes: [
+          GoRoute(
+            path: 'add',
+            builder: (_, __) => const ConnectScreen(adding: true),
+          ),
+        ],
       ),
       GoRoute(
         path: '/join',

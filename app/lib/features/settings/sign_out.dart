@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
 import '../../core/logger.dart';
@@ -104,6 +105,11 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
       ],
     ),
   );
-  if (sure != true) return;
-  unawaited(signOut(ref));
+  if (sure != true || !context.mounted) return;
+  // Others on this device: afterwards the picker asks who listens now, instead of quietly carrying on as somebody else.
+  final others = (ref.read(profilesProvider).value?.length ?? 1) > 1;
+  final router = GoRouter.maybeOf(context);
+  unawaited(signOut(ref).then((_) {
+    if (others) router?.go('/profiles');
+  }));
 }

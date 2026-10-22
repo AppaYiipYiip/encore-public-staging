@@ -42,7 +42,7 @@ void main() {
     ]);
   });
 
-  for (final from in const [1, 2, 3, 4, 5]) {
+  for (final from in const [1, 2, 3, 4, 5, 6]) {
     test('v$from upgrades to the current schema and keeps its rows', () async {
       final schema = await verifier.schemaAt(from);
 

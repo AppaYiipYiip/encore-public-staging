@@ -198,7 +198,11 @@ class _Header extends ConsumerWidget {
                 excludeSemantics: true,
                 child: InkWell(
                   customBorder: const CircleBorder(),
-                  onTap: () => Nav.settings(context),
+                  // On a device with several people the avatar is how to change who is listening; otherwise it opens Settings.
+                  onTap: () =>
+                      (ref.read(profilesProvider).value?.length ?? 1) > 1
+                          ? context.push('/profiles')
+                          : Nav.settings(context),
                   // 48 dp target around the 36 dp avatar.
                   child: SizedBox.square(
                     dimension: 48,

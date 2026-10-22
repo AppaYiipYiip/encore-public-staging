@@ -11,13 +11,13 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 
 | # | Finding | State |
 |---|---------|-------|
-| F1 | A tap plays only a 30-second snippet (0:29 track) | **Fixed** (`7099a8e`): one failed look for the instant-play service was remembered for the session, so every tap fell back to the Deezer preview. Now a service found once is assumed to be there, a service never found is looked for again, the look waits longer. Not yet re-walked on the emulator with a busy server. |
-| F2 | An imported playlist shows letters ("OD"), not a picture | Server side **done** (`d217de0`: the playlist gets its source's picture at once). App side open: it needs P2-04 (import through the new API) so the picture is shown from the first second. |
-| F3 | No download button on an imported playlist page | Open. The import page is the special page of ADR-102, which P2-04/P2-07 remove; an import becomes a normal playlist page with the normal download button. Until then: add the button to the import page if P2-04 slips. |
+| F1 | A tap plays only a 30-second snippet (0:29 track) | **Fixed** (`7099a8e`): one failed look for the instant-play service was remembered for the session, so every tap fell back to the Deezer preview. Now a service found once is assumed to be there, a service never found is looked for again, the look waits longer. **Re-walked on the new server (builds 103-107):** a catalogue song never seen before streams in full (0:22 of 5:42) 2.8 s after the tap, a kept one in about a second; there is no 30-second fallback on that path. |
+| F2 | An imported playlist shows letters ("OD"), not a picture | **Fixed on an Encore server:** the server gives the playlist its source's picture at once, the app shows a picture address as a picture, and a playlist without one gets a collage of its songs' covers (the cover finder fills songs that have none). Walked on the emulator. Still open for the legacy import page (goes away with P2-07). |
+| F3 | No download button on an imported playlist page | **Fixed on an Encore server:** an import (paste or share) opens the ordinary playlist page, with the ordinary play and download buttons; the download of the 10-song import finished in 4 s. A download that cannot move now says "Waiting for Wi-Fi" (it said "Downloading 0 of 10" for ever when Wi-Fi only was on and the phone on mobile data; found by walking), and turning Wi-Fi only off starts it. |
 | F4 | "Downloaded" shows one heap of songs, not playlists; same offline | **Fixed** (`5399414`): Library > Downloaded lists the playlists/albums/Liked Songs that were downloaded with their progress; offline the Library opens there. Walked on the emulator (build 101). |
 | F5 | "Only my music" should be the default; "Show everything" makes no sense | **Fixed** (`5399414`): scope is mine / everything, default mine, wording "Show the whole server". |
 | F6 | Offline shows every download, mine or not; shared tablets and TVs need switching users on a trusted device | Open. Downloads are per server profile, so separate profiles solve it; the **profiles** feature (switch user without signing out, trusted device, picker) is not built — see P4-16 below. |
-| F7 | Test with two phones: an import on one must appear on the other (same account) | Open: needs the live channel in the app (P2-02 remainder) and the import through the new API (P2-04). The second emulator `encore_friend` exists for this. |
+| F7 | Test with two phones: an import on one must appear on the other (same account) | **Partly proved:** a like and a new playlist made through the API as a second phone appeared on the open app within seconds (the open app asks for changes every few seconds). Open: the live channel in the app (events instead of asking), and the same walk with two real emulators signed in as one account (journey 4). |
 | F8 | Test like a new user, end to end, everything | Open: the journeys at the end of this page, to be run when P3/P4 are in; each earlier slice is walked on the emulator as it lands. |
 
 ## P0 — reset
@@ -47,11 +47,21 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
   sharing bytes with a playing stream, the `/encore` route in the Funnel `serve.json` and at home, the wizard making the administrator (today an
   environment variable), `POST /refs/{id}/keep` for downloads of songs the server does not keep yet.
 * P2-02 app data layer: schema v6, the API client, the two feeds, local-first edits and delivery, the move of an existing install, session Encore
-  mode: **done, with 1,684 tests**. Open: the live channel in the app (events instead of probing), the sign-in and join screens for an Encore
+  mode: **done, with 1,720+ tests, walked on the emulators** (fresh install to library in ~8 s). Open: the live channel in the app (events instead of probing), the sign-in and join screens for an Encore
   server (invitation link/QR, the capability learned at "Test & continue"), a Home banner for the move (`session.upgrade`), Year in Music from the
   server's plays, covers from a playlist's picture URL, deleting the legacy `PlaylistMutations`/Subsonic paths once no server needs them, the walk on
   the emulator against the dev VM.
-* P2-03 .. P2-17: not started (play is not save, imports in the app, import stop, Spotify beyond 100 songs, removing the portal code and the second
+* **Done since:** P2-03 app part (a catalogue tap resolves to a ref and streams from the server, nothing is saved by playing: `EncoreInstantBackend`),
+  P2-04 app part (the Import music page on an Encore server creates the import on the server's API and opens the ordinary playlist page; a list can be
+  liked instead of made a playlist; Stop), people and invitations on an Encore server (owner makes a link and QR, a friend joins from a fresh install on
+  a second emulator, owner sees people and invitations: journey 3 passed), pictures for songs without one (server cover finder + `cover.jpg` in the album
+  folder + the keeper), a person whose music-server account had no library is healed (their songs answered "data not found").
+* **Open, found by walking:** the music server (Navidrome) serves covers as `immutable` per id, so a phone that cached its blank-record placeholder
+  keeps showing it for an album whose art was added later (the id does not change); the fix is for the gateway to stop sending the placeholder (404 so the
+  app shows its own fallback and never caches it). The `/encore/join/<code>` link is not yet an Android app link (only `/people/join/` is), so a
+  tap on it in a browser does not open the app; sharing it to the app works. The Your server page still says "Needs the encore-fetch service" on an Encore
+  server. The invite dialog's role words were written for the old service (owner/inviter/guest): on an Encore server they are "A guest" and "Another owner".
+* P2-03 .. P2-17: mostly not started (play is not save: done above; imports in the app: done above; import stop, Spotify beyond 100 songs, removing the portal code and the second
   import screen, playback state and resume anywhere in the app, one device at a time, invite-first sign-in, migrating today's installs on the server
   (the endpoint is built), catalogue module, downloads formats, lyrics on the server, notifications, a self-healing library, "follow the original").
 * P2-18: server part belongs to P3-03.

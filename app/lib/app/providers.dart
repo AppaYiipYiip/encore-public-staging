@@ -31,14 +31,40 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 /// The configured server (first profile). `null` => onboarding.
 ///
+/// The profile in use: of the people who signed in on this device, the one chosen last (signing in or switching stamps it); the first
+/// when none was ever chosen.
+SimpleSelectStatement<$ServersTable, ServerRow> _profileInUse(AppDatabase db) =>
+    db.select(db.servers)
+      ..orderBy([
+        (s) => OrderingTerm.desc(s.lastUsedAtMs),
+        (s) => OrderingTerm.asc(s.id),
+      ])
+      ..limit(1);
+
+/// Everybody who signed in on this device, in the order they did (a shared tablet, a family phone).
+final profilesProvider = StreamProvider<List<ServerRow>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.servers)..orderBy([(s) => OrderingTerm.asc(s.id)]))
+      .watch();
+});
+
+/// Makes [serverId]'s profile the one in use: everything that depends on the active server (the session, the library, the downloads, the
+/// queue) follows by itself, and nothing of the profile that was in use is touched.
+final switchProfileProvider = Provider<Future<void> Function(int)>((ref) {
+  final db = ref.watch(databaseProvider);
+  final clock = ref.watch(clockProvider);
+  return (id) async {
+    await (db.update(db.servers)..where((s) => s.id.equals(id))).write(
+      ServersCompanion(lastUsedAtMs: Value(clock.now().millisecondsSinceEpoch)),
+    );
+  };
+});
+
 /// Reads the **local database only**, so the app shell can render before any
 /// network or secure-storage call completes (R-03).
 final activeServerProvider = StreamProvider<ServerRow?>((ref) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.servers)
-        ..orderBy([(s) => OrderingTerm.asc(s.id)])
-        ..limit(1))
-      .watchSingleOrNull();
+  return _profileInUse(db).watchSingleOrNull();
 });
 
 /// Id of the configured server. Emits only when it *changes*, so things that
@@ -46,27 +72,18 @@ final activeServerProvider = StreamProvider<ServerRow?>((ref) {
 /// server row is merely updated.
 final activeServerIdProvider = StreamProvider<int?>((ref) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.servers)
-        ..orderBy([(s) => OrderingTerm.asc(s.id)])
-        ..limit(1))
-      .watchSingleOrNull()
-      .map((s) => s?.id)
-      .distinct();
+  return _profileInUse(db).watchSingleOrNull().map((s) => s?.id).distinct();
 });
 
 /// Same stream but only re-emitting when something the *network session*
 /// depends on changes (address list, user).
 final _sessionServerProvider = StreamProvider<ServerRow?>((ref) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.servers)
-        ..orderBy([(s) => OrderingTerm.asc(s.id)])
-        ..limit(1))
-      .watchSingleOrNull()
-      .distinct((a, b) =>
-          a?.id == b?.id &&
-          a?.endpointsJson == b?.endpointsJson &&
-          a?.capabilitiesJson == b?.capabilitiesJson &&
-          a?.username == b?.username);
+  return _profileInUse(db).watchSingleOrNull().distinct((a, b) =>
+      a?.id == b?.id &&
+      a?.endpointsJson == b?.endpointsJson &&
+      a?.capabilitiesJson == b?.capabilitiesJson &&
+      a?.username == b?.username);
 });
 
 /// Repository over the local library; available as soon as the server row is.

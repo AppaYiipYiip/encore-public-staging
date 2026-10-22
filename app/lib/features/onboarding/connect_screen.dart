@@ -53,7 +53,10 @@ class _WhatIsAServer extends StatelessWidget {
 /// optional second address (e.g. Tailscale). Shows each verification step and
 /// then drops the user into Home while the first sync runs in the background.
 class ConnectScreen extends ConsumerStatefulWidget {
-  const ConnectScreen({super.key});
+  const ConnectScreen({super.key, this.adding = false});
+
+  /// Somebody else is signing in on a device that already has people on it (Who's listening > Add someone).
+  final bool adding;
 
   @override
   ConsumerState<ConnectScreen> createState() => _ConnectScreenState();
@@ -180,7 +183,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           password: _password.text,
           ping: value.ping,
         );
-      // activeServerProvider emits; the router leaves onboarding.
+        // The new profile is the one listening now. A first sign-in is left by the router; another person's is left here.
+        if (widget.adding && mounted) context.go('/home');
     }
   }
 

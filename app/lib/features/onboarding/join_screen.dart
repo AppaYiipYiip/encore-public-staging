@@ -135,7 +135,8 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           password: password,
           ping: value.ping,
         );
-      // activeServerProvider emits; the router leaves the sign-in screens.
+        // On a device that already had somebody, the new person is the one listening now.
+        if (mounted) context.go('/home');
     }
   }
 

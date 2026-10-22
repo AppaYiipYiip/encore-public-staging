@@ -35,6 +35,7 @@ class DownloadButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state =
         ref.watch(pinStateProvider((type, targetId))).value ?? PinState.none;
+    final waiting = ref.watch(downloadsWaitProvider);
     final c = context.colors;
 
     final (IconData icon, Color fg, Color? fill, String label) =
@@ -49,7 +50,9 @@ class DownloadButton extends ConsumerWidget {
           Icons.arrow_downward_rounded,
           c.accent,
           null,
-          'Downloading $name, ${(state.progress * 100).round()} percent',
+          waiting == null
+              ? 'Downloading $name, ${(state.progress * 100).round()} percent'
+              : '$waiting to download $name',
         ),
       PinPhase.complete => (
           Icons.arrow_downward_rounded,
@@ -137,7 +140,8 @@ class DownloadButton extends ConsumerWidget {
 
     final remove = await showEncoreSheet<bool>(
       context: context,
-      builder: (sheet) => _RemoveSheet(name: name, state: state),
+      builder: (sheet) => _RemoveSheet(
+          name: name, state: state, waiting: ref.read(downloadsWaitProvider)),
     );
     if (remove == true) {
       await actions.unpin(type, targetId);
@@ -152,10 +156,13 @@ class DownloadButton extends ConsumerWidget {
 }
 
 class _RemoveSheet extends StatelessWidget {
-  const _RemoveSheet({required this.name, required this.state});
+  const _RemoveSheet({required this.name, required this.state, this.waiting});
 
   final String name;
   final PinState state;
+
+  /// Why nothing is moving ("Waiting for Wi-Fi"), when that is the case.
+  final String? waiting;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +171,9 @@ class _RemoveSheet extends StatelessWidget {
     final title = switch (state.phase) {
       PinPhase.complete => 'Downloaded',
       PinPhase.attention => 'Some songs could not be downloaded',
-      _ => 'Downloading ${state.done} of ${state.total}',
+      _ => waiting == null
+          ? 'Downloading ${state.done} of ${state.total}'
+          : '$waiting - ${state.done} of ${state.total}',
     };
     return SafeArea(
       child: Padding(

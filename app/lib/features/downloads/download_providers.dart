@@ -234,6 +234,11 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
   await manager.start();
 
   ref.listen(networkKindProvider, (_, __) => manager.requestReconcile());
+  // Turning "Wi-Fi only" off lets what waited for Wi-Fi start now (and on, hold back what has not started).
+  ref.listen(
+    settingsProvider.select((s) => s.wifiOnlyDownloads),
+    (_, __) => manager.requestReconcile(),
+  );
   // A raised cap lets a paused queue continue at once.
   ref.listen(
     settingsProvider.select((s) => s.downloadLimitBytes),
@@ -246,6 +251,17 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
   });
   ref.onDispose(() => unawaited(manager.dispose()));
   return manager;
+});
+
+/// Why downloads are not moving, in words for the person, or `null` when they can: "Wi-Fi only" is on and the phone is on mobile data, or
+/// there is no connection at all.
+final downloadsWaitProvider = Provider<String?>((ref) {
+  final wifiOnly =
+      ref.watch(settingsProvider.select((s) => s.wifiOnlyDownloads));
+  final network = ref.watch(networkKindProvider).value ?? NetworkKind.wifi;
+  if (network == NetworkKind.none) return 'Waiting for a connection';
+  if (wifiOnly && network != NetworkKind.wifi) return 'Waiting for Wi-Fi';
+  return null;
 });
 
 // ---------------------------------------------------------------- actions

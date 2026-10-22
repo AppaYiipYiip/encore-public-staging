@@ -176,6 +176,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           if (server != null && f.isEmpty)
             ListTile(
+              key: const Key('switch-user'),
+              leading: const Icon(Icons.switch_account_rounded),
+              title: Text('Switch user', style: context.text.titleMedium),
+              subtitle: const Text('Somebody else listens on this device.'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/profiles'),
+            ),
+          if (server != null && f.isEmpty)
+            ListTile(
               leading: const Icon(Icons.logout_rounded),
               title: Text('Sign out', style: context.text.titleMedium),
               subtitle: Text('Signed in as ${server.username}'),

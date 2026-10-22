@@ -28,6 +28,7 @@ const _server = ServerRow(
   endpointsJson: '[{"label":"Home","url":"http://192.168.1.2:4533"}]',
   capabilitiesJson: '{}',
   createdAtMs: 0,
+  lastUsedAtMs: 0,
 );
 
 ProviderContainer containerWith({

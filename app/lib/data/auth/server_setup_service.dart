@@ -158,6 +158,8 @@ class ServerSetupService {
             'openSubsonic': ping?.openSubsonic ?? false,
           })),
           createdAtMs: _clock.now().millisecondsSinceEpoch,
+          // The person who has just signed in is the one listening now.
+          lastUsedAtMs: Value(_clock.now().millisecondsSinceEpoch),
         ));
     await _credentials.writePassword(id, password);
     return id;
