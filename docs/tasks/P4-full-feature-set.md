@@ -115,6 +115,7 @@ and activity).
 * **Do.** Search aliases/transliteration and history; Follow artists; library sort/filter/pins/folders/custom covers; Liked Songs
   download with new likes following; crossfade setting (gapless kept); Android Auto search and `MEDIA_PLAY_FROM_SEARCH`; a home-screen
   widget; a single "Data saver" switch.
+* **Start from** `../29-spotify-gap-review.md` (owner, 2026-10-22: the artist page was fixed first; "Spotify does other things much better").
 * **Acceptance.** Each sub-task has its own journey; the owner compares side by side with Spotify on his phone and lists gaps.
 
 ## P4-13 — Problem reports and battery-saver guidance — Size M
