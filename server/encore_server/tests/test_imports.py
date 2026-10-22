@@ -311,3 +311,24 @@ def test_the_default_reader_uses_what_the_machine_has(monkeypatch: pytest.Monkey
     service.default_reader()(LINK)
 
     assert seen["ytmusic"] is not None and seen["ytdlp"] is not None
+
+
+def test_the_playlist_gets_the_picture_its_source_gave_it_at_once(rig: Rig) -> None:
+    rig.playlist = Playlist("Road trip", "youtube", "playlist", tracks(2), False, cover_url="https://i.ytimg.com/vi/abc/hq.jpg")
+
+    made = rig.imported()
+
+    assert made["playlist"]["cover"] == "https://i.ytimg.com/vi/abc/hq.jpg"
+    changes = rig.get("marwa", "/library/changes?since=0")
+    assert changes["playlists"][0]["cover"] == "https://i.ytimg.com/vi/abc/hq.jpg"
+
+
+def test_a_file_import_may_name_a_picture_only_on_a_host_the_readers_allow(rig: Rig) -> None:
+    songs = [{"title": "T", "artists": ["A"]}]
+
+    good = rig.post("marwa", {"name": "Good", "songs": songs, "cover": "https://i.scdn.co/image/x"}).json()
+    bad = rig.post("marwa", {"name": "Bad", "songs": songs, "cover": "https://evil.example/x.jpg"}).json()
+    insecure = rig.post("marwa", {"name": "Plain", "songs": songs, "cover": "http://i.scdn.co/image/x"}).json()
+
+    assert good["playlist"]["cover"] == "https://i.scdn.co/image/x"
+    assert bad["playlist"]["cover"] is None and insecure["playlist"]["cover"] is None

@@ -78,6 +78,40 @@ class Playlist:
     kind: str  # "playlist" | "album"
     tracks: tuple[Track, ...]
     truncated: bool = False
+    #: The picture the source gives the playlist (shown at once, before any song has been looked at).
+    cover_url: str | None = None
+
+
+# --------------------------------------------------------------------------- the playlist's own picture
+
+#: Where a playlist picture may come from (the phone is told the address and fetches it itself: only these hosts are ever named).
+COVER_HOSTS = ("ytimg.com", "googleusercontent.com", "ggpht.com", "scdn.co", "spotifycdn.com", "dzcdn.net")
+
+
+def _cover_ok(url: object) -> str | None:
+    if not isinstance(url, str):
+        return None
+    try:
+        parsed = urllib.parse.urlsplit(url)
+    except ValueError:
+        return None
+    host = (parsed.hostname or "").lower()
+    ok = parsed.scheme == "https" and any(host == h or host.endswith("." + h) for h in COVER_HOSTS)
+    return url if ok else None
+
+
+def largest_picture(pictures: object) -> str | None:
+    """The address of the biggest of `[{url, width, height}, ...]` (what both sources call their pictures), if its host is allowed."""
+    best: tuple[int, str] | None = None
+    for item in pictures if isinstance(pictures, list) else []:
+        if not isinstance(item, dict):
+            continue
+        url = _cover_ok(item.get("url"))
+        width = item.get("width")
+        size = int(width) if isinstance(width, (int, float)) and not isinstance(width, bool) else 0
+        if url is not None and (best is None or size > best[0]):
+            best = (size, url)
+    return best[1] if best else None
 
 
 # --------------------------------------------------------------------------- reading text apart
@@ -166,6 +200,12 @@ def _find(obj: object, key: str, depth: int = 0) -> object | None:
 
 def spotify_tracks(html: str) -> tuple[str, list[Track]]:
     """The name and the songs of a Spotify embed page."""
+    name, tracks, _ = spotify_page(html)
+    return name, tracks
+
+
+def spotify_page(html: str) -> tuple[str, list[Track], str | None]:
+    """The name, the songs and the picture of a Spotify embed page."""
     match = _NEXT_DATA.search(html or "")
     if not match:
         raise PlaylistError("unreadable", "Could not read that playlist. Is it public?")
@@ -193,7 +233,9 @@ def spotify_tracks(html: str) -> tuple[str, list[Track]]:
                 artists=artists,
             )
         )
-    return name, tracks
+    art = entity.get("coverArt") or entity.get("visualIdentity")
+    sources = art.get("sources") or art.get("image") if isinstance(art, dict) else None
+    return name, tracks, largest_picture(sources)
 
 
 # --------------------------------------------------------------------------- the readers
@@ -313,8 +355,8 @@ def read_playlist(
             html = http(f"https://open.spotify.com/embed/{kind}/{ident}")
         except Exception as error:  # noqa: BLE001 - any network trouble reads the same to the person
             raise PlaylistError("unreachable", "Spotify did not answer. Try again in a minute.") from error
-        name, tracks = spotify_tracks(html)
-        return _playlist(name, "spotify", kind, tracks, cut=len(tracks) >= SPOTIFY_EMBED_LIMIT)
+        name, tracks, cover = spotify_page(html)
+        return _playlist(name, "spotify", kind, tracks, cut=len(tracks) >= SPOTIFY_EMBED_LIMIT, cover=cover)
 
     if host in YOUTUBE_HOSTS:
         query = urllib.parse.parse_qs(link.query)
@@ -322,13 +364,16 @@ def read_playlist(
         if link.path not in ("/playlist", "/watch") or not _YOUTUBE_LIST.match(ident):
             raise unsupported
         if ytmusic is not None:
+            cover = None
             try:
-                name, tracks = _ytmusic_tracks(ytmusic(ident))
+                answer = ytmusic(ident)
+                name, tracks = _ytmusic_tracks(answer)
+                cover = largest_picture(answer.get("thumbnails"))
             except Exception as error:  # noqa: BLE001 - the quick way in; yt-dlp is asked next and says why when it cannot
                 log.info("YouTube Music could not list playlist %s (%s); asking yt-dlp", ident, error)
                 tracks = []
             if tracks:
-                return _playlist(name, "youtube", "playlist", tracks)
+                return _playlist(name, "youtube", "playlist", tracks, cover=cover)
         if ytdlp is None:
             raise PlaylistError("unreachable", "This server cannot read YouTube playlists.")
         try:
@@ -346,10 +391,10 @@ def read_playlist(
     raise unsupported
 
 
-def _playlist(name: str, source: str, kind: str, tracks: list[Track], *, cut: bool = False) -> Playlist:
+def _playlist(name: str, source: str, kind: str, tracks: list[Track], *, cut: bool = False, cover: str | None = None) -> Playlist:
     if not tracks:
         raise PlaylistError("empty", "That playlist has no songs we can read. Is it empty, or private?")
-    return Playlist(name, source, kind, tuple(tracks[:MAX_TRACKS]), truncated=cut or len(tracks) > MAX_TRACKS)
+    return Playlist(name, source, kind, tuple(tracks[:MAX_TRACKS]), truncated=cut or len(tracks) > MAX_TRACKS, cover_url=cover)
 
 
 def ytdlp_reader(

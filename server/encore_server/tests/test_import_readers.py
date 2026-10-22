@@ -412,3 +412,66 @@ class YouTubeMusicPlaylistTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PlaylistPictureTest(unittest.TestCase):
+    """The picture a playlist has at its source, so the app can show it before any song has been looked at."""
+
+    def test_the_biggest_picture_on_an_allowed_host_wins(self):
+        from encore_server.imports.readers import largest_picture
+
+        pictures = [
+            {"url": "https://i.ytimg.com/small.jpg", "width": 60},
+            {"url": "https://lh3.googleusercontent.com/big=w544", "width": 544},
+            {"url": "https://evil.example/huge.jpg", "width": 4000},
+            {"url": "http://i.ytimg.com/plain.jpg", "width": 9999},
+        ]
+        self.assertEqual(largest_picture(pictures), "https://lh3.googleusercontent.com/big=w544")
+
+    def test_nothing_usable_is_none(self):
+        from encore_server.imports.readers import largest_picture
+
+        for odd in (None, [], "x", [{"url": 5}], [{"url": "https://evil.example/a.jpg"}], [None]):
+            self.assertIsNone(largest_picture(odd), odd)
+
+    def test_a_youtube_music_playlist_brings_its_thumbnail(self):
+        data = recorded("playlist_album.json")
+        data["thumbnails"] = [
+            {"url": "https://lh3.googleusercontent.com/a=w60", "width": 60, "height": 60},
+            {"url": "https://lh3.googleusercontent.com/a=w544", "width": 544, "height": 544},
+        ]
+
+        playlist = read_playlist(LINK, ytmusic=lambda ident: data)
+
+        self.assertEqual(playlist.cover_url, "https://lh3.googleusercontent.com/a=w544")
+
+    def test_a_spotify_page_brings_its_cover(self):
+        page = spotify_page_with_cover("Mix", [spotify_track("Song", "Artist")], "https://i.scdn.co/image/abc")
+        playlist = read_playlist("https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M", http=lambda url: page)
+
+        self.assertEqual(playlist.cover_url, "https://i.scdn.co/image/abc")
+
+
+def spotify_page_with_cover(name, tracks, cover):
+    data = {
+        "props": {
+            "pageProps": {
+                "state": {
+                    "data": {
+                        "entity": {
+                            "name": name,
+                            "title": name,
+                            "type": "playlist",
+                            "trackList": tracks,
+                            "coverArt": {"sources": [{"url": cover, "width": 640, "height": 640}]},
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return (
+        '<html><head></head><body><script id="__NEXT_DATA__" type="application/json">'
+        + json.dumps(data)
+        + "</script></body></html>"
+    )

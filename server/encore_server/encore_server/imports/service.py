@@ -64,6 +64,13 @@ def default_reader() -> Callable[[str], Playlist]:
     return read
 
 
+def _picture(body: dict[str, Any]) -> str | None:
+    """A file import may name a picture for its playlist (an https address on a host the readers allow)."""
+    from .readers import _cover_ok
+
+    return _cover_ok(body.get("cover"))
+
+
 class ImportService:
     def __init__(
         self,
@@ -98,11 +105,11 @@ class ImportService:
             if again is not None:
                 return {"import": again, "playlistId": again["playlistId"]}
 
-        source, url, name, songs, extra, truncated = self._what(body)
+        source, url, name, songs, extra, truncated, cover = self._what(body)
         import_id = import_id or new_id("im")
         with self._db.tx() as conn:
             made = [refs.resolve(conn, song) for song in songs]
-            library.create_playlist(conn, person, playlist_id, name)
+            library.create_playlist(conn, person, playlist_id, name, cover)
             entry_ids: list[str] = []
             for start in range(0, len(made), library.MAX_ENTRIES_PER_CALL):
                 chunk = made[start : start + library.MAX_ENTRIES_PER_CALL]
@@ -139,8 +146,10 @@ class ImportService:
         self._hub.publish(person, {"type": "library.changed", "cursor": str(cursor)})
         return {"import": record, "playlistId": playlist_id, "playlist": playlist, "refs": made, "cursor": str(cursor)}
 
-    def _what(self, body: dict[str, Any]) -> tuple[str, str | None, str, list[dict[str, Any]], list[str | None], bool]:
-        """(source, url, name, the songs, each song's own video if any, cut)."""
+    def _what(
+        self, body: dict[str, Any]
+    ) -> tuple[str, str | None, str, list[dict[str, Any]], list[str | None], bool, str | None]:
+        """(source, url, name, the songs, each song's own video if any, cut, the picture the source gave the list)."""
         url = body.get("url")
         songs = body.get("songs")
         if isinstance(url, str) and url.strip():
@@ -157,6 +166,7 @@ class ImportService:
                 [_song_of(t) for t in playlist.tracks],
                 [None if t.official else t.video_id for t in playlist.tracks],
                 playlist.truncated,
+                playlist.cover_url,
             )
         if isinstance(songs, list) and songs:
             name = str(body.get("name") or "").strip()
@@ -178,7 +188,7 @@ class ImportService:
                 }
                 for p in parsed
             ]
-            return str(source), None, name, described, [None] * len(described), len(songs) > MAX_SONGS
+            return str(source), None, name, described, [None] * len(described), len(songs) > MAX_SONGS, _picture(body)
         raise ApiError("validation", "Send a link (url) or a list of songs (name and songs).")
 
     @staticmethod
