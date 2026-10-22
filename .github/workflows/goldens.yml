@@ -1,0 +1,39 @@
+name: Goldens (Linux)
+
+# Draws the Linux set of the screen pictures that the App job compares against (app/test/flutter_test_config.dart keeps one set per
+# operating system: a screen drawn on Windows differs by a few pixels on Linux). Run it by hand from the Actions tab (or
+# `gh workflow run goldens.yml --ref <branch>`) after a screen changed on purpose, download the artifact, commit the files in
+# app/test/features/goldens/linux, and look at the pictures before committing them: a golden is only as good as the person who looked.
+on:
+  workflow_dispatch:
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Generate code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Draw the pictures
+        run: flutter test --no-pub --update-goldens test/features/screens_golden_test.dart test/features/lyrics_controls_test.dart test/features/year_in_music_screen_test.dart
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goldens-linux
+          path: app/test/features/goldens/linux/*.png
+          if-no-files-found: error
