@@ -15,7 +15,7 @@ the owner's existing data or keep the old model alongside the new one forever.
 | `playlist` / `playlist_entry` | id, owner, name, cover, collaborative / id, playlist, position (fractional index), ref, added_by, at | fractional positions make concurrent moves mergeable (`17` §5) |
 | `play_event` | person, ref, at, ms_played, device, context | Year in Music, history, recommendations |
 | `playback_state` | person, ref, position_ms, queue (json of refs), index, context, shuffle, repeat, playing, active_device, rev, updated_at | `13` §2, ADR-R9 |
-| `work_item` | id, kind (`play`, `prepare`, `match`, `keep`, `measure`), ref, person, priority, state, attempts, next_try_at, error | the scheduler of `04` §10 lives here, so a restart resumes |
+| `work_item` / `work_item_person` | id, kind (`play`, `prepare`, `download`, `match`, `keep`, `measure`), ref, priority, state (`queued`, `running`, `done`, `failed`, `cancelled`), attempts, next_try_at, error / item, person | the scheduler of `04` §10 lives here, so a restart resumes. One active item per kind and song (single flight); `work_item_person` says who wants it, so Stop cancels only what nobody else needs (built in `server/encore_server/encore_server/scheduler.py`) |
 | `import` / `import_entry` | id, person, source, url, state, counts / import, position, raw (json), ref, state | |
 | `change_log` | person, seq, kind, payload, at | feeds `library/changes` cursors and tombstones |
 | `profile` | person, vectors (json), updated_at | recommendations (`20`) |

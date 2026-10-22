@@ -18,6 +18,16 @@ class Settings:
     log_level: str = "INFO"
     youtube: bool = True
     fault: str = ""
+    #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
+    keep: bool = True
+    #: The worker threads that do background work; off in tests, which run the scheduler by hand.
+    workers: bool = True
+    #: The administrator the installer made in the music server, for scans and looking songs up. Nobody else's login.
+    navidrome_admin_user: str = ""
+    navidrome_admin_password: str = ""
+    min_free_gb: float = 10.0
+    #: A song nobody saved is kept once it was played on this many different days.
+    keep_after_play_days: int = 2
     extras: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -37,4 +47,10 @@ class Settings:
             log_level=e.get("ENCORE_LOG_LEVEL", "INFO").upper(),
             youtube=e.get("ENCORE_YOUTUBE", "1").strip().lower() not in ("0", "false", "no"),
             fault=e.get("ENCORE_FAULT", "").strip(),
+            keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
+            workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
+            navidrome_admin_user=e.get("ENCORE_NAVIDROME_ADMIN_USER", "").strip(),
+            navidrome_admin_password=e.get("ENCORE_NAVIDROME_ADMIN_PASSWORD", ""),
+            min_free_gb=float(e.get("ENCORE_MIN_FREE_GB", "10")),
+            keep_after_play_days=int(e.get("ENCORE_KEEP_AFTER_PLAY_DAYS", "2")),
         )

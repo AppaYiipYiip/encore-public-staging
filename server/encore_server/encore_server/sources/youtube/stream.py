@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -165,6 +166,78 @@ class StreamProxy:
                     raise last from error
         raise last or StreamError("not_found")
 
+    # ------------------------------------------------------------------ keeping: the whole file
+
+    def download(self, request: Any, stem: Path, *, max_bytes: int, timeout_s: float = 120.0) -> Path:
+        """Fetches the whole song into `<stem>.<ext>` (renamed from `.part` when complete) and returns the file.
+
+        The address a play just asked for is reused, so saving a song someone is listening to needs no second look-up. Raises
+        [DownloadError] with a code the keeper understands (`unavailable`, `too_big`, `blocked`, `download_failed` ...)."""
+        deadline = self._clock() + timeout_s
+        found = self._candidates(request)
+        if not found:
+            raise DownloadError("not_found")
+        last: DownloadError | None = None
+        for video_id, _title, _duration in found[:3]:
+            try:
+                return self._save(video_id, stem, max_bytes, deadline)
+            except StreamError as error:
+                if error.code not in _GONE:
+                    raise DownloadError("timeout" if error.code == "slow" else error.code) from error
+                last = DownloadError(error.code)
+            except DownloadError as error:
+                if error.code not in _GONE:
+                    raise
+                last = error
+        raise last or DownloadError("not_found")
+
+    def _save(self, video_id: str, stem: Path, max_bytes: int, deadline: float) -> Path:
+        for fresh in (False, True):
+            info = self._info(video_id, deadline, fresh=fresh)
+            if info.size is not None and info.size > max_bytes:
+                raise DownloadError("too_big")
+            try:
+                return self._write(info, stem, max_bytes, deadline)
+            except urllib.error.HTTPError as refused:
+                # The address that was kept has expired (or never opened): ask again, once.
+                if fresh or refused.code not in (403, 404, 410):
+                    raise DownloadError("download_failed", f"HTTP {refused.code}") from refused
+            except (urllib.error.URLError, OSError) as error:
+                raise DownloadError("download_failed", f"{type(error).__name__}: {error}") from error
+        raise DownloadError("download_failed")  # unreachable: the second round either returns or raises
+
+    def _write(self, info: _Info, stem: Path, max_bytes: int, deadline: float) -> Path:
+        final = stem.with_name(f"{stem.name}.{info.ext}")
+        part = final.with_name(final.name + ".part")
+        stem.parent.mkdir(parents=True, exist_ok=True)
+        position = 0
+        total = info.size
+        try:
+            with part.open("wb") as out:
+                while True:
+                    length = FIRST_CHUNK if position == 0 else CHUNK
+                    last = position + length - 1
+                    if total is not None:
+                        last = min(last, total - 1)
+                    status, data, content_range = self._get(info, position, last, deadline if position == 0 else None)
+                    if not data:
+                        raise DownloadError("download_failed", "the server sent no bytes")
+                    if status == 200 and position > 0:
+                        raise DownloadError("download_failed", "the server ignored the range request")
+                    out.write(data)
+                    position += len(data)
+                    # status 200 to a range request: no range support upstream, the whole file arrived in one answer
+                    total = position if status == 200 else _total_from(content_range) or total
+                    if position > max_bytes:
+                        raise DownloadError("too_big")
+                    if (total is not None and position >= total) or (total is None and len(data) < length):
+                        break
+        except BaseException:
+            part.unlink(missing_ok=True)
+            raise
+        os.replace(part, final)
+        return final
+
     # -------------------------------------------------------------- what YouTube says
 
     def _lock_for(self, video_id: str) -> threading.Lock:
@@ -181,6 +254,7 @@ class StreamProxy:
                 self._sleep(int(self._fault.split(":", 1)[1] or 0) / 1000.0)
             if self._clock() >= deadline:
                 raise StreamError("slow")
+            self._work.mkdir(parents=True, exist_ok=True)
             path = self._work / f"stream-{video_id}.info.json"
             asked = self._clock()
             try:

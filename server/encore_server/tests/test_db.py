@@ -12,7 +12,7 @@ from encore_server.ids import is_id, new_id, ulid
 def test_a_new_database_gets_every_table(tmp_path: Path) -> None:
     db = Database(tmp_path / "encore.db")
 
-    assert db.migrate() == [1]
+    assert db.migrate() == [1, 2]
 
     with db.read() as conn:
         tables = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
@@ -28,6 +28,8 @@ def test_a_new_database_gets_every_table(tmp_path: Path) -> None:
         "playback_state",
         "change_log",
         "idempotency_key",
+        "work_item",
+        "work_item_person",
         "schema_migrations",
     } <= tables
 
@@ -59,7 +61,7 @@ def test_a_failed_migration_restores_the_database_and_says_so_plainly(tmp_path: 
     with db.tx() as conn:
         conn.execute("INSERT INTO person (id, navidrome_user, display_name, created_at) VALUES ('pn_keep', 'marwa', 'marwa', 1)")
 
-    broken = [(2, "0002_broken.sql", "CREATE TABLE half (x INTEGER); INSERT INTO nowhere VALUES (1);")]
+    broken = [(3, "0003_broken.sql", "CREATE TABLE half (x INTEGER); INSERT INTO nowhere VALUES (1);")]
     with pytest.raises(MigrationFailed) as caught:
         db.migrate(migrations=[(1, "0001_initial.sql", "")] + broken)
 
@@ -73,7 +75,7 @@ def test_a_failed_migration_restores_the_database_and_says_so_plainly(tmp_path: 
 def test_a_backup_is_taken_before_a_pending_migration(tmp_path: Path) -> None:
     db = Database(tmp_path / "encore.db")
     db.migrate()
-    db.migrate(version="9.9", migrations=[(1, "0001_initial.sql", ""), (2, "0002_more.sql", "CREATE TABLE extra (x INTEGER);")])
+    db.migrate(version="9.9", migrations=[(1, "0001_initial.sql", ""), (3, "0003_more.sql", "CREATE TABLE extra (x INTEGER);")])
 
     backups = list((tmp_path / "backups").glob("encore-9.9-*.db"))
     assert len(backups) == 1

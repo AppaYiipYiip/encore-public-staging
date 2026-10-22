@@ -67,6 +67,10 @@ class YoutubeSource:
     def open(self, wanted: Wanted, range_header: str | None) -> Upstream:
         return self._proxy.open(wanted, range_header)
 
+    def download(self, wanted: Wanted, stem: Path, *, max_bytes: int) -> Path:
+        """The whole audio of the song, for keeping: `<stem>.<ext>`."""
+        return self._proxy.download(wanted, stem, max_bytes=max_bytes)
+
 
 def wanted_from_ref(ref: dict[str, Any]) -> Wanted:
     """From the API's shape of a ref."""

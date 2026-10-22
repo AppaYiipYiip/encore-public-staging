@@ -50,6 +50,21 @@ def latest_cursor(conn: sqlite3.Connection, person: str) -> int:
     return int(row["seq"])
 
 
+def touch_ref_holders(conn: sqlite3.Connection, ref_id: str) -> dict[str, int]:
+    """The song's file changed (kept, replaced, linked): everybody who has it liked or in a playlist is told it changed, so their
+    apps learn the song can now be played from the server's copy. Returns each such person's new cursor."""
+    touched: dict[str, int] = {}
+    for row in conn.execute("SELECT person FROM library_item WHERE kind = 'like' AND target = ?", (ref_id,)).fetchall():
+        touched[row["person"]] = _touch(conn, row["person"], "like", ref_id)
+    for row in conn.execute(
+        "SELECT e.id AS entry, p.owner AS owner FROM playlist_entry e JOIN playlist p ON p.id = e.playlist"
+        " WHERE e.ref = ? AND e.deleted_at IS NULL AND p.deleted_at IS NULL",
+        (ref_id,),
+    ).fetchall():
+        touched[row["owner"]] = _touch(conn, row["owner"], "entry", row["entry"])
+    return touched
+
+
 # ----------------------------------------------------------------------------------------------- likes and the other sets
 
 
@@ -290,6 +305,19 @@ def record_play(
         (play_id, person, ref, stamp, played, device, context if isinstance(context, str) else None),
     )
     return bool(cursor.rowcount)
+
+
+#: A play shorter than this is a skip, not a listen: it does not count towards keeping a song nobody saved.
+MIN_COUNTED_PLAY_MS = 30_000
+
+
+def played_on_days(conn: sqlite3.Connection, ref_id: str) -> int:
+    """On how many different days (UTC) the song was really listened to, by anybody: the rule that keeps a song after the second one."""
+    row = conn.execute(
+        "SELECT COUNT(DISTINCT date(at / 1000, 'unixepoch')) AS days FROM play_event WHERE ref = ? AND ms_played >= ?",
+        (ref_id, MIN_COUNTED_PLAY_MS),
+    ).fetchone()
+    return int(row["days"])
 
 
 # ----------------------------------------------------------------------------------------------- the change feed

@@ -7,10 +7,13 @@ worker threads (SQLite and the music server's check block briefly); the live soc
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib.util
 import logging
 import secrets
+import sqlite3
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -38,7 +41,10 @@ from .config import Settings
 from .db import Database
 from .errors import ApiError
 from .ids import is_id, now_ms
+from .keeper.keeper import Keeper, KeepSettings
 from .live import Hub
+from .navidrome import NavidromeClient
+from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
 from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
@@ -55,6 +61,8 @@ class Services:
     hub: Hub
     verifier: Verifier
     youtube: YoutubeSource | None = None
+    scheduler: Scheduler | None = None
+    keeper: Keeper | None = None
 
 
 def services(request: Request) -> Services:
@@ -131,7 +139,7 @@ def info(request: Request) -> JSONResponse:
             "minAppVersion": MIN_APP_VERSION,
             "serverVersion": __version__,
             "name": svc.settings.server_name,
-            "features": FEATURES,
+            "features": [*FEATURES, *(["keep"] if svc.keeper is not None else [])],
         }
     )
 
@@ -323,12 +331,27 @@ def library_changes(request: Request, since: str = "0", p: Principal = Depends(g
         return _ok(library.changes(conn, p.person_id, max(0, cursor)))
 
 
+def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:
+    """Somebody saved these songs (a like, a playlist): the server keeps a copy, once, in the background (docs/04 D-3). Part of the same
+    write as the save, so a save never loses its keep job. Songs that already have a file the music server knows are skipped."""
+    if svc.scheduler is None or not ref_ids:
+        return
+    for ref_id in dict.fromkeys(ref_ids):
+        file = conn.execute(
+            "SELECT 1 FROM song_file WHERE ref = ? AND navidrome_song_id IS NOT NULL LIMIT 1", (ref_id,)
+        ).fetchone()
+        if file is None and refs.ref_exists(conn, ref_id):
+            svc.scheduler.submit("keep", ref_id, person, conn=conn)
+
+
 def _item_route(kind: str, request: Request, target: str, p: Principal, *, add: bool) -> JSONResponse:
     svc = services(request)
     with svc.db.tx() as conn:
         changed = (
             library.set_item(conn, p.person_id, kind, target) if add else library.clear_item(conn, p.person_id, kind, target)
         )
+        if changed and add and kind == "like":
+            want_kept(svc, conn, p.person_id, [target])
         cursor = library.latest_cursor(conn, p.person_id)
     if changed:
         _changed(svc, p, cursor)
@@ -430,11 +453,14 @@ def add_entries(
     if not isinstance(songs, list) or not all(isinstance(s, dict) for s in songs):
         raise ApiError("validation", "Send the songs as a list of {ref, id?}.")
     after = body.get("after")
-    added, cursor = _write_playlist(
-        request,
-        p,
-        lambda conn: library.add_entries(conn, p.person_id, playlist_id, songs, after=after if isinstance(after, str) else None),
-    )
+    svc = services(request)
+
+    def add(conn: sqlite3.Connection) -> Any:
+        made = library.add_entries(conn, p.person_id, playlist_id, songs, after=after if isinstance(after, str) else None)
+        want_kept(svc, conn, p.person_id, [str(s.get("ref")) for s in songs])
+        return made
+
+    added, cursor = _write_playlist(request, p, add)
     return _ok({"added": added, "cursor": str(cursor)}, 201)
 
 
@@ -473,6 +499,12 @@ def post_play(request: Request, body: dict[str, Any] = Depends(json_body), p: Pr
             device=p.device_id,
             context=body.get("context"),
         )
+        svc = services(request)
+        listened = body.get("msPlayed")
+        if stored and svc.scheduler is not None and isinstance(listened, int) and listened >= library.MIN_COUNTED_PLAY_MS:
+            ref_id = str(body.get("ref", ""))
+            if library.played_on_days(conn, ref_id) >= svc.settings.keep_after_play_days:
+                want_kept(svc, conn, p.person_id, [ref_id])
     return _ok({"stored": stored}, 201 if stored else 200)
 
 
@@ -571,25 +603,75 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
     return YoutubeSource(settings.data_dir / "work", fast_clients=("visionos",), fault=settings.fault, remember_video=remember)
 
 
+def _keeping(
+    settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, navidrome: NavidromeClient | None
+) -> tuple[Scheduler | None, Keeper | None]:
+    """The background work and the keeper. Without a way to fetch songs and a music-server account that can find what was kept, nothing
+    is queued: every song still plays by streaming, and the server says in its log why it keeps nothing."""
+    if not settings.keep:
+        return None, None
+    client = navidrome or NavidromeClient(
+        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
+    )
+    if youtube is None or not client.configured:
+        log.warning(
+            "keeping is off: %s",
+            "no way to fetch songs (yt-dlp is not installed or YouTube is off)"
+            if youtube is None
+            else "ENCORE_NAVIDROME_ADMIN_USER / ENCORE_NAVIDROME_ADMIN_PASSWORD are not set",
+        )
+        return None, None
+
+    def tell(touched: dict[str, int]) -> None:
+        for person, cursor in touched.items():
+            hub.publish(person, {"type": "library.changed", "cursor": str(cursor)})
+
+    keeper = Keeper(
+        database,
+        youtube,
+        client,
+        KeepSettings(music_dir=settings.music_dir, min_free_gb=settings.min_free_gb),
+        settings.data_dir / "work",
+        on_changed=tell,
+    )
+    return Scheduler(database, {"keep": keeper.handle}, workers={"interactive": 1, "background": 2}), keeper
+
+
 def create_app(
     settings: Settings | None = None,
     *,
     verifier: Verifier | None = None,
     db: Database | None = None,
     youtube: YoutubeSource | None = None,
+    navidrome: NavidromeClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
-    app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
+    hub = Hub()
+    scheduler, keeper = _keeping(settings, database, hub, youtube, navidrome)
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if scheduler is not None and settings.workers:
+            scheduler.start()
+        try:
+            yield
+        finally:
+            if scheduler is not None:
+                scheduler.stop()
+
+    app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.services = Services(
         settings=settings,
         db=database,
-        hub=Hub(),
+        hub=hub,
         verifier=verifier or NavidromeVerifier(settings.navidrome_url),
         youtube=youtube,
+        scheduler=scheduler,
+        keeper=keeper,
     )
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
