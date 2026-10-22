@@ -4,6 +4,9 @@ import 'fake_http.dart';
 ///
 /// Mutate the public lists between sync runs to simulate server-side changes.
 class FakeSubsonicServer {
+  /// Navidrome answers the browse calls of a library with no songs in it with error 70 (a brand-new install is exactly that).
+  bool emptyLibraryError = false;
+
   FakeSubsonicServer() {
     adapter = FakeHttpAdapter(routes: {
       'ping': (_) => FakeResponse.json(subsonicOk({})),
@@ -17,14 +20,20 @@ class FakeSubsonicServer {
               'lastScan': lastScan,
             },
           })),
-      'getArtists': (_) => FakeResponse.json(subsonicOk({
-            'artists': {
-              'index': [
-                {'name': 'A', 'artist': artists},
-              ],
-            },
-          })),
+      'getArtists': (_) => emptyLibraryError
+          ? FakeResponse.json(subsonicError(70, 'Library not found or empty'))
+          : FakeResponse.json(subsonicOk({
+              'artists': {
+                'index': [
+                  {'name': 'A', 'artist': artists},
+                ],
+              },
+            })),
       'getAlbumList2': (r) {
+        if (emptyLibraryError) {
+          return FakeResponse.json(
+              subsonicError(70, 'Library not found or empty'));
+        }
         final size = int.parse(r.param('size') ?? '500');
         final offset = int.parse(r.param('offset') ?? '0');
         return FakeResponse.json(subsonicOk({
@@ -32,6 +41,10 @@ class FakeSubsonicServer {
         }));
       },
       'search3': (r) {
+        if (emptyLibraryError) {
+          return FakeResponse.json(
+              subsonicError(70, 'Library not found or empty'));
+        }
         final size = int.parse(r.param('songCount') ?? '0');
         final offset = int.parse(r.param('songOffset') ?? '0');
         return FakeResponse.json(subsonicOk({

@@ -509,6 +509,8 @@ class _EmptyLibrary extends ConsumerWidget {
       // A server with the instant-play service: the way in is to search for a
       // song and tap it (it plays at once and becomes theirs), not to "request".
       final instant = ref.watch(fetchServiceProvider).value != null;
+      // On an Encore server playing a song does not save it: the words say what really happens.
+      final encore = ref.watch(onEncoreServerProvider).value ?? false;
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(Space.xxl),
@@ -527,10 +529,15 @@ class _EmptyLibrary extends ConsumerWidget {
               const SizedBox(height: Space.sm),
               Text(
                 instant
-                    ? 'You have no music of your own here yet. Search for any '
-                        'song and tap it: it plays within seconds and is added '
-                        'to your library. You can also bring playlists over from '
-                        'Spotify or YouTube Music.'
+                    ? (encore
+                        ? 'You have no music of your own here yet. Search for '
+                            'any song and tap it: it plays within seconds. Like '
+                            'a song, or download it, to keep it. You can also '
+                            'bring playlists over from Spotify or YouTube Music.'
+                        : 'You have no music of your own here yet. Search for '
+                            'any song and tap it: it plays within seconds and '
+                            'is added to your library. You can also bring '
+                            'playlists over from Spotify or YouTube Music.')
                     : 'Your server is connected but has no music yet. Bring '
                         'some over from Spotify or YouTube Music, or search for '
                         'what you want and request it. You can also put files '
@@ -564,10 +571,12 @@ class _EmptyLibrary extends ConsumerWidget {
                   label: const Text('Search and request'),
                 ),
               ],
-              TextButton(
-                onPressed: () => context.push('/settings/server'),
-                child: const Text('What does my server need?'),
-              ),
+              // That page explains what a music server needs: nothing to explain on an Encore server.
+              if (!encore)
+                TextButton(
+                  onPressed: () => context.push('/settings/server'),
+                  child: const Text('What does my server need?'),
+                ),
             ],
           ),
         ),

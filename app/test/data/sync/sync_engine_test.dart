@@ -50,6 +50,21 @@ void main() {
   }
 
   group('first sync', () {
+    test(
+        'a brand-new server whose library is empty syncs as an empty library, '
+        'not as a failure (found on a clean install: "Library not synced yet" '
+        'for ever)', () async {
+      server
+        ..seed(songCount: 0, albumCount: 0)
+        ..emptyLibraryError = true;
+
+      final stats = await runOk();
+
+      expect(stats.tracks, 0);
+      expect(await db.select(db.tracks).get(), isEmpty);
+      expect(await db.select(db.albums).get(), isEmpty);
+    });
+
     test('imports artists, albums and all songs in pages', () async {
       server.seed(songCount: 1203, albumCount: 7);
       final stats = await runOk();

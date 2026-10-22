@@ -274,8 +274,22 @@ class OpenSubsonicClient {
         await _call('startScan');
       });
 
+  /// A music server with nothing in its library answers the browse calls with error 70, "Library not found or empty". That is not a failure:
+  /// it is a library of no songs, which is exactly what every brand-new server is (found on a clean install: Home said "we'll keep trying
+  /// to reach your server" for ever). `null` when the answer is that; any other not-found still fails.
+  Future<Map<String, dynamic>?> _callOrEmpty(String method,
+      [Map<String, Object?> params = const {}]) async {
+    try {
+      return await _call(method, params);
+    } on NotFoundFailure catch (e) {
+      if (e.message.toLowerCase().contains('library')) return null;
+      rethrow;
+    }
+  }
+
   Future<Result<List<SsArtist>>> getArtists() => guard(() async {
-        final root = await _call('getArtists');
+        final root = await _callOrEmpty('getArtists');
+        if (root == null) return const <SsArtist>[];
         final indexes = readObjectList(readMap(root['artists'])?['index']);
         return [
           for (final index in indexes)
@@ -290,11 +304,12 @@ class OpenSubsonicClient {
     int offset = 0,
   }) =>
       guard(() async {
-        final root = await _call('getAlbumList2', {
+        final root = await _callOrEmpty('getAlbumList2', {
           'type': type,
           'size': size,
           'offset': offset,
         });
+        if (root == null) return const <SsAlbum>[];
         return [
           for (final a in readObjectList(readMap(root['albumList2'])?['album']))
             SsAlbum.fromJson(a),
@@ -328,7 +343,7 @@ class OpenSubsonicClient {
     int songOffset = 0,
   }) =>
       guard(() async {
-        final root = await _call('search3', {
+        final root = await _callOrEmpty('search3', {
           'query': query,
           'artistCount': artistCount,
           'artistOffset': artistOffset,
@@ -337,6 +352,7 @@ class OpenSubsonicClient {
           'songCount': songCount,
           'songOffset': songOffset,
         });
+        if (root == null) return SsSearchPage.fromJson(const {});
         return SsSearchPage.fromJson(
             readMap(root['searchResult3']) ?? const {});
       });

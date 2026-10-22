@@ -11,6 +11,7 @@ import 'package:encore/design/theme.dart';
 import 'package:encore/design/tokens.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/people/people_providers.dart';
+import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:encore/features/requests/request_ui.dart';
 import 'package:flutter/material.dart';
@@ -98,6 +99,38 @@ void main() {
       expect(find.text('Search and request'), findsNothing);
       expect(find.text('Import a playlist or artist'), findsOneWidget,
           reason: 'still offered, second');
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'on an Encore server the empty Home says playing does not save, and '
+        'has no "what does my server need" button', (tester) async {
+      final app = await pumpApp(
+        tester,
+        overrides: [
+          onEncoreServerProvider.overrideWith((ref) async => true),
+          syncStatusProvider.overrideWith((ref) => Stream.value(SyncStatus(
+                initialSyncDone: true,
+                lastSuccessAt: DateTime(2026, 10, 15, 20),
+              ))),
+          fetchServiceProvider.overrideWith(
+              (ref) async => Uri.parse('http://192.168.1.20:4533')),
+        ],
+      );
+      await app.db.delete(app.db.playlistEntries).go();
+      await app.db.delete(app.db.playlists).go();
+      await app.db.delete(app.db.tracks).go();
+      await app.db.delete(app.db.albums).go();
+      await app.db.delete(app.db.artists).go();
+      await settle(tester);
+
+      expect(find.text('Search for a song to start'), findsOneWidget);
+      expect(find.textContaining('it plays within seconds. Like a song'),
+          findsOneWidget);
+      expect(find.textContaining('is added to your library'), findsNothing,
+          reason: 'playing a song does not save it on an Encore server');
+      expect(find.text('What does my server need?'), findsNothing);
+      expect(find.text('Search for a song'), findsOneWidget);
       await closeApp(tester, app.db);
     });
 
