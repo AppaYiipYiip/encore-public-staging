@@ -239,3 +239,50 @@ def test_a_kept_song_plays_through_the_single_address_with_range_and_covers_and_
     assert whole.status_code == 200 and len(whole.content) > 1000
     assert jump.status_code == 206 and jump.content == whole.content[100:200]
     assert wrong.json()["subsonic-response"]["status"] == "failed", "Navidrome still judges its own logins"
+
+
+def test_an_invited_person_gets_a_real_account_with_the_library_and_can_reset_and_be_removed(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
+    from encore_server.auth import subsonic_token
+
+    def ping(user: str, password: str) -> dict[str, Any]:
+        salt = secrets.token_hex(6)
+        query = {"u": user, "t": subsonic_token(password, salt), "s": salt, "v": "1.16.1", "c": "it", "f": "json"}
+        return rig.client.get("/rest/ping.view", params=query).json()["subsonic-response"]  # type: ignore[no-any-return]
+
+    def folders(user: str, password: str) -> list[Any]:
+        salt = secrets.token_hex(6)
+        query = {"u": user, "t": subsonic_token(password, salt), "s": salt, "v": "1.16.1", "c": "it", "f": "json"}
+        body = rig.client.get("/rest/getMusicFolders.view", params=query).json()["subsonic-response"]
+        return list(body.get("musicFolders", {}).get("musicFolder", []))
+
+    make_audio(
+        MUSIC / "Collection" / unique("Invite Artist") / "Album" / "01 - Invite Song.flac", title="Invite Song", artist="X"
+    )
+    scan_and_wait(navidrome)
+    rig.get("/me")  # the first person of a new server is its owner
+    invite = rig.post("/invites", {"note": "for a friend"})["invite"]
+    name, password = f"friend-{secrets.token_hex(3)}", secrets.token_urlsafe(12)
+
+    joined = rig.client.post(
+        "/encore/api/v1/auth/join",
+        json={"code": invite["code"], "username": name, "password": password, "displayName": "A Friend"},
+    )
+
+    assert joined.status_code == 201, joined.text
+    assert ping(name, password)["status"] == "ok", "the music server knows the new account"
+    assert ping(name, "not-the-password")["status"] == "failed"
+    assert folders(name, password), "the new account may use the library (it is assigned when the account is made)"
+    me = rig.client.get("/encore/api/v1/me", headers={"Authorization": f"Bearer {joined.json()['deviceToken']}"})
+    assert me.status_code == 200 and me.json()["username"] == name
+
+    person = next(p for p in rig.get("/people")["items"] if p["username"] == name)
+    reset = rig.post(f"/people/{person['id']}/reset", {})["reset"]["code"]
+    fresh = secrets.token_urlsafe(12)
+    assert rig.client.post("/encore/api/v1/auth/reset", json={"code": reset, "password": fresh}).status_code == 200
+    assert ping(name, fresh)["status"] == "ok" and ping(name, password)["status"] == "failed"
+
+    removed = rig.client.delete(f"/encore/api/v1/people/{person['id']}", params=rig.creds())
+    assert removed.status_code == 200
+    assert ping(name, fresh)["status"] == "failed", "the account is gone from the music server"

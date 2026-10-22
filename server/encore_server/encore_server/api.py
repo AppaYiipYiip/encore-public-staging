@@ -24,6 +24,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, playback, refs
+from .accounts import Accounts, Limiter
 from .auth import (
     STREAM_URL_TTL_S,
     NavidromeVerifier,
@@ -47,6 +48,7 @@ from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import Hub
 from .navidrome import NavidromeClient
+from .navidrome_admin import NavidromeAdmin
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
@@ -70,6 +72,8 @@ class Services:
     keeper: Keeper | None = None
     linker: LibraryLinker | None = None
     imports: ImportService | None = None
+    accounts: Accounts | None = None
+    limiter: Limiter | None = None
 
 
 def services(request: Request) -> Services:
@@ -124,6 +128,15 @@ async def json_body(request: Request) -> dict[str, Any]:
     return data
 
 
+async def optional_body(request: Request) -> dict[str, Any]:
+    """The JSON body when there is one (a like needs none); anything else is no body."""
+    try:
+        data = await request.json()
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _server_time() -> int:
     return now_ms()
 
@@ -154,18 +167,47 @@ def info(request: Request) -> JSONResponse:
     )
 
 
+def client_address(request: Request) -> str:
+    """Who is asking: the address of the connection, or - when that is the tunnel on this machine or home network - what the tunnel says."""
+    peer = request.client.host if request.client else ""
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    private = peer.startswith(("127.", "10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "::1", "fd", "fc"))
+    return forwarded if forwarded and private else peer
+
+
+def accounts_of(request: Request) -> Accounts:
+    service = services(request).accounts
+    assert service is not None
+    return service
+
+
+def limiter_of(request: Request) -> Limiter:
+    limiter = services(request).limiter
+    assert limiter is not None
+    return limiter
+
+
+def require_owner(p: Principal) -> None:
+    if p.role != "owner":
+        raise ApiError("forbidden", "Only the owner of this server can do that.")
+
+
 @router.post("/auth/login")
 def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONResponse:
     """Signs in with the music server's login, once: the password is turned into a Subsonic token, checked, and dropped. The app keeps
-    the device token it gets back instead."""
+    the device token it gets back instead. Five tries a minute for one name and twenty for one address; twenty wrong passwords in all lock
+    the account until the owner unlocks it."""
     svc = services(request)
     user = body.get("username")
     password = body.get("password")
     if not isinstance(user, str) or not isinstance(password, str) or not user or not password:
         raise ApiError("validation", "Enter your username and password.")
+    limiter_of(request).refuse(f"login:{user.lower()}", 5, 60)
+    limiter_of(request).refuse(f"login-address:{client_address(request)}", 20, 60)
     salt = secrets.token_hex(6)
     token = subsonic_token(password, salt)
     if subsonic_credentials({"u": user, "t": token, "s": salt}, {}) is None or not svc.verifier.verify(user, token, salt):
+        accounts_of(request).failed_login(user)
         raise ApiError("unauthorized", "The username or the password was not accepted.")
     name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
     kind = body.get("deviceKind") if isinstance(body.get("deviceKind"), str) else "phone"
@@ -175,7 +217,8 @@ def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONRe
         admin = existing is None and svc.verifier.is_admin(user, token, salt)
         person = library.ensure_person(conn, user, admin=admin)
         if person["locked"]:
-            raise ApiError("forbidden", "This account is locked.")
+            raise ApiError("forbidden", "This account is locked. Ask the owner of this server to unlock it.")
+        conn.execute("UPDATE person SET failed_logins = 0 WHERE id = ?", (person["id"],))
         device_id, device_token = issue_device(conn, person["id"], str(name), str(kind), version)
         return _ok(
             {
@@ -243,6 +286,127 @@ def revoke_device(device_id: str, request: Request, p: Principal = Depends(get_p
             (now_ms(), device_id, p.person_id),
         )
     return _ok()
+
+
+# ------------------------------------------------------------------------------------------------ people
+
+
+@router.get("/invites/check")
+def check_invite(request: Request, code: str = "") -> JSONResponse:
+    """What the join screen shows for a code before a name is chosen (no sign-in: the code is the key)."""
+    limiter_of(request).refuse(f"join-address:{client_address(request)}", 20, 60)
+    return _ok(accounts_of(request).check_invite(code))
+
+
+@router.post("/invites")
+def create_invite(
+    request: Request, body: dict[str, Any] = Depends(optional_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    require_owner(p)
+    return _ok({"invite": accounts_of(request).create_invite(p.person_id, role=body.get("role"), note=body.get("note"))}, 201)
+
+
+@router.get("/invites")
+def list_invites(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    require_owner(p)
+    return _ok({"items": accounts_of(request).list_invites()})
+
+
+@router.delete("/invites/{invite_id}")
+def revoke_invite(invite_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    require_owner(p)
+    return _ok({"revoked": accounts_of(request).revoke_invite(invite_id)})
+
+
+@router.post("/auth/join")
+def join(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONResponse:
+    """The invited person's first sign-in: a name and a password of their own, an account on the music server, a device token back."""
+    limiter_of(request).refuse(f"join-address:{client_address(request)}", 10, 60)
+    name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
+    version = body.get("appVersion") if isinstance(body.get("appVersion"), str) else None
+    made = accounts_of(request).join(
+        str(body.get("code", "")), body.get("username"), body.get("password"), body.get("displayName"), str(name), version
+    )
+    return _ok(made, 201)
+
+
+@router.get("/people")
+def list_people(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    require_owner(p)
+    return _ok({"items": accounts_of(request).people()})
+
+
+@router.patch("/people/{person_id}")
+def update_person(
+    person_id: str, request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    require_owner(p)
+    return _ok({"person": accounts_of(request).update_person(p.person_id, person_id, body)})
+
+
+@router.delete("/people/{person_id}")
+def remove_person(person_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    require_owner(p)
+    accounts_of(request).remove_person(p.person_id, person_id)
+    return _ok()
+
+
+@router.post("/people/{person_id}/reset")
+def start_reset(person_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    require_owner(p)
+    return _ok({"reset": accounts_of(request).create_reset(person_id)}, 201)
+
+
+@router.post("/auth/reset")
+def reset_password(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONResponse:
+    """A forgotten password: the one-hour link the owner sent, and a new password; signs in on this device."""
+    limiter_of(request).refuse(f"join-address:{client_address(request)}", 10, 60)
+    name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
+    version = body.get("appVersion") if isinstance(body.get("appVersion"), str) else None
+    return _ok(accounts_of(request).reset_password(str(body.get("code", "")), body.get("password"), str(name), version))
+
+
+@router.post("/me/password")
+def change_password(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """A new password for the person signed in: the old one is checked first, and the other devices are signed out."""
+    old = body.get("oldPassword")
+    if not isinstance(old, str) or not old:
+        raise ApiError("validation", "Enter your current password.")
+    limiter_of(request).refuse(f"login:{p.navidrome_user.lower()}", 5, 60)
+    salt = secrets.token_hex(6)
+    if not services(request).verifier.verify(p.navidrome_user, subsonic_token(old, salt), salt):
+        accounts_of(request).failed_login(p.navidrome_user)
+        raise ApiError("unauthorized", "The current password was not accepted.")
+    accounts_of(request).change_password(p.navidrome_user, body.get("newPassword"))
+    with services(request).db.tx() as conn:
+        conn.execute(
+            "UPDATE device SET revoked_at = ? WHERE person = ? AND id IS NOT ? AND revoked_at IS NULL",
+            (now_ms(), p.person_id, p.device_id),
+        )
+    return _ok()
+
+
+@router.patch("/me")
+def update_me(request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)) -> JSONResponse:
+    sets: list[str] = []
+    values: list[Any] = []
+    if "name" in body:
+        shown = " ".join(str(body["name"]).split())[:60]
+        if not shown:
+            raise ApiError("validation", "A name cannot be empty.")
+        sets.append("display_name = ?")
+        values.append(shown)
+    if "explicitOk" in body:
+        if not isinstance(body["explicitOk"], bool):
+            raise ApiError("validation", "explicitOk is true or false.")
+        sets.append("explicit_ok = ?")
+        values.append(1 if body["explicitOk"] else 0)
+    if sets:
+        with services(request).db.tx() as conn:
+            conn.execute(f"UPDATE person SET {', '.join(sets)} WHERE id = ?", (*values, p.person_id))  # noqa: S608 - column names are fixed above
+    return me(request, p)
 
 
 # ------------------------------------------------------------------------------------------------ song refs
@@ -355,15 +519,6 @@ def library_files(request: Request, since: str = "0", limit: int = 500, p: Princ
 
 def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:
     _want_kept(svc.scheduler, conn, person, ref_ids)
-
-
-async def optional_body(request: Request) -> dict[str, Any]:
-    """The JSON body when there is one (a like needs none); anything else is no body."""
-    try:
-        data = await request.json()
-    except ValueError:
-        return {}
-    return data if isinstance(data, dict) else {}
 
 
 def _item_route(
@@ -722,6 +877,7 @@ def create_app(
     youtube: YoutubeSource | None = None,
     navidrome: NavidromeClient | None = None,
     gateway_client: httpx.AsyncClient | None = None,
+    navidrome_admin: NavidromeAdmin | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -765,6 +921,12 @@ def create_app(
         keeper=keeper,
         linker=linker,
         imports=imports,
+        accounts=Accounts(
+            database,
+            navidrome_admin
+            or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
+        ),
+        limiter=Limiter(),
     )
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])

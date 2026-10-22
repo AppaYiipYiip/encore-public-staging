@@ -9,8 +9,8 @@ import time
 
 _ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32: no I, L, O, U
 
-#: `sr_` song ref, `sf_` song file, `pl_` playlist, `pe_` playlist entry, `dv_` device, `im_` import, `pn_` person, `jm_` Jam, `wk_` background work.
-PREFIXES = frozenset({"sr", "sf", "pl", "pe", "dv", "im", "pn", "jm", "wk"})
+#: `sr_` song ref, `sf_` song file, `pl_` playlist, `pe_` playlist entry, `dv_` device, `im_` import, `pn_` person, `jm_` Jam, `wk_` background work, `iv_` invitation, `rc_` password reset.
+PREFIXES = frozenset({"sr", "sf", "pl", "pe", "dv", "im", "pn", "jm", "wk", "iv", "rc"})
 
 _ID = re.compile(r"^(?P<prefix>[a-z]{2})_(?P<ulid>[0-9A-HJKMNP-TV-Z]{26})$")
 
