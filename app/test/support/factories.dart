@@ -31,6 +31,8 @@ TrackRow trackRow(
       fingerprint: '',
       audioKey: 'k-$id',
       syncRun: 0,
+      isRef: false,
+      explicit: false,
     );
 
 /// `n` queue items `t1..tn`.

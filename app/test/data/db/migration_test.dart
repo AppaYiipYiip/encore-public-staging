@@ -42,7 +42,7 @@ void main() {
     ]);
   });
 
-  for (final from in const [1, 2, 3, 4]) {
+  for (final from in const [1, 2, 3, 4, 5]) {
     test('v$from upgrades to the current schema and keeps its rows', () async {
       final schema = await verifier.schemaAt(from);
 
@@ -81,8 +81,14 @@ void main() {
       final lists = {
         for (final p in await db.select(db.playlists).get()) p.id: p,
       };
-      expect(lists['stored']!.entriesStamp, '1700000000000|3');
+      expect(
+          lists['stored']!.entriesStamp, from < 5 ? '1700000000000|3' : isNull,
+          reason: 'only the step into v5 backfills the stamp');
       expect(lists['never']!.entriesStamp, isNull);
+
+      // v6: songs as references. Nothing that exists is a ref until the app moves it, and the new columns start empty.
+      final tracks = await db.select(db.tracks).get();
+      expect(tracks.every((row) => !row.isRef && row.fileId == null), isTrue);
       await db.close();
     });
   }

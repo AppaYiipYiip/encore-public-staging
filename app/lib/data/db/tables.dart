@@ -145,6 +145,21 @@ class Tracks extends Table {
   IntColumn get syncRun => integer().withDefault(const Constant(0))();
   IntColumn get deletedAtMs => integer().nullable()();
 
+  /// (v6, docs/18 section 2) The row is a song **reference** of an Encore server: [id] is the ref id (`sr_...`), the same on every
+  /// device and whether or not the server keeps a file of it. False for rows of a plain music server (and for rows that have not
+  /// been moved to refs yet), whose [id] is the music server's own song id.
+  BoolColumn get isRef => boolean().withDefault(const Constant(false))();
+
+  /// (v6) The music server's id of the kept file, when the server keeps one: what the stream and download addresses are made of. Null =
+  /// no kept copy; the song plays from the server's stream by ref.
+  TextColumn get fileId => text().nullable()();
+
+  /// (v6) Every artist of the song as a JSON list (`artist` is the first), and what a catalogue song brings with it.
+  TextColumn get artistsJson => text().nullable()();
+  TextColumn get videoId => text().nullable()();
+  TextColumn get coverUrl => text().nullable()();
+  BoolColumn get explicit => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {serverId, id};
 }
@@ -195,6 +210,9 @@ class PlaylistEntries extends Table {
   TextColumn get playlistId => text()();
   IntColumn get position => integer()();
   TextColumn get trackId => text()();
+
+  /// (v6) The Encore server's id of this entry (`pe_...`): what a removal or a move names. Null for entries of a plain music server.
+  TextColumn get entryId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {serverId, playlistId, position};

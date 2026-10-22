@@ -72,6 +72,9 @@ class FakeHttpAdapter implements HttpClientAdapter {
 
   /// Handlers keyed by Subsonic method (`ping`) or full path (`/api/song`).
   final Map<String, FakeHandler> routes;
+
+  /// Asked for anything no route matches (a server with paths that carry ids routes them itself).
+  FakeHandler? fallback;
   final List<RecordedRequest> requests = [];
 
   int count(String apiMethod) =>
@@ -103,7 +106,8 @@ class FakeHttpAdapter implements HttpClientAdapter {
     );
     requests.add(request);
 
-    final handler = routes[request.apiMethod] ?? routes[options.uri.path];
+    final handler =
+        routes[request.apiMethod] ?? routes[options.uri.path] ?? fallback;
     if (handler == null) {
       return ResponseBody.fromString(
         jsonEncode({

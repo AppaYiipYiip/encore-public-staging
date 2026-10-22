@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// Bump together with a migration step *and* a schema snapshot
   /// (`dart run drift_dev schema dump ...`) so migrations are testable.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -72,6 +72,17 @@ class AppDatabase extends _$AppDatabase {
               "COALESCE(CAST(changed_at_ms AS TEXT), 'null') || '|' || song_count "
               'WHERE entries_fetched_at_ms IS NOT NULL',
             );
+          }
+          if (from < 6) {
+            // v6: songs as references (docs/18 section 2): the id of a row may be the server's ref id, and a kept file
+            // is one more column; an entry knows its own id on the Encore server.
+            await m.addColumn(tracks, tracks.isRef);
+            await m.addColumn(tracks, tracks.fileId);
+            await m.addColumn(tracks, tracks.artistsJson);
+            await m.addColumn(tracks, tracks.videoId);
+            await m.addColumn(tracks, tracks.coverUrl);
+            await m.addColumn(tracks, tracks.explicit);
+            await m.addColumn(playlistEntries, playlistEntries.entryId);
           }
         },
         beforeOpen: (details) async {
