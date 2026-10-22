@@ -75,21 +75,25 @@ def _plain(text):
 
 
 def find_row(artist, title):
-    """A song row reads "Title | Artist - Album"; an album row reads "Album | Artist - 12 songs" and is never the one to tap.
-    An exact title (ignoring punctuation) wins over one that only starts with it."""
-    best = None
+    """A song row reads "Title | Artist - Album" (or "Artist • Album"); an album row reads "Album | Artist - 12 songs" and is never the one
+    to tap, and the Top result card reads "Top result: Song, Title, Artist". The artist must be the song's own (not a tribute whose album
+    names it); the title must match exactly (ignoring punctuation and a trailing edition mark), or else there is no row."""
+    for label, x, y, click in screen():
+        if label.startswith("Top result: Song, "):
+            _, _, rest = label.partition("Top result: Song, ")
+            name, _, by = rest.rpartition(", ")
+            if _plain(name) == _plain(title) and artist.lower() in by.lower():
+                return label, x, y
     for label, x, y, click in screen():
         parts = label.split(" | ")
-        if not (click and len(parts) >= 2 and artist.lower() in parts[1].lower()):
+        if not (click and len(parts) >= 2):
             continue
-        if re.search(r" - \d+ songs?$", parts[1]):
+        by = re.split(r" [-•] ", parts[1])[0]
+        if artist.lower() not in by.lower() or re.search(r" - \d+ songs?$", parts[1]):
             continue
-        first = _plain(parts[0])
-        if first == _plain(title):
+        if _plain(re.sub(r"\s*\((?:\d{4} )?remaster(?:ed)?[^)]*\)", "", parts[0])) == _plain(title):
             return label, x, y
-        if first.startswith(_plain(title)) and best is None:
-            best = (label, x, y)
-    return best
+    return None
 
 
 def measure(artist, title, limit=90.0):

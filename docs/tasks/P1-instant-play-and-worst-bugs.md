@@ -12,6 +12,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 ---
 
 ## P1-01 — The lean resolver (server) — Size M
+* **Addendum 2026-10-22:** the in-process extractor now tries yt-dlp's `visionos` client first for a visitor: 1.3 s instead of 3.7 s, and its address opens at once. Fallback to yt-dlp's own choice, no second look-up for a block or a gone video, a breaker rests it for an hour after three failures in a row; `YT_FAST_CLIENTS` (empty switches it off). `../09` 7.3.
 * **Status 2026-10-22: implemented** in `server/legacy/encore-fetch` (`lean.py`, `direct.py`; 62 new tests incl. real recorded YouTube Music answers). Measured: search 13.5 s → 0.5 s median, tap to audio-ready 38 s → 4.3–8.7 s (`../09` §7). Left for later tasks: stream proxy without any download (P1-02), separate interactive/background pools and pacing (P1-03), preparing ahead (P1-04).
 * **Why.** B1, B2, B3: 33–35 s of "searching" per song; up to 8 `yt-dlp` processes and 5 watch-page extractions per song.
 * **Context.**
@@ -44,6 +45,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 * **Evidence.** Stage-time table for the 12 songs; the 40-query result table.
 
 ## P1-02 — Stream first; length limits only for keeping; fault flags (server + app) — Size M
+* **Status 2026-10-22: server done and measured, app part for long songs done (not yet walked with a real long video on the emulator).** `GET /api/stream` (`stream.py`): resolves inside the request, proxies the googlevideo bytes in ranged chunks (256 KiB first, then 2 MiB), Range/206/Content-Range, one address look-up however many players ask, expired addresses asked for again once, a first byte that cannot come within 10 s ends in 504 with a sentence, refusals are 404/503 with words, no length limit; `ENCORE_FAULT=youtube_refuse|slow_extract:<ms>|no_results`. 23 tests incl. the real HTTP handler. With the fast client (P1-01 addendum, `../09` 7.3) the first byte is 1.9-3.5 s and the 2 h 21 min recitation starts in 1.9 s, a jump in 1.1 s. App: a catalogue song of 40 minutes or more is played from the stream (no job, no download; `kLongSong`). Not done: ordinary taps still go through the job path (the library keeps what was played until P2's keep rule); the app does not prepare via the stream; `bufferForPlaybackMs` tuning (X-6); a single fetch session shared by reader and cache file.
 * **Why.** B1; a 2-hour audio recording must play. Today the app polls a job every 1.2 s and starts on a growing file after 24 KiB of a
   `yt-dlp` download; songs > 45 min or > 80 MB are refused (`config.py` `MAX_DURATION_S=2700`, `MAX_FILE_MB=80`).
 * **Context.** Measured: 2:21:21 recitation (163 MB) ready in 2.7 s, jump to 90 % in 0.4 s via Range (`../09` §2.5). Stream URLs are

@@ -169,3 +169,28 @@ the only way to fix it was Sign out, which deletes all downloaded music (790 MB 
 A 150-song playlist therefore saves in about half an hour in the background at the same pace; that number is the pacing and
 YouTube's mood, not something the person waits for (the playlist is playable at once).
 
+## 7.3 The fast YouTube client, and streaming (2026-10-22)
+
+Measured on CT 104 (visitor, no YouTube account), the same video, one look-up per row:
+
+| yt-dlp `player_client` | Extraction | Does the address open at once? |
+|---|---|---|
+| default (yt-dlp's own choice: TV client) | 3.7 s | no: 403 for about 1.3 s here (2-4 s earlier) |
+| `visionos` | **1.3 s** | **yes (0.2 s)** |
+| `tv,web_safari` | failed ("The page needs to be reloaded") after 3.1 s | - |
+| `android_vr` | 1.2 s, but an mp4 (itag 18) whose address never opened | no |
+
+So the extractor tries `visionos` first for a visitor (accounts keep yt-dlp's choice) and falls back to yt-dlp's own choice.
+
+`GET /api/stream` (first byte as the client sees it, through the public address; song found + address + first bytes in the server log):
+
+| | before (TV client) | with `visionos` |
+|---|---|---|
+| fresh song, first byte | 5.3-7.5 s (found 0.9-1.1 s, address 3.3-3.9 s, wait for the address to open 1-2.5 s) | **1.9-3.5 s** (found 0.4-1.1 s, address 1.2-1.5 s) |
+| 2 h 21 min recitation (163 MB), first byte | 5.7 s | **1.9 s** |
+| the same, jump to 58 % / 90 %, first byte | 1.2 s / 1.1 s | 1.1 s |
+
+In the app on the emulator (fresh songs, search, tap the Top result, audible): 2.2 s, 2.6 s, 2.9 s (three more were songs the server already
+had: 0.9-1.1 s). J-10 (a two-hour recitation audible in 4 s, a seek in 2 s) holds on the server; the app plays a song of 40 minutes or more
+from the stream, not yet walked on the emulator with a real long video.
+
