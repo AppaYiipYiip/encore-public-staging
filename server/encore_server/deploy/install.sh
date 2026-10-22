@@ -42,6 +42,7 @@ Usage: sudo bash install.sh [options]
 
   --yes                  do not ask; answer yes to installing what is missing
   --owner NAME           the owner's username (3 to 32 letters, digits, . - _)
+  --owner-password-file F  read the owner's password from the first line of file F (for installs nobody sits at)
   --name TEXT            the server's name, shown to people you invite (default: this computer's name)
   --music-dir PATH       where the music is, or will be (default /srv/music)
   --port N               the port the apps connect to (default 4533)
@@ -49,8 +50,9 @@ Usage: sudo bash install.sh [options]
   --image NAME           the server image (default ghcr.io/appayiipyiip/encore-server)
   --tag TAG              the image version (default main)
 
-The owner's password is asked for, or read from ENCORE_OWNER_PASSWORD. For a private image, sign in with a GitHub token that may read
-packages: GH_TOKEN (or GHCR_TOKEN) in the environment, or `gh auth login --scopes read:packages` first.
+The owner's password is asked for, or read from a file (--owner-password-file), or from ENCORE_OWNER_PASSWORD. For a private image, sign in to
+GitHub first with  gh auth login --scopes read:packages  (the installer finds that login even under sudo), or give a token that may read
+packages in GH_TOKEN / GHCR_TOKEN.
 EOF
 }
 
@@ -58,6 +60,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --yes | -y) YES=1 ;;
         --owner) OWNER="${2:?--owner needs a name}"; shift ;;
+        --owner-password-file) OWNER_PASSWORD="$(head -n 1 "${2:?--owner-password-file needs a file}")"; shift ;;
         --name) SERVER_NAME="${2:?--name needs a text}"; shift ;;
         --music-dir) MUSIC_DIR="${2:?--music-dir needs a path}"; shift ;;
         --port) PORT="${2:?--port needs a number}"; shift ;;
@@ -73,7 +76,7 @@ done
 # ---------------------------------------------------------------------------------------------------------------- questions
 
 TTY=""
-if [ -t 0 ]; then TTY=/dev/stdin; elif [ -r /dev/tty ] && : </dev/tty 2>/dev/null; then TTY=/dev/tty; fi
+if [ -t 0 ]; then TTY=/dev/stdin; elif { : </dev/tty; } 2>/dev/null; then TTY=/dev/tty; fi
 
 ask() { # ask "question" default -> answer (default when the person just presses Enter, or when nobody can be asked)
     local question="$1" default="${2:-}" answer=""
@@ -129,7 +132,7 @@ MEM_MB=$(awk '/^MemTotal:/ {print int($2/1024)}' /proc/meminfo)
 mkdir -p "$(dirname "$DIR")"
 FREE_GB=$(df --output=avail -BG "$(dirname "$DIR")" | tail -1 | tr -dc '0-9')
 [ "${FREE_GB:-0}" -ge 6 ] || die "There is ${FREE_GB} GB of free space where Encore keeps its files; it needs at least 6 GB."
-ok "This computer: 64-bit Intel/AMD, $((MEM_MB / 1024)) GB memory, ${FREE_GB} GB free"
+ok "This computer: 64-bit Intel/AMD, $(((MEM_MB + 512) / 1024)) GB memory, ${FREE_GB} GB free"
 
 command -v curl >/dev/null 2>&1 || { apt-get update -qq >>"$LOG" 2>&1 && apt-get install -y -qq curl ca-certificates >>"$LOG" 2>&1; } || die "Encore needs curl and could not install it."
 case "$(curl -s -m 15 -o /dev/null -w '%{http_code}' https://ghcr.io/v2/ 2>>"$LOG" || true)" in
@@ -140,24 +143,6 @@ esac
 if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${PORT}\$" && ! [ -f "$DIR/.env" ]; then
     die "Something else already uses port ${PORT} on this computer. Stop it, or run this again with  --port 4540  (any free number)."
 fi
-
-# ---------------------------------------------------------------------------------------------------------------- Docker
-
-if ! command -v docker >/dev/null 2>&1; then
-    say ""
-    if ask_yes "Docker is not installed. Encore needs it to run. Install it now?"; then
-        log "installing Docker with get.docker.com"
-        (curl -fsSL https://get.docker.com | sh) >>"$LOG" 2>&1 || die "Docker could not be installed. See the log; nothing else was changed."
-    else
-        die "Encore cannot run without Docker. Install it (https://docs.docker.com/engine/install/) and run this again."
-    fi
-fi
-systemctl enable --now docker >>"$LOG" 2>&1 || true
-docker info >>"$LOG" 2>&1 || die "Docker is installed but not running. Start it with  sudo systemctl start docker  and run this again."
-if ! docker compose version >>"$LOG" 2>&1; then
-    apt-get install -y -qq docker-compose-plugin >>"$LOG" 2>&1 || die "Docker is here but its 'compose' part is missing and could not be installed."
-fi
-ok "Docker is ready ($(docker --version | sed 's/Docker version //; s/,.*//'))"
 
 # ---------------------------------------------------------------------------------------------------------------- what is asked
 
@@ -191,11 +176,34 @@ mkdir -p "$MUSIC_DIR" || die "The music folder ${MUSIC_DIR} could not be made."
 SONGS=$(find "$MUSIC_DIR" -type f \( -iname '*.mp3' -o -iname '*.flac' -o -iname '*.m4a' -o -iname '*.ogg' -o -iname '*.opus' -o -iname '*.wav' \) 2>/dev/null | wc -l)
 ok "Your music: ${MUSIC_DIR} (${SONGS} songs found)"
 
+# ---------------------------------------------------------------------------------------------------------------- Docker
+
+if ! command -v docker >/dev/null 2>&1; then
+    say ""
+    if ask_yes "Docker is not installed. Encore needs it to run. Install it now?"; then
+        say "  … Installing Docker (a minute or two)"
+        log "installing Docker with get.docker.com"
+        (curl -fsSL https://get.docker.com | sh) >>"$LOG" 2>&1 || die "Docker could not be installed. See the log; nothing else was changed."
+    else
+        die "Encore cannot run without Docker. Install it (https://docs.docker.com/engine/install/) and run this again."
+    fi
+fi
+systemctl enable --now docker >>"$LOG" 2>&1 || true
+docker info >>"$LOG" 2>&1 || die "Docker is installed but not running. Start it with  sudo systemctl start docker  and run this again."
+if ! docker compose version >>"$LOG" 2>&1; then
+    apt-get install -y -qq docker-compose-plugin >>"$LOG" 2>&1 || die "Docker is here but its 'compose' part is missing and could not be installed."
+fi
+ok "Docker is ready ($(docker --version | sed 's/Docker version //; s/,.*//'))"
+
 # ---------------------------------------------------------------------------------------------------------------- the image
 
 registry_login() { # a private image is pulled with a GitHub token that may read packages
     local token="${GH_TOKEN:-${GHCR_TOKEN:-}}" user=""
-    if [ -z "$token" ] && command -v gh >/dev/null 2>&1; then token="$(gh auth token 2>/dev/null || true)"; fi
+    if [ -z "$token" ] && command -v gh >/dev/null 2>&1; then
+        token="$(gh auth token 2>/dev/null || true)"
+        # Under sudo the sign-in belongs to the person who typed sudo, not to root (and newer sudo passes no environment variables on).
+        if [ -z "$token" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then token="$(sudo -u "$SUDO_USER" gh auth token 2>/dev/null || true)"; fi
+    fi
     if [ -z "$token" ]; then
         say ""
         say "  This version of Encore is still private. Sign in with GitHub to download it:"
