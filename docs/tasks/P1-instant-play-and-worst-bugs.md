@@ -113,7 +113,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   "nas ny state of mind", …) the intended song is the Top result in ≥ 19; keystroke → results ≤ 300 ms (catalogue) on TYPICAL.
 
 ## P1-08 — The player never gets stuck (app) — Size M
-* **Status 2026-10-22: code done, tests green, device walk pending.** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer "play this" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).
+* **Status 2026-10-22: code done, tests green, walked on the emulator (`../evidence/2026-10-22-walk-e1-e2-e6.md`).** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer "play this" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).
 * **Why.** E1 (stuck after a network loss; play/pause replaced by a 1-px sliver; other taps ignored), E7 (spinner = full-frame cost).
 * **Evidence (deep read, `../26` H40).** One first-in-first-out chain `_run` holds every command; a load waiting on a vanished network
   has no own time limit, so later taps wait behind it; the retry-once / stop-after-3 logic in `_onBackendError` is right but is not
@@ -130,7 +130,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   works; while loading, frame work p50 ≤ 4 ms.
 
 ## P1-09 — Offline: no skipping, greyed rows, recovers by itself (app) — Size M
-* **Status 2026-10-22: engine part done, tests green, device walk pending.** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Not done: greyed rows, covers offline (P1-10).
+* **Status 2026-10-22: engine part done, tests green, walked on the emulator (same evidence file).** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Not done: greyed rows, covers offline (P1-10).
 * **Why.** E2 (offline taps start a silent skip cascade every ~3 s through the playlist). The connection strip stays: the owner
   asked for it on 2026-10-17 (`../01` E10 corrected).
 * **Context.** Banner: `lib/features/common/connection_banner.dart` ("You're offline. Downloaded music still plays."); connectivity in
@@ -157,7 +157,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   for any song that has a cover in Deezer or YouTube (check 30 imported songs).
 
 ## P1-11 — Resume after any kill; correct lock-screen position (app) — Size S
-* **Status 2026-10-22: queue part done, tests green, device walk pending.** The saved queue also stores artist/title/album of songs streamed from the catalogue (`named`) and `restore()` finds them in the library by that (`findByName`); those the library does not have are dropped and the rest of the queue comes back. Not done: the 5 s save while playing and the lock-screen position check.
+* **Status 2026-10-22: queue part done, tests green, walked on the emulator (same evidence file).** The saved queue also stores artist/title/album of songs streamed from the catalogue (`named`) and `restore()` finds them in the library by that (`findByName`); those the library does not have are dropped and the rest of the queue comes back. Not done: the 5 s save while playing, the lock-screen position check, and songs the server did not keep (a song played once is not kept: the song-ref design in P2 re-prepares it by its catalogue id instead of dropping it).
 * **Why.** E6 (force-stop while playing a catalogue song lost the song and queue; a normal kill while paused restored correctly),
   E20 (media session position stayed at its start value).
 * **Context.** `PlaybackEngine` persists every 15 s (`persistEvery`) and has `restore()`. **Root cause found (`../26` H39):**
