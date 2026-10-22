@@ -41,6 +41,25 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** Contract tests from `openapi.yaml`; integration test with real Navidrome in Docker: like a catalogue song → keep
   job → file appears → ref gets `file_id` → like unchanged; **rename/re-tag/replace the file → like and playlist entry unchanged**;
   the scheduler tests of P1-03 still pass inside the new server; restart mid-import resumes (J-12).
+* **Status 2026-10-22: the core is built and proved; catalogue/search, imports, the OpenAPI file and the Funnel route are open.** `server/encore_server/`
+  (FastAPI, SQLite WAL, 2 migrations, ruff + mypy strict, 242 unit tests): song refs and matching, likes/saved albums/follows, playlists with
+  fractional positions, plays, `library/changes` cursors, optimistic playback state with takeover, the live websocket, device tokens, signed
+  stream addresses and `GET /encore/stream/{ref}` (cold song first bytes 2.7 s on the dev VM), the persisted **scheduler** (single flight,
+  strict priorities, fair share between people, interactive and background pools, retries, resume after restart, Stop that cancels only what
+  nobody else wants), the **keeper** (whole file through the stream proxy that reuses a play's address, WebM to Ogg Opus without
+  re-encoding, tags with ISRC/MBID/cover, `<music>/Encore/Artist/Album/NN - Title.opus`, wait for the music server, attach, tell everybody
+  who has the song) and the **scanner link** (every song of the library gets a ref and a file; one recording in many folders is one ref;
+  a vanished file loses its row, never the ref). Keep rules D-3 are in: a like, a song added to a playlist, or a song listened to for 30 s
+  on two different days by anybody. **Proved against a real Navidrome 0.64.2** (`tests/integration`, docker compose, also a CI job): the
+  Host's collection becomes refs; a like keeps a song and Navidrome plays it with the right tags; a file moved by hand and a file re-tagged
+  in place leave the like and the playlist entry unchanged; a deleted file is streamed again. **Proved on the dev VM** (port 4540, next to
+  the old stack): like "Nude" -> kept as Opus in 12 s, in `/srv/music/Encore/Radiohead/In Rainbows/`, linked to Navidrome. Learned: Navidrome's
+  Subsonic `path` is made from the tags (so a kept file is recognised by its size); a moved file keeps its song id; a file is re-read only
+  if its old tags are dropped. Bugs found by the tests: a title with a slash never matched its own file name (a retry would have downloaded
+  twice); the root-owned data folder made a first start loop forever (the entrypoint fixes it); login tokens were in the log (httpx quieted).
+  Open: `catalogue` (Deezer/YTM search as an endpoint, P2-12), `imports` (P2-04), saved-album keeping, the cached-bytes sharing between a play and
+  a keep, `openapi.yaml` + contract tests, the `/encore` route in the Funnel `serve.json` and at home, the install wizard's creation of the
+  music-server administrator (today an environment variable).
 
 ## P2-02 — The app's data layer on song refs (app) — Size L
 * **Why.** C3. Today local tables are keyed by Navidrome ids (`lib/data/db/tables.dart`: `Tracks`, `Playlists`, `PlaylistEntries`,
