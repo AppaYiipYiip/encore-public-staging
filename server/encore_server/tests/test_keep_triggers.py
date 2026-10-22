@@ -172,3 +172,34 @@ def test_a_server_without_a_way_to_keep_still_works_and_keeps_nothing(tmp_path: 
 
         assert client.put(f"{V1}/likes/{ref}", params=creds("marwa")).status_code == 200
         assert "keep" not in client.get(f"{V1}/info").json()["features"]
+
+
+def test_a_download_can_ask_for_a_song_to_be_kept_first_in_line_and_see_how_it_goes(rig: Rig) -> None:
+    ref = str(resolve(rig.client, "marwa", song())[0]["id"])
+    other = str(resolve(rig.client, "marwa", song("Reckoner"))[0]["id"])
+    rig.client.put(f"{V1}/likes/{other}", params=creds("marwa"))  # an older keep waits in the queue
+
+    asked = rig.client.post(f"{V1}/refs/{ref}/keep", params=creds("marwa"))
+
+    assert asked.status_code == 200 and asked.json()["state"] == "queued"
+    assert rig.client.get(f"{V1}/refs/{ref}/keep", params=creds("marwa")).json()["state"] == "queued"
+    rig.svc.scheduler.run_one("background")
+    assert rig.source.asked[0].title == "Weird Fishes / Arpeggi", "the song somebody is waiting for goes before the older keep"
+    assert rig.client.get(f"{V1}/refs/{ref}/keep", params=creds("marwa")).json()["state"] == "kept"
+    assert rig.client.post(f"{V1}/refs/{ref}/keep", params=creds("marwa")).json()["state"] == "kept"
+
+
+def test_asking_to_keep_what_is_not_known_is_not_found_and_a_server_that_does_not_keep_says_so(
+    tmp_path: Path, verifier: FakeVerifier
+) -> None:
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "m", navidrome_url="http://navidrome.invalid", youtube=False
+    )
+    with TestClient(create_app(settings, verifier=verifier)) as client:
+        ref = str(resolve(client, "marwa", song())[0]["id"])
+
+        missing = client.post(f"{V1}/refs/sr_{'0' * 26}/keep", params=creds("marwa"))
+        none = client.post(f"{V1}/refs/{ref}/keep", params=creds("marwa"))
+
+    assert missing.status_code == 404
+    assert none.json()["state"] == "unavailable"

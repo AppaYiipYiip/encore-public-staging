@@ -451,6 +451,43 @@ def get_ref(ref_id: str, request: Request, p: Principal = Depends(get_principal)
 # ------------------------------------------------------------------------------------------------ the audio of a ref
 
 
+def _keep_state(svc: Services, conn: Any, ref_id: str) -> dict[str, Any]:
+    linked = conn.execute("SELECT 1 FROM song_file WHERE ref = ? AND navidrome_song_id IS NOT NULL LIMIT 1", (ref_id,)).fetchone()
+    if linked is not None:
+        return {"state": "kept"}
+    if svc.scheduler is None or not svc.scheduler.handles("keep"):
+        return {"state": "unavailable", "reason": "This server does not keep songs."}
+    item = svc.scheduler.state_of("keep", ref_id)
+    if item is None or item["state"] in ("cancelled", "done"):
+        return {"state": "none"}
+    state = {"queued": "queued", "running": "keeping", "failed": "failed"}.get(str(item["state"]), "queued")
+    return {"state": state, **({"reason": item["error"]} if item["error"] else {})}
+
+
+@router.post("/refs/{ref_id}/keep")
+def keep_now(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """Somebody asked for this song to be on the server now (a download of a song the server does not keep yet): it is kept first in line."""
+    svc = services(request)
+    with svc.db.tx() as conn:
+        if not refs.ref_exists(conn, ref_id):
+            raise ApiError("not_found", "That song is not known to this server.")
+        if _keep_state(svc, conn, ref_id)["state"] in ("none", "failed"):
+            want_kept(svc, conn, p.person_id, [ref_id])
+    if svc.scheduler is not None:
+        svc.scheduler.promote("keep", ref_id)
+    with svc.db.read() as conn:
+        return _ok(_keep_state(svc, conn, ref_id))
+
+
+@router.get("/refs/{ref_id}/keep")
+def keep_state(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    svc = services(request)
+    with svc.db.read() as conn:
+        if not refs.ref_exists(conn, ref_id):
+            raise ApiError("not_found", "That song is not known to this server.")
+        return _ok(_keep_state(svc, conn, ref_id))
+
+
 @router.get("/refs/{ref_id}/stream-url")
 def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     """The address to play a song from when the server has no file of it (or the app prefers it): signed, so a player that cannot set
