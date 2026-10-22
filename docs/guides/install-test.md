@@ -55,7 +55,7 @@ your username and your password. Your library arrives in a few seconds.
 **5. Use it away from home (optional, needs your Tailscale login).**
 
 ```
-sudo encore funnel on
+encore funnel on
 ```
 
 It installs Tailscale if the computer has none, shows a link to sign in, and then gives you an `https://…ts.net` address that works from
@@ -68,9 +68,9 @@ proven end to end yet**; tell me exactly what it printed.
 ```
 encore status                  is it running, at which address
 encore logs                    what the server says (Ctrl-C to stop)
-sudo encore update             the newest version
-sudo encore uninstall          remove Encore; your music and Encore's data stay
-sudo encore uninstall --everything    remove Encore's data too (never your music)
+encore update                  the newest version
+encore uninstall               remove Encore; your music and Encore's data stay
+encore uninstall --everything  remove Encore's data too (never your music)
 ```
 
 Running the installer again is safe: what is there is kept and brought up to date.
@@ -78,7 +78,7 @@ Running the installer again is safe: what is there is kept and brought up to dat
 ## If something goes wrong
 
 Every message says what to do. The full record of an install is `/var/log/encore-install.log` (it never contains a password). Send me that
-file and what you saw. To start over completely: `sudo encore uninstall --everything`, then step 2 again.
+file and what you saw. To start over completely: `encore uninstall --everything`, then step 2 again.
 
 ## What is not in this test
 

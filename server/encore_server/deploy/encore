@@ -4,12 +4,18 @@
 #   encore status               is it running, at which address, which version
 #   encore logs [service]       what the server has been saying (Ctrl-C to stop)
 #   encore start | stop | restart
-#   sudo encore update          the newest version, then check it answers
-#   sudo encore funnel on|off|status   let phones reach it away from home (through the Tailscale on this computer)
-#   sudo encore uninstall [--everything]   remove it; the music is never touched
+#   encore update               the newest version, then check it answers
+#   encore funnel on|off|status   let phones reach it away from home (through the Tailscale on this computer)
+#   encore uninstall [--everything]   remove it; the music is never touched
+# (it asks for the administrator's password itself when it needs it)
 set -Eeuo pipefail
 
 DIR="${ENCORE_DIR:-/opt/encore}"
+
+# Everything here needs Docker and the install's private settings, so ask for the administrator's rights once, up front.
+if [ "$(id -u)" != 0 ] && [ "${1:-help}" != help ] && [ "${1:-help}" != "--help" ] && [ "${1:-help}" != "-h" ]; then
+    exec sudo "$0" "$@"
+fi
 
 if [ -t 1 ]; then GREEN=$'\033[32m'; RED=$'\033[31m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'; else GREEN=""; RED=""; DIM=""; BOLD=""; OFF=""; fi
 say() { printf '%s\n' "$*"; }
@@ -157,6 +163,6 @@ case "${1:-help}" in
     funnel) shift; cmd_funnel "${1:-status}" ;;
     uninstall) shift; cmd_uninstall "$@" ;;
     version) server_version ;;
-    help | -h | --help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+    help | -h | --help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command: $1. Try:  encore help" ;;
 esac

@@ -257,3 +257,17 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   and the undo. Bandwidth was freed on request (2026-10-22); the number of look-ups at YouTube is **not** a bandwidth matter and stays
   limited (about ten per test run, spaced).
 * **Why.** The homelab is the owner's separate project; the repository will be public and must not describe it.
+
+### ADR-R33 — A real outside user from now on: what that makes urgent (owner, 2026-10-22)
+* **Context.** A friend will use Encore as his main music app on the owner's server. He has no server of his own, is never in the owner's
+  home, and will report what breaks and what he dislikes. The owner uses the same server at work, in the car and at home, at the same time.
+* **Options.** Carry on in the planned order (the full feature set first); give him a copy of the test install with no promises; **move a
+  small set of "a second person depends on this" items ahead of the rest** (chosen).
+* **Decision.** Ahead of other P3/P4 work, as task P3-12: the public address proven end to end; a nightly backup of the Encore data with a
+  restore that has been tried; an in-app "Report a problem" that uses the phone's share sheet; a friend's guide; a look at what two daily
+  users do to the one home address that YouTube sees. The wizard, admin pages and the rest of P3 stay later.
+* **Why.** His playlists and likes live only in the server's database (today only the music server keeps its own nightly copy); he cannot reach a
+  home-network address; a person who is not technical will not find a developer screen; and one refused address (YouTube) stops both people.
+* **Consequences.** The 5-day own-testing rule applies before he starts. The owner's privacy promise stays: the owner sees who is on the server,
+  never what anybody listens to.
+

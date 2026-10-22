@@ -216,7 +216,7 @@ registry_login() { # a private image is pulled with a GitHub token that may read
 }
 
 say ""
-say "  … Downloading Encore (the first time it is about 300 MB)"
+say "  … Downloading Encore (about 500 MB the first time)"
 if ! docker pull "$IMAGE:$TAG" >>"$LOG" 2>&1; then
     log "pull failed, signing in"
     registry_login
@@ -298,7 +298,7 @@ if command -v qrencode >/dev/null 2>&1 || { apt-get install -y -qq qrencode >>"$
     qrencode -t ANSIUTF8 -m 2 "$URL" 2>>"$LOG" | sed 's/^/        /' || true
     say ""
 fi
-say "  To use it away from home, then invite friends:   sudo encore funnel on"
+say "  To use it away from home, then invite friends:   encore funnel on"
 say "  To see how it is doing, update or remove it:       encore status | encore update | encore uninstall"
 say ""
 log "=== done"
