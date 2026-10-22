@@ -124,6 +124,18 @@ class NavidromeAdmin:
             self.call("PUT", f"/api/user/{user_id}/library", {"libraryIds": libraries})
         return user_id
 
+    def give_libraries(self, usernames: list[str]) -> int:
+        """Lets the named accounts use every library when they have none (made by hand, or before the first scan made a library); returns how many were fixed."""
+        wanted = {name.lower() for name in usernames}
+        libraries = self.libraries()
+        fixed = 0
+        for user in self.users() if libraries else []:
+            if user.get("isAdmin") or user.get("libraries") or str(user.get("userName", "")).lower() not in wanted:
+                continue
+            self.call("PUT", f"/api/user/{user['id']}/library", {"libraryIds": libraries})
+            fixed += 1
+        return fixed
+
     def set_password(self, username: str, password: str) -> None:
         user = self.find(username)
         if user is None:

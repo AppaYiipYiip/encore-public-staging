@@ -221,6 +221,15 @@ class Accounts:
             "person": {"id": person_id, "name": shown, "role": invite["role"]},
         }
 
+    def heal_libraries(self) -> int:
+        """A person whose music-server account has no library sees no songs and cannot stream; gives them the library. Returns how many."""
+        admin = self._admin
+        if admin is None or not admin.configured:
+            return 0
+        with self._db.read() as conn:
+            names = [r["navidrome_user"] for r in conn.execute("SELECT navidrome_user FROM person")]
+        return admin.give_libraries(names)
+
     # ------------------------------------------------------------------ the owner's list of people
 
     def people(self) -> list[dict[str, Any]]:

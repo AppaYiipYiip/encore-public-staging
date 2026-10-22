@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -143,9 +144,18 @@ def _prune(db: Database, seen_ids: set[str], before: int) -> int:
 class LibraryLinker:
     """Runs [link_library] soon after the server starts and then every [every_s]; [poke] asks for a pass sooner (a person added music)."""
 
-    def __init__(self, db: Database, navidrome: Library, *, first_after_s: float = 20.0, every_s: float = 3600.0) -> None:
+    def __init__(
+        self,
+        db: Database,
+        navidrome: Library,
+        *,
+        first_after_s: float = 20.0,
+        every_s: float = 3600.0,
+        before: Callable[[], object] | None = None,
+    ) -> None:
         self._db = db
         self._navidrome = navidrome
+        self._before = before
         self._first = first_after_s
         self._every = every_s
         self._stop = threading.Event()
@@ -154,6 +164,11 @@ class LibraryLinker:
         self.last: LinkReport | None = None
 
     def run_once(self) -> LinkReport:
+        if self._before is not None:
+            try:
+                self._before()
+            except Exception:  # noqa: BLE001 - a side errand must not stop the link; it is tried again next time
+                log.exception("the errand before the library link failed")
         self.last = link_library(self._db, self._navidrome)
         if self.last.linked or self.last.pruned:
             log.info(

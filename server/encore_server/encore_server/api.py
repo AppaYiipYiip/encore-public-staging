@@ -945,8 +945,13 @@ def create_app(
         settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
     )
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client)
+    accounts = Accounts(
+        database,
+        navidrome_admin
+        or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
+    )
     linker = (
-        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0)
+        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0, before=accounts.heal_libraries)
         if client.configured and settings.scan_every_min > 0
         else None
     )
@@ -977,11 +982,7 @@ def create_app(
         keeper=keeper,
         linker=linker,
         imports=imports,
-        accounts=Accounts(
-            database,
-            navidrome_admin
-            or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
-        ),
+        accounts=accounts,
         limiter=Limiter(),
     )
     app.include_router(router)
