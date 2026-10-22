@@ -174,7 +174,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             if (value.reachableEndpoints.contains(e) || e == endpoints.first) e,
         ];
         await service.save(
-          name: value.ping.isNavidrome ? 'Navidrome' : 'My server',
+          name: 'My music server',
           endpoints: keep,
           username: _user.text.trim(),
           password: _password.text,

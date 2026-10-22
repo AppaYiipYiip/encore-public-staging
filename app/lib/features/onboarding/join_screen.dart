@@ -129,7 +129,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
         await service.save(
           name: _info?.serverName.isNotEmpty == true
               ? _info!.serverName
-              : (value.ping.isNavidrome ? 'Navidrome' : 'My server'),
+              : 'My music server',
           endpoints: endpoints,
           username: account.username,
           password: password,
