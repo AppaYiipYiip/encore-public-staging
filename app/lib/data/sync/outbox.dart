@@ -10,6 +10,8 @@ import '../../core/result.dart';
 import '../api/opensubsonic/models.dart';
 import '../api/opensubsonic/opensubsonic_client.dart';
 import '../db/app_database.dart';
+import '../encore/encore_api.dart';
+import '../encore/encore_delivery.dart';
 import 'db_lease.dart';
 import 'playlist_mutations.dart';
 
@@ -54,10 +56,15 @@ class OutboxProcessor {
     this.maxServerAttempts = 12,
     DbLease? lease,
     this.busyRetryDelay = const Duration(seconds: 5),
+    EncoreApi? encore,
   })  : _db = db,
         _lease = lease ?? DbLease(db, clock: clock),
         _client = client,
+        _encore = encore,
         _clock = clock;
+
+  /// Set for an Encore server: the edits go to its API instead of the music server's.
+  final EncoreApi? _encore;
 
   final AppDatabase _db;
   final OpenSubsonicClient _client;
@@ -366,6 +373,10 @@ class OutboxProcessor {
     } on FormatException catch (e) {
       return Result.err(UnexpectedFailure(unreadable, cause: e));
     }
+    final encore = _encore;
+    if (encore != null) {
+      return deliverToEncore(encore, row, p, deviceId: encore.deviceId);
+    }
     List<String> strings(String key) =>
         [for (final v in (p[key] as List? ?? const [])) v.toString()];
 
@@ -567,6 +578,8 @@ class MutationService {
                 'id': trackId,
                 'submission': true,
                 'timeMs': nowMs,
+                'listenedMs': listenedMs,
+                if (source != null) 'source': source,
               }),
               createdAtMs: nowMs,
             ));
