@@ -62,3 +62,6 @@ Thumbs.db
 
 # Flutter golden test failure artifacts
 app/test/**/failures/
+
+# Python packaging leftovers
+*.egg-info/

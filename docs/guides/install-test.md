@@ -27,8 +27,10 @@ approve. (`read:packages` is the permission to download Encore's image.)
 
 ```
 gh api -H "Accept: application/vnd.github.raw" "repos/AppaYiipYiip/encore/contents/server/encore_server/deploy/install.sh?ref=main" > install.sh
-sudo GH_TOKEN="$(gh auth token)" bash install.sh
+sudo bash install.sh
 ```
+
+(It uses the GitHub login from step 1: the person who typed `sudo`.)
 
 It asks, in this order:
 

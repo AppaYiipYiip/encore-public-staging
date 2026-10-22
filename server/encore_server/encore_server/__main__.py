@@ -1,4 +1,5 @@
-"""`python -m encore_server`: runs the server (the container's command); `python -m encore_server setup` does the first-install steps."""
+"""`python -m encore_server`: runs the server (the container's command); `python -m encore_server setup` does the first-install steps;
+`python -m encore_server backup` copies the databases (`encore backup` uses it)."""
 
 from __future__ import annotations
 
@@ -25,6 +26,10 @@ def main(argv: list[str] | None = None) -> None:
         from .setup import command
 
         raise SystemExit(command())
+    if args[:1] == ["backup"]:
+        from .backup import command as backup_command
+
+        raise SystemExit(backup_command(args[1:]))
     settings = Settings.from_env()
     configure_logging(settings.log_level)
     uvicorn.run(

@@ -282,6 +282,15 @@ if [ "$FRESH" = 1 ]; then
     ok "Your account is made: ${OWNER}"
 fi
 
+# A copy of the accounts, playlists and likes every night (switched off for good by  encore autobackup off ), and one right now.
+if [ "$(sed -n 's/^ENCORE_AUTOBACKUP=//p' "$DIR/.env" | head -1)" != 0 ]; then
+    if /usr/local/bin/encore autobackup on >>"$LOG" 2>&1 && /usr/local/bin/encore backup --quiet >>"$LOG" 2>&1; then
+        ok "A backup is made every night (the newest 7 are kept)"
+    else
+        note "The nightly backup could not be switched on; run  encore backup  yourself from time to time. See the log."
+    fi
+fi
+
 # ---------------------------------------------------------------------------------------------------------------- done
 
 HOST_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}')"

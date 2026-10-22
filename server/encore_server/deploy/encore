@@ -6,6 +6,9 @@
 #   encore start | stop | restart
 #   encore update               the newest version, then check it answers
 #   encore funnel on|off|status   let phones reach it away from home (through the Tailscale on this computer)
+#   encore backup               a copy of the accounts, playlists and likes (kept in /opt/encore/backups, the newest 7)
+#   encore restore FILE         put such a copy back (what is here now is set aside, not deleted)
+#   encore autobackup on|off|status   the nightly backup (on by default)
 #   encore uninstall [--everything]   remove it; the music is never touched
 # (it asks for the administrator's password itself when it needs it)
 set -Eeuo pipefail
@@ -43,6 +46,27 @@ funnel_address() {
     tailscale funnel status 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+(:[0-9]+)?' | head -1 || true
 }
 
+BACKUP_DIR="$(env_value ENCORE_BACKUP_DIR)"; BACKUP_DIR="${BACKUP_DIR:-$DIR/backups}"
+KEEP_BACKUPS=7
+image_ref() {
+    local image tag
+    image="$(env_value ENCORE_IMAGE)"; image="${image:-ghcr.io/appayiipyiip/encore-server}"
+    tag="$(env_value ENCORE_TAG)"; tag="${tag:-main}"
+    printf '%s:%s' "$image" "$tag"
+}
+# The backups' file names are made here (no spaces or odd characters), newest first.
+backups_newest_first() { find "$BACKUP_DIR" -maxdepth 1 -name 'encore-backup-*.tar.gz' -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-; }
+newest_backup() { backups_newest_first | head -1 || true; }
+last_backup_text() {
+    local file; file="$(newest_backup)"
+    if [ -z "$file" ]; then printf 'none yet (encore backup)'; return; fi
+    date -d "@$(stat -c %Y "$file")" '+%Y-%m-%d %H:%M'
+}
+# Runs the database tool of the Encore image in a throwaway container: no network, root inside (the data belongs to other users).
+backup_tool() {
+    docker run --rm --user 0 --network none --entrypoint python "$@"
+}
+
 cmd_status() {
     local version away
     version="$(server_version)"
@@ -59,6 +83,7 @@ cmd_status() {
     away="$(funnel_address)"
     if [ -n "$away" ]; then say "        Away from home:        $away"; else say "        Away from home:        not set up (encore funnel on)"; fi
     say "        Music folder:          $(env_value ENCORE_MUSIC_DIR)"
+    say "        Last backup:           $(last_backup_text)"
     say ""
 }
 
@@ -123,6 +148,150 @@ cmd_funnel() {
     esac
 }
 
+cmd_backup() {
+    need_root backup
+    local quiet=0 stamp work archive
+    for arg in "$@"; do
+        case "$arg" in --quiet | -q) quiet=1 ;; *) die "Unknown option: $arg" ;; esac
+    done
+    [ -f "$DIR/data/encore.db" ] || die "Encore has no database yet in $DIR/data: nothing to back up."
+    [ -f "$DIR/navidrome/navidrome.db" ] || die "The music server's database was not found in $DIR/navidrome."
+    stamp="$(date -u +%Y%m%d-%H%M%S)"
+    mkdir -p "$BACKUP_DIR"
+    chmod 700 "$BACKUP_DIR"
+    work="$(mktemp -d "$DIR/.backup-XXXXXX")"
+    # shellcheck disable=SC2064
+    trap "rm -rf -- '$work'" EXIT
+    if [ "$quiet" != 1 ]; then say ""; say "  … Copying the databases"; fi
+    backup_tool -v "$DIR/data:/data" -v "$DIR/navidrome:/nd" -v "$work:/out" "$(image_ref)" \
+        -m encore_server backup --encore-db /data/encore.db --navidrome-db /nd/navidrome.db --out /out >"$work/tool.log" 2>&1 \
+        || die "The databases could not be copied: $(sed -n 's/^backup: //p' "$work/tool.log" | head -1)"
+    rm -f "$work/tool.log"
+    # The settings file holds the music server's administrator login, which the copied database needs to be opened again.
+    cp -p "$DIR/.env" "$work/env"
+    {
+        echo "format=1"
+        echo "made=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "encore=$(server_version)"
+        echo "image=$(image_ref)"
+    } >"$work/manifest.txt"
+    archive="$BACKUP_DIR/encore-backup-$stamp.tar.gz"
+    (umask 077 && tar -C "$work" -czf "$archive.part" . && mv "$archive.part" "$archive")
+    # Keep the newest seven.
+    backups_newest_first | tail -n +$((KEEP_BACKUPS + 1)) | while IFS= read -r old; do rm -f -- "$old"; done
+    if [ "$quiet" != 1 ]; then
+        ok "Backup made: $archive ($(du -h "$archive" | cut -f1))"
+        note "It holds the accounts, playlists and likes, and a login this install needs: keep it private. Your music is not in it."
+        say ""
+    fi
+}
+
+cmd_restore() {
+    need_root restore
+    local file="" yes=0 arg
+    for arg in "$@"; do
+        case "$arg" in --yes | -y) yes=1 ;; -*) die "Unknown option: $arg" ;; *) file="$arg" ;; esac
+    done
+    [ -n "$file" ] || die "Say which backup:  encore restore FILE   (they are in $BACKUP_DIR; the newest is $(basename "$(newest_backup)" 2>/dev/null))"
+    [ -f "$file" ] || die "There is no file $file."
+    local work stamp aside made answer f keep
+    work="$(mktemp -d "$DIR/.restore-XXXXXX")"
+    # shellcheck disable=SC2064
+    trap "rm -rf -- '$work'" EXIT
+    tar -C "$work" -xzf "$file" 2>/dev/null || die "$file is not a backup this command can read."
+    grep -q '^format=1$' "$work/manifest.txt" 2>/dev/null || die "$file is not an Encore backup (or comes from a newer version: run  encore update  first)."
+    [ -f "$work/env" ] || die "$file has no settings file."
+    backup_tool -v "$work:/in" "$(image_ref)" -m encore_server backup --verify /in >"$work/verify.log" 2>&1 \
+        || die "This backup is damaged: $(sed -n 's/^backup: //p' "$work/verify.log" | head -1)"
+    made="$(sed -n 's/^made=//p' "$work/manifest.txt")"
+    keep="$(grep -E '^ENCORE_NAVIDROME_ADMIN_(USER|PASSWORD)=' "$work/env" || true)"
+    [ -n "$keep" ] || die "The backup has no administrator login for the music server."
+    say ""
+    say "  This puts back the accounts, playlists and likes from the backup made ${BOLD}${made}${OFF}."
+    say "  What is on this computer now is set aside (not deleted) in $DIR/before-restore-*, and Encore is stopped for a moment."
+    if [ "$yes" != 1 ]; then
+        read -r -p "  Type  restore  to go on: " answer </dev/tty || answer=""
+        [ "$answer" = restore ] || die "Nothing was changed."
+    fi
+    stamp="$(date -u +%Y%m%d-%H%M%S)"
+    aside="$DIR/before-restore-$stamp"
+    dc stop >/dev/null 2>&1 || die "Encore could not be stopped."
+    mkdir -p "$aside/data" "$aside/navidrome"
+    for f in encore.db encore.db-wal encore.db-shm; do if [ -e "$DIR/data/$f" ]; then mv -- "$DIR/data/$f" "$aside/data/$f"; fi; done
+    for f in navidrome.db navidrome.db-wal navidrome.db-shm; do if [ -e "$DIR/navidrome/$f" ]; then mv -- "$DIR/navidrome/$f" "$aside/navidrome/$f"; fi; done
+    cp -p "$DIR/.env" "$aside/env"
+    cp -- "$work/encore.db" "$DIR/data/encore.db"
+    cp -- "$work/navidrome.db" "$DIR/navidrome/navidrome.db"
+    # The same owner as the file it replaces (the Encore image makes its own folder writable when it starts).
+    if [ -e "$aside/navidrome/navidrome.db" ]; then chown --reference="$aside/navidrome/navidrome.db" "$DIR/navidrome/navidrome.db"; fi
+    # Only the music server's administrator login comes from the backup: the rest of the settings (port, music folder, name) belong to this computer.
+    { grep -vE '^ENCORE_NAVIDROME_ADMIN_(USER|PASSWORD)=' "$DIR/.env"; printf '%s\n' "$keep"; } >"$DIR/.env.new"
+    chmod 600 "$DIR/.env.new"
+    mv -- "$DIR/.env.new" "$DIR/.env"
+    dc up -d >/dev/null 2>&1 || die "Encore could not be started again. The data from before is in $aside."
+    wait_answers || die "Encore did not answer after the restore. See: encore logs. The data from before is in $aside."
+    ok "Restored from the backup of ${made}"
+    note "What was here before is in $aside: delete that folder when you are happy with the result."
+    say ""
+}
+
+timer_available() { command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; }
+remember_autobackup() {
+    if grep -q '^ENCORE_AUTOBACKUP=' "$DIR/.env"; then sed -i "s/^ENCORE_AUTOBACKUP=.*/ENCORE_AUTOBACKUP=$1/" "$DIR/.env"; else echo "ENCORE_AUTOBACKUP=$1" >>"$DIR/.env"; fi
+}
+
+cmd_autobackup() {
+    need_root autobackup
+    case "${1:-status}" in
+        on)
+            timer_available || die "This computer has no scheduler (systemd) to run it. Run  encore backup  yourself from time to time."
+            cat >/etc/systemd/system/encore-backup.service <<'UNIT'
+[Unit]
+Description=Encore: a copy of the accounts, playlists and likes
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/encore backup --quiet
+UNIT
+            cat >/etc/systemd/system/encore-backup.timer <<'UNIT'
+[Unit]
+Description=Encore: nightly backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+            systemctl daemon-reload
+            systemctl enable --now encore-backup.timer >/dev/null 2>&1 || die "The nightly backup could not be switched on."
+            remember_autobackup 1
+            ok "A backup is made every night at about 03:30; the newest $KEEP_BACKUPS are kept in $BACKUP_DIR"
+            ;;
+        off)
+            if timer_available; then
+                systemctl disable --now encore-backup.timer >/dev/null 2>&1 || true
+                rm -f /etc/systemd/system/encore-backup.timer /etc/systemd/system/encore-backup.service
+                systemctl daemon-reload
+            fi
+            remember_autobackup 0
+            ok "The nightly backup is off. Backups already made stay in $BACKUP_DIR"
+            ;;
+        status)
+            if timer_available && systemctl is-enabled encore-backup.timer >/dev/null 2>&1; then
+                ok "Nightly backup is on; last one: $(last_backup_text)"
+            else
+                say "  The nightly backup is off (encore autobackup on)"
+            fi
+            ;;
+        *) die "Use:  encore autobackup on | off | status" ;;
+    esac
+}
+
 cmd_uninstall() {
     need_root uninstall
     local everything=0 yes=0
@@ -143,6 +312,11 @@ cmd_uninstall() {
     local image_ref
     image_ref="$(env_value ENCORE_IMAGE):$(env_value ENCORE_TAG)"
     dc down >/dev/null 2>&1 || true
+    if timer_available; then
+        systemctl disable --now encore-backup.timer >/dev/null 2>&1 || true
+        rm -f /etc/systemd/system/encore-backup.timer /etc/systemd/system/encore-backup.service
+        systemctl daemon-reload
+    fi
     if [ "$everything" = 1 ]; then
         # Never remove a short or odd path: only a folder like /opt/encore that holds this install's own files.
         case "$DIR" in /*/*) ;; *) die "Refusing to remove '$DIR': it does not look like an Encore folder." ;; esac
@@ -163,8 +337,11 @@ case "${1:-help}" in
     restart) dc restart >/dev/null && wait_answers && ok "Restarted and answering" ;;
     update) cmd_update ;;
     funnel) shift; cmd_funnel "${1:-status}" ;;
+    backup) shift; cmd_backup "$@" ;;
+    restore) shift; cmd_restore "$@" ;;
+    autobackup) shift; cmd_autobackup "${1:-status}" ;;
     uninstall) shift; cmd_uninstall "$@" ;;
     version) server_version ;;
-    help | -h | --help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' ;;
+    help | -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command: $1. Try:  encore help" ;;
 esac
