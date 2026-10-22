@@ -134,3 +134,11 @@ def test_a_music_server_that_is_down_is_a_sentence_not_a_crash(tmp_path: Path, v
 
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "server_busy" and "not answering" in response.json()["error"]["message"]
+
+
+def test_the_phones_own_choice_of_compression_is_what_the_music_server_sees(rig: tuple[TestClient, FastAPI]) -> None:
+    client, upstream = rig
+
+    client.get("/rest/ping.view", headers={"accept-encoding": "br"})
+
+    assert upstream.state.seen[0]["accept-encoding"] == "br"

@@ -53,6 +53,8 @@ def mount(app: FastAPI, upstream: str, *, client: httpx.AsyncClient | None = Non
             return JSONResponse(ApiError("not_found").body(), status_code=404)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
         headers = _forward(request.headers)
+        # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see.
+        headers.setdefault("accept-encoding", "identity")
         headers["x-forwarded-for"] = request.client.host if request.client else ""
         headers["x-forwarded-proto"] = request.url.scheme
         body = await request.body() if request.method in ("POST", "PUT", "PATCH", "DELETE") else None
