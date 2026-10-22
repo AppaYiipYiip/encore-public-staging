@@ -34,12 +34,14 @@ void main() {
   });
 
   group('LibraryScope', () {
-    test('is read back by name; unknown values fall back to automatic', () {
+    test(
+        'is read back by name; unknown values (and the old "automatic") fall back to mine',
+        () {
       expect(LibraryScope.byName('everything'), LibraryScope.everything);
       expect(LibraryScope.byName('mine'), LibraryScope.mine);
-      expect(LibraryScope.byName('automatic'), LibraryScope.automatic);
-      expect(LibraryScope.byName(null), LibraryScope.automatic);
-      expect(LibraryScope.byName('whatever'), LibraryScope.automatic);
+      expect(LibraryScope.byName('automatic'), LibraryScope.mine);
+      expect(LibraryScope.byName(null), LibraryScope.mine);
+      expect(LibraryScope.byName('whatever'), LibraryScope.mine);
     });
   });
 

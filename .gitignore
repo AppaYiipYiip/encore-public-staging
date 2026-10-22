@@ -59,3 +59,6 @@ perf-traces/
 /test/**/failures/
 .DS_Store
 Thumbs.db
+
+# Flutter golden test failure artifacts
+app/test/**/failures/

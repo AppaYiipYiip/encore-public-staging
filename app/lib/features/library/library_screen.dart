@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repos/downloads_repository.dart';
 import '../../data/repos/library_repository.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
@@ -25,9 +26,16 @@ enum LibraryFilter { playlists, artists, albums, liked, downloaded }
 enum LibrarySort { recent, alphabetical }
 
 class LibraryFilterNotifier extends Notifier<LibraryFilter?> {
+  /// The person picked a chip (or put it back to "all"): the app does not move them again.
+  bool chosenByPerson = false;
+
   @override
   LibraryFilter? build() => null;
-  void select(LibraryFilter? value) => state = value;
+
+  void select(LibraryFilter? value, {bool byPerson = true}) {
+    if (byPerson) chosenByPerson = true;
+    state = value;
+  }
 }
 
 final libraryFilterProvider =
@@ -67,6 +75,15 @@ class LibraryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(libraryFilterProvider);
+    // Without a connection only what is on the phone can be played: the Library opens on that, once, unless the person already chose.
+    final offline = ref
+        .watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
+    final filterNotifier = ref.read(libraryFilterProvider.notifier);
+    if (offline && filter == null && !filterNotifier.chosenByPerson) {
+      // Not while this widget is being built.
+      scheduleMicrotask(() =>
+          filterNotifier.select(LibraryFilter.downloaded, byPerson: false));
+    }
     final sort = ref.watch(librarySortProvider);
     final grid = ref.watch(libraryGridProvider);
     final sync = ref.watch(syncStatusProvider).value ?? const SyncStatus();
@@ -95,26 +112,30 @@ class LibraryScreen extends ConsumerWidget {
         groups.own.isEmpty;
 
     final storage = ref.watch(storageSummaryProvider).value;
+    final pinned = ref.watch(pinEntriesProvider).value ?? const <PinEntry>[];
 
-    final entries = <_LibraryEntry>[
-      if (filter == null || filter == LibraryFilter.liked)
-        _LibraryEntry.liked(liked.length),
-      if (filter == null || filter == LibraryFilter.downloaded)
-        if (filter == LibraryFilter.downloaded || (storage?.tracks ?? 0) > 0)
-          _LibraryEntry.downloaded(storage?.tracks ?? 0, storage?.bytes ?? 0),
-      if (filter == null || filter == LibraryFilter.playlists)
-        for (final p in _sortPlaylists(playlists, sort))
-          _LibraryEntry.playlist(p, me),
-      if (filter == null || filter == LibraryFilter.artists)
-        for (final a in artists) _LibraryEntry.artist(a),
-      if (filter == null || filter == LibraryFilter.albums)
-        for (final a in albums) _LibraryEntry.album(a),
-    ];
+    // "Downloaded" lists what is downloaded as the things a person chose to take along - the gym playlist, the driving playlist, an album
+    // - not as one heap of every song (owner, 2026-10-22). The songs of all of them are one tap further, under the list.
+    final entries = filter == LibraryFilter.downloaded
+        ? <_LibraryEntry>[
+            for (final p in pinned.where((p) => p.pin.targetType != 'track'))
+              _LibraryEntry.pinned(p),
+            for (final p in pinned.where((p) => p.pin.targetType == 'track'))
+              _LibraryEntry.pinned(p),
+          ]
+        : <_LibraryEntry>[
+            if (filter == null || filter == LibraryFilter.liked)
+              _LibraryEntry.liked(liked.length),
+            if (filter == null || filter == LibraryFilter.playlists)
+              for (final p in _sortPlaylists(playlists, sort))
+                _LibraryEntry.playlist(p, me),
+            if (filter == null || filter == LibraryFilter.artists)
+              for (final a in artists) _LibraryEntry.artist(a),
+            if (filter == null || filter == LibraryFilter.albums)
+              for (final a in albums) _LibraryEntry.album(a),
+          ];
     if (filter == LibraryFilter.liked) {
       entries.removeWhere((e) => e.kind != _Kind.liked);
-    }
-    if (filter == LibraryFilter.downloaded) {
-      entries.removeWhere((e) => e.kind != _Kind.downloaded);
     }
 
     return SafeArea(
@@ -145,10 +166,7 @@ class LibraryScreen extends ConsumerWidget {
             ),
           ),
           SliverToBoxAdapter(
-            child: _ScopeBar(
-              scope: scope,
-              automatic: ref.watch(libraryScopeIsAutomaticProvider),
-            ),
+            child: _ScopeBar(scope: scope),
           ),
           SliverToBoxAdapter(
             child: ChipRow(
@@ -190,7 +208,9 @@ class LibraryScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (!sync.initialSyncDone && entries.length <= 1)
+          if (filter == LibraryFilter.downloaded && entries.isEmpty)
+            const SliverToBoxAdapter(child: _NothingDownloadedCard())
+          else if (!sync.initialSyncDone && entries.length <= 1)
             const SliverToBoxAdapter(child: _FirstSyncCard())
           else if (nothingOfMine && filter == null)
             const SliverToBoxAdapter(child: _NothingYetCard()),
@@ -212,6 +232,11 @@ class LibraryScreen extends ConsumerWidget {
             SliverList.builder(
               itemCount: entries.length,
               itemBuilder: (context, i) => _ListEntry(entry: entries[i]),
+            ),
+          if (filter == LibraryFilter.downloaded && (storage?.tracks ?? 0) > 0)
+            SliverToBoxAdapter(
+              child: _DownloadedFooter(
+                  songs: storage!.tracks, bytes: storage.bytes),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: Space.xxl)),
         ],
@@ -262,7 +287,7 @@ Future<void> _showCreateSheet(BuildContext context) {
   );
 }
 
-enum _Kind { liked, downloaded, playlist, artist, album }
+enum _Kind { liked, playlist, artist, album, song }
 
 /// "Made for you", "by Sara" or the song count.
 String _playlistLine(PlaylistRow p, String? me) {
@@ -285,15 +310,23 @@ class _LibraryEntry {
         coverArt = null,
         playlist = null;
 
-  _LibraryEntry.downloaded(this.count, int bytes)
-      : kind = _Kind.downloaded,
-        id = 'downloaded',
-        title = 'Downloaded',
-        subtitle = count == 0
-            ? 'Nothing downloaded yet'
-            : '${plural(count, 'song')} • ${formatBytes(bytes)}',
-        coverArt = null,
-        playlist = null;
+  /// Something the person chose to download: a playlist, an album, an artist, Liked Songs, a song.
+  _LibraryEntry.pinned(PinEntry p)
+      : kind = switch (p.pin.targetType) {
+          'liked' => _Kind.liked,
+          'playlist' => _Kind.playlist,
+          'artist' => _Kind.artist,
+          'album' => _Kind.album,
+          _ => _Kind.song,
+        },
+        id = p.pin.targetType == 'liked' ? 'liked' : p.pin.targetId,
+        title = p.title,
+        subtitle = p.artist == null ? p.kind : '${p.kind} • ${p.artist}',
+        coverArt = p.coverArt,
+        count = 0,
+        artistName = p.artist,
+        playlist = p.playlist,
+        pin = p.pin;
 
   _LibraryEntry.playlist(PlaylistRow p, String? me)
       : kind = _Kind.playlist,
@@ -331,6 +364,9 @@ class _LibraryEntry {
   final int count;
   final PlaylistRow? playlist;
 
+  /// Set when the entry is a download the person chose (Library > Downloaded): the tile shows how far it is.
+  PinRow? pin;
+
   /// Album entries: artist, so a missing cover can come from the catalogue.
   String? artistName;
 
@@ -338,7 +374,7 @@ class _LibraryEntry {
     switch (kind) {
       case _Kind.liked:
         Nav.liked(context);
-      case _Kind.downloaded:
+      case _Kind.song:
         Nav.downloaded(context);
       case _Kind.playlist:
         Nav.playlist(context, id);
@@ -359,15 +395,6 @@ class _EntryArt extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
-    if (entry.kind == _Kind.downloaded) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: ColoredBox(
-          color: c.accent,
-          child: Icon(Icons.arrow_downward_rounded, color: c.onAccent),
-        ),
-      );
-    }
     if (entry.kind == _Kind.liked) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius),
@@ -398,44 +425,156 @@ class _EntryArt extends ConsumerWidget {
   }
 }
 
-class _ListEntry extends StatelessWidget {
+/// How far a download the person chose has got, and whether it can be used now (a phone without a connection plays only what is on it).
+class _EntryState {
+  const _EntryState(this.line, {this.complete = false, this.usable = true});
+
+  /// "Downloaded - 40 songs", "Downloading 12 of 40", ...
+  final String? line;
+  final bool complete;
+  final bool usable;
+}
+
+_EntryState _stateOf(PinState s, {required bool offline}) {
+  switch (s.phase) {
+    case PinPhase.complete:
+      return _EntryState('Downloaded • ${plural(s.total, 'song')}',
+          complete: true);
+    case PinPhase.downloading:
+      return _EntryState('Downloading ${s.done} of ${s.total}',
+          usable: !offline || s.done > 0);
+    case PinPhase.attention:
+      return _EntryState(
+          '${s.done} of ${s.total} downloaded • some did not come',
+          usable: !offline || s.done > 0);
+    case PinPhase.preparing:
+    case PinPhase.off:
+      return _EntryState('Getting ready to download', usable: !offline);
+  }
+}
+
+/// The entry's own line, or - for a download the person chose - how far it is.
+({String subtitle, bool complete, bool usable}) _lineFor(
+    WidgetRef ref, _LibraryEntry entry) {
+  final pin = entry.pin;
+  if (pin == null) {
+    return (subtitle: entry.subtitle, complete: false, usable: true);
+  }
+  final type = PinTargetType.values.byName(pin.targetType);
+  final state = ref
+          .watch(pinStateProvider(
+              (type, type == PinTargetType.liked ? kLikedPinId : pin.targetId)))
+          .value ??
+      PinState.none;
+  final offline =
+      ref.watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
+  final s = _stateOf(state, offline: offline);
+  return (
+    subtitle: '${entry.subtitle} • ${s.line}',
+    complete: s.complete,
+    usable: s.usable,
+  );
+}
+
+class _ListEntry extends ConsumerWidget {
   const _ListEntry({required this.entry});
 
   final _LibraryEntry entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final line = _lineFor(ref, entry);
     return Semantics(
       button: true,
-      label: '${entry.title}, ${entry.subtitle}',
+      label: '${entry.title}, ${line.subtitle}',
       excludeSemantics: true,
-      child: InkWell(
-        onTap: () => entry.open(context),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Space.gutter, vertical: Space.xs + 2),
-          child: Row(
+      child: Opacity(
+        opacity: line.usable ? 1 : 0.45,
+        child: InkWell(
+          onTap: () => entry.open(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: Space.gutter, vertical: Space.xs + 2),
+            child: Row(
+              children: [
+                SizedBox.square(
+                  dimension: 56,
+                  child: _EntryArt(entry: entry),
+                ),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.text.bodyLarge),
+                      Row(
+                        children: [
+                          if (line.complete)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Icon(Icons.arrow_circle_down_rounded,
+                                  size: 16, color: context.colors.accent),
+                            ),
+                          Expanded(
+                            child: Text(line.subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.bodyMedium),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GridEntry extends ConsumerWidget {
+  const _GridEntry({required this.entry});
+
+  final _LibraryEntry entry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final line = _lineFor(ref, entry);
+    return Semantics(
+      button: true,
+      label: '${entry.title}, ${line.subtitle}',
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: line.usable ? 1 : 0.45,
+        child: InkWell(
+          onTap: () => entry.open(context),
+          borderRadius: BorderRadius.circular(Radii.card),
+          child: Column(
+            crossAxisAlignment: entry.kind == _Kind.artist
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
             children: [
-              SizedBox.square(
-                dimension: 56,
-                child: _EntryArt(entry: entry),
-              ),
-              const SizedBox(width: Space.md),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(entry.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.text.bodyLarge),
-                    Text(entry.subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.text.bodyMedium),
-                  ],
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: _EntryArt(entry: entry, radius: Radii.card),
                 ),
               ),
+              const SizedBox(height: Space.sm),
+              Text(entry.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.titleSmall),
+              Text(line.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.bodySmall),
             ],
           ),
         ),
@@ -444,55 +583,11 @@ class _ListEntry extends StatelessWidget {
   }
 }
 
-class _GridEntry extends StatelessWidget {
-  const _GridEntry({required this.entry});
-
-  final _LibraryEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '${entry.title}, ${entry.subtitle}',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: () => entry.open(context),
-        borderRadius: BorderRadius.circular(Radii.card),
-        child: Column(
-          crossAxisAlignment: entry.kind == _Kind.artist
-              ? CrossAxisAlignment.center
-              : CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: _EntryArt(entry: entry, radius: Radii.card),
-              ),
-            ),
-            const SizedBox(height: Space.sm),
-            Text(entry.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.text.titleSmall),
-            Text(entry.subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.text.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Which part of the server the list shows, and the switch to change it.
 class _ScopeBar extends ConsumerWidget {
-  const _ScopeBar({required this.scope, required this.automatic});
+  const _ScopeBar({required this.scope});
 
   final LibraryScope scope;
-
-  /// The scope was chosen by the app (few plays yet), not by the person.
-  final bool automatic;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -503,12 +598,7 @@ class _ScopeBar extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
-              mine
-                  ? 'Only your music'
-                  : (automatic
-                      ? 'Everything you can listen to. It narrows to your own '
-                          'music as you listen.'
-                      : 'Everything you can listen to'),
+              mine ? 'Only your music' : 'Everything on the server',
               style: context.text.bodySmall,
             ),
           ),
@@ -517,7 +607,7 @@ class _ScopeBar extends ConsumerWidget {
                 .read(settingsProvider.notifier)
                 .setLibraryScope(
                     mine ? LibraryScope.everything : LibraryScope.mine),
-            child: Text(mine ? 'Show everything' : 'Only my music'),
+            child: Text(mine ? 'Show the whole server' : 'Only my music'),
           ),
         ],
       ),
@@ -545,19 +635,78 @@ class _NothingYetCard extends ConsumerWidget {
           Text('Nothing of yours yet', style: context.text.titleMedium),
           const SizedBox(height: Space.xs),
           Text(
-            'Music you play, like or download shows up here. The server has '
-            'more - everyone\'s music is one tap away.',
+            'Search for a song and tap it, like it, or bring a playlist over '
+            'from Spotify or YouTube Music: it shows up here. The server has '
+            'more music of other people, one tap away.',
             style: context.text.bodyMedium,
           ),
           const SizedBox(height: Space.md),
-          FilledButton(
-            onPressed: () => ref
-                .read(settingsProvider.notifier)
-                .setLibraryScope(LibraryScope.everything),
-            child: const Text('Show everything on this server'),
+          Wrap(
+            spacing: Space.sm,
+            children: [
+              FilledButton(
+                onPressed: () => context.go('/search'),
+                child: const Text('Search for a song'),
+              ),
+              OutlinedButton(
+                onPressed: () => ref
+                    .read(settingsProvider.notifier)
+                    .setLibraryScope(LibraryScope.everything),
+                child: const Text('Browse the whole server'),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Library > Downloaded with nothing chosen yet.
+class _NothingDownloadedCard extends StatelessWidget {
+  const _NothingDownloadedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(Space.gutter),
+      padding: const EdgeInsets.all(Space.lg),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Nothing downloaded yet', style: context.text.titleMedium),
+          const SizedBox(height: Space.xs),
+          Text(
+            'Open a playlist or an album and tap the download arrow: it is kept '
+            'on this phone, so it plays on the road, at the gym, anywhere '
+            'without a connection.',
+            style: context.text.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Under the downloaded collections: what they add up to, and the way to the songs themselves.
+class _DownloadedFooter extends StatelessWidget {
+  const _DownloadedFooter({required this.songs, required this.bytes});
+
+  final int songs;
+  final int bytes;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.storage_rounded),
+      title: Text('${plural(songs, 'song')} on this phone'),
+      subtitle: Text(formatBytes(bytes)),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: () => Nav.downloaded(context),
     );
   }
 }

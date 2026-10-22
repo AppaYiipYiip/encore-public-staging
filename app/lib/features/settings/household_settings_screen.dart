@@ -44,12 +44,6 @@ class HouseholdSettingsScreen extends ConsumerWidget {
       children: [
         const SettingsSection('Your library'),
         scopeTile(
-          LibraryScope.automatic,
-          'Automatic',
-          'Your music once you have played a few albums; the whole server '
-              'until then, so a new account is never empty.',
-        ),
-        scopeTile(
           LibraryScope.mine,
           'Only my music',
           'Songs you play, like, rate or download, and what is in your own '

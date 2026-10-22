@@ -135,57 +135,20 @@ void main() {
   });
 
   group('Your Library', () {
-    testWidgets('on automatic a small account sees the whole server',
-        (tester) async {
-      // The seed has 6 albums of its own: fewer than the threshold.
-      final app = await pumpApp(tester, size: tall);
-      await addHousehold(app.db, app.serverId);
-      await openRoute(tester, '/library');
-      await tester.tap(find.text('Albums'));
-      await settle(tester);
-
-      expect(find.textContaining('narrows to your own music as you listen'),
-          findsOneWidget);
-      expect(find.text('Other People Music'), findsOneWidget);
-      await closeApp(tester, app.db);
-    });
-
-    testWidgets('on automatic it becomes "your music" once there is enough',
+    testWidgets(
+        'opens on my music with nothing chosen, however little there is',
         (tester) async {
       final app = await pumpApp(tester, size: tall);
       await addHousehold(app.db, app.serverId);
-      // Three more albums in a playlist of this account: 9 >= the threshold.
-      for (var i = 1; i <= 3; i++) {
-        await app.db.into(app.db.albums).insert(AlbumsCompanion.insert(
-              serverId: app.serverId,
-              id: 'more$i',
-              name: 'More $i',
-              artistId: const Value('ar2'),
-              artist: const Value('Periphery'),
-            ));
-        await app.db.into(app.db.tracks).insert(TracksCompanion.insert(
-              serverId: app.serverId,
-              id: 'more$i-t1',
-              title: 'More song $i',
-              albumId: Value('more$i'),
-              artistId: const Value('ar2'),
-            ));
-        await app.db.into(app.db.playlistEntries).insert(
-            PlaylistEntriesCompanion.insert(
-                serverId: app.serverId,
-                playlistId: 'pl1',
-                position: 100 + i,
-                trackId: 'more$i-t1'));
-      }
       await openRoute(tester, '/library');
-      await tester.pump(const Duration(seconds: 4));
-      await settle(tester);
       await tester.tap(find.text('Albums'));
       await settle(tester);
 
       expect(find.text('Only your music'), findsOneWidget);
-      expect(find.text('More 1'), findsOneWidget);
-      expect(find.text('Other People Music'), findsNothing);
+      expect(find.text('Other People Music'), findsNothing,
+          reason: 'the whole server is a view the person asks for');
+      expect(containerOf(tester).read(settingsProvider).libraryScope,
+          LibraryScope.mine);
       await closeApp(tester, app.db);
     });
 
@@ -202,10 +165,10 @@ void main() {
       expect(find.text('Other People Music'), findsNothing,
           reason: 'nobody here played, liked or saved it');
 
-      await tester.tap(find.text('Show everything'));
+      await tester.tap(find.text('Show the whole server'));
       await settle(tester);
 
-      expect(find.text('Everything you can listen to'), findsOneWidget);
+      expect(find.text('Everything on the server'), findsOneWidget);
       expect(find.text('Other People Music'), findsOneWidget);
       expect(containerOf(tester).read(settingsProvider).libraryScope,
           LibraryScope.everything);
@@ -258,7 +221,7 @@ void main() {
 
       expect(find.text('Nothing of yours yet'), findsOneWidget);
 
-      await tester.tap(find.text('Show everything on this server'));
+      await tester.tap(find.text('Browse the whole server'));
       await settle(tester);
 
       expect(find.text('Nothing of yours yet'), findsNothing);
@@ -271,7 +234,7 @@ void main() {
       final app = await pumpApp(tester, size: tall);
       await openRoute(tester, '/settings/home');
 
-      expect(find.text('Automatic'), findsOneWidget);
+      expect(find.text('Automatic'), findsNothing);
       expect(find.text('Only my music'), findsOneWidget);
       expect(find.text('Everything on the server'), findsOneWidget);
       expect(find.text('Signed in as marwa'), findsOneWidget);

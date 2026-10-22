@@ -6,27 +6,24 @@
 library;
 
 /// Which part of the server "Your Library" lists.
+///
+/// Your Library is the person's own, always (owner, 2026-10-22: "only my music should be the default"). The rest of the server is a view
+/// they ask for, and a new account's empty library says how to fill it instead of showing everybody else's.
 enum LibraryScope {
-  /// "Your music" once the account has played a few albums, the whole server
-  /// until then (an empty "your library" on first start is worse than a full
-  /// one). The default.
-  automatic,
-
   /// What this account has played, liked, rated, downloaded or put into one of
-  /// its own playlists.
+  /// its own playlists. The default.
   mine,
 
   /// Every album and artist the server has.
   everything;
 
+  /// An old install may have saved `automatic` (the app chose for the person: the whole server until a few albums were played): that is
+  /// "mine" now, as is anything unknown.
   static LibraryScope byName(String? name) => values.firstWhere(
         (s) => s.name == name,
-        orElse: () => LibraryScope.automatic,
+        orElse: () => LibraryScope.mine,
       );
 }
-
-/// Albums an account needs before [LibraryScope.automatic] switches to "mine".
-const int kPersonalViewMinAlbums = 8;
 
 /// How a playlist relates to the account that is signed in.
 enum PlaylistOwnership {

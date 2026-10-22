@@ -32,7 +32,7 @@ class AppSettings {
     this.playbackSpeed = 1.0,
     this.replayGainMode = ReplayGainMode.track,
     this.replayGainBoost = false,
-    this.libraryScope = LibraryScope.automatic,
+    this.libraryScope = LibraryScope.mine,
     this.showNewOnServer = true,
     this.privateListening = false,
     this.alertsOnServer = true,

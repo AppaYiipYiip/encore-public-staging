@@ -61,11 +61,21 @@ class PinEntry {
     required this.pin,
     required this.title,
     required this.kind,
+    this.coverArt,
+    this.artist,
+    this.playlist,
   });
 
   final PinRow pin;
   final String title;
   final String kind;
+
+  /// The cover to draw (an album's, a playlist's own, an artist's picture), when there is one.
+  final String? coverArt;
+
+  /// The artist of an album or a song.
+  final String? artist;
+  final PlaylistRow? playlist;
 }
 
 final pinsProvider = StreamProvider.autoDispose<List<PinRow>>((ref) {
@@ -80,50 +90,58 @@ final pinEntriesProvider =
   final db = ref.watch(databaseProvider);
   final entries = <PinEntry>[];
   for (final pin in pins) {
-    String? title;
-    String kind;
     switch (pin.targetType) {
       case 'playlist':
-        kind = 'Playlist';
-        title = (await (db.select(db.playlists)
-                  ..where((p) =>
-                      p.serverId.equals(pin.serverId) &
-                      p.id.equals(pin.targetId)))
-                .getSingleOrNull())
-            ?.name;
+        final row = await (db.select(db.playlists)
+              ..where((p) =>
+                  p.serverId.equals(pin.serverId) & p.id.equals(pin.targetId)))
+            .getSingleOrNull();
+        entries.add(PinEntry(
+          pin: pin,
+          title: row?.name ?? 'Unavailable item',
+          kind: 'Playlist',
+          coverArt: row?.coverArt,
+          playlist: row,
+        ));
       case 'album':
-        kind = 'Album';
-        title = (await (db.select(db.albums)
-                  ..where((a) =>
-                      a.serverId.equals(pin.serverId) &
-                      a.id.equals(pin.targetId)))
-                .getSingleOrNull())
-            ?.name;
+        final row = await (db.select(db.albums)
+              ..where((a) =>
+                  a.serverId.equals(pin.serverId) & a.id.equals(pin.targetId)))
+            .getSingleOrNull();
+        entries.add(PinEntry(
+          pin: pin,
+          title: row?.name ?? 'Unavailable item',
+          kind: 'Album',
+          coverArt: row?.coverArt,
+          artist: row?.artist,
+        ));
       case 'artist':
-        kind = 'Artist';
-        title = (await (db.select(db.artists)
-                  ..where((a) =>
-                      a.serverId.equals(pin.serverId) &
-                      a.id.equals(pin.targetId)))
-                .getSingleOrNull())
-            ?.name;
+        final row = await (db.select(db.artists)
+              ..where((a) =>
+                  a.serverId.equals(pin.serverId) & a.id.equals(pin.targetId)))
+            .getSingleOrNull();
+        entries.add(PinEntry(
+          pin: pin,
+          title: row?.name ?? 'Unavailable item',
+          kind: 'Artist',
+          coverArt: row?.coverArt,
+        ));
       case 'liked':
-        kind = 'Collection';
-        title = 'Liked Songs';
+        entries
+            .add(PinEntry(pin: pin, title: 'Liked Songs', kind: 'Collection'));
       default:
-        kind = 'Song';
-        title = (await (db.select(db.tracks)
-                  ..where((t) =>
-                      t.serverId.equals(pin.serverId) &
-                      t.id.equals(pin.targetId)))
-                .getSingleOrNull())
-            ?.title;
+        final row = await (db.select(db.tracks)
+              ..where((t) =>
+                  t.serverId.equals(pin.serverId) & t.id.equals(pin.targetId)))
+            .getSingleOrNull();
+        entries.add(PinEntry(
+          pin: pin,
+          title: row?.title ?? 'Unavailable item',
+          kind: 'Song',
+          coverArt: row?.coverArt,
+          artist: row?.artist,
+        ));
     }
-    entries.add(PinEntry(
-      pin: pin,
-      title: title ?? 'Unavailable item',
-      kind: kind,
-    ));
   }
   return entries;
 });

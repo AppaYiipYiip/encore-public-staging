@@ -264,26 +264,10 @@ final genreAlbumsProvider =
 
 // --------------------------------------------------------------- household
 
-/// What Your Library lists on a shared server (ADR-049): the person's choice,
-/// or - when left on automatic - "mine" once the account has played enough
-/// to have a library of its own and the whole server before that.
-///
-/// While "mine" is still being worked out it reads as [LibraryScope.mine], so
-/// lists wait (a moment) instead of flashing the whole server first.
-final libraryScopeProvider = Provider<LibraryScope>((ref) {
-  final chosen = ref.watch(settingsProvider.select((s) => s.libraryScope));
-  if (chosen != LibraryScope.automatic) return chosen;
-  final mine = ref.watch(myMusicProvider).value;
-  if (mine == null) return LibraryScope.mine;
-  return mine.albumIds.length >= kPersonalViewMinAlbums
-      ? LibraryScope.mine
-      : LibraryScope.everything;
-});
-
-/// `true` when the scope is the app's own decision, not the person's.
-final libraryScopeIsAutomaticProvider = Provider<bool>((ref) =>
-    ref.watch(settingsProvider.select((s) => s.libraryScope)) ==
-    LibraryScope.automatic);
+/// What Your Library lists on a shared server (ADR-049): the person's own music unless they ask for the whole server.
+final libraryScopeProvider = Provider<LibraryScope>(
+  (ref) => ref.watch(settingsProvider.select((s) => s.libraryScope)),
+);
 
 /// The signed-in account's name; decides what is "mine".
 final accountNameProvider = Provider<String?>(
