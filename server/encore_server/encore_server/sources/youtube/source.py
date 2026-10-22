@@ -67,6 +67,12 @@ class YoutubeSource:
     def open(self, wanted: Wanted, range_header: str | None) -> Upstream:
         return self._proxy.open(wanted, range_header)
 
+    def find(self, wanted: Wanted) -> str | None:
+        """The upload of the song (searching YouTube Music if the ref does not know it yet, and remembering what is found), or `None`.
+        Nothing is extracted or downloaded: this is what imports use to say "found" or "not found"."""
+        found = self._candidates(wanted)
+        return found[0][0] if found else None
+
     def download(self, wanted: Wanted, stem: Path, *, max_bytes: int) -> Path:
         """The whole audio of the song, for keeping: `<stem>.<ext>`."""
         return self._proxy.download(wanted, stem, max_bytes=max_bytes)

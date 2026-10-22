@@ -41,7 +41,9 @@ from .config import Settings
 from .db import Database
 from .errors import ApiError
 from .ids import is_id, now_ms
+from .imports.service import ImportService
 from .keeper.keeper import Keeper, KeepSettings
+from .keeper.triggers import want_kept as _want_kept
 from .live import Hub
 from .navidrome import NavidromeClient
 from .scanner import LibraryLinker
@@ -65,6 +67,7 @@ class Services:
     scheduler: Scheduler | None = None
     keeper: Keeper | None = None
     linker: LibraryLinker | None = None
+    imports: ImportService | None = None
 
 
 def services(request: Request) -> Services:
@@ -334,16 +337,7 @@ def library_changes(request: Request, since: str = "0", p: Principal = Depends(g
 
 
 def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:
-    """Somebody saved these songs (a like, a playlist): the server keeps a copy, once, in the background (docs/04 D-3). Part of the same
-    write as the save, so a save never loses its keep job. Songs that already have a file the music server knows are skipped."""
-    if svc.scheduler is None or not ref_ids:
-        return
-    for ref_id in dict.fromkeys(ref_ids):
-        file = conn.execute(
-            "SELECT 1 FROM song_file WHERE ref = ? AND navidrome_song_id IS NOT NULL LIMIT 1", (ref_id,)
-        ).fetchone()
-        if file is None and refs.ref_exists(conn, ref_id):
-            svc.scheduler.submit("keep", ref_id, person, conn=conn)
+    _want_kept(svc.scheduler, conn, person, ref_ids)
 
 
 def _item_route(kind: str, request: Request, target: str, p: Principal, *, add: bool) -> JSONResponse:
@@ -510,6 +504,43 @@ def post_play(request: Request, body: dict[str, Any] = Depends(json_body), p: Pr
     return _ok({"stored": stored}, 201 if stored else 200)
 
 
+# ------------------------------------------------------------------------------------------------ imports
+
+
+def imports_of(request: Request) -> ImportService:
+    service = services(request).imports
+    assert service is not None
+    return service
+
+
+@router.post("/imports")
+def create_import(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """A link or a list of songs becomes a playlist at once; matching and keeping go on in the background (docs/tasks P2-04)."""
+    return _ok(imports_of(request).create(p.person_id, body), 201)
+
+
+@router.get("/imports")
+def list_imports(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    return _ok({"imports": imports_of(request).listing(p.person_id)})
+
+
+@router.get("/imports/{import_id}")
+def get_import(import_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    return _ok({"import": imports_of(request).get(p.person_id, import_id)})
+
+
+@router.get("/imports/{import_id}/entries")
+def get_import_entries(import_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    return _ok({"entries": imports_of(request).entries(p.person_id, import_id)})
+
+
+@router.post("/imports/{import_id}/stop")
+def stop_import(import_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    return _ok({"import": imports_of(request).stop(p.person_id, import_id)})
+
+
 # ------------------------------------------------------------------------------------------------ playback
 
 
@@ -605,35 +636,44 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
     return YoutubeSource(settings.data_dir / "work", fast_clients=("visionos",), fault=settings.fault, remember_video=remember)
 
 
-def _keeping(
+def _background(
     settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, client: NavidromeClient
-) -> tuple[Scheduler | None, Keeper | None]:
-    """The background work and the keeper. Without a way to fetch songs and a music-server account that can find what was kept, nothing
-    is queued: every song still plays by streaming, and the server says in its log why it keeps nothing."""
+) -> tuple[Scheduler | None, Keeper | None, ImportService]:
+    """The background work: matching the songs of imports to uploads, and the keeper. Without a way to fetch songs nothing is queued,
+    and without a music-server account that can find what was kept the keeper is off: every song still plays by streaming, and the
+    server says in its log why it keeps nothing."""
+    handlers: dict[str, Any] = {}
+    keeper: Keeper | None = None
     if not settings.keep:
-        return None, None
-    if youtube is None or not client.configured:
+        pass
+    elif youtube is None or not client.configured:
         log.warning(
             "keeping is off: %s",
             "no way to fetch songs (yt-dlp is not installed or YouTube is off)"
             if youtube is None
             else "ENCORE_NAVIDROME_ADMIN_USER / ENCORE_NAVIDROME_ADMIN_PASSWORD are not set",
         )
-        return None, None
+    else:
 
-    def tell(touched: dict[str, int]) -> None:
-        for person, cursor in touched.items():
-            hub.publish(person, {"type": "library.changed", "cursor": str(cursor)})
+        def tell(touched: dict[str, int]) -> None:
+            for person, cursor in touched.items():
+                hub.publish(person, {"type": "library.changed", "cursor": str(cursor)})
 
-    keeper = Keeper(
-        database,
-        youtube,
-        client,
-        KeepSettings(music_dir=settings.music_dir, min_free_gb=settings.min_free_gb),
-        settings.data_dir / "work",
-        on_changed=tell,
-    )
-    return Scheduler(database, {"keep": keeper.handle}, workers={"interactive": 1, "background": 2}), keeper
+        keeper = Keeper(
+            database,
+            youtube,
+            client,
+            KeepSettings(music_dir=settings.music_dir, min_free_gb=settings.min_free_gb),
+            settings.data_dir / "work",
+            on_changed=tell,
+        )
+        handlers["keep"] = keeper.handle
+    imports = ImportService(database, hub, youtube)
+    if youtube is not None:
+        handlers["match"] = imports.match
+    scheduler = Scheduler(database, handlers, workers={"interactive": 1, "background": 2}) if handlers else None
+    imports.use(scheduler)
+    return scheduler, keeper, imports
 
 
 def create_app(
@@ -653,7 +693,7 @@ def create_app(
     client = navidrome or NavidromeClient(
         settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
     )
-    scheduler, keeper = _keeping(settings, database, hub, youtube, client)
+    scheduler, keeper, imports = _background(settings, database, hub, youtube, client)
     linker = (
         LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0)
         if client.configured and settings.scan_every_min > 0
@@ -685,6 +725,7 @@ def create_app(
         scheduler=scheduler,
         keeper=keeper,
         linker=linker,
+        imports=imports,
     )
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])

@@ -48,6 +48,9 @@ class FakeNavidrome:
         self.scans += 1
         return True
 
+    def scanning(self) -> bool | None:
+        return False
+
     def find_song(
         self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None, size: int | None = None
     ) -> str | None:

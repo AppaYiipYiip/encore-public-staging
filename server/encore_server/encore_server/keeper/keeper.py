@@ -54,7 +54,7 @@ class KeepSettings:
     max_minutes: int = 45
     #: How long to wait for the music server to find a file it was just given.
     scan_wait_s: float = 45.0
-    scan_poll_s: float = 1.5
+    scan_poll_s: float = 0.5
 
     @property
     def root(self) -> Path:
@@ -208,18 +208,22 @@ class Keeper:
             self._on_changed(touched)
 
     def _wait_for_music_server(self, ref: dict[str, Any], relative: str, size: int) -> str | None:
+        """Tells the music server there is a new file at once (it is told here, not left to its schedule), waits for its scan to end,
+        and looks for the song; a second request for a scan goes out if it has not found it after a few seconds."""
         s = self._settings
         deadline = self._clock() + s.scan_wait_s
-        asked = False
+        self._navidrome.start_scan()
+        asked_again = False
         while True:
-            found = self._navidrome.find_song(
-                artist=ref["artists"][0], title=ref["title"], album=ref.get("album"), relative_path=relative, size=size
-            )
-            if found is not None:
-                return found
-            if not asked:
-                self._navidrome.start_scan()
-                asked = True
+            if not self._navidrome.scanning():
+                found = self._navidrome.find_song(
+                    artist=ref["artists"][0], title=ref["title"], album=ref.get("album"), relative_path=relative, size=size
+                )
+                if found is not None:
+                    return found
             if self._clock() >= deadline:
                 return None
             self._sleep(s.scan_poll_s)
+            if not asked_again and self._clock() >= deadline - s.scan_wait_s * 0.7:
+                self._navidrome.start_scan()
+                asked_again = True

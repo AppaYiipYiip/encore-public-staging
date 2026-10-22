@@ -155,15 +155,39 @@ class Scheduler:
                 (person, kind, kind),
             ).fetchall()
             for item in items:
-                conn.execute("DELETE FROM work_item_person WHERE item = ? AND person = ?", (item["id"], person))
-                if conn.execute("SELECT 1 FROM work_item_person WHERE item = ?", (item["id"],)).fetchone() is None:
-                    conn.execute(
-                        "UPDATE work_item SET state = 'cancelled', updated_at = ? WHERE id = ?", (self._now_ms(), item["id"])
-                    )
-                    if item["state"] == "running":
-                        self._cancelled.add(str(item["id"]))
-                    cancelled += 1
+                cancelled += self._release(conn, item["id"], item["state"], person)
         return cancelled
+
+    def cancel_refs(self, person: str, ref_ids: list[str], *, kinds: tuple[str, ...]) -> int:
+        """Stop for part of a person's work: [kinds] of work on these songs. Same rule as [cancel_person]: only what nobody else wants
+        is cancelled."""
+        cancelled = 0
+        with self._db.tx() as conn:
+            for start in range(0, len(ref_ids), 400):
+                chunk = ref_ids[start : start + 400]
+                refs_in = ",".join("?" for _ in chunk)
+                kinds_in = ",".join("?" for _ in kinds)
+                items = conn.execute(
+                    "SELECT i.id, i.state FROM work_item i JOIN work_item_person p ON p.item = i.id"  # noqa: S608 - only placeholders are formatted in
+                    f" WHERE p.person = ? AND i.state IN ('queued', 'running') AND i.ref IN ({refs_in}) AND i.kind IN ({kinds_in})",
+                    (person, *chunk, *kinds),
+                ).fetchall()
+                for item in items:
+                    cancelled += self._release(conn, item["id"], item["state"], person)
+        return cancelled
+
+    def _release(self, conn: sqlite3.Connection, item_id: str, state: str, person: str) -> int:
+        conn.execute("DELETE FROM work_item_person WHERE item = ? AND person = ?", (item_id, person))
+        if conn.execute("SELECT 1 FROM work_item_person WHERE item = ?", (item_id,)).fetchone() is not None:
+            return 0
+        conn.execute("UPDATE work_item SET state = 'cancelled', updated_at = ? WHERE id = ?", (self._now_ms(), item_id))
+        if state == "running":
+            self._cancelled.add(item_id)
+        return 1
+
+    def handles(self, kind: str) -> bool:
+        """Whether something here does this kind of work (a request for work nobody does would sit in the queue for ever)."""
+        return kind in self._handlers
 
     def is_cancelled(self, item: WorkItem) -> bool:
         """For a long handler to ask between steps: has everybody who wanted this pressed Stop?"""
