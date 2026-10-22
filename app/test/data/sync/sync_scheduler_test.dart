@@ -427,6 +427,8 @@ void main() {
         () async {
       await firstSyncDone();
       server.lastScan = '2026-10-16T13:00:00.000000000Z';
+      clock.advance(
+          const Duration(hours: 2)); // past the gap between library passes
 
       await fireProbe();
       expect(server.adapter.count('search3'), 0,

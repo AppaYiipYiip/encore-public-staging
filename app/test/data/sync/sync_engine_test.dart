@@ -101,6 +101,8 @@ void main() {
       server.songs[0] = FakeSubsonicServer.song(0, title: 'Renamed on server');
       server.songs.add(FakeSubsonicServer.song(100, album: 1));
       server.lastScan = '2026-10-14T13:00:00.000000000Z';
+      clock.advance(const Duration(
+          hours: 2)); // later than the gap between library passes
 
       final stats = await runOk(reason: SyncReason.scheduled);
 
@@ -108,6 +110,81 @@ void main() {
       final tracks = await liveTracks();
       expect(tracks, hasLength(31));
       expect(tracks.firstWhere((t) => t.id == 's0').title, 'Renamed on server');
+    });
+
+    group('the sync storm guard (H38, P1-14)', () {
+      setUp(() async {
+        await runOk();
+        // Somebody's import kept a song: the server's scan time moved.
+        server.songs.add(FakeSubsonicServer.song(100, album: 1));
+        server.lastScan = '2026-10-14T12:05:00.000000000Z';
+        server.adapter.requests.clear();
+      });
+
+      test(
+          'a scan that moved a minute after the last pass does not download the library again',
+          () async {
+        clock.advance(const Duration(minutes: 1));
+
+        final stats = await runOk(reason: SyncReason.scheduled);
+
+        expect(stats.libraryPhaseRan, isFalse);
+        expect(server.adapter.count('search3'), 0);
+        expect(server.adapter.count('getAlbumList2'), 0);
+        expect(await liveTracks(), hasLength(30),
+            reason: 'the new song waits for the next pass');
+      });
+
+      test('after an hour the pass is done', () async {
+        clock.advance(const Duration(hours: 1, minutes: 1));
+
+        final stats = await runOk(reason: SyncReason.scheduled);
+
+        expect(stats.libraryPhaseRan, isTrue);
+        expect(await liveTracks(), hasLength(31));
+      });
+
+      test('on mobile data the gap is six hours', () async {
+        engine.metered = true;
+        clock.advance(const Duration(hours: 5));
+        expect((await runOk(reason: SyncReason.scheduled)).libraryPhaseRan,
+            isFalse);
+
+        clock.advance(const Duration(hours: 2));
+        expect((await runOk(reason: SyncReason.scheduled)).libraryPhaseRan,
+            isTrue);
+      });
+
+      test('a pull to refresh ignores the gap', () async {
+        clock.advance(const Duration(minutes: 1));
+
+        final stats = await runOk(reason: SyncReason.manual);
+
+        expect(stats.libraryPhaseRan, isTrue);
+        expect(await liveTracks(), hasLength(31));
+      });
+
+      test('the cheap probe does not ask for a pass inside the gap', () async {
+        clock.advance(const Duration(minutes: 1));
+
+        expect(await engine.probe(), isNot(isA<ProbeNeedsFullPass>()));
+
+        clock.advance(const Duration(hours: 2));
+        expect(await engine.probe(), isA<ProbeNeedsFullPass>());
+      });
+
+      test('fifty-nine scans in the first hour cost no second library pass',
+          () async {
+        var passes = 0;
+        for (var minute = 1; minute <= 59; minute++) {
+          clock.advance(const Duration(minutes: 1));
+          server.lastScan =
+              '2026-10-14T12:${minute.toString().padLeft(2, '0')}:30.000000000Z';
+          final stats = await runOk(reason: SyncReason.scheduled);
+          if (stats.libraryPhaseRan) passes++;
+        }
+        expect(passes, 0, reason: 'the first hour has no second pass');
+      });
     });
 
     test('periodic verification even when the server claims no change',
@@ -894,6 +971,8 @@ void main() {
     test('a changed library asks for a normal pass, it does not dump here',
         () async {
       server.lastScan = '2026-10-16T13:00:00.000000000Z';
+      clock.advance(
+          const Duration(hours: 2)); // past the gap between library passes
 
       final outcome = await engine.probe();
 

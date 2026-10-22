@@ -287,6 +287,7 @@ class JobManager:
         daily_limit: int = 80,
         active_limit: int = 3,
         index_wait_s: float = 40.0,
+        watcher_wait_s: float = 0.0,
         keep_s: float = 3600.0,
         prepare_ttl_s: float = 1200.0,
         prepare_limit: int = 40,
@@ -332,6 +333,7 @@ class JobManager:
         self._daily = daily_limit
         self._active_limit = active_limit
         self._index_wait = index_wait_s
+        self._watcher_wait = watcher_wait_s
         self._keep = keep_s
         self._prepare_ttl = prepare_ttl_s
         self._prepare_limit = prepare_limit
@@ -793,8 +795,13 @@ class JobManager:
     def _index(self, job: Job, auth: Auth) -> None:
         r = job.request
         try:
-            self._nd.start_scan(auth)
-            deadline = self._clock() + self._index_wait
+            # The music server's own file watcher lists a new file within seconds. A scan asked for per song moves the scan time that
+            # every open phone watches (each move made a phone re-download the library, H38): only a song the watcher has not listed
+            # after a few seconds gets one.
+            now = self._clock()
+            deadline = now + self._index_wait
+            scan_after = now + self._watcher_wait
+            asked = False
             while True:
                 song = self._nd.find_song(
                     auth, artist=r.artist, title=r.title, album=r.album,
@@ -804,8 +811,12 @@ class JobManager:
                         job.song_id = song
                         job.updated = self._clock()
                     return
-                if self._clock() >= deadline:
+                now = self._clock()
+                if now >= deadline:
                     return
+                if not asked and now >= scan_after:
+                    asked = True
+                    self._nd.start_scan(auth)
                 self._sleep(2.0)
         except Exception:  # noqa: BLE001 - never let indexing crash a thread
             log.exception("indexing %s failed", job.id)

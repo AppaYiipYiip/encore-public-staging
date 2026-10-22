@@ -52,6 +52,9 @@ class Config:
     import_gap_s: float = 2.0
     #: Songs an hour the import queue lets itself fetch, taps included (YouTube allows a visitor about 300 an hour).
     import_max_per_hour: int = 200
+    #: How long the music server's own file watcher gets to list a new song before a scan is asked for (every scan moves the
+    #: scan time all open phones watch, H38).
+    watcher_wait_s: float = 6.0
     #: Where the YouTube accounts live (docs/50): one private file each, their list, what each did.
     accounts_dir: Path | None = None
     #: Look up the album, cover, number and year of a song that came without them (Deezer's public catalogue).
@@ -92,6 +95,7 @@ class Config:
             import_workers=max(1, min(3, _int("IMPORT_WORKERS", 2))),
             import_gap_s=max(0.0, _int("IMPORT_GAP_S", 2)),
             import_max_per_hour=max(10, _int("IMPORT_MAX_PER_HOUR", 200)),
+            watcher_wait_s=max(0.0, _int("WATCHER_WAIT_S", 6)),
             accounts_dir=Path(e["ACCOUNTS_DIR"]) if e.get("ACCOUNTS_DIR") else None,
             lookup_albums=e.get("LOOKUP_ALBUMS", "1") not in ("0", "false", "no"),
             people_url=(e.get("PEOPLE_URL", "http://encore-people:8702") or None),

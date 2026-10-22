@@ -135,6 +135,30 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(job.codec, "opus")
         self.assertIsNone(job._auth, "credentials are dropped when done")
 
+    def test_a_song_the_music_servers_watcher_lists_by_itself_costs_no_scan(self):
+        class Watcher(FakeNavidrome):
+            """Lists the new file on the third look, with no scan asked for."""
+
+            looks = 0
+
+            def find_song(self, auth, *, artist, title, album=None, relative_path=None):
+                if relative_path:
+                    self.looks += 1
+                    return "listed-by-watcher" if self.looks >= 3 else None
+                return super().find_song(auth, artist=artist, title=title, album=album, relative_path=relative_path)
+
+        m = self.manager(nd=Watcher(), watcher_wait_s=6.0)
+        job = m.submit(AUTH, self.req)
+        self.assertEqual(job.state, "ready", job.view())
+        self.assertEqual(job.song_id, "listed-by-watcher")
+        self.assertEqual(self.nd.scans, 0, "every scan moves the scan time that all open phones watch")
+
+    def test_a_song_the_watcher_does_not_list_gets_one_scan_after_a_few_seconds(self):
+        m = self.manager(nd=FakeNavidrome(appears_after_scan=True), watcher_wait_s=6.0)
+        job = m.submit(AUTH, self.req)
+        self.assertEqual(job.song_id, "new-song-id")
+        self.assertEqual(self.nd.scans, 1)
+
     def test_a_song_already_in_the_library_is_ready_without_downloading(self):
         m = self.manager(nd=FakeNavidrome(present={("opeth", "windowpane"): "42"}))
         job = m.submit(AUTH, self.req)

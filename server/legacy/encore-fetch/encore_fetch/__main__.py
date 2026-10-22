@@ -71,6 +71,7 @@ def build(config: Config) -> Api:
         executor=Dispatcher(workers=config.workers, bulk_slots=max(1, config.workers - 1)),
         min_free_gb=0 if config.fake else config.min_free_gb,
         skip_index=config.fake or config.dev_local,
+        watcher_wait_s=config.watcher_wait_s,
         max_duration_s=config.max_duration_s,
         daily_limit=config.user_daily_limit,
         active_limit=config.user_active_limit,

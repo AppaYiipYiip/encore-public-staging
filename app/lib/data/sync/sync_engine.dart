@@ -55,6 +55,8 @@ class SyncOptions {
   const SyncOptions({
     this.pageSize = 500,
     this.maxLibraryAge = const Duration(hours: 24),
+    this.libraryPassGap = const Duration(hours: 1),
+    this.libraryPassGapMetered = const Duration(hours: 6),
     this.smartPlaylistTtl = const Duration(hours: 6),
     this.pinnedSmartPlaylistTtl = const Duration(hours: 1),
     this.maxPlaylistFetchesPerRun = 24,
@@ -70,6 +72,12 @@ class SyncOptions {
 
   /// Even when the server reports no change, do a full verification this often.
   final Duration maxLibraryAge;
+
+  /// The server's scan time moves for every song anyone's import keeps, and a full library pass costs 8.6 MB for 6,700 songs: when
+  /// the scan time moved, the pass is still not repeated sooner than this (a pull to refresh is). An hour keeps an open phone near
+  /// 9 MB an hour at the most; on mobile data it is [libraryPassGapMetered]. The cheap probe keeps playlists fresh meanwhile (P1-14, H38).
+  final Duration libraryPassGap;
+  final Duration libraryPassGapMetered;
 
   /// Re-fetch cadence of unpinned smart playlists whose `changed` is stable.
   final Duration smartPlaylistTtl;
@@ -316,7 +324,10 @@ class SyncEngine {
       final nowMs = _clock.now().millisecondsSinceEpoch;
       // A server without a scan status cannot say whether anything changed, so
       // the full pass re-reads the library (the probe does not: it runs often).
-      final needLibrary = force || scan == null || await _libraryDue(scan);
+      // A pull to refresh is the person asking: it ignores the gap between passes.
+      final needLibrary = force ||
+          scan == null ||
+          await _libraryDue(scan, ignoreGap: reason == SyncReason.manual);
 
       var stats = const SyncStats();
 
@@ -519,7 +530,10 @@ class SyncEngine {
   /// Whether the library pass is due: never done, older than the maximum age,
   /// or the server's scan status moved. A server without a scan status cannot
   /// say, so only the age and a first run count as due for it.
-  Future<bool> _libraryDue(SsScanStatus? scan) async {
+  ///
+  /// A moved scan status does not make it due sooner than [SyncOptions.libraryPassGap] after the last pass (an import by anyone moves
+  /// it for every song kept: an open phone used to download the whole listing each time, H38), unless [ignoreGap].
+  Future<bool> _libraryDue(SsScanStatus? scan, {bool ignoreGap = false}) async {
     final lastFullMs = await _state.getInt(SyncStateStore.lastFullSyncAtMs);
     if (lastFullMs == null) return true;
     final nowMs = _clock.now().millisecondsSinceEpoch;
@@ -527,8 +541,15 @@ class SyncEngine {
     if (scan == null) return false;
     final savedScanMs = await _state.getInt(SyncStateStore.lastScanMs);
     final savedCount = await _state.getInt(SyncStateStore.lastScanCount);
-    return scan.lastScanMs != savedScanMs || scan.count != savedCount;
+    final moved = scan.lastScanMs != savedScanMs || scan.count != savedCount;
+    if (!moved || ignoreGap) return moved;
+    final gap =
+        metered ? options.libraryPassGapMetered : options.libraryPassGap;
+    return nowMs - lastFullMs >= gap.inMilliseconds;
   }
+
+  /// The phone is on mobile data (set by the scheduler): full library passes are spaced further apart.
+  bool metered = false;
 
   Future<void>? _probeInFlight;
 

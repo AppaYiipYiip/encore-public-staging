@@ -190,7 +190,10 @@ class SyncScheduler {
   }
 
   /// Mobile data is slower to wake and costs the person's plan: probe less often.
-  void setMetered(bool metered) => _metered = metered;
+  void setMetered(bool metered) {
+    _metered = metered;
+    _engine.metered = metered;
+  }
 
   /// Something happened that makes "is it current?" worth asking now (the person
   /// opened a screen, the app came back). Probes at once, at most once per

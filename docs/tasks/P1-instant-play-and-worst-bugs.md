@@ -216,6 +216,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   volume is exactly 1.0 for every song; the phone's volume buttons are the only thing that changes loudness.
 
 ## P1-14 — Stop the sync storm (app + server) — Size S
+* **Status 2026-10-22: code done, unit-tested; the data-usage measurement is open.** App: a moved scan status no longer makes a full library pass due sooner than `SyncOptions.libraryPassGap` (1 hour; 6 hours on mobile data) after the last one; a pull to refresh ignores the gap; the cheap probe stops asking for a pass inside the gap. The task said 30 minutes: for the owner's 6,700 songs a pass is 8.6 MB, so 30 minutes would be 17 MB an hour against the 10 MB target; an hour gives about 9 MB. Server: the per-song `startScan` is now a fallback after `WATCHER_WAIT_S` (6 s) when Navidrome's own watcher has not listed the new file. Not done: the Android data-usage measurement during a 50-song import on another account; P2's change cursors make all of this disappear.
 * **Why.** `../26` H38: an open phone re-downloads the whole library listing (8.6 MB, 18 requests for the owner's 6,731 songs) every time
   anyone's import keeps a song, with no minimum gap.
 * **Do.** App: at most one full library pass per 30 minutes unless the person pulls to refresh; on metered networks at most one per 6 hours;
