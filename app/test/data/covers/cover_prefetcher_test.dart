@@ -177,6 +177,25 @@ void main() {
       expect(ids.where((id) => id == 'al-al3'), hasLength(1));
     });
 
+    test(
+        "a song the server found a picture for brings that picture into the playlist's collage, not its album's blank record",
+        () async {
+      const url = 'https://cdn-images.dzcdn.net/images/cover/abc/1000x1000.jpg';
+      await (db.update(db.tracks)..where((t) => t.albumId.equals('al3')))
+          .write(const TracksCompanion(coverArt: Value(url)));
+
+      final ids = await repo.coverIdsToKeepOffline();
+      final playlists = await db.select(db.playlists).get();
+      final collages = <String>{};
+      for (final p in playlists) {
+        collages.addAll(await repo.watchPlaylistCoverIds(p.id).first);
+      }
+
+      expect(ids, contains(url));
+      expect(collages, contains(url));
+      expect(collages, isNot(contains('al-al3')));
+    });
+
     test('the list is cut at the limit', () async {
       expect(await repo.coverIdsToKeepOffline(limit: 2), hasLength(2));
     });

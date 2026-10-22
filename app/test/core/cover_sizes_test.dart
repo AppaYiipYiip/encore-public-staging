@@ -40,6 +40,22 @@ void main() {
     expect(resolver.alternateKey('al-1', 1000), row.cacheKey);
   });
 
+  test(
+      'a picture that is an address is fetched as it is and cached once for every size',
+      () {
+    const resolver = CoverArtResolver(serverId: 7);
+    const url = 'https://cdn-images.dzcdn.net/images/cover/abc/1000x1000.jpg';
+
+    final row = resolver.resolve(url, 150);
+    final player = resolver.resolve(url, 1000);
+
+    expect(row.url.toString(), url,
+        reason: 'it is its own address, with no music-server login on it');
+    expect(row.cacheKey, 'url:$url');
+    expect(player.cacheKey, row.cacheKey);
+    expect(resolver.alternateKey(url, 150), row.cacheKey);
+  });
+
   test('the cache key never carries credentials', () {
     final key =
         const CoverArtResolver(serverId: 1).resolve('mf-9', 300).cacheKey;

@@ -16,6 +16,12 @@ enum AlbumSort { recentlyAdded, alphabetical, artist, year }
 /// re-emits when sync (or the user) changes the underlying rows - this is how
 /// "the server changed, the phone follows" reaches the UI without any
 /// refresh plumbing (ADR-003).
+/// The picture a song stands for in a collage or a list of covers to keep: the catalogue's picture the server found for it when it has
+/// one (an address), else its album's, else its own. (An album the music server has no art for shows a blank record: such a song must
+/// not bring that into a playlist's collage.)
+const _coverOfSong =
+    "COALESCE(CASE WHEN t.cover_art LIKE 'https://%' THEN t.cover_art END, a.cover_art, t.cover_art)";
+
 class LibraryRepository {
   LibraryRepository(this._db, this.serverId);
 
@@ -445,14 +451,14 @@ class LibraryRepository {
       {int limit = 9}) {
     return _db
         .customSelect(
-          'SELECT COALESCE(a.cover_art, t.cover_art) AS cover, COUNT(*) AS n, '
+          'SELECT $_coverOfSong AS cover, COUNT(*) AS n, '
           'MIN(e.position) AS first_pos '
           'FROM playlist_entries e '
           'JOIN tracks t ON t.server_id = e.server_id AND t.id = e.track_id '
           'LEFT JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
           'WHERE e.server_id = ?1 AND e.playlist_id = ?2 '
           'AND t.deleted_at_ms IS NULL '
-          'AND COALESCE(a.cover_art, t.cover_art) IS NOT NULL '
+          'AND $_coverOfSong IS NOT NULL '
           'GROUP BY COALESCE(t.album_id, t.id) '
           'ORDER BY n DESC, first_pos ASC LIMIT ?3',
           variables: [
@@ -471,7 +477,7 @@ class LibraryRepository {
   /// rest of the library's covers load when they are first shown. The input to the background cover fetch (E3: offline shows
   /// covers, not letters).
   Future<List<String>> coverIdsToKeepOffline({int limit = 600}) async {
-    const cover = 'COALESCE(a.cover_art, t.cover_art)';
+    const cover = _coverOfSong;
     const live = 't.deleted_at_ms IS NULL AND $cover IS NOT NULL';
     // A song's row shows the song's own cover id (`mf-...`), the collage and the album page the album's: the same picture under two
     // names, and offline a row without it is a letter. So the song's own id is fetched too when it differs.

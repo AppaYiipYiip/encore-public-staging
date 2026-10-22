@@ -94,6 +94,9 @@ class Rig:
         self.told: list[dict[str, int]] = []
         self.slept: list[float] = []
         self.now = 0.0
+        self.cover_found: str | None = None
+        self.cover_breaks = False
+        self.cover_asked: list[tuple[str, str, str | None]] = []
 
         def write_tags(path: Path, tags: Tags, cover: bytes | None = None) -> bool:
             self.tagged.append((path.suffix, tags, cover))
@@ -112,10 +115,17 @@ class Rig:
             runner=fake_ffmpeg,
             write_tags_=write_tags,
             fetch_cover_=lambda url: b"cover-bytes" if url else None,
+            find_cover_=self.find_cover,
             on_changed=self.told.append,
             sleep=sleep,
             clock=lambda: self.now,
         )
+
+    def find_cover(self, artist: str, title: str, album: str | None) -> str | None:
+        self.cover_asked.append((artist, title, album))
+        if self.cover_breaks:
+            raise RuntimeError("the catalogue is down")
+        return self.cover_found
 
     def make_ref(self, **extra: Any) -> str:
         item = {
@@ -163,6 +173,35 @@ def test_a_kept_song_lands_in_the_shared_folder_tagged_found_and_attached(rig: R
         2007,
         "GBAYE0701234",
     )
+
+
+def test_a_song_that_came_without_a_picture_gets_the_catalogues_in_its_file_and_on_its_ref(rig: Rig) -> None:
+    rig.cover_found = "https://cdn.dzcdn.net/found.jpg"
+    ref = rig.make_ref()
+
+    rig.keep(ref)
+
+    assert rig.cover_asked == [("Radiohead", "Weird Fishes / Arpeggi", "In Rainbows")]
+    assert rig.tagged[0][2] == b"cover-bytes"
+    assert rig.ref(ref)["coverUrl"] == "https://cdn.dzcdn.net/found.jpg"
+
+
+def test_a_song_that_has_a_picture_is_not_looked_up(rig: Rig) -> None:
+    rig.keep(rig.make_ref(coverUrl="https://e-cdns-images.dzcdn.net/cover.jpg"))
+
+    assert rig.cover_asked == []
+
+
+@pytest.mark.parametrize("breaks", [False, True])
+def test_no_picture_found_or_a_lookup_that_fails_never_stops_the_keep(rig: Rig, breaks: bool) -> None:
+    rig.cover_breaks = breaks
+    ref = rig.make_ref()
+
+    rig.keep(ref)
+
+    assert rig.ref(ref)["file"]["navidromeSongId"] == "nd-1"
+    assert rig.tagged[0][2] is None
+    assert rig.ref(ref)["coverUrl"] is None
 
 
 def test_the_work_folder_is_left_clean(rig: Rig, tmp_path: Path) -> None:

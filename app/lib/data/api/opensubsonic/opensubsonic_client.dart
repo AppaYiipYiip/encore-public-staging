@@ -133,10 +133,14 @@ class OpenSubsonicClient {
 
   /// Cover art URL. Callers must key their image cache on `(server, id, size)`
   /// rather than this URL (ADR-017).
-  Uri coverArtUrl(String id, {int? size}) => _endpoint('getCoverArt', {
-        'id': id,
-        if (size != null) 'size': size,
-      });
+  ///
+  /// An Encore server gives a song without a file of its own the catalogue's picture as an address: such an id is its own URL.
+  Uri coverArtUrl(String id, {int? size}) => id.startsWith('https://')
+      ? Uri.parse(id)
+      : _endpoint('getCoverArt', {
+          'id': id,
+          if (size != null) 'size': size,
+        });
 
   // ------------------------------------------------------------------ calls
 

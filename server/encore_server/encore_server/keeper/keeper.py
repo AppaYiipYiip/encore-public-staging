@@ -75,6 +75,7 @@ class Keeper:
         runner: Runner | None = None,
         write_tags_: Callable[..., bool] = write_tags,
         fetch_cover_: Callable[[str | None], bytes | None] = fetch_cover,
+        find_cover_: Callable[[str, str, str | None], str | None] | None = None,
         on_changed: Callable[[dict[str, int]], None] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
@@ -87,6 +88,7 @@ class Keeper:
         self._run = runner if runner is not None else run_command
         self._write_tags = write_tags_
         self._cover = fetch_cover_
+        self._find_cover = find_cover_
         self._on_changed = on_changed
         self._sleep = sleep
         self._clock = clock
@@ -159,7 +161,8 @@ class Keeper:
 
     def _finish(self, ref: dict[str, Any], downloaded: Path) -> Path:
         audio = self._as_opus(downloaded)
-        cover = self._cover(ref.get("coverUrl"))
+        cover_url = ref.get("coverUrl") or self._look_for_cover(ref)
+        cover = self._cover(cover_url)
         tags = Tags(
             title=ref["title"],
             artist=", ".join(ref["artists"]),
@@ -178,6 +181,20 @@ class Keeper:
         if already is not None:
             return already  # the same song was put there while this ran: that one stays
         return place_file(audio, placement, self._settings.music_dir)
+
+    def _look_for_cover(self, ref: dict[str, Any]) -> str | None:
+        """A song that came without a picture gets the catalogue's, in its file and on its ref (every phone then shows it)."""
+        if self._find_cover is None:
+            return None
+        try:
+            url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"))
+        except Exception:  # noqa: BLE001 - a picture is a nicety, never a reason to fail a keep
+            log.info("looking for a picture for %s failed", ref["id"], exc_info=True)
+            return None
+        if url:
+            with self._db.tx() as conn:
+                conn.execute("UPDATE song_ref SET cover_url = ? WHERE id = ? AND cover_url IS NULL", (url, ref["id"]))
+        return url
 
     def _as_opus(self, path: Path) -> Path:
         """YouTube's Opus arrives in a WebM container; the library's own format is the same Opus in Ogg (no re-encoding)."""

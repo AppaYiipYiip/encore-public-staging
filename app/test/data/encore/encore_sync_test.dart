@@ -56,6 +56,26 @@ void main() {
 
   group('the server\'s files', () {
     test(
+        'a song shows the picture the server found for it; a file whose picture was not found keeps the music server\'s own',
+        () async {
+      const url = 'https://cdn-images.dzcdn.net/images/cover/abc/1000x1000.jpg';
+      final found = server.addRef('Nude', 'Radiohead',
+          album: 'In Rainbows', fileId: 'nd-1', meta: {'coverArt': 'al-1'});
+      server.refs[found]!['coverUrl'] = url;
+      final plain = server.addRef('Reckoner', 'Radiohead',
+          album: 'In Rainbows', fileId: 'nd-2', meta: {'coverArt': 'al-1'});
+      final streamed = server.addRef('Videotape', 'Radiohead');
+      server.refs[streamed]!['coverUrl'] = url;
+      server.otherDeviceLikes(streamed);
+
+      await sync.pull();
+
+      expect((await track(found)).coverArt, url);
+      expect((await track(plain)).coverArt, 'al-1');
+      expect((await track(streamed)).coverArt, url);
+    });
+
+    test(
         'a first pass writes every song the server keeps, with the music server\'s ids, in pages',
         () async {
       for (var i = 1; i <= 7; i++) {

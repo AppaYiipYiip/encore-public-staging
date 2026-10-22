@@ -50,7 +50,9 @@ class EncoreWriter {
       discNo: Value(ref.discNo),
       year: Value(ref.year),
       genre: Value(file?.genre),
-      coverArt: Value(file?.coverArt),
+      // The catalogue's picture when the server found one (the same image on every screen, and it never shows the music server's
+      // blank-record placeholder for a file that came without art); otherwise the music server's own.
+      coverArt: Value(ref.coverUrl ?? file?.coverArt),
       durationSec: Value(ref.durationSec),
       size: Value(file?.size),
       suffix: Value(file?.suffix),

@@ -166,8 +166,11 @@ class CoverArtResolver {
 
   ({Uri url, String cacheKey}) resolve(String coverArtId, int px) {
     final size = bucket(px);
-    final url = session?.coverArtUrl(coverArtId, size: size) ??
-        Uri.parse('https://cover-cache.invalid/$serverId/$coverArtId/$size');
+    final url = coverArtId.startsWith('https://')
+        ? Uri.parse(coverArtId)
+        : session?.coverArtUrl(coverArtId, size: size) ??
+            Uri.parse(
+                'https://cover-cache.invalid/$serverId/$coverArtId/$size');
     return (url: url, cacheKey: CoverSize.key(serverId, coverArtId, size));
   }
 

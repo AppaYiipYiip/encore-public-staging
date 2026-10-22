@@ -40,6 +40,7 @@ from .auth import (
     valid_stream_signature,
 )
 from .config import Settings
+from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
 from .errors import ApiError
 from .ids import is_id, now_ms
@@ -915,6 +916,7 @@ def _background(
             KeepSettings(music_dir=settings.music_dir, min_free_gb=settings.min_free_gb),
             settings.data_dir / "work",
             on_changed=tell,
+            find_cover_=deezer_lookup,
         )
         handlers["keep"] = keeper.handle
     imports = ImportService(database, hub, youtube)
@@ -950,8 +952,17 @@ def create_app(
         navidrome_admin
         or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
     )
+    finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
+
+    def errands() -> None:
+        for errand in (accounts.heal_libraries, finder.run_once):
+            try:
+                errand()
+            except Exception:  # noqa: BLE001 - one errand failing must not stop the next, nor the library link
+                log.exception("a background errand failed")
+
     linker = (
-        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0, before=accounts.heal_libraries)
+        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0, before=errands)
         if client.configured and settings.scan_every_min > 0
         else None
     )

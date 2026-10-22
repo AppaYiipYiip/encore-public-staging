@@ -17,6 +17,11 @@ abstract final class CoverSize {
   static int otherThan(int size) => size == small ? large : small;
 
   /// The disk-cache key of a cover of this server at [size]. It never holds credentials (ADR-017).
+  ///
+  /// A picture that is an address (the catalogue's picture of a song the server keeps no file of) is the same image at every size and for every server:
+  /// its key is the address, which is also what a catalogue result's picture is cached under.
   static String key(int serverId, String coverArtId, int size) =>
-      'cover:$serverId:$coverArtId:$size';
+      coverArtId.startsWith('https://')
+          ? 'url:$coverArtId'
+          : 'cover:$serverId:$coverArtId:$size';
 }
