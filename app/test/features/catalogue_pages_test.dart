@@ -236,9 +236,8 @@ void main() {
       );
 
       await search(tester, 'Taylor Swift');
-      // The artist row (its subtitle is unique; the name is also in the
-      // search field).
-      await tester.tap(find.text('Artist - 1.2M fans - 12 releases'));
+      // The artist that was typed is the Top result.
+      await tester.tap(find.byKey(const Key('top-result')));
       await settle(tester);
 
       expect(find.text('1.2M fans'), findsOneWidget);

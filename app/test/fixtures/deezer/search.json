@@ -1,0 +1,4753 @@
+{
+ "daft punk instant crush": {
+  "artist": [],
+  "album": [
+   {
+    "id": 6575789,
+    "title": "Random Access Memories",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 13,
+    "record_type": "album",
+    "artist": {
+     "id": 27,
+     "name": "Daft Punk"
+    }
+   },
+   {
+    "id": 438167857,
+    "title": "Random Access Memories (10th Anniversary Edition)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d99e2c9df92886c5098af5973cb9298e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 22,
+    "record_type": "album",
+    "artist": {
+     "id": 27,
+     "name": "Daft Punk"
+    }
+   },
+   {
+    "id": 494309801,
+    "title": "Random Access Memories (Drumless Edition)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bb8b5f188ae380ac3a7c876b70556357/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 13,
+    "record_type": "album",
+    "artist": {
+     "id": 27,
+     "name": "Daft Punk"
+    }
+   },
+   {
+    "id": 957693131,
+    "title": "Instant Crush Re-structure",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a9f2256c8a5752239ef57f1621f24268/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 2433651,
+     "name": "Glori"
+    }
+   },
+   {
+    "id": 1076088832,
+    "title": "Instant Crush",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/63d832fc26d1119002632b862d8c9ccb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 415622492,
+     "name": "FifthofMay"
+    }
+   },
+   {
+    "id": 198643262,
+    "title": "Sleepy's Instant Crush",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4a8fa66b7c7ade5d0277b86fb0801e27/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 61177172,
+     "name": "SLEEPfactory"
+    }
+   },
+   {
+    "id": 75109252,
+    "title": "Instant Crush",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/eece7077ef383bc44d9fafcf3df34c05/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 52367202,
+     "name": "Two's a Pair"
+    }
+   },
+   {
+    "id": 534662132,
+    "title": "instant crush (feat. Legend R3DD & Adam Ott)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47b3c9a765abecea271067a307c24e5b/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 99082382,
+     "name": "Werewing"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 67238732,
+    "title": "Instant Crush (feat. Julian Casablancas)",
+    "duration": 337,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/6/b/0/d6bc80aadfa1d7625d59a6620f229371.mp3?hdnea=exp=1792632367~acl=/api/1/1/d/6/b/0/d6bc80aadfa1d7625d59a6620f229371.mp3*~data=user_id=0,application_id=42~hmac=5e6e356085aeae8c5c71dfb6bffd3dbe543e1df55c8f7b4b40804531d60bc8c1",
+    "artist": {
+     "id": 27,
+     "name": "Daft Punk"
+    },
+    "album": {
+     "id": 6575789,
+     "title": "Random Access Memories",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 942491,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2478010351,
+    "title": "Instant Crush (Drumless Edition) (feat. Julian Casablancas)",
+    "duration": 337,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/7/b/0/e7b651d551570458fc19006956f12180.mp3?hdnea=exp=1792632367~acl=/api/1/1/e/7/b/0/e7b651d551570458fc19006956f12180.mp3*~data=user_id=0,application_id=42~hmac=181475490a699965527c76ac9ccb4144cc3718df35457c82565e6b2e8983f46b",
+    "artist": {
+     "id": 27,
+     "name": "Daft Punk"
+    },
+    "album": {
+     "id": 494309801,
+     "title": "Random Access Memories (Drumless Edition)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bb8b5f188ae380ac3a7c876b70556357/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 591649,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1632028882,
+    "title": "Instant Crush (Live)",
+    "duration": 211,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/5/a/0/25a239968e48136a08680d139ac45f1a.mp3?hdnea=exp=1792632367~acl=/api/1/1/2/5/a/0/25a239968e48136a08680d139ac45f1a.mp3*~data=user_id=0,application_id=42~hmac=cc4a7840a90ae25f320bc633438d0742c74450164b81c804b1b1a1ea9823123a",
+    "artist": {
+     "id": 378715,
+     "name": "The Dø"
+    },
+    "album": {
+     "id": 290063312,
+     "title": "Around The World - A Daft Punk Tribute",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0391a412590a835572aa9ecda55bb2fd/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 354854,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2606793652,
+    "title": "Motherboard / Instant Crush / Superheroes",
+    "duration": 411,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/8/8/0/088edc3f9ab415260a9f10725cff5f88.mp3?hdnea=exp=1792632367~acl=/api/1/1/0/8/8/0/088edc3f9ab415260a9f10725cff5f88.mp3*~data=user_id=0,application_id=42~hmac=96f593179d7ebb8f94edf58f52a60596fecd329bbc08f2d7e83a1cc3d6742ae8",
+    "artist": {
+     "id": 75639082,
+     "name": "Nu Deco Ensemble"
+    },
+    "album": {
+     "id": 530579392,
+     "title": "Humans vs Robots - An Orchestral Tribute to Daft Punk",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/94cd03183b02daafe1ae0fe992f205b1/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 141154,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 119800386,
+    "title": "Instant Crush",
+    "duration": 136,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/e/e/0/eeebcac2dc1e4e0ebec8d1aeb37d6036.mp3?hdnea=exp=1792632367~acl=/api/1/1/e/e/e/0/eeebcac2dc1e4e0ebec8d1aeb37d6036.mp3*~data=user_id=0,application_id=42~hmac=cd7ebbcaa737a17ae04e62f6f710563ed1c77d8996cd1db503a11496ae7fe70f",
+    "artist": {
+     "id": 275309,
+     "name": "Vitamin String Quartet"
+    },
+    "album": {
+     "id": 12485028,
+     "title": "Vitamin String Quartet Performs Daft Punk's Random Access Memories",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/db91f2e59f3e10241b3fee4c2386b0fd/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 111807,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1363787952,
+    "title": "Instant Crush",
+    "duration": 310,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/d/4/0/8d46f726cb6002e3ea137b4f57d70ad4.mp3?hdnea=exp=1792632367~acl=/api/1/1/8/d/4/0/8d46f726cb6002e3ea137b4f57d70ad4.mp3*~data=user_id=0,application_id=42~hmac=06a1094e6821117ffaa325806d34fcb2c68f170caa11efeeec2a63bbf77ef4ce",
+    "artist": {
+     "id": 12030250,
+     "name": "8-Bit Misfits"
+    },
+    "album": {
+     "id": 227907792,
+     "title": "Arcade Versions of Daft Punk",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/45c97525144674e12ef4c553b351846c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 18655,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 919639452,
+    "title": "Instant Crush",
+    "duration": 313,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/2/d/0/72d7117967e19054e01e44ffab4c7497.mp3?hdnea=exp=1792632367~acl=/api/1/1/7/2/d/0/72d7117967e19054e01e44ffab4c7497.mp3*~data=user_id=0,application_id=42~hmac=b8edbf7ffc35e6d2bad1b1e36b732353d20db92eb4d65f4140c611da3983c860",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 139594172,
+     "title": "The Ultimate Daft Punk",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f287d2b95c2e10e2f662d11da44d3751/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 59756,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 578612792,
+    "title": "Instant Crush",
+    "duration": 209,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/5/e/0/65ed9e6d877bdfdbe66acbf71c8a3aa0.mp3?hdnea=exp=1792632367~acl=/api/1/1/6/5/e/0/65ed9e6d877bdfdbe66acbf71c8a3aa0.mp3*~data=user_id=0,application_id=42~hmac=451236d41f9e21d226d5fa082e3e013336f58ee5b7fda05324a2b0cadd89a37c",
+    "artist": {
+     "id": 154357,
+     "name": "Sweet Little Band"
+    },
+    "album": {
+     "id": 77419232,
+     "title": "Babies Go Daft Punk",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d64b0100eccc1b30389fd3e6a14787d6/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 25839,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "radiohead weird fishes": {
+  "artist": [],
+  "album": [
+   {
+    "id": 14880659,
+    "title": "In Rainbows",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a175af9b7d329bc678cb4d26fc13d6de/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 399,
+     "name": "Radiohead"
+    }
+   },
+   {
+    "id": 56861882,
+    "title": "Weird Fishes (A Cappella)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b6ff4355c0037015a7557750c1d022b2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 5352034,
+     "name": "Smooth McGroove"
+    }
+   },
+   {
+    "id": 920658831,
+    "title": "Weird Fishes",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/db3d0e2ab6f8bad7287fb78435d49fee/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 49324062,
+     "name": "T. Soomian"
+    }
+   },
+   {
+    "id": 260241212,
+    "title": "Weird Fishes/Arpeggi",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0812deff77245bfb6b36616f30deee3e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 334169461,
+     "name": "Aditya"
+    }
+   },
+   {
+    "id": 811273611,
+    "title": "Weird Fishes/Arpeggi",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/267dc911f1f59838dfa86e44348344d9/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 179024537,
+     "name": "Escaping"
+    }
+   },
+   {
+    "id": 12771978,
+    "title": "Weird Fishes / Arpeggi",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ffc4f6eed4930cfa2915f90c2ea1e693/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 5815719,
+     "name": "Leo*Leo"
+    }
+   },
+   {
+    "id": 1059391922,
+    "title": "Weird Fishes / Arpeggi",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f0eca9a1e3e54b1e6ab5b2db449d0ffa/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 333211441,
+     "name": "Wave Jam"
+    }
+   },
+   {
+    "id": 671945781,
+    "title": "Weird Fishes (Radiohead Cover)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/51bb471533ab82681ff840c6ddab1d49/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 283514761,
+     "name": "Ctrl Alt Suppr"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 138546809,
+    "title": "Weird Fishes / Arpeggi",
+    "duration": 318,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/a/f/0/5afea1001a936755ae5404c829e1954a.mp3?hdnea=exp=1792632369~acl=/api/1/1/5/a/f/0/5afea1001a936755ae5404c829e1954a.mp3*~data=user_id=0,application_id=42~hmac=d26a51f8bcbe2c2b3886931935ba15f8e7947522843634acda7955e56e47d169",
+    "artist": {
+     "id": 399,
+     "name": "Radiohead"
+    },
+    "album": {
+     "id": 14880659,
+     "title": "In Rainbows",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a175af9b7d329bc678cb4d26fc13d6de/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 813048,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 61316992,
+    "title": "Weird Fishes",
+    "duration": 493,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/e/4/0/be469aadaaeba5491d6427e626b7cace.mp3?hdnea=exp=1792632369~acl=/api/1/1/b/e/4/0/be469aadaaeba5491d6427e626b7cace.mp3*~data=user_id=0,application_id=42~hmac=dbc8e0b8cae17af1db01ec88b8fd9e1a1e607c638fbfb1e231ff0827f74f9489",
+    "artist": {
+     "id": 4045340,
+     "name": "Noordpool Orchestra"
+    },
+    "album": {
+     "id": 6007449,
+     "title": "Radiohead, A Jazz Symphony",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/806d2acc2ae97cae7a877bd297ece8c6/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 192880,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 819169842,
+    "title": "Weird Fishes / Arpeggi",
+    "duration": 380,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/1/8/0/c18140fbdf5a8d370a97d4c7a4e294e3.mp3?hdnea=exp=1792632369~acl=/api/1/1/c/1/8/0/c18140fbdf5a8d370a97d4c7a4e294e3.mp3*~data=user_id=0,application_id=42~hmac=82fbc883fd5f28842deec9cf2b7b2ec353d38321f1ec92711f1b95241b6f99b8",
+    "artist": {
+     "id": 7001159,
+     "name": "Josh Cohen"
+    },
+    "album": {
+     "id": 120529272,
+     "title": "Radiohead for Solo Piano",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/33e5fbb027a2d54f999e0facd286e643/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 112379,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2633988052,
+    "title": "Weird Fishes",
+    "duration": 328,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/b/7/0/fb7783a8b6d10f3d7372e7a4ee3e0625.mp3?hdnea=exp=1792632369~acl=/api/1/1/f/b/7/0/fb7783a8b6d10f3d7372e7a4ee3e0625.mp3*~data=user_id=0,application_id=42~hmac=d3c7b77901240c6586e27778190c30778bda603004286104a2b151165bca679c",
+    "artist": {
+     "id": 111293382,
+     "name": "AP Big Band"
+    },
+    "album": {
+     "id": 539115442,
+     "title": "AP Big Band plays Radiohead",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ad843f6d764ca7a9b966209488a23485/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 41951,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 73818372,
+    "title": "Weird Fishes",
+    "duration": 315,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/0/b/0/b0bd395c2aff25c06a62037ec3c2ad46.mp3?hdnea=exp=1792632369~acl=/api/1/1/b/0/b/0/b0bd395c2aff25c06a62037ec3c2ad46.mp3*~data=user_id=0,application_id=42~hmac=b58cad06203f8aa82958960bc80a5d71cecb478c0450cc8f97afc723e1a97f27",
+    "artist": {
+     "id": 400322,
+     "name": "SYBARITE5"
+    },
+    "album": {
+     "id": 7280656,
+     "title": "Everything in Its Right Place (Radiohead Remixed)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4ecfc9d7316f268e3ae666d3e297c9e3/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 22049,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3581011511,
+    "title": "Weird Fishes",
+    "duration": 313,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/f/b/0/7fb630e66058a0a2cdf3a704c15a06c0.mp3?hdnea=exp=1792632369~acl=/api/1/1/7/f/b/0/7fb630e66058a0a2cdf3a704c15a06c0.mp3*~data=user_id=0,application_id=42~hmac=e029f9b851563145c639f6a481ac44139c451a082290f23b8039cae0217ff8f9",
+    "artist": {
+     "id": 348665111,
+     "name": "The Chris George Big Band"
+    },
+    "album": {
+     "id": 830399231,
+     "title": "The Radiohead Sessions",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d45951d60ac7aef6ed0f020d227498d8/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 1835,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2290558215,
+    "title": "Weird Fishes/Arpeggi",
+    "duration": 157,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/1/e/0/41e62bd38779aae2311ae6a82d7ac08d.mp3?hdnea=exp=1792632369~acl=/api/1/1/4/1/e/0/41e62bd38779aae2311ae6a82d7ac08d.mp3*~data=user_id=0,application_id=42~hmac=7afc4fe73187c9ab6701a140fe6454fa3980b0f4679da81efca96abc90016d14",
+    "artist": {
+     "id": 144118512,
+     "name": "Divine String Quartet"
+    },
+    "album": {
+     "id": 443361855,
+     "title": "Radiohead String Quartet Versions",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f22645a2f429ca1ae9f1da68bfa22ff/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 962,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2290555395,
+    "title": "Weird Fishes/Arpeggi",
+    "duration": 159,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/1/7/0/c17df9e5b562ec12fc5cb47a25e331cc.mp3?hdnea=exp=1792632369~acl=/api/1/1/c/1/7/0/c17df9e5b562ec12fc5cb47a25e331cc.mp3*~data=user_id=0,application_id=42~hmac=a46a923b4e9781a64da1bcfb9e1ae9dc6380721d9e6ed0d5a183f65d3679018a",
+    "artist": {
+     "id": 82757182,
+     "name": "Mellow Meditation"
+    },
+    "album": {
+     "id": 443361485,
+     "title": "Acoustic Piano Versions of Radiohead",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3893fa79a98e050408a1562c306401fd/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 10020,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "fairuz kifak inta": {
+  "artist": [],
+  "album": [
+   {
+    "id": 118273302,
+    "title": "Kifak Inta",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b6b5832f34e202ed0aadfa3131b32e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 11,
+    "record_type": "album",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    }
+   },
+   {
+    "id": 407345867,
+    "title": "Fairuz - Kifak Inta (Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/067500df0c7ff7bee47f82e7d5cf8c52/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 123267672,
+     "name": "Blvck Moe"
+    }
+   },
+   {
+    "id": 9898634,
+    "title": "Fairuz Kifak Inta Music",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e7f31afe3bf28935234429d78c773355/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7682722,
+     "name": "Ammar Auda"
+    }
+   },
+   {
+    "id": 301096,
+    "title": "Legend - The Best Of Fairuz",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/55a59408a1efdaea9789e7dfd4290611/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 2148724797,
+    "title": "Fairuz - Kifak Inta (Remix)",
+    "duration": 157,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/2/9/0/e290f3574d92bea4f397a35d8c229977.mp3?hdnea=exp=1792632370~acl=/api/1/1/e/2/9/0/e290f3574d92bea4f397a35d8c229977.mp3*~data=user_id=0,application_id=42~hmac=70bb429fec1a6ceff977c2b16c8c8aedabe91e0cfd1138107fa1734869eb6e19",
+    "artist": {
+     "id": 123267672,
+     "name": "Blvck Moe"
+    },
+    "album": {
+     "id": 407345867,
+     "title": "Fairuz - Kifak Inta (Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/067500df0c7ff7bee47f82e7d5cf8c52/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 102201,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 97733306,
+    "title": "Kifak Inta",
+    "duration": 209,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/e/e/0/aee7702de39dcf1becbe91c49dec55c9.mp3?hdnea=exp=1792632370~acl=/api/1/1/a/e/e/0/aee7702de39dcf1becbe91c49dec55c9.mp3*~data=user_id=0,application_id=42~hmac=02ca0f2ed350bb4b5ea5e7d6bd1f604307aa8bfe1e996f84e35104886491103d",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 9950862,
+     "title": "Fairuz Chillout Classics",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9f4d132f4ae5b8b4add119f2f5cb108d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 470306,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 97223030,
+    "title": "Fairuz Kifak Inta Music",
+    "duration": 227,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/d/8/0/1d8185b47254af3212f42a1fc9604b74.mp3?hdnea=exp=1792632370~acl=/api/1/1/1/d/8/0/1d8185b47254af3212f42a1fc9604b74.mp3*~data=user_id=0,application_id=42~hmac=a2bb19ec6dc8b772892d295cefd1fadd389a459a48362666fe540c45346215e1",
+    "artist": {
+     "id": 7682722,
+     "name": "Ammar Auda"
+    },
+    "album": {
+     "id": 9898634,
+     "title": "Fairuz Kifak Inta Music",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e7f31afe3bf28935234429d78c773355/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 21412,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3458672,
+    "title": "Kifak Inta (Live)",
+    "duration": 231,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/9/c/0/29cffb68f33e7a0ef85be813f213740b.mp3?hdnea=exp=1792632370~acl=/api/1/1/2/9/c/0/29cffb68f33e7a0ef85be813f213740b.mp3*~data=user_id=0,application_id=42~hmac=003f9b0a964a4b19e891212a35ca787a885f13566fe8ca4e121e1170c53cd736",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 328110,
+     "title": "Live At Beitedienne (Vol.1 & 2)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8a2acddb28cbaeea72dd371de92ebe2f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 67338,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 800748262,
+    "title": "Prova (Kifak Inta)",
+    "duration": 211,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/b/9/0/eb9b70bc5cad66d068757c91f2350712.mp3?hdnea=exp=1792632370~acl=/api/1/1/e/b/9/0/eb9b70bc5cad66d068757c91f2350712.mp3*~data=user_id=0,application_id=42~hmac=dca62de72ef0a2020edbfa53464aa4c24adecb76c71285b1c89237863912ac23",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 118273302,
+     "title": "Kifak Inta",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b6b5832f34e202ed0aadfa3131b32e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 67622,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 800748292,
+    "title": "Fi Shi Am 'Bisser",
+    "duration": 164,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/d/3/0/dd38542da91049f5d367441bae5eff8b.mp3?hdnea=exp=1792632370~acl=/api/1/1/d/d/3/0/dd38542da91049f5d367441bae5eff8b.mp3*~data=user_id=0,application_id=42~hmac=e46d1b0eb91ad49cf03c6e4ecb84f63a46e6b2cb4224ac1b5d0b27427a09ba61",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 118273302,
+     "title": "Kifak Inta",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b6b5832f34e202ed0aadfa3131b32e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 129696,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 800748212,
+    "title": "Oghniat Al Wadaa",
+    "duration": 243,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/7/4/0/274526bd7d5518350267eb0ee24079f5.mp3?hdnea=exp=1792632370~acl=/api/1/1/2/7/4/0/274526bd7d5518350267eb0ee24079f5.mp3*~data=user_id=0,application_id=42~hmac=af0a087eea7c69b1edddf3ab5e0668a70daa7ae9caa92451e292861e68716312",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 118273302,
+     "title": "Kifak Inta",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b6b5832f34e202ed0aadfa3131b32e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 100596,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 800748312,
+    "title": "Mish Ossa Hai",
+    "duration": 404,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/e/1/0/ee1d6e701e829ec5fc1feda9adc62e95.mp3?hdnea=exp=1792632370~acl=/api/1/1/e/e/1/0/ee1d6e701e829ec5fc1feda9adc62e95.mp3*~data=user_id=0,application_id=42~hmac=28dc6abce9f7b5aa82fa98cefe25661becfd6240fbb73c145e74724d7e0e7fc4",
+    "artist": {
+     "id": 211187,
+     "name": "Fairuz"
+    },
+    "album": {
+     "id": 118273302,
+     "title": "Kifak Inta",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3b6b5832f34e202ed0aadfa3131b32e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 243820,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "opeth windowpane": {
+  "artist": [],
+  "album": [
+   {
+    "id": 6851846,
+    "title": "Peaceville Presents... Opeth",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7478f65e50370d511552cabf1d1054bd/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 5,
+    "record_type": "album",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    }
+   },
+   {
+    "id": 72266,
+    "title": "Damnation",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aba252a27f21306679c7fe03a24fc6eb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 8,
+    "record_type": "album",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    }
+   },
+   {
+    "id": 11539892,
+    "title": "Deliverance & Damnation Remixed",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e873882b3eabc2277b9d2b892b7aabcd/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 549194,
+    "title": "Windowpane",
+    "duration": 464,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/0/b/0/c0bf564368cca516f8d350b4558d7451.mp3?hdnea=exp=1792632371~acl=/api/1/1/c/0/b/0/c0bf564368cca516f8d350b4558d7451.mp3*~data=user_id=0,application_id=42~hmac=0008567e2b28a075ed035f56d8eb78805b39c9eb6df90ef1beb32a2139392fa5",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    },
+    "album": {
+     "id": 72266,
+     "title": "Damnation",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aba252a27f21306679c7fe03a24fc6eb/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 484404,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1923946,
+    "title": "Windowpane",
+    "duration": 481,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/f/4/0/cf4ff3063a0340fcf1fa1933954a04ed.mp3?hdnea=exp=1792632371~acl=/api/1/1/c/f/4/0/cf4ff3063a0340fcf1fa1933954a04ed.mp3*~data=user_id=0,application_id=42~hmac=1268d51d5482e47b99e772415664f5ebf892de30eace69185c4178ea5a150590",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    },
+    "album": {
+     "id": 196309,
+     "title": "The Roundhouse Tapes",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ea29d4d2a698cb65639f2e3405344596/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 97466,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 128946800,
+    "title": "Windowpane (Live at Shepherd's Bush Empire, London)",
+    "duration": 555,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/7/f/0/c7f111e461b3673f587e1ca9919828fe.mp3?hdnea=exp=1792632371~acl=/api/1/1/c/7/f/0/c7f111e461b3673f587e1ca9919828fe.mp3*~data=user_id=0,application_id=42~hmac=6202807ed1a8b77a8308fc8803619f58e4af299608d3ad8485899c9778b36d0d",
+    "artist": {
+     "id": 2814,
+     "name": "Opeth"
+    },
+    "album": {
+     "id": 13632674,
+     "title": "Lamentations (Live at Shepherd's Bush Empire, London)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d3103470d7bc843d96fde60bd6d78801/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 120654,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 560260242,
+    "title": "Windowpane (8-Bit Opeth Emulation)",
+    "duration": 454,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/1/e/0/b1e158016e08a228f8f9de92495b530b.mp3?hdnea=exp=1792632371~acl=/api/1/1/b/1/e/0/b1e158016e08a228f8f9de92495b530b.mp3*~data=user_id=0,application_id=42~hmac=afccddac4ccca3409d5e099e7e2335450fe113f335042c39d9e2e29dc6e94539",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 74184272,
+     "title": "By Request, Vol. 6",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/29f442abf803b2d5034c8e6eaa103774/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 3435,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 586749192,
+    "title": "Windowpane (16-Bit Opeth Emulation)",
+    "duration": 456,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/8/a/0/b8a6c515fcfae9effae7be59f087a16e.mp3?hdnea=exp=1792632371~acl=/api/1/1/b/8/a/0/b8a6c515fcfae9effae7be59f087a16e.mp3*~data=user_id=0,application_id=42~hmac=7a9e1b2eb9944491d2d2e47a244fe2b326eb848a959b248d37ca39afc5c9ef68",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 78844502,
+     "title": "Megadrive Metal: The Impossible Sega Genesis Soundtrack",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a35c049478232ee89f07812cef0d9ac8/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 26671,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1881533577,
+    "title": "Windowpane (feat. Opeth) (YM2612)",
+    "duration": 485,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/1/b/0/f1b3c679378882ed95d7df152bb6625d.mp3?hdnea=exp=1792632371~acl=/api/1/1/f/1/b/0/f1b3c679378882ed95d7df152bb6625d.mp3*~data=user_id=0,application_id=42~hmac=4ee99d59a161014393c09b27164c7934c5d6b8f3f1a7f5c98cba52e286b1a8b0",
+    "artist": {
+     "id": 172739217,
+     "name": "Flosk"
+    },
+    "album": {
+     "id": 349803187,
+     "title": "Opeth Music Cartridge for Sega Mega Drive",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/da2dfadadc7316c855557731959ffd73/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 15590,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1881533637,
+    "title": "Windowpane Mini (Menu)",
+    "duration": 21,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/f/0/0/5f016c89c6bd0956381a45f46c4a86e8.mp3?hdnea=exp=1792632371~acl=/api/1/1/5/f/0/0/5f016c89c6bd0956381a45f46c4a86e8.mp3*~data=user_id=0,application_id=42~hmac=50cd77cf914169e51baba16cc8a2ddc988d017854131b022f720e656c5df179a",
+    "artist": {
+     "id": 172739217,
+     "name": "Flosk"
+    },
+    "album": {
+     "id": 349803187,
+     "title": "Opeth Music Cartridge for Sega Mega Drive",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/da2dfadadc7316c855557731959ffd73/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 100000,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1043765262,
+    "title": "Windowpane (8-Bit Computer Game Cover Version of Opeth)",
+    "duration": 454,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/9/1/0/9910983a2bbcb41c4baaac0bc5cc5281.mp3?hdnea=exp=1792632371~acl=/api/1/1/9/9/1/0/9910983a2bbcb41c4baaac0bc5cc5281.mp3*~data=user_id=0,application_id=42~hmac=c841ebc1a4a0c2fe664db2dd21d8e7b79d0070a1539f42c09dd31153d96f6a36",
+    "artist": {
+     "id": 95384382,
+     "name": "Chiptune Punks"
+    },
+    "album": {
+     "id": 165437062,
+     "title": "Bitpop Hits, Vol. 12",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d5687f339b362d11d2bd032d207a847d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 18161,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "nas ny state of mind": {
+  "artist": [],
+  "album": [
+   {
+    "id": 1398751,
+    "title": "I Am...",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a7927813b372e0fc401980277c78881/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   },
+   {
+    "id": 245650992,
+    "title": "N.Y. State of Mind Type Beat - Nas X Guru",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a7563c6017549e3811e75c39f3b17a43/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 138812642,
+     "name": "Coelholoko"
+    }
+   },
+   {
+    "id": 7654077,
+    "title": "Illmatic",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1bd8913c9577f0c1535ba0e82eddcf45/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   },
+   {
+    "id": 874642942,
+    "title": "Light-Years",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e92407d1fcc02a9fb67da5e0c0109c57/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 15,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   },
+   {
+    "id": 59002752,
+    "title": "Illmatic: Live from the Kennedy Center with the National Symphony Orchestra",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/410b721509453a2c6df2c8c6ff447ba8/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   },
+   {
+    "id": 7664645,
+    "title": "Illmatic",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4c2dc31af4f87864afcdb6ab599c7960/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   },
+   {
+    "id": 912968161,
+    "title": "N.Y. State of Mind",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3b4184a07728dc0d8ec16f302f98f307/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 356415512,
+     "name": "Whiskey Hip-Hop"
+    }
+   },
+   {
+    "id": 704078,
+    "title": "Greatest Hits",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/69905b0dee6eba0d8bf41847f560631c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 77096688,
+    "title": "N.Y. State of Mind",
+    "duration": 294,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/9/b/0/f9b8c4e99aa0c2ae247f8751e1246565.mp3?hdnea=exp=1792632372~acl=/api/1/1/f/9/b/0/f9b8c4e99aa0c2ae247f8751e1246565.mp3*~data=user_id=0,application_id=42~hmac=f6429129d67dc1444e18fbf9b413c0c06d489016739119cfcd3b70f45574e52a",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 7654077,
+     "title": "Illmatic",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1bd8913c9577f0c1535ba0e82eddcf45/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 634418,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 77183271,
+    "title": "N.Y. State of Mind",
+    "duration": 292,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/a/2/0/6a28aff1e75ce50d6ee78183d75189fe.mp3?hdnea=exp=1792632372~acl=/api/1/1/6/a/2/0/6a28aff1e75ce50d6ee78183d75189fe.mp3*~data=user_id=0,application_id=42~hmac=a85fda4ce05659b03456adc7dda13d0c61308d6e0f7beb6be4849cb2b0f68f96",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 7664645,
+     "title": "Illmatic",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4c2dc31af4f87864afcdb6ab599c7960/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 461787,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 15176645,
+    "title": "N.Y. State of Mind, Pt. ll",
+    "duration": 216,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/0/e/0/b0ef56f33933357c5d1990e8608bd53a.mp3?hdnea=exp=1792632372~acl=/api/1/1/b/0/e/0/b0ef56f33933357c5d1990e8608bd53a.mp3*~data=user_id=0,application_id=42~hmac=aee33cfc1096d6c8d22e107165e29e4d95299510647511d13b3992b2a4a0bf98",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 1398751,
+     "title": "I Am...",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a7927813b372e0fc401980277c78881/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 326396,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 3708305522,
+    "title": "NY State Of Mind Pt. 3",
+    "duration": 192,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/6/1/0/961d68ea8970e4aebc9001ebe7c1efc4.mp3?hdnea=exp=1792632372~acl=/api/1/1/9/6/1/0/961d68ea8970e4aebc9001ebe7c1efc4.mp3*~data=user_id=0,application_id=42~hmac=d2b94048847350ae7fbb050ce4e7c9207528357fa2d038d374ef520ed71d1299",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 874642942,
+     "title": "Light-Years",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e92407d1fcc02a9fb67da5e0c0109c57/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 227746,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 473149312,
+    "title": "N.Y. State of Mind (feat. National Symphony Orchestra) (Live)",
+    "duration": 398,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/8/f/0/f8fa5f3d56ec32c57b42a4c01beb663a.mp3?hdnea=exp=1792632372~acl=/api/1/1/f/8/f/0/f8fa5f3d56ec32c57b42a4c01beb663a.mp3*~data=user_id=0,application_id=42~hmac=426cc3756766115a06e2ebbb0cf6f44b8cbc467aa40c32782e456750f611d8a6",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 59002752,
+     "title": "Illmatic: Live from the Kennedy Center with the National Symphony Orchestra",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/410b721509453a2c6df2c8c6ff447ba8/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 113356,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 2237315127,
+    "title": "N.Y. State of Mind (Live at Webster Hall, NYC - Dec. 17, 2002)",
+    "duration": 104,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/1/a/0/61ae3484cba3510586559892cbaa82cf.mp3?hdnea=exp=1792632372~acl=/api/1/1/6/1/a/0/61ae3484cba3510586559892cbaa82cf.mp3*~data=user_id=0,application_id=42~hmac=0ccc01924a43e0f0831c425364bc607aefa32ab807bd3f7537464e5b6af182c1",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 429527787,
+     "title": "Made You Look: God's Son Live 2002",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/69701bdc5941b3f54071e9bab76ec72e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 20386,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 80003306,
+    "title": "N.Y. State Of Mind",
+    "duration": 281,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/3/2/0/832b2d50a5c8f2c794d52f695be442f5.mp3?hdnea=exp=1792632372~acl=/api/1/1/8/3/2/0/832b2d50a5c8f2c794d52f695be442f5.mp3*~data=user_id=0,application_id=42~hmac=cb61cac708b0d4cccb9fac145dd65593a2dfebd539b57ff7c67d531385024a9b",
+    "artist": {
+     "id": 73,
+     "name": "Nas"
+    },
+    "album": {
+     "id": 7980498,
+     "title": "Coachella Nights (Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bf767b76d4f3ad20ad184f3583d25e50/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 33144,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 4072834651,
+    "title": "My Place",
+    "duration": 159,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/f/e/0/8fe0c829de87f3f8d4f98a7366c1eefb.mp3?hdnea=exp=1792632372~acl=/api/1/1/8/f/e/0/8fe0c829de87f3f8d4f98a7366c1eefb.mp3*~data=user_id=0,application_id=42~hmac=ec333b9082127124eb54611933d3e889836a30c4f45f0d00d8e46b496ae538d3",
+    "artist": {
+     "id": 4833740,
+     "name": "Josh Baker"
+    },
+    "album": {
+     "id": 1000868701,
+     "title": "My Place",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4ffbb017427bb92608e89403ad02f2e2/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 605917,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "beach house space song": {
+  "artist": [],
+  "album": [
+   {
+    "id": 986276991,
+    "title": "Beach Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cdb8e683ae48634c27ddf18a3ca95070/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 4,
+    "record_type": "ep",
+    "artist": {
+     "id": 121411072,
+     "name": "Space House"
+    }
+   },
+   {
+    "id": 404547667,
+    "title": "beach space",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/af9bf52af3ad62abffdbcbf96d3c2503/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 4,
+    "record_type": "ep",
+    "artist": {
+     "id": 200488047,
+     "name": "house song"
+    }
+   },
+   {
+    "id": 273393412,
+    "title": "Space Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/82045e23763ad942a28dd812bbbc3e2c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 151672442,
+     "name": "GASM4SK"
+    }
+   },
+   {
+    "id": 266566162,
+    "title": "space song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ac1f66061e4d1d9129a882adaacf0aa0/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1317229,
+     "name": "Carsick"
+    }
+   },
+   {
+    "id": 760540181,
+    "title": "Space Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8151c7c986d726c864c6295f5c30bf75/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 265698672,
+     "name": "MusiX3"
+    }
+   },
+   {
+    "id": 523698432,
+    "title": "Space Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e3e42fc0e6777e27e6ac562fe4c6a7a3/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 156682872,
+     "name": "Orchestra Eclipse"
+    }
+   },
+   {
+    "id": 459914365,
+    "title": "Space Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bceaabb978c5525327907f2825e12df1/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 192118747,
+     "name": "tell the moon"
+    }
+   },
+   {
+    "id": 955963031,
+    "title": "Space Song",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b73ecd61f7274de5eeef82d25adca2a3/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 185070477,
+     "name": "Phantom of Oscoda"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 1503949292,
+    "title": "Beach House Space Song",
+    "duration": 145,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/e/c/0/6ec8ce24f8df8942c729f2f1ffd77516.mp3?hdnea=exp=1792632373~acl=/api/1/1/6/e/c/0/6ec8ce24f8df8942c729f2f1ffd77516.mp3*~data=user_id=0,application_id=42~hmac=8a4da48eb414d34886c6ced5e3b3167044e31226fa9643c933ad82ebbc987f22",
+    "artist": {
+     "id": 120866722,
+     "name": "Cigarettiquette"
+    },
+    "album": {
+     "id": 261196672,
+     "title": "Nano Heart",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/57d6e10e482a3a2e55aa64ce13c9cc7f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 73510,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1354132742,
+    "title": "Space Song (Beach House Cover)",
+    "duration": 470,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/c/8/0/5c858908230d3c5b444ce1005c56fd53.mp3?hdnea=exp=1792632373~acl=/api/1/1/5/c/8/0/5c858908230d3c5b444ce1005c56fd53.mp3*~data=user_id=0,application_id=42~hmac=7f735960f4db32f4b3bbb67d27709c747a7ac747cbf44f37be1bd7b58e41edd3",
+    "artist": {
+     "id": 13191967,
+     "name": "Alles Club"
+    },
+    "album": {
+     "id": 225557622,
+     "title": "Emballage",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ae6cd55de0f78ca8ac38ad6c6cff0c1f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 229880,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2787477952,
+    "title": "Beach House Space Song",
+    "duration": 67,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/e/3/0/5e390113ee4965a4a7b0eb41ab865b12.mp3?hdnea=exp=1792632373~acl=/api/1/1/5/e/3/0/5e390113ee4965a4a7b0eb41ab865b12.mp3*~data=user_id=0,application_id=42~hmac=6d47dc2de3f9d97efae01882a88400dcd2925cba79d0202b4760869b5b49ac3f",
+    "artist": {
+     "id": 65185792,
+     "name": "Lee Sang Gul"
+    },
+    "album": {
+     "id": 583387052,
+     "title": "Seattle News",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f4cf121552de53e09e56a7605d98a767/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 19639,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2816951882,
+    "title": "Beach House Space Song",
+    "duration": 133,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/7/2/0/b72137923bb30c8a53a83a919e4795c8.mp3?hdnea=exp=1792632373~acl=/api/1/1/b/7/2/0/b72137923bb30c8a53a83a919e4795c8.mp3*~data=user_id=0,application_id=42~hmac=7243444264acce62bcd480fd84e71136d9297b604fed9bf6dfabfde2e7e7c1fa",
+    "artist": {
+     "id": 236089191,
+     "name": "Aiden Yoo"
+    },
+    "album": {
+     "id": 591592832,
+     "title": "Seattle News",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/06cd721b25a97827226eaf0255b3937f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 10083,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2307247075,
+    "title": "Space Song",
+    "duration": 311,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/a/f/0/3afd6e664352b7f55c7ab8a455683582.mp3?hdnea=exp=1792632373~acl=/api/1/1/3/a/f/0/3afd6e664352b7f55c7ab8a455683582.mp3*~data=user_id=0,application_id=42~hmac=688e595c0a1686d110a3d975d9a84dca7b2faf6465f8cb4dbf17a0e1742488e2",
+    "artist": {
+     "id": 213179997,
+     "name": "The Bada-Ba-Ba-Ba's"
+    },
+    "album": {
+     "id": 448058775,
+     "title": "House Of Beach Depression Cherry (Remastered)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/892eebeb7aafcc5fb176a124d0d95088/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 26878,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4030923511,
+    "title": "Beach Song",
+    "duration": 211,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/0/3/0/4039a63c2b4e1bcf9ec428e9082f7d36.mp3?hdnea=exp=1792632373~acl=/api/1/1/4/0/3/0/4039a63c2b4e1bcf9ec428e9082f7d36.mp3*~data=user_id=0,application_id=42~hmac=858449d1855e269f7e240f8b2acc85fb2ce44547c26f4f83f323e993a327e2f9",
+    "artist": {
+     "id": 121411072,
+     "name": "Space House"
+    },
+    "album": {
+     "id": 986276991,
+     "title": "Beach Song",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cdb8e683ae48634c27ddf18a3ca95070/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 42390,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2138808977,
+    "title": "beach space",
+    "duration": 120,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/8/e/0/68e7c4176cd126b7501c88d524096603.mp3?hdnea=exp=1792632373~acl=/api/1/1/6/8/e/0/68e7c4176cd126b7501c88d524096603.mp3*~data=user_id=0,application_id=42~hmac=77c014d809e526cca9ff88d8e774ae54489f009f6adeb6c965ce06c10a956dc8",
+    "artist": {
+     "id": 200488047,
+     "name": "house song"
+    },
+    "album": {
+     "id": 404547667,
+     "title": "beach space",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/af9bf52af3ad62abffdbcbf96d3c2503/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 9354,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3356564631,
+    "title": "Beach House The Space Song (Instrumental Slowed and Reverb)",
+    "duration": 418,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/3/4/0/5342371ee11e1eb01082808db7567671.mp3?hdnea=exp=1792632373~acl=/api/1/1/5/3/4/0/5342371ee11e1eb01082808db7567671.mp3*~data=user_id=0,application_id=42~hmac=52d202d3b4e04089836af123633f7022a2968bced30fa5b7fbe1bb04a4477510",
+    "artist": {
+     "id": 250167972,
+     "name": "Sad Girl Slo Music"
+    },
+    "album": {
+     "id": 753314961,
+     "title": "Beach House The Space Song (Instrumental Slowed and Reverb)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/015af718abba36b7fb7f92750aa0262b/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 2341,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "mazzy star fade into you": {
+  "artist": [],
+  "album": [
+   {
+    "id": 319814,
+    "title": "So Tonight That I Might See",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d3703e81301662626cc06a8b2843c78/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    }
+   },
+   {
+    "id": 330503357,
+    "title": "fade into you",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4ad7f24b1a9cd41a885ef9f789e9d574/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7043983,
+     "name": "Jessie Villa"
+    }
+   },
+   {
+    "id": 892326032,
+    "title": "Fade Into You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/031095f8fb92995a97e1e832fd81f935/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 81158472,
+     "name": "Middle-Aged Queers"
+    }
+   },
+   {
+    "id": 565580041,
+    "title": "fade into you",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2086b5510b5a560e0fb591a6fe5f50ea/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4023363,
+     "name": "Brown Eyed Girl"
+    }
+   },
+   {
+    "id": 523853302,
+    "title": "Fade into You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f87babc3a7a77ded8644651c8286f397/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7575984,
+     "name": "O'keefe Music Foundation"
+    }
+   },
+   {
+    "id": 1023786581,
+    "title": "Fade into You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b14ad0d72f76febe9fa35a9c88e92fcb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 401424851,
+     "name": "Carole Kimberley"
+    }
+   },
+   {
+    "id": 78196902,
+    "title": "Fade Into You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f6479147115603f00bb608cb8f8841bc/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 53878712,
+     "name": "Norswrthy"
+    }
+   },
+   {
+    "id": 1078991042,
+    "title": "Fade Into You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d35a6969bfa21029d391eb66e07271fb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 367485742,
+     "name": "Intension"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 3360821,
+    "title": "Fade Into You",
+    "duration": 292,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/8/b/0/28bba46a2f7f86069f5f287cff70cf1c.mp3?hdnea=exp=1792632374~acl=/api/1/1/2/8/b/0/28bba46a2f7f86069f5f287cff70cf1c.mp3*~data=user_id=0,application_id=42~hmac=55c921e5218b689810d7f6d6aa3c26c5d6e4778385da6c2d6e0117e421a4a7ce",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    },
+    "album": {
+     "id": 319814,
+     "title": "So Tonight That I Might See",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d3703e81301662626cc06a8b2843c78/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 960422,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 93477542,
+    "title": "Fade Into You (The Avener Rework)",
+    "duration": 252,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/e/9/0/2e9444ebb8edbc3c4cb7aed26b116378.mp3?hdnea=exp=1792632374~acl=/api/1/1/2/e/9/0/2e9444ebb8edbc3c4cb7aed26b116378.mp3*~data=user_id=0,application_id=42~hmac=b47e179b9dd966e71d34b38bec98e6ec9b88b60508e3149b1882ae4e43a30dcf",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    },
+    "album": {
+     "id": 9495176,
+     "title": "The Wanderings Of The Avener",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/72a02f7727eaaa38c6faa2ed3eec9d4f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 644574,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3584532281,
+    "title": "Fade Into You (Edit)",
+    "duration": 238,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/4/5/0/b4575a2278ca912380c4ebff17468854.mp3?hdnea=exp=1792632374~acl=/api/1/1/b/4/5/0/b4575a2278ca912380c4ebff17468854.mp3*~data=user_id=0,application_id=42~hmac=49605c5d01c0dbd809d8d18f66a9f872d601884a27ff06049be69e9a8cd6aeb8",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    },
+    "album": {
+     "id": 831615821,
+     "title": "Rock Goes Acoustic",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b9ca27534cacd2f5d889a101996eae4c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 550031,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 44131701,
+    "title": "Fade Into You",
+    "duration": 288,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/2/4/0/b248bb3aedb194f766f9b14ea6f4a911.mp3?hdnea=exp=1792632374~acl=/api/1/1/b/2/4/0/b248bb3aedb194f766f9b14ea6f4a911.mp3*~data=user_id=0,application_id=42~hmac=452c489ace93742cccadc6b1125aad26765f3d209b3e1f877bd23e780900faf6",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    },
+    "album": {
+     "id": 4351151,
+     "title": "Dinner Party Songs",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/664adaafb170c7ff29e425a2f07a9952/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 207017,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2387789085,
+    "title": "Fade Into You (Live)",
+    "duration": 270,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/7/b/0/d7b8cfa663e236bc3ba856305d939eb0.mp3?hdnea=exp=1792632374~acl=/api/1/1/d/7/b/0/d7b8cfa663e236bc3ba856305d939eb0.mp3*~data=user_id=0,application_id=42~hmac=844d5eb6932f109f7307b9a60e60c49db37d1f9dae321a21ba45c87ba2225744",
+    "artist": {
+     "id": 1306,
+     "name": "Mazzy Star"
+    },
+    "album": {
+     "id": 470005505,
+     "title": "Welcome To The 1990s (Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1e75535536a4cafc1e64a7a26b9cc677/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 184431,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 975408622,
+    "title": "Fade Into You (Cover Mazzy Star)",
+    "duration": 304,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/5/8/0/b58032ed336811af936663390f3e3c69.mp3?hdnea=exp=1792632374~acl=/api/1/1/b/5/8/0/b58032ed336811af936663390f3e3c69.mp3*~data=user_id=0,application_id=42~hmac=64f06845ff70b32e1717b59d4c0aef1a36a93519e6305485f369e6d4b4cc6688",
+    "artist": {
+     "id": 71840352,
+     "name": "Gabal"
+    },
+    "album": {
+     "id": 151576812,
+     "title": "Lov-Fi",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0f87b588708fc13c2c8e7e20ea91f775/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 109762,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1911843627,
+    "title": "Fade Into You (Mazzy Star Cover)",
+    "duration": 317,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/7/f/0/07f39bc3280cd14d4c8ee3c882de8488.mp3?hdnea=exp=1792632374~acl=/api/1/1/0/7/f/0/07f39bc3280cd14d4c8ee3c882de8488.mp3*~data=user_id=0,application_id=42~hmac=801c023b81ed476052c5c24c868c5b96aa65fe88ec38936cf4dd56fc8792bab8",
+    "artist": {
+     "id": 59558302,
+     "name": "Dylan Stack"
+    },
+    "album": {
+     "id": 356235917,
+     "title": "Covers",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c883474d279e4f401255a7cd65e0670a/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 26398,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2123174417,
+    "title": "Fade into You (8-Bit Mazzy Star Emulation)",
+    "duration": 242,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/2/0/0/e200dd721703a7f809386c43467bd3f9.mp3?hdnea=exp=1792632374~acl=/api/1/1/e/2/0/0/e200dd721703a7f809386c43467bd3f9.mp3*~data=user_id=0,application_id=42~hmac=cbe2776a060b9ddeec052058d57efd1cfd3ce370334bfb384e787aa5bcb5729d",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 400316747,
+     "title": "By Request, Vol. 197",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ac847286c2b40c246c2bb561954bb8b6/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 25494,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "blinding lights": {
+  "artist": [
+   {
+    "id": 992603,
+    "name": "Blinding Lights",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/63f4fa56ea2d24a39e1437c29cb7fc91/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 1444,
+    "nb_album": 38
+   },
+   {
+    "id": 5144372,
+    "name": "The Blinding Lights",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/5d2947afb34954d217b2143aabb0153a/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 174,
+    "nb_album": 7
+   },
+   {
+    "id": 377015521,
+    "name": "Blinding Lights Noises",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 0,
+    "nb_album": 2
+   },
+   {
+    "id": 183901277,
+    "name": "Bending Lights",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/4b274da897bfa93c1c06061fce8d34dd/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 4,
+    "nb_album": 3
+   },
+   {
+    "id": 13417107,
+    "name": "Light Blending In",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c39dba726c869e342bdb5dd01286a8b/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 39,
+    "nb_album": 45
+   },
+   {
+    "id": 491769,
+    "name": "The Blinding Light",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/87ee4ad6fbda737e525d9c11ecc233fe/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 91,
+    "nb_album": 4
+   },
+   {
+    "id": 245497112,
+    "name": "Bending Light",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/a504355983b0f7fc49fa4602a3a3cfdc/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 1,
+    "nb_album": 1
+   },
+   {
+    "id": 249855742,
+    "name": "Bridges and Blinking Lights",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7e02b4638ef106eb785b1dc90e0ba9c5/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 1,
+    "nb_album": 1
+   }
+  ],
+  "album": [
+   {
+    "id": 172918312,
+    "title": "Blinding Lights (Instrumental)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 340740067,
+    "title": "Blinding Lights (Single Version)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/dd7c8f64ea151fbe4de06174444ddf6b/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 58876632,
+     "name": "Wave Runner"
+    }
+   },
+   {
+    "id": 172920142,
+    "title": "Blinding Lights",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 4,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 256906632,
+    "title": "Blinding Lights",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/76b15cefa4d1f4d447bb4592b079876b/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 128991072,
+     "name": "Loi"
+    }
+   },
+   {
+    "id": 190172832,
+    "title": "Blinding Lights (Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/555be3736048d8370077be6e4cb6a369/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 157120672,
+    "title": "Blinding Lights",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cd47dc285e1d133274a1a3df760fcb51/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7662484,
+     "name": "Punk Rock Factory"
+    }
+   },
+   {
+    "id": 750007411,
+    "title": "Blinding Lights",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/37a38760a46b5834c186d0051b99f6d6/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 123016982,
+     "name": "Sonny Wern"
+    }
+   },
+   {
+    "id": 483849755,
+    "title": "Blinding Lights (Techno)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/abc44ced74e9ebe03659b156645cddf9/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 13811527,
+     "name": "Astech"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 908604612,
+    "title": "Blinding Lights",
+    "duration": 200,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/b/2/0/1b27825bf63c36edcdc7fac9f920214e.mp3?hdnea=exp=1792632376~acl=/api/1/1/1/b/2/0/1b27825bf63c36edcdc7fac9f920214e.mp3*~data=user_id=0,application_id=42~hmac=d56b15776cb74ced9d5c48e99397429cb31f175970a81f83057d191ffa7cad87",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 137217782,
+     "title": "After Hours",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fd00ebd6d30d7253f813dba3bb1c66a9/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 984833,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 851937072,
+    "title": "Blinding Lights (Acoustic Version)",
+    "duration": 241,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/f/4/0/ef47b0a8d944c98ab5d3862424b338ae.mp3?hdnea=exp=1792632376~acl=/api/1/1/e/f/4/0/ef47b0a8d944c98ab5d3862424b338ae.mp3*~data=user_id=0,application_id=42~hmac=a251391b43970d5df8cbe565c43920187931cbf21a3fb143c99876c2af8c6f98",
+    "artist": {
+     "id": 8941068,
+     "name": "Victoria Voss"
+    },
+    "album": {
+     "id": 126616392,
+     "title": "Blinding Lights (Acoustic Version)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0395001edac75ba51b1d838ab22bb7e3/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 600104,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1486911192,
+    "title": "Blinding Lights",
+    "duration": 147,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/d/b/0/0db63c3111fc04ab1443c13ca35d5e72.mp3?hdnea=exp=1792632376~acl=/api/1/1/0/d/b/0/0db63c3111fc04ab1443c13ca35d5e72.mp3*~data=user_id=0,application_id=42~hmac=005a25e1d7ffa7d5f1485cbfcf6c20368415594313ba72cfef6b35a4073a4541",
+    "artist": {
+     "id": 128991072,
+     "name": "Loi"
+    },
+    "album": {
+     "id": 256906632,
+     "title": "Blinding Lights",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/76b15cefa4d1f4d447bb4592b079876b/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 598292,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3638278102,
+    "title": "Blinding Lights",
+    "duration": 171,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/1/9/0/019c73bfc369ff9ac31aa74c63cbe482.mp3?hdnea=exp=1792632376~acl=/api/1/1/0/1/9/0/019c73bfc369ff9ac31aa74c63cbe482.mp3*~data=user_id=0,application_id=42~hmac=720008f502591b5c80a50f854fa4486f5c6f975aeacb842217c795beeeb771fb",
+    "artist": {
+     "id": 238676321,
+     "name": "Emily Dawn"
+    },
+    "album": {
+     "id": 850397082,
+     "title": "Blinding Lights",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a0a1bec307256fe6a99bbc7d71303e70/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 583421,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2177992817,
+    "title": "Blinding Lights",
+    "duration": 204,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/e/0/0/3e07ad78158f7b513059c9091943c8a4.mp3?hdnea=exp=1792632376~acl=/api/1/1/3/e/0/0/3e07ad78158f7b513059c9091943c8a4.mp3*~data=user_id=0,application_id=42~hmac=561932be3dbe21fa02a5a8ffc734e8a67549c5d816f3ed2af59c4254067d3c61",
+    "artist": {
+     "id": 191586,
+     "name": "Pablo Cepeda"
+    },
+    "album": {
+     "id": 414418377,
+     "title": "Bossa Nova Pop Hits",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a05dff553156d1b44b2f9921c2d32833/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 556031,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 959480292,
+    "title": "Blinding Lights",
+    "duration": 214,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/5/3/0/753a10c3fa32969c82ac07d767d49a8b.mp3?hdnea=exp=1792632376~acl=/api/1/1/7/5/3/0/753a10c3fa32969c82ac07d767d49a8b.mp3*~data=user_id=0,application_id=42~hmac=22575979362cc99de54d170a716d0bea3deed07120cfe1d23a05c44bb55f8787",
+    "artist": {
+     "id": 64927672,
+     "name": "Teddy Swims"
+    },
+    "album": {
+     "id": 148007762,
+     "title": "Blinding Lights",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/28c5a6b7405450430463382258a6cf21/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 525155,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1584368692,
+    "title": "Blinding Lights",
+    "duration": 252,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/2/c/0/a2ce9712e50c9c3578d70aa685e74aff.mp3?hdnea=exp=1792632376~acl=/api/1/1/a/2/c/0/a2ce9712e50c9c3578d70aa685e74aff.mp3*~data=user_id=0,application_id=42~hmac=751800f666378db83edb491a3499e5c027a52bd49e73abf97806e5442f5e3d58",
+    "artist": {
+     "id": 153943952,
+     "name": "Marianne"
+    },
+    "album": {
+     "id": 279113752,
+     "title": "Coverz",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/69fe76992b190810b7d9fcc6aa2cde35/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 496977,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1161752782,
+    "title": "Blinding Lights (Remix)",
+    "duration": 216,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/7/0/0/6703a8ecf2c7fe402096f98f60dd51a8.mp3?hdnea=exp=1792632376~acl=/api/1/1/6/7/0/0/6703a8ecf2c7fe402096f98f60dd51a8.mp3*~data=user_id=0,application_id=42~hmac=f1752ce0852d52844ef1ab94005a9bcd89663ab957c63474dabeeb7bd9a51829",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 190172832,
+     "title": "Blinding Lights (Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/555be3736048d8370077be6e4cb6a369/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 501580,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "the weeknd blinding lights": {
+  "artist": [],
+  "album": [
+   {
+    "id": 172918312,
+    "title": "Blinding Lights (Instrumental)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 172920142,
+    "title": "Blinding Lights",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 4,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 190172832,
+    "title": "Blinding Lights (Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/555be3736048d8370077be6e4cb6a369/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 141782082,
+    "title": "Blinding Lights (Major Lazer Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b75aa1dd04af25dcbcbc71cc2f3e6398/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   },
+   {
+    "id": 551576892,
+    "title": "Blinding lights The Weeknd (Piano arrangement)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5dc57ba259b8d4a449662d2dc1f3e16d/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 253774772,
+     "name": "Piano Off"
+    }
+   },
+   {
+    "id": 340740067,
+    "title": "Blinding Lights (Single Version)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/dd7c8f64ea151fbe4de06174444ddf6b/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 58876632,
+     "name": "Wave Runner"
+    }
+   },
+   {
+    "id": 441197957,
+    "title": "Seleção 26",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fe2c5c88f84c9812428ea0fa558625f3/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 25,
+    "record_type": "album",
+    "artist": {
+     "id": 164098067,
+     "name": "Pancadão GD Som"
+    }
+   },
+   {
+    "id": 137272602,
+    "title": "After Hours",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f520bf0be2e3cfc476824e75d20a164a/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 908604612,
+    "title": "Blinding Lights",
+    "duration": 200,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/b/2/0/1b27825bf63c36edcdc7fac9f920214e.mp3?hdnea=exp=1792632377~acl=/api/1/1/1/b/2/0/1b27825bf63c36edcdc7fac9f920214e.mp3*~data=user_id=0,application_id=42~hmac=b86e88ac7f55148ef082ace533168ffdbd60f63e4f1fa29704a3137023034dfb",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 137217782,
+     "title": "After Hours",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fd00ebd6d30d7253f813dba3bb1c66a9/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 984833,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1161752782,
+    "title": "Blinding Lights (Remix)",
+    "duration": 216,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/7/0/0/6703a8ecf2c7fe402096f98f60dd51a8.mp3?hdnea=exp=1792632377~acl=/api/1/1/6/7/0/0/6703a8ecf2c7fe402096f98f60dd51a8.mp3*~data=user_id=0,application_id=42~hmac=a978f8e9794f3d9af1b950b951d46f6e36f3284c4fca9619b23ca4a6bdefaea1",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 190172832,
+     "title": "Blinding Lights (Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/555be3736048d8370077be6e4cb6a369/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 501580,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2166259437,
+    "title": "Blinding Lights (Live)",
+    "duration": 253,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/7/c/0/67c2e360ac632ff431e9977f1ff5e96f.mp3?hdnea=exp=1792632377~acl=/api/1/1/6/7/c/0/67c2e360ac632ff431e9977f1ff5e96f.mp3*~data=user_id=0,application_id=42~hmac=0a9b4cfd517808c80da74f0e77dafa1c6bfa5480fbb7bddea64ae7b76584add4",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 411519667,
+     "title": "Live At SoFi Stadium",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/17bf5f732c2943ad4cb2bf3778b806cc/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 425595,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 1078622722,
+    "title": "Blinding Lights (Major Lazer Remix)",
+    "duration": 198,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/b/4/0/3b45132b57d8f2656c103e0a795add3a.mp3?hdnea=exp=1792632377~acl=/api/1/1/3/b/4/0/3b45132b57d8f2656c103e0a795add3a.mp3*~data=user_id=0,application_id=42~hmac=0c3a0de07ac0aaf46bd780e7195d96fd1efa9442ab3e012e7a60042657ca6122",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 172920142,
+     "title": "Blinding Lights",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 304791,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1078622732,
+    "title": "Blinding Lights (Chromatics Remix)",
+    "duration": 261,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/9/b/0/19bc7606204480ff55d6536106a0d2c5.mp3?hdnea=exp=1792632377~acl=/api/1/1/1/9/b/0/19bc7606204480ff55d6536106a0d2c5.mp3*~data=user_id=0,application_id=42~hmac=9f4059fabbcb5d01105630df84566c4ffe8377322e43b6b2650b1265b7b8c235",
+    "artist": {
+     "id": 4050205,
+     "name": "The Weeknd"
+    },
+    "album": {
+     "id": 172920142,
+     "title": "Blinding Lights",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cf22674710be326f668dfb27d5af9576/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 292499,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2282985187,
+    "title": "Blinding Lights The Weeknd",
+    "duration": 185,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/c/f/0/1cfca0761a375929ceb6e6998d0aa784.mp3?hdnea=exp=1792632377~acl=/api/1/1/1/c/f/0/1cfca0761a375929ceb6e6998d0aa784.mp3*~data=user_id=0,application_id=42~hmac=02299f488f3317fd826ea36f5477b83e1236008507333a388e5bc0b7d8e3985b",
+    "artist": {
+     "id": 164098067,
+     "name": "Pancadão GD Som"
+    },
+    "album": {
+     "id": 441197957,
+     "title": "Seleção 26",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fe2c5c88f84c9812428ea0fa558625f3/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 367225,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1146504462,
+    "title": "Blinding Lights (Original by The Weeknd)",
+    "duration": 195,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/e/f/0/5ef535925d8608cca96ea7920b7ff715.mp3?hdnea=exp=1792632377~acl=/api/1/1/5/e/f/0/5ef535925d8608cca96ea7920b7ff715.mp3*~data=user_id=0,application_id=42~hmac=0b1837abfed59b0f348af25a700a6c795a389adce6704815a0e351bb928d7591",
+    "artist": {
+     "id": 113360572,
+     "name": "Piano Cover by Lily Morgan"
+    },
+    "album": {
+     "id": 187268082,
+     "title": "Blinding Lights (Original by The Weeknd)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1f5c1228f36bcb0cb16072dab082ec18/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 216742,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 862500012,
+    "title": "Blinding Lights (The Weeknd Cover Mix)",
+    "duration": 197,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/1/4/0/e147fb8153318aae6760fc8bd9ee38b9.mp3?hdnea=exp=1792632377~acl=/api/1/1/e/1/4/0/e147fb8153318aae6760fc8bd9ee38b9.mp3*~data=user_id=0,application_id=42~hmac=0f79ff2f5ad26a0ef0dcb58b724e46a80b1f124b64b9a9e3f6cf3569308ecdad",
+    "artist": {
+     "id": 88692512,
+     "name": "Alba"
+    },
+    "album": {
+     "id": 128964352,
+     "title": "Blinding Lights (The Weeknd Cover Mix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4c0c99c25a7ba692dc7606252e41cba4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 31393,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "taylor swift cardigan": {
+  "artist": [],
+  "album": [
+   {
+    "id": 163970502,
+    "title": "cardigan (cabin in candlelight version)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e1c7bc224b480d6ca1749139ed83b9a4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    }
+   },
+   {
+    "id": 167766152,
+    "title": "folklore (deluxe version)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/290abe93bdda84bb8b170f30a4998c4c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 17,
+    "record_type": "album",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    }
+   },
+   {
+    "id": 162683632,
+    "title": "folklore",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/290abe93bdda84bb8b170f30a4998c4c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    }
+   },
+   {
+    "id": 188803732,
+    "title": "folklore: the long pond studio sessions (from the Disney+ special) (deluxe edition)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7d658d07f762d586edffa92dbf52b4ac/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 34,
+    "record_type": "album",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    }
+   },
+   {
+    "id": 596275822,
+    "title": "Cardigan (Edit)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fb79ff88aeee3d265362b209012ae4c6/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 3,
+    "record_type": "single",
+    "artist": {
+     "id": 260797071,
+     "name": "Luke Muzzic"
+    }
+   },
+   {
+    "id": 691245911,
+    "title": "Shake It Off (EDM)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3a03636249386850fdaea7644ecf03af/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 296213551,
+     "name": "Cardigan Queen"
+    }
+   },
+   {
+    "id": 628143021,
+    "title": "Cardigan (TikTok Best Part)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d00fa0a3722e5f1c2e782a0371c4def9/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 179150957,
+     "name": "OURGRND"
+    }
+   },
+   {
+    "id": 164103642,
+    "title": "Cardigan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bbbe5871031e98f4cb598033143d9913/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 5390605,
+     "name": "Josh Rabenold"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 1031382712,
+    "title": "cardigan",
+    "duration": 239,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/a/c/0/aacb03c3f2094e148234cc85a0ab7211.mp3?hdnea=exp=1792632378~acl=/api/1/1/a/a/c/0/aacb03c3f2094e148234cc85a0ab7211.mp3*~data=user_id=0,application_id=42~hmac=0a88a99129bcde5b037c8e90da18c7b83062a07200e32563af90f9cd35dc5e0f",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    },
+    "album": {
+     "id": 162683632,
+     "title": "folklore",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/290abe93bdda84bb8b170f30a4998c4c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 884633,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1037179262,
+    "title": "cardigan (cabin in candlelight version)",
+    "duration": 228,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/9/0/0/a901814803c97c7c0f9b19a0ddb9d557.mp3?hdnea=exp=1792632378~acl=/api/1/1/a/9/0/0/a901814803c97c7c0f9b19a0ddb9d557.mp3*~data=user_id=0,application_id=42~hmac=310f1758ca2d7a7cb298ff5e82dbd16ebde32cec15a0b4e43802d9e7dfd27e01",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    },
+    "album": {
+     "id": 163970502,
+     "title": "cardigan (cabin in candlelight version)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e1c7bc224b480d6ca1749139ed83b9a4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 383615,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1154635992,
+    "title": "cardigan (the long pond studio sessions)",
+    "duration": 231,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/b/0/0/6b0e179c36772f1efba766c7af5e5a0c.mp3?hdnea=exp=1792632378~acl=/api/1/1/6/b/0/0/6b0e179c36772f1efba766c7af5e5a0c.mp3*~data=user_id=0,application_id=42~hmac=64539fcb3e6eb3dd07e3352f0432ce17ab0cebf859e2d65533b650ed3fbd06de",
+    "artist": {
+     "id": 12246,
+     "name": "Taylor Swift"
+    },
+    "album": {
+     "id": 188803732,
+     "title": "folklore: the long pond studio sessions (from the Disney+ special) (deluxe edition)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7d658d07f762d586edffa92dbf52b4ac/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 317053,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1410467172,
+    "title": "Piano Tribute to Taylor Swift's Cardigan",
+    "duration": 254,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/0/c/0/20cae082046ad6c67694d940fe45bc94.mp3?hdnea=exp=1792632378~acl=/api/1/1/2/0/c/0/20cae082046ad6c67694d940fe45bc94.mp3*~data=user_id=0,application_id=42~hmac=49246bb3f5ba6c73185d8579a128776014c65310c50e775c56e183833ee9e70b",
+    "artist": {
+     "id": 7419074,
+     "name": "One Piano"
+    },
+    "album": {
+     "id": 238806852,
+     "title": "Piano Tribute to Taylor Swift's Cardigan",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1f6b58a76a38eaea3e6b270861491525/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 30049,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1155403272,
+    "title": "Cardigan (Instrumental)",
+    "duration": 236,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/b/8/0/3b86a5dbfc4d3c7fa60b01f76559bf8f.mp3?hdnea=exp=1792632378~acl=/api/1/1/3/b/8/0/3b86a5dbfc4d3c7fa60b01f76559bf8f.mp3*~data=user_id=0,application_id=42~hmac=065cc1aa61db1ec2cdcb6898226fdb4213673f5bda9f149aac11dbffa1d1b842",
+    "artist": {
+     "id": 92920972,
+     "name": "Lo-Fi Dreamers"
+    },
+    "album": {
+     "id": 188954142,
+     "title": "Lofi Renditions of Taylor Swift (Instrumental)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/44b2cf299e815b7bd9248d18e0aeeb4b/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 104197,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1512399532,
+    "title": "cardigan (Piano Version)",
+    "duration": 230,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/1/0/0/f10a2fada51fad86678457a353202245.mp3?hdnea=exp=1792632378~acl=/api/1/1/f/1/0/0/f10a2fada51fad86678457a353202245.mp3*~data=user_id=0,application_id=42~hmac=8cbe244e1cccbda8f33adb043d071ac54ba14c80b18b9df0692766a98798a448",
+    "artist": {
+     "id": 60565692,
+     "name": "The Chillest"
+    },
+    "album": {
+     "id": 263363422,
+     "title": "The Chillest Taylor Swift",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/89c770c8fa48e1c0010a8686ddaf394e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 81389,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2475710991,
+    "title": "Cardigan (Piano Cover)",
+    "duration": 238,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/1/8/0/e18b557007cf2a472a1ba759e1ab9053.mp3?hdnea=exp=1792632378~acl=/api/1/1/e/1/8/0/e18b557007cf2a472a1ba759e1ab9053.mp3*~data=user_id=0,application_id=42~hmac=cf2a09aa066d927ecc108452223a94754e55ea054b9337f060be225f11f399a2",
+    "artist": {
+     "id": 75965,
+     "name": "Andrea Parker"
+    },
+    "album": {
+     "id": 493768871,
+     "title": "Taylor Swift - Hits - Piano Covers (Instrumentals)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6a9c88ea8a4cc29dad233b56bb9123be/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 129689,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2504890071,
+    "title": "cardigan (Bonus Track)",
+    "duration": 233,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/5/b/0/35b404e3335b2552744c08de5d35ff48.mp3?hdnea=exp=1792632378~acl=/api/1/1/3/5/b/0/35b404e3335b2552744c08de5d35ff48.mp3*~data=user_id=0,application_id=42~hmac=d0afdaac1ce54dab7794627c7e9bde5bd834911202022270ab47ca4693e46b53",
+    "artist": {
+     "id": 275309,
+     "name": "Vitamin String Quartet"
+    },
+    "album": {
+     "id": 501997281,
+     "title": "VSQ Performs Taylor Swift",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e9637f8c08e3f4a72aeeb434d66fbfb7/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 44990,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "kendrick lamar humble": {
+  "artist": [],
+  "album": [
+   {
+    "id": 49049112,
+    "title": "HUMBLE. (SKRILLEX REMIX)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/264b3b6ba639ab6a22c4c781c5f3cbba/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 525643,
+     "name": "Skrillex"
+    }
+   },
+   {
+    "id": 39949511,
+    "title": "DAMN.",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7ce6b8452fae425557067db6e6a1cad5/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 525046,
+     "name": "Kendrick Lamar"
+    }
+   },
+   {
+    "id": 58993682,
+    "title": "DAMN. COLLECTORS EDITION.",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2b67121bb8223c905af64a1e399011dd/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 525046,
+     "name": "Kendrick Lamar"
+    }
+   },
+   {
+    "id": 41613411,
+    "title": "\"HUMBLE\" Parody of Kendrick Lamar's \"HUMBLE\"",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/294681c5e53da58604b9ac1ca411e769/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1211299,
+     "name": "The Key of Awesome"
+    }
+   },
+   {
+    "id": 43687641,
+    "title": "Humble (Homage to Kendrick Lamar)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a7c6238d5c8f2d6ccb4f58c5a8e54b08/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 3,
+    "record_type": "single",
+    "artist": {
+     "id": 11650639,
+     "name": "Barberry Records"
+    }
+   },
+   {
+    "id": 797563111,
+    "title": "Humble",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cba2ca4c808081f007d51c4383b7648d/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 123016982,
+     "name": "Sonny Wern"
+    }
+   },
+   {
+    "id": 6772599,
+    "title": "Hungry and Humble",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0409c10d98f1592c0dc91ef4da68247f/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 8,
+    "record_type": "album",
+    "artist": {
+     "id": 4318189,
+     "name": "Droop-E"
+    }
+   },
+   {
+    "id": 996611811,
+    "title": "HUMBLE",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b24866f7a007e45b10d22cc3d273c742/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 358450982,
+     "name": "Acid Boyz"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 350171311,
+    "title": "HUMBLE.",
+    "duration": 177,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/9/c/0/59c7208affd26e5d728f03dd312dc4cd.mp3?hdnea=exp=1792632379~acl=/api/1/1/5/9/c/0/59c7208affd26e5d728f03dd312dc4cd.mp3*~data=user_id=0,application_id=42~hmac=63166837369c047a59eb4a1c13bc0625f42b3428c2674810473be1d52af9c986",
+    "artist": {
+     "id": 525046,
+     "name": "Kendrick Lamar"
+    },
+    "album": {
+     "id": 39949511,
+     "title": "DAMN.",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7ce6b8452fae425557067db6e6a1cad5/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 816161,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 412241052,
+    "title": "HUMBLE. (SKRILLEX REMIX)",
+    "duration": 156,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/0/8/0/f08ead66bd874505153345d152c8d878.mp3?hdnea=exp=1792632379~acl=/api/1/1/f/0/8/0/f08ead66bd874505153345d152c8d878.mp3*~data=user_id=0,application_id=42~hmac=de8cda73f3a7874b372bdb9191f6b0cc8f72674749790b647cb555350598124e",
+    "artist": {
+     "id": 525643,
+     "name": "Skrillex"
+    },
+    "album": {
+     "id": 49049112,
+     "title": "HUMBLE. (SKRILLEX REMIX)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/264b3b6ba639ab6a22c4c781c5f3cbba/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 485781,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 350171251,
+    "title": "DNA.",
+    "duration": 185,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/4/f/0/84f14a899de2d97a98c6fa751379e361.mp3?hdnea=exp=1792632379~acl=/api/1/1/8/4/f/0/84f14a899de2d97a98c6fa751379e361.mp3*~data=user_id=0,application_id=42~hmac=4d429e5e372f341a026ea230d722e6767251360f3a11c1b8befd30ac5f903357",
+    "artist": {
+     "id": 525046,
+     "name": "Kendrick Lamar"
+    },
+    "album": {
+     "id": 39949511,
+     "title": "DAMN.",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7ce6b8452fae425557067db6e6a1cad5/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 715500,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 2110183877,
+    "title": "\"HUMBLE\" Parody of Kendrick Lamar's \"HUMBLE\"",
+    "duration": 145,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/9/f/0/a9f199dcfa488c9c4b3d6e1d14df44cd.mp3?hdnea=exp=1792632379~acl=/api/1/1/a/9/f/0/a9f199dcfa488c9c4b3d6e1d14df44cd.mp3*~data=user_id=0,application_id=42~hmac=301f07df40324b033234bb10752502652239fee0c0b0b557dddafc83b6098326",
+    "artist": {
+     "id": 1211299,
+     "name": "The Key of Awesome"
+    },
+    "album": {
+     "id": 397128007,
+     "title": "\"HUMBLE\" Parody of Kendrick Lamar's \"HUMBLE\"",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a5802af244223052ec1cf57e5aab007e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 100000,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3962165331,
+    "title": "humble by kendrick lamar",
+    "duration": 73,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/8/4/0/384fbdb70bb6429fc1d2484f0873a5fd.mp3?hdnea=exp=1792632379~acl=/api/1/1/3/8/4/0/384fbdb70bb6429fc1d2484f0873a5fd.mp3*~data=user_id=0,application_id=42~hmac=918898431d99ae64f91bef8837522b6530f5619ea915860618c6a9d5d20f60f9",
+    "artist": {
+     "id": 366193212,
+     "name": "John AND Jimmy..."
+    },
+    "album": {
+     "id": 962069291,
+     "title": "Memories of the Mustard Store",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/25c5594b9525158e1be5aa4fd42753b7/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 100000,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2751243521,
+    "title": "HUMBLE. (8-Bit Kendrick lamar Emulation)",
+    "duration": 173,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/d/1/0/0d1fbcd005988584bf59d48b0adfd6eb.mp3?hdnea=exp=1792632379~acl=/api/1/1/0/d/1/0/0d1fbcd005988584bf59d48b0adfd6eb.mp3*~data=user_id=0,application_id=42~hmac=3c99b8e16654f22e08321a8c8912e562ef76b9c7ac420a9352d0f3983d203613",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 573544661,
+     "title": "By Request, Vol. 255",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5b491e8aa898e4cc4ca4df02b83add62/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 9067,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 460475962,
+    "title": "Dedication (feat. Kendrick Lamar)",
+    "duration": 245,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/0/3/0/4037af3bd46444ccbd64262d5442802b.mp3?hdnea=exp=1792632379~acl=/api/1/1/4/0/3/0/4037af3bd46444ccbd64262d5442802b.mp3*~data=user_id=0,application_id=42~hmac=a4b0ac6d607e2c5a705863e8f94dd4c8c12c6dcae75d05b16c275dedb0a5bb09",
+    "artist": {
+     "id": 257128,
+     "name": "Nipsey Hussle"
+    },
+    "album": {
+     "id": 56765112,
+     "title": "Victory Lap",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aeb3dc33bd8e78a2f9c04cded6812b4a/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 346275,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 525887302,
+    "title": "HUMBLE.",
+    "duration": 154,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/8/8/0/888d267bba926bde32c7e56800af6c2f.mp3?hdnea=exp=1792632379~acl=/api/1/1/8/8/8/0/888d267bba926bde32c7e56800af6c2f.mp3*~data=user_id=0,application_id=42~hmac=5e83896ebdbc9040830de8a498ff3572fa8d29cd47c4569f6eeb9736e87bf67e",
+    "artist": {
+     "id": 12030250,
+     "name": "8-Bit Misfits"
+    },
+    "album": {
+     "id": 67938742,
+     "title": "8-Bit Versions of Kendrick Lamar",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/814208e23914c26a396c42364270b69d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 25509,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "drake gods plan": {
+  "artist": [],
+  "album": [
+   {
+    "id": 61230722,
+    "title": "Drake God's Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3d6d04f86f7769e3f6539bc765cf9a4e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 3109151,
+     "name": "Troy Ave"
+    }
+   },
+   {
+    "id": 893814502,
+    "title": "God's Plan (but it’s a 1950’s blues song)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f4412dca16a5d47dbe54b8c7c7987ed4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 366495262,
+     "name": "Legendary_Vibezz"
+    }
+   },
+   {
+    "id": 56432852,
+    "title": "God's Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a7db86b7b53d4b146704f5a1847c1cb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 8087921,
+     "name": "William Singe"
+    }
+   },
+   {
+    "id": 61778572,
+    "title": "Gods Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1a6f83d753c722d7fe19bccdd83d82eb/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 3,
+    "record_type": "single",
+    "artist": {
+     "id": 72413192,
+     "name": "Blake"
+    }
+   },
+   {
+    "id": 56899572,
+    "title": "God's Plan (Acoustic)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a51b9d63e9646338247d8dd83a1499a5/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 13179277,
+     "name": "Blame Jones"
+    }
+   },
+   {
+    "id": 56474542,
+    "title": "God's Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/05e25afcc35643096725afe04c739430/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 389930,
+     "name": "THOREAU"
+    }
+   },
+   {
+    "id": 1081536862,
+    "title": "God's _Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/eecda550ec55099ae84f57afd2eb99aa/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "ep",
+    "artist": {
+     "id": 258602462,
+     "name": "drake j"
+    }
+   },
+   {
+    "id": 185011422,
+    "title": "God's Plan",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e9d1d4139783f0af4b68dc9559d0f3e7/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 10525821,
+     "name": "Love Angeles"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 533609232,
+    "title": "God's Plan",
+    "duration": 198,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/5/c/0/95c243df757f8ccd17b6692e1051e2e9.mp3?hdnea=exp=1792632380~acl=/api/1/1/9/5/c/0/95c243df757f8ccd17b6692e1051e2e9.mp3*~data=user_id=0,application_id=42~hmac=d0d88f19b390c612e2bc98e04513b3edb3951621b0421ebf42bbec0b1369acd2",
+    "artist": {
+     "id": 246791,
+     "name": "Drake"
+    },
+    "album": {
+     "id": 69319552,
+     "title": "Scorpion",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b69d3bcbd130ad4cc9259de543889e30/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 937522,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 486018992,
+    "title": "Drake God's Plan",
+    "duration": 168,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/1/4/0/61400f2d734fb6a32626616de44f59d2.mp3?hdnea=exp=1792632380~acl=/api/1/1/6/1/4/0/61400f2d734fb6a32626616de44f59d2.mp3*~data=user_id=0,application_id=42~hmac=bd0b32f15475cd8f17877c699de6ecb1f236d4556d03404a0dea2938577a9d4a",
+    "artist": {
+     "id": 3109151,
+     "name": "Troy Ave"
+    },
+    "album": {
+     "id": 61230722,
+     "title": "Drake God's Plan",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3d6d04f86f7769e3f6539bc765cf9a4e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 102565,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 2007931867,
+    "title": "God's Plan",
+    "duration": 273,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/a/7/0/fa7378e735e0ffc06b3a79e382e92054.mp3?hdnea=exp=1792632380~acl=/api/1/1/f/a/7/0/fa7378e735e0ffc06b3a79e382e92054.mp3*~data=user_id=0,application_id=42~hmac=15c8b643a6cb7d2915390645034f2be44bc502ac36d2d6c74dbb73fb58c403a6",
+    "artist": {
+     "id": 246791,
+     "name": "Drake"
+    },
+    "album": {
+     "id": 373999667,
+     "title": "Rare RnB & New Jack 107",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/051785f9c04540c9c291347cd9c5eccb/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 86340,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 1235004642,
+    "title": "Darker Place (Joe Goddard Remix)",
+    "duration": 252,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/6/4/0/76401207e0c440527c03cc83bb7a9447.mp3?hdnea=exp=1792632380~acl=/api/1/1/7/6/4/0/76401207e0c440527c03cc83bb7a9447.mp3*~data=user_id=0,application_id=42~hmac=a77df11244bfa92f8fded76ce6c190f684d4dc14714b3572554ad8f205f3d393",
+    "artist": {
+     "id": 8763546,
+     "name": "Rachel Chinouriri"
+    },
+    "album": {
+     "id": 205704512,
+     "title": "Darker Place (Joe Goddard Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2b4653dd9b7e87a4847fc8423d734e4a/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 136776,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1235187852,
+    "title": "Darker Place (Joe Goddard Remix, Radio Edit)",
+    "duration": 168,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/8/b/0/28b6b748f153b5995b84c9b8ba4d8908.mp3?hdnea=exp=1792632380~acl=/api/1/1/2/8/b/0/28b6b748f153b5995b84c9b8ba4d8908.mp3*~data=user_id=0,application_id=42~hmac=f2fd5441c05c2c03f3abeff4052cafc8e39e5e71d2c6557a849afd2315d9703a",
+    "artist": {
+     "id": 8763546,
+     "name": "Rachel Chinouriri"
+    },
+    "album": {
+     "id": 205737562,
+     "title": "Darker Place (Joe Goddard Remix, Radio Edit)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2b4653dd9b7e87a4847fc8423d734e4a/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 121453,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 574229332,
+    "title": "God's Plan (Remix Pop Drake Covered)",
+    "duration": 187,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/c/6/0/7c6fdb15c008ee8df0f4060526cdf31b.mp3?hdnea=exp=1792632380~acl=/api/1/1/7/c/6/0/7c6fdb15c008ee8df0f4060526cdf31b.mp3*~data=user_id=0,application_id=42~hmac=5c7407faafc0640eea56997d3964969143da13af1a566a8a715ff882aa78451f",
+    "artist": {
+     "id": 10384882,
+     "name": "Maxence Luchi"
+    },
+    "album": {
+     "id": 76678842,
+     "title": "Nothing Stop Me",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8bd5c1d77100070c2eaada7553ebfa10/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 26316,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 542075012,
+    "title": "Gods Plan (8-Bit Drake Emulation)",
+    "duration": 261,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/1/0/0/510508b0eacb15bcf13d4109b3083827.mp3?hdnea=exp=1792632380~acl=/api/1/1/5/1/0/0/510508b0eacb15bcf13d4109b3083827.mp3*~data=user_id=0,application_id=42~hmac=a48fa33a037ad3555242ad0d90ddf04d383dbf92824165d7bc7c9a5431f3b7ac",
+    "artist": {
+     "id": 5845951,
+     "name": "8-Bit Arcade"
+    },
+    "album": {
+     "id": 70859572,
+     "title": "By Request, Vol. 1",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be46020325ab9bf9017f3cd56e6fe1a1/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 26350,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2803407522,
+    "title": "Gods Plan",
+    "duration": 429,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/4/1/0/641d8eae37ce856e42d51810f0bca5ab.mp3?hdnea=exp=1792632380~acl=/api/1/1/6/4/1/0/641d8eae37ce856e42d51810f0bca5ab.mp3*~data=user_id=0,application_id=42~hmac=422c09e78902317e9749f45997c1e5f5f356531086e2e428875c81a472a538ae",
+    "artist": {
+     "id": 75602452,
+     "name": "Diamond String Orchestra"
+    },
+    "album": {
+     "id": 587275332,
+     "title": "Orchestral String Versions of Drake",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/14f02c169286665cfea4c40594cfd394/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 25671,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "tame impala let it happen": {
+  "artist": [],
+  "album": [
+   {
+    "id": 10709540,
+    "title": "Currents",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/de5b9b704cd4ec36f8bf49beb3e17ba2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 13,
+    "record_type": "album",
+    "artist": {
+     "id": 134790,
+     "name": "Tame Impala"
+    }
+   },
+   {
+    "id": 51431732,
+    "title": "Currents B-Sides & Remixes",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4d9b3ad6489b071bb1aa6d959b1dba53/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 5,
+    "record_type": "ep",
+    "artist": {
+     "id": 134790,
+     "name": "Tame Impala"
+    }
+   },
+   {
+    "id": 418531787,
+    "title": "Let It Happen",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/baf89079e3ced71e55d62dc2c6a47042/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 6406552,
+     "name": "Almy"
+    }
+   },
+   {
+    "id": 469179155,
+    "title": "LET IT HAPPEN - (TECHNO SPED UP)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96160f42d2d09260b303fb78fc9d9e13/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 194674587,
+     "name": "FAST BASSTON"
+    }
+   },
+   {
+    "id": 469178175,
+    "title": "LET IT HAPPEN - (TECHNO)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/375f97fd2adde1d99415833ac15495f4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 11106372,
+     "name": "BassTon"
+    }
+   },
+   {
+    "id": 972194681,
+    "title": "let it happen (slowed + reverb)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/170e38c77462e275afdf0332654bea30/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 98469712,
+     "name": "Vallvete"
+    }
+   },
+   {
+    "id": 972193041,
+    "title": "Let It Happen (Nightcore)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d02728ba3e5c9a215c25796b57e898c8/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 225683565,
+     "name": "Nøvacore"
+    }
+   },
+   {
+    "id": 463444335,
+    "title": "LET IT HAPPEN - HYPERTECHNO (SPED UP)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7feb9fdb9fdefe2cd599905ba15c2585/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1587534,
+     "name": "HypeRave"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 103052650,
+    "title": "Let It Happen",
+    "duration": 469,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/a/e/0/6aee42a038480ecdcf2d6168f95810f2.mp3?hdnea=exp=1792632382~acl=/api/1/1/6/a/e/0/6aee42a038480ecdcf2d6168f95810f2.mp3*~data=user_id=0,application_id=42~hmac=fd6140f85797d600f8ba191a89439ee04a327b101ce7a3206f1e3c1c143d2f46",
+    "artist": {
+     "id": 134790,
+     "name": "Tame Impala"
+    },
+    "album": {
+     "id": 10709540,
+     "title": "Currents",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/de5b9b704cd4ec36f8bf49beb3e17ba2/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 941898,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 427243362,
+    "title": "Let It Happen (Soulwax Remix)",
+    "duration": 556,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/c/f/0/4cf41b91d535b23ccc4b1ab91aa3b558.mp3?hdnea=exp=1792632382~acl=/api/1/1/4/c/f/0/4cf41b91d535b23ccc4b1ab91aa3b558.mp3*~data=user_id=0,application_id=42~hmac=b4ce9f74fb2674af29271be47f74cfb1a089f817d895304db1d88e1215aec878",
+    "artist": {
+     "id": 134790,
+     "name": "Tame Impala"
+    },
+    "album": {
+     "id": 51431732,
+     "title": "Currents B-Sides & Remixes",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4d9b3ad6489b071bb1aa6d959b1dba53/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 516723,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3092821611,
+    "title": "Let It Happen (Radio Edit)",
+    "duration": 239,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/8/0/0/480335dfd10d715177b8eb54de045a1b.mp3?hdnea=exp=1792632382~acl=/api/1/1/4/8/0/0/480335dfd10d715177b8eb54de045a1b.mp3*~data=user_id=0,application_id=42~hmac=d381cb10d4346e1f298ca4d43e3951c39c5a14b34516b8ebd2c0a8c27fa204a9",
+    "artist": {
+     "id": 134790,
+     "name": "Tame Impala"
+    },
+    "album": {
+     "id": 670372491,
+     "title": "Chill 2010s",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/81d03c19443f0392b66657fd22d51f5e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 502280,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 135485014,
+    "title": "Let it Happen",
+    "duration": 251,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/8/8/0/a888609be22eb562d0cf2cac115adaa0.mp3?hdnea=exp=1792632382~acl=/api/1/1/a/8/8/0/a888609be22eb562d0cf2cac115adaa0.mp3*~data=user_id=0,application_id=42~hmac=bc70da5192227a027dfbea6b7b22560b16193ba1a7cac57a571dd308b20204cb",
+    "artist": {
+     "id": 5174833,
+     "name": "Midnite String Quartet"
+    },
+    "album": {
+     "id": 14472330,
+     "title": "MSQ Performs Tame Impala",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/056e65e5c256aa0b48a73d5920c25efa/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 22334,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 917368862,
+    "title": "Let It Happen",
+    "duration": 367,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/6/4/0/764f2fa7727edc6e3eee2d71dc2ef58f.mp3?hdnea=exp=1792632382~acl=/api/1/1/7/6/4/0/764f2fa7727edc6e3eee2d71dc2ef58f.mp3*~data=user_id=0,application_id=42~hmac=1b67e2136fa3fb31b367de1e77447b5bc9053cac3e819967e3a9713ea6c9a37a",
+    "artist": {
+     "id": 65187922,
+     "name": "Ambient Light Orchestra"
+    },
+    "album": {
+     "id": 139085112,
+     "title": "Ambient Translations of Tame Impala",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c19e5ad02e76da34df73ec6e524551ba/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 1996,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3443926071,
+    "title": "Let It Happen",
+    "duration": 214,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/f/c/0/cfc87644833f268b464e6e5d4f24ec12.mp3?hdnea=exp=1792632382~acl=/api/1/1/c/f/c/0/cfc87644833f268b464e6e5d4f24ec12.mp3*~data=user_id=0,application_id=42~hmac=7f1895ecec602994ec7cb87793e539b0d45cd5f5f2c74484e47d31e92f4b0e3e",
+    "artist": {
+     "id": 14175089,
+     "name": "Acoustic Heartstrings"
+    },
+    "album": {
+     "id": 782518501,
+     "title": "Acoustic Guitar Renditions of Tame Impala",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3bfaae932db45c58b4e7b59d6c4053bf/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 871,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1668093362,
+    "title": "Let It Happen",
+    "duration": 252,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/1/7/0/a171b39d58ae41d06ef8be428ea62083.mp3?hdnea=exp=1792632382~acl=/api/1/1/a/1/7/0/a171b39d58ae41d06ef8be428ea62083.mp3*~data=user_id=0,application_id=42~hmac=4895b416fc1a3d5f5f32f22edc9d7da8d73b8d5f44a31d10fe86373e8c1f9521",
+    "artist": {
+     "id": 74481062,
+     "name": "Roma Symphony Orchestra"
+    },
+    "album": {
+     "id": 298741562,
+     "title": "RSO Performs Tame Impala",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0cbff8ede24847771bdfdac945b3bcfd/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 33029,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 980450492,
+    "title": "Let It Happen",
+    "duration": 326,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/0/3/0/5030abf69a0bd0f665805a8aae34ea6f.mp3?hdnea=exp=1792632382~acl=/api/1/1/5/0/3/0/5030abf69a0bd0f665805a8aae34ea6f.mp3*~data=user_id=0,application_id=42~hmac=7ad745dfae35023ca1d936c3cc4bdc4c75e73a463064c70f2da657fffd43a280",
+    "artist": {
+     "id": 377693,
+     "name": "Yoga Pop Ups"
+    },
+    "album": {
+     "id": 152528262,
+     "title": "Yogi Translations of Tame Impala",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/195c5e6398d94eff6fba0503044350f3/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 2480,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "cairokee": {
+  "artist": [
+   {
+    "id": 4409439,
+    "name": "Cairokee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/5a3ac63ee64160e0fd9b88c2d130f03e/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 469816,
+    "nb_album": 37
+   },
+   {
+    "id": 77207,
+    "name": "Cherokee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/5d498b6b9c98d9d17beb4cdebdfe5904/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 16396,
+    "nb_album": 8
+   },
+   {
+    "id": 11285738,
+    "name": "Fiokee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/b7d79cbeaf9317c138983c6772b0de37/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 2246,
+    "nb_album": 45
+   },
+   {
+    "id": 119602852,
+    "name": "Day$okee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/387b07a06b624f2fbcf2f2c382c53ec6/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 597,
+    "nb_album": 21
+   },
+   {
+    "id": 143382,
+    "name": "Carolee Carmello",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/583fde5ebdde96e4ebbbe9c72cc5f845/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 17,
+    "nb_album": 2
+   },
+   {
+    "id": 246207542,
+    "name": "Cherokee Social",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/be5e6a7ec091c88769a92f75d2cb7bcc/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 99,
+    "nb_album": 16
+   },
+   {
+    "id": 157899702,
+    "name": "Cherokee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/dfe2a4f7b6a99ad785af0b07ff5c83e5/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 2,
+    "nb_album": 7
+   },
+   {
+    "id": 9900914,
+    "name": "Cherokee",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/836cb10d1e543eaea72f6cb4506c05f1/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 7,
+    "nb_album": 3
+   }
+  ],
+  "album": [
+   {
+    "id": 1042362322,
+    "title": "Supernova",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 323860307,
+    "title": "Nas W Nas",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be48433a00b9cab74639ac3948835683/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 12,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 255081102,
+    "title": "The Ugly Ducklings",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/615939d0dd9787e8f6fe5a649393b3a0/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 9,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 254507752,
+    "title": "Noaata Beida",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2eced838f7821268f8ec34ff764c33c2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 11,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 318909727,
+    "title": "كايروكي من الاستوديو",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d8f64e0a4a6f4e7602d5207e30af4f2d/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 45706411,
+    "title": "Dinosaur",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6801767a1ba35d6d5c7d41cfe1a9d2e3/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 357275537,
+    "title": "Roma",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/59aca1990910aa9314c818af8dada52e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 12,
+    "record_type": "album",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   },
+   {
+    "id": 356970247,
+    "title": "James Dean",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/705a9b26a9225f5f237aca0195fd4c8b/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 4192089202,
+    "title": "Wahdy",
+    "duration": 293,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/5/4/0/f5478fea5e4bba9d4b85a4733e468081.mp3?hdnea=exp=1792632383~acl=/api/1/1/f/5/4/0/f5478fea5e4bba9d4b85a4733e468081.mp3*~data=user_id=0,application_id=42~hmac=94cc8f9c796fdfbf3f41653a88dacf7f92c47876ba78e41eab1fb79404010a65",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 1042362322,
+     "title": "Supernova",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 396894,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4192089132,
+    "title": "Nesena",
+    "duration": 215,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/2/a/0/92a3ff5c0a6255116fa4b88793ac82b4.mp3?hdnea=exp=1792632383~acl=/api/1/1/9/2/a/0/92a3ff5c0a6255116fa4b88793ac82b4.mp3*~data=user_id=0,application_id=42~hmac=3b413a127d6da21d22a517e416dbed7cbb149e602631dffeb7236ab2f848f422",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 1042362322,
+     "title": "Supernova",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 393900,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1917028047,
+    "title": "Ana Negm",
+    "duration": 241,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/c/8/0/7c80275755ed243ce8b338f878804d00.mp3?hdnea=exp=1792632383~acl=/api/1/1/7/c/8/0/7c80275755ed243ce8b338f878804d00.mp3*~data=user_id=0,application_id=42~hmac=dfff24979baebbcffb21b27d16eaa7aae80fcd3c9f816024d562e447ff394655",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 357275537,
+     "title": "Roma",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/59aca1990910aa9314c818af8dada52e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 387467,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1917028037,
+    "title": "Basrah w Atooh",
+    "duration": 237,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/f/3/0/af37dac7bc9fc799d8c23908c7459756.mp3?hdnea=exp=1792632383~acl=/api/1/1/a/f/3/0/af37dac7bc9fc799d8c23908c7459756.mp3*~data=user_id=0,application_id=42~hmac=011b80a49eb4dbd26b8cf93e9182a97eec2000ea75352df05defb5c7d5b8cb06",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 357275537,
+     "title": "Roma",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/59aca1990910aa9314c818af8dada52e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 389840,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4192089142,
+    "title": "Mategy",
+    "duration": 338,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/9/d/0/49d201c5ff17d132b3f1b1020a4980a0.mp3?hdnea=exp=1792632383~acl=/api/1/1/4/9/d/0/49d201c5ff17d132b3f1b1020a4980a0.mp3*~data=user_id=0,application_id=42~hmac=2f27c376fb705b206a26f57d62559b1133c7575302fe12b2323d82738ea25a09",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 1042362322,
+     "title": "Supernova",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 347088,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2564121202,
+    "title": "Telk Qadeya",
+    "duration": 354,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/e/0/0/3e0b5075b81951cb9dcefe19298c92de.mp3?hdnea=exp=1792632383~acl=/api/1/1/3/e/0/0/3e0b5075b81951cb9dcefe19298c92de.mp3*~data=user_id=0,application_id=42~hmac=230100ffcd75697906a3b0d5f57493a32b0993fdfd2d5c27d3308257492e8e3d",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 518146472,
+     "title": "Telk Qadeya",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2360e2ce60efb80936d46ebf045a2e1f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 362934,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4192089152,
+    "title": "Ana Fadel",
+    "duration": 281,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/d/1/0/8d1e1032d214b3183800c22a71df358e.mp3?hdnea=exp=1792632383~acl=/api/1/1/8/d/1/0/8d1e1032d214b3183800c22a71df358e.mp3*~data=user_id=0,application_id=42~hmac=ae9100cc16ac4898ae987737cc9c3f3106aa7304d8ec110f8d83ab0ea9ef4545",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 1042362322,
+     "title": "Supernova",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 348940,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4192089182,
+    "title": "Mot Leh",
+    "duration": 284,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/b/d/0/6bd8afa1ae4be967de7f54e7847d1685.mp3?hdnea=exp=1792632383~acl=/api/1/1/6/b/d/0/6bd8afa1ae4be967de7f54e7847d1685.mp3*~data=user_id=0,application_id=42~hmac=ef6cee17be8af7c22a6c739e25002e78bccffe322f0c680c5fb79a568082b0ec",
+    "artist": {
+     "id": 4409439,
+     "name": "Cairokee"
+    },
+    "album": {
+     "id": 1042362322,
+     "title": "Supernova",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/570a84020d10120147172e2cc82bf473/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 328568,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "oum kalthoum enta omri": {
+  "artist": [
+   {
+    "id": 1236161,
+    "name": "Umm Kulthum",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e9fee29059b16f7304a4030afbfb4a63/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 366123,
+    "nb_album": 4
+   }
+  ],
+  "album": [
+   {
+    "id": 804881451,
+    "title": "Best of : Oum Kalsoum",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c2ceda8dd8068731a8352ebb47744f89/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 18,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 744338021,
+    "title": "Oum Kalthoum - Anthology",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b1bc1fdd55c70e09ad64a641ef017873/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 15,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 845240892,
+    "title": "الف ليلة وليلة",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/93b68338fbe951ae2af9d968cbd39ed2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 574086761,
+    "title": "Oum Kalsoum \"Fakkarouny\"",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b0000014bd6a68115e3d0450433091f8/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 8,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 1131212,
+    "title": "Oum Kalsoum, 36 Titles, Remastered",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/75151f60be2f9a90cdc7161bd31a238d/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 36,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 1267259,
+    "title": "Wataneyat 1 Thowwar",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e3d24bd31b7bc098ecae64f4e2fa0d9e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 5,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 1131211,
+    "title": "Oum Kalsoum, The Legend of Arab Music",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c1a8a867dbb9724211a5b89e49248441/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 23,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   },
+   {
+    "id": 1025023641,
+    "title": "** Oum Kalsoum 1",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1eb2feef2bcd1efd491a656c650b713a/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 5,
+    "record_type": "album",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 2139795527,
+    "title": "Alf leila wa leila",
+    "duration": 3494,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/0/f/0/20fbecfcf8d55a61fcef48401651de7c.mp3?hdnea=exp=1792632384~acl=/api/1/1/2/0/f/0/20fbecfcf8d55a61fcef48401651de7c.mp3*~data=user_id=0,application_id=42~hmac=a91ca862c89451b99a9771ec0cdefb414780f259ef8e07a49a7a9486ec8a8ab1",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 404872627,
+     "title": "Oum Kalsoum",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f5e700208f364fce9d56db9ef2eddf3c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 310475,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3624936022,
+    "title": "انت عمري",
+    "duration": 3551,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/9/d/0/19dde4997bdf31f56cf5b3e92beb4dee.mp3?hdnea=exp=1792632384~acl=/api/1/1/1/9/d/0/19dde4997bdf31f56cf5b3e92beb4dee.mp3*~data=user_id=0,application_id=42~hmac=76446d7f87552994dd18c81c7d8970d241467acf021accdcba8e21e65633e790",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 845826482,
+     "title": "انت عمري",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9cbe1757fdc1a8102d175ba58fdacc18/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 224324,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3623279142,
+    "title": "وصفوا لي الصبر",
+    "duration": 840,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/d/c/0/cdcd71e8f2b182b4f8d6624c3a12e103.mp3?hdnea=exp=1792632384~acl=/api/1/1/c/d/c/0/cdcd71e8f2b182b4f8d6624c3a12e103.mp3*~data=user_id=0,application_id=42~hmac=03977e77fd7ac45613dbf8c42639e0cbdc9c345d3ff525fee3502eeb9414ae85",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 845257992,
+     "title": "روائع أم كلثوم",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6fec92f046dbe5554e15d71fe1e8f203/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 121911,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 12313721,
+    "title": "Ya hanah ell",
+    "duration": 353,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/1/b/0/31b2c4967b95070d878dc171e2ae91e5.mp3?hdnea=exp=1792632384~acl=/api/1/1/3/1/b/0/31b2c4967b95070d878dc171e2ae91e5.mp3*~data=user_id=0,application_id=42~hmac=98fe71688cd2dae557aa51782a249e9a1195d15fe98477b973586182744b877f",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 1131237,
+     "title": "Oum Kalthoum, Arabic Classics remastered, Classiques Arabes remasterisés",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/69d5d5b2ece71e988323ca432f653c61/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 31641,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1402612072,
+    "title": "Techouf Oumri",
+    "duration": 378,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/4/a/0/c4a8863a9ba4839854d67737f7c6f9b1.mp3?hdnea=exp=1792632384~acl=/api/1/1/c/4/a/0/c4a8863a9ba4839854d67737f7c6f9b1.mp3*~data=user_id=0,application_id=42~hmac=ba91e9ed959d808bb411865ed8960dafa256a4a1833e3e70572a66d10016d47a",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 236845712,
+     "title": "Oum Kalsoum",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/391bc4e4d35d4b6f776086ca3a021263/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 113037,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3508564401,
+    "title": "Khassamatni",
+    "duration": 362,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/6/1/0/e61893ab9004c6abecff7ba3dd97dc4e.mp3?hdnea=exp=1792632384~acl=/api/1/1/e/6/1/0/e61893ab9004c6abecff7ba3dd97dc4e.mp3*~data=user_id=0,application_id=42~hmac=e8e16ceb130de2367df0179fc14324524023b488923c3b5f67643e14376e8910",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 804881451,
+     "title": "Best of : Oum Kalsoum",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c2ceda8dd8068731a8352ebb47744f89/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 138137,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4143586221,
+    "title": "Aini ya aini",
+    "duration": 317,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/b/8/0/5b84270d40e6ef8d2ac5e3ecd9d50985.mp3?hdnea=exp=1792632384~acl=/api/1/1/5/b/8/0/5b84270d40e6ef8d2ac5e3ecd9d50985.mp3*~data=user_id=0,application_id=42~hmac=752b7f46b15028d6e391b4aa0970a6791306a76040b83a24dcec1435c1327e0b",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 1025037221,
+     "title": "Oum Kalsoum 4",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1eb2feef2bcd1efd491a656c650b713a/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 39447,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3623206102,
+    "title": "دارت الأيام",
+    "duration": 2391,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/a/7/0/ea7aa280e8a3c4f263e8bf3815724ee7.mp3?hdnea=exp=1792632384~acl=/api/1/1/e/a/7/0/ea7aa280e8a3c4f263e8bf3815724ee7.mp3*~data=user_id=0,application_id=42~hmac=4eaf02e5562ac5a66b6f182b71916b6f6cdaea0cf38c88d6ef58f2c126d3a1be",
+    "artist": {
+     "id": 1236161,
+     "name": "Umm Kulthum"
+    },
+    "album": {
+     "id": 845231932,
+     "title": "دارت الأيام",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c653bad4622cf5f67b0e72b127865608/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 199163,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "pink floyd comfortably numb": {
+  "artist": [],
+  "album": [
+   {
+    "id": 8902737,
+    "title": "Comfortably Numb - On Piano (Tribute to Pink Floyd)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2d01ce52b3b58a8fbe2c695f1d4da625/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1515522,
+     "name": "Dagmar Krug"
+    }
+   },
+   {
+    "id": 265182102,
+    "title": "Pulse (Live)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a1a2b945b4ed8d9f84eda7974696d66c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 25,
+    "record_type": "album",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   },
+   {
+    "id": 157054802,
+    "title": "The Doctor (Comfortably Numb The Wall Work In Progress, Pt. 2, 1979 Programme 1 Band Demo 2011 Remastered Versi",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/326d775bcd83c3a051b72dcab460e184/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   },
+   {
+    "id": 12114248,
+    "title": "The Wall",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2bea643b92a8fc6b19a23756f718cbd4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 26,
+    "record_type": "album",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   },
+   {
+    "id": 12114244,
+    "title": "Delicate Sound of Thunder (Live)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cb33edf058cce918bb9a47e8d1bd32df/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 15,
+    "record_type": "album",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   },
+   {
+    "id": 225226942,
+    "title": "Live at Knebworth 1990",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8f61e8d936a8945dfd71cf68ec3cb557/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 7,
+    "record_type": "album",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   },
+   {
+    "id": 1055037912,
+    "title": "MA KANE N’7ESSCH (The Moroccan Pink Floyd) (Psychedelic Progressive Moroccan Rock x Comfortably Numb)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f335c8f1afb1cc358faaf87c529ba528/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 394170471,
+     "name": "AI Next Wave"
+    }
+   },
+   {
+    "id": 12114262,
+    "title": "A Foot in the Door: The Best of Pink Floyd",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/59355945331f15b639e62a3259be35f2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 116914122,
+    "title": "Comfortably Numb",
+    "duration": 382,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/d/f/0/fdfb3224e60d793b0585f97a793e8648.mp3?hdnea=exp=1792632385~acl=/api/1/1/f/d/f/0/fdfb3224e60d793b0585f97a793e8648.mp3*~data=user_id=0,application_id=42~hmac=a2a038113439c7b6de4bd26c5b9dbf868b198ab4a1d8b8d3efad972fdfbcce31",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 12114248,
+     "title": "The Wall",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2bea643b92a8fc6b19a23756f718cbd4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 819187,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 116914348,
+    "title": "Comfortably Numb",
+    "duration": 382,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/6/4/0/5640c1722fc0e0bb16a98a110932f607.mp3?hdnea=exp=1792632385~acl=/api/1/1/5/6/4/0/5640c1722fc0e0bb16a98a110932f607.mp3*~data=user_id=0,application_id=42~hmac=86a2a60e7361e842c87c53cb7dbab02a989d0fd4a640be4ad0bbd1d1cd4e918e",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 12114262,
+     "title": "A Foot in the Door: The Best of Pink Floyd",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/59355945331f15b639e62a3259be35f2/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 714281,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1520205192,
+    "title": "Comfortably Numb (Live)",
+    "duration": 569,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/f/3/0/bf3a0d9031dc8eb498d71efe05cb30fd.mp3?hdnea=exp=1792632385~acl=/api/1/1/b/f/3/0/bf3a0d9031dc8eb498d71efe05cb30fd.mp3*~data=user_id=0,application_id=42~hmac=d2155db75ac04a72638f21fe71ab0665dfbe0ccc16f5b0a8dea3f82387c18427",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 265182102,
+     "title": "Pulse (Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a1a2b945b4ed8d9f84eda7974696d66c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 586243,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 116914310,
+    "title": "Comfortably Numb",
+    "duration": 413,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/7/6/0/276126e9b12f4448bfd5d5bcb50d4111.mp3?hdnea=exp=1792632385~acl=/api/1/1/2/7/6/0/276126e9b12f4448bfd5d5bcb50d4111.mp3*~data=user_id=0,application_id=42~hmac=462f51c57d17de156a4d5f07c29b8185d7758996363fab87422f2dbb6326233c",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 12114260,
+     "title": "Echoes: The Best of Pink Floyd",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/af7adc3c0ce592bebcfc9651cb37caed/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 422588,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 116914072,
+    "title": "Comfortably Numb (Live)",
+    "duration": 536,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/5/b/0/35b00cf4a62f63195c92a8952fc6c91d.mp3?hdnea=exp=1792632385~acl=/api/1/1/3/5/b/0/35b00cf4a62f63195c92a8952fc6c91d.mp3*~data=user_id=0,application_id=42~hmac=0197e81ac15a1efb88975069b7cfaa7d55334a1a6bfdb32a6b1ba482147d110e",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 12114244,
+     "title": "Delicate Sound of Thunder (Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/cb33edf058cce918bb9a47e8d1bd32df/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 373753,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1352940292,
+    "title": "Comfortably Numb (Live at Knebworth 1990)",
+    "duration": 467,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/7/1/0/c7142f670005e4173f10e100783383de.mp3?hdnea=exp=1792632385~acl=/api/1/1/c/7/1/0/c7142f670005e4173f10e100783383de.mp3*~data=user_id=0,application_id=42~hmac=4f4d09f3e381d6c21241a995e6c301ab425203f08e01db2d43555ffc545178fb",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 225226942,
+     "title": "Live at Knebworth 1990",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8f61e8d936a8945dfd71cf68ec3cb557/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 333566,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 1122138232,
+    "title": "Comfortably Numb (2019 remix Live)",
+    "duration": 594,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/9/a/0/89a6facf77a2abbb3a25a8ef7d13982f.mp3?hdnea=exp=1792632385~acl=/api/1/1/8/9/a/0/89a6facf77a2abbb3a25a8ef7d13982f.mp3*~data=user_id=0,application_id=42~hmac=8483e1faf8321d3b2fb75f734a24d189c0a414abddbd2d7d3d28aa9389a05f05",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 182318122,
+     "title": "Delicate Sound of Thunder (2019 Remix) (Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2a00a906933603d09959ec1f2472ae76/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 312663,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2454812225,
+    "title": "Comfortably Numb (Live)",
+    "duration": 537,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/f/a/0/3fa570caf72a71d535cce113d600b1f6.mp3?hdnea=exp=1792632385~acl=/api/1/1/3/f/a/0/3fa570caf72a71d535cce113d600b1f6.mp3*~data=user_id=0,application_id=42~hmac=fd5578dba1e5f7a6fc7f936b06e26c7a5e923c8e47b5ed49fb4b96e934bdbf3e",
+    "artist": {
+     "id": 860,
+     "name": "Pink Floyd"
+    },
+    "album": {
+     "id": 488058205,
+     "title": "Rock, Rock y más Rock",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/eba904bcb0f84cbac85c89be9713f909/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 278596,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "billie eilish": {
+  "artist": [
+   {
+    "id": 9635624,
+    "name": "Billie Eilish",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/8eab1a9a644889aabaca1e193e05f984/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 9282134,
+    "nb_album": 32
+   },
+   {
+    "id": 120810992,
+    "name": "Billie Eilish & ROSALÍA",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 1323,
+    "nb_album": 0
+   },
+   {
+    "id": 214957705,
+    "name": "DJ Billie Eilish",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 12,
+    "nb_album": 0
+   },
+   {
+    "id": 12001578,
+    "name": "Billie Eilish O'Connell",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 2233,
+    "nb_album": 0
+   }
+  ],
+  "album": [
+   {
+    "id": 586786102,
+    "title": "HIT ME HARD AND SOFT",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 91598612,
+    "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 14,
+    "record_type": "album",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 53522522,
+    "title": "dont smile at me",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c6e5ffd676146c447a4a81819c5d29ae/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 9,
+    "record_type": "ep",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 248214242,
+    "title": "Happier Than Ever",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9955047483278bd0f93420951226ac44/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 16,
+    "record_type": "album",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 61392882,
+    "title": "lovely",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/910033ba5cd64291a921061c8e8ba85a/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 338169017,
+    "title": "Guitar Songs",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4cc57080cf8a5ce157adf50a85acebf5/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 2,
+    "record_type": "ep",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 131675232,
+    "title": "No Time To Die",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5c8b9fe62c67cb0257ea76bcdf4ee06f/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    }
+   },
+   {
+    "id": 623577791,
+    "title": "Guess featuring billie eilish",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a6a00854b95f19a50772e50bdd2c4a0e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1462230,
+     "name": "Charli xcx"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 2801558052,
+    "title": "BIRDS OF A FEATHER",
+    "duration": 210,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/e/0/0/5e0fb99f6f1e0f18ab70a4c0d18efa5c.mp3?hdnea=exp=1792632386~acl=/api/1/1/5/e/0/0/5e0fb99f6f1e0f18ab70a4c0d18efa5c.mp3*~data=user_id=0,application_id=42~hmac=8888b748f2fb333af20a3da67276c51e2e9e4ae3e6b7089223e3e341cc312f02",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 586786102,
+     "title": "HIT ME HARD AND SOFT",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 963029,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2801558062,
+    "title": "WILDFLOWER",
+    "duration": 261,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/b/6/0/ab6f382533bd12e8905a8141ceaed4e8.mp3?hdnea=exp=1792632386~acl=/api/1/1/a/b/6/0/ab6f382533bd12e8905a8141ceaed4e8.mp3*~data=user_id=0,application_id=42~hmac=f74b1d8c6975618588d472086ee6c253529e8b4f1f7ed740354918d0a3a12b18",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 586786102,
+     "title": "HIT ME HARD AND SOFT",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 964181,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2801558042,
+    "title": "CHIHIRO",
+    "duration": 303,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/f/5/0/0f5715afba045fbfcadd73fb0c2135df.mp3?hdnea=exp=1792632386~acl=/api/1/1/0/f/5/0/0f5715afba045fbfcadd73fb0c2135df.mp3*~data=user_id=0,application_id=42~hmac=483169b9a817e810a1fe738e7d7627ead85bf4951212cdd38ccfda72e8f8d7d2",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 586786102,
+     "title": "HIT ME HARD AND SOFT",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 931082,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 655095962,
+    "title": "when the party's over",
+    "duration": 199,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/6/2/0/2622138c94fa96f4d5f06a4db1db733a.mp3?hdnea=exp=1792632386~acl=/api/1/1/2/6/2/0/2622138c94fa96f4d5f06a4db1db733a.mp3*~data=user_id=0,application_id=42~hmac=5ff918098cb20ac2455f13bf53f84370d73bedb3f01c385aff864f713541e352",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 91598612,
+     "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 917041,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2366043655,
+    "title": "What Was I Made For? [From The Motion Picture \"Barbie\"]",
+    "duration": 222,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/0/c/0/80ce163046226da27191c2abf5f5517c.mp3?hdnea=exp=1792632386~acl=/api/1/1/8/0/c/0/80ce163046226da27191c2abf5f5517c.mp3*~data=user_id=0,application_id=42~hmac=2c97eae456a180c3d631b5fd66124868f053b73ac74f80f10f5f2e97427a343d",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 463935645,
+     "title": "What Was I Made For? [From The Motion Picture \"Barbie\"]",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 911507,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2801558032,
+    "title": "LUNCH",
+    "duration": 180,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/4/7/0/64794bd2d788edb12e44b11e09548d10.mp3?hdnea=exp=1792632386~acl=/api/1/1/6/4/7/0/64794bd2d788edb12e44b11e09548d10.mp3*~data=user_id=0,application_id=42~hmac=58a84c6537af879511bd18977fd44895f0ad0642138f15e4d9e5627439492c85",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 586786102,
+     "title": "HIT ME HARD AND SOFT",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 914352,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 655095912,
+    "title": "bad guy",
+    "duration": 194,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/5/2/0/b528e07441caa4883c8d1c4b746bf47c.mp3?hdnea=exp=1792632386~acl=/api/1/1/b/5/2/0/b528e07441caa4883c8d1c4b746bf47c.mp3*~data=user_id=0,application_id=42~hmac=0d1eb5045ac55df7af0f6bbfbb06678737da9df504b6f217822ea75df96f7323",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 91598612,
+     "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 932130,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2801558112,
+    "title": "BLUE",
+    "duration": 343,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/5/2/0/852b177941c869dbf003f386e8ff5b38.mp3?hdnea=exp=1792632386~acl=/api/1/1/8/5/2/0/852b177941c869dbf003f386e8ff5b38.mp3*~data=user_id=0,application_id=42~hmac=31f7c3fb90bd9299c860f783945a6c5aba97a4bc8e32a99590d869be1b33a10e",
+    "artist": {
+     "id": 9635624,
+     "name": "Billie Eilish"
+    },
+    "album": {
+     "id": 586786102,
+     "title": "HIT ME HARD AND SOFT",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 893889,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "hotel california": {
+  "artist": [
+   {
+    "id": 278957,
+    "name": "Hotel California",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/27c4fd958a6cff1b6763a4953e707608/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 7812,
+    "nb_album": 21
+   },
+   {
+    "id": 176307607,
+    "name": "Jotel California",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/43ba0f4edd33650717e3427dba209c85/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 6,
+    "nb_album": 3
+   },
+   {
+    "id": 13142645,
+    "name": "Hotel California Rooftop Orchestra",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 100,
+    "nb_album": 0
+   },
+   {
+    "id": 5123322,
+    "name": "Ed Landry, Abe Lyman's California Ambassador Hotel Orchestra",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 41,
+    "nb_album": 0
+   },
+   {
+    "id": 5123314,
+    "name": "Abe Lyman's California Ambassador Hotel Orchestra",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 62,
+    "nb_album": 0
+   },
+   {
+    "id": 5154735,
+    "name": "Abe Lymans & His California Ambassador Hotel Orchestra",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 27,
+    "nb_album": 0
+   },
+   {
+    "id": 5137188,
+    "name": "Paul Neely, Abe Lyman's California Ambassador Hotel Orchestra",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 33,
+    "nb_album": 0
+   }
+  ],
+  "album": [
+   {
+    "id": 6670584,
+    "title": "Hotel California (2013 Remaster)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ef02459f8e72f33acef71617a97d3999/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 9,
+    "record_type": "album",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    }
+   },
+   {
+    "id": 51350192,
+    "title": "Hotel California (40th Anniversary Expanded Edition)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a6c7b49cfdaf4ee233f66c3070d2f40/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 19,
+    "record_type": "album",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    }
+   },
+   {
+    "id": 856782282,
+    "title": "Hotel California (Rock)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5c89775d965c5ef018126440a3276e20/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 68249,
+     "name": "Our Last Night"
+    }
+   },
+   {
+    "id": 6483949,
+    "title": "Hotel California (Deluxe)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a2a606cdc4ec03ad87b228b7a5acee83/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 18,
+    "record_type": "album",
+    "artist": {
+     "id": 304545,
+     "name": "Tyga"
+    }
+   },
+   {
+    "id": 851219832,
+    "title": "Hotel California",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7820b046803a7bb37d34f9d437790152/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 9490530,
+     "name": "Red Lemon"
+    }
+   },
+   {
+    "id": 124507802,
+    "title": "Hotel California",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4462eea4602197f965406a3f9cc41a1d/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 20,
+    "record_type": "album",
+    "artist": {
+     "id": 1249099,
+     "name": "Acoustic Moods"
+    }
+   },
+   {
+    "id": 321145727,
+    "title": "Hotel California",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/98fdc8718ea8827a49f9352e04adb7ec/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 207759,
+     "name": "Bossa Bros"
+    }
+   },
+   {
+    "id": 60597782,
+    "title": "Hotel California",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ba80285c252faec8ddbb956915d3e749/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 3,
+    "record_type": "single",
+    "artist": {
+     "id": 327968,
+     "name": "Moonraisers"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 426703682,
+    "title": "Hotel California (2013 Remaster)",
+    "duration": 391,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/e/0/0/de0b52925103149e94a7123d0c0cb6c4.mp3?hdnea=exp=1792632388~acl=/api/1/1/d/e/0/0/de0b52925103149e94a7123d0c0cb6c4.mp3*~data=user_id=0,application_id=42~hmac=3499035dccc6e584c3b167ed2c7ff29a2d45e534ce24db07157a8df9b9f7d664",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    },
+    "album": {
+     "id": 51350192,
+     "title": "Hotel California (40th Anniversary Expanded Edition)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a6c7b49cfdaf4ee233f66c3070d2f40/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 977590,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 642692332,
+    "title": "Hotel California (Live On MTV, 1994)",
+    "duration": 432,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/c/c/0/bcc27c2f73ffd4e253d35e091dbb9759.mp3?hdnea=exp=1792632388~acl=/api/1/1/b/c/c/0/bcc27c2f73ffd4e253d35e091dbb9759.mp3*~data=user_id=0,application_id=42~hmac=4eab42fbd1f68b4f57bf15c0dfeb21c90a9ef445b642c714f633b551a976b77b",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    },
+    "album": {
+     "id": 89201332,
+     "title": "Hell Freezes Over (Remaster 2018)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2d8ad0dfdf16395cf21cb153f806b094/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 721743,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2421747515,
+    "title": "Hotel California (Live)",
+    "duration": 440,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/0/5/0/405c9cb25d3c8a76cd14b8a5c7bc3369.mp3?hdnea=exp=1792632388~acl=/api/1/1/4/0/5/0/405c9cb25d3c8a76cd14b8a5c7bc3369.mp3*~data=user_id=0,application_id=42~hmac=e15afbe71fa4a3926ed0975df432c6cd095fba48779bdb4ab601340b51e8b611",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    },
+    "album": {
+     "id": 479136805,
+     "title": "Live On MTV 1994",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/34950f39871cf0c9f06f93db8350746d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 622345,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 958716742,
+    "title": "Hotel California (Spanish Mix)",
+    "duration": 347,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/3/5/0/53599dade8f2767b6d9257bde6ad28e8.mp3?hdnea=exp=1792632388~acl=/api/1/1/5/3/5/0/53599dade8f2767b6d9257bde6ad28e8.mp3*~data=user_id=0,application_id=42~hmac=76ec28a0967c9d02be0c5d2742a55ca13ea9d15c5017139cc19c808aa24e80f4",
+    "artist": {
+     "id": 723,
+     "name": "Gipsy Kings"
+    },
+    "album": {
+     "id": 147841382,
+     "title": "The Essential Gipsy Kings",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/437df84ac29952af1a22abc18bf62335/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 666958,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 426703852,
+    "title": "Hotel California (Live at The Forum, Los Angeles, CA, 10/20-22/1976)",
+    "duration": 409,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/a/7/0/9a7dc22e8d47fc25e9daf457e9e487fa.mp3?hdnea=exp=1792632388~acl=/api/1/1/9/a/7/0/9a7dc22e8d47fc25e9daf457e9e487fa.mp3*~data=user_id=0,application_id=42~hmac=51f4dc8ce85c455d99d603d363ae66b323ff487250f76df0eed4849c59e591d7",
+    "artist": {
+     "id": 210,
+     "name": "Eagles"
+    },
+    "album": {
+     "id": 51350192,
+     "title": "Hotel California (40th Anniversary Expanded Edition)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7a6c7b49cfdaf4ee233f66c3070d2f40/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 580916,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3629599752,
+    "title": "Hotel California",
+    "duration": 128,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/6/c/0/96c1ea607aa3fe5b360a303fe0df00c8.mp3?hdnea=exp=1792632388~acl=/api/1/1/9/6/c/0/96c1ea607aa3fe5b360a303fe0df00c8.mp3*~data=user_id=0,application_id=42~hmac=d059885ba87a034857c842b308fcdb3f268d7b2b11a6a899474040ccd7c393d6",
+    "artist": {
+     "id": 5078097,
+     "name": "Joji"
+    },
+    "album": {
+     "id": 847338002,
+     "title": "Piss In The Wind",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8924735f044517fa68978f78a3c3a2a4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 536155,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 1762854877,
+    "title": "Hotel California",
+    "duration": 248,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/8/5/0/085faf3ce75dd7076f6289312ddab811.mp3?hdnea=exp=1792632388~acl=/api/1/1/0/8/5/0/085faf3ce75dd7076f6289312ddab811.mp3*~data=user_id=0,application_id=42~hmac=83f0c6dee3bd39cb04295dae12769098081165609f23b31d1c7f7effc10d332f",
+    "artist": {
+     "id": 207759,
+     "name": "Bossa Bros"
+    },
+    "album": {
+     "id": 321145727,
+     "title": "Hotel California",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/98fdc8718ea8827a49f9352e04adb7ec/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 548827,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 378072241,
+    "title": "Hotel California (Cover)",
+    "duration": 284,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/1/d/0/61d3b712852d1ab96d645efbab724eeb.mp3?hdnea=exp=1792632388~acl=/api/1/1/6/1/d/0/61d3b712852d1ab96d645efbab724eeb.mp3*~data=user_id=0,application_id=42~hmac=df41e7f8347ced264de143f0c2ffe448b5a61a0f8ec2b192658b50a96fd7f4d6",
+    "artist": {
+     "id": 16398,
+     "name": "Passenger"
+    },
+    "album": {
+     "id": 43819941,
+     "title": "Sunday Night Sessions",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1160e65fe052d26cbc068994416534dc/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 510542,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "bohemian rhapsody": {
+  "artist": [
+   {
+    "id": 279863,
+    "name": "Bohemian Rhapsody",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/87e4c0897cf676a571a5f0109b4814c7/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 5371,
+    "nb_album": 14
+   },
+   {
+    "id": 8374840,
+    "name": "The Bohemian Rhapsody's",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 228,
+    "nb_album": 0
+   },
+   {
+    "id": 333922971,
+    "name": "Bohemian Azuki Rhapsody",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/60865aa22bfe7cc10f754cceb9113d7c/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 0,
+    "nb_album": 1
+   },
+   {
+    "id": 251413962,
+    "name": "BOHEMIAN RAPSODY",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/121f03e2b269cb8390cb81bcba6b9b95/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 16,
+    "nb_album": 1
+   }
+  ],
+  "album": [
+   {
+    "id": 1007321401,
+    "title": "Bohemian Rhapsody (The Original Soundtrack)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5bbfab8ae2def08b9d58932b5e6121a4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 22,
+    "record_type": "album",
+    "artist": {
+     "id": 412,
+     "name": "Queen"
+    }
+   },
+   {
+    "id": 639951741,
+    "title": "Bohemian Rhapsody (In the style of System Of A Down)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7e872db59e145cedd5899b97ee0d53f5/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 4982773,
+     "name": "Anthony Vincent"
+    }
+   },
+   {
+    "id": 265207872,
+    "title": "Bohemian Rhapsody",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/855c67e7ca76d392de239a73b689f394/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7369880,
+     "name": "Péter Bence"
+    }
+   },
+   {
+    "id": 699169001,
+    "title": "Bohemian Rhapsody (Live)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/65f2c1dba0d457869cff91bb9e527526/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 290781951,
+     "name": "Legendary Rock Voices"
+    }
+   },
+   {
+    "id": 529456862,
+    "title": "Bohemian Rhapsody",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1cd35ff630d6ffb45b7e1e03bb4dc29c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 651304,
+     "name": "Lucas Imbiriba"
+    }
+   },
+   {
+    "id": 1101723852,
+    "title": "Bohemian Rhapsody",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0640263a305cb286c812ea1bfa2716ad/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 7201064,
+     "name": "Angelina Jordan"
+    }
+   },
+   {
+    "id": 189024872,
+    "title": "Bohemian Rhapsody (Live)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/98694fa9b53ca34f3e807e5e597f8588/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 422620,
+     "name": "God Save the Queen"
+    }
+   },
+   {
+    "id": 47286782,
+    "title": "Bohemian Rhapsody",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/55fbb4d4fcc1e6e6fae8695913a64bad/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 290613,
+     "name": "Randy Coleman"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 4091937401,
+    "title": "Bohemian Rhapsody",
+    "duration": 354,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/f/9/0/5f9a6a2ea1876e6d07c4b7feefa99951.mp3?hdnea=exp=1792632389~acl=/api/1/1/5/f/9/0/5f9a6a2ea1876e6d07c4b7feefa99951.mp3*~data=user_id=0,application_id=42~hmac=620ebb6fc3d5b1ff0dc6a708ca6603b06b1e273600c275b0f6f5295335a2d440",
+    "artist": {
+     "id": 412,
+     "name": "Queen"
+    },
+    "album": {
+     "id": 1007321681,
+     "title": "A Night At The Opera",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0b56f4eee05fa1ea753c5654b2cdb70c/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 958949,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4092342471,
+    "title": "Bohemian Rhapsody (Live At Wembley Stadium / July 1986)",
+    "duration": 351,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/8/f/0/78fa2bf431ad09cf2b9a2626d8dd1882.mp3?hdnea=exp=1792632389~acl=/api/1/1/7/8/f/0/78fa2bf431ad09cf2b9a2626d8dd1882.mp3*~data=user_id=0,application_id=42~hmac=097623fe5175b1c1300ecdd125d385a1aa4bc01b6c6d1e88ec7337466e5a2ecf",
+    "artist": {
+     "id": 412,
+     "name": "Queen"
+    },
+    "album": {
+     "id": 1007460301,
+     "title": "Live at Wembley Stadium",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/bffe9bbf3a5270200d59f9537c5581ed/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 583160,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4091936771,
+    "title": "Bohemian Rhapsody (Live Aid)",
+    "duration": 148,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/c/9/0/3c9237a9f045481936fff9771ffa7ff4.mp3?hdnea=exp=1792632389~acl=/api/1/1/3/c/9/0/3c9237a9f045481936fff9771ffa7ff4.mp3*~data=user_id=0,application_id=42~hmac=24c8150c49fd23134aadfce5067d203470271936fa0579ea0cc0c8d8396b4f5b",
+    "artist": {
+     "id": 412,
+     "name": "Queen"
+    },
+    "album": {
+     "id": 1007321401,
+     "title": "Bohemian Rhapsody (The Original Soundtrack)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5bbfab8ae2def08b9d58932b5e6121a4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 590497,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 5617477,
+    "title": "Bohemian Rhapsody",
+    "duration": 238,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/3/0/0/3308d153a75f625111da7e0b4b09bbc1.mp3?hdnea=exp=1792632389~acl=/api/1/1/3/3/0/0/3308d153a75f625111da7e0b4b09bbc1.mp3*~data=user_id=0,application_id=42~hmac=3028ba4390c67189a68b415c71e8d5a8b486e8c246d72f9965b257b33ca1d763",
+    "artist": {
+     "id": 3030,
+     "name": "The Braids"
+    },
+    "album": {
+     "id": 512892,
+     "title": "Here We Come",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/a66f686d24596a770a5307166846f407/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 512586,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 4298783512,
+    "title": "Bohemian Rhapsody",
+    "duration": 148,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/0/8/0/408fc39e58a0afec59189a2c1012c910.mp3?hdnea=exp=1792632389~acl=/api/1/1/4/0/8/0/408fc39e58a0afec59189a2c1012c910.mp3*~data=user_id=0,application_id=42~hmac=fa7b109b9f388f266fb2e508503531e0cb0fd42ec698ed6fc6618653ab1247d7",
+    "artist": {
+     "id": 7201064,
+     "name": "Angelina Jordan"
+    },
+    "album": {
+     "id": 1101723852,
+     "title": "Bohemian Rhapsody",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0640263a305cb286c812ea1bfa2716ad/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 499348,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 94973468,
+    "title": "Bohemian Rhapsody (feat. The White Buffalo, Billy Valentine & Franky Perez) (From Sons of Anarchy)",
+    "duration": 402,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/7/a/3/0/7a3a3867dfd5e4ceaf3402fde1772c6c.mp3?hdnea=exp=1792632389~acl=/api/1/1/7/a/3/0/7a3a3867dfd5e4ceaf3402fde1772c6c.mp3*~data=user_id=0,application_id=42~hmac=ca9372d275a655ebd6c658872842199d317a17fd6ceb0a29d506ade9c59f8800",
+    "artist": {
+     "id": 5157384,
+     "name": "The Forest Rangers"
+    },
+    "album": {
+     "id": 9663874,
+     "title": "Songs of Anarchy, Vol. 4 (Music from Sons of Anarchy)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7b7e6baf676627807753dd1f7c984f29/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 456574,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 107954168,
+    "title": "Bohemian Rhapsody",
+    "duration": 432,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/3/c/0/83c3b39a8e5cb17d8c0d25e4c0453381.mp3?hdnea=exp=1792632389~acl=/api/1/1/8/3/c/0/83c3b39a8e5cb17d8c0d25e4c0453381.mp3*~data=user_id=0,application_id=42~hmac=340b50ddfa2e8d28a3dda512a15a16a3e6697009a43bf98d21a51b5f59c6cccf",
+    "artist": {
+     "id": 1438450,
+     "name": "Judson Mancebo"
+    },
+    "album": {
+     "id": 11259086,
+     "title": "Babies Love Queen",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/548c11cfea542867dfa185e609c3771f/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 448293,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 129568048,
+    "title": "Bohemian Rhapsody",
+    "duration": 361,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/4/f/0/f4f66dcebe747c090c571d041cbc73ed.mp3?hdnea=exp=1792632389~acl=/api/1/1/f/4/f/0/f4f66dcebe747c090c571d041cbc73ed.mp3*~data=user_id=0,application_id=42~hmac=2733aecec61fee1633921b33e196019ef2b919b8db030c2ab6a482d10b58c84f",
+    "artist": {
+     "id": 402,
+     "name": "Panic! At the Disco"
+    },
+    "album": {
+     "id": 13717022,
+     "title": "Suicide Squad: The Album",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/552f4b953a02ecb92268b1c7a80d9b2d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 448276,
+    "explicit_lyrics": false
+   }
+  ]
+ },
+ "ed sheeran shape of you": {
+  "artist": [],
+  "album": [
+   {
+    "id": 15319389,
+    "title": "Shape of You (Acoustic)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 15659254,
+    "title": "Shape of You (feat. Zion & Lennox) (Latin Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 14996073,
+    "title": "Shape of You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 15444274,
+    "title": "Shape of You (feat. Nyla & Kranium) (Major Lazer Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 45536891,
+    "title": "Shape of You (Yxng Bane Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1a8df936e99d7f376a1cc9c9f58261d4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 46830692,
+    "title": "Shape of You (NOTD Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1a8df936e99d7f376a1cc9c9f58261d4/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 15319277,
+    "title": "Shape of You (Galantis Remix)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    }
+   },
+   {
+    "id": 15424806,
+    "title": "\"Shape Of You\" Parody of Ed Sheeran's Shape Of You",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/031a68661ab75e0a345bc5d027d46706/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 1211299,
+     "name": "The Key of Awesome"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 139470659,
+    "title": "Shape of You",
+    "duration": 233,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/1/b/0/f1becf66c6264a6a0306fc47d47690b0.mp3?hdnea=exp=1792632390~acl=/api/1/1/f/1/b/0/f1becf66c6264a6a0306fc47d47690b0.mp3*~data=user_id=0,application_id=42~hmac=37b5d5b1fb7536f4a9ac271fa1f5ead8860f437b5485e388a873ffd7488203ed",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 14996073,
+     "title": "Shape of You",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 968208,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 141827557,
+    "title": "Shape of You (Acoustic)",
+    "duration": 223,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/2/5/0/b25bfc3c7e51ec7b999686b4a76e0839.mp3?hdnea=exp=1792632390~acl=/api/1/1/b/2/5/0/b25bfc3c7e51ec7b999686b4a76e0839.mp3*~data=user_id=0,application_id=42~hmac=55ca21dc51b0759597a0981860c61fecff1da84027f78389e74d5d757fbd4755",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 15319389,
+     "title": "Shape of You (Acoustic)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 823978,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 144392352,
+    "title": "Shape of You (feat. Zion & Lennox) (Latin Remix)",
+    "duration": 237,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/8/4/0/4848b077e0faa4741b02fa83b44bbddf.mp3?hdnea=exp=1792632390~acl=/api/1/1/4/8/4/0/4848b077e0faa4741b02fa83b44bbddf.mp3*~data=user_id=0,application_id=42~hmac=6f6367a3633cb362fa7c588ee8adbce99863a8d6524637c56338687fdf8ba543",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 15659254,
+     "title": "Shape of You (feat. Zion & Lennox) (Latin Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 533384,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 142749606,
+    "title": "Shape of You (feat. Nyla & Kranium) (Major Lazer Remix)",
+    "duration": 192,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/0/d/0/20da7b3fabbd63a31cf8e6ba7496113b.mp3?hdnea=exp=1792632390~acl=/api/1/1/2/0/d/0/20da7b3fabbd63a31cf8e6ba7496113b.mp3*~data=user_id=0,application_id=42~hmac=d7df2223b259fbc100405a4e0115743e972fb37e4ee0f8366f5e77bd1f44f6e1",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 15444274,
+     "title": "Shape of You (feat. Nyla & Kranium) (Major Lazer Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 478201,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 141826811,
+    "title": "Shape of You (Galantis Remix)",
+    "duration": 195,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/5/e/5/0/5e5ace7d14156ab76642d163bbdeb38a.mp3?hdnea=exp=1792632390~acl=/api/1/1/5/e/5/0/5e5ace7d14156ab76642d163bbdeb38a.mp3*~data=user_id=0,application_id=42~hmac=2db969e03d6c98755b3af39f23d09681268a4d4bd41395208bd1754496151242",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 15319277,
+     "title": "Shape of You (Galantis Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/107c2b43f10c249077c1f7618563bb63/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 310706,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 389706151,
+    "title": "Shape of You (Yxng Bane Remix)",
+    "duration": 207,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/b/a/0/6bae298b5791d397d33d4ec5d0f50030.mp3?hdnea=exp=1792632390~acl=/api/1/1/6/b/a/0/6bae298b5791d397d33d4ec5d0f50030.mp3*~data=user_id=0,application_id=42~hmac=791ddfa14aafbbcc493187bb7ca8a223f74c2a1b161a683d820e2a63df8108b3",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 45536891,
+     "title": "Shape of You (Yxng Bane Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1a8df936e99d7f376a1cc9c9f58261d4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 251872,
+    "explicit_lyrics": true
+   },
+   {
+    "id": 398313402,
+    "title": "Shape of You (NOTD Remix)",
+    "duration": 190,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/6/b/0/b6bdce7b8adaf1a574866a433483aca1.mp3?hdnea=exp=1792632390~acl=/api/1/1/b/6/b/0/b6bdce7b8adaf1a574866a433483aca1.mp3*~data=user_id=0,application_id=42~hmac=aeabdd95e988ccd3de766ae08a70b40fff8b3ef230ff0e93d5babc2a64efd944",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 46830692,
+     "title": "Shape of You (NOTD Remix)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/1a8df936e99d7f376a1cc9c9f58261d4/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 170316,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 3134389251,
+    "title": "Shape of You (Live)",
+    "duration": 286,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/7/f/0/87f7231ecf98a67b861924656fee3223.mp3?hdnea=exp=1792632390~acl=/api/1/1/8/7/f/0/87f7231ecf98a67b861924656fee3223.mp3*~data=user_id=0,application_id=42~hmac=d5403d69dcddd11629650a579cfb771281b9a6f3fab1d32bfd01710fa636d4b3",
+    "artist": {
+     "id": 384236,
+     "name": "Ed Sheeran"
+    },
+    "album": {
+     "id": 681693011,
+     "title": "+-=÷× (Tour Collection: Live)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311c91feb28509e66c4de96584dc5382/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 313547,
+    "explicit_lyrics": false
+   }
+  ]
+ }
+}

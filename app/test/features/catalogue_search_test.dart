@@ -72,7 +72,9 @@ void main() {
 
     await search(tester, 'Taylor Swift');
 
-    expect(find.text('Not in your library yet'), findsOneWidget);
+    expect(find.text('Top result'), findsOneWidget);
+    expect(find.text('Not in your library yet'), findsNothing,
+        reason: 'whether the library has it is never a header');
     expect(find.text('Taylor Swift'), findsWidgets);
     expect(find.text('Folklore'), findsOneWidget);
     expect(find.text('Cardigan'), findsOneWidget);
@@ -135,9 +137,14 @@ void main() {
     await search(tester, 'Billie Eilish');
     expect(find.text('Damian Marley'), findsNothing);
     expect(find.text('Billie Eilish & ROSALÍA'), findsOneWidget);
-    expect(find.text('Artist - 32 releases'), findsOneWidget);
-    expect(find.text('Artist'), findsOneWidget,
-        reason: 'no "0 releases" noise for a zero-release artist');
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('top-result')),
+            matching: find.text('Billie Eilish')),
+        findsOneWidget,
+        reason: 'the artist who was typed is the Top result');
+    // The Top result's line and the collaboration's row both say just "Artist": no "0 releases" noise.
+    expect(find.text('Artist'), findsNWidgets(2));
 
     await closeApp(tester, app.db);
   });
@@ -204,8 +211,122 @@ void main() {
     ]);
 
     await search(tester, 'The Walk');
-    expect(find.text('Not in your library yet'), findsNothing);
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('top-result')),
+            matching: find.text('The Walk')),
+        findsOneWidget,
+        reason: 'the library has it: it is the Top result');
+    expect(find.text('Albums'), findsNothing,
+        reason: 'and the catalogue copy is not offered a second time');
 
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'the song that was typed is the Top result, with no header about the library',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      catalogueClientProvider.overrideWithValue(FakeCatalogue(_swift)),
+      requestBackendProvider.overrideWith((ref) async => FakePortal()),
+    ]);
+
+    await search(tester, 'taylor swift cardigan');
+
+    expect(find.text('Top result'), findsOneWidget);
+    expect(find.text('Cardigan'), findsOneWidget,
+        reason: 'on top, and not listed a second time below it');
+    expect(find.text('Not in your library yet'), findsNothing);
+    expect(find.textContaining('added to your library first'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('top-result')));
+    await settle(tester);
+    expect(app.facade.calls, contains('preview(100)'));
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'a song the library has is the Top result too, and the catalogue copy is not listed',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      catalogueClientProvider.overrideWithValue(FakeCatalogue(
+        const CatalogueResults(
+          tracks: [
+            CatalogueTrack(
+                id: '9',
+                title: 'Opening Kodama',
+                artistName: 'Alcest',
+                albumTitle: 'Kodama'),
+          ],
+        ),
+      )),
+      requestBackendProvider.overrideWith((ref) async => FakePortal()),
+    ]);
+
+    await search(tester, 'alcest opening kodama');
+
+    expect(find.text('Top result'), findsOneWidget);
+    expect(find.text('Opening Kodama'), findsOneWidget,
+        reason: 'the library has it: one row, not two');
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'what the library has and what it has not are mixed in one list of songs',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      catalogueClientProvider.overrideWithValue(FakeCatalogue(
+        const CatalogueResults(
+          tracks: [
+            CatalogueTrack(
+                id: '1', title: 'Echoes of Spring', artistName: 'Somebody'),
+            CatalogueTrack(
+                id: '2', title: 'Echoes Return', artistName: 'Somebody Else'),
+          ],
+        ),
+      )),
+      requestBackendProvider.overrideWith((ref) async => FakePortal()),
+    ]);
+
+    await search(tester, 'echoes');
+
+    expect(find.text('Songs'), findsOneWidget, reason: 'one list');
+    expect(find.text('Echoes Kodama'), findsOneWidget,
+        reason: 'from the library');
+    expect(find.text('Echoes of Spring'), findsOneWidget,
+        reason: 'from the catalogue');
+    expect(find.text('Not in your library yet'), findsNothing);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'a barely known artist with the name of a song does not take the Top result',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      catalogueClientProvider.overrideWithValue(FakeCatalogue(
+        const CatalogueResults(
+          artists: [
+            CatalogueArtist(
+                id: '1', name: 'Hotel California', fans: 7812, albumCount: 1),
+          ],
+          tracks: [
+            CatalogueTrack(
+                id: '2',
+                title: 'Hotel California',
+                artistName: 'Eagles',
+                albumTitle: 'Hotel California'),
+          ],
+        ),
+      )),
+      requestBackendProvider.overrideWith((ref) async => FakePortal()),
+    ]);
+
+    await search(tester, 'hotel california');
+
+    final top = find.byKey(const Key('top-result'));
+    expect(find.descendant(of: top, matching: find.textContaining('Eagles')),
+        findsOneWidget,
+        reason: 'the song by Eagles is on top, not the artist with 7,812 fans');
     await closeApp(tester, app.db);
   });
 }

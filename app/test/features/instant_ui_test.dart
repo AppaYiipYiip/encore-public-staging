@@ -137,7 +137,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Damnation');
     await tester.pump(const Duration(milliseconds: 600));
     await settle(tester);
-    await tester.tap(find.text('Opeth - 2003 - 3 songs'));
+    // The album that was typed is the Top result.
+    await tester.tap(find.byKey(const Key('top-result')));
     await settle(tester);
   }
 

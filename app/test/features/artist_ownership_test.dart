@@ -90,10 +90,12 @@ void main() {
 
     await search(tester, 'opeth');
 
-    expect(find.text('Not in your library yet'), findsOneWidget);
-    expect(find.text('1.2M fans - 14 releases'), findsOneWidget);
-    // The well-known Opeth is the library's; the namesake is a stranger.
-    expect(find.text('In your library'), findsOneWidget);
+    // The well-known Opeth is the library's and is the Top result, with the catalogue's fans; the namesake is a stranger.
+    final top = find.byKey(const Key('top-result'));
+    expect(
+        find.descendant(of: top, matching: find.text('Opeth')), findsOneWidget);
+    expect(find.descendant(of: top, matching: find.textContaining('1.2M fans')),
+        findsOneWidget);
     expect(find.text('Artist - 310 fans - 1 release'), findsOneWidget);
     expect(find.text('Request'), findsWidgets);
     await closeApp(tester, app.db);

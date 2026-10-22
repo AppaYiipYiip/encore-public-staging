@@ -8,11 +8,9 @@ import '../../app/navigation.dart';
 import '../../app/providers.dart' show NetworkKind, networkKindProvider;
 import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
-import '../common/track_menu.dart';
-import '../common/track_swipe.dart';
 import '../common/widgets.dart';
 import '../providers.dart';
-import 'catalogue_section.dart';
+import 'search_results.dart';
 
 /// Recent searches, persisted locally (most recent first, max 10).
 class RecentSearches extends Notifier<List<String>> {
@@ -151,7 +149,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       setState(() => _query = q);
                     },
                   )
-                : _Results(query: _query, onOpen: _commit),
+                : SearchResultsView(query: _query, onOpen: _commit),
           ),
         ],
       ),
@@ -301,99 +299,6 @@ class _GenreTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Results extends ConsumerWidget {
-  const _Results({required this.query, required this.onOpen});
-
-  final String query;
-  final ValueChanged<String> onOpen;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final results = ref.watch(searchResultsProvider(query));
-    final facade = ref.watch(playbackFacadeProvider);
-    final snapshot = ref.watch(playbackSnapshotProvider).value;
-
-    return results.when(
-      loading: () => const SizedBox.shrink(),
-      error: (e, _) => EmptyState(
-        icon: Icons.error_outline_rounded,
-        title: "Couldn't search",
-        message: '$e',
-      ),
-      data: (r) {
-        return ListView(
-          padding: const EdgeInsets.only(bottom: Space.xxl),
-          children: [
-            if (r.artists.isNotEmpty) ...[
-              const SectionHeader(title: 'Artists'),
-              MediaShelf(
-                itemCount: r.artists.length,
-                cardWidth: 112,
-                height: 112 + 44,
-                itemBuilder: (context, i) {
-                  final a = r.artists[i];
-                  return MediaCard(
-                    title: a.name,
-                    coverArtId: a.coverArt,
-                    circular: true,
-                    width: 112,
-                    onTap: () {
-                      onOpen(query);
-                      Nav.artist(context, a.id);
-                    },
-                  );
-                },
-              ),
-            ],
-            if (r.albums.isNotEmpty) ...[
-              const SectionHeader(title: 'Albums'),
-              MediaShelf(
-                itemCount: r.albums.length,
-                itemBuilder: (context, i) {
-                  final a = r.albums[i];
-                  return MediaCard(
-                    title: a.name,
-                    subtitle: a.artist,
-                    coverArtId: a.coverArt,
-                    artistName: a.artist,
-                    onTap: () {
-                      onOpen(query);
-                      Nav.album(context, a.id);
-                    },
-                  );
-                },
-              ),
-            ],
-            if (r.tracks.isNotEmpty) ...[
-              const SectionHeader(title: 'Songs'),
-              for (var i = 0; i < r.tracks.length; i++)
-                TrackSwipe(
-                  track: r.tracks[i],
-                  index: i,
-                  child: TrackTile(
-                    track: r.tracks[i],
-                    showAlbum: true,
-                    isCurrent: snapshot?.track?.id == r.tracks[i].id,
-                    isPlaying: snapshot?.isPlaying ?? false,
-                    onTap: () {
-                      onOpen(query);
-                      facade.playTracks(r.tracks,
-                          startIndex: i, sourceName: 'Search: $query');
-                    },
-                    onMore: () => showTrackMenu(context, r.tracks[i]),
-                  ),
-                ),
-            ],
-            // Never a dead end: what the catalogue knows that the library
-            // does not, with Preview and Request (docs/07).
-            CatalogueSection(query: query, localIsEmpty: r.isEmpty),
-          ],
-        );
-      },
     );
   }
 }
