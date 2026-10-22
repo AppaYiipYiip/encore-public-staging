@@ -1,3 +1,4 @@
+import '../../core/network_policy.dart' show isPrivateHost;
 import '../../core/result.dart';
 import '../people/people_client.dart';
 import 'encore_api.dart';
@@ -16,6 +17,26 @@ class EncorePeopleApi implements PeopleApi {
 
   /// The ids of the people seen last, by user name (the people screens speak of names, the server of ids).
   final Map<String, String> _ids = {};
+
+  /// The address an invitation link is made with. A friend is usually not on the home network, so an address this server has on the
+  /// internet wins (https first); with none, the one in use is all there is, and the link then works only at home.
+  static Uri invitationAddress(Iterable<Uri> candidates, Uri current) {
+    final away = [
+      for (final u in candidates)
+        if (worksAway(u)) u,
+    ];
+    for (final u in away) {
+      if (u.scheme == 'https') return u;
+    }
+    return away.isNotEmpty ? away.first : current;
+  }
+
+  /// Whether somebody away from home can open a link made with [address]: https (a certificate means it was set up to be reached from
+  /// outside, as the guided way in is) or a host that is not on a private network. Plain http to a home-network or Tailscale address
+  /// is for the home network only.
+  static bool worksAway(Uri address) =>
+      address.host.isNotEmpty &&
+      (address.scheme == 'https' || !isPrivateHost(address.host));
 
   /// The link an invitation is sent as: the address of the server, so it opens the app on the invited person's phone.
   static Uri joinLink(Uri server, String code) {

@@ -244,10 +244,10 @@ class _SessionLifecycleState extends ConsumerState<_SessionLifecycle>
     if (session == null) return;
     switch (state) {
       case AppLifecycleState.resumed:
-        session.scheduler.onForeground();
+        session.onForeground();
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        session.scheduler.onBackground();
+        session.onBackground();
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;

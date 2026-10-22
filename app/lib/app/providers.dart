@@ -107,6 +107,7 @@ final sessionProvider = FutureProvider<ServerSession?>((ref) async {
     server: server,
     password: password,
     clock: ref.watch(clockProvider),
+    credentialStore: ref.watch(credentialStoreProvider),
   );
   ref.onDispose(() => unawaited(session.dispose()));
   return session;

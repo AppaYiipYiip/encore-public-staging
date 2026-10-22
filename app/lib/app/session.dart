@@ -9,8 +9,11 @@ import '../core/clock.dart';
 import '../core/logger.dart';
 import '../core/result.dart';
 import '../data/api/opensubsonic/opensubsonic_client.dart';
+import '../data/auth/credential_store.dart';
 import '../data/db/app_database.dart';
 import '../data/encore/encore_api.dart';
+import '../data/encore/encore_device.dart';
+import '../data/encore/encore_live.dart';
 import '../data/encore/encore_models.dart';
 import '../data/encore/encore_mutations.dart';
 import '../data/encore/encore_sync.dart';
@@ -81,6 +84,7 @@ class ServerSession {
     required this.playHistory,
     required this.encore,
     required this.encoreMode,
+    required this.live,
     required EncoreUpgrade upgradeRunner,
     required AppDatabase db,
     required Dio Function() probeDio,
@@ -96,6 +100,10 @@ class ServerSession {
     required String password,
     Dio? dio,
     Clock clock = const SystemClock(),
+
+    /// Where the device sign-in is kept; without it (the background job, tests) there is no live channel.
+    CredentialStore? credentialStore,
+    String? appVersion,
   }) async {
     final candidates = [
       for (final e in jsonDecode(server.endpointsJson) as List)
@@ -152,6 +160,23 @@ class ServerSession {
       auth: client.authQuery,
     );
     final encoreMode = serverCapabilities(server)['encore'] == true;
+    // The live channel: the server tells this phone when something changed, so another phone's edit shows within a second or two.
+    EncoreLive? live;
+    if (encoreMode && credentialStore != null) {
+      final device = EncoreDevice(
+        api: encore,
+        store: credentialStore,
+        serverId: server.id,
+        username: server.username,
+        password: password,
+        appVersion: appVersion,
+      );
+      live = EncoreLive(
+        baseUrl: () => endpoints.currentUrl,
+        deviceToken: device.token,
+        tokenRefused: device.forget,
+      );
+    }
     final outbox = OutboxProcessor(
       db: db,
       client: client,
@@ -237,6 +262,7 @@ class ServerSession {
       playHistory: playHistory,
       encore: encore,
       encoreMode: encoreMode,
+      live: live,
       upgradeRunner: upgrade,
       db: db,
       // A short look: a server that is not there must not hold the start of syncing back.
@@ -277,6 +303,11 @@ class ServerSession {
   /// This server is an Encore server and this phone has been moved over to it.
   final bool encoreMode;
 
+  /// The server's live channel (Encore mode, foreground session only); `null` otherwise.
+  final EncoreLive? live;
+  StreamSubscription<LiveEvent>? _liveEvents;
+  StreamSubscription<bool>? _liveConnection;
+
   final AppDatabase _db;
   final EncoreUpgrade _upgradeRunner;
   final Dio Function() _probeDio;
@@ -294,9 +325,36 @@ class ServerSession {
     unawaited(client.loadExtensions());
     if (encoreMode) {
       scheduler.start();
+      _startLive();
       return;
     }
     unawaited(_detectAndUpgrade());
+  }
+
+  void _startLive() {
+    final live = this.live;
+    if (live == null || _disposed) return;
+    _liveEvents ??= live.events.listen((event) {
+      // The server said something changed (or this phone has just connected): ask what, now.
+      switch (event.type) {
+        case 'hello' || 'library.changed' || 'resync':
+          scheduler.liveEvent();
+      }
+    });
+    _liveConnection ??= live.connection.listen(scheduler.setLive);
+    live.start();
+  }
+
+  /// The app came to the front: check at once and listen to the server again.
+  void onForeground() {
+    scheduler.onForeground();
+    if (encoreMode) _startLive();
+  }
+
+  /// The app went to the background: nothing is checked and no connection is held (the battery, and Android would cut it anyway).
+  void onBackground() {
+    scheduler.onBackground();
+    unawaited(live?.stop());
   }
 
   Future<void> _detectAndUpgrade() async {
@@ -376,6 +434,9 @@ class ServerSession {
   Future<void> dispose() async {
     _disposed = true;
     upgrade.dispose();
+    await _liveEvents?.cancel();
+    await _liveConnection?.cancel();
+    await live?.dispose();
     await scheduler.dispose();
     await outbox.dispose();
     await sync.dispose();

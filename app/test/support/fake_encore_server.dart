@@ -33,7 +33,20 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/invites'] = _invitesRoot;
     _handlers['/encore/api/v1/imports'] = _importsRoot;
     _handlers['/encore/api/v1/people'] = (r) => _ok({'items': people});
+    _handlers['/encore/api/v1/auth/login'] = (r) {
+      logins++;
+      if (failLogin) return _error(401, 'unauthorized');
+      return _ok({
+        'deviceToken': 'ed_fake$logins',
+        'device': {'id': 'dv_$logins', 'name': 'Android phone'},
+        'person': {'id': 'pn_me', 'name': user, 'role': myRole},
+      });
+    };
   }
+
+  /// How many times a phone signed in as a device, and whether the server refuses that.
+  int logins = 0;
+  bool failLogin = false;
 
   /// What the server's reader finds behind any link it is given (title, artist), and the picture it gives the playlist.
   List<(String, String)> linkSongs = [

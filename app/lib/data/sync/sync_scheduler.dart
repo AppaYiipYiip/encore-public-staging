@@ -71,6 +71,7 @@ class SyncScheduler {
     this.probeQuiet = const Duration(seconds: 20),
     this.quietAfterProbes = 40,
     this.minPokeGap = const Duration(seconds: 2),
+    this.probeLive = const Duration(seconds: 60),
   })  : _engine = engine,
         _endpoints = endpoints,
         _clock = clock,
@@ -120,6 +121,10 @@ class SyncScheduler {
   /// A touch or a navigation may probe at once, but not more often than this.
   final Duration minPokeGap;
 
+  /// Probe cadence while the server's live channel is connected: the server tells this phone when something changed, so the probe is only
+  /// a safety net for an event that never arrived.
+  final Duration probeLive;
+
   final StreamController<SyncStatus> _statusController =
       StreamController<SyncStatus>.broadcast();
   late final StreamSubscription<SyncProgress> _progressSub;
@@ -128,6 +133,10 @@ class SyncScheduler {
   Timer? _probePending;
   bool _probing = false;
   bool _metered = false;
+  bool _live = false;
+
+  /// The server said something changed while a probe or a pass was working: ask again as soon as it is done.
+  bool _probeAgain = false;
   int _quietProbes = 0;
   DateTime? _lastProbeAt;
 
@@ -206,11 +215,43 @@ class SyncScheduler {
     _scheduleProbe(Duration.zero);
   }
 
+  /// The server's live channel connected or dropped. While it is up the probe slows to [probeLive]; when it drops the short cadence
+  /// returns at once, so a phone without the channel (an old proxy, a blocked socket) is no worse off than before it existed.
+  void setLive(bool connected) {
+    if (_live == connected) return;
+    _live = connected;
+    _quietProbes = 0;
+    if (!connected) _scheduleProbe(Duration.zero);
+  }
+
+  bool get isLive => _live;
+
+  /// The server pushed "something changed" (or this phone has just connected): probe now, however recently the last probe was, and if a
+  /// probe or a pass is already working, once more right after it.
+  void liveEvent() {
+    if (!liveProbe || _disposed) return;
+    _quietProbes = 0;
+    if (_probing || _engine.isRunning || _status.isSyncing) {
+      _probeAgain = true;
+      return;
+    }
+    _scheduleProbe(Duration.zero);
+  }
+
   bool get isProbing => _probing;
 
-  Duration get _probeDelay => _quietProbes >= quietAfterProbes
-      ? probeQuiet
-      : (_metered ? probeMetered : probeFast);
+  Duration get _probeDelay => _live
+      ? probeLive
+      : _quietProbes >= quietAfterProbes
+          ? probeQuiet
+          : (_metered ? probeMetered : probeFast);
+
+  /// When to probe next: at once if the server said something changed meanwhile, otherwise the normal cadence.
+  Duration _nextProbeDelay() {
+    if (!_probeAgain) return _probeDelay;
+    _probeAgain = false;
+    return Duration.zero;
+  }
 
   void _scheduleProbe(Duration delay) {
     // Nothing to compare with before the first sync has finished.
@@ -256,7 +297,7 @@ class SyncScheduler {
       // The normal pass reschedules probing when it finishes.
       _schedule(Duration.zero, SyncReason.scheduled);
     } else {
-      _scheduleProbe(_probeDelay);
+      _scheduleProbe(_nextProbeDelay());
     }
   }
 
@@ -316,7 +357,7 @@ class SyncScheduler {
         ));
         _scheduleNextForeground();
         _quietProbes = 0;
-        _scheduleProbe(_probeDelay);
+        _scheduleProbe(_nextProbeDelay());
       case SyncCancelled():
         _setStatus(_status.copyWith(isSyncing: false, clearProgress: true));
       case SyncBusy():

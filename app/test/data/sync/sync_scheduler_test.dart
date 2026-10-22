@@ -381,6 +381,60 @@ void main() {
       expect(nextProbe(), Duration.zero);
     });
 
+    test(
+        'the server saying something changed probes at once, however soon '
+        'after the last probe', () async {
+      await firstSyncDone();
+      await fireProbe(); // a probe just ran: a poke would have to wait
+
+      live.liveEvent();
+
+      expect(nextProbe(), Duration.zero);
+    });
+
+    test(
+        'while the live channel is up the probe is only a slow safety net, '
+        'and the short cadence returns the moment it drops', () async {
+      await firstSyncDone();
+      live.setLive(true);
+      await fireProbe();
+
+      expect(nextProbe(), const Duration(seconds: 60));
+
+      live.setLive(false);
+      expect(nextProbe(), Duration.zero, reason: 'ask now, then every 3 s');
+      await fireProbe();
+      expect(nextProbe(), const Duration(seconds: 3));
+    });
+
+    test(
+        'a push that arrives while a probe is working asks again right after '
+        'it', () async {
+      await firstSyncDone();
+      live.setLive(true);
+
+      // A probe starts, and the server pushes before it has finished.
+      probeTimers.latestLive!.fire();
+      live.liveEvent();
+      await settleLive();
+
+      expect(nextProbe(), Duration.zero,
+          reason: 'the push was not lost behind the probe that was running');
+    });
+
+    test(
+        'a push is ignored in the background and by a scheduler that does not '
+        'probe', () async {
+      await firstSyncDone();
+      live.onBackground();
+      live.liveEvent();
+      expect(nextProbe(), isNull);
+
+      timers.active.clear();
+      scheduler.liveEvent(); // liveProbe is off here
+      expect(probeTimers.latestLive, isNull);
+    });
+
     test('it stays quiet in the background and probes at once on resume',
         () async {
       await firstSyncDone();
