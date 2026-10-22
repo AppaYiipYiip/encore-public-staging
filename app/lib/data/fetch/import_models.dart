@@ -278,9 +278,10 @@ class ImportJob {
     if (!isRunning || eta == null || eta <= 0) return null;
     if (eta < 90) return 'about a minute left';
     final minutes = (eta / 60).round();
-    if (minutes < 90) return 'about $minutes minutes left';
-    final hours = eta / 3600;
-    return 'about ${hours.toStringAsFixed(hours < 10 ? 1 : 0)} hours left';
+    if (minutes < 60) return 'about $minutes minutes left';
+    // A wait of an hour or more is the server pacing itself to stay on YouTube's good side, not a wait for the person: the
+    // playlist is on screen and every song plays when tapped. A number of hours would only look like a queue to sit through.
+    return 'the rest keeps saving in the background';
   }
 }
 

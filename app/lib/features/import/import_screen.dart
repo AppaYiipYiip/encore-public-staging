@@ -452,9 +452,10 @@ class _PlaylistImportScreenState extends ConsumerState<PlaylistImportScreen> {
           ),
           const _Step(
             icon: Icons.schedule_rounded,
-            text: 'The server needs about 12 seconds a song. A hundred songs '
-                'take about twenty minutes; the playlist is there at once '
-                'and every song plays when you tap it.',
+            text: 'The playlist is there at once and every song plays when you '
+                'tap it (a few seconds for one your server does not have yet). '
+                'Saving them all to your server takes longer and carries on '
+                'in the background.',
           ),
         ],
         if (finished.isNotEmpty) ...[

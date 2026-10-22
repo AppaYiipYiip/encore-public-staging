@@ -202,7 +202,12 @@ void main() {
     test('the time left is said in minutes or hours, not seconds', () {
       expect(job({'etaSec': 40}).etaText, 'about a minute left');
       expect(job({'etaSec': 600}).etaText, 'about 10 minutes left');
-      expect(job({'etaSec': 7200}).etaText, 'about 2.0 hours left');
+      // A long wait is never shown as a number of hours: the playlist plays at once, the rest is saved in the background.
+      expect(job({'etaSec': 3000}).etaText, 'about 50 minutes left');
+      expect(job({'etaSec': 7200}).etaText,
+          'the rest keeps saving in the background');
+      expect(job({'etaSec': 3600}).etaText,
+          'the rest keeps saving in the background');
       expect(job({'etaSec': 0}).etaText, isNull);
       expect(job({'state': 'done', 'etaSec': 600}).etaText, isNull);
     });
