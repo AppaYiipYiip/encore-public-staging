@@ -32,6 +32,7 @@ def test_a_new_database_gets_every_table(tmp_path: Path) -> None:
         "work_item_person",
         "import",
         "import_entry",
+        "file_log",
         "schema_migrations",
     } <= tables
 

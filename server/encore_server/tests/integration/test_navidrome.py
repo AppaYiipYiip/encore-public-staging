@@ -81,6 +81,9 @@ def test_liking_a_catalogue_song_keeps_it_and_the_music_server_plays_it(rig: Rig
 
     kept = rig.get(f"/refs/{ref['id']}")["file"]
     assert kept is not None and kept["navidromeSongId"] and kept["codec"] == "opus"
+    assert kept["meta"]["albumId"] and kept["meta"]["suffix"] == "opus" and kept["meta"]["size"] > 1000, (
+        "the app is told the music server's ids"
+    )
     files = list((MUSIC / "Encore" / artist).rglob("*.opus"))
     assert len(files) == 1 and files[0].name.startswith("07 - ")
     # What Navidrome read from the file's tags is what the person asked for, not what the downloaded video called itself.

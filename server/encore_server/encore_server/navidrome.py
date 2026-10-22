@@ -87,6 +87,11 @@ class NavidromeClient:
                 return found
         return None
 
+    def get_song(self, song_id: str) -> dict[str, Any] | None:
+        body = self._call("getSong", id=song_id)
+        song = (body or {}).get("song")
+        return song if isinstance(song, dict) else None
+
     def songs(self, offset: int, size: int = 500) -> list[dict[str, Any]] | None:
         """A page of every song in the library (an empty search lists them all); `None` when the music server did not answer."""
         body = self._call("search3", query='""', songOffset=offset, songCount=size, artistCount=0, albumCount=0)
@@ -136,3 +141,27 @@ def pick_song(
         if best is None or score > best[0]:
             best = (score, str(s.get("id")))
     return best[1] if best else None
+
+
+#: What of the music server's description of a song the app gets with the ref (it needs these to show the song's album, artist and
+#: cover, and to play and download the file, without asking the music server again).
+_META_KEYS = (
+    "albumId",
+    "artistId",
+    "coverArt",
+    "suffix",
+    "contentType",
+    "size",
+    "bitRate",
+    "samplingRate",
+    "bitDepth",
+    "channels",
+    "genre",
+    "created",
+    "replayGain",
+    "musicBrainzId",
+)
+
+
+def file_meta(song: dict[str, Any]) -> dict[str, Any]:
+    return {key: song[key] for key in _META_KEYS if song.get(key) not in (None, "")}

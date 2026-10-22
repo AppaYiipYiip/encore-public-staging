@@ -18,6 +18,7 @@ from . import library, refs
 from .db import Database
 from .errors import ApiError
 from .ids import now_ms
+from .navidrome import file_meta
 
 log = logging.getLogger("encore_server.scanner")
 
@@ -106,6 +107,7 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE) -> LinkR
                     codec=_CODEC.get(suffix, suffix or None),
                     bitrate_kbps=song.get("bitRate") if isinstance(song.get("bitRate"), int) else None,
                     source="library",
+                    meta=file_meta(song),
                 )
                 report.linked += 1
         if len(songs) < page:
@@ -132,6 +134,7 @@ def _prune(db: Database, seen_ids: set[str], before: int) -> int:
                 "UPDATE song_file SET preferred = 1 WHERE id = (SELECT id FROM song_file WHERE ref = ? ORDER BY added_at DESC LIMIT 1)",
                 (row["ref"],),
             )
+            refs.touch_file(conn, row["ref"])
             library.touch_ref_holders(conn, row["ref"])
             removed += 1
     return removed

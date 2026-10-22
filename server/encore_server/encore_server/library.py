@@ -320,6 +320,27 @@ def played_on_days(conn: sqlite3.Connection, ref_id: str) -> int:
     return int(row["days"])
 
 
+# ----------------------------------------------------------------------------------------------- the server's files
+
+
+FILES_PAGE = 500
+
+
+def files_since(conn: sqlite3.Connection, since: int, limit: int = FILES_PAGE) -> dict[str, Any]:
+    """The songs whose file changed after cursor [since], as they are now (`file` is null when the server no longer has one). This is the
+    app's browse index of what the server keeps: one first pass, then only what changed."""
+    rows = conn.execute(
+        "SELECT ref, MAX(seq) AS seq FROM file_log WHERE seq > ? GROUP BY ref ORDER BY seq LIMIT ?", (since, limit)
+    ).fetchall()
+    cursor = rows[-1]["seq"] if rows else since
+    more = len(rows) == limit and conn.execute("SELECT 1 FROM file_log WHERE seq > ?", (cursor,)).fetchone() is not None
+    return {
+        "refs": [refs.get_ref(conn, row["ref"]) for row in rows if refs.ref_exists(conn, row["ref"])],
+        "cursor": str(cursor),
+        "more": more,
+    }
+
+
 # ----------------------------------------------------------------------------------------------- the change feed
 
 

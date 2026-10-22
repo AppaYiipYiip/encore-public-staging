@@ -342,6 +342,17 @@ def library_changes(request: Request, since: str = "0", p: Principal = Depends(g
         return _ok(library.changes(conn, p.person_id, max(0, cursor)))
 
 
+@router.get("/library/files")
+def library_files(request: Request, since: str = "0", limit: int = 500, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The songs this server keeps, as they change: the app's browse index of the server's files (docs/18 section 2)."""
+    try:
+        cursor = max(0, int(since))
+    except ValueError:
+        raise ApiError("validation", "The cursor is a number, as the server gave it.") from None
+    with services(request).db.read() as conn:
+        return _ok(library.files_since(conn, cursor, max(1, min(limit, library.FILES_PAGE))))
+
+
 def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:
     _want_kept(svc.scheduler, conn, person, ref_ids)
 

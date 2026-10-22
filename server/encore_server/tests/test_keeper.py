@@ -55,6 +55,17 @@ class FakeNavidrome:
     def scanning(self) -> bool | None:
         return False
 
+    def get_song(self, song_id: str) -> dict[str, object] | None:
+        return {
+            "id": song_id,
+            "albumId": "al-1",
+            "artistId": "ar-1",
+            "coverArt": "al-1",
+            "suffix": "opus",
+            "size": 4096,
+            "unwanted": "x",
+        }
+
     def find_song(
         self, *, artist: str, title: str, album: str | None = None, relative_path: str | None = None, size: int | None = None
     ) -> str | None:
@@ -312,3 +323,12 @@ def test_replacing_the_file_changes_nothing_a_person_has(rig: Rig, db: Database)
     assert [like["ref"] for like in after["likes"]] == [like["ref"] for like in before["likes"]] == [ref]
     assert [e["ref"] for e in after["entries"]] == [e["ref"] for e in before["entries"]] == [ref]
     assert [e["id"] for e in after["entries"]] == [e["id"] for e in before["entries"]]
+
+
+def test_the_apps_view_of_a_kept_file_carries_what_the_music_server_knows(rig: Rig) -> None:
+    ref = rig.make_ref()
+
+    rig.keep(ref)
+
+    meta = rig.ref(ref)["file"]["meta"]
+    assert meta == {"albumId": "al-1", "artistId": "ar-1", "coverArt": "al-1", "suffix": "opus", "size": 4096}

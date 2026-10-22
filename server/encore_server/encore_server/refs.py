@@ -85,7 +85,7 @@ def _cover(value: object) -> str | None:
 def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
     """The API's shape of a ref, with the server's copy of the song when there is one."""
     file_row = conn.execute(
-        "SELECT id, navidrome_song_id, codec, bitrate_kbps FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC LIMIT 1",
+        "SELECT id, navidrome_song_id, codec, bitrate_kbps, meta FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC LIMIT 1",
         (row["id"],),
     ).fetchone()
     return {
@@ -111,6 +111,7 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
             "navidromeSongId": file_row["navidrome_song_id"],
             "codec": file_row["codec"],
             "bitrateKbps": file_row["bitrate_kbps"],
+            "meta": json.loads(file_row["meta"]) if file_row["meta"] else {},
         },
     }
 
@@ -215,6 +216,12 @@ def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str) -> bool
     return bool(cursor.rowcount)
 
 
+def touch_file(conn: sqlite3.Connection, ref_id: str) -> int:
+    """The song's file changed: the feed of the server's files (`GET /library/files`) will say so."""
+    cursor = conn.execute("INSERT INTO file_log (ref, at) VALUES (?, ?)", (ref_id, now_ms()))
+    return int(cursor.lastrowid or 0)
+
+
 def attach_file(
     conn: sqlite3.Connection,
     ref_id: str,
@@ -224,25 +231,45 @@ def attach_file(
     codec: str | None,
     bitrate_kbps: int | None,
     source: str = "library",
+    meta: dict[str, Any] | None = None,
 ) -> str:
-    """The server has (or now keeps) a copy of this song. Replacing a file changes only this: likes and playlists never move."""
+    """The server has (or now keeps) a copy of this song. Replacing a file changes only this: likes and playlists never move.
+    Attaching what is already attached changes nothing (and writes nothing to the feed), so a scan can run as often as it likes."""
     if not ref_exists(conn, ref_id):
         raise ApiError("not_found", "That song is not known to this server.")
+    meta_json = json.dumps(meta, separators=(",", ":"), sort_keys=True) if meta else None
     existing = conn.execute(
-        "SELECT id FROM song_file WHERE ref = ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
+        "SELECT id, navidrome_song_id, path, codec, bitrate_kbps, meta FROM song_file WHERE ref = ?"
+        " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
         (ref_id, navidrome_song_id, path),
     ).fetchone()
     if existing is not None:
-        conn.execute(
-            "UPDATE song_file SET navidrome_song_id = COALESCE(?, navidrome_song_id), path = COALESCE(path, ?),"
-            " codec = COALESCE(?, codec), bitrate_kbps = COALESCE(?, bitrate_kbps) WHERE id = ?",
-            (navidrome_song_id, path, codec, bitrate_kbps, existing["id"]),
+        merged = (
+            navidrome_song_id or existing["navidrome_song_id"],
+            existing["path"] or path,
+            codec or existing["codec"],
+            bitrate_kbps if bitrate_kbps is not None else existing["bitrate_kbps"],
+            meta_json or existing["meta"],
         )
+        if merged != (
+            existing["navidrome_song_id"],
+            existing["path"],
+            existing["codec"],
+            existing["bitrate_kbps"],
+            existing["meta"],
+        ):
+            conn.execute(
+                "UPDATE song_file SET navidrome_song_id = ?, path = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
+                (*merged, existing["id"]),
+            )
+            touch_file(conn, ref_id)
         return str(existing["id"])
     file_id = new_id("sf")
     conn.execute("UPDATE song_file SET preferred = 0 WHERE ref = ?", (ref_id,))
     conn.execute(
-        "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at) VALUES (?,?,?,?,?,?,?,1,?)",
-        (file_id, ref_id, navidrome_song_id, path, codec, bitrate_kbps, source, now_ms()),
+        "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta)"
+        " VALUES (?,?,?,?,?,?,?,1,?,?)",
+        (file_id, ref_id, navidrome_song_id, path, codec, bitrate_kbps, source, now_ms(), meta_json),
     )
+    touch_file(conn, ref_id)
     return file_id

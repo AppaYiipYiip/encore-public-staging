@@ -16,7 +16,7 @@ from typing import Any, Protocol
 
 from .. import library, refs
 from ..db import Database
-from ..navidrome import NavidromeClient
+from ..navidrome import NavidromeClient, file_meta
 from ..scheduler import GiveUp, Retry, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
@@ -204,9 +204,17 @@ class Keeper:
             path.suffix.lower(), path.suffix.lower().lstrip(".")
         )
         navidrome_id = self._wait_for_music_server(ref, relative, size)
+        meta = file_meta(self._navidrome.get_song(navidrome_id) or {}) if navidrome_id else None
         with self._db.tx() as conn:
             refs.attach_file(
-                conn, ref["id"], navidrome_song_id=navidrome_id, path=relative, codec=codec, bitrate_kbps=kbps, source="youtube"
+                conn,
+                ref["id"],
+                navidrome_song_id=navidrome_id,
+                path=relative,
+                codec=codec,
+                bitrate_kbps=kbps,
+                source="youtube",
+                meta=meta,
             )
             touched = library.touch_ref_holders(conn, ref["id"]) if navidrome_id else {}
         if navidrome_id is None:
