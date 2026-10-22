@@ -19,6 +19,7 @@ import '../common/collection_menu.dart';
 import '../common/cover_art.dart';
 import '../common/download_button.dart';
 import '../common/format.dart';
+import '../common/playability.dart';
 import '../common/playlist_actions.dart';
 import '../common/track_menu.dart';
 import '../common/track_swipe.dart';
@@ -138,6 +139,7 @@ class _TrackList extends ConsumerWidget {
     final facade = ref.watch(playbackFacadeProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final downloaded = ref.watch(downloadedIdsProvider).value ?? const {};
+    final playable = ref.watch(playabilityProvider);
 
     return SliverList.builder(
       itemCount: tracks.length,
@@ -155,6 +157,7 @@ class _TrackList extends ConsumerWidget {
             isCurrent: current,
             isPlaying: current && (snapshot?.isPlaying ?? false),
             downloaded: downloaded.contains(t.id),
+            available: playable(t.id),
             onTap: () => facade.playTracks(tracks,
                 startIndex: i, sourceName: sourceName, sourceId: sourceId),
             onMore: () => showTrackMenu(

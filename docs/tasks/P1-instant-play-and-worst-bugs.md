@@ -133,7 +133,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   works; while loading, frame work p50 ≤ 4 ms.
 
 ## P1-09 — Offline: no skipping, greyed rows, recovers by itself (app) — Size M
-* **Status 2026-10-22: engine part done, tests green, walked on the emulator (same evidence file).** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Not done: greyed rows, covers offline (P1-10).
+* **Status 2026-10-22: engine part done, tests green, walked on the emulator (same evidence file).** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Greyed rows done too (`lib/features/common/playability.dart`: offline, songs not on the phone are dimmed with a cloud-off mark in album/playlist lists, search rows and the Top result; `test/features/offline_rows_test.dart`). Not done: queue sheet rows, the "once per session" explanation (the player's own notice covers a tap), covers offline (done in P1-10).
 * **Why.** E2 (offline taps start a silent skip cascade every ~3 s through the playlist). The connection strip stays: the owner
   asked for it on 2026-10-17 (`../01` E10 corrected).
 * **Context.** Banner: `lib/features/common/connection_banner.dart` ("You're offline. Downloaded music still plays."); connectivity in

@@ -10,6 +10,7 @@ import '../../design/tokens.dart';
 import '../catalogue/catalogue_widgets.dart' show formatFans;
 import '../common/cover_art.dart';
 import '../common/format.dart';
+import '../common/playability.dart';
 import '../common/track_menu.dart';
 import '../common/track_swipe.dart';
 import '../common/widgets.dart';
@@ -127,6 +128,11 @@ class _TopResult extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    final playable = ref.watch(playabilityProvider);
+    final h = hit;
+    // A song of the library that is not on the phone cannot be played without a connection.
+    final unavailable =
+        h is SongHit && h.local != null && !playable(h.local!.id);
     final (kind, title, artist) = switch (hit) {
       final SongHit h => ('Song', h.title, h.artist),
       final ArtistHit h => (
@@ -199,8 +205,11 @@ class _TopResult extends ConsumerWidget {
                     ),
                   ),
                   if (hit is SongHit)
-                    Icon(Icons.play_circle_fill_rounded,
-                        size: 44, color: c.accent),
+                    unavailable
+                        ? Icon(Icons.cloud_off_rounded,
+                            size: 28, color: c.onBgFaint)
+                        : Icon(Icons.play_circle_fill_rounded,
+                            size: 44, color: c.accent),
                 ],
               ),
             ),
@@ -286,6 +295,7 @@ class _SongRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playing = ref.watch(playbackSnapshotProvider).value;
+    final playable = ref.watch(playabilityProvider);
     final local = hit.local;
     if (local != null) {
       return TrackSwipe(
@@ -294,6 +304,7 @@ class _SongRow extends ConsumerWidget {
         child: TrackTile(
           track: local,
           showAlbum: true,
+          available: playable(local.id),
           isCurrent: playing?.track?.id == local.id,
           isPlaying: playing?.isPlaying ?? false,
           onTap: () {
