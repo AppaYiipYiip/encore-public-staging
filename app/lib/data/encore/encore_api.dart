@@ -235,6 +235,49 @@ class EncoreApi {
             readMap(body['report']) ?? const {});
       });
 
+  // ------------------------------------------------------------------ people and invitations
+
+  /// Who the server says this person is.
+  Future<Result<EncoreMe>> me() =>
+      guard(() async => EncoreMe.fromJson(await _send('GET', '/me')));
+
+  /// Makes a one-person invitation (an owner's call). The code is in the answer once and nowhere else.
+  Future<Result<EncoreInvite>> createInvite(
+          {String role = 'member', String? note}) =>
+      guard(() async {
+        final body = await _send('POST', '/invites',
+            body: {'role': role, if (note != null) 'note': note});
+        return EncoreInvite.fromJson(readMap(body['invite']) ?? const {});
+      });
+
+  Future<Result<List<EncoreInvite>>> invites() => guard(() async {
+        final body = await _send('GET', '/invites');
+        return [
+          for (final i in readObjectList(body['items']))
+            EncoreInvite.fromJson(i)
+        ];
+      });
+
+  Future<Result<void>> revokeInvite(String id) =>
+      guard(() async => _send('DELETE', '/invites/$id'));
+
+  Future<Result<List<EncorePerson>>> people() => guard(() async {
+        final body = await _send('GET', '/people');
+        return [
+          for (final p in readObjectList(body['items']))
+            EncorePerson.fromJson(p)
+        ];
+      });
+
+  Future<Result<void>> updatePerson(String id, {String? role, bool? locked}) =>
+      guard(() async => _send('PATCH', '/people/$id', body: {
+            if (role != null) 'role': role,
+            if (locked != null) 'locked': locked,
+          }));
+
+  Future<Result<void>> removePerson(String id) =>
+      guard(() async => _send('DELETE', '/people/$id'));
+
   // ------------------------------------------------------------------ plays
 
   /// One listening, for history, "recently played", Year in Music and recommendations. [id] is made by the phone: a retried report is one play.

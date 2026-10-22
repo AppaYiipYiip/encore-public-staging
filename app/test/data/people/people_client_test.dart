@@ -455,7 +455,7 @@ void main() {
       final made = (await client.createInvite()).valueOrNull!;
 
       expect(last().method, 'POST');
-      expect(made.id, 7);
+      expect(made.id, '7');
       expect(made.url, 'https://music.example.ts.net/people/join/abc');
       expect(made.expiresAt,
           DateTime.fromMillisecondsSinceEpoch(1760604800 * 1000));
@@ -488,7 +488,7 @@ void main() {
       final rows = (await client.invites()).valueOrNull!;
 
       expect(rows.map((r) => (r.id, r.state, r.redeemedBy)),
-          [(2, 'used', 'ben'), (3, 'open', null)]);
+          [('2', 'used', 'ben'), ('3', 'open', null)]);
       expect(rows.last.isOpen, isTrue);
       expect(rows.first.isOpen, isFalse);
     });
@@ -496,7 +496,7 @@ void main() {
     test('revokes one by id', () async {
       adapter.routes['/people/api/invites/3'] = (_) => ok('', status: 204);
 
-      expect((await client.revokeInvite(3)).isOk, isTrue);
+      expect((await client.revokeInvite('3')).isOk, isTrue);
 
       expect(last().method, 'DELETE');
       expect(last().uri.path, '/people/api/invites/3');

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/logger.dart';
 import '../../core/result.dart';
+import '../../data/encore/encore_people.dart';
 import '../../data/people/activity_publisher.dart';
 import '../../data/people/people_client.dart';
 import '../../data/people/people_join_client.dart';
@@ -69,8 +70,19 @@ final peopleServiceProvider = FutureProvider<Uri?>((ref) async {
   return null;
 });
 
+/// An Encore server has people and invitations in itself, on the same address: its own client, or `null` on any other server (tests
+/// replace it).
+final encorePeopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
+  final session = await ref.watch(sessionProvider.future);
+  if (session == null || !session.encoreMode) return null;
+  return EncorePeopleApi(
+      api: session.encore, address: () => session.endpoints.currentUrl);
+});
+
 /// The client of the people service, once it is found and somebody is signed in.
 final peopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
+  final encore = await ref.watch(encorePeopleApiProvider.future);
+  if (encore != null) return encore;
   final uri = await ref.watch(peopleServiceProvider.future);
   final auth = await ref.watch(peopleAuthProvider.future);
   if (uri == null || auth == null) return null;

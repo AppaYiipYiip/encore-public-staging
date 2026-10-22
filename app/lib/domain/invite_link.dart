@@ -14,6 +14,7 @@ class InviteLink {
     required this.server,
     required this.code,
     this.behindPeoplePrefix = true,
+    this.encore = false,
   });
 
   /// The front door of the server: scheme, host, port and any path in front of
@@ -28,12 +29,26 @@ class InviteLink {
   /// The calls go to the same place the link came from.
   final bool behindPeoplePrefix;
 
+  /// The link of an Encore server (`https://<server>/encore/join/<code>`): the invitation is checked and used on the server's own API, on
+  /// the same address as everything else.
+  final bool encore;
+
   /// Who invited, what the server is called, until when: asked before the
   /// person chooses a name.
-  Uri get infoUrl => _join('$code/info');
+  Uri get infoUrl => encore
+      ? _api('/invites/check').replace(queryParameters: {'code': code})
+      : _join('$code/info');
 
   /// Makes the account.
-  Uri get redeemUrl => _join('$code/redeem');
+  Uri get redeemUrl => encore ? _api('/auth/join') : _join('$code/redeem');
+
+  /// What this server is called (an Encore server only).
+  Uri get nameUrl => _api('/info');
+
+  Uri _api(String tail) {
+    final front = server.path.replaceAll(RegExp(r'/+$'), '');
+    return server.replace(path: '$front/encore/api/v1$tail');
+  }
 
   Uri _join(String tail) {
     final front = server.path.replaceAll(RegExp(r'/+$'), '');
@@ -46,10 +61,11 @@ class InviteLink {
       other is InviteLink &&
       other.server == server &&
       other.code == code &&
-      other.behindPeoplePrefix == behindPeoplePrefix;
+      other.behindPeoplePrefix == behindPeoplePrefix &&
+      other.encore == encore;
 
   @override
-  int get hashCode => Object.hash(server, code, behindPeoplePrefix);
+  int get hashCode => Object.hash(server, code, behindPeoplePrefix, encore);
 
   @override
   String toString() => 'InviteLink($server, $code)';
@@ -58,6 +74,7 @@ class InviteLink {
 // `scheme://host[:port][/some/path]` then the join path, then the code.
 const _front = r'(https?)://([^\s/?#]+)((?:/[^\s/?#]+)*?)';
 const _code = r'([A-Za-z0-9_-]+)';
+final RegExp _encoreForm = RegExp('$_front/encore/join/$_code');
 final RegExp _publicForm = RegExp('$_front/people/join/$_code');
 final RegExp _homeForm = RegExp('$_front/join/$_code');
 
@@ -65,14 +82,21 @@ final RegExp _homeForm = RegExp('$_front/join/$_code');
 /// that was tapped), or `null`. A link over plain http to an address on the
 /// internet is refused: the page takes a password.
 InviteLink? findInviteLink(String text) {
-  for (final (pattern, prefixed) in [(_publicForm, true), (_homeForm, false)]) {
+  for (final (pattern, prefixed, encore) in [
+    (_encoreForm, false, true),
+    (_publicForm, true, false),
+    (_homeForm, false, false),
+  ]) {
     final m = pattern.firstMatch(text);
     if (m == null) continue;
     final server = Uri.tryParse('${m.group(1)}://${m.group(2)}${m.group(3)}');
     if (server == null || server.host.isEmpty) continue;
     if (cleartextProblem(server) != null) return null;
     return InviteLink(
-        server: server, code: m.group(4)!, behindPeoplePrefix: prefixed);
+        server: server,
+        code: m.group(4)!,
+        behindPeoplePrefix: prefixed,
+        encore: encore);
   }
   return null;
 }

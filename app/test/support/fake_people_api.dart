@@ -19,14 +19,14 @@ class FakePeopleApi implements PeopleApi {
   int clears = 0;
 
   Result<CreatedInvite> createAnswer = Result.ok(CreatedInvite(
-    id: 1,
+    id: '1',
     url: 'https://music.example.ts.net/people/join/abc',
     expiresAt: DateTime(2026, 10, 24),
   ));
   Result<List<InviteRow>> inviteList = const Result.ok([]);
   int createCalls = 0;
   PersonRole? lastInviteRole;
-  final revoked = <int>[];
+  final revoked = <String>[];
 
   /// Everybody on the server, as an owner sees them; [setRole] and
   /// [removePerson] change it the way the real service does.
@@ -66,7 +66,7 @@ class FakePeopleApi implements PeopleApi {
   Future<Result<List<InviteRow>>> invites() async => inviteList;
 
   @override
-  Future<Result<void>> revokeInvite(int id) async {
+  Future<Result<void>> revokeInvite(String id) async {
     revoked.add(id);
     return const Result.ok(null);
   }

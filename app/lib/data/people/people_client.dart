@@ -151,7 +151,7 @@ class CreatedInvite {
     this.role = PersonRole.guest,
   });
 
-  final int id;
+  final String id;
   final String url;
   final DateTime expiresAt;
 
@@ -174,7 +174,7 @@ class InviteRow {
     this.redeemedAt,
   });
 
-  final int id;
+  final String id;
 
   /// Who made it.
   final String inviter;
@@ -243,7 +243,7 @@ abstract interface class PeopleApi implements ActivitySink {
   Future<Result<void>> setSharing(bool on);
   Future<Result<CreatedInvite>> createInvite({PersonRole role});
   Future<Result<List<InviteRow>>> invites();
-  Future<Result<void>> revokeInvite(int id);
+  Future<Result<void>> revokeInvite(String id);
   Future<Result<List<PersonOnServer>>> people();
   Future<Result<void>> setRole(String user, PersonRole role);
   Future<Result<void>> removePerson(String user);
@@ -377,11 +377,11 @@ class PeopleClient implements PeopleApi {
         final id = data['id'];
         final url = data['url'];
         final expires = _time(data['expiresAt']);
-        if (id is! int || url is! String || expires == null) {
+        if (id == null || url is! String || expires == null) {
           throw _unreadable();
         }
         return CreatedInvite(
-          id: id,
+          id: '$id',
           url: url,
           expiresAt: expires,
           role: PersonRole.tryParse(data['role']) ?? PersonRole.guest,
@@ -400,14 +400,14 @@ class PeopleClient implements PeopleApi {
           final state = e['state'];
           final created = _time(e['createdAt']);
           final expires = _time(e['expiresAt']);
-          if (id is! int ||
+          if (id == null ||
               state is! String ||
               created == null ||
               expires == null) {
             continue;
           }
           rows.add(InviteRow(
-            id: id,
+            id: '$id',
             state: state,
             createdAt: created,
             expiresAt: expires,
@@ -422,7 +422,7 @@ class PeopleClient implements PeopleApi {
       });
 
   @override
-  Future<Result<void>> revokeInvite(int id) =>
+  Future<Result<void>> revokeInvite(String id) =>
       guard<void>(() async => _send('DELETE', '/invites/$id'));
 
   // ------------------------------------------------------ people (owners)

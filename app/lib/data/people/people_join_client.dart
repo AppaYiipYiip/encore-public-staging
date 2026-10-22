@@ -62,6 +62,26 @@ class PeopleJoinClient {
         final response = await _call(
             link, () => _dio.getUri<Object?>(link.infoUrl, options: _any));
         final data = _map(response);
+        if (link.encore) {
+          // Who invited comes with the invitation; what the server is called is asked separately and is a nicety.
+          var name = '';
+          try {
+            final named = await _dio.getUri<Object?>(link.nameUrl,
+                options:
+                    _any.copyWith(receiveTimeout: const Duration(seconds: 6)));
+            final body = named.data;
+            if (body is Map && body['name'] is String) {
+              name = body['name'] as String;
+            }
+          } on DioException {
+            // The name is optional.
+          }
+          return InvitationInfo(
+            inviter: '${data['invitedBy'] ?? ''}',
+            serverName: name,
+            address: null,
+          );
+        }
         return InvitationInfo(
           inviter: '${data['inviter'] ?? ''}',
           serverName: '${data['server'] ?? ''}',
@@ -86,11 +106,21 @@ class PeopleJoinClient {
           link,
           () => _dio.postUri<Object?>(
             link.redeemUrl,
-            data: {'username': username, 'password': password},
+            data: link.encore
+                ? {
+                    'code': link.code,
+                    'username': username,
+                    'password': password,
+                    'deviceName': 'Phone',
+                  }
+                : {'username': username, 'password': password},
             options: _any,
           ),
         );
         final data = _map(response);
+        if (link.encore) {
+          return JoinedAccount(username: username, address: null);
+        }
         return JoinedAccount(
           username: '${data['username'] ?? username}',
           address: _address(data['address']),
@@ -137,6 +167,11 @@ class PeopleJoinClient {
   static String? _words(Response<Object?> response) {
     final data = response.data;
     if (data is Map && data['error'] is String) return data['error'] as String;
+    // An Encore server's one error shape: {"error": {"code", "message"}}.
+    if (data is Map && data['error'] is Map) {
+      final message = (data['error'] as Map)['message'];
+      if (message is String && message.isNotEmpty) return message;
+    }
     return null;
   }
 

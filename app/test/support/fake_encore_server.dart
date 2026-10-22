@@ -22,7 +22,25 @@ class FakeEncoreServer {
           : _ok({'report': migrationReport});
     };
     _handlers['/encore/api/v1/playlists'] = _playlistsRoot;
+    _handlers['/encore/api/v1/me'] = (r) => _ok({
+          'id': 'pn_me',
+          'name': user,
+          'username': user,
+          'role': myRole,
+          'explicitOk': true,
+          'federationOk': true,
+        });
+    _handlers['/encore/api/v1/invites'] = _invitesRoot;
+    _handlers['/encore/api/v1/people'] = (r) => _ok({'items': people});
   }
+
+  /// This person's role on the server (`owner` or `member`).
+  String myRole = 'owner';
+
+  /// The people the owner sees, and the invitations (what a test arranges or reads back).
+  final List<Map<String, Object?>> people = [];
+  final List<Map<String, Object?>> inviteRows = [];
+  int _inviteCount = 0;
 
   final String user;
   late final FakeHttpAdapter adapter;
@@ -185,6 +203,30 @@ class FakeEncoreServer {
       }
       return _ok({'changed': true, 'cursor': '$_seq'});
     }
+    final inviteMatch =
+        RegExp(r'^/encore/api/v1/invites/(iv_\w+)$').firstMatch(path);
+    if (inviteMatch != null && r.method == 'DELETE') {
+      final row =
+          inviteRows.where((i) => i['id'] == inviteMatch.group(1)).firstOrNull;
+      if (row == null) return _error(404, 'not_found');
+      row['state'] = 'revoked';
+      return _ok({'changed': true});
+    }
+    final personMatch =
+        RegExp(r'^/encore/api/v1/people/(pn_\w+)$').firstMatch(path);
+    if (personMatch != null) {
+      final row =
+          people.where((p) => p['id'] == personMatch.group(1)).firstOrNull;
+      if (row == null) return _error(404, 'not_found');
+      if (r.method == 'DELETE') {
+        people.remove(row);
+        return _ok({'removed': true});
+      }
+      final body = jsonDecode(r.body) as Map;
+      if (body['role'] != null) row['role'] = body['role'];
+      if (body['locked'] != null) row['locked'] = body['locked'];
+      return _ok(row);
+    }
     final streamMatch =
         RegExp(r'^/encore/api/v1/refs/(sr_\w+)/stream-url$').firstMatch(path);
     if (streamMatch != null) {
@@ -227,6 +269,30 @@ class FakeEncoreServer {
     if (likes.containsKey(ref)) return;
     likes[ref] = atMs ?? clockMs++;
     _touch('like', ref);
+  }
+
+  FakeResponse _invitesRoot(RecordedRequest r) {
+    if (r.method == 'POST') {
+      final body = r.body.isEmpty
+          ? const <String, Object?>{}
+          : jsonDecode(r.body) as Map;
+      final id = 'iv_${(++_inviteCount).toString().padLeft(26, '0')}';
+      final row = <String, Object?>{
+        'id': id,
+        'role': body['role'] ?? 'member',
+        'note': body['note'],
+        'createdAt': clockMs,
+        'expiresAt': clockMs + 7 * 24 * 3600 * 1000,
+        'state': 'open',
+        'usedBy': null,
+        'usedAt': null,
+      };
+      inviteRows.add(row);
+      return _ok({
+        'invite': {...row, 'code': 'ABCD-EFGH-JK$_inviteCount'}
+      }, status: 201);
+    }
+    return _ok({'items': inviteRows});
   }
 
   FakeResponse _info() => _ok({

@@ -130,4 +130,97 @@ void main() {
     expect(result.isErr, isTrue);
     expect(adapter.requests, isEmpty);
   });
+
+  group('on an Encore server (the invitation is on its own API, same address)',
+      () {
+    final encore = findInviteLink(
+        'Come and listen: http://192.168.50.133:4540/encore/join/ABCD-EFGH-JKLM')!;
+
+    test('the link is read, and its calls go to the own API of the server', () {
+      expect(encore.encore, isTrue);
+      expect(encore.server, Uri.parse('http://192.168.50.133:4540'));
+      expect(encore.code, 'ABCD-EFGH-JKLM');
+      expect(encore.infoUrl.path, '/encore/api/v1/invites/check');
+      expect(encore.infoUrl.queryParameters, {'code': 'ABCD-EFGH-JKLM'});
+      expect(encore.redeemUrl.path, '/encore/api/v1/auth/join');
+    });
+
+    test('says who invited the person and what the server is called', () async {
+      serve({
+        '/encore/api/v1/invites/check': (r) {
+          expect(r.uri.queryParameters['code'], 'ABCD-EFGH-JKLM');
+          return const FakeResponse.json(
+              {'invitedBy': 'marwa', 'expiresAt': 1792000000000});
+        },
+        '/encore/api/v1/info': (_) => const FakeResponse.json(
+            {'name': 'Home music', 'apiVersion': '1.0'}),
+      });
+
+      final info = (await client.info(encore)).valueOrNull!;
+
+      expect(info.inviter, 'marwa');
+      expect(info.serverName, 'Home music');
+    });
+
+    test('an invitation that is used up says so in the words of the server',
+        () async {
+      serve({
+        '/encore/api/v1/invites/check': (_) => const FakeResponse.json({
+              'error': {
+                'code': 'not_found',
+                'message': 'This invitation is not valid any more.'
+              }
+            }, status: 404),
+      });
+
+      final failure = (await client.info(encore)).failureOrNull!;
+
+      expect(failure, isA<NotFoundFailure>());
+      expect(failure.message, 'This invitation is not valid any more.');
+    });
+
+    test('makes the account: the code, the name and the password in the body',
+        () async {
+      late String body;
+      serve({
+        '/encore/api/v1/auth/join': (r) {
+          body = r.body;
+          return const FakeResponse.json({
+            'deviceToken': 'x',
+            'device': {'id': 'dv_1', 'name': 'Phone'},
+            'person': {'id': 'pn_1', 'name': 'mia', 'role': 'member'},
+          }, status: 201);
+        },
+      });
+
+      final joined = (await client.redeem(encore,
+              username: 'mia', password: 'a long password'))
+          .valueOrNull!;
+
+      expect(joined.username, 'mia');
+      final sent = jsonDecode(body) as Map;
+      expect(sent['code'], 'ABCD-EFGH-JKLM');
+      expect(sent['username'], 'mia');
+      expect(sent['password'], 'a long password');
+      expect(adapter.requests.single.uri.query, isNot(contains('password')),
+          reason: 'never in an address');
+    });
+
+    test('a name that is taken is said in the words of the server', () async {
+      serve({
+        '/encore/api/v1/auth/join': (_) => const FakeResponse.json({
+              'error': {
+                'code': 'conflict',
+                'message': 'That name is already taken. Choose another.'
+              }
+            }, status: 409),
+      });
+
+      final failure = (await client.redeem(encore,
+              username: 'mia', password: 'a long password'))
+          .failureOrNull!;
+
+      expect(failure.message, 'That name is already taken. Choose another.');
+    });
+  });
 }

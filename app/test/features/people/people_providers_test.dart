@@ -23,6 +23,7 @@ void main() {
       final c = ProviderContainer(overrides: [
         networkKindProvider
             .overrideWith((ref) => Stream.value(NetworkKind.wifi)),
+        encorePeopleApiProvider.overrideWith((ref) async => null),
         peopleCandidatesProvider.overrideWith((ref) async => candidates),
         peopleAuthProvider.overrideWith((ref) async => auth),
         peopleProbeProvider.overrideWithValue((uri) async {

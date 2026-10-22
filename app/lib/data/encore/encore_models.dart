@@ -383,3 +383,108 @@ class EncoreDeviceLogin {
   final String deviceId;
   final String personId;
 }
+
+/// `GET /me`: who this person is on the server.
+@immutable
+class EncoreMe {
+  const EncoreMe({
+    required this.id,
+    required this.name,
+    required this.username,
+    required this.role,
+  });
+
+  factory EncoreMe.fromJson(Map<String, dynamic> json) => EncoreMe(
+        id: readString(json['id']) ?? '',
+        name: readString(json['name']) ?? '',
+        username: readString(json['username']) ?? '',
+        role: readString(json['role']) ?? 'member',
+      );
+
+  final String id;
+  final String name;
+  final String username;
+
+  /// `owner` or `member`.
+  final String role;
+
+  bool get isOwner => role == 'owner';
+}
+
+/// One invitation. [code] is set only on the answer to making it: the server keeps a hash and never says it again.
+@immutable
+class EncoreInvite {
+  const EncoreInvite({
+    required this.id,
+    required this.role,
+    required this.createdAtMs,
+    required this.expiresAtMs,
+    this.code,
+    this.note,
+    this.state = 'open',
+    this.usedBy,
+    this.usedAtMs,
+  });
+
+  factory EncoreInvite.fromJson(Map<String, dynamic> json) => EncoreInvite(
+        id: readString(json['id']) ?? '',
+        role: readString(json['role']) ?? 'member',
+        createdAtMs: readInt(json['createdAt']) ?? 0,
+        expiresAtMs: readInt(json['expiresAt']) ?? 0,
+        code: readString(json['code']),
+        note: readString(json['note']),
+        state: readString(json['state']) ?? 'open',
+        usedBy: readString(json['usedBy']),
+        usedAtMs: readInt(json['usedAt']),
+      );
+
+  final String id;
+  final String role;
+  final int createdAtMs;
+  final int expiresAtMs;
+  final String? code;
+  final String? note;
+
+  /// `open`, `used`, `expired` or `revoked`.
+  final String state;
+  final String? usedBy;
+  final int? usedAtMs;
+}
+
+/// One person on the server, as an owner sees them: counts and dates only, never what anybody listens to.
+@immutable
+class EncorePerson {
+  const EncorePerson({
+    required this.id,
+    required this.username,
+    required this.name,
+    required this.role,
+    required this.createdAtMs,
+    this.locked = false,
+    this.invitedBy,
+    this.devices = 0,
+    this.lastSeenMs,
+  });
+
+  factory EncorePerson.fromJson(Map<String, dynamic> json) => EncorePerson(
+        id: readString(json['id']) ?? '',
+        username: readString(json['username']) ?? '',
+        name: readString(json['name']) ?? '',
+        role: readString(json['role']) ?? 'member',
+        createdAtMs: readInt(json['createdAt']) ?? 0,
+        locked: readBool(json['locked']),
+        invitedBy: readString(json['invitedBy']),
+        devices: readInt(json['devices']) ?? 0,
+        lastSeenMs: readInt(json['lastSeen']),
+      );
+
+  final String id;
+  final String username;
+  final String name;
+  final String role;
+  final int createdAtMs;
+  final bool locked;
+  final String? invitedBy;
+  final int devices;
+  final int? lastSeenMs;
+}

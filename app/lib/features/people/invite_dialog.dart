@@ -65,7 +65,7 @@ class _ServiceInviteState extends ConsumerState<ServiceInviteDialog> {
     if (result?.isOk ?? false) unawaited(_load());
   }
 
-  Future<void> _revoke(int id) async {
+  Future<void> _revoke(String id) async {
     final api = await ref.read(peopleApiProvider.future);
     await api?.revokeInvite(id);
     if (mounted) await _load();

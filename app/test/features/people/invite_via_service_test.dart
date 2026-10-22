@@ -190,7 +190,7 @@ void main() {
     final api = FakePeopleApi(me_: owner)
       ..inviteList = Result.ok([
         InviteRow(
-          id: 2,
+          id: '2',
           state: 'used',
           createdAt: DateTime(2026, 10, 10),
           expiresAt: DateTime(2026, 10, 17),
@@ -198,13 +198,13 @@ void main() {
           redeemedAt: DateTime(2026, 10, 11),
         ),
         InviteRow(
-          id: 3,
+          id: '3',
           state: 'open',
           createdAt: DateTime(2026, 10, 16),
           expiresAt: DateTime(2026, 10, 23),
         ),
         InviteRow(
-          id: 4,
+          id: '4',
           state: 'expired',
           createdAt: DateTime(2026, 9, 1),
           expiresAt: DateTime(2026, 9, 8),
@@ -221,7 +221,7 @@ void main() {
     await tester.tap(find.text('Revoke'));
     await settle(tester);
 
-    expect(api.revoked, [3]);
+    expect(api.revoked, ['3']);
     await closeApp(tester, db);
   });
 
@@ -278,7 +278,7 @@ void main() {
       final api = FakePeopleApi(me_: owner)
         ..inviteList = Result.ok([
           InviteRow(
-            id: 2,
+            id: '2',
             state: 'used',
             createdAt: DateTime(2026, 10, 10),
             expiresAt: DateTime(2026, 10, 17),
@@ -299,7 +299,7 @@ void main() {
       final api = FakePeopleApi(me_: inviter)
         ..inviteList = Result.ok([
           InviteRow(
-            id: 2,
+            id: '2',
             state: 'open',
             createdAt: DateTime(2026, 10, 16),
             expiresAt: DateTime(2026, 10, 23),
