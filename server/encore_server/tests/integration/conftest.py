@@ -114,6 +114,9 @@ class SourceOfRealAudio:
         self.asked.append(wanted)
         return make_audio(stem.with_name(stem.name + ".webm"), title="From YouTube", artist="Someone Else")
 
+    def resting_for(self) -> float:
+        return 0.0
+
     def open(self, *_: Any) -> Any:  # pragma: no cover - not used here
         raise NotImplementedError
 

@@ -213,3 +213,26 @@ def test_the_work_folder_is_left_clean(rig: Rig, tmp_path: Path) -> None:
     rig.svc.scheduler.drain()
 
     assert list((tmp_path / "data" / "work").glob("keep-*")) == []
+
+
+def test_a_kept_song_plays_through_the_single_address_with_range_and_covers_and_logins_work_too(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
+    artist, title = unique("Gateway Artist"), unique("Gateway Song")
+    ref = rig.resolve(title=title, artists=[artist], album="One Door", durationMs=3000, isrc="GBAYE0900006")
+    rig.put(f"/likes/{ref['id']}")
+    rig.svc.scheduler.drain()
+    song_id = rig.get(f"/refs/{ref['id']}")["file"]["navidromeSongId"]
+    query = {**rig.creds(), "v": "1.16.1", "c": "it", "f": "json"}
+
+    ping = rig.client.get("/rest/ping.view", params=query)
+    whole = rig.client.get("/rest/stream.view", params={**query, "id": song_id, "format": "raw"})
+    jump = rig.client.get(
+        "/rest/stream.view", params={**query, "id": song_id, "format": "raw"}, headers={"Range": "bytes=100-199"}
+    )
+    wrong = rig.client.get("/rest/ping.view", params={**query, "t": "0" * 32})
+
+    assert ping.status_code == 200 and ping.json()["subsonic-response"]["status"] == "ok"
+    assert whole.status_code == 200 and len(whole.content) > 1000
+    assert jump.status_code == 206 and jump.content == whole.content[100:200]
+    assert wrong.json()["subsonic-response"]["status"] == "failed", "Navidrome still judges its own logins"

@@ -17,12 +17,13 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
-from . import API_VERSION, MIN_APP_VERSION, __version__, library, playback, refs
+from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, playback, refs
 from .auth import (
     STREAM_URL_TTL_S,
     NavidromeVerifier,
@@ -694,6 +695,7 @@ def create_app(
     db: Database | None = None,
     youtube: YoutubeSource | None = None,
     navidrome: NavidromeClient | None = None,
+    gateway_client: httpx.AsyncClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -741,6 +743,7 @@ def create_app(
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
     app.add_api_websocket_route("/encore/live", live)
+    gateway.mount(app, settings.navidrome_url, client=gateway_client)
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, error: ApiError) -> JSONResponse:
