@@ -22,6 +22,13 @@ import 'player/deferred_playback_facade.dart';
 import 'player/playback_facade.dart';
 import 'settings/settings_controller.dart';
 
+/// Whether the signed-in server is an Encore server (tests replace it). On one, songs are references the server plays itself, playing
+/// does not save, and there is no helper service to find; screens word themselves accordingly.
+final onEncoreServerProvider = FutureProvider<bool>((ref) async {
+  final session = await ref.watch(sessionProvider.future);
+  return session?.encoreMode ?? false;
+});
+
 /// Read-model providers consumed by screens. Each is a thin, autoDispose
 /// adapter over a [LibraryRepository] stream, so a server-side change that the
 /// sync engine writes shows up everywhere without any refresh code (R-04).

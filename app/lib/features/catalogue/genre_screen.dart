@@ -10,7 +10,6 @@ import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
 import '../providers.dart';
 import 'catalogue_providers.dart';
-import 'catalogue_screens.dart' show playPreviewRun;
 import 'catalogue_widgets.dart';
 
 /// One genre of the catalogue, from the Browse grid of the Search tab: what is

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../data/catalogue/catalogue_models.dart';
+import '../../data/db/app_database.dart' show AlbumRow;
 import '../../data/repos/request_repository.dart';
 import '../../domain/text_match.dart';
 import '../providers.dart';
@@ -42,14 +43,51 @@ final catalogueArtistTopProvider = FutureProvider.autoDispose
 /// One release of an artist, with the library album when the user owns it.
 @immutable
 class ArtistRelease {
-  const ArtistRelease(this.album, {this.libraryAlbumId});
+  const ArtistRelease(this.album, {this.libraryAlbumId, this.libraryCoverArt});
 
   final CatalogueAlbum album;
 
   /// Id of the matching album in the library, `null` when not owned.
   final String? libraryAlbumId;
 
+  /// The library's own cover of that album (kept on the phone, so it also shows offline).
+  final String? libraryCoverArt;
+
   bool get owned => libraryAlbumId != null;
+}
+
+/// [releases] (newest first) with the library's own albums that the catalogue did not match added as albums: a rip, a local release, a
+/// title spelt differently. A person's own album never disappears from their artist page because the catalogue does not list it.
+List<ArtistRelease> withLibraryAlbums(
+    List<ArtistRelease> releases, List<AlbumRow> library) {
+  final shown = {
+    for (final r in releases)
+      if (r.libraryAlbumId != null) r.libraryAlbumId,
+  };
+  final extra = [
+    for (final a in library)
+      if (!shown.contains(a.id))
+        ArtistRelease(
+          CatalogueAlbum(
+            id: 'library:${a.id}',
+            title: a.name,
+            artistName: a.artist ?? '',
+            year: a.year,
+            recordType: 'album',
+          ),
+          libraryAlbumId: a.id,
+          libraryCoverArt: a.coverArt,
+        ),
+  ];
+  if (extra.isEmpty) return releases;
+  // Newest first, and the catalogue's own order kept for equal years.
+  final all = [...releases, ...extra];
+  final order = {for (var i = 0; i < all.length; i++) all[i]: i};
+  all.sort((a, b) {
+    final byYear = (b.album.year ?? 0).compareTo(a.album.year ?? 0);
+    return byYear != 0 ? byYear : order[a]!.compareTo(order[b]!);
+  });
+  return all;
 }
 
 /// An artist's releases split the way streaming apps do.
@@ -159,7 +197,8 @@ final catalogueArtistReleasesProvider = FutureProvider.autoDispose
   final out = <ArtistRelease>[];
   for (final album in foldReleases(raw)) {
     final owned = await matcher?.findAlbum(album.artistName, album.title);
-    out.add(ArtistRelease(album, libraryAlbumId: owned?.id));
+    out.add(ArtistRelease(album,
+        libraryAlbumId: owned?.id, libraryCoverArt: owned?.coverArt));
   }
   return out;
 });

@@ -12,10 +12,10 @@ import '../common/widgets.dart';
 import '../detail/hero_header.dart';
 import '../instant/instant_controller.dart';
 import '../instant/instant_warmup.dart';
-import '../player/playback_facade.dart';
 import '../providers.dart';
 import '../requests/request_ui.dart';
 import 'adding_music_help.dart';
+import 'artist_sections.dart';
 import 'catalogue_providers.dart';
 import 'catalogue_widgets.dart';
 
@@ -117,6 +117,10 @@ class _CatalogueDownloadButton extends ConsumerWidget {
   }
 }
 
+/// What a catalogue page says on an Encore server, where playing a song does not save it.
+const String kEncorePlayLine =
+    'Tap a song to play it. Like it or download it to keep it on your server.';
+
 /// The one calm sentence under a release's buttons, with the way to the
 /// longer explanation.
 SliverToBoxAdapter _explain(BuildContext context, String text,
@@ -151,31 +155,6 @@ SliverToBoxAdapter _explain(BuildContext context, String text,
       ),
     );
 
-/// Queues the samples of [tracks] (those that have one) and starts at the
-/// row [index] of the *full* list.
-Future<void> playPreviewRun(
-  PlaybackFacade facade,
-  List<CatalogueTrack> tracks, {
-  required int index,
-  required String sourceName,
-  required String sourceId,
-}) {
-  final playable = <PreviewTrack>[];
-  var start = 0;
-  for (var i = 0; i < tracks.length; i++) {
-    final preview = previewOf(tracks[i]);
-    if (preview == null) continue;
-    if (i == index) start = playable.length;
-    playable.add(preview);
-  }
-  return facade.playPreviews(
-    playable,
-    startIndex: start,
-    sourceName: sourceName,
-    sourceId: sourceId,
-  );
-}
-
 /// Shown when a page cannot get its release from the catalogue.
 class _Unavailable extends StatelessWidget {
   const _Unavailable({required this.loading, required this.onRetry});
@@ -199,23 +178,6 @@ class _Unavailable extends StatelessWidget {
     );
   }
 }
-
-SliverToBoxAdapter _loadingSliver() => const SliverToBoxAdapter(
-      child: Padding(
-        padding: EdgeInsets.all(Space.xl),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    );
-
-SliverToBoxAdapter _retrySliver(VoidCallback onRetry) => SliverToBoxAdapter(
-      child: EmptyState(
-        icon: Icons.cloud_off_rounded,
-        title: 'Nothing to show right now',
-        message: 'The music catalogue could not be reached.',
-        actionLabel: 'Try again',
-        onAction: onRetry,
-      ),
-    );
 
 // ------------------------------------------------------------------- album
 
@@ -253,6 +215,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     final isPlaying = isCurrent && (snapshot?.isPlaying ?? false);
     final list = tracks.value ?? const <CatalogueTrack>[];
     final instant = ref.watch(instantAvailableProvider);
+    final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final firstPlayable =
         list.indexWhere((t) => instant || t.previewUrl != null);
 
@@ -321,18 +284,20 @@ class CatalogueAlbumScreen extends ConsumerWidget {
         _explain(
           context,
           instant
-              ? 'Tap a song to play it. It is added to your library first, '
-                  'which takes a few seconds.'
+              ? (encore
+                  ? kEncorePlayLine
+                  : 'Tap a song to play it. It is added to your library '
+                      'first, which takes a few seconds.')
               : 'Previews are 30 seconds. Request the album and it is added '
                   'to your library in full.',
           instant: instant,
         ),
         tracks.when(
-          loading: _loadingSliver,
-          error: (_, __) => _retrySliver(
+          loading: loadingSliver,
+          error: (_, __) => retrySliver(
               () => ref.invalidate(catalogueAlbumTracksProvider(albumId))),
           data: (items) => items.isEmpty
-              ? _retrySliver(
+              ? retrySliver(
                   () => ref.invalidate(catalogueAlbumTracksProvider(albumId)))
               : SliverList.builder(
                   itemCount: items.length,
@@ -427,15 +392,9 @@ class CatalogueArtistScreen extends ConsumerWidget {
     final isPlaying = isCurrent && (snapshot?.isPlaying ?? false);
     final topList = top.value ?? const <CatalogueTrack>[];
     final instant = ref.watch(instantAvailableProvider);
+    final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final firstPlayable =
         topList.indexWhere((t) => instant || t.previewUrl != null);
-
-    void retry() {
-      ref
-        ..invalidate(catalogueArtistProvider(artistId))
-        ..invalidate(catalogueArtistTopProvider(artistId))
-        ..invalidate(catalogueArtistReleasesProvider(releasesKey));
-    }
 
     return CollectionScaffold(
       title: artist.name,
@@ -484,121 +443,19 @@ class CatalogueArtistScreen extends ConsumerWidget {
         _explain(
           context,
           instant
-              ? 'Tap a song to play it. It is added to your library first, '
-                  'which takes a few seconds.'
+              ? (encore
+                  ? kEncorePlayLine
+                  : 'Tap a song to play it. It is added to your library '
+                      'first, which takes a few seconds.')
               : 'Previews are 30 seconds. Request an artist and their music '
                   'is added to your library in full.',
           instant: instant,
         ),
-        const SliverToBoxAdapter(child: SectionHeader(title: 'Popular')),
-        top.when(
-          loading: _loadingSliver,
-          error: (_, __) => _retrySliver(retry),
-          data: (items) => items.isEmpty
-              ? _retrySliver(retry)
-              : SliverList.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, i) {
-                    final t = items[i];
-                    final status = ref.watch(instantStatusProvider(t.id));
-                    final playingId = snapshot?.track?.id;
-                    final current = playingId == t.id ||
-                        (status?.track != null &&
-                            playingId == status!.track!.id);
-                    void preview() => playPreviewRun(
-                          facade,
-                          items,
-                          index: i,
-                          sourceName: artist.name,
-                          sourceId: sourceId,
-                        );
-                    return PreviewTrackTile(
-                      track: t,
-                      showCover: true,
-                      isCurrent: current,
-                      isPlaying: current && (snapshot?.isPlaying ?? false),
-                      instant: instant,
-                      status: status,
-                      onTap: instant
-                          ? () => unawaited(ref
-                              .read(instantControllerProvider.notifier)
-                              .playRun(items,
-                                  startIndex: i,
-                                  sourceName: artist.name,
-                                  sourceId: sourceId))
-                          : preview,
-                      onLongPress:
-                          instant && t.previewUrl != null ? preview : null,
-                    );
-                  },
-                ),
-        ),
+        ArtistPopularSection(artist: artist, sourceId: sourceId),
         releases.when(
-          loading: _loadingSliver,
+          loading: loadingSliver,
           error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          data: (items) {
-            final groups = groupReleases(items);
-            return SliverMainAxisGroup(
-              slivers: [
-                _ReleaseSection(title: 'Albums', releases: groups.albums),
-                _ReleaseSection(
-                    title: 'Singles and EPs',
-                    releases: groups.singles,
-                    collapsedCount: 5),
-                _ReleaseSection(
-                    title: 'Compilations',
-                    releases: groups.compilations,
-                    collapsedCount: 5),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// A titled list of releases; long lists start collapsed.
-class _ReleaseSection extends StatefulWidget {
-  const _ReleaseSection({
-    required this.title,
-    required this.releases,
-    this.collapsedCount = 8,
-  });
-
-  final String title;
-  final List<ArtistRelease> releases;
-  final int collapsedCount;
-
-  @override
-  State<_ReleaseSection> createState() => _ReleaseSectionState();
-}
-
-class _ReleaseSectionState extends State<_ReleaseSection> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final all = widget.releases;
-    if (all.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-    final collapsible = all.length > widget.collapsedCount;
-    final visible = collapsible && !_expanded
-        ? all.take(widget.collapsedCount).toList()
-        : all;
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverToBoxAdapter(
-          child: SectionHeader(
-            title: widget.title,
-            seeAllLabel: _expanded ? 'Show less' : 'Show all',
-            onSeeAll: collapsible
-                ? () => setState(() => _expanded = !_expanded)
-                : null,
-          ),
-        ),
-        SliverList.builder(
-          itemCount: visible.length,
-          itemBuilder: (context, i) => ReleaseTile(release: visible[i]),
+          data: (items) => ArtistReleaseSections(releases: items),
         ),
       ],
     );

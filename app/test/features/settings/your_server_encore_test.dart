@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_models.dart';
+import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/settings/encore_play_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

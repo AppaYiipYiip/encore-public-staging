@@ -6,13 +6,6 @@ import '../../data/encore/encore_models.dart';
 import '../../design/tokens.dart';
 import 'settings_controller.dart';
 
-/// Whether the signed-in server is an Encore server (tests replace it). The Your server page says different things on one: it plays
-/// songs itself, so there is no helper service to find.
-final onEncoreServerProvider = FutureProvider<bool>((ref) async {
-  final session = await ref.watch(sessionProvider.future);
-  return session?.encoreMode ?? false;
-});
-
 /// What an Encore server says about itself right now (is it allowed to fetch new songs, or resting). `null` when it does not answer
 /// (tests replace it).
 final encoreServerInfoProvider =

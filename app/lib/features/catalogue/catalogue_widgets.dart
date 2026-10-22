@@ -29,6 +29,31 @@ PreviewTrack? previewOf(CatalogueTrack t) {
   );
 }
 
+/// Queues the samples of [tracks] (those that have one) and starts at the
+/// row [index] of the *full* list.
+Future<void> playPreviewRun(
+  PlaybackFacade facade,
+  List<CatalogueTrack> tracks, {
+  required int index,
+  required String sourceName,
+  required String sourceId,
+}) {
+  final playable = <PreviewTrack>[];
+  var start = 0;
+  for (var i = 0; i < tracks.length; i++) {
+    final preview = previewOf(tracks[i]);
+    if (preview == null) continue;
+    if (i == index) start = playable.length;
+    playable.add(preview);
+  }
+  return facade.playPreviews(
+    playable,
+    startIndex: start,
+    sourceName: sourceName,
+    sourceId: sourceId,
+  );
+}
+
 /// `1.2M fans`, `850K fans`, `12,345 fans` -> short form.
 String formatFans(int fans) {
   if (fans >= 1000000) {
@@ -82,6 +107,8 @@ class ReleaseTile extends StatelessWidget {
                 SizedBox.square(
                   dimension: 52,
                   child: CoverArt(
+                    // The person's own copy of the cover wins: it is on the phone, so it shows offline too.
+                    coverArtId: release.libraryCoverArt,
                     imageUrl: album.coverUrl,
                     fallbackLabel: album.title,
                     radius: Radii.art,

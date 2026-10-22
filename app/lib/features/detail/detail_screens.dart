@@ -7,12 +7,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../data/catalogue/catalogue_models.dart' show CatalogueTrack;
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
 import '../../domain/artwork_color.dart';
+import '../catalogue/artist_sections.dart';
 import '../catalogue/catalogue_providers.dart';
-import '../catalogue/catalogue_screens.dart' show playPreviewRun;
 import '../catalogue/catalogue_widgets.dart';
 import '../common/artwork_color.dart';
 import '../common/collection_menu.dart';
@@ -450,20 +451,21 @@ class ArtistScreen extends ConsumerWidget {
         )))
         .value;
 
-    // What this artist has released that the library lacks (Plex's "missing
-    // items"): from the public catalogue, only when it is reachable.
+    // What the catalogue knows of this artist: its popular songs and everything it released, next to what the library holds. Only
+    // when it is reachable; without it the page is the library's own albums.
     final catalogueArtist =
         ref.watch(libraryArtistCatalogueProvider(artistId)).value;
-    final releases = catalogueArtist == null
+    final releasesAsync = catalogueArtist == null
         ? null
-        : ref
-            .watch(catalogueArtistReleasesProvider(
-                (catalogueArtist.id, catalogueArtist.name)))
-            .value;
-    final missing = [
-      for (final r in releases ?? const <ArtistRelease>[])
-        if (!r.owned) r,
-    ];
+        : ref.watch(catalogueArtistReleasesProvider(
+            (catalogueArtist.id, catalogueArtist.name)));
+    final releases = releasesAsync?.value;
+    final instant = ref.watch(instantAvailableProvider);
+    final popular = catalogueArtist == null
+        ? const <CatalogueTrack>[]
+        : ref.watch(catalogueArtistTopProvider(catalogueArtist.id)).value ??
+            const <CatalogueTrack>[];
+    final popularSource = 'catalogue-artist:${catalogueArtist?.id}';
 
     // "2 of 5 albums on your server": what the artist has made, next to what
     // the library holds, instead of only the library's own count (which made
@@ -483,6 +485,34 @@ class ArtistScreen extends ConsumerWidget {
           ? plural(total, 'album')
           : '$have of $total albums on your server';
     }();
+
+    // The library's own albums, in a grid: the page while the catalogue is not there (offline, still loading, or it failed).
+    final libraryDiscography = <Widget>[
+      const SliverToBoxAdapter(child: SectionHeader(title: 'Discography')),
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+        sliver: SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 180,
+            mainAxisSpacing: Space.lg,
+            crossAxisSpacing: Space.md,
+            childAspectRatio: 0.78,
+          ),
+          itemCount: albums.length,
+          itemBuilder: (context, i) {
+            final a = albums[i];
+            return MediaCard(
+              title: a.name,
+              subtitle: a.year?.toString(),
+              coverArtId: a.coverArt,
+              artistName: artist.name,
+              width: double.infinity,
+              onTap: () => Nav.album(context, a.id),
+            );
+          },
+        ),
+      ),
+    ];
 
     return CollectionScaffold(
       title: artist.name,
@@ -510,9 +540,19 @@ class ArtistScreen extends ConsumerWidget {
           const Spacer(),
           PlayButton(
             isPlaying: false,
-            onPressed: albums.isEmpty
+            onPressed: albums.isEmpty && popular.isEmpty
                 ? null
                 : () async {
+                    // With the popular songs on the page, play is those (as everywhere else); otherwise what the library holds.
+                    if (instant && popular.isNotEmpty) {
+                      unawaited(ref
+                          .read(instantControllerProvider.notifier)
+                          .playRun(popular,
+                              startIndex: 0,
+                              sourceName: artist.name,
+                              sourceId: popularSource));
+                      return;
+                    }
                     // Gone if the person signed out while this page was open.
                     final repo = ref.read(libraryRepositoryProvider);
                     if (repo == null) return;
@@ -527,49 +567,17 @@ class ArtistScreen extends ConsumerWidget {
       tint: swatch == null ? c.surfaceHigh : backdropFor(swatch),
       circularArt: true,
       slivers: [
-        const SliverToBoxAdapter(child: SectionHeader(title: 'Discography')),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
-          sliver: SliverGrid.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 180,
-              mainAxisSpacing: Space.lg,
-              crossAxisSpacing: Space.md,
-              childAspectRatio: 0.78,
-            ),
-            itemCount: albums.length,
-            itemBuilder: (context, i) {
-              final a = albums[i];
-              return MediaCard(
-                title: a.name,
-                subtitle: a.year?.toString(),
-                coverArtId: a.coverArt,
-                artistName: artist.name,
-                width: double.infinity,
-                onTap: () => Nav.album(context, a.id),
-              );
-            },
-          ),
-        ),
-        if (missing.isNotEmpty) ...[
-          SliverToBoxAdapter(
-              child: SectionHeader(title: 'More from ${artist.name}')),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  Space.gutter, 0, Space.gutter, Space.sm),
-              child: Text(
-                '${plural(missing.length, 'release')} not in your library '
-                'yet. Open one to listen or to add it.',
-                style: context.text.bodyMedium,
-              ),
-            ),
-          ),
-          SliverList.builder(
-            itemCount: missing.length,
-            itemBuilder: (context, i) => ReleaseTile(release: missing[i]),
-          ),
-        ],
+        if (catalogueArtist != null && releasesAsync != null) ...[
+          ArtistPopularSection(
+              artist: catalogueArtist, sourceId: popularSource),
+          if (releases != null)
+            ArtistReleaseSections(releases: withLibraryAlbums(releases, albums))
+          else if (releasesAsync.hasError)
+            ...libraryDiscography
+          else
+            loadingSliver(),
+        ] else
+          ...libraryDiscography,
       ],
     );
   }

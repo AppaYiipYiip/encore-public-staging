@@ -1,5 +1,6 @@
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
+import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/requests/portal_client.dart';
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
@@ -59,6 +60,29 @@ FakeCatalogue _catalogue() {
         year: 2002,
         recordType: 'album'),
   ];
+  c.albumsByArtist['o1'] = [
+    ...c.albumsByArtist['o1']!,
+    const CatalogueAlbum(
+        id: 's1',
+        title: 'Hex Omega',
+        artistName: 'Opeth',
+        year: 2011,
+        recordType: 'single'),
+    const CatalogueAlbum(
+        id: 'e1',
+        title: 'The Candlelight Years',
+        artistName: 'Opeth',
+        year: 2012,
+        recordType: 'ep'),
+  ];
+  c.topTracksByArtist['o1'] = [
+    for (var i = 1; i <= 7; i++)
+      CatalogueTrack(
+          id: 'p$i',
+          title: 'Popular Song $i',
+          artistName: 'Opeth',
+          albumTitle: 'Blackwater Park'),
+  ];
   c.albumsByArtist['o2'] = const [
     CatalogueAlbum(
         id: 'b1', title: 'Garage Demo', artistName: 'Opeth', year: 2019),
@@ -101,37 +125,85 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('the library artist page lists what the library lacks',
-      (tester) async {
+  Future<AppDatabase> openLibraryArtist(WidgetTester tester,
+      {FakeCatalogue? catalogue}) async {
     final app = await pumpApp(
       tester,
-      size: const Size(390, 2200),
+      size: const Size(390, 2600),
       overrides: [
-        catalogueClientProvider.overrideWithValue(_catalogue()),
+        catalogueClientProvider.overrideWithValue(catalogue ?? _catalogue()),
         requestBackendProvider.overrideWith((ref) async => _Portal()),
       ],
     );
-
     final element = tester.element(find.byType(Scaffold).first);
     GoRouter.of(element).go('/library/artist/ar3');
     await settle(tester);
     await tester.pump(const Duration(seconds: 1));
     await settle(tester);
+    return app.db;
+  }
 
-    expect(find.text('Discography'), findsOneWidget);
-    expect(find.text('More from Opeth'), findsOneWidget);
-    expect(
-        find.textContaining('2 releases not in your library'), findsOneWidget);
-    expect(find.text('Damnation'), findsOneWidget);
-    expect(find.text('Deliverance'), findsOneWidget);
-    // Owned releases are in the grid above, not offered again.
-    expect(find.text('Garage Demo'), findsNothing,
-        reason: 'the namesake is not this artist');
+  testWidgets(
+      'the library artist page is laid out as Popular, Albums, Singles and EPs',
+      (tester) async {
+    final db = await openLibraryArtist(tester);
+
+    expect(find.text('Popular'), findsOneWidget);
+    expect(find.text('Albums'), findsOneWidget);
+    expect(find.text('Singles and EPs'), findsOneWidget);
+    // Not the old two-part page (the library's albums, then everything else mixed).
+    expect(find.text('Discography'), findsNothing);
+    expect(find.textContaining('More from'), findsNothing);
+    expect(find.textContaining('not in your library'), findsNothing);
+
+    // Albums hold albums, owned or not; singles and EPs hold theirs and nothing else.
+    for (final album in [
+      'Blackwater Park',
+      'Ghost Reveries',
+      'Damnation',
+      'Deliverance',
+    ]) {
+      expect(find.text(album), findsOneWidget, reason: album);
+    }
+    expect(find.text('Hex Omega'), findsOneWidget);
+    expect(find.text('The Candlelight Years'), findsOneWidget);
+    // The namesake is not this artist.
+    expect(find.text('Garage Demo'), findsNothing);
     expect(find.textContaining('1.2M fans'), findsOneWidget);
-    // What the artist made next to what the library holds: not "2 albums",
-    // which made a band with four look like one with two.
+    // What the artist made next to what the library holds.
     expect(find.textContaining('2 of 4 albums on your server'), findsOneWidget);
-    await closeApp(tester, app.db);
+    await closeApp(tester, db);
+  });
+
+  testWidgets('Popular shows five songs and the rest after "Show more"',
+      (tester) async {
+    final db = await openLibraryArtist(tester);
+
+    expect(find.text('Popular Song 1'), findsOneWidget);
+    expect(find.text('Popular Song 5'), findsOneWidget);
+    expect(find.text('Popular Song 6'), findsNothing);
+
+    await tester.tap(find.text('Show more'));
+    await settle(tester);
+    expect(find.text('Popular Song 7'), findsOneWidget);
+    expect(find.text('Show less'), findsOneWidget);
+    await closeApp(tester, db);
+  });
+
+  testWidgets(
+      'an album the library has stays on the page even if the catalogue '
+      'does not list it', (tester) async {
+    final catalogue = _catalogue();
+    catalogue.albumsByArtist['o1'] = [
+      for (final a in catalogue.albumsByArtist['o1']!)
+        if (a.title != 'Ghost Reveries') a,
+    ];
+    final db = await openLibraryArtist(tester, catalogue: catalogue);
+
+    expect(find.text('Ghost Reveries'), findsOneWidget,
+        reason: 'the person has it, whatever the catalogue says');
+    expect(find.text('Albums'), findsOneWidget);
+    await closeApp(tester, db);
   });
 
   testWidgets('with no network the artist page is just the library',
