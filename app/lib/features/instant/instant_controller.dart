@@ -62,9 +62,39 @@ List<Uri> fetchServiceCandidates(Iterable<Uri> serverEndpoints, {Uri? saved}) {
 /// disk and YouTube does not like bursts. Two songs ahead is minutes of music.
 const int kRunLookahead = 2;
 
+/// How the service is asked who it is. A provider of its own so a test can answer for it.
+final fetchProbeProvider = Provider<Future<FetchServiceInfo?> Function(Uri)>(
+  (ref) => (uri) => EncoreFetchClient.probe(uri),
+);
+
+/// How many rounds in a row found no service (drives the pause before the next look).
+final fetchProbeMissesProvider = NotifierProvider<_Counter, int>(_Counter.new);
+
+class _Counter extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state = state + 1;
+  void reset() => state = 0;
+}
+
+/// The pause before looking for the service again, after [misses] rounds that found none: 8 s, then doubling to 2 minutes.
+Duration fetchProbeRetryAfter(int misses) =>
+    Duration(seconds: (8 * (1 << (misses.clamp(0, 4)))).clamp(8, 120));
+
+/// How long to wait before the next look (a provider so a test need not wait).
+final fetchProbeRetryProvider = Provider<Duration Function(int)>(
+  (ref) => fetchProbeRetryAfter,
+);
+
 /// Where the instant-play service is, or `null`: the address saved earlier,
 /// then the music server's own host (home and away) on its usual port. The
 /// answer is remembered so later starts do not ask again (ADR-057).
+///
+/// A look that fails is not an answer. The service may be busy (an import is running), the line may be changing from Wi-Fi to mobile, the
+/// phone may have just woken up: with one failed look remembered for the whole session every song fell back to its 30-second preview
+/// ("only a snippet plays", owner, 2026-10-22). So a service that was found once is assumed to be still there when a look fails, and a
+/// service never found is looked for again, with growing pauses, for as long as the app runs.
 final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
   final settings = ref.watch(settingsProvider);
   if (!settings.instantPlayEnabled) return null;
@@ -85,8 +115,9 @@ final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
     saved: saved != null && saved.host.isNotEmpty ? saved : null,
   );
   if (candidates.isEmpty) return null;
+  final probe = ref.read(fetchProbeProvider);
   final infos = await Future.wait([
-    for (final uri in candidates) EncoreFetchClient.probe(uri),
+    for (final uri in candidates) probe(uri),
   ]);
   for (var i = 0; i < candidates.length; i++) {
     final info = infos[i];
@@ -98,11 +129,26 @@ final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
             .read(settingsProvider.notifier)
             .setFetchServiceUrl(found.toString()));
       }
+      scheduleMicrotask(
+          () => ref.read(fetchProbeMissesProvider.notifier).reset());
       return found;
     }
   }
-  return null;
+  // Nobody answered "I can play now". A service that answered before is still assumed; the next look is soon either way.
+  final misses = ref.read(fetchProbeMissesProvider);
+  final timer = Timer(ref.read(fetchProbeRetryProvider)(misses), () {
+    ref.read(fetchProbeMissesProvider.notifier).bump();
+    ref.invalidateSelf();
+  });
+  ref.onDispose(timer.cancel);
+  final answeredBefore = saved != null && saved.host.isNotEmpty;
+  final someoneAnsweredAtAll = infos.any((i) => i != null);
+  // A service that answered but says it cannot play now (an older one) is not assumed.
+  return answeredBefore && !someoneAnsweredAtAll ? saved : null;
 });
+
+/// Whether each service address could stream the last time it answered.
+final Map<String, bool> _knownStreaming = {};
 
 /// The backend, once the service answered and a music-server session exists.
 final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
@@ -110,11 +156,13 @@ final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
   if (uri == null) return null;
   final session = await ref.watch(sessionProvider.future);
   if (session == null) return null;
-  final info = await EncoreFetchClient.probe(uri);
+  final info = await ref.read(fetchProbeProvider)(uri);
+  // A look that failed leaves what was known: a service that could stream can still.
+  if (info != null) _knownStreaming[uri.toString()] = info.canStream;
   return EncoreFetchClient(
       baseUrl: uri,
       auth: session.client.authQuery,
-      canStream: info?.canStream ?? false);
+      canStream: info?.canStream ?? _knownStreaming[uri.toString()] ?? false);
 });
 
 /// Whether rows may offer "play now" (service found and switched on).

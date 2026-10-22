@@ -241,8 +241,8 @@ class EncoreFetchClient implements InstantPlayBackend, PlaylistImportBackend {
   static Future<FetchServiceInfo?> probe(Uri base, {Dio? dio}) async {
     final http = dio ??
         Dio(BaseOptions(
-          connectTimeout: const Duration(milliseconds: 1500),
-          receiveTimeout: const Duration(milliseconds: 2500),
+          connectTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 7),
           validateStatus: (_) => true,
         ));
     try {
