@@ -111,6 +111,9 @@ class _Songs implements InstantPlayBackend {
       Ok(FetchJob(id: id, state: FetchState.ready));
 
   @override
+  Uri? streamUrlFor(FetchRequest request) => null;
+
+  @override
   Uri? streamUri(FetchJob job) => null;
 }
 

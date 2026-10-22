@@ -55,6 +55,8 @@ class Config:
     #: How long the music server's own file watcher gets to list a new song before a scan is asked for (every scan moves the
     #: scan time all open phones watch, H38).
     watcher_wait_s: float = 6.0
+    #: YouTube clients tried first for a visitor (comma separated; empty = yt-dlp's own choice): `visionos` extracts in 1.3 s, not 3.7 s.
+    youtube_fast_clients: tuple = ("visionos",)
     #: Fault injection for tests of the app against a misbehaving YouTube (youtube_refuse | slow_extract:<ms> | no_results). Empty in real use.
     fault: str = ""
     #: Where the YouTube accounts live (docs/50): one private file each, their list, what each did.
@@ -98,6 +100,7 @@ class Config:
             import_gap_s=max(0.0, _int("IMPORT_GAP_S", 2)),
             import_max_per_hour=max(10, _int("IMPORT_MAX_PER_HOUR", 200)),
             watcher_wait_s=max(0.0, _int("WATCHER_WAIT_S", 6)),
+            youtube_fast_clients=tuple(c.strip() for c in e.get("YT_FAST_CLIENTS", "visionos").split(",") if c.strip()),
             fault=e.get("ENCORE_FAULT", "").strip(),
             accounts_dir=Path(e["ACCOUNTS_DIR"]) if e.get("ACCOUNTS_DIR") else None,
             lookup_albums=e.get("LOOKUP_ALBUMS", "1") not in ("0", "false", "no"),

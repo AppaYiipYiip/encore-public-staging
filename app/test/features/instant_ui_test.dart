@@ -39,6 +39,9 @@ class _InstantBackend implements InstantPlayBackend {
       Ok(FetchJob(id: id, state: FetchState.ready));
 
   @override
+  Uri? streamUrlFor(FetchRequest request) => null;
+
+  @override
   Uri? streamUri(FetchJob job) =>
       job.stream == null ? null : Uri.parse('http://svc${job.stream}');
 }

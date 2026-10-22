@@ -84,6 +84,16 @@ class _FakeBackend implements InstantPlayBackend {
     return Ok(FetchJob(id: id, state: FetchState.queued));
   }
 
+  /// Where a song can be played straight from YouTube (the service can stream); `null` = it cannot.
+  Uri? streamingAt;
+  final List<FetchRequest> streamAsked = [];
+
+  @override
+  Uri? streamUrlFor(FetchRequest request) {
+    streamAsked.add(request);
+    return streamingAt;
+  }
+
   @override
   Uri? streamUri(FetchJob job) =>
       job.stream == null ? null : Uri.parse('http://svc${job.stream}');
@@ -398,6 +408,68 @@ void main() {
       ).fetch(_t('1', 'X')).toList();
       expect(events.last.isFailed, isTrue);
       expect(events.last.message, contains('Cannot reach'));
+    });
+  });
+
+  group('a song too long to keep is streamed (P1-02)', () {
+    CatalogueTrack long(Duration length) => CatalogueTrack(
+          id: 'surah',
+          title: 'Surat Al-Baqarah',
+          artistName: 'Reciter',
+          duration: length,
+          videoId: 'dQw4w9WgXcQ',
+        );
+
+    test('a recitation of two hours plays from the stream: no job, no download',
+        () async {
+      final backend = _FakeBackend()
+        ..streamingAt = Uri.parse('http://svc/api/stream?videoId=dQw4w9WgXcQ');
+
+      final events = await _service(backend)
+          .fetch(long(const Duration(hours: 2, minutes: 21)))
+          .toList();
+
+      expect(events.last.isReady, isTrue);
+      expect(events.last.streamUri,
+          Uri.parse('http://svc/api/stream?videoId=dQw4w9WgXcQ'));
+      expect(events.last.track, isNull,
+          reason: 'it is not in the library and is not put there');
+      expect(backend.started, isEmpty,
+          reason: 'no job: nothing is downloaded, so no length limit applies');
+      expect(backend.streamAsked.single.videoId, 'dQw4w9WgXcQ');
+      expect(backend.streamAsked.single.durationSec, 8460);
+    });
+
+    test('an ordinary song still goes through the library', () async {
+      final backend = _FakeBackend()
+        ..streamingAt = Uri.parse('http://svc/api/stream');
+
+      await _service(backend).fetch(_t('1', 'Windowpane')).toList();
+
+      expect(backend.started, hasLength(1));
+      expect(backend.streamAsked, isEmpty);
+    });
+
+    test('a service that cannot stream falls back to the old way', () async {
+      final backend = _FakeBackend(); // streamingAt stays null
+
+      final events = await _service(backend)
+          .fetch(long(const Duration(hours: 1)))
+          .toList();
+
+      expect(backend.started, hasLength(1));
+      expect(events.last.isReady || events.last.isFailed, isTrue);
+    });
+
+    test('a song being added in the background is not streamed', () async {
+      final backend = _FakeBackend()
+        ..streamingAt = Uri.parse('http://svc/api/stream');
+
+      await _service(backend)
+          .fetch(long(const Duration(hours: 1)), bulk: true)
+          .toList();
+
+      expect(backend.streamAsked, isEmpty);
     });
   });
 
@@ -776,6 +848,9 @@ class _Broken implements InstantPlayBackend {
 
   @override
   Future<Result<FetchJob>> status(String id) async => Err(failure);
+
+  @override
+  Uri? streamUrlFor(FetchRequest request) => null;
 
   @override
   Uri? streamUri(FetchJob job) => null;

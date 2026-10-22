@@ -10,6 +10,9 @@ import '../../data/repos/request_repository.dart';
 /// What a catalogue row shows while its song is being fetched (ADR-057).
 enum InstantPhase { working, ready, failed }
 
+/// From this length a song is streamed, not fetched into the library (the service keeps songs up to 45 minutes).
+const Duration kLongSong = Duration(minutes: 40);
+
 class InstantStatus {
   const InstantStatus.working(this.stage, {this.detail})
       : phase = InstantPhase.working,
@@ -161,6 +164,16 @@ class InstantPlayService {
       }
     } on Object catch (error) {
       Log.debug('instant', 'library lookup failed: $error');
+    }
+
+    // A song too long to keep (a recitation of two hours) is not fetched into the library at all: it is played from the stream,
+    // which has no length limit and can be jumped around in.
+    if (!bulk && (track.duration ?? Duration.zero) >= kLongSong) {
+      final uri = _backend.streamUrlFor(requestFor(track));
+      if (uri != null) {
+        yield InstantStatus.ready(null, streamUri: uri);
+        return;
+      }
     }
 
     yield const InstantStatus.working(FetchState.queued);

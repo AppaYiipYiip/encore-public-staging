@@ -53,6 +53,64 @@ void main() {
     expect(sent.body, contains('"durationSec":467'));
   });
 
+  group('the stream address (P1-02)', () {
+    EncoreFetchClient streaming(
+            {String base = 'http://192.168.50.129:8701',
+            bool canStream = true}) =>
+        EncoreFetchClient(
+          baseUrl: Uri.parse(base),
+          auth: () => {'u': 'marwa', 't': 'tok', 's': 'salt'},
+          dio: dio(),
+          canStream: canStream,
+        );
+
+    test('carries the song, the video the playlist saved, and the login', () {
+      final uri = streaming().streamUrlFor(const FetchRequest(
+        artist: 'Reciter',
+        title: 'Surat Al-Baqarah',
+        durationSec: 8481,
+        videoId: 'dQw4w9WgXcQ',
+        official: true,
+      ))!;
+
+      expect(uri.path, '/api/stream');
+      expect(uri.queryParameters, {
+        'u': 'marwa',
+        't': 'tok',
+        's': 'salt',
+        'videoId': 'dQw4w9WgXcQ',
+        'official': '1',
+        'artist': 'Reciter',
+        'title': 'Surat Al-Baqarah',
+        'durationSec': '8481',
+      });
+    });
+
+    test('a service that cannot stream has none', () {
+      expect(
+          streaming(canStream: false)
+              .streamUrlFor(const FetchRequest(artist: 'A', title: 'B')),
+          isNull);
+    });
+
+    test('the login does not go to a public address without https', () {
+      expect(
+          streaming(base: 'http://music.example.org:8701')
+              .streamUrlFor(const FetchRequest(artist: 'A', title: 'B')),
+          isNull);
+      expect(
+          streaming(base: 'https://music.example.org')
+              .streamUrlFor(const FetchRequest(artist: 'A', title: 'B')),
+          isNotNull);
+    });
+
+    test('the service info says whether it can stream', () {
+      expect(const FetchServiceInfo(features: ['play-now', 'stream']).canStream,
+          isTrue);
+      expect(const FetchServiceInfo(features: ['play-now']).canStream, isFalse);
+    });
+  });
+
   group('the music login only travels over a safe address (docs/23, B25)', () {
     EncoreFetchClient at(String base) => EncoreFetchClient(
           baseUrl: Uri.parse(base),

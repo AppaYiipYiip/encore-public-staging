@@ -57,7 +57,7 @@ def build(config: Config) -> Api:
             from .lean import InProcessExtractor, LeanResolver, YtmusicApiSearcher
 
             resolver = LeanResolver(YtmusicApiSearcher(), fallback=legacy, max_duration_s=config.max_duration_s)
-            extractor = InProcessExtractor(cache_dir=config.work_dir / "ytdlp-cache")
+            extractor = InProcessExtractor(cache_dir=config.work_dir / "ytdlp-cache", fast_clients=config.youtube_fast_clients)
         downloader = YtDlpDownloader(
             config.ytdlp, cookies=accounts,
             max_file_mb=config.max_file_mb, extractor=extractor,

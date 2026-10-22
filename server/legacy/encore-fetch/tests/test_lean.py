@@ -263,6 +263,10 @@ class FakeYtDlp:
     created = 0
     answer: dict | None = None
     error: str | None = None
+    #: An error only the fast client (the one given `extractor_args`) raises.
+    fast_error: str | None = None
+    #: The player clients each look-up was asked for (`()` = yt-dlp's own choice).
+    asked: list = []
 
     class YoutubeDL:
         def __init__(self, options):
@@ -271,6 +275,10 @@ class FakeYtDlp:
 
         def extract_info(self, url, download):
             assert download is False
+            clients = tuple(self.options.get("extractor_args", {}).get("youtube", {}).get("player_client", ()))
+            FakeYtDlp.asked.append(clients)
+            if FakeYtDlp.fast_error and clients:
+                raise FakeYtDlp.utils.DownloadError(FakeYtDlp.fast_error)
             if FakeYtDlp.error:
                 raise FakeYtDlp.utils.DownloadError(FakeYtDlp.error)
             return FakeYtDlp.answer
@@ -314,6 +322,91 @@ class InProcessExtractorTest(unittest.TestCase):
         with self.assertRaises(DownloadError) as caught:
             InProcessExtractor().extract("abcdefghijk", self.info)
         self.assertEqual(caught.exception.code, "age_restricted")
+
+
+class FastClientTest(unittest.TestCase):
+    """A visitor is first tried with the fast YouTube client (visionos: 1.3 s against 3.7 s), then with yt-dlp's own choice."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.info = Path(self._tmp.name) / "job.info.json"
+        FakeYtDlp.created, FakeYtDlp.answer, FakeYtDlp.error = 0, {"id": "abcdefghijk", "url": "https://x"}, None
+        FakeYtDlp.asked = []
+        FakeYtDlp.fast_error = None
+        patcher = mock.patch.dict(sys.modules, {"yt_dlp": FakeYtDlp, "yt_dlp.utils": FakeYtDlp.utils})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.now = 0.0
+
+    def extractor(self, **kw):
+        return InProcessExtractor(clock=lambda: self.now, **kw)
+
+    def test_a_visitor_is_tried_with_the_fast_client_first(self):
+        self.extractor().extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [("visionos",)])
+
+    def test_an_account_always_uses_yt_dlps_own_choice(self):
+        self.extractor().extract("abcdefghijk", self.info, "/secret/cookies.txt")
+        self.assertEqual(FakeYtDlp.asked, [()])
+
+    def test_the_fast_client_can_be_switched_off(self):
+        self.extractor(fast_clients=()).extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [()])
+
+    def test_a_video_the_fast_client_cannot_play_is_tried_with_yt_dlps_own_choice(self):
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Requested format is not available"
+        self.extractor().extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [("visionos",), ()])
+        self.assertIn("url", self.info.read_text(encoding="utf-8"))
+
+    def test_an_age_gate_on_the_fast_client_gets_the_other_one_a_chance(self):
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Sign in to confirm your age"
+        self.extractor().extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [("visionos",), ()])
+
+    def test_a_block_is_not_looked_up_twice(self):
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Sign in to confirm you're not a bot"
+        with self.assertRaises(DownloadError) as caught:
+            self.extractor().extract("abcdefghijk", self.info)
+        self.assertEqual(caught.exception.code, "blocked")
+        self.assertEqual(FakeYtDlp.asked, [("visionos",)], "YouTube refusing the server says nothing about the client")
+
+    def test_a_video_that_is_gone_is_not_looked_up_twice(self):
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Video unavailable"
+        with self.assertRaises(DownloadError) as caught:
+            self.extractor().extract("abcdefghijk", self.info)
+        self.assertEqual(caught.exception.code, "unavailable")
+        self.assertEqual(FakeYtDlp.asked, [("visionos",)])
+
+    def test_a_fast_client_that_keeps_failing_is_rested_for_an_hour(self):
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Requested format is not available"
+        ex = self.extractor(breaker_after=3, breaker_s=3600)
+        for _ in range(3):
+            ex.extract("abcdefghijk", self.info)
+        FakeYtDlp.asked.clear()
+
+        ex.extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [()], "the fast client is left out while it rests")
+
+        self.now += 3601
+        FakeYtDlp.asked.clear()
+        FakeYtDlp.fast_error = None
+        ex.extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked, [("visionos",)], "and tried again after the hour")
+
+    def test_a_success_clears_the_count(self):
+        ex = self.extractor(breaker_after=3)
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Requested format is not available"
+        ex.extract("abcdefghijk", self.info)
+        ex.extract("abcdefghijk", self.info)
+        FakeYtDlp.fast_error = None
+        ex.extract("abcdefghijk", self.info)
+        FakeYtDlp.fast_error = "ERROR: [youtube] x: Requested format is not available"
+        ex.extract("abcdefghijk", self.info)
+        FakeYtDlp.asked.clear()
+        ex.extract("abcdefghijk", self.info)
+        self.assertEqual(FakeYtDlp.asked[0], ("visionos",), "two failures, a success, two more: not three in a row")
 
 
 class DownloaderUsesItTest(unittest.TestCase):

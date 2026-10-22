@@ -133,6 +133,10 @@ abstract interface class InstantPlayBackend {
   /// Where a finished job's audio can be played from (with the music
   /// server's login in the address), `null` when it has no stream.
   Uri? streamUri(FetchJob job);
+
+  /// Where a song can be played from straight away, passed on from YouTube as it arrives (no job, no download, no length limit: a
+  /// two-hour recitation plays and can be jumped around in), `null` when this service cannot stream.
+  Uri? streamUrlFor(FetchRequest request);
 }
 
 /// What `GET /api/info` says about a service.
@@ -145,6 +149,9 @@ class FetchServiceInfo {
 
   bool get canPlayNow => features.contains('play-now');
   bool get canPrepare => features.contains('prepare');
+
+  /// Passes songs on as they arrive (`GET /api/stream`).
+  bool get canStream => features.contains('stream');
 
   /// Reads a pasted Spotify / YouTube link into a list of songs.
   bool get canReadPlaylists => features.contains('playlist');
@@ -189,6 +196,7 @@ class EncoreFetchClient implements InstantPlayBackend, PlaylistImportBackend {
     required Uri baseUrl,
     required Map<String, String> Function() auth,
     Dio? dio,
+    this.canStream = false,
   })  : _base = baseUrl,
         _auth = auth,
         _dio = dio ??
@@ -201,6 +209,9 @@ class EncoreFetchClient implements InstantPlayBackend, PlaylistImportBackend {
   final Uri _base;
   final Map<String, String> Function() _auth;
   final Dio _dio;
+
+  /// The service said it can stream (`/api/info` lists `stream`).
+  final bool canStream;
 
   /// An older service answers 404 to `/api/prepare`: stop asking.
   bool _prepareSupported = true;
@@ -277,6 +288,26 @@ class EncoreFetchClient implements InstantPlayBackend, PlaylistImportBackend {
     } on Object {
       // Nobody is waiting for this answer.
     }
+  }
+
+  @override
+  Uri? streamUrlFor(FetchRequest request) {
+    if (!canStream || _unsafe != null) return null;
+    final basePath = _base.path.replaceAll(RegExp(r'/+$'), '');
+    return _base.replace(
+      path: '$basePath/api/stream',
+      queryParameters: {
+        ..._auth(),
+        if (request.videoId != null) 'videoId': request.videoId!,
+        if (request.official && request.videoId != null) 'official': '1',
+        'artist': request.artist,
+        'title': request.title,
+        if (request.album != null) 'album': request.album!,
+        if (request.durationSec != null && request.durationSec! >= 5)
+          'durationSec': '${request.durationSec}',
+      },
+      fragment: null,
+    );
   }
 
   @override

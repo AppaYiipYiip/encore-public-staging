@@ -118,7 +118,8 @@ class StreamProxy:
     # ------------------------------------------------------------------ the request
 
     def open(self, request: Any, range_header: str | None) -> Upstream:
-        deadline = self._clock() + self._first_byte
+        began = self._clock()
+        deadline = began + self._first_byte
         if self._fault == "no_results":
             raise StreamError("not_found")
         if self._fault == "youtube_refuse":
@@ -129,10 +130,14 @@ class StreamProxy:
             raise StreamError(error.code) from error
         if not found:
             raise StreamError("not_found")
+        found_at = self._clock()
         last: StreamError | None = None
         for video_id, _title, _duration in found[:3]:
             try:
-                return self._start(video_id, range_header, deadline)
+                upstream = self._start(video_id, range_header, deadline)
+                log.info("stream %s: the song found in %.1f s, the first bytes after %.1f s", video_id, found_at - began,
+                         self._clock() - began)
+                return upstream
             except DownloadError as error:
                 last = StreamError(error.code)
                 if error.code not in _GONE:
@@ -156,6 +161,7 @@ class StreamProxy:
             if self._clock() >= deadline:
                 raise StreamError("slow")
             path = self._work / f"stream-{video_id}.info.json"
+            asked = self._clock()
             try:
                 self._extract(video_id, path)
                 data = json.loads(path.read_text(encoding="utf-8"))
@@ -176,6 +182,7 @@ class StreamProxy:
                 at=self._clock(),
             )
             self._infos[video_id] = info
+            log.info("stream %s: the address was asked for (%.1f s)", video_id, self._clock() - asked)
             return info
 
     # ------------------------------------------------------------- the bytes

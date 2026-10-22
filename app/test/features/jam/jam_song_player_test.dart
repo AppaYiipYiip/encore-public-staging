@@ -46,6 +46,9 @@ class _Service implements InstantPlayBackend {
       const Ok(FetchJob(id: 'job', state: FetchState.failed));
 
   @override
+  Uri? streamUrlFor(FetchRequest request) => null;
+
+  @override
   Uri? streamUri(FetchJob job) => null;
 }
 

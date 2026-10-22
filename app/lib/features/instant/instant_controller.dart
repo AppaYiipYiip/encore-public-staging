@@ -110,7 +110,11 @@ final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
   if (uri == null) return null;
   final session = await ref.watch(sessionProvider.future);
   if (session == null) return null;
-  return EncoreFetchClient(baseUrl: uri, auth: session.client.authQuery);
+  final info = await EncoreFetchClient.probe(uri);
+  return EncoreFetchClient(
+      baseUrl: uri,
+      auth: session.client.authQuery,
+      canStream: info?.canStream ?? false);
 });
 
 /// Whether rows may offer "play now" (service found and switched on).

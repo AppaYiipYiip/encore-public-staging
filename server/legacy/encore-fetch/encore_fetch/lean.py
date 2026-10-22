@@ -20,10 +20,11 @@ import json
 import logging
 import re
 import threading
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from .download import FORMAT, DownloadError, classify_failure
 from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, score
@@ -236,23 +237,43 @@ class LeanResolver:
 # ----------------------------------------------------------------- locating the stream in this process
 
 
+#: What yt-dlp says when the video itself is gone (not when one client cannot play it).
+_GONE_VIDEO = re.compile(r"video unavailable|private video|has been removed|account associated with this video has been terminated|"
+                         r"copyright|this video is not available", re.IGNORECASE)
+
+
 class InProcessExtractor:
     """`yt_dlp` as a library: one extractor per thread, kept between songs (player code, solver and cookies stay loaded).
 
     Writes the same JSON that `yt-dlp -j` prints, so the downloader can carry on with `--load-info-json` as before.
+
+    A visitor (no YouTube account) is first tried with the [fast_clients] (`visionos`): measured on the real server on 2026-10-22 it
+    extracts in 1.3 s against 3.7 s for yt-dlp's own choice, and its stream address opens at once (the TV client's answers 403 for two
+    to four seconds). When that fails for a reason that is not "YouTube blocks this server", yt-dlp's own choice is tried, so a
+    video the fast client cannot play still plays. A fast client that fails [breaker_after] times in a row (YouTube changed it) is left
+    out for [breaker_s] seconds. An account's cookies always use yt-dlp's own choice (some clients ignore cookies).
     """
 
-    def __init__(self, *, socket_timeout: int = 20, cache_dir: Path | None = None) -> None:
+    def __init__(self, *, socket_timeout: int = 20, cache_dir: Path | None = None, fast_clients: tuple[str, ...] = ("visionos",),
+                 breaker_after: int = 3, breaker_s: float = 3600.0, clock: Callable[[], float] = time.monotonic) -> None:
         self._timeout = socket_timeout
         self._cache = cache_dir
+        self._fast = tuple(fast_clients)
+        self._breaker_after = breaker_after
+        self._breaker_s = breaker_s
+        self._clock = clock
+        self._failures = 0
+        self._resting_until = 0.0
         self._local = threading.local()
 
-    def _extractor(self, cookiefile: str | None):
-        """This thread's extractor for [cookiefile] (none = a visitor). Kept between songs, so the player code is loaded once."""
-        by_cookies = getattr(self._local, "by_cookies", None)
-        if by_cookies is None:
-            by_cookies = self._local.by_cookies = {}
-        ydl = by_cookies.get(cookiefile)
+    def _extractor(self, cookiefile: str | None, clients: tuple[str, ...] = ()):
+        """This thread's extractor for [cookiefile] and [clients] (none = a visitor, yt-dlp's own choice). Kept between songs, so the
+        player code is loaded once."""
+        by_kind = getattr(self._local, "by_kind", None)
+        if by_kind is None:
+            by_kind = self._local.by_kind = {}
+        key = (cookiefile, clients)
+        ydl = by_kind.get(key)
         if ydl is None:
             import yt_dlp  # imported late: the fake mode and most tests never need it
 
@@ -264,20 +285,46 @@ class InProcessExtractor:
                 options["cachedir"] = str(self._cache)
             if cookiefile:
                 options["cookiefile"] = cookiefile
-            ydl = by_cookies[cookiefile] = yt_dlp.YoutubeDL(options)
+            if clients:
+                options["extractor_args"] = {"youtube": {"player_client": list(clients)}}
+            ydl = by_kind[key] = yt_dlp.YoutubeDL(options)
         return ydl
+
+    def _fast_allowed(self, cookiefile: str | None) -> bool:
+        return bool(self._fast) and not cookiefile and self._clock() >= self._resting_until
 
     def extract(self, video_id: str, info: Path, cookiefile: str | None = None) -> None:
         import yt_dlp
 
-        ydl = self._extractor(cookiefile)
-        try:
-            data = ydl.extract_info(f"https://music.youtube.com/watch?v={video_id}", download=False)
-        except yt_dlp.utils.DownloadError as error:
-            text = str(error)
-            raise DownloadError(classify_failure(text), text[-300:]) from error
+        url = f"https://music.youtube.com/watch?v={video_id}"
+        data = None
+        used = None
+        if self._fast_allowed(cookiefile):
+            try:
+                used = self._extractor(None, self._fast)
+                data = used.extract_info(url, download=False)
+                self._failures = 0
+            except yt_dlp.utils.DownloadError as error:
+                text = str(error)
+                code = classify_failure(text)
+                if code == "blocked" or _GONE_VIDEO.search(text):
+                    # About the server or the video, not the client: a second look-up would only repeat it. ("Requested format is not
+                    # available" is about the client, and gets the second look-up.)
+                    raise DownloadError(code, text[-300:]) from error
+                self._failures += 1
+                if self._failures >= self._breaker_after:
+                    self._resting_until = self._clock() + self._breaker_s
+                    log.warning("the fast YouTube client failed %d times in a row; resting it for %d s", self._failures,
+                                int(self._breaker_s))
+        if data is None:
+            try:
+                used = self._extractor(cookiefile)
+                data = used.extract_info(url, download=False)
+            except yt_dlp.utils.DownloadError as error:
+                text = str(error)
+                raise DownloadError(classify_failure(text), text[-300:]) from error
         info.parent.mkdir(parents=True, exist_ok=True)
-        info.write_text(json.dumps(ydl.sanitize_info(data)), encoding="utf-8")
+        info.write_text(json.dumps(used.sanitize_info(data)), encoding="utf-8")
 
 
 __all__ = [
