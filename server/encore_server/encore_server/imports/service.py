@@ -7,7 +7,9 @@ background work, fair-shared with everybody else's. The counts a person sees com
 
 from __future__ import annotations
 
+import importlib.util
 import logging
+import shutil
 import sqlite3
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -21,7 +23,7 @@ from ..live import Hub
 from ..scheduler import Retry, Scheduler, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
-from .readers import Playlist, PlaylistError, Track, read_playlist
+from .readers import Playlist, PlaylistError, Track, read_playlist, ytdlp_reader, ytmusic_reader
 
 log = logging.getLogger("encore_server.imports")
 
@@ -33,6 +35,8 @@ _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
 
 class Finder(Protocol):
     def find(self, wanted: Wanted) -> str | None: ...
+
+    def resting_for(self) -> float: ...
 
 
 def _song_of(track: Track) -> dict[str, Any]:
@@ -47,6 +51,19 @@ def _song_of(track: Track) -> dict[str, Any]:
     }
 
 
+def default_reader() -> Callable[[str], Playlist]:
+    """Reads playlist links the way this machine can: YouTube Music's own interface when `ytmusicapi` is installed, `yt-dlp` as the fallback."""
+    ytmusic = ytmusic_reader() if importlib.util.find_spec("ytmusicapi") is not None else None
+    ytdlp = ytdlp_reader() if shutil.which("yt-dlp") is not None else None
+    if ytmusic is None and ytdlp is None:
+        log.warning("neither ytmusicapi nor yt-dlp is installed: YouTube playlist links cannot be read")
+
+    def read(url: str) -> Playlist:
+        return read_playlist(url, ytmusic=ytmusic, ytdlp=ytdlp)
+
+    return read
+
+
 class ImportService:
     def __init__(
         self,
@@ -54,13 +71,13 @@ class ImportService:
         hub: Hub,
         finder: Finder | None,
         *,
-        read: Callable[[str], Playlist] = read_playlist,
+        read: Callable[[str], Playlist] | None = None,
     ) -> None:
         self._db = db
         self._hub = hub
         self._scheduler: Scheduler | None = None
         self._finder = finder
-        self._read = read
+        self._read = read if read is not None else default_reader()
 
     def use(self, scheduler: Scheduler | None) -> None:
         """The scheduler that runs this service's matching (made after the service, because it needs the service's handler)."""
@@ -249,6 +266,9 @@ class ImportService:
         """Finds the upload of one song for everybody who imported it. The song stays playable by name whatever this finds."""
         if self._finder is None:
             return
+        resting = self._finder.resting_for()
+        if resting > 0:
+            raise Retry("YouTube is being given a rest", after_s=resting)
         with self._db.read() as conn:
             ref = refs.get_ref(conn, item.ref)
             rows = conn.execute(
@@ -264,7 +284,9 @@ class ImportService:
                 video = self._finder.find(wanted_from_ref(ref))
             except DownloadError as error:
                 if error.code in _REST:
-                    raise Retry(f"YouTube is not answering ({error.code})", after_s=_REST[error.code]) from error
+                    raise Retry(
+                        f"YouTube is not answering ({error.code})", after_s=max(_REST[error.code], self._finder.resting_for())
+                    ) from error
                 video = None
             if video is None:
                 video = next((r["video"] for r in rows if r["video"]), None)

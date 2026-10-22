@@ -49,6 +49,7 @@ from .navidrome import NavidromeClient
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
+from .sources.youtube.rest import DbRestStore, Rest
 from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
 
@@ -145,6 +146,9 @@ def info(request: Request) -> JSONResponse:
             "serverVersion": __version__,
             "name": svc.settings.server_name,
             "features": [*FEATURES, *(["keep"] if svc.keeper is not None else [])],
+            "youtube": svc.youtube.status()
+            if svc.youtube is not None and hasattr(svc.youtube, "status")
+            else {"state": "off", "resumesInSec": 0},
         }
     )
 
@@ -280,11 +284,12 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
 _UNAVAILABLE_REASON = {"not_found": "not_found", "unavailable": "removed", "age_restricted": "age_restricted"}
 
 
-def _stream_error(error: StreamError) -> ApiError:
+def _stream_error(error: StreamError, youtube: Any = None) -> ApiError:
     if error.code in _UNAVAILABLE_REASON:
         return ApiError("song_unavailable", error.message, details={"reason": _UNAVAILABLE_REASON[error.code]})
     if error.code == "blocked":
-        return ApiError("source_busy", error.message)
+        left = youtube.resting_for() if youtube is not None and hasattr(youtube, "resting_for") else 0
+        return ApiError("source_busy", error.message, retry_after_ms=int(left * 1000) or None)
     if error.code == "slow":
         return ApiError("upstream_timeout", error.message)
     return ApiError("source_unreachable", error.message)
@@ -309,9 +314,9 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
     try:
         upstream = svc.youtube.open(wanted_from_ref(ref), request.headers.get("range"))
     except StreamError as error:
-        raise _stream_error(error) from error
+        raise _stream_error(error, svc.youtube) from error
     except DownloadError as error:
-        raise _stream_error(StreamError(error.code)) from error
+        raise _stream_error(StreamError(error.code), svc.youtube) from error
     headers = {**upstream.headers, "Cache-Control": "no-store"}
     body = iterate_in_threadpool(upstream.body) if request.method != "HEAD" else iter(())
     return StreamingResponse(
@@ -633,7 +638,13 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
     if importlib.util.find_spec("yt_dlp") is None or importlib.util.find_spec("ytmusicapi") is None:
         log.warning("yt-dlp or ytmusicapi is not installed: songs that are not kept cannot be streamed")
         return None
-    return YoutubeSource(settings.data_dir / "work", fast_clients=("visionos",), fault=settings.fault, remember_video=remember)
+    return YoutubeSource(
+        settings.data_dir / "work",
+        fast_clients=("visionos",),
+        fault=settings.fault,
+        remember_video=remember,
+        rest=Rest(store=DbRestStore(database)),
+    )
 
 
 def _background(

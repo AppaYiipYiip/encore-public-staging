@@ -294,3 +294,20 @@ def test_somebody_elses_import_is_not_found(rig: Rig) -> None:
     response = rig.client.get(f"{V1}/imports/{made['import']['id']}", params=creds("nina"))
 
     assert response.status_code == 404
+
+
+def test_the_default_reader_uses_what_the_machine_has(monkeypatch: pytest.MonkeyPatch) -> None:
+    from encore_server.imports import service
+
+    seen: dict[str, Any] = {}
+
+    def fake_read(url: str, **kwargs: Any) -> Playlist:
+        seen.update(kwargs)
+        return Playlist("P", "youtube", "playlist", tracks(1), False)
+
+    monkeypatch.setattr(service, "read_playlist", fake_read)
+    monkeypatch.setattr(service.shutil, "which", lambda name: "/usr/local/bin/yt-dlp")
+
+    service.default_reader()(LINK)
+
+    assert seen["ytmusic"] is not None and seen["ytdlp"] is not None

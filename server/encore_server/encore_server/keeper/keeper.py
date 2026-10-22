@@ -43,6 +43,8 @@ _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
 class Source(Protocol):
     def download(self, wanted: Wanted, stem: Path, *, max_bytes: int) -> Path: ...
 
+    def resting_for(self) -> float: ...
+
 
 @dataclass(frozen=True)
 class KeepSettings:
@@ -125,6 +127,9 @@ class Keeper:
 
     def _fetch(self, ref: dict[str, Any], item: WorkItem) -> Path:
         s = self._settings
+        resting = self._source.resting_for()
+        if resting > 0:
+            raise Retry("YouTube is being given a rest", after_s=resting)
         duration_ms = ref.get("durationMs")
         if isinstance(duration_ms, int) and duration_ms > s.max_minutes * 60_000:
             raise GiveUp(f"longer than {s.max_minutes} minutes, so it is played but not kept")
@@ -147,7 +152,9 @@ class Keeper:
             if error.code in _GIVE_UP:
                 raise GiveUp(_GIVE_UP[error.code]) from error
             if error.code in _REST:
-                raise Retry(f"YouTube is not answering ({error.code})", after_s=_REST[error.code]) from error
+                raise Retry(
+                    f"YouTube is not answering ({error.code})", after_s=max(_REST[error.code], self._source.resting_for())
+                ) from error
             raise
 
     def _finish(self, ref: dict[str, Any], downloaded: Path) -> Path:

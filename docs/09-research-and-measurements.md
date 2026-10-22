@@ -194,3 +194,23 @@ In the app on the emulator (fresh songs, search, tap the Top result, audible): 2
 had: 0.9-1.1 s). J-10 (a two-hour recitation audible in 4 s, a seek in 2 s) holds on the server; the app plays a song of 40 minutes or more
 from the stream, not yet walked on the emulator with a real long video.
 
+
+## 7.4 YouTube refuses this address (2026-10-22, 06:08 UTC) and what the server now does
+
+After about three hours of testing from the owner's home line (a few dozen look-ups and four downloads from this address, spread over the day),
+the first import of a ten-song album on the new server (eight downloads started within seconds of each other, two workers) was answered
+for **every** song with `Sign in to confirm you're not a bot`. Two hours earlier the same code had kept a song in 12 s. The refusal is about
+the *address*, not the song or the client (`visionos` included).
+
+What it taught:
+* A refusal for one request is a refusal for all of them: the eight queued downloads each asked once more instead of waiting. Background work
+  must stop at the first refusal. **Built** (`sources/youtube/rest.py`): one shared rest for the whole server (30 min, doubling for every
+  refusal in a row up to a day, ended by one success, kept in the database across restarts); keeping and matching never ask while it lasts; a
+  person's tap may probe once every 30 s; `GET /info` reports `youtube: {state: ok|resting, resumesInSec}` and a refused tap answers `503
+  source_busy` with `retryAfterMs`.
+* Testing from a home line has a cost. From now on: no YouTube traffic from the owner's address for at least two hours after a refusal, no
+  imports that keep ten songs at once while testing (stop them after two or three), and every test that must hit YouTube says how many
+  requests it makes.
+* The old services (CT 104 and the dev VM's old stack) had no refusals in the same hours because nothing asked them; this is not a bug of the
+  new server, it is what an address that has asked too much looks like. Whether the refusal ends by itself (it usually does within hours to a
+  day) is measured here: the dev VM's rest was set to two hours by hand at 06:15 UTC and the first probe after it will be one look-up.

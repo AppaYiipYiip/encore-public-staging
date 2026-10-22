@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .lean import InProcessExtractor, LeanResolver, YtmusicApiSearcher
+from .rest import Guarded, Rest
 from .scoring import Want
 from .stream import StreamProxy, Upstream
 
@@ -42,10 +43,14 @@ class YoutubeSource:
         fast_clients: tuple[str, ...] = ("visionos",),
         fault: str = "",
         remember_video: Any | None = None,
+        rest: Rest | None = None,
     ) -> None:
         self._remember = remember_video
+        self.rest = rest if rest is not None else Rest()
         self._resolver = resolver or LeanResolver(YtmusicApiSearcher(), max_duration_s=6 * 3600)
-        self._extractor = extractor or InProcessExtractor(cache_dir=work_dir / "ytdlp-cache", fast_clients=fast_clients)
+        self._extractor = Guarded(
+            extractor or InProcessExtractor(cache_dir=work_dir / "ytdlp-cache", fast_clients=fast_clients), self.rest
+        )
         work_dir.mkdir(parents=True, exist_ok=True)
         self._proxy = proxy or StreamProxy(
             candidates=self._candidates, extract=self._extractor.extract, work_dir=work_dir, fault=fault
@@ -66,6 +71,13 @@ class YoutubeSource:
 
     def open(self, wanted: Wanted, range_header: str | None) -> Upstream:
         return self._proxy.open(wanted, range_header)
+
+    def resting_for(self) -> float:
+        """Seconds YouTube is being left alone for (0 when it is asked as usual): background work waits instead of asking."""
+        return self.rest.remaining()
+
+    def status(self) -> dict[str, Any]:
+        return self.rest.snapshot()
 
     def find(self, wanted: Wanted) -> str | None:
         """The upload of the song (searching YouTube Music if the ref does not know it yet, and remembering what is found), or `None`.

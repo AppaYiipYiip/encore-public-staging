@@ -24,6 +24,10 @@ class FakeSource:
     def __init__(self) -> None:
         self.asked: list[Wanted] = []
         self.failure: Exception | None = None
+        self.resting = 0.0
+
+    def resting_for(self) -> float:
+        return self.resting
 
     def download(self, wanted: Wanted, stem: Path, *, max_bytes: int) -> Path:
         self.asked.append(wanted)
