@@ -49,7 +49,9 @@ def db(tmp_path: Path) -> Database:
 
 @pytest.fixture()
 def client(tmp_path: Path, verifier: FakeVerifier) -> Iterator[TestClient]:
-    settings = Settings(data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid")
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
+    )
     with TestClient(create_app(settings, verifier=verifier)) as test_client:
         yield test_client
 

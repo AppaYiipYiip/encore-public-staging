@@ -1,0 +1,443 @@
+{
+ "query": "Daft Punk Instant Crush",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "khnokW3Mw24",
+   "title": "Instant Crush (feat. Julian Casablancas)",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    },
+    {
+     "name": "Julian Casablancas",
+     "id": "UCWhpbdGLnR8XtXLr0yl2nYA"
+    }
+   ],
+   "album": {
+    "name": "Random Access Memories",
+    "id": "MPREb_K8qWMWVqXGi"
+   },
+   "duration": "5:38",
+   "duration_seconds": 338,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.2B"
+  },
+  {
+   "videoId": "l4Gb0ViuJGw",
+   "title": "falling",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "falling",
+    "id": "MPREb_QvWQvPKqs0r"
+   },
+   "duration": "3:17",
+   "duration_seconds": 197,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "Nrv5IhE-Q54",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Sweet Little Band",
+     "id": "UCoGRFkzgwmjmzgZKy3qCkvA"
+    }
+   ],
+   "album": {
+    "name": "Babies Go Daft Punk",
+    "id": "MPREb_zVV5y15CPYR"
+   },
+   "duration": "3:30",
+   "duration_seconds": 210,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "562"
+  },
+  {
+   "videoId": "zKSsP2084nU",
+   "title": "Give Life Back to Music",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    }
+   ],
+   "album": {
+    "name": "Random Access Memories",
+    "id": "MPREb_K8qWMWVqXGi"
+   },
+   "duration": "4:36",
+   "duration_seconds": 276,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "54M"
+  },
+  {
+   "videoId": "XdUHViB4bjQ",
+   "title": "Instant Crush (Slowed + Reverb)",
+   "artists": [
+    {
+     "name": "Glaceo",
+     "id": "UCaey79wnXhbpHjzNBpdQ9rg"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Fe7ghUANaLQ"
+   },
+   "duration": "3:48",
+   "duration_seconds": 228,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.4K"
+  },
+  {
+   "videoId": "ZBZao3_hcQw",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Casey Cassette",
+     "id": "UCrs_eBpWETg6vLHx4HTzYyg"
+    }
+   ],
+   "album": {
+    "name": "Echoes",
+    "id": "MPREb_L4j2N21wKFR"
+   },
+   "duration": "5:37",
+   "duration_seconds": 337,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.2K"
+  },
+  {
+   "videoId": "5y_pB9YmbiI",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Vinsmoker",
+     "id": "UC2scVlnljSasclboMtcpVBA"
+    },
+    {
+     "name": "Rachel Leycroft",
+     "id": "UCkF9m7J_BHZwK9gO5tgog6g"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_wvrtzyXFuje"
+   },
+   "duration": "2:46",
+   "duration_seconds": 166,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "15K"
+  },
+  {
+   "videoId": "vUVmyqM8cJI",
+   "title": "karma (is patient)",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "karma (is patient)",
+    "id": "MPREb_6JpOEpOsoN8"
+   },
+   "duration": "3:27",
+   "duration_seconds": 207,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.8K"
+  },
+  {
+   "videoId": "-hTofpvU-P8",
+   "title": "Instant Crush (Extended Mix)",
+   "artists": [
+    {
+     "name": "K.Beverly",
+     "id": "UC4tWhE7Ndu5vsLEJO2pCmbw"
+    },
+    {
+     "name": "Saxado",
+     "id": "UCUzgYGyXfoKdAedPVFR0f9Q"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Ldd7U2ueVin"
+   },
+   "duration": "6:06",
+   "duration_seconds": 366,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "525"
+  },
+  {
+   "videoId": "zSXsaW3UXs8",
+   "title": "Instant Crush (feat. Nino, Dwight & Samz)",
+   "artists": [
+    {
+     "name": "Luk",
+     "id": "UCbMjfVsZJLdw36OUBIT3tMw"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_NRUQRtmstl4"
+   },
+   "duration": "5:42",
+   "duration_seconds": 342,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "4.7K"
+  },
+  {
+   "videoId": "z6xK0QEmVig",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "The First Contact",
+     "id": "UCkV8OvNStUZoNq5dMtjM4SQ"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_bySOP5srtv1"
+   },
+   "duration": "3:32",
+   "duration_seconds": 212,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "336"
+  },
+  {
+   "videoId": "NthvLi4G8x0",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Paul Spencer",
+     "id": "UCThcZbBhQxhVy9NIVz4OOYg"
+    }
+   ],
+   "album": {
+    "name": "The Whole Shebang",
+    "id": "MPREb_IlYJEKMSZ0h"
+   },
+   "duration": "2:05",
+   "duration_seconds": 125,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "319"
+  },
+  {
+   "videoId": "SDEPa5sv8Ls",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Shawn Hook",
+     "id": "UCSNvXa3it4fsaJSUAyjCPGQ"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_RlhHQloFxUY"
+   },
+   "duration": "4:58",
+   "duration_seconds": 298,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "23K"
+  },
+  {
+   "videoId": "qXI87eMP-bs",
+   "title": "Face to Face",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    }
+   ],
+   "album": {
+    "name": "Discovery",
+    "id": "MPREb_7ltM34kr0mH"
+   },
+   "duration": "4:01",
+   "duration_seconds": 241,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "56M"
+  },
+  {
+   "videoId": "_r1rFlax7kc",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "CHEST - Metal Covers",
+     "id": "UCzNVVD17RiaJSQwZk6MU0wA"
+    }
+   ],
+   "album": {
+    "name": "My Covers (The Pack)",
+    "id": "MPREb_bT4r6YcOCPv"
+   },
+   "duration": "6:31",
+   "duration_seconds": 391,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.5K"
+  },
+  {
+   "videoId": "WQQ5QTBKwmE",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "The Stairwells",
+     "id": "UCVMAc4nKyncAjzfiyMKZg6g"
+    }
+   ],
+   "album": {
+    "name": "Push It Further",
+    "id": "MPREb_V89zL906EA2"
+   },
+   "duration": "2:54",
+   "duration_seconds": 174,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "963"
+  },
+  {
+   "videoId": "Xd1Q1ebdooc",
+   "title": "Instant Crush",
+   "artists": [
+    {
+     "name": "Phill (Italy)",
+     "id": "UChb71IHxr2YCklenfyiLCKA"
+    }
+   ],
+   "album": {
+    "name": "Displaced",
+    "id": "MPREb_9g21F8iQCzv"
+   },
+   "duration": "7:21",
+   "duration_seconds": 441,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "295"
+  },
+  {
+   "videoId": "ZFZM6jDTWd4",
+   "title": "Giorgio by Moroder",
+   "artists": [
+    {
+     "name": "Daft Punk",
+     "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+    }
+   ],
+   "album": {
+    "name": "Random Access Memories",
+    "id": "MPREb_K8qWMWVqXGi"
+   },
+   "duration": "9:05",
+   "duration_seconds": 545,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "95M"
+  },
+  {
+   "videoId": "B3uH_r-bxDk",
+   "title": "REDEMPTION ARC",
+   "artists": [
+    {
+     "name": "instant crush",
+     "id": "UC76LnagIRE2Be1FHSWm-uNQ"
+    }
+   ],
+   "album": {
+    "name": "REDEMPTION ARC",
+    "id": "MPREb_L3c9DgEcyu9"
+   },
+   "duration": "3:13",
+   "duration_seconds": 193,
+   "resultType": "song",
+   "isExplicit": true,
+   "year": null,
+   "category": "Songs",
+   "views": "10K"
+  },
+  {
+   "videoId": "7AcXmUnsq8o",
+   "title": "Instant Crush (Cut Version)",
+   "artists": [
+    {
+     "name": "K.Beverly",
+     "id": "UC4tWhE7Ndu5vsLEJO2pCmbw"
+    },
+    {
+     "name": "Saxado",
+     "id": "UCUzgYGyXfoKdAedPVFR0f9Q"
+    }
+   ],
+   "album": {
+    "name": "Instant Crush",
+    "id": "MPREb_Ldd7U2ueVin"
+   },
+   "duration": "2:02",
+   "duration_seconds": 122,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "41"
+  }
+ ]
+}

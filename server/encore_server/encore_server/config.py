@@ -16,6 +16,8 @@ class Settings:
     port: int = 4533
     server_name: str = "My music server"
     log_level: str = "INFO"
+    youtube: bool = True
+    fault: str = ""
     extras: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -33,4 +35,6 @@ class Settings:
             port=int(e.get("ENCORE_PORT", "4533")),
             server_name=e.get("ENCORE_SERVER_NAME", "My music server"),
             log_level=e.get("ENCORE_LOG_LEVEL", "INFO").upper(),
+            youtube=e.get("ENCORE_YOUTUBE", "1").strip().lower() not in ("0", "false", "no"),
+            fault=e.get("ENCORE_FAULT", "").strip(),
         )

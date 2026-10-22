@@ -1,0 +1,471 @@
+{
+ "query": "Maria Tambien Khruangbin",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "olf4IO9Dx4E",
+   "title": "Maria También",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Con Todo El Mundo",
+    "id": "MPREb_mtjjPHRp41v"
+   },
+   "duration": "3:11",
+   "duration_seconds": 191,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "8.5M"
+  },
+  {
+   "videoId": "qtz8L-gICzA",
+   "title": "Mariella",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Leon Bridges",
+     "id": "UCnqQ2w8U9bqdEkGKSiBVkRA"
+    }
+   ],
+   "album": {
+    "name": "Texas Moon",
+    "id": "MPREb_uxsMek3FUn0"
+   },
+   "duration": "5:11",
+   "duration_seconds": 311,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "23M"
+  },
+  {
+   "videoId": "WyD8hoeZuTs",
+   "title": "Ma Be Ham Nemiresim",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Philia: Artists Rise Against Islamophobia",
+    "id": "MPREb_LX6vwB7m6bW"
+   },
+   "duration": "3:52",
+   "duration_seconds": 232,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "381K"
+  },
+  {
+   "videoId": "I1HiXxH3JuA",
+   "title": "Nasri",
+   "artists": [
+    {
+     "name": "Maria Tambun",
+     "id": "UCQPL99wH6dcKu-JQdJrdtFw"
+    }
+   ],
+   "album": {
+    "name": "Nasri",
+    "id": "MPREb_cfJxpKNOPeQ"
+   },
+   "duration": "2:51",
+   "duration_seconds": 171,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "16K"
+  },
+  {
+   "videoId": "IXJc_VQnSwE",
+   "title": "People Everywhere (Shifting Sands Remix) (Live at Sydney Opera House)",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Live at Sydney Opera House",
+    "id": "MPREb_jk9sbtaa6TG"
+   },
+   "duration": "8:09",
+   "duration_seconds": 489,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "464K"
+  },
+  {
+   "videoId": "HF5G5HK5mOI",
+   "title": "So We Won't Forget (Mang Dynasty Version)",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Mang Dynasty",
+     "id": null
+    }
+   ],
+   "album": {
+    "name": "Mordechai Remixes",
+    "id": "MPREb_AL8A02ADCxN"
+   },
+   "duration": "6:33",
+   "duration_seconds": 393,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "158K"
+  },
+  {
+   "videoId": "kM7KJcG8lPU",
+   "title": "Cómo Te Quiero",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Con Todo El Mundo",
+    "id": "MPREb_mtjjPHRp41v"
+   },
+   "duration": "4:03",
+   "duration_seconds": 243,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "8.8M"
+  },
+  {
+   "videoId": "EHoiiOF1Ny4",
+   "title": "C-Side",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Leon Bridges",
+     "id": "UCnqQ2w8U9bqdEkGKSiBVkRA"
+    }
+   ],
+   "album": {
+    "name": "Texas Sun",
+    "id": "MPREb_Sa0gF76HQxz"
+   },
+   "duration": "4:44",
+   "duration_seconds": 284,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "3.9M"
+  },
+  {
+   "videoId": "VFXR6pUMjUU",
+   "title": "Texas Sun",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Leon Bridges",
+     "id": "UCnqQ2w8U9bqdEkGKSiBVkRA"
+    }
+   ],
+   "album": {
+    "name": "Texas Sun",
+    "id": "MPREb_Sa0gF76HQxz"
+   },
+   "duration": "4:13",
+   "duration_seconds": 253,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "55M"
+  },
+  {
+   "videoId": "J7dT8ADaHdQ",
+   "title": "Tamalla",
+   "artists": [
+    {
+     "name": "Vieux Farka Touré",
+     "id": "UCZrKdZ2-mhDRf01r9gse4PA"
+    },
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Ali",
+    "id": "MPREb_kZxZtia47LW"
+   },
+   "duration": "5:56",
+   "duration_seconds": 356,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "426K"
+  },
+  {
+   "videoId": "frDnbMdoVCE",
+   "title": "Pelota (Cut a Rug Mix)",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Quantic",
+     "id": "UCJRtNmHnL1PnW96Q7_2Fl0A"
+    }
+   ],
+   "album": {
+    "name": "Mordechai Remixes",
+    "id": "MPREb_AL8A02ADCxN"
+   },
+   "duration": "5:02",
+   "duration_seconds": 302,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "825K"
+  },
+  {
+   "videoId": "-1Aq10LTVsQ",
+   "title": "Connaissais de Face",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Mordechai",
+    "id": "MPREb_FmGuTRuIC4I"
+   },
+   "duration": "4:21",
+   "duration_seconds": 261,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.6M"
+  },
+  {
+   "videoId": "ltiGpcaM7Lk",
+   "title": "Father Bird, Mother Bird (Sunbirds)",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Kadhja Bonet",
+     "id": "UCBeC8JDSJ0wNgmZlyWhqJMw"
+    }
+   ],
+   "album": {
+    "name": "Mordechai Remixes",
+    "id": "MPREb_AL8A02ADCxN"
+   },
+   "duration": "2:54",
+   "duration_seconds": 174,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "104K"
+  },
+  {
+   "videoId": "uYx4uK1R1tg",
+   "title": "Saos",
+   "artists": [
+    {
+     "name": "Rattlesquad",
+     "id": "UCbdLtyFjFd9wriT9OWjYS_A"
+    }
+   ],
+   "album": {
+    "name": "1233",
+    "id": "MPREb_qs52PeoUaPu"
+   },
+   "duration": "5:19",
+   "duration_seconds": 319,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "252"
+  },
+  {
+   "videoId": "49hZqOd_DRM",
+   "title": "Feel Good",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Maribou State",
+     "id": "UCxIW9VhUSiNWTftN9VEMDDQ"
+    }
+   ],
+   "album": {
+    "name": "Feel Good",
+    "id": "MPREb_XC4SMtosE7s"
+   },
+   "duration": "4:28",
+   "duration_seconds": 268,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.5M"
+  },
+  {
+   "videoId": "S8Bo0jl8SCU",
+   "title": "Tongo Barra",
+   "artists": [
+    {
+     "name": "Vieux Farka Touré",
+     "id": "UCZrKdZ2-mhDRf01r9gse4PA"
+    },
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Ali",
+    "id": "MPREb_kZxZtia47LW"
+   },
+   "duration": "5:34",
+   "duration_seconds": 334,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.5M"
+  },
+  {
+   "videoId": "7uWGxXQHHyk",
+   "title": "Doris",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Leon Bridges",
+     "id": "UCnqQ2w8U9bqdEkGKSiBVkRA"
+    }
+   ],
+   "album": {
+    "name": "Texas Moon",
+    "id": "MPREb_uxsMek3FUn0"
+   },
+   "duration": "3:51",
+   "duration_seconds": 231,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1M"
+  },
+  {
+   "videoId": "Xh8krAqYR18",
+   "title": "Conversion",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    },
+    {
+     "name": "Leon Bridges",
+     "id": "UCnqQ2w8U9bqdEkGKSiBVkRA"
+    }
+   ],
+   "album": {
+    "name": "Texas Sun",
+    "id": "MPREb_Sa0gF76HQxz"
+   },
+   "duration": "6:47",
+   "duration_seconds": 407,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.6M"
+  },
+  {
+   "videoId": "E6EtluMrdU4",
+   "title": "Mr. White",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "The Universe Smiles Upon You",
+    "id": "MPREb_jsOej1oQ2xf"
+   },
+   "duration": "4:59",
+   "duration_seconds": 299,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "6.1M"
+  },
+  {
+   "videoId": "vBGhD2ZhAK8",
+   "title": "Mary Always",
+   "artists": [
+    {
+     "name": "Khruangbin",
+     "id": "UCW2SLxltqPa553qretr4KzQ"
+    }
+   ],
+   "album": {
+    "name": "Mary Always",
+    "id": "MPREb_hiqLfS6elvK"
+   },
+   "duration": "3:15",
+   "duration_seconds": 195,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "578K"
+  }
+ ]
+}

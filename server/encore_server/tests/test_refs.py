@@ -144,3 +144,19 @@ def test_a_file_for_an_unknown_ref_is_not_found(db: Database) -> None:
     with pytest.raises(ApiError) as caught, db.tx() as conn:
         refs.attach_file(conn, "sr_00000000000000000000000000", navidrome_song_id="x", path=None, codec=None, bitrate_kbps=None)
     assert caught.value.code == "not_found"
+
+
+def test_a_play_that_found_the_upload_leaves_it_on_the_ref(db: Database) -> None:
+    ref = resolve(db)
+    with db.tx() as conn:
+        assert refs.remember_video(conn, str(ref["id"]), "bgsmr7t8zGE") is True
+        assert refs.remember_video(conn, str(ref["id"]), "zzzzzzzzzzz") is False, "the first one found is kept"
+        assert refs.get_ref(conn, str(ref["id"]))["videoId"] == "bgsmr7t8zGE"
+
+
+def test_an_upload_another_ref_owns_is_not_taken(db: Database) -> None:
+    a = resolve(db, title="A", artists=["X"], videoId="aaaaaaaaaaa", durationMs=100000)
+    b = resolve(db, title="B", artists=["Y"], durationMs=100000)
+    with db.tx() as conn:
+        assert refs.remember_video(conn, str(b["id"]), "aaaaaaaaaaa") is False
+        assert refs.get_ref(conn, str(a["id"]))["videoId"] == "aaaaaaaaaaa"

@@ -7,31 +7,41 @@ worker threads (SQLite and the music server's check block briefly); the live soc
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import logging
 import secrets
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.concurrency import iterate_in_threadpool
 
 from . import API_VERSION, MIN_APP_VERSION, __version__, library, playback, refs
 from .auth import (
+    STREAM_URL_TTL_S,
     NavidromeVerifier,
     Principal,
     Verifier,
     bearer_token,
     hash_token,
     issue_device,
+    sign_stream,
+    stream_secret,
     subsonic_credentials,
     subsonic_token,
+    valid_stream_signature,
 )
 from .config import Settings
 from .db import Database
 from .errors import ApiError
 from .ids import is_id, now_ms
 from .live import Hub
+from .sources.youtube.errors import DownloadError
+from .sources.youtube.source import YoutubeSource, wanted_from_ref
+from .sources.youtube.stream import StreamError
 
 log = logging.getLogger("encore_server.api")
 
@@ -44,6 +54,7 @@ class Services:
     db: Database
     hub: Hub
     verifier: Verifier
+    youtube: YoutubeSource | None = None
 
 
 def services(request: Request) -> Services:
@@ -234,6 +245,65 @@ def resolve_refs(
 def get_ref(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     with services(request).db.read() as conn:
         return _ok(refs.get_ref(conn, ref_id))
+
+
+# ------------------------------------------------------------------------------------------------ the audio of a ref
+
+
+@router.get("/refs/{ref_id}/stream-url")
+def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The address to play a song from when the server has no file of it (or the app prefers it): signed, so a player that cannot set
+    headers can use it, and valid for as long as a listen can last."""
+    svc = services(request)
+    with svc.db.tx() as conn:
+        if not refs.ref_exists(conn, ref_id):
+            raise ApiError("not_found", "That song is not known to this server.")
+        secret = stream_secret(conn)
+    expires = int(time.time()) + STREAM_URL_TTL_S
+    sig = sign_stream(secret, p.person_id, ref_id, expires)
+    return _ok({"url": f"/encore/stream/{ref_id}?p={p.person_id}&e={expires}&sig={sig}", "expiresAt": expires * 1000})
+
+
+_UNAVAILABLE_REASON = {"not_found": "not_found", "unavailable": "removed", "age_restricted": "age_restricted"}
+
+
+def _stream_error(error: StreamError) -> ApiError:
+    if error.code in _UNAVAILABLE_REASON:
+        return ApiError("song_unavailable", error.message, details={"reason": _UNAVAILABLE_REASON[error.code]})
+    if error.code == "blocked":
+        return ApiError("source_busy", error.message)
+    if error.code == "slow":
+        return ApiError("upstream_timeout", error.message)
+    return ApiError("source_unreachable", error.message)
+
+
+def stream(ref_id: str, request: Request) -> StreamingResponse:
+    """`GET /encore/stream/{ref}`: the song's audio from YouTube, passed on as it arrives, with Range (docs/04 section 4)."""
+    svc = services(request)
+    query = request.query_params
+    with svc.db.tx() as conn:
+        secret = stream_secret(conn)
+        person = query.get("p", "")
+        try:
+            expires = int(query.get("e", "0"))
+        except ValueError:
+            expires = 0
+        if not valid_stream_signature(secret, person, ref_id, expires, query.get("sig", "")):
+            raise ApiError("unauthorized", "This song address has expired. Ask the app to play it again.")
+        ref = refs.get_ref(conn, ref_id)
+    if svc.youtube is None:
+        raise ApiError("source_unreachable", "This server cannot fetch songs from YouTube.")
+    try:
+        upstream = svc.youtube.open(wanted_from_ref(ref), request.headers.get("range"))
+    except StreamError as error:
+        raise _stream_error(error) from error
+    except DownloadError as error:
+        raise _stream_error(StreamError(error.code)) from error
+    headers = {**upstream.headers, "Cache-Control": "no-store"}
+    body = iterate_in_threadpool(upstream.body) if request.method != "HEAD" else iter(())
+    return StreamingResponse(
+        body, status_code=upstream.status, headers=headers, media_type=headers.pop("Content-Type", None), background=None
+    )
 
 
 # ------------------------------------------------------------------------------------------------ the library
@@ -488,18 +558,41 @@ async def live(websocket: WebSocket) -> None:
 # ------------------------------------------------------------------------------------------------ the application
 
 
-def create_app(settings: Settings | None = None, *, verifier: Verifier | None = None, db: Database | None = None) -> FastAPI:
+def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | None:
+    """The real YouTube source, when its libraries are installed (a server without them still runs: songs it keeps still play)."""
+
+    def remember(ref_id: str, video_id: str) -> None:
+        with database.tx() as conn:
+            refs.remember_video(conn, ref_id, video_id)
+
+    if importlib.util.find_spec("yt_dlp") is None or importlib.util.find_spec("ytmusicapi") is None:
+        log.warning("yt-dlp or ytmusicapi is not installed: songs that are not kept cannot be streamed")
+        return None
+    return YoutubeSource(settings.data_dir / "work", fast_clients=("visionos",), fault=settings.fault, remember_video=remember)
+
+
+def create_app(
+    settings: Settings | None = None,
+    *,
+    verifier: Verifier | None = None,
+    db: Database | None = None,
+    youtube: YoutubeSource | None = None,
+) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
     app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None)
+    if youtube is None and settings.youtube:
+        youtube = _default_youtube(settings, database)
     app.state.services = Services(
         settings=settings,
         db=database,
         hub=Hub(),
         verifier=verifier or NavidromeVerifier(settings.navidrome_url),
+        youtube=youtube,
     )
     app.include_router(router)
+    app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
     app.add_api_websocket_route("/encore/live", live)
 
     @app.exception_handler(ApiError)

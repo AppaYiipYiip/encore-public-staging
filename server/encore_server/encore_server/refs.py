@@ -205,6 +205,16 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
     return row_to_ref(conn, row)
 
 
+def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str) -> bool:
+    """A play found the upload of this song: the next play needs no search. An upload another ref already owns is never taken from it."""
+    cursor = conn.execute(
+        "UPDATE song_ref SET ytm_video_id = ? WHERE id = ? AND ytm_video_id IS NULL"
+        " AND NOT EXISTS (SELECT 1 FROM song_ref WHERE ytm_video_id = ?)",
+        (video_id, ref_id, video_id),
+    )
+    return bool(cursor.rowcount)
+
+
 def attach_file(
     conn: sqlite3.Connection,
     ref_id: str,

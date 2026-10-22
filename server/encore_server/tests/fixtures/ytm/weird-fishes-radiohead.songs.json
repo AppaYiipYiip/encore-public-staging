@@ -1,0 +1,427 @@
+{
+ "query": "Weird Fishes Radiohead",
+ "filter": "songs",
+ "recorded": "2026-10-21",
+ "results": [
+  {
+   "videoId": "LUjGtyYEi90",
+   "title": "Weird Fishes / Arpeggi",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "In Rainbows",
+    "id": "MPREb_R6C9lU4QEg2"
+   },
+   "duration": "5:19",
+   "duration_seconds": 319,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "67M"
+  },
+  {
+   "videoId": "LnIHVvEwbLk",
+   "title": "Like Spinning Plates (Live)",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "I Might Be Wrong",
+    "id": "MPREb_WHT29n5quUP"
+   },
+   "duration": "3:53",
+   "duration_seconds": 233,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.6M"
+  },
+  {
+   "videoId": "kPAZV8y4B44",
+   "title": "Present Tense",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "A Moon Shaped Pool",
+    "id": "MPREb_zwdwliUWiJm"
+   },
+   "duration": "5:07",
+   "duration_seconds": 307,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "6M"
+  },
+  {
+   "videoId": "3ZKxungSg9U",
+   "title": "Bones",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "The Bends",
+    "id": "MPREb_xsmDKhqhQrG"
+   },
+   "duration": "3:09",
+   "duration_seconds": 189,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "5.2M"
+  },
+  {
+   "videoId": "Bf01riuiJWA",
+   "title": "Exit Music (For A Film)",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "OK Computer",
+    "id": "MPREb_yXhSI4FCUo6"
+   },
+   "duration": "4:28",
+   "duration_seconds": 268,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "115M"
+  },
+  {
+   "videoId": "fzK5kbNL2Ak",
+   "title": "Glass Eyes",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "A Moon Shaped Pool",
+    "id": "MPREb_zwdwliUWiJm"
+   },
+   "duration": "2:53",
+   "duration_seconds": 173,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "3M"
+  },
+  {
+   "videoId": "z1rQf1g3WXk",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Sweet Dreams, Sleep Tight",
+     "id": "UCyswaHj8hG2YlRgVgVMDbcg"
+    }
+   ],
+   "album": {
+    "name": "Lullaby Renditions of Radiohead",
+    "id": "MPREb_LCkmhladx2H"
+   },
+   "duration": "3:05",
+   "duration_seconds": 185,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "58"
+  },
+  {
+   "videoId": "KluFyXOtBU8",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "Mellow Meditation",
+     "id": "UCqqQP0tbvInPMCYLhK-3-sA"
+    }
+   ],
+   "album": {
+    "name": "Acoustic Piano Versions of Radiohead",
+    "id": "MPREb_UJZsE0a8A2O"
+   },
+   "duration": "2:40",
+   "duration_seconds": 160,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "260"
+  },
+  {
+   "videoId": "Xk6FfhTJZAM",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Jack Hues & The Quartet",
+     "id": "UCXFng6OCDQdElmysXa836Wg"
+    }
+   ],
+   "album": {
+    "name": "Epigonal Quark",
+    "id": "MPREb_oHuoPORPZJC"
+   },
+   "duration": "6:36",
+   "duration_seconds": 396,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "390"
+  },
+  {
+   "videoId": "2SjbsuXMqfk",
+   "title": "Faust Arp/ Weird Fishes/ Arpeggi",
+   "artists": [
+    {
+     "name": "Harbor Hammond",
+     "id": "UCNwVNtEER2ecnp_R_ENvu1A"
+    }
+   ],
+   "album": {
+    "name": "Ankle Biter",
+    "id": "MPREb_29tkGtaYmbn"
+   },
+   "duration": "7:42",
+   "duration_seconds": 462,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "113"
+  },
+  {
+   "videoId": "WIqToUF74Zc",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Liam Culligan",
+     "id": "UCPfvq_eNP1n7KZcc4uxpstQ"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes",
+    "id": "MPREb_VzG5Gqas8a5"
+   },
+   "duration": "2:44",
+   "duration_seconds": 164,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "7"
+  },
+  {
+   "videoId": "jZwHLiPoagA",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Perolas",
+     "id": "UCqNz2fycdlfgRoessRWguaA"
+    }
+   ],
+   "album": {
+    "name": "Perolas",
+    "id": "MPREb_lniQo9RE6kJ"
+   },
+   "duration": "4:37",
+   "duration_seconds": 277,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "345"
+  },
+  {
+   "videoId": "sNzQ3nBMZKs",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Montréal Guitare Trio",
+     "id": "UCnxsSmJc7dqUO0kXz8krFLw"
+    }
+   ],
+   "album": {
+    "name": "Der Prinz",
+    "id": "MPREb_CbN0S6eALV6"
+   },
+   "duration": "4:44",
+   "duration_seconds": 284,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.5K"
+  },
+  {
+   "videoId": "PUzg2xpRz0g",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "yarn.",
+     "id": "UCdbcpTc6HYxpFFFFrU6PgQA"
+    }
+   ],
+   "album": {
+    "name": "I Said Goodbye And Then... EP",
+    "id": "MPREb_1qQAuYbRfQS"
+   },
+   "duration": "5:34",
+   "duration_seconds": 334,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "351"
+  },
+  {
+   "videoId": "40TGvrPq-Ik",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "Sidney Bridges",
+     "id": "UClMK3llue8uSNrpvlq8gjPA"
+    }
+   ],
+   "album": {
+    "name": "Sidney Bridges",
+    "id": "MPREb_MJnfli5QuKB"
+   },
+   "duration": "5:07",
+   "duration_seconds": 307,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "245"
+  },
+  {
+   "videoId": "28qka3DSK4E",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "William Haviland",
+     "id": "UC6KNz5IPR1hUlYNu_da-3_A"
+    }
+   ],
+   "album": {
+    "name": "But Beautiful",
+    "id": "MPREb_zh6CkOilgW4"
+   },
+   "duration": "5:31",
+   "duration_seconds": 331,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "314"
+  },
+  {
+   "videoId": "gDeBZjtWi60",
+   "title": "Weird Fishes/Arpeggi",
+   "artists": [
+    {
+     "name": "Aditya",
+     "id": "UCnAcZ42jMnwVpApfuFJpk-A"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes/Arpeggi",
+    "id": "MPREb_RNPdHtypdik"
+   },
+   "duration": "5:30",
+   "duration_seconds": 330,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "120"
+  },
+  {
+   "videoId": "SWkydNZjX2U",
+   "title": "Weird Fishes",
+   "artists": [
+    {
+     "name": "Jazz Night Music Paradise",
+     "id": "UC9V9QPgXT-iAVJkya3J8yYw"
+    }
+   ],
+   "album": {
+    "name": "Every Single Day (Instrumental Jazz Music, Perfect Background Relaxing Sounds)",
+    "id": "MPREb_Y7jq4In66kv"
+   },
+   "duration": "3:09",
+   "duration_seconds": 189,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "3.1K"
+  },
+  {
+   "videoId": "4OzU1jdjSZA",
+   "title": "The Tourist",
+   "artists": [
+    {
+     "name": "Radiohead",
+     "id": "UCr_iyUANcn9OX_yy9piYoLw"
+    }
+   ],
+   "album": {
+    "name": "OK Computer OKNOTOK 1997 2017",
+    "id": "MPREb_b9Yfli6Cg79"
+   },
+   "duration": "5:24",
+   "duration_seconds": 324,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "9.5M"
+  },
+  {
+   "videoId": "z58Xi8HJR0c",
+   "title": "Weird Fishes / Arpeggi",
+   "artists": [
+    {
+     "name": "Leo*Leo",
+     "id": "UCCOCQXUf1x5xjghRp3ryY8A"
+    }
+   ],
+   "album": {
+    "name": "Weird Fishes / Arpeggi",
+    "id": "MPREb_hfxfi1yMAdW"
+   },
+   "duration": "3:18",
+   "duration_seconds": 198,
+   "resultType": "song",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "992"
+  }
+ ]
+}

@@ -13,6 +13,7 @@ The password itself is never stored; at sign-in it is turned into a Subsonic tok
 from __future__ import annotations
 
 import hashlib
+import hmac
 import re
 import secrets
 import time
@@ -144,3 +145,30 @@ def require(principal: Principal | None) -> Principal:
     if principal is None:
         raise ApiError("unauthorized")
     return principal
+
+
+# ---- signed stream addresses (docs/17 section 1): a player cannot always set headers, so the address carries a signature.
+
+#: How long a stream address works. Long, because a player keeps using the same address for a whole listen (a two-hour recitation).
+STREAM_URL_TTL_S = 6 * 3600
+
+
+def stream_secret(conn) -> bytes:  # type: ignore[no-untyped-def]
+    """The server's secret for signing addresses: made once, kept in the database."""
+    row = conn.execute("SELECT value FROM setting WHERE key = 'stream_secret'").fetchone()
+    if row is not None:
+        return bytes.fromhex(row["value"])
+    secret = secrets.token_bytes(32)
+    conn.execute("INSERT OR IGNORE INTO setting (key, value) VALUES ('stream_secret', ?)", (secret.hex(),))
+    row = conn.execute("SELECT value FROM setting WHERE key = 'stream_secret'").fetchone()
+    return bytes.fromhex(row["value"])
+
+
+def sign_stream(secret: bytes, person: str, ref: str, expires_s: int) -> str:
+    return hmac.new(secret, f"{person}|{ref}|{expires_s}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def valid_stream_signature(secret: bytes, person: str, ref: str, expires_s: int, sig: str, *, now_s: float | None = None) -> bool:
+    if expires_s < (now_s if now_s is not None else time.time()):
+        return False
+    return hmac.compare_digest(sign_stream(secret, person, ref, expires_s), sig)
