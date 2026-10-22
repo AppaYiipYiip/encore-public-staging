@@ -297,3 +297,16 @@ String importEstimate(int songs) {
   final hours = seconds / 3600;
   return 'about ${hours.toStringAsFixed(hours < 10 ? 1 : 0)} hours';
 }
+
+/// What the review page promises: the playlist is there the moment the person agrees and every song plays when tapped;
+/// saving them all to the server is a background job, never something to sit through (docs/03: "nobody waits for downloads").
+String importPromise(int songs) {
+  final seconds = songs * 12;
+  final saving = seconds < 90
+      ? 'takes about a minute, in the background'
+      : seconds < 90 * 60
+          ? 'takes ${importEstimate(songs)}, in the background'
+          : 'carries on in the background for a few hours';
+  return 'The playlist is there as soon as you tap Import, and every song '
+      'plays when you tap it. Saving them all to your server $saving.';
+}

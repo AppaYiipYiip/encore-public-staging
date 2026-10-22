@@ -579,8 +579,7 @@ class _PlaylistImportScreenState extends ConsumerState<PlaylistImportScreen> {
               style: context.text.titleMedium),
           const SizedBox(height: Space.xs),
           Text(
-            'It takes ${importEstimate(count)}. You can listen while it '
-            'fills, and close the app.',
+            importPromise(count),
             style: context.text.bodyMedium?.copyWith(color: c.onBgMuted),
           ),
           if (list.truncated) ...[

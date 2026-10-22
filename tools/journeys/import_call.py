@@ -1,4 +1,5 @@
 """import_call.py LOGIN_FILE --list            the person's imports and how far they are
+import_call.py LOGIN_FILE URL --read          only reads the playlist and says how long it took and what each song came with
 import_call.py LOGIN_FILE URL [N] [--kind=playlist|liked] [--watch]
 
 Reads the playlist at URL through the fetch service as the person in LOGIN_FILE, hands the first N songs (default all) to
@@ -40,10 +41,20 @@ if link == '--list':
               'eta', i.get('etaSec'), i.get('paused', ''), '|', i['name'])
     sys.exit(0)
 
+started = time.time()
 status, playlist = call('POST', '/api/playlist', {'url': link})
+seconds = time.time() - started
 if status != 200:
     print(status, playlist)
     sys.exit(1)
+if '--read' in flags:
+    tracks = playlist['tracks']
+    print(f"read '{playlist['name']}' ({playlist['source']}) in {seconds:.1f} s: {playlist['count']} songs, "
+          f"{sum(1 for t in tracks if t.get('videoId'))} with a video id, {sum(1 for t in tracks if t.get('official'))} official, "
+          f"{sum(1 for t in tracks if t.get('album'))} with an album, truncated={playlist['truncated']}")
+    for t in tracks[:5]:
+        print('  ', t)
+    sys.exit(0)
 songs = playlist['tracks'][:count]
 print(f"read '{playlist['name']}' ({playlist['source']}): {playlist['count']} songs, truncated={playlist['truncated']}; importing {len(songs)}")
 status, imp = call('POST', '/api/import', {'name': playlist['name'], 'kind': kind, 'source': playlist['source'], 'tracks': songs})

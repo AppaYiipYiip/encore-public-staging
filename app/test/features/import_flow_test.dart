@@ -227,7 +227,7 @@ void main() {
         reason: 'the tracking part of the link is not sent');
     expect(find.text('3 songs from Spotify'), findsOneWidget);
     expect(find.text('Windowpane - Opeth'), findsOneWidget);
-    expect(find.textContaining('It takes about a minute'), findsOneWidget);
+    expect(find.textContaining('as soon as you tap Import'), findsOneWidget);
     expect(find.text('Import 3 songs'), findsOneWidget);
     expect(
         tester

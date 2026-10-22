@@ -218,6 +218,19 @@ void main() {
       expect(importEstimate(1000), 'about 3.3 hours');
     });
 
+    test(
+        'the review page promises the playlist at once and puts the saving in the background',
+        () {
+      for (final songs in [5, 100, 1000]) {
+        final text = importPromise(songs);
+        expect(text, contains('as soon as you tap Import'), reason: '$songs');
+        expect(text, contains('in the background'), reason: '$songs');
+      }
+      expect(importPromise(100), contains('about 20 minutes'));
+      expect(importPromise(1000), isNot(contains('hours,')));
+      expect(importPromise(1000), contains('a few hours'));
+    });
+
     test('an unknown state is not a crash and an empty list is not a bar', () {
       final odd = job({'state': 'something new', 'total': 0});
       expect(odd.state, ImportState.running);
