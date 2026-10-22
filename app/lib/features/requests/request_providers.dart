@@ -14,6 +14,7 @@ import '../../data/requests/portal_client.dart';
 import '../../data/requests/portal_discovery.dart';
 import '../../data/requests/request_service.dart';
 import '../../domain/text_match.dart';
+import '../search/artist_aware_search.dart';
 import '../settings/settings_controller.dart';
 
 /// Where the portal password is kept.
@@ -212,8 +213,13 @@ final catalogueSearchProvider = FutureProvider.autoDispose
   final network = ref.read(networkKindProvider).value;
   if (network == NetworkKind.none) return CatalogueResults.empty;
 
-  final raw = await ref.read(catalogueClientProvider).search(q);
+  final client = ref.read(catalogueClientProvider);
+  var raw = await client.search(q);
   if (disposed || raw.isEmpty) return raw;
+  // "beach house space song": the artist's own song is not among the text matches; find it through the artist.
+  raw = await withArtistSongs(client, q, raw,
+      cache: ref.read(artistLookupCacheProvider));
+  if (disposed) return raw;
 
   final serverId = await ref.watch(activeServerIdProvider.future);
   if (serverId == null) return raw;

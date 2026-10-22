@@ -37,7 +37,10 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
   "interactive at most one look-up per 5 s while resting", the comparison with an import running (J-02).
 * P1-04: preparing the first 3 songs of an opened album/playlist and the next 2 of the queue, cancelling stale prepares, dropping prepares first under back-off.
 * P1-06: the app's `play.audible` span (the server side logs are there).
-* P1-07: keystroke-to-results timing; two known search misses (Beach House "Space Song", Oum Kalthoum's Arabic title).
+* P1-07: keystroke-to-results timing; the miss of Oum Kalthoum's Arabic title. **Fixed 2026-10-22 (build 114): "Beach House Space Song"** - the catalogue's text
+  search never lists Beach House's own song (not in its first 11 results), only covers and look-alike titles; when none of the results is a song by an
+  artist named at one end of what was typed, the app now looks the artist up, searches its popular songs for the title and puts the hit first
+  (`artist_aware_search.dart`, 14 tests, walked: Top result is now "Space Song, Beach House"; "Gojira Silvera" and "Radiohead House of Cards" unchanged).
 * P1-10: covers of catalogue and imported songs, notification art.
 * P1-12: system-bar steps 2, 3, 5, 6, 7 and right-to-left layouts.
 * P1-13: loudness tags written by the server (the app side is done).

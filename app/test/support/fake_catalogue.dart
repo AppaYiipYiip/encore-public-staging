@@ -1,4 +1,5 @@
 import 'package:encore/data/catalogue/catalogue_models.dart';
+import 'package:encore/domain/text_match.dart';
 
 /// Scriptable catalogue for tests: canned search results plus per-id
 /// artist / album / track lookups, and counters to assert on traffic.
@@ -30,6 +31,22 @@ class FakeCatalogue implements CatalogueClient {
   Future<CatalogueResults> search(String query, {int limit = 8}) async {
     queries.add(query);
     return results;
+  }
+
+  /// What an artist search for exactly this (normalised) name finds; by default the artists of [results] named like the query.
+  final Map<String, List<CatalogueArtist>> artistsByName = {};
+  final List<String> artistSearches = [];
+
+  @override
+  Future<List<CatalogueArtist>> searchArtists(String query,
+      {int limit = 5}) async {
+    artistSearches.add(query);
+    final key = normalizeForMatch(query);
+    return artistsByName[key] ??
+        [
+          for (final a in results.artists)
+            if (normalizeForMatch(a.name).contains(key)) a,
+        ];
   }
 
   @override

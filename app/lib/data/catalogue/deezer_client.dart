@@ -67,6 +67,15 @@ class DeezerClient implements CatalogueClient {
   }
 
   @override
+  Future<List<CatalogueArtist>> searchArtists(String query,
+      {int limit = 5}) async {
+    final q = query.trim();
+    if (q.length < 2) return const [];
+    final json = await _get('/search/artist', {'q': q, 'limit': limit});
+    return _list(json).map(_artist).whereType<CatalogueArtist>().toList();
+  }
+
+  @override
   Future<CatalogueArtist?> artist(String artistId) async {
     final json = await _get('/artist/$artistId');
     return json == null ? null : _artist(json);

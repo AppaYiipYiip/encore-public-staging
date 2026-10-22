@@ -181,6 +181,9 @@ const List<({int id, String name})> kCatalogueGenres = [
 abstract interface class CatalogueClient {
   Future<CatalogueResults> search(String query, {int limit = 8});
 
+  /// Only the artists whose name matches [query] (the full [search] also asks for albums and songs).
+  Future<List<CatalogueArtist>> searchArtists(String query, {int limit = 5});
+
   /// One artist / album by catalogue id (`null` when unknown or offline).
   Future<CatalogueArtist?> artist(String artistId);
   Future<CatalogueAlbum?> album(String albumId);
