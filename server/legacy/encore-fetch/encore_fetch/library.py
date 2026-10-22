@@ -13,7 +13,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from .textnorm import norm_title, safe_path_part
+from .textnorm import norm_title, safe_path_part, version_signature
 
 AUDIO_SUFFIXES = {".opus", ".ogg", ".m4a", ".mp3", ".flac", ".aac", ".wav"}
 
@@ -106,7 +106,7 @@ def find_existing(placement: Placement, title: str) -> Path | None:
         if f.suffix.lower() not in AUDIO_SUFFIXES or not f.is_file():
             continue
         stem = re.sub(r"^\d{1,2}(-\d{1,2})?\s*-\s*", "", f.stem)
-        if norm_title(stem) == want:
+        if norm_title(stem) == want and version_signature(stem) == version_signature(title):
             return f
     return None
 

@@ -10,7 +10,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Callable
 
-from .textnorm import norm_artist, norm_title, ratio
+from .textnorm import norm_artist, norm_title, ratio, version_signature
 
 
 @dataclass(frozen=True)
@@ -171,9 +171,13 @@ def pick_song(songs: list[dict], *, artist: str, title: str,
             if path and (path == want or path.endswith("/" + want)):
                 return str(s.get("id"))
     wt, wa = norm_title(title), norm_artist(artist)
+    wv = version_signature(title)
     best: tuple[float, str] | None = None
     for s in songs:
         if norm_title(str(s.get("title") or "")) != wt:
+            continue
+        # A rework, a live take or a remix with the same words is another recording, not the song that was asked for.
+        if version_signature(str(s.get("title") or "")) != wv:
             continue
         a = max(
             ratio(wa, norm_artist(str(s.get("artist") or ""))),

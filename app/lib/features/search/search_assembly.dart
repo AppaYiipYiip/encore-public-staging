@@ -173,11 +173,11 @@ AssembledSearch assembleSearch(
 
   return AssembledSearch(
     top: top,
-    // The Top result is not listed again below it.
-    songs: [
-      for (final h in rankedSongs)
-        if (!identical(h.value, top)) h.value,
-    ].take(maxSongRows).toList(),
+    // The Top result is not listed again below it, and the same song on a compilation is not listed twice.
+    songs: _withoutRepeats(
+      [for (final h in rankedSongs) h.value],
+      top: top,
+    ).take(maxSongRows).toList(),
     artists: [
       for (final h in rankedArtists)
         if (!identical(h.value, top)) h.value,
@@ -191,3 +191,20 @@ AssembledSearch assembleSearch(
 
 /// What the library's own search found is never ranked as "nothing": it sits below every real match but above nothing.
 double _atLeast(double score) => score < 0.15 ? 0.15 : score;
+
+/// [songs] without the Top result and without a catalogue song that repeats an earlier one (the same artist and title on a
+/// compilation, a soundtrack or a "best of"): the library's songs are never dropped.
+List<SongHit> _withoutRepeats(List<SongHit> songs, {SearchHit? top}) {
+  final seen = <String>{
+    if (top is SongHit) matchKey(top.artist, top.title),
+  };
+  final kept = <SongHit>[];
+  for (final s in songs) {
+    if (identical(s, top)) continue;
+    final key = matchKey(s.artist, s.title);
+    if (!s.owned && !seen.add(key)) continue;
+    seen.add(key);
+    kept.add(s);
+  }
+  return kept;
+}

@@ -27,7 +27,7 @@ from typing import Any, Protocol
 
 from .download import FORMAT, DownloadError, classify_failure
 from .resolve import ACCEPT, Candidate, Resolver, Scored, Want, score
-from .textnorm import norm_artist, norm_title, ratio
+from .textnorm import norm_artist, norm_title, ratio, version_signature
 
 log = logging.getLogger("encore_fetch.lean")
 
@@ -159,7 +159,13 @@ def artist_matches(asked: str, names: tuple[str, ...]) -> bool:
 
 
 def title_matches(want: Want, c: Candidate) -> bool:
-    return ratio(norm_title(want.title), norm_title(c.track or c.title)) >= MIN_TITLE_SIMILARITY
+    got = c.track or c.title
+    if ratio(norm_title(want.title), norm_title(got)) < MIN_TITLE_SIMILARITY:
+        return False
+    # A rework, a live take or a remix that was asked for must be the one that is offered ("Fade Into You (The Avener Rework)" is
+    # not "Fade Into You"); a plain song asked for is not held to what the upload adds (that is the scoring's business).
+    wanted = version_signature(want.title)
+    return not wanted or bool(wanted & version_signature(got))
 
 
 def rank(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> list[Scored]:

@@ -63,6 +63,32 @@ void main() {
       expect(real, greaterThan(cover));
     });
 
+    test(
+        'the artists own versions rank above a cover that has all the words in its title',
+        () {
+      const q = 'mazzy star fade into you';
+      final real =
+          songMatch(q, artist: 'Mazzy Star', title: 'Fade Into You (Edit)');
+      final live =
+          songMatch(q, artist: 'Mazzy Star', title: 'Fade Into You (Live)');
+      final cover = songMatch(q,
+          artist: 'Gabal', title: 'Fade Into You (Cover Mazzy Star)');
+      final tribute = songMatch(q,
+          artist: '8-Bit Arcade',
+          title: 'Fade into You (8-Bit Mazzy Star Emulation)');
+      expect(real, greaterThan(cover));
+      expect(live, greaterThan(cover));
+      expect(real, greaterThan(tribute));
+      expect(songMatch(q, artist: 'Mazzy Star', title: 'Fade Into You'), 1);
+    });
+
+    test('title first and artist after is the same clean answer', () {
+      expect(
+          songMatch('fade into you mazzy star',
+              artist: 'Mazzy Star', title: 'Fade Into You (Edit)'),
+          greaterThan(0.8));
+    });
+
     test('a shorter title beats a longer one that contains it', () {
       final plain = songMatch('mazzy star fade into you',
           artist: 'Mazzy Star', title: 'Fade Into You');

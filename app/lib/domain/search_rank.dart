@@ -45,6 +45,13 @@ double songMatch(String query, {String? artist, required String title}) {
   final found = typed.where((w) => all.any((x) => x.startsWith(w))).length;
   if (found < typed.length) return 0.4 * found / typed.length;
 
+  // "artist title" (or "title artist"): the first typed words are the artist's, the rest the song's. That is a clean answer, and
+  // it ranks above a cover or a tribute that merely has all the words in its title ("Fade Into You (Cover Mazzy Star)").
+  if (_splitsIntoArtistAndTitle(typed, artistWords, titleWords)) {
+    return (0.8 + 0.15 * typed.length / all.length.clamp(1, 1000))
+        .clamp(0.0, 0.99);
+  }
+
   var score = 0.5;
   if (t.startsWith(q)) score += 0.25;
   if (_covers(typed, titleWords)) score += 0.15;
@@ -52,6 +59,19 @@ double songMatch(String query, {String? artist, required String title}) {
   // The tighter the match, the higher: "Instant Crush" before "Instant Crush (Live at Wembley)".
   score += 0.09 * (typed.length / all.length.clamp(1, 1000));
   return score.clamp(0.0, 0.99);
+}
+
+/// Whether [typed] is some of the artist's words then some of the song's, or the other way round.
+bool _splitsIntoArtistAndTitle(
+    List<String> typed, List<String> artistWords, List<String> titleWords) {
+  if (artistWords.isEmpty || titleWords.isEmpty) return false;
+  for (var k = 1; k < typed.length; k++) {
+    final first = typed.sublist(0, k);
+    final second = typed.sublist(k);
+    if (_covers(first, artistWords) && _covers(second, titleWords)) return true;
+    if (_covers(first, titleWords) && _covers(second, artistWords)) return true;
+  }
+  return false;
 }
 
 /// 0 to 1: how well the artist [name] answers [query]. A name spelled almost like what was typed ("bilie eilsh") still scores 0.6:

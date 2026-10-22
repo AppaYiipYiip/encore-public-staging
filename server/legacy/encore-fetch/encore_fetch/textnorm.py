@@ -44,6 +44,37 @@ def norm_title(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", t).strip()
 
 
+#: Words in a bracket (or after a dash) that say nothing about *which recording* it is.
+_SIGNATURE_NOISE = frozenset((
+    "official video audio lyrics lyric hd hq 4k remaster remastered explicit clean visualizer visualiser music full album topic "
+    "version edition edit radio single mono stereo deluxe expanded bonus track anniversary the a an of from".split()))
+_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
+_DASH_VERSION = re.compile(r"\s+-\s+(.*)$")
+
+
+def version_signature(text: str) -> frozenset[str]:
+    """What a title says about *which recording* it is: the words of its brackets and of what follows a dash, without the noise
+    (featured artists, remaster years, "explicit", "radio edit"). `Fade Into You` is empty, `Fade Into You (The Avener Rework)` is
+    {avener, rework}, `Song - Live at Wembley` is {live, wembley}, `Song (2013 Remaster) (feat. X)` is empty.
+
+    Two titles with the same words but different signatures are different recordings: the library's rework is not the song that was
+    asked for (`norm_title` alone treats them as one)."""
+    folded = ascii_fold(text)
+    pieces = [g for group in re.findall(r"\((.*?)\)|\[(.*?)\]|\{(.*?)\}", folded) for g in group if g]
+    outside = re.sub(r"\(.*?\)|\[.*?\]|\{.*?\}", " ", folded)
+    dash = _DASH_VERSION.search(outside)
+    if dash:
+        pieces.append(dash.group(1))
+    words: set[str] = set()
+    for piece in pieces:
+        piece = _FEAT.sub(" ", piece)
+        piece = _YEAR.sub(" ", piece)
+        for word in re.findall(r"[a-z0-9]+", piece.replace("'", "")):
+            if word not in _SIGNATURE_NOISE:
+                words.add(word)
+    return frozenset(w for w in words if w)
+
+
 def norm_artist(text: str) -> str:
     t = re.sub(r"\s*-\s*topic$", "", text or "", flags=re.IGNORECASE)
     t = re.sub(r"(?i)vevo$|official$", "", ascii_fold(t))
