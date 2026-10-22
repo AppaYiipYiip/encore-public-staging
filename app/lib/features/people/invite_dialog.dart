@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/share_out.dart';
+import '../../data/encore/encore_people.dart' show EncorePeopleApi;
 import '../../data/people/people_client.dart';
 import '../../design/tokens.dart';
 import '../common/link_code.dart';
@@ -168,6 +169,18 @@ class _ServiceInviteState extends ConsumerState<ServiceInviteDialog> {
               const SizedBox(height: Space.sm),
               Text('Valid until ${_day(made.expiresAt)}, for one person.',
                   style: context.text.bodySmall?.copyWith(color: c.onBgMuted)),
+              // A link with a home-network address opens only for somebody on that network: say so before it is sent.
+              if (!EncorePeopleApi.worksAway(
+                  Uri.tryParse(made.url) ?? Uri())) ...[
+                const SizedBox(height: Space.sm),
+                Text(
+                  'This link opens only on your home network. To invite '
+                  'somebody who is away, add the address you reach your '
+                  'server at from outside, under Your server.',
+                  key: const Key('invite-home-only'),
+                  style: context.text.bodySmall?.copyWith(color: c.danger),
+                ),
+              ],
               const SizedBox(height: Space.lg),
               // For somebody sitting next to you: their own camera reads it
               // and offers to open the link in Encore. Light on dark, the way

@@ -117,6 +117,37 @@ void main() {
     await closeApp(tester, db);
   });
 
+  testWidgets('a link with a home-network address says it opens only there',
+      (tester) async {
+    final api = FakePeopleApi(me_: owner)
+      ..createAnswer = Result.ok(CreatedInvite(
+        id: '1',
+        url: 'http://192.168.50.133:4540/encore/join/ABCD-EFGH-JK1',
+        expiresAt: DateTime(2026, 10, 24),
+      ));
+    final db = await openInvite(tester, api);
+
+    await tester.tap(find.text('Create invitation link'));
+    await settle(tester);
+
+    expect(find.byKey(const Key('invite-home-only')), findsOneWidget);
+    expect(find.textContaining('only on your home network'), findsOneWidget);
+    await closeApp(tester, db);
+  });
+
+  testWidgets('a link with an address on the internet carries no warning',
+      (tester) async {
+    final api = FakePeopleApi(me_: owner);
+    final db = await openInvite(tester, api);
+
+    await tester.tap(find.text('Create invitation link'));
+    await settle(tester);
+
+    expect(find.text(link), findsOneWidget);
+    expect(find.byKey(const Key('invite-home-only')), findsNothing);
+    await closeApp(tester, db);
+  });
+
   testWidgets(
       'shows a code to scan: the link itself, for somebody sitting next to you',
       (tester) async {

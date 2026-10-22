@@ -22,6 +22,36 @@ void main() {
     );
   });
 
+  group('which address an invitation is made with', () {
+    final home = Uri.parse('http://192.168.50.133:4540');
+    final tailnet = Uri.parse('http://100.101.102.103:4540');
+    final funnel = Uri.parse('https://music.example.ts.net');
+
+    test('the address on the internet wins over the one in use at home', () {
+      expect(EncorePeopleApi.invitationAddress([home, funnel], home), funnel);
+      expect(EncorePeopleApi.invitationAddress([funnel, home], home), funnel);
+    });
+
+    test('a Tailscale address is not an address a friend can use', () {
+      expect(EncorePeopleApi.invitationAddress([home, tailnet], home), home);
+      expect(EncorePeopleApi.invitationAddress([tailnet, funnel], tailnet),
+          funnel);
+    });
+
+    test('https is preferred, and with only a home address that is the one',
+        () {
+      final plain = Uri.parse('http://music.example.org:8080');
+      expect(EncorePeopleApi.invitationAddress([plain, funnel], home), funnel);
+      expect(EncorePeopleApi.invitationAddress([home], home), home);
+    });
+
+    test('whether a link works away from home', () {
+      expect(EncorePeopleApi.worksAway(funnel), isTrue);
+      expect(EncorePeopleApi.worksAway(home), isFalse);
+      expect(EncorePeopleApi.worksAway(tailnet), isFalse);
+    });
+  });
+
   test('an owner is an owner who can invite and manage', () async {
     final me = (await people.me()).getOrThrow();
 
