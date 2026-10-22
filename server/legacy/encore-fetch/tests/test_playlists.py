@@ -2,11 +2,20 @@
 playlist or album, so the app can add them to a person's library. Pure logic plus two small readers whose I/O is
 injected."""
 import json
+import pathlib
 import unittest
 
 from encore_fetch.playlists import (MAX_TRACKS, SPOTIFY_EMBED_LIMIT, PlaylistError, Track,
                                     clean_title, read_playlist,
-                                    split_artist_title, spotify_tracks)
+                                    split_artist_title, spotify_tracks, ytmusic_reader)
+
+FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "ytm"
+LINK = "https://music.youtube.com/playlist?list=OLAK5uy_m59x-hBFsC789l1_qWwFXwH3gjntwy_CA"
+
+
+def recorded(name: str) -> dict:
+    """What `ytmusicapi.get_playlist` really answered on 2026-10-22 (thumbnails left out)."""
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
 def spotify_page(name: str, tracks: list[dict]) -> str:
@@ -200,6 +209,108 @@ class ReadPlaylistTest(unittest.TestCase):
         with self.assertRaises(PlaylistError) as ctx:
             read_playlist("https://www.youtube.com/playlist?list=PL1234567890abcdefghijklmnopqrstu", ytdlp=ytdlp)
         self.assertEqual(ctx.exception.code, "not_found")
+
+
+class YouTubeMusicPlaylistTest(unittest.TestCase):
+    """The quick way in: YouTube Music's own listing, checked against answers recorded from the real service."""
+
+    def test_an_album_comes_with_real_titles_artists_album_length_and_the_video_of_every_song(self):
+        playlist = read_playlist(LINK, ytmusic=lambda ident: recorded("playlist_album.json"))
+
+        self.assertEqual((playlist.source, playlist.name, len(playlist.tracks)), ("youtube", "In Rainbows", 10))
+        first = playlist.tracks[0]
+        self.assertEqual((first.title, first.artist, first.album, first.duration_s), ("15 Step", "Radiohead", "In Rainbows", 238))
+        self.assertEqual(first.video_id, "bgsmr7t8zGE")
+        self.assertTrue(all(t.official and t.video_id for t in playlist.tracks), "YouTube's own audio uploads: nothing to search")
+
+    def test_a_playlist_of_a_hundred_and_fifty_songs_is_read_whole(self):
+        playlist = read_playlist("https://music.youtube.com/playlist?list=PLiXZsbFff5pE3hkUVO0QK-qNFIoPGZmOI",
+                                 ytmusic=lambda ident: recorded("playlist_community.json"))
+
+        self.assertEqual((playlist.name, len(playlist.tracks), playlist.truncated), ("Early 2000s hip hop", 149, False))
+        self.assertEqual(sum(1 for t in playlist.tracks if t.video_id), 147)
+
+    def test_a_song_youtube_no_longer_has_keeps_its_name_and_is_searched_by_it(self):
+        playlist = read_playlist(LINK, ytmusic=lambda ident: recorded("playlist_community.json"))
+
+        gone = next(t for t in playlist.tracks if t.title == "We Fly High")
+        self.assertEqual((gone.artist, gone.album, gone.duration_s), ("Jim Jones", "Hustler's P.o.m.e.", 240))
+        self.assertIsNone(gone.video_id)
+        self.assertFalse(gone.official)
+
+    def test_a_music_video_is_not_taken_for_the_song_and_its_title_is_cleaned(self):
+        playlist = read_playlist(LINK, ytmusic=lambda ident: recorded("playlist_community.json"))
+
+        video = next(t for t in playlist.tracks if t.video_id == "2IH8tNQAzSs")
+        self.assertEqual((video.title, video.artist, video.official), ("Lollipop", "Lil Wayne", False))
+
+    def test_the_playlist_id_is_what_is_asked_for(self):
+        asked = []
+
+        def listing(ident: str) -> dict:
+            asked.append(ident)
+            return recorded("playlist_album.json")
+
+        read_playlist("https://www.youtube.com/watch?v=abc&list=OLAK5uy_m59x-hBFsC789l1_qWwFXwH3gjntwy_CA", ytmusic=listing)
+        self.assertEqual(asked, ["OLAK5uy_m59x-hBFsC789l1_qWwFXwH3gjntwy_CA"])
+
+    def test_yt_dlp_is_not_asked_when_the_quick_way_worked(self):
+        def ytdlp(url: str) -> dict:
+            raise AssertionError("yt-dlp must not be started for a list YouTube Music gave")
+
+        read_playlist(LINK, ytmusic=lambda ident: recorded("playlist_album.json"), ytdlp=ytdlp)
+
+    def test_when_the_quick_way_fails_yt_dlp_reads_the_playlist(self):
+        def listing(ident: str) -> dict:
+            raise RuntimeError("Server returned HTTP 404: Not Found")
+
+        playlist = read_playlist(LINK, ytmusic=listing, ytdlp=lambda url: {"title": "Old way", "entries": [
+            {"id": "sj27caXHKm4", "title": "In Mist She Was Standing", "channel": "Opeth - Topic"}]})
+
+        self.assertEqual((playlist.name, playlist.tracks[0].artist), ("Old way", "Opeth"))
+
+    def test_when_the_quick_way_finds_no_songs_yt_dlp_is_asked_too(self):
+        playlist = read_playlist(LINK, ytmusic=lambda ident: {"title": "x", "tracks": []}, ytdlp=lambda url: {
+            "title": "Old way", "entries": [{"id": "sj27caXHKm4", "title": "Song", "channel": "Artist - Topic"}]})
+        self.assertEqual(playlist.name, "Old way")
+
+    def test_a_private_playlist_is_still_said_plainly_when_both_ways_fail(self):
+        def listing(ident: str) -> dict:
+            raise RuntimeError("nope")
+
+        def ytdlp(url: str) -> dict:
+            raise RuntimeError("YouTube said: This playlist is private.")
+
+        with self.assertRaises(PlaylistError) as ctx:
+            read_playlist(LINK, ytmusic=listing, ytdlp=ytdlp)
+        self.assertEqual(ctx.exception.code, "not_found")
+
+    def test_a_very_long_listing_is_cut_and_says_so(self):
+        many = {"title": "Long", "tracks": [{"videoId": f"{i:011d}", "title": f"Song {i}", "isAvailable": True,
+                                             "artists": [{"name": "Artist"}], "album": None, "duration_seconds": 200,
+                                             "videoType": "MUSIC_VIDEO_TYPE_ATV"} for i in range(MAX_TRACKS + 5)]}
+        playlist = read_playlist(LINK, ytmusic=lambda ident: many)
+        self.assertEqual(len(playlist.tracks), MAX_TRACKS)
+        self.assertTrue(playlist.truncated)
+
+    def test_entries_with_odd_shapes_are_skipped_not_fatal(self):
+        odd = {"title": "Odd", "tracks": [None, "text", {"title": ""}, {"title": "No artist", "artists": None},
+                                          {"title": "Fine", "videoId": "sj27caXHKm4", "artists": [{"name": "Opeth - Topic"}],
+                                           "videoType": "MUSIC_VIDEO_TYPE_ATV", "isAvailable": True}]}
+        playlist = read_playlist(LINK, ytmusic=lambda ident: odd)
+        self.assertEqual([(t.title, t.artist, t.official) for t in playlist.tracks],
+                         [("No artist", "", False), ("Fine", "Opeth", True)])
+
+    def test_the_reader_asks_for_one_more_than_the_limit_so_a_cut_is_noticed(self):
+        calls = []
+
+        class Client:
+            def get_playlist(self, ident, limit=None):
+                calls.append((ident, limit))
+                return {"title": "x", "tracks": []}
+
+        ytmusic_reader(factory=Client)("PLabcdefghijk")
+        self.assertEqual(calls, [("PLabcdefghijk", MAX_TRACKS + 1)])
 
 
 if __name__ == "__main__":

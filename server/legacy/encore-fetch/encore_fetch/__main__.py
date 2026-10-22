@@ -16,7 +16,7 @@ from .accounts import Accounts
 from .identity import account_identity
 from .navidrome import Auth, Navidrome
 from .owners import OwnerCheck
-from .playlists import read_playlist, ytdlp_reader
+from .playlists import read_playlist, ytdlp_reader, ytmusic_reader
 from .profile import ProfileStore
 from .resolve import YtDlpResolver
 from .server import Api, serve
@@ -83,12 +83,13 @@ def build(config: Config) -> Api:
     if config.profile:
         store = ProfileStore(config.profile_dir or config.work_dir / "profile")
     flat = ytdlp_reader(config.ytdlp, cookies=accounts)
+    listing = ytmusic_reader()
     imports = ImportQueue(manager, nd, config.work_dir / "imports", workers=config.import_workers,
                           gap_s=0.0 if config.fake else config.import_gap_s,
                           max_per_hour=config.import_max_per_hour, max_song_s=config.max_duration_s,
                           account_ceiling=accounts.capacity)
     return Api(manager, nd, store,
-               playlist_reader=lambda url: read_playlist(url, ytdlp=flat), imports=imports,
+               playlist_reader=lambda url: read_playlist(url, ytdlp=flat, ytmusic=listing), imports=imports,
                owner_check=OwnerCheck(config.people_url if config.people else None, nd),
                accounts=accounts, visitor_per_hour=config.import_max_per_hour,
                account_tester=lambda path: check_account(config.ytdlp, path))

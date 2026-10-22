@@ -6,9 +6,12 @@ song" pipeline). Nothing is downloaded here: this only reads the list.
 
 * **Spotify** publishes a public *embed* page for every playlist and album; it carries the title, the artists and the
   length of each song (up to the first hundred). No login, no API key.
-* **YouTube / YouTube Music** playlists are listed by yt-dlp without downloading (`--flat-playlist`). Those lists
-  carry video titles ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart
-  here; the video id is kept so that, when a song cannot be found by name, the video the person saved is used.
+* **YouTube / YouTube Music** playlists are listed through YouTube Music's own web interface (`ytmusicapi`): the real
+  title, artists, album, length and video id of every entry, about 1.5 s for 150 songs. When that cannot read a
+  playlist, yt-dlp lists it without downloading (`--flat-playlist`); those lists carry video titles
+  ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart here. Either way the
+  video id is kept: for YouTube's own audio upload of a song it *is* the song (nothing is searched), and otherwise,
+  when a song cannot be found by name, the video the person saved is used.
 
 The service fetches pages for people, so it only ever asks the services named here (`ALLOWED_*`): never an address
 somebody typed.
@@ -16,13 +19,17 @@ somebody typed.
 from __future__ import annotations
 
 import json
+import logging
 import re
+import threading
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Callable
 
 from .cookies import as_source
+
+log = logging.getLogger("encore_fetch.playlists")
 
 #: A playlist longer than this is cut (and says so). A person's first import can be a whole "liked" list (the owner's has
 #: more than 500); the import queue (imports.py) works through it at the line's pace, so the cap is only a sanity limit.
@@ -222,11 +229,50 @@ def _youtube_tracks(data: dict) -> tuple[str, list[Track]]:
     return name, tracks
 
 
+#: YouTube Music's kinds of entry that *are* the song: YouTube's own audio upload of it (a "Topic" release, or the label's).
+_SONG_TYPES = frozenset({"MUSIC_VIDEO_TYPE_ATV", "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC"})
+
+
+def _ytmusic_tracks(data: dict) -> tuple[str, list[Track]]:
+    """The name and the songs of what `ytmusicapi.get_playlist` answers (checked against the real answer: tests/fixtures/ytm)."""
+    name = str(data.get("title") or "").strip() or "Imported playlist"
+    tracks: list[Track] = []
+    for entry in data.get("tracks") or []:
+        if not isinstance(entry, dict):
+            continue
+        raw = str(entry.get("title") or "").strip()
+        if not raw:
+            continue
+        names = [_VEVO.sub("", _TOPIC.sub("", str(a.get("name") or ""))).strip()
+                 for a in entry.get("artists") or [] if isinstance(a, dict)]
+        names = [n for n in names if n]
+        title = clean_title(raw)
+        if not title:
+            continue
+        # An entry YouTube no longer has keeps its name, artist and album (so it is searched by name) but has no video.
+        video_id = entry.get("videoId") if entry.get("isAvailable") is not False else None
+        video_id = video_id if isinstance(video_id, str) and _VIDEO_ID.match(video_id) else None
+        album = entry.get("album")
+        album_name = str(album.get("name") or "").strip() if isinstance(album, dict) else ""
+        seconds = entry.get("duration_seconds")
+        tracks.append(Track(
+            title=title,
+            artist=names[0] if names else "",
+            album=album_name or None,
+            duration_s=int(seconds) if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds > 0 else None,
+            artists=tuple(names),
+            video_id=video_id,
+            official=video_id is not None and entry.get("videoType") in _SONG_TYPES,
+        ))
+    return name, tracks
+
+
 def read_playlist(
     url: str,
     *,
     http: Callable[[str], str] = _http_get,
     ytdlp: Callable[[str], dict] | None = None,
+    ytmusic: Callable[[str], dict] | None = None,
 ) -> Playlist:
     """The songs of the playlist or album at [url]; raises [PlaylistError] with a sentence for the person."""
     try:
@@ -257,6 +303,14 @@ def read_playlist(
         ident = (query.get("list") or [""])[0]
         if link.path not in ("/playlist", "/watch") or not _YOUTUBE_LIST.match(ident):
             raise unsupported
+        if ytmusic is not None:
+            try:
+                name, tracks = _ytmusic_tracks(ytmusic(ident))
+            except Exception as error:  # noqa: BLE001 - the quick way in; yt-dlp is asked next and says why when it cannot
+                log.info("YouTube Music could not list playlist %s (%s); asking yt-dlp", ident, error)
+                tracks = []
+            if tracks:
+                return _playlist(name, "youtube", "playlist", tracks)
         if ytdlp is None:
             raise PlaylistError("unreachable", "This server cannot read YouTube playlists.")
         try:
@@ -297,5 +351,24 @@ def ytdlp_reader(binary: str, *, cookies: object = None, timeout: int = 180,
         if done.returncode != 0:
             raise RuntimeError((done.stderr or "yt-dlp failed").strip()[-300:])
         return json.loads(done.stdout or "{}")
+
+    return read
+
+
+def ytmusic_reader(*, factory: Callable[[], object] | None = None) -> Callable[[str], dict]:
+    """A function that lists a playlist through YouTube Music's web interface (no download, no login): the real title,
+    artists, album, length and video id of every entry, about 1.5 s for 150 songs."""
+    local = threading.local()
+
+    def read(ident: str) -> dict:
+        client = getattr(local, "client", None)
+        if client is None:
+            if factory is not None:
+                client = factory()
+            else:
+                from ytmusicapi import YTMusic  # imported here: the server runs without it (yt-dlp reads playlists then)
+                client = YTMusic()
+            local.client = client
+        return client.get_playlist(ident, limit=MAX_TRACKS + 1)  # type: ignore[attr-defined]
 
     return read
