@@ -198,6 +198,9 @@ void main() {
           .valueOrNull!;
 
       expect(joined.username, 'mia');
+      expect(joined.deviceToken, 'x',
+          reason: 'the device the server made for this phone is kept');
+      expect(joined.deviceId, 'dv_1');
       final sent = jsonDecode(body) as Map;
       expect(sent['code'], 'ABCD-EFGH-JKLM');
       expect(sent['username'], 'mia');

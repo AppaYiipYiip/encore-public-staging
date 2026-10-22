@@ -45,6 +45,15 @@ class InviteLink {
   /// What this server is called (an Encore server only).
   Uri get nameUrl => _api('/info');
 
+  /// Whether this invitation is to a server one of [addresses] already is (same host and port): somebody who has an account there does
+  /// not need it, but somebody who uses Encore on another server does, and may be signed in on this very phone.
+  bool pointsAt(Iterable<Uri> addresses) {
+    int port(Uri u) => u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
+    return addresses.any((a) =>
+        a.host.toLowerCase() == server.host.toLowerCase() &&
+        port(a) == port(server));
+  }
+
   Uri _api(String tail) {
     final front = server.path.replaceAll(RegExp(r'/+$'), '');
     return server.replace(path: '$front/encore/api/v1$tail');

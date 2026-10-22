@@ -20,9 +20,16 @@ class EncoreDevice {
     this.appVersion,
   })  : _api = api,
         _store = store,
-        _key = 'encore.device.$serverId',
+        _key = secretKey(serverId),
         _username = username,
         _password = password;
+
+  /// Where a server's device sign-in is kept in the secure store.
+  static String secretKey(int serverId) => 'encore.device.$serverId';
+
+  /// What is kept there.
+  static String encode(String token, String? id) =>
+      jsonEncode({'token': token, 'id': id});
 
   final EncoreApi _api;
   final CredentialStore _store;
@@ -61,8 +68,7 @@ class EncoreDevice {
           'device sign-in failed: ${result.failureOrNull?.message}');
       return null;
     }
-    await _store.writeSecret(
-        _key, jsonEncode({'token': login.deviceToken, 'id': login.deviceId}));
+    await _store.writeSecret(_key, encode(login.deviceToken, login.deviceId));
     _api.deviceId = login.deviceId;
     return login.deviceToken;
   }

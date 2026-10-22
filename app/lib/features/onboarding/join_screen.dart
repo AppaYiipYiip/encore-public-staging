@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/providers.dart';
 import '../../core/result.dart';
 import '../../data/auth/server_setup_service.dart';
+import '../../data/encore/encore_device.dart';
 import '../../data/people/people_join_client.dart';
 import '../../data/sync/endpoint_resolver.dart';
 import '../../design/tokens.dart';
@@ -126,7 +127,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
               'sign in with the name and password you just chose.';
         });
       case Ok(:final value):
-        await service.save(
+        final serverId = await service.save(
           name: _info?.serverName.isNotEmpty == true
               ? _info!.serverName
               : 'My music server',
@@ -135,6 +136,13 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           password: password,
           ping: value.ping,
         );
+        // The device the server made while it made the account is this phone's: keep it, so the live channel does not sign in again.
+        final token = account.deviceToken;
+        if (token != null) {
+          await ref.read(credentialStoreProvider).writeSecret(
+              EncoreDevice.secretKey(serverId),
+              EncoreDevice.encode(token, account.deviceId));
+        }
         // On a device that already had somebody, the new person is the one listening now.
         if (mounted) context.go('/home');
     }

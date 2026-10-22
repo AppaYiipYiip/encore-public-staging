@@ -14,6 +14,7 @@ import '../features/auth/login_problem.dart';
 import '../features/downloads/download_providers.dart';
 import '../features/downloads/lyrics_for_downloads.dart';
 import '../features/import/import_providers.dart';
+import '../features/instant/instant_controller.dart' show jsonDecodeEndpoints;
 import '../features/jam/jam_providers.dart';
 import '../features/jam/jam_wiring.dart';
 import '../features/people/people_providers.dart';
@@ -119,11 +120,20 @@ class EncoreApp extends ConsumerWidget {
       final invite = findInviteLink(text);
       if (invite != null) {
         unawaited(() async {
-          // The account is read from the phone's own database: a link that
+          // The accounts are read from the phone's own database: a link that
           // started the app arrives before that has answered.
-          final server = await ref.read(activeServerProvider.future);
-          if (server == null) {
+          final profiles = await ref.read(profilesProvider.future);
+          if (profiles.isEmpty) {
             router.go('/join', extra: invite);
+            return;
+          }
+          // Somebody who already uses Encore on another server (or shares this phone) can join this one: only a link to a server that
+          // is already here is the "you have an account" case.
+          final here = [
+            for (final p in profiles) ...jsonDecodeEndpoints(p.endpointsJson),
+          ];
+          if (!invite.pointsAt([for (final e in here) e.url])) {
+            unawaited(router.push<void>('/join', extra: invite));
             return;
           }
           // After the first frame: there may be no screen to show it on yet.
@@ -131,8 +141,8 @@ class EncoreApp extends ConsumerWidget {
             _messengerKey.currentState
               ?..hideCurrentSnackBar()
               ..showSnackBar(const SnackBar(
-                content: Text('That is an invitation to join a server, and '
-                    'you already have an account here.'),
+                content: Text('That is an invitation to join this server, '
+                    'and you already have an account here.'),
               ));
           });
         }());

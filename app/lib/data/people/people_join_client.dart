@@ -27,9 +27,19 @@ class InvitationInfo {
 /// The account that was made.
 @immutable
 class JoinedAccount {
-  const JoinedAccount({required this.username, required this.address});
+  const JoinedAccount({
+    required this.username,
+    required this.address,
+    this.deviceToken,
+    this.deviceId,
+  });
 
   final String username;
+
+  /// An Encore server makes this phone a device of the new person while it makes the account: its token and id, so the phone keeps
+  /// that one instead of signing in for a second device a moment later (the owner's list of devices would show two for one phone).
+  final String? deviceToken;
+  final String? deviceId;
 
   /// Where to sign in; `null` when the service did not say (the address the
   /// invitation came from is then the one).
@@ -119,7 +129,16 @@ class PeopleJoinClient {
         );
         final data = _map(response);
         if (link.encore) {
-          return JoinedAccount(username: username, address: null);
+          final token = data['deviceToken'];
+          final device = data['device'];
+          return JoinedAccount(
+            username: username,
+            address: null,
+            deviceToken: token is String && token.isNotEmpty ? token : null,
+            deviceId: device is Map && device['id'] is String
+                ? device['id'] as String
+                : null,
+          );
         }
         return JoinedAccount(
           username: '${data['username'] ?? username}',

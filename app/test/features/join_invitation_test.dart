@@ -3,8 +3,10 @@ import 'dart:convert';
 
 import 'package:encore/app/providers.dart';
 import 'package:encore/app/share_intake.dart';
+import 'package:encore/data/auth/credential_store.dart';
 import 'package:encore/data/auth/server_setup_service.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/data/encore/encore_device.dart';
 import 'package:encore/data/people/people_join_client.dart';
 import 'package:encore/domain/invite_link.dart';
 import 'package:encore/features/people/people_providers.dart';
@@ -108,6 +110,51 @@ void main() {
         find.widgetWithText(TextFormField, 'Password'), password);
     await tester.pump();
   }
+
+  testWidgets(
+      'an Encore invitation keeps the device the server made for this phone, '
+      'so the live channel does not sign in for a second one', (tester) async {
+    final encoreLink =
+        findInviteLink('http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM')!;
+    final store = InMemoryCredentialStore();
+    adapter = FakeHttpAdapter(routes: {
+      '/encore/api/v1/invites/check': (_) => const FakeResponse.json(
+          {'invitedBy': 'owner', 'expiresAt': 1792000000000}),
+      '/encore/api/v1/info': (_) =>
+          const FakeResponse.json({'name': 'Home music', 'apiVersion': '1.0'}),
+      '/encore/api/v1/auth/join': (_) => const FakeResponse.json({
+            'deviceToken': 'ed_phone',
+            'device': {'id': 'dv_7', 'name': 'Phone'},
+            'person': {'id': 'pn_1', 'name': 'mia', 'role': 'member'},
+          }, status: 201),
+      'ping': (_) => FakeResponse.json(subsonicOk({})),
+    });
+    final app = await pumpApp(tester, seeded: false, overrides: [
+      credentialStoreProvider.overrideWithValue(store),
+      peopleJoinClientProvider
+          .overrideWith((ref) => PeopleJoinClient(dio: fakeDio(adapter))),
+      serverSetupServiceProvider.overrideWith((ref) => ServerSetupService(
+            db: ref.watch(databaseProvider),
+            credentials: ref.watch(credentialStoreProvider),
+            dioFactory: () => fakeDio(adapter),
+          )),
+    ]);
+    final element = tester.element(find.byType(Scaffold).first);
+    GoRouter.of(element).go('/join', extra: encoreLink);
+    await wait(tester);
+
+    await fill(tester, 'mia', 'a long password');
+    await tester.tap(find.text('Join'));
+    await wait(tester);
+
+    final servers = await app.db.select(app.db.servers).get();
+    expect(servers, hasLength(1));
+    final kept =
+        await store.readSecret(EncoreDevice.secretKey(servers.single.id));
+    expect(kept, isNotNull);
+    expect(jsonDecode(kept!), {'token': 'ed_phone', 'id': 'dv_7'});
+    await closeApp(tester, app.db);
+  });
 
   testWidgets('says who invited the person and asks for two things only',
       (tester) async {
@@ -279,8 +326,29 @@ void main() {
   });
 
   testWidgets(
-      'somebody who already has an account is told, and nothing is imported',
-      (tester) async {
+      'an invitation to the server the phone already has an account on is '
+      'told so, and nothing is imported', (tester) async {
+    server();
+    final app = await pumpApp(tester, overrides: [
+      peopleJoinClientProvider
+          .overrideWith((ref) => PeopleJoinClient(dio: fakeDio(adapter))),
+      // The seeded phone is signed in on http://192.168.1.10:4533.
+      sharedTextProvider.overrideWith((ref) => Stream.value(
+          SharedText('http://192.168.1.10:4533/people/join/Code123'))),
+    ]);
+    await wait(tester);
+
+    expect(find.textContaining('That is an invitation to join this server'),
+        findsOneWidget);
+    expect(find.text('Join Our music'), findsNothing);
+    expect(find.text('Import music'), findsNothing);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'an invitation to ANOTHER server opens on a phone that already has an '
+      'account elsewhere (found tapping a link on a phone signed in on '
+      'another server)', (tester) async {
     server();
     final app = await pumpApp(tester, overrides: [
       peopleJoinClientProvider
@@ -290,9 +358,11 @@ void main() {
     ]);
     await wait(tester);
 
-    expect(find.textContaining('already have an account'), findsOneWidget);
-    expect(find.text('Join Our music'), findsNothing);
-    expect(find.text('Import music'), findsNothing);
+    expect(find.text('Join Our music'), findsOneWidget,
+        reason: 'the account here is on a different server: join this one too');
+    expect(find.textContaining('That is an invitation to join this server'),
+        findsNothing,
+        reason: 'not told "you have an account here": there is none here');
     await closeApp(tester, app.db);
   });
 }

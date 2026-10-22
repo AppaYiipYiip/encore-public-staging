@@ -59,4 +59,32 @@ void main() {
     expect(link.redeemUrl.toString(),
         'https://music.example.org/people/join/Code123/redeem');
   });
+
+  group('pointsAt', () {
+    final link =
+        findInviteLink('https://music.example.org/encore/join/ABCD-EFGH-JKLM')!;
+
+    test('the same server by host and port', () {
+      expect(link.pointsAt([Uri.parse('https://music.example.org')]), isTrue);
+      expect(
+          link.pointsAt([Uri.parse('https://MUSIC.example.org:443/')]), isTrue,
+          reason: 'case and the default port do not matter');
+    });
+
+    test('another host or another port is another server', () {
+      expect(link.pointsAt([Uri.parse('https://other.example.org')]), isFalse);
+      expect(link.pointsAt([Uri.parse('https://music.example.org:8443')]),
+          isFalse);
+      expect(link.pointsAt(const []), isFalse);
+    });
+
+    test('one of several addresses is enough', () {
+      expect(
+          link.pointsAt([
+            Uri.parse('http://192.168.1.10:4533'),
+            Uri.parse('https://music.example.org'),
+          ]),
+          isTrue);
+    });
+  });
 }
