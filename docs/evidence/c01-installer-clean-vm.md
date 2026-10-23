@@ -12,6 +12,7 @@ back before every run. The server image came from GitHub's container registry (p
 | 2 | The same again from clean | **330 s** (5 min 30 s) |
 | 3 | Installer run again on the installed machine | **4 s**, `.env` byte for byte unchanged, containers kept running |
 | 4 | From clean, **interactive**, the guide followed as written (`ref=main`, no tag): `gh` installed and signed in, `install.sh` downloaded, every question answered in the order asked, the password typed at hidden prompts | **577 s** (9 min 37 s) for the installer, 10 min with the `gh` steps; exit 0 |
+| 5 | **Final proof from `main` (8497e07)**, the guide as written (`ref=main`, no tag), interactive, after the interrupted-install fixes: the image's own revision label is that commit | **15 min 11 s** on the capped line (Docker ready at 230 s, images at 698 s, music server at 895 s, running at 904 s); every answer given; the owner signs in; nightly backup on with its first backup taken; the timer's own service run exits 0; no marker left |
 | 4b | The same machine, `encore uninstall` then the installer again over the kept data | **12 s**; the owner signs in with the same password; `.env` still mode 600 |
 | app | Fresh sign-in on a phone to the new server | 6 s |
 | app | The first song on a brand-new server (cold) | about 8 s from the tap to sound |

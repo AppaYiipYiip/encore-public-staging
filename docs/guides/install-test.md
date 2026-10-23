@@ -9,7 +9,8 @@ wrong are what this test is for: write down what you see, even small things.
 * A **fresh computer or VM with Ubuntu Server or Debian**, 64-bit Intel/AMD, **2 GB memory or more**, **6 GB free disk or more**, on the
   internet. Nothing else has to be installed; the installer asks before it installs anything.
 * Your **GitHub login** (the Encore download is private for now, so the installer signs in as you).
-* About **10 minutes**. The measured time is in the table at the end.
+* About **10 to 15 minutes**, nearly all of it downloads (about 330 MB, plus Docker if it has to be installed): on a quick line it is 5 to 6 minutes, on a slow
+  one longer. The measured times are in the table at the end.
 
 ## The steps
 
@@ -86,7 +87,8 @@ Running the installer again is safe: what is there is kept and brought up to dat
 
 ## If something goes wrong
 
-Every message says what to do. The full record of an install is `/var/log/encore-install.log` (it never contains a password). Send me that
+If the window is closed or the connection drops, the install carries on by itself; if the power goes or you press Ctrl-C, run the same two lines again:
+the installer notices that your account was not made yet and asks only for your username and password. Every message says what to do. The full record of an install is `/var/log/encore-install.log` (it never contains a password). Send me that
 file and what you saw. To start over completely: `encore uninstall --everything`, then step 2 again.
 
 ## What is not in this test
