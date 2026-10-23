@@ -21,7 +21,12 @@ ADMIN, ADMIN_PW = "encore-admin", "generated-admin-secret-123"
 class FakeMusicServer:
     """What the real music server does with these calls: accounts, the one-time first administrator, the account API with a login token."""
 
-    def __init__(self, *, up_after: int = 0, existing: dict[str, tuple[str, bool]] | None = None) -> None:
+    def __init__(
+        self, *, up_after: int = 0, existing: dict[str, tuple[str, bool]] | None = None, too_many_sign_ins: int = 0
+    ) -> None:
+        self.too_many_sign_ins = (
+            too_many_sign_ins  # the first this many sign-ins are answered 429, as the real one does after five in 20 s
+        )
         self.users: dict[str, tuple[str, bool]] = dict(existing or {})  # name -> (password, is_admin)
         self.pings = 0
         self.up_after = up_after
@@ -38,6 +43,9 @@ class FakeMusicServer:
             return httpx.Response(200 if self.pings > self.up_after else 503)
         body: dict[str, Any] = json.loads(request.content) if request.content else {}
         if path == "/auth/login":
+            if self.too_many_sign_ins > 0:
+                self.too_many_sign_ins -= 1
+                return httpx.Response(429, headers={"Retry-After": "0"}, text="Too many requests")
             known = self.users.get(body.get("username", ""))
             if known and known[0] == body.get("password"):
                 return httpx.Response(200, json={"token": "t-" + body["username"], "isAdmin": known[1]})
@@ -103,6 +111,33 @@ def test_an_interrupted_install_finished_with_another_password_says_so_instead_o
         run_setup(settings(), {**OWNER, "password": "a different password!"}, client=server.client, wait=False)
 
     assert server.users == before, "and nothing was changed"
+
+
+def test_a_music_server_that_says_too_many_sign_ins_is_waited_for_not_taken_for_a_refusal() -> None:
+    """Running the installer again straight away asks the music server to sign in several times in a few seconds; it answers 429 for a while."""
+    server = FakeMusicServer(too_many_sign_ins=3)
+
+    result = run_setup(settings(), OWNER, client=server.client, wait=False)
+
+    assert (result.administrator, result.owner) == ("created", "created")
+    assert server.too_many_sign_ins == 0, "all three refusals were met and waited out"
+
+
+def test_an_existing_owner_is_still_found_when_the_music_server_is_rate_limiting() -> None:
+    server = FakeMusicServer()
+    run_setup(settings(), OWNER, client=server.client, wait=False)
+    server.too_many_sign_ins = 3
+
+    again = run_setup(settings(), OWNER, client=server.client, wait=False)
+
+    assert (again.administrator, again.owner) == ("existing", "existing")
+
+
+def test_a_music_server_that_keeps_saying_too_many_sign_ins_is_said_so_not_called_a_wrong_password() -> None:
+    server = FakeMusicServer(too_many_sign_ins=50)
+
+    with pytest.raises(SetupError, match="too many in a short time"):
+        run_setup(settings(), OWNER, client=server.client, wait=False)
 
 
 def test_a_music_server_with_other_accounts_that_refuses_ours_says_what_to_do() -> None:

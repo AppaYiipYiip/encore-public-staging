@@ -25,7 +25,7 @@ import httpx
 from .accounts import clean_password, clean_username
 from .config import Settings
 from .errors import ApiError
-from .navidrome_admin import AdminUnavailable, NameTaken, NavidromeAdmin
+from .navidrome_admin import AdminUnavailable, NameTaken, NavidromeAdmin, post_login
 
 log = logging.getLogger("encore_server.setup")
 
@@ -63,21 +63,35 @@ def wait_for_music_server(
         sleep(2.0)
 
 
-def signs_in(base_url: str, user: str, password: str, *, client: httpx.Client) -> bool:
+#: What a person is told when the music server keeps answering "too many sign-ins" even after waiting: not a wrong password, not a broken install.
+TOO_MANY_SIGN_INS = "The music server is refusing sign-ins for a minute because there were too many in a short time. Wait a minute and run the installer again."
+
+
+def signs_in(
+    base_url: str, user: str, password: str, *, client: httpx.Client, sleep: Callable[[float], None] = time.sleep
+) -> bool:
     """Whether the music server lets [user] in with [password]."""
     try:
-        return client.post(f"{base_url.rstrip('/')}/auth/login", json={"username": user, "password": password}).status_code == 200
+        answer = post_login(client, base_url, user, password, sleep=sleep)
     except httpx.HTTPError:
         return False
+    if answer.status_code == 429:
+        raise SetupError(TOO_MANY_SIGN_INS)
+    return answer.status_code == 200
 
 
-def ensure_administrator(base_url: str, user: str, password: str, *, client: httpx.Client) -> str:
+def ensure_administrator(
+    base_url: str, user: str, password: str, *, client: httpx.Client, sleep: Callable[[float], None] = time.sleep
+) -> str:
     """The music server's first account is its administrator, made by one call while it has no accounts at all (the call is refused after
     that). `"existing"` when this account already signs in; [SetupError] when the music server has other accounts and refuses this one."""
     base = base_url.rstrip("/")
     try:
-        if client.post(f"{base}/auth/login", json={"username": user, "password": password}).status_code == 200:
+        signed_in = post_login(client, base, user, password, sleep=sleep)
+        if signed_in.status_code == 200:
             return "existing"
+        if signed_in.status_code == 429:
+            raise SetupError(TOO_MANY_SIGN_INS)
         made = client.post(f"{base}/auth/createAdmin", json={"username": user, "password": password})
     except httpx.HTTPError as error:
         raise SetupError("The music server is not answering.") from error

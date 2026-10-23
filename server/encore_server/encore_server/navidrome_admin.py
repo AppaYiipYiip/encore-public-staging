@@ -22,6 +22,25 @@ log = logging.getLogger("encore_server.navidrome_admin")
 SESSION_S = 600.0
 
 
+def post_login(
+    client: httpx.Client, base_url: str, user: str, password: str, *, sleep: Callable[[float], None] = time.sleep, tries: int = 4
+) -> httpx.Response:
+    """Asks the music server to sign [user] in. It answers 429 when it has been asked too often (it counts every sign-in from this computer
+    together, five in twenty seconds): wait the few seconds it asks for and ask again, instead of taking the refusal for a wrong password."""
+    url = f"{base_url.rstrip('/')}/auth/login"
+    response = client.post(url, json={"username": user, "password": password})
+    for _ in range(max(0, tries - 1)):
+        if response.status_code != 429:
+            break
+        try:
+            wait = float(response.headers.get("Retry-After", ""))
+        except ValueError:
+            wait = 6.0
+        sleep(min(max(wait, 0.0), 20.0))
+        response = client.post(url, json={"username": user, "password": password})
+    return response
+
+
 class AdminUnavailable(ApiError):
     def __init__(self, message: str = "This server cannot add or change people right now.") -> None:
         super().__init__("server_busy", message)
@@ -40,7 +59,9 @@ class NavidromeAdmin:
         *,
         client: httpx.Client | None = None,
         clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
+        self._sleep = sleep
         self._base = base_url.rstrip("/")
         self._user = user
         self._password = password
@@ -61,9 +82,7 @@ class NavidromeAdmin:
             if not fresh and self._session is not None and now - self._session[0] < SESSION_S:
                 return self._session[1]
             try:
-                response = self._client.post(
-                    f"{self._base}/auth/login", json={"username": self._user, "password": self._password}
-                )
+                response = post_login(self._client, self._base, self._user, self._password, sleep=self._sleep)
             except httpx.HTTPError as error:
                 raise AdminUnavailable("The music server is not answering.") from error
             if response.status_code != 200:

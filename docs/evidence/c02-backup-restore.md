@@ -34,8 +34,8 @@ playlist), made through the servers' own APIs, never by editing files. Passwords
 ## Times worth knowing
 
 The installer took **9 min 40 s** (the branch image, interactive) and **14 min 17 s** on the second, "new computer" install, against 5 min 30 s on the
-unattended runs of 2026-10-22: the difference is all before the containers start (Docker and the downloads), i.e. the line, not Encore. The installer now
-writes the time of each phase to its log and says the total at the end, so a slow install can be told apart from a stuck one.
+unattended runs of 2026-10-22. The cause was measured (see `c01`): the host's total download is held to 10 Mbit by the owner's dashboard and shared with
+other downloads, so a fresh install got about 0.5 MB/s. The installer now says how big each download is and logs the time of each phase.
 
 ## Not proved here
 

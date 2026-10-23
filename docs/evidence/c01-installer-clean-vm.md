@@ -16,12 +16,18 @@ back before every run. The server image came from GitHub's container registry (p
 | app | Fresh sign-in on a phone to the new server | 6 s |
 | app | The first song on a brand-new server (cold) | about 8 s from the tap to sound |
 
-The two slow parts are Docker's own installation (about 2 minutes) and the download of the two images (1.26 GB on disk; **332 MB over the wire**: the Encore image 238 MB, the music server 94 MB, measured from the registry manifests on 2026-10-23). Acceptance in `docs/tasks/P3-05` is "10 minutes at most": **met, but only just on the interactive run** (9 min 37 s against
-5 min 30 s and 6 min 10 s on the two unattended runs earlier the same day). The extra four minutes were all before the containers started
-(Docker and the image downloads), so it is the line, not the installer; on a slower line the 10 minutes will be missed, and the installer's
-own "about 240 MB" and "about 95 MB" lines and the guide's "about 10 minutes" say so. The first interactive attempt did not finish because the test driver
-answered the questions in the wrong order (it waited for the Docker question first); the installer itself was waiting correctly. Fixed in the
-driver, not in the installer.
+The two slow parts are Docker's own installation (about 2 minutes on a quick line) and the download of the two images (1.26 GB on disk; **332 MB over
+the wire**: the Encore image 238 MB, the music server 94 MB, measured from the registry manifests on 2026-10-23). Acceptance in `docs/tasks/P3-05` is
+"10 minutes at most": **met on the quick runs, missed on the slow ones** (9 min 37 s interactive, then 9 min 40 s, 14 min 17 s and, for the final proof from `main`, more than 15 minutes, against
+5 min 30 s and 6 min 10 s on the two unattended runs of 2026-10-22). The extra time is all before the containers start (Docker and the downloads).
+*Why, measured 2026-10-23 on the host while an install ran (read-only counters):* the test VM's downloads ran at about 0.5 MB/s, in a flat 1.27 MB/s
+that the whole host shares: the owner's dashboard holds the server's total download to **10 Mbit** (`server-down-limit.json`), and that pipe was also
+carrying a game-cache download (about 0.4 MB/s) and the media stack. So it is the owner's own cap and neighbours, not the installer and not the ISP;
+on 2026-10-22, with that cap not in the way, the whole install took 5 min 30 s. The installer's lines now say how big each download is ("about 240 MB",
+"about 95 MB"), and the log has the time of each phase, so a slow line can be told from a stuck install.
+The first interactive attempt did not finish because the test driver answered the questions in the wrong order; and the final proof from `main` was cut off
+by the driver's own 15-minute limit while the music server's image (pulled silently inside "Starting Encore") was still downloading: that exposed the two
+installer faults fixed on 2026-10-23 (the silent second download; an install cut short being taken for finished), see `c03`.
 On the fresh install the app signed in in about 2 s, the empty Home said what to do next, a song the server did not have (searched as
 "Beach House Space Song") played from the top result.
 
