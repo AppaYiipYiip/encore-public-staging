@@ -33,6 +33,8 @@ die() {
     exit 1
 }
 log() { printf '%s\n' "$*" >>"$LOG"; }
+T0=$(date +%s)
+since() { echo $(($(date +%s) - T0)); }
 
 trap 'die "Something went wrong at line $LINENO of the installer."' ERR
 
@@ -194,6 +196,7 @@ if ! docker compose version >>"$LOG" 2>&1; then
     apt-get install -y -qq docker-compose-plugin >>"$LOG" 2>&1 || die "Docker is here but its 'compose' part is missing and could not be installed."
 fi
 ok "Docker is ready ($(docker --version | sed 's/Docker version //; s/,.*//'))"
+log "docker ready after $(since) s"
 
 # ---------------------------------------------------------------------------------------------------------------- the image
 
@@ -223,6 +226,7 @@ if ! docker pull "$IMAGE:$TAG" >>"$LOG" 2>&1; then
     docker pull "$IMAGE:$TAG" >>"$LOG" 2>&1 || die "The Encore image ${IMAGE}:${TAG} could not be downloaded. See the log."
 fi
 ok "Encore downloaded"
+log "images downloaded after $(since) s"
 
 mkdir -p "$DIR/data" "$DIR/navidrome"
 # The deployment files travel inside the image, so they always match the version that was downloaded.
@@ -265,6 +269,7 @@ done
 [ "$(curl -s -m 4 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null)" = 200 ] \
     || die "Encore started but did not answer in 3 minutes. Run  encore logs  to see why."
 ok "Encore is running"
+log "encore running after $(since) s"
 
 if [ "$FRESH" = 1 ]; then
     # The owner's details go in on standard input from a file only this account can read, never on a command line.
@@ -310,4 +315,5 @@ fi
 say "  To use it away from home, then invite friends:   encore funnel on"
 say "  To see how it is doing, update or remove it:       encore status | encore update | encore uninstall"
 say ""
-log "=== done"
+note "Installed in $(($(since) / 60)) min $(($(since) % 60)) s (the time you spent answering is in it)."
+log "=== done after $(since) s"
