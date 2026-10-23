@@ -64,7 +64,9 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --yes | -y) YES=1 ;;
         --owner) OWNER="${2:?--owner needs a name}"; shift ;;
-        --owner-password-file) OWNER_PASSWORD="$(head -n 1 "${2:?--owner-password-file needs a file}")"; shift ;;
+        --owner-password-file)
+            [ -r "${2:?--owner-password-file needs a file}" ] || die "The password file $2 cannot be read."
+            OWNER_PASSWORD="$(head -n 1 "$2")"; shift ;;
         --name) SERVER_NAME="${2:?--name needs a text}"; shift ;;
         --music-dir) MUSIC_DIR="${2:?--music-dir needs a path}"; shift ;;
         --port) PORT="${2:?--port needs a number}"; shift ;;
