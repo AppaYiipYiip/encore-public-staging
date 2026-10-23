@@ -70,7 +70,7 @@ proven end to end yet**; tell me exactly what it printed.
 ```
 encore status                  is it running, at which address
 encore logs                    what the server says (Ctrl-C to stop)
-encore update                  the newest version
+encore update                  the newest version (a backup is made first)
 encore backup                  a copy of your accounts, playlists and likes, now (also made every night)
 encore restore FILE            put such a copy back (what is there now is set aside, not deleted)
 encore uninstall               remove Encore; your music and Encore's data stay

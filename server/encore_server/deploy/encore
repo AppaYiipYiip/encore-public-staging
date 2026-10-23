@@ -4,7 +4,7 @@
 #   encore status               is it running, at which address, which version
 #   encore logs [service]       what the server has been saying (Ctrl-C to stop)
 #   encore start | stop | restart
-#   encore update               the newest version, then check it answers
+#   encore update               a backup, then the newest version, then check it answers
 #   encore funnel on|off|status   let phones reach it away from home (through the Tailscale on this computer)
 #   encore backup               a copy of the accounts, playlists and likes (kept in /opt/encore/backups, the newest 7)
 #   encore restore FILE         put such a copy back (what is here now is set aside, not deleted)
@@ -97,6 +97,10 @@ cmd_update() {
     image="$(env_value ENCORE_IMAGE)"; image="${image:-ghcr.io/appayiipyiip/encore-server}"
     tag="$(env_value ENCORE_TAG)"; tag="${tag:-main}"
     say ""
+    # A copy of the accounts, playlists and likes first: a new version may change the databases, and the old one cannot read them back.
+    if [ -f "$DIR/data/encore.db" ] && [ -f "$DIR/navidrome/navidrome.db" ]; then
+        if (cmd_backup --quiet) 2>/dev/null; then ok "A backup was made first"; else note "A backup could not be made first; updating anyway."; fi
+    fi
     say "  … Looking for a newer version"
     dc pull encore-server >/dev/null 2>&1 || die "The newest version could not be downloaded (are you signed in to the image registry? see: encore logs, or run the installer's sign-in step again)."
     # The deployment files travel in the image: take the ones that match what was just downloaded.
