@@ -156,6 +156,9 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Do.** `textnorm` with the Arabic and featured-artist rules, the matching table of `../19` §3, the two-phase search endpoint and ranking
   of §4 (the app merges phone results + fast + full without jumping), aliases from MusicBrainz, automatic ref merges and the duplicates
   report (§6), the ≥ 200-pair labelled test set (§7).
+* **Also (ADR-R38, clients are thin):** the server, not the phone, calls Deezer. That covers search, artist and album pages, the 30-second previews (served as a short-lived signed
+  address, so a browser can play them too) and the new-release check that today runs in the phone's background (`app/background_sync.dart`). When it lands, delete
+  `app/lib/data/catalogue/deezer_client.dart`'s use in the app and lower the outside-host ratchet (`../30` §5).
 * **Acceptance.** Precision ≥ 99 % / recall ≥ 90 % on the labelled set; search p50 ≤ 400 ms (fast phase) on TYPICAL; "fairouz",
   "fairuz" and "فيروز" find the same artist.
 
@@ -169,7 +172,8 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 ## P2-14 — Lyrics on the server (server + app) — Size S
 * **Why.** `../23` §3.
 * **Do.** Server-side lookup (tags, `.lrc`, LRCLIB), cache per ref, delivered with the song and with downloads; right-to-left rendering;
-  per-person timing offset.
+  per-person timing offset. The phone stops calling LRCLIB (`app/lib/data/api/lrclib_client.dart`, ADR-R38) and the outside-host ratchet drops by one (`../30` §5).
+  Also the answer to F9 (a song LRCLIB does not have): more sources are added on the server, once, for every client.
 * **Acceptance.** 30 songs from the test pool: lyrics shown when LRCLIB has them, offline for downloaded ones, Arabic lyrics right-to-left.
 
 ## P2-15 — Notifications without push (server + app) — Size S

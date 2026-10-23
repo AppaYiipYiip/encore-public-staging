@@ -2,7 +2,8 @@
 
 Read first, in this order: `docs/README.md`, your task in `docs/tasks/`, the stories it cites (`docs/03a-user-stories.md`), the
 architecture section it cites (`docs/04-architecture.md`), then `docs/06-sdlc-and-agent-workflow.md` and `docs/07-testing-and-device-matrix.md`
-(sections 1 to 3). The plan is in `docs/`; do not rely on anything older.
+(sections 1 to 3), and **`docs/30-engineering-guide.md`** (what to do, what not to do, and which rules a machine checks). The plan is in `docs/`; do not rely on anything older.
+If you start with no memory of earlier work: `docs/README.md` has the current state and what is next; `docs/tasks/AUDIT.md` is the list of what is still open.
 
 ## Do
 
@@ -21,6 +22,9 @@ architecture section it cites (`docs/04-architecture.md`), then `docs/06-sdlc-an
 * **Never commit** passwords, login files, cookies, `.env`, keys, APK/AAB files. The hook refuses them.
 * **Never print, log, screenshot or paste a password.** Type passwords on test devices with `tools/journeys/typepw.py`.
 * **Never burst requests at YouTube** (at most 10 look-ups per test run, spaced) and never from a Host's home address unless the task says so.
+* **Never make a client call an outside service** (YouTube, Deezer, lyrics, covers, anything): clients talk only to their own Encore server, the server talks to the
+  outside, so a web or desktop client can exist later (`docs/11` ADR-R38).
+* Ask the strongest model you have before committing to an architecture or any hard-to-undo choice, and again before calling a multi-step task done (`docs/30` §3).
 * Do not start other tasks; file new problems as issues.
 * Do not touch the owner's homelab or anything outside this repository's own test machines (`docs/06` section 8).
 

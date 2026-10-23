@@ -25,10 +25,11 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 
 ## P0 — reset
 
-* GitHub repository creation, rename of the old one and the first push: **blocked on the owner's permission lines** (`git push`, `gh pr ...`,
-  `gh release create` in `~/.claude/settings.json`). Nothing has ever been pushed; the CI workflows have therefore never run on GitHub (they pass
-  locally: app gate, server unit tests, the integration suite with a real Navidrome in Docker on the dev VM).
+* **GitHub is set up (2026-10-22):** the old repository was renamed, the new private `encore` exists, `main` and four pull requests (#1 to #4) are merged, and the
+  five CI workflows exist (each filters by the paths a push touches; the latest run of each succeeded, 2026-10-23). **Still open from P0-07:** branch protection on `main` (checked 2026-10-23: not protected),
+  the project board, one issue per task.
 * P0-09 environments as code, P0-10 licence checks: not done.
+* Before the repository goes public (P5-06): several plan documents still name the owner's own machines and containers; scrub them (see `../README.md`).
 * Android build tooling warns that Gradle 8.14, AGP 8.11 and Kotlin 2.2.20 "will soon be dropped" by Flutter: upgrade before the first release.
 
 ## P1 — instant play and the worst bugs
@@ -82,6 +83,10 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
   import screen, playback state and resume anywhere in the app, one device at a time, invite-first sign-in, migrating today's installs on the server
   (the endpoint is built), catalogue module, downloads formats, lyrics on the server, notifications, a self-healing library, "follow the original").
 * P2-18: server part belongs to P3-03.
+* **Debts against the thin-client rule (ADR-R38, checked in the code 2026-10-23).** The audio path is server-side and web-ready. The phone still calls outside services itself:
+  Deezer for search, artist and album pages, 30-second previews (the phone plays Deezer's file) and the background new-release alerts; LRCLIB for lyrics; outside picture
+  addresses for some covers. A web client could not do these. They go away with P2-12 and P2-14 (and the covers served by the server); the table is in `../11` ADR-R38. Not yet
+  enforced by a test: an outside-host ratchet in `app/test/architecture_test.dart` is the planned follow-up (`../30` §5).
 
 ## P3 — one server and the install
 
@@ -99,6 +104,10 @@ Also from P2: the gateway, the accounts module (invites, join, reset, lock, rate
 **Open:** `encore funnel on` proven with a real Tailscale sign-in (the owner's), the friend's guide as a finished page (P3-12 item 4; a draft exists), the browser wizard
 and admin pages, `encore.local`, device-token gateway signing (X-2), updates with rollback, arm64, the reuse-what-you-have install path, security/privacy tests per
 cell of the matrix, devices and the Host's safety nets, the Tinkerer's door.
+**Found 2026-10-23 (yt-dlp freshness, P3-08):** the server image installs the newest yt-dlp when it is built (`pip install ".[youtube]"`), and CI builds it only when server code
+changes on `main` or by hand (`server-image.yml` has no schedule); the running server has no updater. When YouTube changes, songs the server does not have stop playing
+until a new image is built and `encore update` is run on that server (nothing pulls it by itself; no updater was found in the server's code or scripts). First step: a scheduled
+rebuild (it only makes a newer yt-dlp available); then the in-server updater with the 24-hour rule and a canary, which is what makes it automatic.
 
 ## P4 — full feature set
 

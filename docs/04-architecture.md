@@ -197,6 +197,12 @@ tokens. Change:
 | Auth | password stored, Subsonic token per request | device token from `accounts`; password never stored |
 | Removed | portal client/discovery/download-service sheet, second import screen, ServiceFinder, multi-service capability probing | |
 
+**The client rule (ADR-R38, owner 2026-10-23).** Every client (the Android app, later a web, desktop, iOS or TV client) talks **only to its own Encore server**; the server talks to
+YouTube, Deezer, LRCLIB and every other outside service. Audio, imports and matching already work this way. Search, previews, new-release checks, lyrics and some covers still
+go from the phone to the outside; the list, the files and the tasks that remove them are in `11` ADR-R38. Anything a media element fetches by itself (stream, cover, preview,
+download) uses a short-lived signed address, because a browser's audio element cannot send a login header (`17` §1). Phone-only shortcuts (X-3, X-5) are allowed as extras, never as the
+only route. A new client should need no server change beyond ordinary additions to the API.
+
 ## 9. Remote access (unchanged choice, new shape)
 
 Tailscale Funnel sidecar publishes **only the gateway** (`serve.json` → `encore-server:4533`). The wizard guides the two console

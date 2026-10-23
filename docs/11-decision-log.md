@@ -358,3 +358,38 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   `encore uninstall --everything` removes the backups with the rest (said in its question). A restore needs the same Encore version or a newer one
   (`encore update` first). Not covered yet: a second copy off the computer (a different disk or a cloud folder), which is the owner's choice
   (ADR-077); the hypervisor's backup is that today.
+
+### ADR-R38 — Clients are thin: every call to an outside service goes through the server (owner, 2026-10-23)
+* **Context.** The owner asked where a song that is not on the server is fetched from, the phone or the server, and whether a web version would break it ("a browser cannot
+  fetch it, it needs to be the server; always future-proof the engineering"). **The audio already comes from the server** (ADR-R2, `02` Q2): the app asks the server to resolve
+  a song to a ref and plays the server's own stream (`EncoreInstantBackend`); YouTube, yt-dlp and the playlist readers (YouTube Music, Spotify) run only on the server. **But the phone
+  still calls some outside services itself** (table below). A browser only talks to services that allow it (same-origin rules), so a web client could not do those calls; each call also
+  shows the person's own internet address to that service, and a change in the service needs an app update on every client instead of one server update.
+* **Options.** (a) Each client talks to outside services itself where it can (fastest to write; breaks for a browser, repeats the logic per client, spreads every person's address).
+  (b) The server for audio, the clients for metadata (today's mix). (c) **The server is the only thing a client talks to; the server talks to the outside.**
+* **Decision.** (c), as the rule for every new feature and the end state for the old ones:
+  1. A client (the Android app, later web, desktop, iOS, a TV) talks only to its own Encore server. Search, the catalogue, covers, previews, lyrics, new-release checks, import reading
+     and matching go through the server's API.
+  2. Anything a media element fetches by itself (a stream, a cover, a preview, a download) must work **without custom headers**: a short-lived signed address. Built for streams
+     (`GET /refs/{id}/stream-url`, signature checked on `/encore/stream/{id}`, `17` §1); to be built the same way for previews and covers.
+  3. A client may have a **native-only shortcut** (X-3 on-device extraction, X-5 direct download at home) when it measurably helps, but the server's route stays complete and nothing in
+     the client may depend on the shortcut being there.
+  4. A feature that cannot go through the server needs its own ADR saying why, and what the web client does instead.
+* **Why.** One place to fix when YouTube, Deezer or LRCLIB change (the server image); one cache shared by everybody on the server; one place where pacing and privacy are enforced
+  (`04` §5, §10); thin clients are small, testable and portable; a web client (P6) becomes a new front end, not a rewrite of the data layer. Cost: server work for each call moved,
+  one more hop, and the server must cache.
+* **Where the phone still calls the outside itself (checked in the code on 2026-10-23), and what removes it.**
+
+  | Call | Where | Goes away with |
+  |------|-------|----------------|
+  | Catalogue search, artist and album pages (Deezer) | `app/lib/data/catalogue/deezer_client.dart` | P2-12 (the catalogue module on the server) |
+  | 30-second previews: the phone plays Deezer's file | `PreviewTrack.uri` in `features/catalogue/catalogue_widgets.dart` | P2-12 (a signed preview address from the server) |
+  | New-release alerts in the background (Deezer) | `app/background_sync.dart` → `AlertsService` | P2-12, then the alert check on the server (`23` §4, notifications without push: P2-15) |
+  | Lyrics (LRCLIB) | `app/lib/data/api/lrclib_client.dart` | P2-14 (lyrics on the server) |
+  | Cover pictures by an outside address (Deezer covers, an import's source picture) | `CachedNetworkImage` in `features/common/cover_art.dart` | Covers served by the server (the cover finder already stores `cover.jpg`); **whether Flutter web can load outside pictures is unchecked: check when the web client starts** |
+
+* **Consequences.** P6 "Web/desktop client" now lists these as prerequisites. The audio path needs no change for a browser (the server streams with Range support and signed
+  addresses). Platform parts of the app (files, the phone's database, secure storage, background work) will need web versions behind interfaces: not examined yet. A follow-up adds an
+  architecture-test ratchet that counts outside hosts in `app/lib` (today two clients, goal zero), so the rule is enforced and not only written (`30` section 5).
+* **Revisit when.** An outside service offers browser-safe access that is faster than a hop through the server **and** the owner accepts the privacy cost; or when the server
+  cannot afford the extra traffic on a small machine (X-8).

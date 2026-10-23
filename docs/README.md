@@ -58,6 +58,8 @@ documents are history; read one only when a task links it.
 | 26 | [Lifecycles and processes](26-lifecycles-and-processes.md) | Deep read of the code (sync storm, restore and stuck-player root causes), Android developer verification, the life of a song / playlist / phone / person / server, the server's day, the phone's battery budget |
 | 27 | [Story map](27-story-map.md) | Every step of the Listener, the Host and the Tinkerer, marked designed / partial / missing, and the tasks the holes became |
 | 28 | [Code-level re-engineering](28-code-level-re-engineering.md) | Module by module: what the code does today, what is structurally wrong, the target shape (player state machine, change feed, feature folders, one server package) |
+| 29 | [Spotify gap review](29-spotify-gap-review.md) | Where Spotify does better, from the owner's walks |
+| 30 | [Engineering guide](30-engineering-guide.md) | **Read before coding.** What to do and not to do, taken from what went wrong here, and which rules a machine checks; the thin-client rule; when to ask a stronger model; the PR self-review |
 | — | [tasks/](tasks/) | The work, phase by phase, with context and acceptance criteria |
 | — | [evidence/](evidence/) | Screenshots from the app walk, the measurement scripts, and the clean-machine proofs (`c01` the installer, `c02` backup and restore) |
 | — | [guides/](guides/) | The install test guide (`install-test.md`: one command on a fresh computer, backups, looking after it) and a draft guide for a friend using somebody's server (`friend.md`) |
@@ -67,6 +69,8 @@ documents are history; read one only when a task links it.
 * **Encore is a public product** (website with the guide, server download and APK). Nothing about the owner's homelab (addresses,
   container numbers, scripts, his request portal, his dashboard at `:8687`) belongs in Encore's code, docs or defaults.
 * **No trace of the old project** (owner, 2026-10-21), done through a fresh repository (P0-04), after checking nothing copied remains.
+* **Clients are thin** (owner, 2026-10-23, ADR-R38): the app, and any web, desktop or TV client later, talk only to their own Encore server; the server talks to YouTube, Deezer,
+  lyrics and every other outside service. Always choose the solution that still works when the client is a browser. Today's exceptions and the tasks that remove them are in `11` ADR-R38.
 * **Free for the user**: no feature depends on a paid account (no Tidal, no Spotify Premium, no Plex Pass).
 * **For everyone**: other countries, weak PCs, slow or shared lines, flagged or blocked addresses, non-Latin text. Nothing may only
   work on the owner's setup. Never put a Host's internet address or accounts at risk.
@@ -75,15 +79,22 @@ documents are history; read one only when a task links it.
 * **Never print, commit or screenshot a password.** Login files live outside the repository.
 * **Say what was measured and on what setup.** "Tests pass" is not "it works".
 
-## State (2026-10-21)
+## State (2026-10-23)
+
+The list of what is still open, task by task, with the owner's findings and the proof for each, is **[tasks/AUDIT.md](tasks/AUDIT.md)**; it is
+kept current and this table only says where the phases stand.
 
 | Item | State |
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
-| Server download cap on the owner's homelab | Raised from 3 to **15 Mbit/s** with the owner's permission (dashboard file `/var/lib/libdash/server-down-limit.json`; backup of the old value in `/root/server-down-limit.json.before-encore-test` on the Proxmox host) |
-| `tester` password (leaked into a session log during testing) | Rotated and verified; the new one is only in `local/logins/encore-tester-login.txt` (never committed) |
-| Owner decisions | **Decided in chat 2026-10-21:** one copy per song with personal libraries/profiles (D-2); keep on save, download or plays on 2 days (D-3); everything in the first version (D-4); name/website not now (D-5, D-9); new repo, no password changes (D-7). **Open (defaults apply):** licence GPL-3.0 (D-1), YouTube on by default (D-6), allow agents to push (D-8), quality tier off until switched on (D-12) |
-| P0 tasks | Ready; pushing needs D-8 |
-| Roadmap | P0 → P1 → P2 → P3 → **P4 full feature set** → P5 public release → P6 later |
-| P1 tasks | Ready after P0-04 |
+| Repository | On GitHub (private). `main` has five CI workflows (app, server, server image, docs and secret scan, screen pictures; the latest run of each succeeded on 2026-10-23) and four merged pull requests; **`main` is not protected yet** |
+| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice |
+| P0 Reset | Done except P0-09 (environments as code), P0-10 (licence inventory and check), branch protection and the project board |
+| P1 Instant play | Core done (lean resolver, a player that cannot stick, offline, queue restore, covers); open items are listed in AUDIT (P1-03 legacy side, P1-04, P1-06, P1-07, P1-12, P1-13) |
+| P2 Songs as references | Server core and the app's data layer done and walked; open items in AUDIT |
+| P3 One server, one-command install | Installer slice, nightly backup and restore, and a resumable install are proved on clean machines (`evidence/c01` to `c03`); wizard, admin pages, update rollback, arm64 and the rest are open |
+| P4 Full feature set, P5 Public release | Not started (the artist page and a first slice of profiles on a shared device exist) |
+| **Current milestone** | The first outside user (P3-12, ADR-R34). Five checks, in order: the owner installed and uses the server; the away-from-home address works on mobile data; the data can come back (**done**); the friend's guide is final (draft); five days of the owner's own use |
+| Next, in order | 1. Owner's install and phone (needs the owner). 2. A scheduled rebuild of the server image (a newer yt-dlp becomes available; it reaches a server through `encore update`), then the in-server updater that makes it automatic (P3-08). 3. Journey 4 in full, the friend's guide, the live connection through the public address (X-7). 4. P1-06 and P1-04, then lyrics and Arabic search (P2-14, P1-07). 5. Wizard and admin pages (P3-06, drawings first), the toolchain upgrade, then P4 |
+| Before going public (P5-06) | The plan documents still name the owner's own machines and containers in several places (`06`, `09`, `11` and others); scrub them first |
 | The old documents | History, kept only in the old repository's archive |
