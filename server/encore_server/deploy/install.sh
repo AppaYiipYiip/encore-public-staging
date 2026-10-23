@@ -24,12 +24,14 @@ OWNER_PASSWORD="${ENCORE_OWNER_PASSWORD:-}"
 
 if [ -t 1 ]; then GREEN=$'\033[32m'; RED=$'\033[31m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'; else GREEN=""; RED=""; DIM=""; BOLD=""; OFF=""; fi
 
-say() { printf '%s\n' "$*"; }
-ok() { printf '  %s✓%s %s\n' "$GREEN" "$OFF" "$*"; }
-note() { printf '  %s%s%s\n' "$DIM" "$*" "$OFF"; }
+# Writing to a terminal that has gone away (the window was closed, the connection dropped) must not end an install that is already
+# running: after the questions are answered nothing needs the terminal, so every message is allowed to fail.
+say() { printf '%s\n' "$*" || true; }
+ok() { printf '  %s✓%s %s\n' "$GREEN" "$OFF" "$*" || true; }
+note() { printf '  %s%s%s\n' "$DIM" "$*" "$OFF" || true; }
 die() {
-    printf '\n  %s✗ %s%s\n' "$RED" "$*" "$OFF" >&2
-    printf '  %sThe details are in %s. Running the same command again is safe.%s\n\n' "$DIM" "$LOG" "$OFF" >&2
+    printf '\n  %s✗ %s%s\n' "$RED" "$*" "$OFF" >&2 || true
+    printf '  %sThe details are in %s. Running the same command again is safe.%s\n\n' "$DIM" "$LOG" "$OFF" >&2 || true
     exit 1
 }
 log() { printf '%s\n' "$*" >>"$LOG"; }
@@ -150,15 +152,16 @@ fi
 
 FRESH=1
 [ -f "$DIR/.env" ] && FRESH=0
+# The first install writes this before its settings file and removes it once the owner's account exists: if the install was cut short in
+# between (power, Ctrl-C, a dropped connection), running the installer again finishes the job instead of leaving a server nobody can sign in to.
+PENDING=0
+[ -f "$DIR/.setup-pending" ] && PENDING=1
+NEED_OWNER=0
+{ [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ]; } && NEED_OWNER=1
 
 env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
 
-if [ "$FRESH" = 0 ]; then
-    note "Encore is already installed here: it is kept and brought up to date."
-    PORT=$(env_value ENCORE_PORT); PORT=${PORT:-4533}
-    MUSIC_DIR=$(env_value ENCORE_MUSIC_DIR); MUSIC_DIR=${MUSIC_DIR:-/srv/music}
-else
-    [ -n "$SERVER_NAME" ] || SERVER_NAME="$(ask 'What should this server be called?' "$(hostname)'s music")"
+ask_owner() { # the owner's username and password, from the options or by asking
     if [ -z "$OWNER" ]; then OWNER="$(ask 'Your username (3 to 32 letters, digits, . - _):' "")"; fi
     [ -n "$OWNER" ] || die "A username is needed for the owner's account (use --owner NAME)."
     if [ -z "$OWNER_PASSWORD" ]; then
@@ -168,11 +171,29 @@ else
         OWNER_PASSWORD="$first"
     fi
     [ "${#OWNER_PASSWORD}" -ge 8 ] || die "The password is too short: use 8 or more characters."
+}
+
+if [ "$FRESH" = 0 ]; then
+    PORT=$(env_value ENCORE_PORT); PORT=${PORT:-4533}
+    MUSIC_DIR=$(env_value ENCORE_MUSIC_DIR); MUSIC_DIR=${MUSIC_DIR:-/srv/music}
+    if [ "$PENDING" = 1 ]; then
+        note "An earlier install here was cut short before your account was made: finishing it."
+        say "  Choose the username and password for your account now. If you already chose them the first time, type the same ones."
+        ask_owner
+    else
+        note "Encore is already installed here: it is kept and brought up to date."
+    fi
+else
+    [ -n "$SERVER_NAME" ] || SERVER_NAME="$(ask 'What should this server be called?' "$(hostname)'s music")"
+    ask_owner
     MUSIC_DIR="$(ask 'Where is your music? (a folder; it is only read)' "$MUSIC_DIR")"
     # The name goes into a settings file: leave out what that file treats as more than text.
     SERVER_NAME=${SERVER_NAME//[\$\"\`\'#\\]/}
     [ -n "$SERVER_NAME" ] || SERVER_NAME="My music server"
 fi
+
+# From here nothing needs the terminal: a window that is closed, or a connection that drops, must not stop an install half way.
+trap '' HUP
 
 mkdir -p "$MUSIC_DIR" || die "The music folder ${MUSIC_DIR} could not be made."
 SONGS=$(find "$MUSIC_DIR" -type f \( -iname '*.mp3' -o -iname '*.flac' -o -iname '*.m4a' -o -iname '*.ogg' -o -iname '*.opus' -o -iname '*.wav' \) 2>/dev/null | wc -l)
@@ -219,7 +240,7 @@ registry_login() { # a private image is pulled with a GitHub token that may read
 }
 
 say ""
-say "  … Downloading Encore (about 500 MB the first time)"
+say "  … Downloading Encore (about 240 MB the first time)"
 if ! docker pull "$IMAGE:$TAG" >>"$LOG" 2>&1; then
     log "pull failed, signing in"
     registry_login
@@ -238,6 +259,7 @@ mv /usr/local/bin/encore.new /usr/local/bin/encore
 
 if [ "$FRESH" = 1 ]; then
     umask 077
+    : >"$DIR/.setup-pending"
     {
         echo "# Written by the Encore installer on $(date -u +%F). Keep this file private: it holds the music server's own password."
         echo "ENCORE_IMAGE=$IMAGE"
@@ -259,6 +281,11 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: a
 fi
 
 dc() { docker compose --project-directory "$DIR" "$@"; }
+# The music server's own image is the second download (about as big as the first on a slow line): say so, rather than looking stuck in "Starting".
+say "  … Downloading the music server (about 95 MB the first time)"
+dc pull navidrome >>"$LOG" 2>&1 || die "The music server could not be downloaded. See the log."
+ok "Music server downloaded"
+log "music server downloaded after $(since) s"
 say "  … Starting Encore"
 dc up -d >>"$LOG" 2>&1 || die "Encore could not be started. See the log."
 
@@ -271,7 +298,7 @@ done
 ok "Encore is running"
 log "encore running after $(since) s"
 
-if [ "$FRESH" = 1 ]; then
+if [ "$NEED_OWNER" = 1 ]; then
     # The owner's details go in on standard input from a file only this account can read, never on a command line.
     details="$(mktemp)"
     chmod 600 "$details"
@@ -284,6 +311,7 @@ if [ "$FRESH" = 1 ]; then
         die "$message"
     fi
     rm -f "$details" "$details.err"
+    rm -f "$DIR/.setup-pending"
     ok "Your account is made: ${OWNER}"
 fi
 
@@ -306,7 +334,7 @@ say ""
 say "  ${BOLD}Encore is ready.${OFF} In the Encore app on your phone (on the same Wi-Fi) sign in with:"
 say ""
 say "        Address:   ${HOST_IP}:${PORT}"
-if [ "$FRESH" = 1 ]; then say "        Username:  ${OWNER}"; say "        Password:  the one you just chose"; fi
+if [ "$NEED_OWNER" = 1 ]; then say "        Username:  ${OWNER}"; say "        Password:  the one you just chose"; fi
 say ""
 if command -v qrencode >/dev/null 2>&1 || { apt-get install -y -qq qrencode >>"$LOG" 2>&1 && command -v qrencode >/dev/null 2>&1; }; then
     qrencode -t ANSIUTF8 -m 2 "$URL" 2>>"$LOG" | sed 's/^/        /' || true

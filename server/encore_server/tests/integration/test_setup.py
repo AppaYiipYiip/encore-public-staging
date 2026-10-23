@@ -11,7 +11,7 @@ import httpx
 import pytest
 
 from encore_server.config import Settings
-from encore_server.setup import run_setup
+from encore_server.setup import SetupError, run_setup
 from tests.integration.conftest import URL
 
 pytestmark = pytest.mark.integration
@@ -36,8 +36,11 @@ def test_the_owner_is_made_in_the_real_music_server_and_a_second_run_changes_not
     assert signed_in.status_code == 200, "the owner can sign in with the password that was chosen"
     assert signed_in.json().get("isAdmin") is False, "and is an ordinary account, not the music server's administrator"
 
-    again = run_setup(settings, {**owner, "password": secrets.token_urlsafe(12)})
+    again = run_setup(settings, owner)
     assert (again.administrator, again.owner) == ("existing", "existing")
+
+    with pytest.raises(SetupError, match="password you chose the first time"):
+        run_setup(settings, {**owner, "password": secrets.token_urlsafe(12)})
     assert login(owner["username"], owner["password"]).status_code == 200, (
-        "the first password still works: a second run does not replace it"
+        "the first password still works: a second run with another one does not replace it"
     )

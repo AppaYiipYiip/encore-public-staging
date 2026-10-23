@@ -82,15 +82,27 @@ def test_a_new_music_server_gets_its_administrator_and_the_owners_account() -> N
     assert server.library_grants == ["id-riley"], "and may use the library"
 
 
-def test_running_it_again_changes_nothing_and_says_so() -> None:
+def test_running_it_again_with_the_same_details_changes_nothing_and_says_so() -> None:
     server = FakeMusicServer()
     run_setup(settings(), OWNER, client=server.client, wait=False)
     before = dict(server.users)
 
-    again = run_setup(settings(), {**OWNER, "password": "a different password!"}, client=server.client, wait=False)
+    again = run_setup(settings(), OWNER, client=server.client, wait=False)
 
     assert (again.administrator, again.owner) == ("existing", "existing")
-    assert server.users == before, "the owner's password is not replaced by a second run"
+    assert server.users == before
+
+
+def test_an_interrupted_install_finished_with_another_password_says_so_instead_of_keeping_the_old_one_quietly() -> None:
+    """The first run made the account and was cut off before it could say so; the person types a different password the second time."""
+    server = FakeMusicServer()
+    run_setup(settings(), OWNER, client=server.client, wait=False)
+    before = dict(server.users)
+
+    with pytest.raises(SetupError, match="password you chose the first time"):
+        run_setup(settings(), {**OWNER, "password": "a different password!"}, client=server.client, wait=False)
+
+    assert server.users == before, "and nothing was changed"
 
 
 def test_a_music_server_with_other_accounts_that_refuses_ours_says_what_to_do() -> None:

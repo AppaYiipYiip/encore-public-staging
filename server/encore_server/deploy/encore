@@ -92,6 +92,7 @@ cmd_status() {
         if [ -n "$state" ] && [ "${state#running}" != "$state" ]; then ok "$label: $state"; else printf '  %s✗%s %s: %s\n' "$RED" "$OFF" "$label" "${state:-not running}"; fi
     done
     if answers; then ok "It answers on port ${PORT}"; else printf '  %s✗%s It does not answer on port %s (try: encore logs)\n' "$RED" "$OFF" "$PORT"; fi
+    if [ -f "$DIR/.setup-pending" ]; then printf '  %s✗%s The first install was cut short before your account was made: run the installer again (sudo bash install.sh).\n' "$RED" "$OFF"; fi
     say ""
     say "        On your home network:  $(host_ip):${PORT}"
     away="$(funnel_address)"

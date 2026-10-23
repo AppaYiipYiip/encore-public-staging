@@ -63,6 +63,14 @@ def wait_for_music_server(
         sleep(2.0)
 
 
+def signs_in(base_url: str, user: str, password: str, *, client: httpx.Client) -> bool:
+    """Whether the music server lets [user] in with [password]."""
+    try:
+        return client.post(f"{base_url.rstrip('/')}/auth/login", json={"username": user, "password": password}).status_code == 200
+    except httpx.HTTPError:
+        return False
+
+
 def ensure_administrator(base_url: str, user: str, password: str, *, client: httpx.Client) -> str:
     """The music server's first account is its administrator, made by one call while it has no accounts at all (the call is refused after
     that). `"existing"` when this account already signs in; [SetupError] when the music server has other accounts and refuses this one."""
@@ -107,6 +115,13 @@ def run_setup(settings: Settings, owner: dict[str, Any], *, client: httpx.Client
         admin.create_user(username, display, password)
         made = "created"
     except NameTaken:
+        # An earlier install that was interrupted already made this account. The same password is fine; a different one must not be
+        # taken for granted, or the person would believe the new password is the one that works.
+        if not signs_in(settings.navidrome_url, username, password, client=http):
+            raise SetupError(
+                f'An account named "{username}" already exists on this server, made by an install that was interrupted, with a '
+                "different password. Type the password you chose the first time, or run `encore uninstall --everything` and install again."
+            ) from None
         made = "existing"
     except AdminUnavailable as error:
         raise SetupError(error.message) from error
