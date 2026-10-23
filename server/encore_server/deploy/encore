@@ -50,9 +50,6 @@ funnel_address_for() { # $1 = the local port: the public address that points at 
     awk -v want="proxy http://127.0.0.1:$1" '/^https:\/\// {site = $1} index($0, want) {print site; exit}'
 }
 funnel_site_count() { grep -Ec '^https://' || true; }
-funnel_public_port() { # an address like https://name:8443 -> 8443 (443 when it has no port)
-    case "$1" in https://*:[0-9]*) printf '%s' "${1##*:}" ;; *) printf '443' ;; esac
-}
 
 funnel_address() {
     command -v tailscale >/dev/null 2>&1 || return 0
@@ -174,8 +171,9 @@ cmd_funnel() {
             if [ "$(printf '%s\n' "$status" | funnel_site_count)" -le 1 ]; then
                 tailscale funnel reset >/dev/null 2>&1 || die "Tailscale would not turn Funnel off."
             else
-                # Other things on this computer use Funnel too: take away only Encore's own address.
-                tailscale funnel --https="$(funnel_public_port "$mine")" off >/dev/null 2>&1 || die "Tailscale would not turn off Encore's address ($mine). See:  tailscale funnel status"
+                # Other things on this computer use Funnel too, and Tailscale's own command has no way to take away one address that works
+                # the same in every version: change nothing and say so, rather than reset what is not Encore's.
+                die "Other things on this computer use Funnel as well, so nothing was changed. Encore's address is $mine. To take only that one away see  tailscale funnel --help  (or  tailscale funnel reset  removes them all)."
             fi
             ok "Encore is no longer reachable from outside (Funnel is off)"
             ;;

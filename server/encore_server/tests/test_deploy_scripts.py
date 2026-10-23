@@ -133,19 +133,6 @@ def test_how_many_sites_there_are(status: str, count: str) -> None:
     assert out == count
 
 
-@pytest.mark.parametrize(
-    ("address", "port"),
-    [
-        ("https://box.tail1234.ts.net", "443"),
-        ("https://box.tail1234.ts.net:8443", "8443"),
-        ("https://box.tail1234.ts.net:10000", "10000"),
-    ],
-)
-def test_the_public_port_of_an_address(address: str, port: str) -> None:
-    _, out = run(f"funnel_public_port {address}", "")
-    assert out == port
-
-
 @pytest.mark.parametrize("name", ["install.sh", "encore"])
 def test_the_scripts_parse(name: str) -> None:
     assert BASH is not None
