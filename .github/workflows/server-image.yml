@@ -8,7 +8,17 @@ on:
     # A task branch also publishes (as `:task-<name>`), so an installer under development can be tried on a clean machine before it is merged.
     branches: [main, 'task/**']
     paths: ['server/encore_server/**', '.github/workflows/server-image.yml']
+  # Weekly, Monday 04:17 UTC: rebuild from scratch so the newest yt-dlp (and base image and ffmpeg fixes) are inside, even when no server code changed.
+  # Without `no-cache` the cached `pip install` layer would be reused and ship the old yt-dlp again. A running server only gets the new image when
+  # `encore update` is run on it.
+  schedule:
+    - cron: '17 4 * * 1'
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: 'Build from scratch (ignore the layer cache), as the weekly run does'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,12 +51,25 @@ jobs:
             org.opencontainers.image.title=Encore server
             org.opencontainers.image.description=The Encore music server: songs as references, playlists, likes and the live channel, in front of a music server.
 
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: server/encore_server
           platforms: linux/amd64
           push: true
+          pull: true
+          no-cache: ${{ github.event_name == 'schedule' || github.event.inputs.fresh == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Every build says which yt-dlp it carries, so "is the image fresh?" is answered from the run page and not guessed.
+      - name: Say which yt-dlp is inside
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/encore-server@${DIGEST}"
+          version=$(docker run --rm --entrypoint yt-dlp "$image" --version)
+          echo "yt-dlp in this image: ${version}"
+          echo "yt-dlp in this image: \`${version}\` (built by: ${GITHUB_EVENT_NAME})" >> "$GITHUB_STEP_SUMMARY"

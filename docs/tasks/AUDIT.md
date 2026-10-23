@@ -105,9 +105,13 @@ Also from P2: the gateway, the accounts module (invites, join, reset, lock, rate
 and admin pages, `encore.local`, device-token gateway signing (X-2), updates with rollback, arm64, the reuse-what-you-have install path, security/privacy tests per
 cell of the matrix, devices and the Host's safety nets, the Tinkerer's door.
 **Found 2026-10-23 (yt-dlp freshness, P3-08):** the server image installs the newest yt-dlp when it is built (`pip install ".[youtube]"`), and CI builds it only when server code
-changes on `main` or by hand (`server-image.yml` has no schedule); the running server has no updater. When YouTube changes, songs the server does not have stop playing
-until a new image is built and `encore update` is run on that server (nothing pulls it by itself; no updater was found in the server's code or scripts). First step: a scheduled
-rebuild (it only makes a newer yt-dlp available); then the in-server updater with the 24-hour rule and a canary, which is what makes it automatic.
+changes on `main` or by hand; the running server has no updater. When YouTube changes, songs the server does not have stop playing
+until a new image is built and `encore update` is run on that server (nothing pulls it by itself; no updater was found in the server's code or scripts).
+**First step done (2026-10-23, PR `task/P3-08a-weekly-image-rebuild`):** `server-image.yml` rebuilds from scratch every Monday 04:17 UTC and on request (`gh workflow run server-image.yml -f fresh=true`),
+and every build writes the yt-dlp version it carries into the run page. Why from scratch: the layer cache reused the `pip install` step (the log showed `CACHED`, image carried
+2026.10.21), the fresh build downloaded it again (not cached; same 2026.10.21, which was PyPI's newest that day). It only makes a newer yt-dlp *available*: a server gets it when
+`encore update` is run on it. The scheduled build has no canary, so a bad yt-dlp release would also be inside `:main` (every build keeps its own `:sha-<commit>` tag to go back to).
+Next: the in-server updater with the 24-hour rule and a canary, which is what makes it automatic.
 
 ## P4 — full feature set
 

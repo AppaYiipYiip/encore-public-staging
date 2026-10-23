@@ -15,7 +15,8 @@ designed: the old stack updated by hand-run scripts, yt-dlp freshness depended o
 ## 2. Keeping YouTube working (yt-dlp freshness) — the one part that cannot wait for a monthly release
 
 YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the same day.
-* The image ships a pinned yt-dlp. The server also keeps a **runtime copy** in `/data/tools/` that it updates itself: daily check of
+* The image ships the newest yt-dlp at its build time (not pinned; rebuilt from scratch every week by CI, and each build's run page says which version it carries).
+  The server also keeps a **runtime copy** in `/data/tools/` that it updates itself (**not built yet**, P3-08): daily check of
   PyPI; only releases **older than 24 hours** (protects against a broken or malicious release); hash-checked; installed beside the
   current one; a **canary** (one fixed, obscure, never-cached song: resolve + 64 KB) must pass, else it stays on the previous copy.
 * If every copy fails the canary, the admin Home says "Songs from YouTube are not working right now; Encore will try again every
