@@ -96,6 +96,11 @@ class Scheduler:
         self._turn = 0
         self._cancelled: set[str] = set()
 
+    def running(self) -> int:
+        """How many pieces of work are being done this moment (the server is not quiet while any is)."""
+        with self._db.read() as conn:
+            return int(conn.execute("SELECT COUNT(*) AS n FROM work_item WHERE state = 'running'").fetchone()["n"])
+
     # ------------------------------------------------------------------ asking for work
 
     def _now_ms(self) -> int:

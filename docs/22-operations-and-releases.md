@@ -16,12 +16,18 @@ designed: the old stack updated by hand-run scripts, yt-dlp freshness depended o
 
 YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the same day.
 * The image ships the newest yt-dlp at its build time (not pinned; rebuilt from scratch every week by CI, and each build's run page says which version it carries).
-  The server also keeps a **runtime copy** in `/data/tools/` that it updates itself (**not built yet**, P3-08): daily check of
-  PyPI; only releases **older than 24 hours** (protects against a broken or malicious release); hash-checked; installed beside the
-  current one; a **canary** (one fixed, obscure, never-cached song: resolve + 64 KB) must pass, else it stays on the previous copy.
+  The server also keeps a **runtime copy** in `/data/tools/yt-dlp/` that it updates itself (**built, P3-08b; decision and reasons: `11` ADR-R39**): a daily check of
+  PyPI at a random time; only releases **older than 24 hours** (protects against a broken or malicious release); the wheel's sha256 must match PyPI's; stored beside the
+  current one; a **canary** must pass before anything changes. The canary runs in a child process with the new wheel first on its path, through the server's own
+  `YoutubeSource` (same format selector, same fast client), on one fixed 19-second video, and reads 64 KB of audio. It is a look-up like any other: it takes the pacer's
+  turn, does not run while the server rests, is counted, and a refusal during it starts the rest; at most four runs a day. On a pass a pointer file is written and the
+  server **restarts itself, but only once nothing has gone through it for a minute and never by force**; Docker starts it again on the new copy (`/info` says which
+  version runs and which waits). On a fail the server stays on its copy; if the running copy fails the same canary, YouTube is the problem, the release stays eligible
+  and the state is `degraded`. Every use of yt-dlp follows the pointer (the playlist reader runs `python -m yt_dlp`, not a `yt-dlp` command). `ENCORE_AUTO_TOOLS=0` switches it off.
+  Run for real on the dev VM, including the failure drills: `evidence/c04-ytdlp-self-update.md`.
 * If every copy fails the canary, the admin Home says "Songs from YouTube are not working right now; Encore will try again every
   hour", and the app says the same when a catalogue song fails.
-* The same rule applies to `ytmusicapi`, the PO-token provider (if enabled) and Deno.
+* The same rule is meant for `ytmusicapi`, the PO-token provider (if enabled) and Deno (not built: the first slice is yt-dlp only).
 
 ## 3. Backups and restore
 

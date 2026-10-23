@@ -394,3 +394,68 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   it cannot see an address that arrives in data, such as a cover URL.
 * **Revisit when.** An outside service offers browser-safe access that is faster than a hop through the server **and** the owner accepts the privacy cost; or when the server
   cannot afford the extra traffic on a small machine (X-8).
+
+### ADR-R39 — How a running server gets a newer yt-dlp by itself (P3-08, first slice) — DECIDED, built, run for real on the dev VM 2026-10-23 (`evidence/c04`)
+* **Context.** The image carries the yt-dlp that was newest when it was built (not pinned; rebuilt weekly since PR #7). A server only gets it when `encore update` is run on it.
+  YouTube changes often, and when it does, every song the server does not already have stops playing until someone runs that command (`30` §J, STATUS risk 3). `22` §2 designed
+  an updater (daily PyPI check, releases older than 24 hours only, hash check, a canary, stay on the old copy on failure) and nothing of it exists. Facts that shape the choice, all read in
+  the code on 2026-10-23:
+  * **yt-dlp is used in three ways, not one.** In the server's own process (`sources/youtube/lean.py`, two `import yt_dlp` sites; one cached `YoutubeDL` per worker thread and client kind, and the
+    code catches `yt_dlp.utils.DownloadError` by class). As a **command** (`imports/readers.py` `ytdlp_reader`, `argv = ["yt-dlp", "--flat-playlist", …]`, chosen by `shutil.which("yt-dlp")` in
+    `imports/service.py`), the fallback that reads a playlist when YouTube Music's interface cannot; a command ignores whatever the server puts on `sys.path`. And a presence check
+    (`api.py` `find_spec("yt_dlp")`).
+  * The container is started by `entrypoint.sh` and restarted by Docker (`restart: unless-stopped`); `/data` is writable by the server's user and is **not** in the backups (they copy the named
+    databases only, `backup.py`), so a restore on a new computer starts from the image's copy.
+  * yt-dlp's wheel is pure Python with no required dependencies and **imports straight from the downloaded `.whl` file with no pip** (tried 2026-10-23, Python 3.13 on Windows: PyPI's sha256 matched,
+    `YoutubeDL` constructed). GitHub's `SHA2-256SUMS` for the same release lists the zipapp and the sdist but **not the wheel**, so it cannot be a second check of what is downloaded.
+  * A YouTube look-up has a shared budget (`Rest`, `Pacer`, the per-day counter); a child process has none of these. The server is one program that clients reconnect to by themselves (`evidence/b01`).
+* **Options.**
+  (a) **Swap in place**: load the new version into the running process (new `sys.path` entry, purge `yt_dlp*` from `sys.modules`, drop every thread's cached extractor). No restart,
+  but the `except yt_dlp.utils.DownloadError` clauses would hold the *old* class after a swap and stop matching, a thread can be half-way through an extraction, the command in `readers.py` is not
+  reached at all, and the module state of two versions can mix: a bug that shows up only on the day of an update, when it matters most.
+  (b) **Prepare beside, check in a separate process, switch at the next start**: download the wheel into `/data/tools/yt-dlp/`, verify, run the **canary in a child process** whose import path
+  starts with the new wheel (the running server is untouched), and only on a pass write the pointer. The server puts the pointer's wheel first on `sys.path` at start (before anything imports
+  yt_dlp) and **restarts itself once nothing is going through it**; Docker starts it again. The old wheel stays, so a bad pointer returns to it by deleting one file.
+  (c) **A warm child process per version** that speaks to the server over a pipe (what `04` §4 calls the warm worker): switching is starting a new child and draining the old one, with no restart of
+  the server. The cleanest, but it replaces the extraction calls in `lean.py` and `stream.py` and their error handling: a task of its own, and a bigger change than the problem needs today.
+  (d) **Keep `encore update` as the only route** (today). Zero code, and the friend's songs depend on the owner noticing.
+* **Decision (proposed).** (b) now; (c) when the extraction moves out of process for its own reasons; never (a).
+  1. **One way to run yt-dlp.** Every use follows the pointer. The playlist fallback stops calling the `yt-dlp` command and runs `[sys.executable, "-m", "yt_dlp", …]` with the pointer's wheel in
+     `PYTHONPATH`; its availability check becomes `find_spec`. A test fails if an argv beginning with `"yt-dlp"` comes back.
+  2. **Where from.** PyPI's JSON for `yt-dlp` (the server calling an outside service is the rule, ADR-R38), once a day at a random time; the wheel's URL and `sha256` come from that answer and the
+     downloaded file must match. Only a release **older than 24 hours** is considered (a broken or hostile release is usually pulled within a day). Only a version **newer than the image's own**
+     is used: the image's version is read with `importlib.metadata` (nothing is imported) and versions compare as integer tuples; copies older than the image's are deleted after an `encore update`.
+  3. **The canary tests the path that plays songs.** The child imports the server's own `InProcessExtractor` with the same format selector, the same fast client list (`visionos` first) and the same
+     `music.youtube.com/watch?v=` address, with a **temporary cache folder of its own**, on one fixed, long-lived video that is not music (Blender Foundation's open film "Big Buck Bunny", `aqz-KE-bpKQ`; the first choice, YouTube's first upload, answered "This video is unavailable" on this path in the first real run), then reads the first
+     64 KB of the audio. If the candidate fails, the **running** copy runs the same canary, so "YouTube broke" and "the new release is bad" are told apart: only when the running copy passes is the release marked bad for good; when it fails too, YouTube is the problem and the release stays eligible (it may be the fix). Before the real run, the video is checked to
+     satisfy the selector through this path (an old upload may not offer the audio format wanted); if it does not, another fixed video is chosen, not the selector loosened.
+  4. **The canary is a look-up like any other, and the child cannot count it.** The **parent** waits for the `Pacer` and checks `Rest` before starting the child (resting: no check, no update), records
+     the look-up in the per-day counter afterwards, and feeds a refusal into `Rest.blocked()`. At most **four** canary runs a day (a healthy day uses none or one; a day on which the candidate fails uses two, the candidate and then the running copy, and may retry once).
+  5. **Switching.** On a pass: write the wheel's sha256 next to it, then the pointer (temp file, rename), keep the previous wheel, log `yt-dlp 2026.10.21 -> 2026.11.02`. The restart waits until
+     **nothing is going through the server**: no stream of any kind (YouTube songs, owned songs proxied by the gateway, a playlist download), no import, no keep, for 60 s. **It waits as long as it
+     takes and never forces**: the owner's rule is not to update while somebody is likely to be listening without saying so (P3-12). The log says "a newer yt-dlp is ready, waiting for a quiet
+     moment" and `/encore/api/v1/info` says which version is running and which is waiting.
+  6. **The loader never fails the start.** At start it re-checks the stored sha256; a pointer to a missing, partial or mismatching wheel (an interrupted write, a copied folder) logs one line, the
+     image's own copy is used and **the pointer is removed**, so that nothing waits for a copy that cannot be used and the next daily check fetches the release again (found in the first real run:
+     without this, `/info` kept saying "pending" and the server would have restarted every quiet minute for ever). A second guard for causes nobody thought of: **one restart per version**; a marker
+     file (`restarted-for`) is written before the restart, and a server that comes back still pending for the same version logs it and does not restart for it again; staging a version anew
+     (after a failed start dropped its pointer) clears the marker, so every staging gets exactly one restart. There is **no crash-loop marker**:
+     yt-dlp is imported late, so a bad wheel would not fail the start, and the child canary before the switch is the check that matters.
+  7. **When nothing works.** If the running copy fails the canary and no newer release exists, the server says so in the log and in `/info` (`youtube: degraded`) and retries hourly, within the budget of
+     point 4; the app can show "songs from YouTube are not working right now" (the admin Home later). No fall-back to an older release: the older one is what broke.
+  8. **Off switch.** `ENCORE_AUTO_TOOLS=0` for a Tinkerer who pins versions or has no outside access; the image's own yt-dlp is used as today.
+  9. **Scope of this slice.** yt-dlp only. `ytmusicapi` (the search) breaks less often and has dependencies; it follows the same pattern later. Rollback of a whole server update (`encore update`) is another task.
+* **Why (b) beats the others.** It never touches the running process until a restart, so there is no half-updated state and no stale exception class; the check happens in a process that can crash
+  without taking the server with it; the rollback is "delete one file"; and it needs a pointer file, a loader at start and a child-process canary, so it can be tested without a network (a fake PyPI and a
+  fake canary). (c) is better long term and larger now; (d) leaves the friend dependent on a manual step; (a) is the cheapest to write and the most likely to fail on exactly the day it is needed.
+* **Costs and risks.** (1) A restart (about 5 s) once the server is quiet; a server that is never quiet never restarts and keeps the old copy (visible in `/info`). (2) The server downloads code from PyPI
+  and runs it with access to `/data` and `/music`. yt-dlp already is such code; the new exposure is a hostile release inside the 24 h window, which the delay and the hash only partly cover (the hash comes
+  from the same place as the file). A second, independent channel would be GitHub's zipapp checked against its `SHA2-256SUMS`: **open**, not planned. (3) One or two more YouTube look-ups a day from the
+  Host's address, counted. (4) A future yt-dlp that needs a new dependency or a JavaScript runtime fails the canary and the server stays on the old copy: safe, but then only a new image helps. (5) The canary
+  video could one day be removed: the updater then says "cannot check" and does nothing, the safe side.
+* **Tests.** A fake PyPI (`httpx.MockTransport`) and a fake canary: the 24 h rule, a hash mismatch, a candidate that fails and one that passes, the running copy failing too (degraded), the pointer and the
+  previous copy, a pointer to a missing or mismatching wheel, `Rest` resting, the pacer and the counter being used by the parent, the idle test (a stream open: no restart), the off switch, an older image
+  after `encore update`, the playlist fallback's argv. One real run on the dev VM, last: at most 2 look-ups, the version before and after, the log lines, the restart at idle, a deliberately broken wheel refused.
+* **For the owner.** Nothing to decide. It changes nothing a person sees, costs one or two look-ups a day, never restarts the server while something is playing, and can be switched off. When the `encore update`
+  that first brings it to VM 107 is announced, it says so.
+* **Revisit when.** The extraction moves out of process (then (c)); or YouTube starts treating a fixed canary video as a signal; or a Host reports a restart at a bad moment.

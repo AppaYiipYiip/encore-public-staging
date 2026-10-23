@@ -51,6 +51,7 @@ from .live import Hub
 from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
+from .quiet import InFlight, InFlightMiddleware
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
 from .sources.youtube.errors import DownloadError
@@ -58,6 +59,8 @@ from .sources.youtube.pace import Pacer
 from .sources.youtube.rest import DbRestStore, Rest
 from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
+from .sources.youtube.tools import Active, ToolStore
+from .sources.youtube.updater import Tools, create_tools
 
 log = logging.getLogger("encore_server.api")
 
@@ -78,6 +81,8 @@ class Services:
     accounts: Accounts | None = None
     limiter: Limiter | None = None
     music_as: Callable[[str, str, str], SubsonicUser] | None = None
+    #: The yt-dlp updater and the restart that waits for a quiet moment (docs/11 ADR-R39); `None` when off.
+    tools: Tools | None = None
 
 
 def services(request: Request) -> Services:
@@ -167,6 +172,7 @@ def info(request: Request) -> JSONResponse:
             "youtube": svc.youtube.status()
             if svc.youtube is not None and hasattr(svc.youtube, "status")
             else {"state": "off", "resumesInSec": 0},
+            **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
     )
 
@@ -888,6 +894,27 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
     )
 
 
+def _default_tools(
+    settings: Settings,
+    youtube: YoutubeSource | None,
+    scheduler: Scheduler | None,
+    in_flight: InFlight,
+    active: Active | None,
+) -> Tools | None:
+    """The yt-dlp updater, for a server that really fetches from YouTube, runs its background work and has not switched it off."""
+    if not (settings.auto_tools and settings.workers and isinstance(youtube, YoutubeSource)):
+        return None
+    pacer = youtube.pacer
+    return create_tools(
+        ToolStore(settings.data_dir / "tools" / "yt-dlp"),
+        active,
+        rest=youtube.rest,
+        lookups=youtube.lookups,
+        wait_turn=pacer.wait_turn if pacer is not None else None,
+        busy=lambda: in_flight.count > 0 or (scheduler is not None and scheduler.running() > 0),
+    )
+
+
 def _background(
     settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, client: NavidromeClient
 ) -> tuple[Scheduler | None, Keeper | None, ImportService]:
@@ -938,6 +965,7 @@ def create_app(
     navidrome: NavidromeClient | None = None,
     gateway_client: httpx.AsyncClient | None = None,
     navidrome_admin: NavidromeAdmin | None = None,
+    tools_active: Active | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -969,6 +997,10 @@ def create_app(
         else None
     )
 
+    # Not counted: the Docker health check, which would break every quiet moment.
+    in_flight = InFlight(ignore=(f"{router.prefix}/info",))
+    tools = _default_tools(settings, youtube, scheduler, in_flight, tools_active)
+
     @contextlib.asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if settings.workers:
@@ -976,9 +1008,13 @@ def create_app(
                 scheduler.start()
             if linker is not None:
                 linker.start()
+            if tools is not None:
+                tools.start()
         try:
             yield
         finally:
+            if tools is not None:
+                tools.stop()
             if linker is not None:
                 linker.stop()
             if scheduler is not None:
@@ -997,7 +1033,9 @@ def create_app(
         imports=imports,
         accounts=accounts,
         limiter=Limiter(),
+        tools=tools,
     )
+    app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
     app.add_api_websocket_route("/encore/live", live)

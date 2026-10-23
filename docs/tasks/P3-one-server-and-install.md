@@ -83,6 +83,9 @@ installer and a browser wizard that a person who never used Docker can follow. R
   `--restore`; CI that restores a real backup nightly; owners' in-app "needs you" notices; `encore stats`.
 * **Acceptance.** A forced bad update rolls back by itself; a yt-dlp release that fails the canary is not used; moving the dev VM's
   server to a fresh VM keeps phones signed in and friends on other servers connected.
+* **Slices (L task, split 2026-10-23).** **P3-08a done:** the weekly from-scratch image rebuild (PR #7). **P3-08b built and run for real (PR #9, `../evidence/c04-ytdlp-self-update.md`):** the in-server yt-dlp updater as designed in `../11` ADR-R39
+  (pointer + child-process canary on the production path, restart only when quiet and at most once per version, one way to run yt-dlp); it reaches a server with the next `encore update`. Later slices: `encore update` with automatic rollback; the same pattern for
+  `ytmusicapi`; `encore stats`; the in-app "needs you" notices.
 
 ## P3-09 — Security and privacy as written (server + app) — Size M
 * **Why.** `../21`.

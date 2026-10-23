@@ -323,7 +323,7 @@ def test_the_default_reader_uses_what_the_machine_has(monkeypatch: pytest.Monkey
         return Playlist("P", "youtube", "playlist", tracks(1), False)
 
     monkeypatch.setattr(service, "read_playlist", fake_read)
-    monkeypatch.setattr(service.shutil, "which", lambda name: "/usr/local/bin/yt-dlp")
+    monkeypatch.setattr(service.importlib.util, "find_spec", lambda name: object())
 
     service.default_reader()(LINK)
 

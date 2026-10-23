@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-import shutil
 import sqlite3
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -54,7 +53,7 @@ def _song_of(track: Track) -> dict[str, Any]:
 def default_reader() -> Callable[[str], Playlist]:
     """Reads playlist links the way this machine can: YouTube Music's own interface when `ytmusicapi` is installed, `yt-dlp` as the fallback."""
     ytmusic = ytmusic_reader() if importlib.util.find_spec("ytmusicapi") is not None else None
-    ytdlp = ytdlp_reader() if shutil.which("yt-dlp") is not None else None
+    ytdlp = ytdlp_reader() if importlib.util.find_spec("yt_dlp") is not None else None
     if ytmusic is None and ytdlp is None:
         log.warning("neither ytmusicapi nor yt-dlp is installed: YouTube playlist links cannot be read")
 

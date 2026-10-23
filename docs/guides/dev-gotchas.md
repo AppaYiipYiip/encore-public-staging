@@ -12,6 +12,7 @@ the tool and fix the line. Rules about *what* to do are in `docs/30-engineering-
 | A foreground `sleep` or `Start-Sleep` before a command is blocked | Start a polling loop in the background and do other work; it wakes you when it exits |
 | The Bash tool's `cd` persists and changes the working directory | Use absolute paths |
 | The working tree is CRLF; Linux shells and `ssh … 'cat > f'` choke on it | Strip with `tr -d '\r'` before sending anything to Linux |
+| `git archive HEAD:server/encore_server \| ssh host tar -x` delivers CRLF files here (this PC has `core.autocrlf=true`), and a CRLF `entrypoint.sh` fails inside the container with "no such file or directory" | `git -c core.autocrlf=false archive …`, then check on the host: `grep -c "$(printf '\r')" entrypoint.sh` must print 0 |
 | A long shell here-document with quotes breaks the parser; Python patches with `\n` in non-raw strings break | Write scripts with a file-writing tool; edit shell scripts with an editor tool |
 | `flutter build` run through PowerShell reports "failed (exit 1)" when Gradle prints a deprecation warning | Run it from the Bash tool, or check the APK's timestamp, or `aapt2 dump badging` for the version code |
 | Gradle cannot reach Google when the PC picks IPv6 | `./gradlew --stop`, then `JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true`, then build |

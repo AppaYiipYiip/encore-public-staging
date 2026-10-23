@@ -112,7 +112,9 @@ until a new image is built and `encore update` is run on that server (nothing pu
 and every build writes the yt-dlp version it carries into the run page. Why from scratch: the layer cache reused the `pip install` step (the log showed `CACHED`, image carried
 2026.10.21), the fresh build downloaded it again (not cached; same 2026.10.21, which was PyPI's newest that day). It only makes a newer yt-dlp *available*: a server gets it when
 `encore update` is run on it. The scheduled build has no canary, so a bad yt-dlp release would also be inside `:main` (every build keeps its own `:sha-<commit>` tag to go back to).
-Next: the in-server updater with the 24-hour rule and a canary, which is what makes it automatic.
+**Second step built and run for real (2026-10-23, PR #9, `../evidence/c04-ytdlp-self-update.md`, ADR-R39):** the server checks PyPI daily, takes a release older than 24 hours, tests it on the song path in a child process and, on a pass,
+switches to it at its next start, which it makes itself once nothing has gone through it for a minute (never forced, once per version). Seen on the dev VM: yt-dlp 2026.8.19 became 2026.10.21 by itself, 19.6 minutes after start, with 1 canary look-up
+(4 extractions in all, including the diagnosis of a bad first choice of check video). Not seen: days, a never-quiet server, `degraded` against the real YouTube, VM 107 (it gets this with the next `encore update`, which the owner is told about first).
 
 ## P4 — full feature set
 

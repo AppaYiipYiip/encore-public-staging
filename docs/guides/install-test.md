@@ -85,6 +85,13 @@ pointing at that folder, then `encore restore FILE`. `encore uninstall --everyth
 
 Running the installer again is safe: what is there is kept and brought up to date.
 
+**Songs from YouTube keep working by themselves.** The part of Encore that fetches songs from YouTube (yt-dlp) breaks now and then when YouTube changes.
+Once a day the server looks for a newer version, tries it on one open film (it asks YouTube for the film's sound and reads 64 KB of it; that counts as one of the
+server's look-ups) and, only if that works, switches to it. The switch is a restart of about 2 seconds, and it happens only after **a full minute in which nothing is
+playing, downloading or being worked on**; phones reconnect by themselves. It never happens while somebody is listening, and at most once per new version.
+`encore logs` says what it did (`encore logs | grep yt-dlp`). To turn it off (you want to choose versions yourself, or the server has no internet except
+for songs), add the line `ENCORE_AUTO_TOOLS=0` to `/opt/encore/.env` and run `encore update`; Encore then uses the yt-dlp that came with the image.
+
 ## If something goes wrong
 
 If the window is closed or the connection drops, the install carries on by itself; if the power goes or you press Ctrl-C, run the same two lines again:

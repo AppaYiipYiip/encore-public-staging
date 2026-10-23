@@ -14,7 +14,7 @@ from typing import Any
 
 from .lean import InProcessExtractor, LeanResolver, YtmusicApiSearcher
 from .pace import Pacer
-from .rest import Guarded, Rest
+from .rest import Guarded, Lookups, Rest
 from .scoring import Want
 from .stream import StreamProxy, Upstream
 
@@ -74,6 +74,15 @@ class YoutubeSource:
 
     def open(self, wanted: Wanted, range_header: str | None) -> Upstream:
         return self._proxy.open(wanted, range_header)
+
+    @property
+    def lookups(self) -> Lookups:
+        """The count of today's look-ups at YouTube (the updater's check is one of them)."""
+        return self._extractor.lookups
+
+    @property
+    def pacer(self) -> Pacer | None:
+        return self._pace
 
     def resting_for(self) -> float:
         """Seconds YouTube is being left alone for (0 when it is asked as usual): background work waits instead of asking."""

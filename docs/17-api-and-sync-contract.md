@@ -18,7 +18,7 @@ from the server code and checked in CI.
 | Changes | `GET /library/changes?since=<cursor>` returns everything changed for this person since the cursor, including deletions (tombstones), in order |
 | Errors | One shape everywhere: `{"error": {"code": "song_unavailable", "message": "This song isn't available in your country.", "retryable": false, "retryAfterMs": null, "details": {}}}`; `message` is a plain sentence the app may show as is; `code` is for logic |
 | Rate limits | `429` with `retryAfterMs`; per person and per device |
-| Versions | `GET /encore/api/v1/info` → `{apiVersion: "1.4", minAppVersion: "0.9.0", serverVersion, features[]}`; additive changes bump the minor; a breaking change is a new `/v2` while `/v1` keeps working for **two app releases**; the app refuses to run against a server whose `apiVersion` major it does not know and says "Update Encore" (or "Ask Riley to update the server") |
+| Versions | `GET /encore/api/v1/info` → `{apiVersion: "1.4", minAppVersion: "0.9.0", serverVersion, features[]}`; additive changes bump the minor; a breaking change is a new `/v2` while `/v1` keeps working for **two app releases**; the app refuses to run against a server whose `apiVersion` major it does not know and says "Update Encore" (or "Ask Riley to update the server"). `info` also carries `youtube` (`{state: ok|resting|off, resumesInSec}`) and, on a server that keeps its own yt-dlp fresh (ADR-R39), `tools: {ytDlp: {running, pending, state: ok|degraded}}`: `pending` is a newer version that waits for a quiet moment to be switched to, `degraded` means songs from YouTube are not working right now |
 
 ## 2. Error codes (the closed list; new codes need a doc change)
 

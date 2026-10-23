@@ -398,13 +398,25 @@ def _playlist(name: str, source: str, kind: str, tracks: list[Track], *, cut: bo
 
 
 def ytdlp_reader(
-    binary: str = "yt-dlp", *, timeout: int = 180, run: Callable[..., Any] | None = None
+    python: str | None = None, *, timeout: int = 180, run: Callable[..., Any] | None = None
 ) -> Callable[[str], dict[str, Any]]:
-    """A function that lists a playlist with the yt-dlp command line (no download)."""
+    """A function that lists a playlist with yt-dlp (no download), run as `python -m yt_dlp` so that it is the same copy the rest of the server uses:
+    the one the server switched to (docs/11 ADR-R39) is first on `PYTHONPATH`, which the child inherits. A `yt-dlp` command would ignore it."""
     import subprocess
+    import sys
 
     def read(url: str) -> dict[str, Any]:
-        argv = [binary, "--flat-playlist", "-J", "--no-warnings", "--playlist-end", str(MAX_TRACKS + 1), url]
+        argv = [
+            python or sys.executable,
+            "-m",
+            "yt_dlp",
+            "--flat-playlist",
+            "-J",
+            "--no-warnings",
+            "--playlist-end",
+            str(MAX_TRACKS + 1),
+            url,
+        ]
         runner = run or subprocess.run
         done = runner(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout, check=False)
         if done.returncode != 0:
