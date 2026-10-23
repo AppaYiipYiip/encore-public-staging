@@ -59,7 +59,8 @@ documents are history; read one only when a task links it.
 | 27 | [Story map](27-story-map.md) | Every step of the Listener, the Host and the Tinkerer, marked designed / partial / missing, and the tasks the holes became |
 | 28 | [Code-level re-engineering](28-code-level-re-engineering.md) | Module by module: what the code does today, what is structurally wrong, the target shape (player state machine, change feed, feature folders, one server package) |
 | — | [tasks/](tasks/) | The work, phase by phase, with context and acceptance criteria |
-| — | [evidence/](evidence/) | Screenshots from the app walk and the measurement scripts |
+| — | [evidence/](evidence/) | Screenshots from the app walk, the measurement scripts, and the clean-machine proofs (`c01` the installer, `c02` backup and restore) |
+| — | [guides/](guides/) | The install test guide (`install-test.md`: one command on a fresh computer, backups, looking after it) and a draft guide for a friend using somebody's server (`friend.md`) |
 
 ## Ground rules that do not change
 
