@@ -189,7 +189,7 @@ tokens. Change:
 |------|-------|--------|
 | Remote truth | Navidrome via Subsonic (stars, playlists) + several Encore services | **Encore API** for library, playback, imports, people; Subsonic only for streaming/covers of files (through the gateway) |
 | Identity | Navidrome song id (+ Deezer id for catalogue) | `song_ref` id everywhere; local `Tracks` table keyed by ref with optional file id |
-| Network discovery | probes ports and paths per service | one base URL per server (+ `encore.local` and the public address, raced) |
+| Network discovery | probes ports and paths per service | one server = **a key** (`serverId` = hash of its Ed25519 public key) + a list of addresses the server itself provides; on each network the phone races the known addresses and what mDNS (`_encore._tcp`, advertised by avahi on the host) finds, and uses the first that proves the key; credentials only go to a verified address (`11` ADR-R40, P2-19) |
 | Live updates | 3 s adaptive probe | websocket `live` channel; probe only as fallback |
 | Playback | engine wrapped by `JamPlaybackFacade` | engine + `TrackSource` resolver (download / file / catalogue stream) + **playback sync** (state to server on pause/seek/track change and every 15 s; takeover handling); Jam later as a separate layer |
 | Covers | URL per widget size; letter-tile fallback | one canonical cover per album/song ref, stored with downloads and in a bounded disk cache, resized locally; letter tiles only when no cover exists anywhere |

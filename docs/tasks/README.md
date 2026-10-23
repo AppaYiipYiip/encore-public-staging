@@ -20,7 +20,7 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 |-------|------|-------|
 | P0 Reset | [P0-reset.md](P0-reset.md) | P0-01 to P0-08 done; P0-09, P0-10 and branch protection open |
 | P1 Instant play, worst bugs | [P1-instant-play-and-worst-bugs.md](P1-instant-play-and-worst-bugs.md) | Core done; open items in [AUDIT.md](AUDIT.md) |
-| P2 Songs as references | [P2-songs-as-references.md](P2-songs-as-references.md) | Server core and app data layer done; P2-03 to P2-18 partly, see [AUDIT.md](AUDIT.md) |
+| P2 Songs as references | [P2-songs-as-references.md](P2-songs-as-references.md) | Server core and app data layer done; P2-03 to P2-18 partly, see [AUDIT.md](AUDIT.md); **P2-19 (find your server, ADR-R40) decided, not started** |
 | P3 One server, one-command install | [P3-one-server-and-install.md](P3-one-server-and-install.md) | P3-05 slice, backups and resumable install done and proved; P3-12 gates open; the rest open |
 | P4 Full feature set | [P4-full-feature-set.md](P4-full-feature-set.md) | Not started (owner: everything in the first version) |
 | P5 Public release | [P5-public-release.md](P5-public-release.md) | After P4; website and name not now |

@@ -89,6 +89,9 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
   **Enforced since 2026-10-23** for addresses written into the source: the outside-host ratchet in `app/test/architecture_test.dart` (baseline: the Deezer and LRCLIB clients, goal zero; `../30` §5;
   shown to fail on a new outside `baseUrl`). Not enforced for an address that arrives in data (a cover URL inside a record).
 
+* **Found 2026-10-23, security S2 (ADR-R40, P2-19 slice A):** the app's address probe is a Subsonic `ping` that carries the person's login token, sent to every candidate address, requests use the first candidate before any probe, and "reachable but rejecting the login" counts as "this is the server". On a network that has the same address as the person's home server (a café, a work Wi-Fi) the token (md5 of password and salt, guessable offline) goes to whatever answers there. Low for the first friend (one https address); real for a phone that has a home address and roams. Fix: servers get a key as identity and credentials go only to an address that proved it (slice A).
+* **Found 2026-10-23, the first screen asks for an IP address** (P2-19, `15` A1); the installer's QR is the bare address; the app has no QR scanner. Decided in ADR-R40 (the owner's question of the same day): a key as identity, the server's own address list, a link or QR first, "Servers on this Wi-Fi" by mDNS second, a typed address last. Slices A and B before P1-06, slice C when the owner's phone exists.
+
 ## P3 — one server and the install
 
 **Built and proved (2026-10-22): the installer, first slice (P3-05, PR #1).** One command on a clean Ubuntu 26.04 VM: 5.5 to 6 minutes, a re-run 4 s, every
@@ -134,7 +137,7 @@ Each is run from the UI on fresh machines, written up in `../evidence/`, and eve
 2. Fresh install of the app on a clean emulator: sign in, import a Spotify and a YouTube Music playlist (a long one too), watch it appear at once with
    its picture, play, download a playlist, go offline, come back.
 3. A friend joins by invitation on a second emulator; both use the same server; likes and playlists stay separate.
-4. The same account on two emulators: an import, a like, a playlist edit and a resume on one appear on the other within seconds.
+4. The same account on two emulators: an import, a like, a playlist edit and a resume on one appear on the other within seconds. **Walked 2026-10-23 (`../evidence/b02-journey4-two-phones.md`): import 3.3 s, like 2.2 s, rename 2.5 s (upper bounds); passed. Resume is not offered on the other phone: the app never calls the server's `/playback` (P2-08, P2-09 are open app work).**
 5. A Jam on one server (host and guest), a catalogue song in the Jam, leave and rejoin, the host hands over.
 6. A Jam with a person on another server (federation), and a guest seat for somebody with no server.
 7. A shared tablet: two profiles, switch without signing out, separate downloads.

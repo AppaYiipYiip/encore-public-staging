@@ -173,6 +173,8 @@ Nothing to fill. Shows the computer's name and that it is ready.
 
 Manual connection ("Other ways to connect"): address + username + password, for Tinkerers and the Host's own debugging only.
 
+**Order of the first screen, decided 2026-10-23 (`11` ADR-R40; not built, the app still shows the address form first, `evidence/b02`):** 1. a link or a QR code (the installer and `encore pair` print a one-time pairing link and QR for the owner's own phone); 2. **"Servers on this Wi-Fi"**, found by the server's own advertisement and shown by name; 3. "Other ways to connect". No "address", "IP" or "port" on the first screens. The phone recognises its server by a key, not by an address, so another Wi-Fi, a new router or a new computer (restored from a backup) do not matter.
+
 ## 4. The admin site (the Host's pages after setup)
 
 At `http://encore.local` (home network only by default; never on the public address). Sign in with the Host's normal account.
