@@ -46,7 +46,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 
 | Don't (what happened) | Do | Caught by |
 |-----------------------|----|-----------|
-| **Let a client call an outside service itself** (today: the phone calls Deezer, LRCLIB and outside picture addresses; a browser cannot, and each call shows the person's own address) | **Clients talk only to their own Encore server; the server talks to the outside** (ADR-R38). Media elements use short-lived signed addresses. Native-only shortcuts are extras, never the only route | **Convention** until the outside-host ratchet exists (section 5). The existing dio rule only keeps HTTP inside `data/`, and today's Deezer and LRCLIB clients live there, so it does not catch this |
+| **Let a client call an outside service itself** (today: the phone calls Deezer, LRCLIB and outside picture addresses; a browser cannot, and each call shows the person's own address) | **Clients talk only to their own Encore server; the server talks to the outside** (ADR-R38). Media elements use short-lived signed addresses. Native-only shortcuts are extras, never the only route | **Machine** for addresses written into the source (the outside-host ratchet in `app/test/architecture_test.dart`, section 5); **convention** for an address that arrives in data (a cover URL inside a record) |
 | Many programs for one home server (C1: seven server programs, six ports, each with its own copy of the music-server client) | One program, modules in folders, one HTTP client, one auth check, one port (ADR-R3, `04` §2) | Convention; the old code is being removed (P3-04) |
 | Make a file id the song's identity (C3: it led to "pending likes", an "instant playlist" and an "upgrade map", each a new way to lose a like) | A **song ref** is the identity; files attach to it; likes and playlist entries point to refs (ADR-R4, `18`) | Machine: the integration suite against a real music server (CI `encore-server-navidrome`); otherwise convention |
 | Make the app find each service two ways (C2: by port at home, by path away) | One front door: the gateway; one base URL per server (`04` §2, §8) | Convention |
@@ -185,9 +185,9 @@ A rule written in a document decays. The cheap way to make it stay is a **ratche
 3. A *new* violation fails the test. A baseline entry that has been *fixed* also fails, with a message to lower the number, so cleanup is always recorded.
 4. The goal of every baseline is an **empty map**. A guard test checks that the scan really sees the code (a silent no-op is the failure to avoid).
 
-**Planned (a separate pull request, because it touches `app/`):** an outside-host ratchet for ADR-R38. It counts `baseUrl: 'https://…'` and other outside web addresses in
-`app/lib`, with the baseline `deezer_client.dart: 1` and `lrclib_client.dart: 1`, and loses an entry when P2-12 and P2-14 land. When the map is empty, the thin-client rule is
-enforced by the machine and the web client's biggest prerequisite is checked automatically.
+**Built (the group `thin client` in `app/test/architecture_test.dart`):** the outside-host ratchet for ADR-R38. It counts, in `app/lib`, a literal `baseUrl: 'https://…'`, `Uri.http(s)(…)`, `Uri.parse('https://…')` and a request to a literal
+address, with the baseline `deezer_client.dart: 1` and `lrclib_client.dart: 1`; an entry is lowered when P2-12 and P2-14 land. When the map is empty, the thin-client rule is
+enforced by the machine for everything written into the source. It cannot see an address that arrives in data (a cover URL inside a record, `CoverFileService` fetches whatever it is given): that part stays a convention until the covers are served by the server.
 
 ## 6. Where to read more
 

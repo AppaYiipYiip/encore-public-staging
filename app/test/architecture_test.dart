@@ -98,6 +98,54 @@ void main() {
     });
   });
 
+  group('thin client (docs/11 ADR-R38)', () {
+    // The app talks only to its own Encore server; the server talks to YouTube,
+    // Deezer, lyrics and every other outside service, so a web or desktop
+    // client can exist later. This scan sees only addresses written into the
+    // source: a literal base address, `Uri.http(s)(...)`, `Uri.parse('https://..')`
+    // and a request to a literal address. It cannot see an address that arrives
+    // in data (a cover URL inside a record); that debt is tracked in ADR-R38
+    // and goes with the covers served by the server.
+    final outside = RegExp(
+      r'''baseUrl:\s*['"]https?://|Uri\.https?\(|Uri\.parse\(\s*['"]https?://|\.(?:get|post|put|patch|delete|head|getUri|download)\(\s*['"]https?://''',
+    );
+
+    test('the pattern recognises an outside address and ignores the rest', () {
+      for (final line in const [
+        "baseUrl: 'https://api.example.test/v1',",
+        'baseUrl: "http://example.test",',
+        "final u = Uri.https('example.test', '/x');",
+        "final u = Uri.http('example.test', '/x');",
+        "final u = Uri.parse('https://example.test/x');",
+        "await dio.get('https://example.test/x');",
+      ]) {
+        expect(outside.hasMatch(line), isTrue, reason: line);
+      }
+      for (final line in const [
+        'baseUrl: () => endpoints.currentUrl,',
+        'baseUrl: uri,',
+        'final u = Uri.parse(serverBase);',
+        "await dio.get('/encore/api/v1/library');",
+        "final text = 'see https://example.test';",
+      ]) {
+        expect(outside.hasMatch(line), isFalse, reason: line);
+      }
+    });
+
+    test('no client code calls an outside service itself', () {
+      _ratchet(
+        rule: 'clients talk only to their own Encore server (ADR-R38); '
+            'the server talks to the outside. Today the phone itself calls '
+            'Deezer (P2-12 removes it) and LRCLIB (P2-14 removes it)',
+        actual: _countByFile(files, dirs: const ['lib/'], pattern: outside),
+        baseline: const {
+          'lib/data/api/lrclib_client.dart': 1,
+          'lib/data/catalogue/deezer_client.dart': 1,
+        },
+      );
+    });
+  });
+
   group('error handling', () {
     // A catch that ignores the error object cannot log it, which breaks the
     // project rule "no silent failure" (docs/README.md working agreement 5).

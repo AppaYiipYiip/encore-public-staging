@@ -85,8 +85,9 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 * P2-18: server part belongs to P3-03.
 * **Debts against the thin-client rule (ADR-R38, checked in the code 2026-10-23).** The audio path is server-side and web-ready. The phone still calls outside services itself:
   Deezer for search, artist and album pages, 30-second previews (the phone plays Deezer's file) and the background new-release alerts; LRCLIB for lyrics; outside picture
-  addresses for some covers. A web client could not do these. They go away with P2-12 and P2-14 (and the covers served by the server); the table is in `../11` ADR-R38. Not yet
-  enforced by a test: an outside-host ratchet in `app/test/architecture_test.dart` is the planned follow-up (`../30` §5).
+  addresses for some covers. A web client could not do these. They go away with P2-12 and P2-14 (and the covers served by the server); the table is in `../11` ADR-R38.
+  **Enforced since 2026-10-23** for addresses written into the source: the outside-host ratchet in `app/test/architecture_test.dart` (baseline: the Deezer and LRCLIB clients, goal zero; `../30` §5;
+  shown to fail on a new outside `baseUrl`). Not enforced for an address that arrives in data (a cover URL inside a record).
 
 ## P3 — one server and the install
 

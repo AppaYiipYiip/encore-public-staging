@@ -389,7 +389,8 @@ Format: Context → Options → Decision → Why it beats the others → Consequ
   | Cover pictures by an outside address (Deezer covers, an import's source picture) | `CachedNetworkImage` in `features/common/cover_art.dart` | Covers served by the server (the cover finder already stores `cover.jpg`); **whether Flutter web can load outside pictures is unchecked: check when the web client starts** |
 
 * **Consequences.** P6 "Web/desktop client" now lists these as prerequisites. The audio path needs no change for a browser (the server streams with Range support and signed
-  addresses). Platform parts of the app (files, the phone's database, secure storage, background work) will need web versions behind interfaces: not examined yet. A follow-up adds an
-  architecture-test ratchet that counts outside hosts in `app/lib` (today two clients, goal zero), so the rule is enforced and not only written (`30` section 5).
+  addresses). Platform parts of the app (files, the phone's database, secure storage, background work) will need web versions behind interfaces: not examined yet. An
+  architecture-test ratchet (2026-10-23) counts outside addresses written into `app/lib` (today two clients, goal zero), so the rule is enforced and not only written (`30` section 5);
+  it cannot see an address that arrives in data, such as a cover URL.
 * **Revisit when.** An outside service offers browser-safe access that is faster than a hop through the server **and** the owner accepts the privacy cost; or when the server
   cannot afford the extra traffic on a small machine (X-8).
