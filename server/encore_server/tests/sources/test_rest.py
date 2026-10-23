@@ -14,7 +14,7 @@ from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.scheduler import Retry, WorkItem
 from encore_server.sources.youtube.errors import DownloadError
-from encore_server.sources.youtube.rest import DbRestStore, Guarded, Rest
+from encore_server.sources.youtube.rest import DbRestStore, Guarded, Lookups, Rest
 from tests.conftest import FakeVerifier, creds, resolve, song
 from tests.test_keeper import Rig as KeeperRig
 
@@ -209,3 +209,50 @@ def test_matching_waits_out_the_rest_without_asking(tmp_path: Path, db: Database
         service.match(WorkItem("wk_x", "match", "sr_x", 3, 1, ()))
 
     assert caught.value.after_s == 900
+
+
+def test_the_look_ups_of_a_day_are_counted_and_told_to_the_log(caplog: pytest.LogCaptureFixture) -> None:
+    clock = Clock()
+    lookups = Lookups(clock=clock, every=3)
+    caplog.set_level("INFO", logger="encore_server.youtube")
+
+    for _ in range(7):
+        lookups.note()
+
+    assert lookups.today == 7
+    assert [r.getMessage() for r in caplog.records] == ["youtube look-ups today: 3", "youtube look-ups today: 6"]
+
+
+def test_a_new_day_starts_the_count_again_and_says_what_the_last_one_was(caplog: pytest.LogCaptureFixture) -> None:
+    clock = Clock()
+    lookups = Lookups(clock=clock, every=100)
+    caplog.set_level("INFO", logger="encore_server.youtube")
+    lookups.note()
+    lookups.note()
+
+    clock.now += 86400
+
+    assert lookups.today == 0, "nothing yet today"
+    lookups.note()
+    assert lookups.today == 1
+    assert [r.getMessage() for r in caplog.records] == ["youtube look-ups yesterday: 2"]
+
+
+def test_a_guarded_extractor_counts_the_look_ups_that_reach_youtube_not_the_ones_stopped_by_the_rest() -> None:
+    clock = Clock()
+    rest = Rest(clock=clock, probe_every_s=30)
+    inner = Inner()
+    guarded = Guarded(inner, rest)
+
+    guarded.extract("a", Path("x"))
+    guarded.extract("b", Path("x"))
+    inner.failure = DownloadError("blocked")
+    with pytest.raises(DownloadError):
+        guarded.extract("c", Path("x"))
+    for _ in range(4):
+        with pytest.raises(DownloadError):
+            guarded.extract("d", Path("x"))
+
+    assert guarded.lookups.today == inner.calls == 4, (
+        "two that worked, the refusal and one probe; the three others during the rest were never sent"
+    )

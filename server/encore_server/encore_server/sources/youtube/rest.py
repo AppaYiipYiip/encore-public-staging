@@ -9,6 +9,7 @@ in the database, so a restart does not start by hammering YouTube again.
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -16,6 +17,8 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .errors import DownloadError
+
+log = logging.getLogger("encore_server.youtube")
 
 
 class RestStore(Protocol):
@@ -80,20 +83,57 @@ class Rest:
             self._store.save(self._until, self._streak)
 
 
+class Lookups:
+    """How many times the server has asked YouTube today (UTC), for the log: two people using one home address every day is a number worth
+    knowing (docs/tasks P3-12), and one a person can read with `encore logs`. Only the number: no person, no song. Kept in memory, told to the
+    log every [every]th time and when a new day starts."""
+
+    def __init__(self, *, clock: Callable[[], float] = time.time, every: int = 25) -> None:
+        self._clock = clock
+        self._every = max(1, every)
+        self._lock = threading.Lock()
+        self._day = self._today()
+        self._count = 0
+
+    def _today(self) -> int:
+        return int(self._clock() // 86400)
+
+    @property
+    def today(self) -> int:
+        with self._lock:
+            return self._count if self._day == self._today() else 0
+
+    def note(self) -> int:
+        """One more look-up; returns today's count."""
+        with self._lock:
+            today = self._today()
+            if today != self._day:
+                if self._count:
+                    log.info("youtube look-ups yesterday: %d", self._count)
+                self._day, self._count = today, 0
+            self._count += 1
+            if self._count % self._every == 0:
+                log.info("youtube look-ups today: %d", self._count)
+            return self._count
+
+
 class Guarded:
     """An extractor that obeys the rest: it does not ask YouTube while the server rests (except to probe), and tells the rest what happened."""
 
-    def __init__(self, inner: Any, rest: Rest) -> None:
+    def __init__(self, inner: Any, rest: Rest, lookups: Lookups | None = None) -> None:
         self._inner = inner
         self._rest = rest
+        self.lookups = lookups if lookups is not None else Lookups()
 
     def extract(self, video_id: str, info: Path, cookiefile: str | None = None) -> None:
         if not self._rest.allow_probe():
             raise DownloadError("blocked", "YouTube is being given a rest")
+        self.lookups.note()
         try:
             self._inner.extract(video_id, info, cookiefile)
         except DownloadError as error:
             if error.code == "blocked":
+                log.warning("youtube refused the server (look-up %d today): resting", self.lookups.today)
                 self._rest.blocked()
             elif error.code in ("unavailable", "age_restricted", "not_found"):
                 self._rest.ok()  # YouTube answered, about this video
