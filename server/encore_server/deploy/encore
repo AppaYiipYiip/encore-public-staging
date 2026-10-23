@@ -41,9 +41,23 @@ server_version() { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>
 host_ip() { ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}'; }
 state_of() { dc ps --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null | awk -v s="$1" '$1 == s {print $2 (NF > 2 && $3 != "" ? " (" $3 ")" : "")}'; }
 
+# Reading the text of `tailscale funnel status` (on standard input). Each site is a line "https://name[:port] (Funnel on)" followed by
+# "|-- / proxy http://127.0.0.1:4533". Plain functions of that text, so they are tested without Tailscale (tests/test_deploy_scripts.py).
+funnel_port_in_use() { # $1 = 443, 8443 or 10000: is a site already on that public port?
+    if [ "$1" = 443 ]; then grep -Eq '^https://[A-Za-z0-9._-]+ \('; else grep -Eq "^https://[A-Za-z0-9._-]+:$1 \("; fi
+}
+funnel_address_for() { # $1 = the local port: the public address that points at it
+    awk -v want="proxy http://127.0.0.1:$1" '/^https:\/\// {site = $1} index($0, want) {print site; exit}'
+}
+funnel_site_count() { grep -Ec '^https://' || true; }
+funnel_public_port() { # an address like https://name:8443 -> 8443 (443 when it has no port)
+    case "$1" in https://*:[0-9]*) printf '%s' "${1##*:}" ;; *) printf '443' ;; esac
+}
+
 funnel_address() {
     command -v tailscale >/dev/null 2>&1 || return 0
-    tailscale funnel status 2>/dev/null | grep -Eo 'https://[A-Za-z0-9._-]+(:[0-9]+)?' | head -1 || true
+    local status; status="$(tailscale funnel status 2>/dev/null || true)"
+    printf '%s\n' "$status" | funnel_address_for "$PORT"
 }
 
 BACKUP_DIR="$(env_value ENCORE_BACKUP_DIR)"; BACKUP_DIR="${BACKUP_DIR:-$DIR/backups}"
@@ -132,10 +146,18 @@ cmd_funnel() {
                 say "  This computer is not signed in to Tailscale yet. Open the link below in a browser and sign in:"
                 tailscale up || die "Signing in to Tailscale did not finish."
             fi
-            # Another service may already own the https port 443 of this computer: use the next free public one instead of replacing it.
-            local https=443
-            if tailscale funnel status 2>/dev/null | grep -q ':443'; then https=8443; note "Port 443 is already used by something else here; using ${https}."; fi
-            local out
+            local status https="" candidate out
+            status="$(tailscale funnel status 2>/dev/null || true)"
+            if [ -n "$(printf '%s\n' "$status" | funnel_address_for "$port")" ]; then
+                ok "Away from home: $(funnel_address) (it was already on)"
+                return 0
+            fi
+            # Another service may already own the public https port 443 of this computer: take the next free one instead of replacing it.
+            for candidate in 443 8443 10000; do
+                if ! printf '%s\n' "$status" | funnel_port_in_use "$candidate"; then https="$candidate"; break; fi
+            done
+            [ -n "$https" ] || die "The public ports 443, 8443 and 10000 of this computer are all used by other things. Free one with  tailscale funnel status."
+            if [ "$https" != 443 ]; then note "Port 443 is already used by something else here; using ${https}."; fi
             if ! out="$(tailscale funnel --bg --https="$https" "$port" 2>&1)"; then
                 printf '%s\n' "$out" | sed 's/^/    /' >&2
                 die "Tailscale would not turn Funnel on. It needs HTTPS and Funnel enabled for your tailnet (https://login.tailscale.com/admin/dns)."
@@ -145,7 +167,16 @@ cmd_funnel() {
             ;;
         off)
             command -v tailscale >/dev/null 2>&1 || die "Tailscale is not on this computer."
-            tailscale funnel reset >/dev/null 2>&1 || true
+            local status mine
+            status="$(tailscale funnel status 2>/dev/null || true)"
+            mine="$(printf '%s\n' "$status" | funnel_address_for "$port")"
+            if [ -z "$mine" ]; then ok "Encore was not reachable from outside: nothing to turn off"; return 0; fi
+            if [ "$(printf '%s\n' "$status" | funnel_site_count)" -le 1 ]; then
+                tailscale funnel reset >/dev/null 2>&1 || die "Tailscale would not turn Funnel off."
+            else
+                # Other things on this computer use Funnel too: take away only Encore's own address.
+                tailscale funnel --https="$(funnel_public_port "$mine")" off >/dev/null 2>&1 || die "Tailscale would not turn off Encore's address ($mine). See:  tailscale funnel status"
+            fi
             ok "Encore is no longer reachable from outside (Funnel is off)"
             ;;
         status)
