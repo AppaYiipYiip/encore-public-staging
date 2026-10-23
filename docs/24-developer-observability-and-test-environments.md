@@ -44,5 +44,5 @@ new one tried by the owner first (per-person beta flag).
 ## 5. What an agent needs on day one (put in `AGENTS.md`)
 
 * `tools/check --quick` / `--full`; `tools/env/stack up`; `tools/emulators/create`; `tools/journeys/ui.py` (drive the emulator by
-  labels), `typepw.py` (passwords, never printed), `play_timing.py` (measure tap → audible); where the debug bundles are.
+  labels; its `typefile` command types a password, never printed), `play_timing.py` (measure tap → audible); where the debug bundles are.
 * The rule: a bug report or a fix without request ids, setup and numbers is incomplete.

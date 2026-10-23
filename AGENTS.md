@@ -20,7 +20,7 @@ If you start with no memory of earlier work: `docs/README.md` has the current st
 ## Don't
 
 * **Never commit** passwords, login files, cookies, `.env`, keys, APK/AAB files. The hook refuses them.
-* **Never print, log, screenshot or paste a password.** Type passwords on test devices with `tools/journeys/typepw.py`.
+* **Never print, log, screenshot or paste a password.** Type passwords on test devices with `python -I tools/journeys/ui.py typefile <login file>` (it types only the `password:` line and prints nothing).
 * **Never burst requests at YouTube** (at most 10 look-ups per test run, spaced) and never from a Host's home address unless the task says so.
 * **Never make a client call an outside service** (YouTube, Deezer, lyrics, covers, anything): clients talk only to their own Encore server, the server talks to the
   outside, so a web or desktop client can exist later (`docs/11` ADR-R38).
@@ -37,3 +37,4 @@ If you start with no memory of earlier work: `docs/README.md` has the current st
 | Server | `server/legacy/*` today; `server/encore_server` after task P2-01 |
 | Checks | `tools/check.ps1` (`-Quick`, `-Server`, `-Live`) |
 | Emulator driving | `tools/journeys/ui.py` (never tap blind: `dump` first) |
+| Traps on this PC and how to avoid them | `docs/guides/dev-gotchas.md` |

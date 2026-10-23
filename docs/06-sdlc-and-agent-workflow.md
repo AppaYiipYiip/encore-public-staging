@@ -59,8 +59,8 @@ and the evidence. It must:
   (device, network, server, line).
 * Plain words on Listener screens; no "Navidrome", "Subsonic", "codec", "kbps", "server address" outside Advanced/Host screens.
 * Every tappable widget has a semantics label; every screen works at font scale 2.0 and with 3-button navigation.
-* Never print, log, screenshot or commit a password; type passwords with `tools/journeys/typepw.py` (reads a login file, prints
-  nothing); never screenshot while a password field is visible.
+* Never print, log, screenshot or commit a password; type passwords with `python -I tools/journeys/ui.py typefile <login file>` (types only the `password:` line,
+  prints nothing); never screenshot while a password field is visible.
 * Live tests against YouTube are **small** (≤ 10 look-ups per test run), never bursts; never from the owner's machines unless the
   task says so (`§8`).
 * When stuck for more than 30 minutes on something outside your task (permissions, a broken tool), stop and write it in the PR.

@@ -66,7 +66,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 | Poll when you can listen (a 3-second probe; worst case 7.4 s) | The live channel pushes; a slow poll is only the safety net (60 s) (ADR-R27) | Convention |
 | Skip silently when something is unavailable (E2: offline, the player hopped through 61 songs) | Say what is unavailable; grey the row; never auto-skip | Convention; offline tests |
 | Write a file straight to its final name | Temporary file, check size or checksum, then rename (downloads, backups) | Convention; tests |
-| Unformatted or lint-failing code | `dart format`, `dart analyze --fatal-infos` (warnings and infos fail) | Machine: pre-commit and the App workflow |
+| Unformatted or lint-failing code; a Future nobody awaits; a subscription never cancelled; `print` | `dart format`, `dart analyze --fatal-infos` (warnings and infos fail). A stricter profile (`app/analysis_options_strict.yaml`: strict casts, inference and raw types; unawaited futures, uncancelled subscriptions, unclosed sinks and `print` are errors; sorted imports) applies to `lib/{app,core,data,design,domain,features,playback}` and the matching `test/` folders | Machine: pre-commit and the App workflow |
 
 ### D. The server (Python)
 
@@ -111,7 +111,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 | Don't (what happened) | Do | Caught by |
 |-----------------------|----|-----------|
 | Commit passwords, logins, cookies, `.env`, keys, APK/AAB files (D1: six login files were pushed) | Login files live outside the repository (`local/logins/`) | Machine: the pre-commit hook, CI `forbidden-files`, gitleaks |
-| Print, log, screenshot or paste a password | Type it with `tools/journeys/typepw.py`, which prints nothing; never screenshot a visible password field | Convention |
+| Print, log, screenshot or paste a password | Type it with `python -I tools/journeys/ui.py typefile <login file>`, which types only the password line and prints nothing; never screenshot a visible password field | Convention |
 | Let the Host see what a person plays | The Host sees who has an account and when they last signed in, never what they play (ADR-R33, `21`) | Convention; the privacy-matrix tests are planned (P3-09) |
 | Risk a Host's internet address | Pace and back off; no bursts; no Google account; contain YouTube behind one interface (ADR-R2, `04` §5) | Convention |
 

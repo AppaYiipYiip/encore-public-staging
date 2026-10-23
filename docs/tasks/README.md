@@ -31,4 +31,4 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 * Work in the repository `encore/`.
 * The test servers: dev VM `encore-dev` (yours to change), CT 104 (read-only except test accounts). The owner's homelab: hands off.
 * Test accounts' login files: `..\local\logins\`. Type passwords only with
-  `evidence/scripts/typepw.py` (copy into `tools/journeys/`), never print them, never screenshot a visible password field.
+  `python -I tools/journeys/ui.py typefile PATH` (types only the `password:` line of a login file), never print them, never screenshot a visible password field.
