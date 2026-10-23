@@ -16,7 +16,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 
 ---
 
-## 0. Before you write a line: eight questions (answer them in the pull request; if you cannot, stop)
+## 0. Before you write a line: nine questions (answer them in the pull request; if you cannot, stop)
 
 1. **Which story (`03a`) and which promise (`03` §4) does this serve?** None: do not build it, file an issue.
 2. **Does the core promise still hold** (a song you don't own: ~2 s typical, **≤ 10 s worst case**)? An open S1 bug in the area is fixed before new work there.
@@ -28,6 +28,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 7. **How will a person see it fail?** What does the screen say, in plain words, and what can they do?
 8. **Is this hard to undo (a data shape, a public address, an API, a choice of library)?** Write an ADR with the options compared (`11`) and ask the strongest model
    you have **before you commit** (section 3).
+9. **Which state table does this touch (`31` connecting, `32` accounts and devices, `33` playback, `34` conflicts)?** Change its row in the same pull request, with the test that covers it; a state or a failure that has no row is added before the code.
 
 ---
 

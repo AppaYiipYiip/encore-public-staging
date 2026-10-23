@@ -75,6 +75,8 @@ Goldens are stored for profiles A and B only (to keep them reviewable).
 
 ## 5. Network and life-cycle conditions
 
+What the player is **supposed to do** in each condition below (and what it does today) is the failure matrix in **`33`** §4; this section is how to **test** it. Conflicts between devices: `34`.
+
 | Condition | How | What a person must see |
 |-----------|-----|------------------------|
 | Offline from the start | airplane mode, cold start | Home from the phone's database ≤ 0.7 s; downloaded music plays; other rows greyed; no banner |

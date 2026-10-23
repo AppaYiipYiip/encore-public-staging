@@ -41,21 +41,10 @@ the source daily (one small request), adds new songs, removes songs removed at t
 here (then it asks), and says what changed in a quiet line ("3 new songs from the original"). This is what makes free editorial
 playlists possible without a Spotify subscription.
 
-## 4. The life of a phone (device)
+## 4. The life of a phone (device) and 5. The life of a person
 
-| Moment | Today | Designed |
-|--------|-------|----------|
-| First sign-in | address + password, or an invite | invite / Host pairing QR (`15`); **"Add a device" from a phone already signed in** shows a QR the new phone scans (like linking WhatsApp) |
-| Daily | tokens; downloads; Connect | (P2–P4) |
-| New phone | sign in again, choose settings and downloads again (H46) | settings stored per person on the server (device-only ones excepted); "Download the same playlists as on <old phone>?" |
-| Lost or stolen | nothing | revoke from another device or the admin; downloads on it stay but stop playing after the token is revoked (the app checks at start) |
-| Uninstalled | nothing | the device disappears from the list after 180 days unused |
-
-## 5. The life of a person
-
-Invited → joins → imports → daily use → forgets password (asks the Host in-app; the Host resets) → maybe shares a device with a child
-(explicit filter, `21` §5) → leaves (export, delete; `21` §6). **The Host forgetting their own password** has no Host above them:
-`encore reset-password <name>` on the server (physical access is the proof), and the wizard suggests adding a second owner.
+Moved to **`32` (accounts, joining and devices)**, where every state and every way in is a table with its status and its test: first sign-in, a new phone, lost or stolen,
+uninstalled, the forgotten password (including the Host's own: `encore reset-password <name>`, AC-28), the shared device, leaving. Connecting and signing in again are in `31`.
 
 ## 6. The life of the server
 

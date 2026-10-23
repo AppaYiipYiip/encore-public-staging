@@ -1,0 +1,111 @@
+# 33 — Playing music: the ways a song plays, the player's states, and what happens when it breaks
+
+Written 2026-10-23 from the app (`playback/playback_engine.dart`, `source_resolver.dart`, `queue_model.dart`, `playback_state_store.dart`, `app/playback_providers.dart`,
+`app/connection.dart`) and the server (`api.py` `stream`, `stream_url`, `sources/youtube/stream.py`), and the tests that exist. Same reading rules as `31`: **Built** (I read the
+code), **Designed**, **Open**; a Test of "none" is a debt. The failure matrix in section 4 is the part to read first when something stops playing. Conflicts between devices
+and offline edits are `34`; connecting and signing in again are `31`, `32`.
+
+## 1. Every way a song can play
+
+The app decides **what** to play in one place, `DefaultSourceResolver.resolve`, in this order: (1) a direct address on the queue item, (2) a finished download on this phone,
+(3) a stream from the server. The server decides what a stream is made of.
+
+| ID | Way | When | What plays | Needs | Status | Where | Test |
+|----|-----|------|------------|-------|--------|-------|------|
+| PB-1 | **A finished download** | the song is in the person's downloads and the file is still there | the file on the phone | nothing (works offline, in a tunnel, on a plane) | Built | `source_resolver.dart` (the file must still exist, else PB-2) | `source_resolver_test.dart`; engine `downloaded tracks are played from the file`, `offline, a downloaded song plays` |
+| PB-2 | **A library song streamed from the server** | the song is on the server (kept there, or the person's own music) and not downloaded | the music server's stream through the Encore front door, **at the quality set for this network**: original, or capped; a lossy file already at or under the cap is sent as it is, not re-encoded | a network and the server | Built | `_streamUri`; `gateway.py` | `source_resolver_test.dart` |
+| PB-3 | **A catalogue song, in full** ("instant play": a song the person does not own, from search, an artist page, an album) | a tap on a catalogue row | the whole song: the server fetches it from YouTube and passes it on as it arrives (`/encore/stream/{ref}`, a **signed address valid 6 hours**); nothing is saved by playing (play is not save) | a network, the server, YouTube willing | Built | `EncoreInstantBackend`; `api.py` `stream`, `stream_url`; `QueueItem.preview(fullSong: true)` | `instant_play_test.dart`, `instant_ui_test.dart`; server `test_stream_route.py` |
+| PB-4 | **A catalogue 30-second preview** | a long press on a catalogue row | Deezer's own 30-second file; **listening to it is never recorded** | a network and Deezer | Built; **goes away with P2-12** (a client calling an outside service: ADR-R38) | `QueueItem.preview(...)` | engine `samples are never scrobbled or recorded as listening history`, `a run of samples plays in order from the chosen one` |
+| PB-5 | **A song the server has kept** (saved, downloaded, or played on two different days) | after the keeper copied it | from then on it is PB-2: a file in the music folder, no YouTube | the server | Built | `keeper/` | `test_keeper.py`, `test_keep_triggers.py` |
+| PB-6 | **A Jam** (everybody hears the same thing) | the person is in a Jam | a layer on the live connection; the player does not know it exists | the server | **Designed** (P4-02; the old Jam is not on the new server) | none | none |
+| PB-7 | **Another device plays, this one controls it** (Connect) | the person picks a device | the song plays on the other device, with a volume each | both devices online | **Designed** (P4-07) | none | none |
+| PB-8 | **A song that cannot play** | removed on YouTube, age-restricted, nothing matching, or the file was deleted | nothing; a sentence (section 4, PB-F7) | — | Built | `_stream_error` | `test_stream_route.py` |
+
+**Precedence:** direct address, then download, then stream. A song that is downloaded **and** on the server plays from the file even online (saves data and works at once).
+**Next song:** the player keeps the current and the next song loaded (a window of two, gapless); the next is only prepared when it can play (`_syncWindowTail`).
+**Not built:** preparing the next *catalogue* songs ahead so that Next is instant (P1-04).
+
+## 2. The server's side of PB-3 (what a stream is made of, and what it can answer)
+
+| ID | Server state | Meaning | The app is told | Status | Where | Test |
+|----|--------------|---------|-----------------|--------|-------|------|
+| PB-10 | the address is valid and YouTube answers | the song is looked up (or its saved video id used), one look-up gives the stream, bytes pass on with Range | audio | Built | `stream.py` | `test_stream_route.py` |
+| PB-11 | the signed address has **expired** (older than 6 hours) | the server refuses | 401 "This song address has expired. Ask the app to play it again." | Built | `valid_stream_signature` | `test_stream_route.py` |
+| PB-12 | the song is not on YouTube | none found | 404 `song_unavailable` reason `not_found` | Built | `_stream_error` | same |
+| PB-13 | removed / private | | 404 `song_unavailable` reason `removed` | Built | same | same |
+| PB-14 | age check | | 404 reason `age_restricted` | Built | same | same |
+| PB-15 | **YouTube is refusing this server** (`rest`, a rest of 30 min up to a day) | background work waits; a person's tap may try once in a while | 503 `source_busy` with `retryAfterMs`: "YouTube is not letting this server fetch songs right now. Try again in a little while." | Built | `rest.py`, `_stream_error` | `test_rest.py` |
+| PB-16 | the song could not be started in time | first bytes later than 10 s | 504 `upstream_timeout` | Built | `stream.py` `first_byte_s` | `test_stream.py` |
+| PB-17 | any other failure | | 502 `source_unreachable` "The song could not be fetched. Try again." | Built | same | same |
+| PB-18 | **no YouTube on this server** (switched off, libraries missing) | | 502 `source_unreachable` "This server cannot fetch songs from YouTube." | Built | `api.py` | none |
+
+## 3. The player's states (what the person can see)
+
+The platform player reports `idle / loading / buffering / ready / completed` and `playing` yes or no (`BackendState`); the engine adds the states in the table. One command runs at a
+time, in order; **a newer tap supersedes an older one that is still loading** ("the newest tap wins", P1-08).
+
+| ID | State | How it starts | What the person sees | How it ends | Status | Test |
+|----|-------|---------------|----------------------|-------------|--------|------|
+| PB-20 | **no queue** | first start, or the queue was cleared | nothing playing | a tap | Built | engine `removing the only track empties and stops` |
+| PB-21 | **loading** | a tap, Next, Previous, a restored queue pressed Play | the row shows it is working; the mini player is there | audio starts (`ready` and `playing`), or PB-23/PB-25 | Built | engine `loads current + next into the window and plays` |
+| PB-22 | **playing** | audio runs | the play/pause button, progress; "now playing" is sent once; half the song (or 4 minutes) counts as a listen | pause, end, error | Built | engine `half the track is a play; "now playing" is sent once` |
+| PB-23 | **waiting for the connection** | no network and the song needs one, or a load never finished, or **a song failed while the phone has no network** | a notice once: "Waiting for a connection." / "Not downloaded. Connect to play it." / "Taking too long to load. Check your connection." Nothing is skipped | the network returns (the song starts by itself at the position it was at), or the person presses Play, or starts something else | Built | engine `a song that failed while the network is down is not skipped`, `when the network returns, the song that was waiting plays by itself`, `a load that never finishes gives up, says so, and the next tap works`, `after a load gave up, Play tries again` |
+| PB-24 | **paused** | the person, a call, a headset | the play button | Play | Built | engine `pause returns at once and the song never starts`, `play after that pause plays` |
+| PB-25 | **a song failed** | the player reports an error and the phone has a network | first failure: **one quiet retry from the same position**; second failure: "Couldn't play <title>" and the next song starts; **three failures in a row**: stops with "Playback stopped: several tracks in a row failed. Check your connection."; one song that plays resets the count | audio, or stopped | Built | engine `first failure retries the same track from the same position`, `a second failure skips ahead and tells the user`, `three tracks failing in a row stops instead of looping forever`, `a track that plays resets the failure budget` |
+| PB-26 | **the queue ended** | the last song finished, repeat off | the last song stays loaded and paused, ready to replay | Play | Built | engine `end of queue with repeat off stops on the last track` |
+| PB-27 | **a song that is unavailable but only offline** | Next lands on a song that is not downloaded and there is no network | Next goes on to the **next song that can play**; if none can, nothing moves | — | Built | engine `offline, Next skips songs that are not downloaded` |
+| PB-28 | **sleep timer** | the person | volume fades over 10 s, then pause; "end of song" waits for the song to end | pause | Built | engine `counts down, fades, then pauses` |
+
+## 4. The failure matrix: what happens when something breaks while music plays
+
+The question the owner asked: *what happens if the internet cuts off mid-song?* One row per thing that can go wrong, with what the player does **today** and what it should do.
+
+| ID | What breaks | What the player does today | What the person hears and sees | Wanted | Status | Test |
+|----|-------------|---------------------------|--------------------------------|--------|--------|------|
+| PB-F1 | **The phone loses all network mid-song, the song is streamed** | plays what was already buffered; when that runs out the player reports an error; the engine sees "no network and the song is not a file": pauses, **waits** | the music stops after the buffer; "Waiting for a connection."; the play button shows paused | same | Built | `a song that failed while the network is down is not skipped` |
+| PB-F2 | **The network comes back** | the waiting song reloads **at the position it stopped at** and plays by itself, unless the person paused or started something else meanwhile | music resumes (`07` wants ≤ 5 s after the network is back; **not measured**) | same | Built (timing Open) | `when the network returns, the song that was waiting plays by itself`; `07` J-07 walk |
+| PB-F3 | **The phone loses the network, the song is a downloaded file** | nothing | nothing: the song keeps playing | same | Built | `offline, a downloaded song plays` |
+| PB-F4 | **The network is cut and the next song is not downloaded** | the next song is not prepared (the window stays one song); when this one ends, the player goes on to the next *downloadable* song or stays on the last one paused | the music ends or continues with downloaded songs only | same | Built | `offline, the next song to play is not preloaded when it is not downloaded`, `offline, Next skips songs that are not downloaded`, `offline, when no later song is downloaded Next says so and keeps playing nothing new` |
+| PB-F5 | **A tap on a song that is not downloaded, with no network** | nothing is loaded and nothing is skipped; "Not downloaded. Connect to play it."; it starts by itself when the network returns | the sentence | same | Built | `offline, a song that is not downloaded is not tried and nothing is skipped` |
+| PB-F6 | **A song that takes more than 12 s to load** (a network that is there but dead) | gives up, stops the platform load, "Taking too long to load. Check your connection."; waits like PB-F1; the next tap is not held up | the sentence; the player is not frozen | same | Built | `a load that never finishes gives up, says so, and the next tap works`, `a newer tap does not wait for a load that is stuck: the latest wins` |
+| PB-F7 | **The phone has a network but the server does not answer** (the server restarts, the home Wi-Fi has no internet, the Funnel is down) | "network" is only "any network" (`canReachServer` = `NetworkKind != none`), so this is treated as **a bad song**: one quiet retry, then "Couldn't play <title>" and **the next song is tried** (which fails the same way), at most three, then "Playback stopped: several tracks in a row failed" | a run of "Couldn't play …" notices, then a stop. Meanwhile the strip says "Can't reach your server." (`31` CN-14) | **wait like PB-F1** (pause, keep the queue and position, resume when the server answers), not hop. **GAP** | **Open (G-1)** | none |
+| PB-F8 | **The server restarts in the middle of a streamed song** | the proxy connection ends; the same path as PB-F7 | as PB-F7 | resume from the position when the server is back (a restart is 2 to 5 s) | **Open (G-1)** | none |
+| PB-F9 | **The signed address of a catalogue song has expired** (paused for hours, then Play) | the server answers 401 "This song address has expired. Ask the app to play it again."; whether a retry fetches a **new** address is **not verified** | possibly "Couldn't play …" | a fresh address is fetched on the retry | **Open (G-2: verify)** | none |
+| PB-F10 | **YouTube refuses the server** (PB-15) | the stream fails with 503; the player reports a generic error; the server's sentence is not shown on this path (not verified) | "Couldn't play …" | "YouTube is not letting this server fetch songs right now. Try again in a little while." and no hopping to the next *catalogue* song | **Open (G-3: verify)** | none |
+| PB-F11 | **The song is gone from YouTube** (404) | PB-25: one retry, then "Couldn't play <title>", the next song | "Couldn't play …" | the server's reason ("removed", "needs an age check") in the notice | Built (generic words) / Open (reason) | engine `first failure retries …`; `test_stream_route.py` (server) |
+| PB-F12 | **The person's login is refused mid-song** (locked, removed, password changed) | the song keeps playing from the buffer; the next request is refused: for library songs the stream fails (PB-25 path); the sync marks the login as rejected and shows the card "Sign in again" (`31` CN-24) | the card on Home | the card, and no notice for every song | Built (card) / Open (the song notices) | `login_problem_test.dart` |
+| PB-F13 | **The app is killed** (swiped away, the system needs memory, a crash) | the queue (ids only, a few KB), the cursor and the position are saved every **15 s while playing** and on every change; on the next start the queue is restored **paused** at that position; a song that left the library is dropped | the queue and the song, paused; up to 15 s of position lost | same | Built | engine `queue and position are saved and restored paused`, `restore drops tracks that left the library`; `evidence/2026-10-22-e6` walk |
+| PB-F14 | **The restored queue contains songs the library no longer has** | those are dropped, the rest stays | nothing said | same | Built | engine `a streamed song the library does not have is dropped, the rest stays` |
+| PB-F15 | **A phone call, another app plays, a navigation voice** | handled by `audio_session` with the music configuration (`bootstrap.dart`): our code has **no handler of its own**; what happens (pause, duck, resume) is the library's default | **not verified on a device** | pause for a call and resume after it; duck for a short voice | **Open (G-4: verify on a phone)** | none |
+| PB-F16 | **Bluetooth or headphones disconnect** | same: the library's default (the "becoming noisy" pause) | **not verified** | pause at once, never blare from the speaker | **Open (G-4)** | none |
+| PB-F17 | **The disk of the phone is full** while a download runs | a download fails; what playing a stream does on a completely full disk is **not verified** | the download shows an error | the person is told in words and the rest keeps playing | Open (G-4: verify) | `downloads/` tests (download side only) |
+| PB-F18 | **A downloaded file is damaged or deleted** | deleted: the resolver sees no file and streams instead (online) or waits (offline); damaged: the player errors, PB-25 | as PB-25 | mark the download bad and fetch again | Built (deleted) / Open (damaged) | `source_resolver_test.dart` |
+| PB-F19 | **Two quick taps, or Next while a song loads** | the newest tap wins; the older load is left to end by itself; edits to the queue wait their turn | the last tap's song plays; no double start | same | Built | `rapid taps: the last request wins and loads once` |
+| PB-F20 | **The same account plays on two phones** | both play; nothing stops either | two songs at once | one device at a time: starting here stops the other within 2 s (N6) | **Open (G-5): P2-09**; the server has `POST /playback/claim` and `GET/PUT /playback` and the app never calls them | server `test_api.py`; app none |
+
+## 5. What is saved, and what comes back (resume)
+
+| ID | What | When saved | Where | Comes back | Status | Test |
+|----|------|------------|-------|------------|--------|------|
+| PB-30 | the queue (song ids; for streamed songs also title and artist so they can be found again), the cursor, the position, what the person was playing from | every 15 s while playing, on every queue change (about 2 s later), on pause | the phone's database (`sync_state`) | on the next start, **paused**, at the position | Built | `queue and position are saved and restored paused`, `a library song is saved by its id only, a streamed one also by name` |
+| PB-31 | a catalogue **sample** queue | never | — | a restart does not bring it back | Built | `a restart does not bring a sample queue back` |
+| PB-32 | playback state **on the server** (so another phone can continue) | never by the app | server `playback` rows (built, tested) | the other phone does not offer it | **Open (G-5)**: P2-08 | server tests; app none |
+
+## 6. Gaps this document makes visible (each becomes a task or an owner question)
+
+| ID | Gap | Fix | Size |
+|----|-----|-----|------|
+| G-1 | PB-F7/F8: a server that does not answer is treated as a bad song, and the player hops | `canReachServer` also asks `endpoints.isReachable` (and the strip's state); wait like PB-F1; resume by itself when the server answers; tests for "server down" and "server restarts mid-song" | S |
+| G-2 | PB-F9: an expired signed address may not be renewed on retry | verify; if so, renew the address on the one quiet retry | S |
+| G-3 | PB-F10, F11: the server's reason does not reach the notice | map `song_unavailable`/`source_busy` to words in the notice | S |
+| G-4 | PB-F15, F16: nothing of ours handles focus loss or a noisy-output pause | verify on a real phone; write tests with the audio-session fake | S |
+| G-5 | PB-F20, PB-32: one device at a time and resume anywhere | P2-08, P2-09 | M |
+| G-6 | `07` J-07 says "resumes ≤ 5 s after the network returns": not measured | add to the play-timing tool (P1-06) | S |
+
+## 7. Open (decisions)
+
+| ID | Question | Who |
+|----|----------|-----|
+| O-1 | When the server is unreachable while a streamed song plays, how long does the player wait before it says "Can't reach your server" in the player itself? (Proposal: the strip's 4 s, nothing more.) | **Decided 2026-10-23: as proposed** |
+| O-2 | A person starts a song on the phone while the tablet is playing: does the tablet stop at once, or ask? (Proposal: stop at once; "Playing on this phone" on the tablet.) | product |
+| O-3 | Offline, should Next skip not-downloaded songs silently (today) or say "2 songs skipped: not downloaded"? | product |

@@ -60,6 +60,10 @@ documents are history; read one only when a task links it.
 | 28 | [Code-level re-engineering](28-code-level-re-engineering.md) | Module by module: what the code does today, what is structurally wrong, the target shape (player state machine, change feed, feature folders, one server package) |
 | 29 | [Spotify gap review](29-spotify-gap-review.md) | Where Spotify does better, from the owner's walks |
 | 30 | [Engineering guide](30-engineering-guide.md) | **Read before coding.** What to do and not to do, taken from what went wrong here, and which rules a machine checks; the thin-client rule; when to ask a stronger model; the PR self-review |
+| 31 | [Connecting to a server](31-connecting-to-a-server.md) | The network, one address, who answers (the key), the race, signed in or not: states, words, tests |
+| 32 | [Accounts, joining, devices](32-accounts-joining-and-devices.md) | Every way an account comes to exist, every way a phone joins, invitation / person / device states, limits |
+| 33 | [Playback: sources, states, failures](33-playback-sources-states-and-failures.md) | Every way a song plays, the server's stream answers, the player's states, the failure matrix (internet cut mid-song and the rest), what is saved |
+| 34 | [Conflicts and offline edits](34-conflicts-and-offline-edits.md) | The life of a queued edit, every pair of operations from two devices, other disagreements, the gaps |
 | — | [tasks/](tasks/) | The work, phase by phase, with context and acceptance criteria |
 | — | [evidence/](evidence/) | Screenshots from the app walk, the measurement scripts, and the clean-machine proofs (`c01` the installer, `c02` backup and restore, `c03` an interrupted install, `c04` the server updating its own yt-dlp; the app walks `b01` live channel, `b02` journey 4 on two phones) |
 | — | [guides/](guides/) | The install test guide (`install-test.md`: one command on a fresh computer, backups, looking after it) and a draft guide for a friend using somebody's server (`friend.md`) |

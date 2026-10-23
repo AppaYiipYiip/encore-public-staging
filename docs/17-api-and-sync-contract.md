@@ -64,7 +64,7 @@ Each has one plain message per language, owned by the server (`server/encore_ser
   both survive; a removed entry stays removed; a move of a removed entry is dropped; renames are last-writer-wins by server arrival;
   operations on a deleted playlist are dropped and reported (`conflict`) so the phone shows "That playlist was deleted on another
   device".
-* Likes are a set; like/unlike conflicts resolve by the latest action time (the device's action time corrected by its clock offset).
+* Likes are a set; like/unlike conflicts resolve by **arrival order at the server** (decided 2026-10-23, `34` G-1: with a live connection two phones of one person see the real order within about 2.5 s; the like's own time only keeps the order of Liked Songs). Every pair of operations, with its test, is in **`34`**.
 * Playback state uses `rev` (optimistic concurrency): a write with an old `rev` gets `conflict` and the current state.
 * Journey **J-15** (`14` §3) is the acceptance test.
 
