@@ -89,9 +89,13 @@ Update it whenever a status changes; nothing is "done" while it is listed here. 
 `encore` verb used, the music folder byte for byte untouched; a second person joined by link; `docs/evidence/c01-installer-clean-vm.md`. The image is private
 and published by CI. **The first outside user (P3-12):** the friend's server is the owner's own, decided in ADR-R34; an in-app "Report a problem" was built, walked on an
 emulator and then **put on hold** by the owner (the friend messages him; branch `parked/in-app-report`, ADR-R35, idea kept in P4-13).
+**Built and proved (2026-10-23): backups (P3-12 item 2, PR #2).** `encore backup`, `encore restore`, a nightly timer the installer switches on, a backup before every
+`encore update`; proved on real machines including a restore on a new computer with a different install-time password (`docs/evidence/c02-backup-restore.md`, ADR-R37).
+Also: `encore funnel` hardened (free port, own address reused, never resets what is not Encore's; control flow run against a stand-in Tailscale, not yet a real one), the
+server counts its YouTube look-ups per day in the log, the join screen retries the look at an invitation by itself, the installer logs the time of each phase.
 
 Also from P2: the gateway, the accounts module (invites, join, reset, lock, rate limits), device tokens, the music-server administrator client.
-**Open:** `encore funnel on` proven with a real Tailscale sign-in, `encore backup`/`restore` (P3-12 item 2), the friend's guide (P3-12 item 4), the browser wizard
+**Open:** `encore funnel on` proven with a real Tailscale sign-in (the owner's), the friend's guide as a finished page (P3-12 item 4; a draft exists), the browser wizard
 and admin pages, `encore.local`, device-token gateway signing (X-2), updates with rollback, arm64, the reuse-what-you-have install path, security/privacy tests per
 cell of the matrix, devices and the Host's safety nets, the Tinkerer's door.
 
