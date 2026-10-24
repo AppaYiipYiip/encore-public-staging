@@ -16,7 +16,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 
 ---
 
-## 0. Before you write a line: nine questions (answer them in the pull request; if you cannot, stop)
+## 0. Before you write a line: ten questions (answer them in the pull request; if you cannot, stop)
 
 1. **Which story (`03a`) and which promise (`03` §4) does this serve?** None: do not build it, file an issue.
 2. **Does the core promise still hold** (a song you don't own: ~2 s typical, **≤ 10 s worst case**)? An open S1 bug in the area is fixed before new work there.
@@ -29,6 +29,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 8. **Is this hard to undo (a data shape, a public address, an API, a choice of library)?** Write an ADR with the options compared (`11`) and ask the strongest model
    you have **before you commit** (section 3).
 9. **Which state table does this touch (`31` connecting, `32` accounts and devices, `33` playback, `34` conflicts)?** Change its row in the same pull request, with the test that covers it; a state or a failure that has no row is added before the code.
+10. **Does this decide something another client would have to repeat, or need a platform part (ADR-R42)?** Ranking, merging, counting, what a section contains, who may do what: the server answers, the client draws. Could a browser do it with only HTTPS to its own server? What does a client without the platform part do? How does it work with a D-pad (a TV)? A decision that stays on the client says why in the pull request.
 
 ---
 
@@ -96,6 +97,9 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 | Tests that would still pass if the feature were broken (A5: the same agent wrote the code and the tests that matched its assumptions) | Break the feature in your head: which test fails? A **reviewer who is not the author** re-runs the acceptance | Convention |
 | Weaken a test to make it pass; skip one silently | Never weaken; a skip needs an issue number (`AGENTS.md`) | Convention |
 | Journeys on fake data | Real data, made through the app like a user (`07` §8) | Convention |
+| A walk written as prose, with no "expected" (`b01`, `b02`): a pass was a feeling | Fill **Expected** from the row **before** walking; write **Got** as the text on the screen or a number; the verdict follows (`07` §12). No row for what should happen? Write the row first | Convention; `tools/check_rows.py` lists the rows nobody tested (ADR-R41 T2) |
+| A test named after a function, so nobody can tell which promise it keeps | Name it after the row it proves (`'CN-11: an impostor at the saved address is asked and never sent a login'`) | `tools/check_rows.py` (report first, ratchet later) |
+| Only the happy path, and "must not happen" untested (S2 survived 1,800 tests) | For every row that sends or stores something, a test that the **wrong** party gets nothing; a fault is produced on purpose (a proxy, a fake that answers badly), not only imagined | Convention; ADR-R41 T3/T4 |
 | Screens that look right only on your phone | Golden pictures per operating system (ADR-R31); big text and tap targets are tested on the screens `accessibility_test.dart` covers | Machine on those screens; convention elsewhere |
 | Bursts at YouTube from a test (the home address was refused on 2026-10-22) | **At most 10 look-ups per test run**, spaced; the server counts its look-ups per day | Convention; the counter shows it afterwards |
 
