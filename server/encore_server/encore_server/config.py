@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+def clean_url(text: str) -> str:
+    """An address as phones should be told it: `http(s)://host[:port]` with nothing after it; anything else is "unknown"."""
+    text = text.strip().rstrip("/")
+    return text if re.fullmatch(r"https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?", text) else ""
 
 
 @dataclass(frozen=True)
@@ -19,6 +26,9 @@ class Settings:
     youtube: bool = True
     #: The server fetches, checks and switches to a newer yt-dlp by itself (docs/11 ADR-R39). Off for a Host who pins versions or has no outside access.
     auto_tools: bool = True
+    #: The addresses this server tells its phones about (docs/11 ADR-R40): the installer writes the home one, `encore funnel on` the away one. Empty: unknown.
+    home_url: str = ""
+    away_url: str = ""
     #: Mean seconds between the background look-ups and downloads at YouTube (0: no pacing, for tests).
     youtube_pace_s: float = 12.0
     fault: str = ""
@@ -53,6 +63,8 @@ class Settings:
             log_level=e.get("ENCORE_LOG_LEVEL", "INFO").upper(),
             youtube=e.get("ENCORE_YOUTUBE", "1").strip().lower() not in ("0", "false", "no"),
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
+            home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
+            away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
             youtube_pace_s=float(e.get("ENCORE_YOUTUBE_PACE_S", "12")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),

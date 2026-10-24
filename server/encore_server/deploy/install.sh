@@ -162,6 +162,12 @@ NEED_OWNER=0
 { [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ]; } && NEED_OWNER=1
 
 env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+host_ip() {
+    local ip
+    ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}')"
+    [ -n "$ip" ] || ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+    printf '%s' "$ip"
+}
 
 ask_owner() { # the owner's username and password, from the options or by asking
     if [ -z "$OWNER" ]; then OWNER="$(ask 'Your username (3 to 32 letters, digits, . - _):' "")"; fi
@@ -276,6 +282,16 @@ if [ "$FRESH" = 1 ]; then
     umask 022
 fi
 
+# The address phones are told for this computer on the home network (the server hands it to signed-in phones: docs/11 ADR-R40). Kept up to date on every run.
+HOST_IP="$(host_ip)"
+if [ -n "$HOST_IP" ]; then
+    if grep -q '^ENCORE_HOME_URL=' "$DIR/.env"; then
+        sed -i "s|^ENCORE_HOME_URL=.*|ENCORE_HOME_URL=http://${HOST_IP}:${PORT}|" "$DIR/.env"
+    else
+        echo "ENCORE_HOME_URL=http://${HOST_IP}:${PORT}" >>"$DIR/.env"
+    fi
+fi
+
 # ---------------------------------------------------------------------------------------------------------------- start
 
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
@@ -328,8 +344,7 @@ fi
 
 # ---------------------------------------------------------------------------------------------------------------- done
 
-HOST_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}')"
-[ -n "$HOST_IP" ] || HOST_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+HOST_IP="$(host_ip)"
 URL="http://${HOST_IP}:${PORT}"
 
 say ""

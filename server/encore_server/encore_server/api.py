@@ -43,6 +43,7 @@ from .config import Settings
 from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
 from .errors import ApiError
+from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
 from .keeper.keeper import Keeper, KeepSettings
@@ -83,6 +84,8 @@ class Services:
     music_as: Callable[[str, str, str], SubsonicUser] | None = None
     #: The yt-dlp updater and the restart that waits for a quiet moment (docs/11 ADR-R39); `None` when off.
     tools: Tools | None = None
+    #: Who this server is: its key and the id made from it (docs/11 ADR-R40).
+    identity: ServerIdentity | None = None
 
 
 def services(request: Request) -> Services:
@@ -160,10 +163,19 @@ router = APIRouter(prefix="/encore/api/v1")
 
 
 @router.get("/info")
-def info(request: Request) -> JSONResponse:
+def info(request: Request, challenge: str | None = None) -> JSONResponse:
+    """What this server is, without a login. With `?challenge=<nonce>` the answer is also signed, so a phone can tell this server from anything else
+    that answers at the same address (docs/11 ADR-R40)."""
     svc = services(request)
+    if challenge is not None and NONCE_PATTERN.fullmatch(challenge) is None:
+        raise ApiError("validation")
+    who = svc.identity
+    who_fields: dict[str, str] = {}
+    if who is not None:
+        who_fields = who.answer(challenge) if challenge is not None else who.public_fields()
     return _ok(
         {
+            **who_fields,
             "apiVersion": API_VERSION,
             "minAppVersion": MIN_APP_VERSION,
             "serverVersion": __version__,
@@ -175,6 +187,17 @@ def info(request: Request) -> JSONResponse:
             **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
     )
+
+
+@router.get("/server")
+def server_addresses(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The server's own list of addresses, for a signed-in phone to keep fresh: the app never asks the person to type one (docs/11 ADR-R40)."""
+    svc = services(request)
+    who = svc.identity
+    found = [
+        {"kind": kind, "url": url} for kind, url in (("home", svc.settings.home_url), ("away", svc.settings.away_url)) if url
+    ]
+    return _ok({"serverId": who.server_id if who else None, "name": svc.settings.server_name, "addresses": found})
 
 
 def client_address(request: Request) -> str:
@@ -976,6 +999,8 @@ def create_app(
     client = navidrome or NavidromeClient(
         settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
     )
+    with database.tx() as conn:
+        identity = load_or_create(conn)
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client)
     accounts = Accounts(
         database,
@@ -1034,6 +1059,7 @@ def create_app(
         accounts=accounts,
         limiter=Limiter(),
         tools=tools,
+        identity=identity,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.include_router(router)

@@ -11,6 +11,13 @@ class FakeEncoreServer {
   FakeEncoreServer({this.user = 'tester'}) {
     adapter = FakeHttpAdapter()..fallback = _dispatch;
     _handlers['/encore/api/v1/info'] = (r) => _info();
+    _handlers['/encore/api/v1/server'] = (r) => _ok({
+          'serverId': serverId,
+          'name': 'Fake Encore',
+          'addresses': [
+            for (final a in addresses) {'kind': a.$1, 'url': a.$2}
+          ],
+        });
     _handlers['/encore/api/v1/refs/resolve'] = _resolve;
     _handlers['/encore/api/v1/library/changes'] = _changes;
     _handlers['/encore/api/v1/library/files'] = _files;
@@ -377,6 +384,10 @@ class FakeEncoreServer {
     }
     return _ok({'items': inviteRows});
   }
+
+  /// What `GET /server` says about this server: its key and the addresses it has (`('home', 'http://...')`).
+  String? serverId;
+  final List<(String, String)> addresses = [];
 
   FakeResponse _info() => _ok({
         'apiVersion': '1.0',

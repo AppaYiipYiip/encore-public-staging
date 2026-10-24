@@ -8,6 +8,7 @@ import 'package:encore/data/auth/server_setup_service.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_device.dart';
 import 'package:encore/data/people/people_join_client.dart';
+import 'package:encore/data/sync/server_identity.dart';
 import 'package:encore/domain/invite_link.dart';
 import 'package:encore/features/onboarding/join_screen.dart'
     show joinRetryDelaysProvider;
@@ -19,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/fake_http.dart';
+import '../support/fake_identity_probe.dart';
 import '../support/test_app.dart';
 
 /// A friend who was sent an invitation joins from inside the app (docs/39 F3):
@@ -438,5 +440,136 @@ void main() {
         findsNothing,
         reason: 'not told "you have an account here": there is none here');
     await closeApp(tester, app.db);
+  });
+
+  group('an invitation that names the key of the server', () {
+    const knownId = 'mw3am46w5weex4a4fqrc3avnua';
+
+    FakeHttpAdapter encoreServer() => adapter = FakeHttpAdapter(routes: {
+          '/encore/api/v1/invites/check': (_) => const FakeResponse.json(
+              {'invitedBy': 'owner', 'expiresAt': 1792000000000}),
+          '/encore/api/v1/info': (_) => const FakeResponse.json(
+              {'name': 'Home music', 'apiVersion': '1.0'}),
+          '/encore/api/v1/auth/join': (_) => const FakeResponse.json({
+                'deviceToken': 'ed_phone',
+                'device': {'id': 'dv_7', 'name': 'Phone'},
+                'person': {'id': 'pn_1', 'name': 'mia', 'role': 'member'},
+              }, status: 201),
+          'ping': (_) => FakeResponse.json(subsonicOk({})),
+        });
+
+    Future<AppDatabase> joinWith(WidgetTester tester, InviteLink invitation,
+        FakeIdentityProbe probe) async {
+      final app = await pumpApp(tester, seeded: false, overrides: [
+        joinRetryDelaysProvider.overrideWithValue(const <Duration>[]),
+        serverIdentityProbeProvider.overrideWithValue(probe),
+        peopleJoinClientProvider
+            .overrideWith((ref) => PeopleJoinClient(dio: fakeDio(adapter))),
+        serverSetupServiceProvider.overrideWith((ref) => ServerSetupService(
+              db: ref.watch(databaseProvider),
+              credentials: ref.watch(credentialStoreProvider),
+              dioFactory: () => fakeDio(adapter),
+              identity: probe,
+            )),
+      ]);
+      final element = tester.element(find.byType(Scaffold).first);
+      GoRouter.of(element).go('/join', extra: invitation);
+      await wait(tester);
+      return app.db;
+    }
+
+    testWidgets(
+        'is joined once the server proves that key, and the key is kept',
+        (tester) async {
+      encoreServer();
+      final probe = FakeIdentityProbe(
+          verdict: EndpointVerdict.verified, serverId: knownId);
+      final invitation = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$knownId')!;
+      expect(invitation.serverId, knownId);
+
+      final db = await joinWith(tester, invitation, probe);
+      await fill(tester, 'mia', 'a long password');
+      await tester.tap(find.text('Join'));
+      await wait(tester);
+
+      expect(probe.asked.first.expectedId, knownId,
+          reason: 'the server is asked for this key before anything else');
+      final servers = await db.select(db.servers).get();
+      expect(servers, hasLength(1));
+      expect((jsonDecode(servers.single.capabilitiesJson) as Map)['serverId'],
+          knownId);
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'is not joined by an address that does not prove it: nothing, not even the question about the invitation, is sent',
+        (tester) async {
+      encoreServer();
+      final probe = FakeIdentityProbe(
+          verdict: EndpointVerdict.verified, serverId: 'a' * 26);
+      final invitation = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$knownId')!;
+
+      final db = await joinWith(tester, invitation, probe);
+
+      expect(find.textContaining('not the server that invited you'),
+          findsOneWidget);
+      expect(adapter.requests, isEmpty,
+          reason: 'no invitation check, no account, no password went out');
+      expect(await db.select(db.servers).get(), isEmpty);
+      await closeApp(tester, db);
+    });
+
+    testWidgets('is not joined by a server that says it has no key',
+        (tester) async {
+      encoreServer();
+      final probe = FakeIdentityProbe(verdict: EndpointVerdict.legacy);
+      final invitation = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$knownId')!;
+
+      final db = await joinWith(tester, invitation, probe);
+
+      expect(find.textContaining('not the server that invited you'),
+          findsOneWidget);
+      expect(adapter.requests, isEmpty);
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'an older link with no key still works, and the phone keeps the key the server proves',
+        (tester) async {
+      encoreServer();
+      final probe = FakeIdentityProbe(
+          verdict: EndpointVerdict.verified, serverId: knownId);
+      final invitation = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM')!;
+      expect(invitation.serverId, isNull);
+
+      final db = await joinWith(tester, invitation, probe);
+      await fill(tester, 'mia', 'a long password');
+      await tester.tap(find.text('Join'));
+      await wait(tester);
+
+      final servers = await db.select(db.servers).get();
+      expect(servers, hasLength(1));
+      expect((jsonDecode(servers.single.capabilitiesJson) as Map)['serverId'],
+          knownId);
+      await closeApp(tester, db);
+    });
+
+    testWidgets('a server that cannot be reached ends on the retry screen',
+        (tester) async {
+      encoreServer();
+      final probe = FakeIdentityProbe(verdict: EndpointVerdict.unreachable);
+      final invitation = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$knownId')!;
+
+      final db = await joinWith(tester, invitation, probe);
+
+      expect(find.text('This invitation did not open'), findsOneWidget);
+      expect(adapter.requests, isEmpty);
+      await closeApp(tester, db);
+    });
   });
 }

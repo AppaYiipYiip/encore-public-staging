@@ -26,6 +26,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_catalogue.dart';
+import 'fake_identity_probe.dart';
 
 /// Controllable playback facade for UI tests.
 class FakePlaybackFacade implements PlaybackFacade {
@@ -418,6 +419,7 @@ Future<({AppDatabase db, FakePlaybackFacade facade, int serverId})> pumpApp(
       retry: (_, __) => null,
       overrides: _withDefaults([
         databaseProvider.overrideWithValue(db),
+        serverIdentityProbeProvider.overrideWithValue(FakeIdentityProbe()),
         // A fixed evening: the greeting and "synced 5 min ago" labels must
         // not make goldens depend on when the suite runs.
         clockProvider.overrideWithValue(FakeClock(DateTime(2026, 10, 15, 21))),

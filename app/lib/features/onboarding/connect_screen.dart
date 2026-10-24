@@ -182,6 +182,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           username: _user.text.trim(),
           password: _password.text,
           ping: value.ping,
+          serverId: value.serverId,
         );
         // The new profile is the one listening now. A first sign-in is left by the router; another person's is left here.
         if (widget.adding && mounted) context.go('/home');

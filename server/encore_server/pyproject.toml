@@ -8,6 +8,8 @@ dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
   "httpx>=0.27",
+  # The server's identity: an Ed25519 key pair (docs/11 ADR-R40). Apache-2.0 OR BSD-3-Clause; wheels for x86-64 and aarch64.
+  "cryptography>=43",
 ]
 
 [project.optional-dependencies]

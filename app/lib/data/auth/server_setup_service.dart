@@ -11,6 +11,7 @@ import '../api/opensubsonic/models.dart';
 import '../api/opensubsonic/opensubsonic_client.dart';
 import '../db/app_database.dart';
 import '../sync/endpoint_resolver.dart';
+import '../sync/server_identity.dart';
 import 'credential_store.dart';
 
 /// What a successful "Test & continue" learned about the server.
@@ -19,11 +20,15 @@ class ServerCheckReport {
     required this.ping,
     required this.reachableEndpoints,
     this.songCount,
+    this.serverId,
   });
 
   final SsPing ping;
   final List<ServerEndpoint> reachableEndpoints;
   final int? songCount;
+
+  /// The key the server proved (docs/11 ADR-R40); `null` for a server that has none yet.
+  final String? serverId;
 }
 
 /// Validates connection details and persists a server profile.
@@ -37,15 +42,19 @@ class ServerSetupService {
     required CredentialStore credentials,
     Dio Function()? dioFactory,
     Clock clock = const SystemClock(),
+    ServerIdentityProbe? identity,
   })  : _db = db,
         _credentials = credentials,
         _dioFactory = dioFactory ?? _defaultDio,
-        _clock = clock;
+        _clock = clock,
+        _identity = identity ??
+            ServerIdentityProbe(dioFactory: dioFactory ?? _defaultDio);
 
   final AppDatabase _db;
   final CredentialStore _credentials;
   final Dio Function() _dioFactory;
   final Clock _clock;
+  final ServerIdentityProbe _identity;
 
   static Dio _defaultDio() => Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 6),
@@ -79,13 +88,29 @@ class ServerSetupService {
     return cleartextProblem(uri);
   }
 
+  /// The key this phone has pinned for [server], if it has one (kept with what else it learned: `capabilitiesJson`).
+  static String? pinnedKeyOf(ServerRow server) {
+    try {
+      final decoded = jsonDecode(server.capabilitiesJson);
+      final id = decoded is Map ? decoded['serverId'] : null;
+      return id is String && id.isNotEmpty ? id : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   /// Verifies every candidate; succeeds if at least one endpoint answers and
   /// authenticates.
+  ///
+  /// Each address is first asked who it is, with nothing secret (docs/11 ADR-R40); the password goes only to an address that has proved
+  /// it is the server ([expectedId]: the key this phone already knows, or the one an invitation named), or - for a server that has no key -
+  /// that answered like a music server.
   Future<Result<ServerCheckReport>> check({
     required List<ServerEndpoint> endpoints,
     required String username,
     required String password,
     void Function(String step)? onStep,
+    String? expectedId,
   }) async {
     if (endpoints.isEmpty) {
       return const Result.err(
@@ -101,9 +126,20 @@ class ServerSetupService {
     SsPing? ping;
     AppFailure? lastFailure;
     OpenSubsonicClient? firstGood;
+    String? provenId;
 
     for (final endpoint in endpoints) {
       onStep?.call('Reaching ${endpoint.label}...');
+      final proof = await _identity.check(endpoint.url, expectedId: expectedId);
+      if (!proof.usable) {
+        lastFailure = NetworkFailure(
+          proof.verdict == EndpointVerdict.wrongKey
+              ? 'Another server answers at ${endpoint.url.host}, not the one you know.'
+              : 'Cannot reach the server',
+        );
+        continue;
+      }
+      provenId ??= proof.serverId;
       final client = OpenSubsonicClient(
         dio: _dioFactory(),
         baseUrl: () => endpoint.url,
@@ -137,6 +173,7 @@ class ServerSetupService {
       ping: ping,
       reachableEndpoints: reachable,
       songCount: count,
+      serverId: provenId,
     ));
   }
 
@@ -147,6 +184,7 @@ class ServerSetupService {
     required String username,
     required String password,
     SsPing? ping,
+    String? serverId,
   }) async {
     final id = await _db.into(_db.servers).insert(ServersCompanion.insert(
           name: name.trim().isEmpty ? 'My server' : name.trim(),
@@ -156,6 +194,7 @@ class ServerSetupService {
             if (ping?.type != null) 'type': ping!.type,
             if (ping?.serverVersion != null) 'version': ping!.serverVersion,
             'openSubsonic': ping?.openSubsonic ?? false,
+            if (serverId != null) 'serverId': serverId,
           })),
           createdAtMs: _clock.now().millisecondsSinceEpoch,
           // The person who has just signed in is the one listening now.
@@ -178,6 +217,7 @@ class ServerSetupService {
       endpoints: endpoints,
       username: server.username,
       password: password,
+      expectedId: pinnedKeyOf(server),
     );
     if (checked case Err(:final failure)) return Result.err(failure);
     await _credentials.writePassword(server.id, password);
@@ -206,13 +246,17 @@ class ServerSetupService {
     ServerEndpoint endpoint, {
     required String username,
     required String password,
+    String? expectedId,
   }) async {
+    final started = _clock.now();
+    // Not the login first: an address that is not the server never gets it.
+    final proof = await _identity.check(endpoint.url, expectedId: expectedId);
+    if (!proof.usable) return null;
     final client = OpenSubsonicClient(
       dio: _dioFactory(),
       baseUrl: () => endpoint.url,
       credentials: SubsonicCredentials(username: username, password: password),
     );
-    final started = _clock.now();
     final result = await client.ping();
     final answered = result.isOk || result.failureOrNull is AuthFailure;
     return answered ? _clock.now().difference(started) : null;

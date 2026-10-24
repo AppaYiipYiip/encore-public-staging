@@ -8,12 +8,19 @@ import 'encore_api.dart';
 /// The server has two roles, an owner and a member; the screens' "guest" is a member (neither can make invitations). Friend activity is not
 /// part of this server yet: nothing is shared and the list of friends is empty.
 class EncorePeopleApi implements PeopleApi {
-  EncorePeopleApi({required EncoreApi api, required Uri Function() address})
+  EncorePeopleApi(
+      {required EncoreApi api,
+      required Uri Function() address,
+      String? Function()? serverId})
       : _api = api,
-        _address = address;
+        _address = address,
+        _serverId = serverId;
 
   final EncoreApi _api;
   final Uri Function() _address;
+
+  /// The key of this server, for the links it makes (`null` until the phone has learned it).
+  final String? Function()? _serverId;
 
   /// The ids of the people seen last, by user name (the people screens speak of names, the server of ids).
   final Map<String, String> _ids = {};
@@ -39,13 +46,17 @@ class EncorePeopleApi implements PeopleApi {
       (address.scheme == 'https' || !isPrivateHost(address.host));
 
   /// The link an invitation is sent as: the address of the server, so it opens the app on the invited person's phone.
-  static Uri joinLink(Uri server, String code) {
+  ///
+  /// With [serverId] (the key of this server) the link carries it, so the phone that opens it can tell the server from anything else that
+  /// answers at that address before it sends a password there.
+  static Uri joinLink(Uri server, String code, {String? serverId}) {
     final front = server.path.replaceAll(RegExp(r'/+$'), '');
     return Uri(
         scheme: server.scheme,
         host: server.host,
         port: server.hasPort ? server.port : null,
-        path: '$front/encore/join/$code');
+        path: '$front/encore/join/$code',
+        queryParameters: serverId == null ? null : {'id': serverId});
   }
 
   static PersonRole _role(String wire) =>
@@ -97,7 +108,7 @@ class EncorePeopleApi implements PeopleApi {
     }
     return Result.ok(CreatedInvite(
       id: made.id,
-      url: joinLink(_address(), code).toString(),
+      url: joinLink(_address(), code, serverId: _serverId?.call()).toString(),
       expiresAt: _time(made.expiresAtMs),
       role: _role(made.role),
     ));

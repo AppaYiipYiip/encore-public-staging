@@ -147,3 +147,81 @@ def test_the_help_text_lists_every_command() -> None:
     dispatched = set(re.findall(r"^\s{4}(\w+)\)", script.split('case "${1:-help}" in')[1], flags=re.M))
     for command in dispatched - {"help", "version", "start", "stop", "restart", "logs"}:
         assert f"encore {command}" in header, command
+
+
+# ------------------------------------------------------------------------------------------------ the addresses the server tells its phones
+
+
+def script_lines(*prefixes: str) -> str:
+    """The single lines of the `encore` script that start with each prefix (the one-line functions and variables)."""
+    lines = (DEPLOY / "encore").read_text(encoding="utf-8").splitlines()
+    found = []
+    for prefix in prefixes:
+        matches = [line for line in lines if line.startswith(prefix)]
+        assert len(matches) == 1, (prefix, matches)
+        found.append(matches[0])
+    return "\n".join(found)
+
+
+def run_env(tmp_path: Path, body: str, env_text: str | None) -> tuple[int, str, str]:
+    assert BASH is not None
+    env_file = tmp_path / ".env"
+    if env_text is not None:
+        env_file.write_text(env_text, encoding="utf-8", newline="\n")
+    functions = script_lines("ENV_FILE=", "set_env() {", "unset_env() {", "refresh_home_url() {")
+    script = f'DIR="{tmp_path.as_posix()}"; PORT=4533; host_ip() {{ echo 192.168.1.9; }}\n{functions}\n{body}'
+    result = subprocess.run([BASH, "-c", script], capture_output=True, text=True, check=False, timeout=30)
+    return result.returncode, result.stdout.strip(), env_file.read_text(encoding="utf-8") if env_file.exists() else ""
+
+
+def test_a_setting_that_is_there_is_replaced_and_the_others_are_left_alone(tmp_path: Path) -> None:
+    code, _, text = run_env(
+        tmp_path, "set_env ENCORE_AWAY_URL https://b.example.ts.net", "A=1\nENCORE_AWAY_URL=https://a.example.ts.net\nZ=2\n"
+    )
+
+    assert code == 0 and text == "A=1\nENCORE_AWAY_URL=https://b.example.ts.net\nZ=2\n"
+
+
+def test_a_setting_that_is_missing_is_added_at_the_end(tmp_path: Path) -> None:
+    _, _, text = run_env(tmp_path, "set_env ENCORE_AWAY_URL https://b.example.ts.net", "A=1\n")
+
+    assert text == "A=1\nENCORE_AWAY_URL=https://b.example.ts.net\n"
+
+
+def test_taking_a_setting_away_removes_that_line_and_nothing_that_only_looks_like_it(tmp_path: Path) -> None:
+    _, _, text = run_env(tmp_path, "unset_env ENCORE_AWAY_URL", "A=1\nENCORE_AWAY_URL=https://a\nENCORE_AWAY_URL_OTHER=keep\n")
+
+    assert text == "A=1\nENCORE_AWAY_URL_OTHER=keep\n"
+
+
+def test_taking_away_a_setting_that_is_not_there_is_not_an_error(tmp_path: Path) -> None:
+    code, _, text = run_env(tmp_path, "unset_env ENCORE_AWAY_URL", "A=1\n")
+
+    assert code == 0 and text == "A=1\n"
+
+
+def test_the_home_address_is_this_computers_address_and_the_installs_port(tmp_path: Path) -> None:
+    _, _, text = run_env(tmp_path, "refresh_home_url", "ENCORE_HOME_URL=http://10.0.0.5:4533\nA=1\n")
+
+    assert text == "ENCORE_HOME_URL=http://192.168.1.9:4533\nA=1\n", "an address that changed (DHCP) is brought up to date"
+
+
+def test_an_address_with_a_port_is_written_as_text(tmp_path: Path) -> None:
+    _, _, text = run_env(tmp_path, "set_env ENCORE_AWAY_URL 'https://x.example.ts.net:8443'", "A=1\n")
+
+    assert text.endswith("ENCORE_AWAY_URL=https://x.example.ts.net:8443\n")
+
+
+def test_the_compose_file_hands_both_addresses_to_the_server() -> None:
+    compose = (DEPLOY / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "ENCORE_HOME_URL: ${ENCORE_HOME_URL:-}" in compose and "ENCORE_AWAY_URL: ${ENCORE_AWAY_URL:-}" in compose
+
+
+def test_the_installer_writes_the_home_address_on_every_run_and_the_funnel_command_the_away_one() -> None:
+    install = (DEPLOY / "install.sh").read_text(encoding="utf-8")
+    encore = (DEPLOY / "encore").read_text(encoding="utf-8")
+
+    assert "ENCORE_HOME_URL=http://${HOST_IP}:${PORT}" in install
+    assert encore.count("tell_server_away") >= 4, "turning Funnel on (both ways) and off tell the server"
+    assert "Your server > Add an address" not in encore, "the person is no longer asked to type the address into the app"

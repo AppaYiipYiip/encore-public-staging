@@ -1,0 +1,7 @@
+# Findings that are not secrets, by fingerprint (commit:file:rule:line).
+#
+# A server's id (26 characters) is made from its PUBLIC key and is printed on /info for anybody; the tests hold one as a constant that happened to be called
+# `key`. The constants were renamed in the next commit, but the scan reads every commit of a pull request and so still reads the one that first had them.
+0de0e147e6c1b29e97efc7d00b60b1d8cf8a692e:app/test/data/encore/encore_people_test.dart:generic-api-key:182
+0de0e147e6c1b29e97efc7d00b60b1d8cf8a692e:app/test/features/join_invitation_test.dart:generic-api-key:446
+0de0e147e6c1b29e97efc7d00b60b1d8cf8a692e:app/test/domain/invite_link_test.dart:generic-api-key:92

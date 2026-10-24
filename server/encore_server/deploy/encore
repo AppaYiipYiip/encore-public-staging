@@ -29,6 +29,11 @@ die() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$OFF" >&2; exit 1; }
 [ -f "$DIR/compose.yaml" ] || die "Encore is not installed here (no $DIR/compose.yaml)."
 dc() { docker compose --project-directory "$DIR" "$@"; }
 env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+# Writing one setting of the install (ENV_FILE, by default its .env): replace the line or add it; unset_env removes it. The values are plain addresses,
+# never anything with a | or & in it. The file keeps the private mode the installer gave it.
+ENV_FILE="${ENV_FILE:-$DIR/.env}"
+set_env() { if grep -q "^$1=" "$ENV_FILE" 2>/dev/null; then sed -i "s|^$1=.*|$1=$2|" "$ENV_FILE"; else printf '%s=%s\n' "$1" "$2" >>"$ENV_FILE"; fi; }
+unset_env() { sed -i "/^$1=/d" "$ENV_FILE" 2>/dev/null || true; }
 PORT="$(env_value ENCORE_PORT)"; PORT="${PORT:-4533}"
 need_root() { [ "$(id -u)" = 0 ] || die "This needs the administrator: use  sudo encore $1"; }
 
@@ -39,6 +44,8 @@ wait_answers() {
 }
 server_version() { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null | sed -n 's/.*"serverVersion":"\([^"]*\)".*/\1/p' | head -1; }
 host_ip() { ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}'; }
+# The address the phones are told for this computer on the home network (they also learn it from the server: GET /encore/api/v1/server).
+refresh_home_url() { local ip; ip="$(host_ip)"; if [ -n "$ip" ]; then set_env ENCORE_HOME_URL "http://${ip}:${PORT}"; fi; }
 state_of() { dc ps --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null | awk -v s="$1" '$1 == s {print $2 (NF > 2 && $3 != "" ? " (" $3 ")" : "")}'; }
 
 # Reading the text of `tailscale funnel status` (on standard input). Each site is a line "https://name[:port] (Funnel on)" followed by
@@ -121,12 +128,20 @@ cmd_update() {
     cp -p "$DIR/compose.yaml" "$DIR/compose.yaml.before-update"
     mv "$DIR/compose.yaml.new" "$DIR/compose.yaml"
     chmod 755 /usr/local/bin/encore.new
+    refresh_home_url
     dc up -d >/dev/null 2>&1 || die "The new version could not be started. The old files are in $DIR/compose.yaml.before-update."
     wait_answers || die "The new version did not answer in 3 minutes. See: encore logs"
     after="$(server_version)"
     ok "Encore is up to date${before:+ (was $before, now $after)}"
     # Replacing the file this is running from last: bash has read it already.
     mv /usr/local/bin/encore.new /usr/local/bin/encore
+}
+
+# The server tells its phones where it can be reached (GET /encore/api/v1/server): remember the away address (or forget it) and let the server read it.
+tell_server_away() {
+    if [ -n "$1" ]; then set_env ENCORE_AWAY_URL "${1%/}"; else unset_env ENCORE_AWAY_URL; fi
+    refresh_home_url
+    dc up -d >/dev/null 2>&1 || note "The server could not be restarted to learn the new address; it will on the next  encore update."
 }
 
 cmd_funnel() {
@@ -147,6 +162,7 @@ cmd_funnel() {
             local status https="" candidate out
             status="$(tailscale funnel status 2>/dev/null || true)"
             if [ -n "$(printf '%s\n' "$status" | funnel_address_for "$port")" ]; then
+                tell_server_away "$(funnel_address)"
                 ok "Away from home: $(funnel_address) (it was already on)"
                 return 0
             fi
@@ -160,8 +176,9 @@ cmd_funnel() {
                 printf '%s\n' "$out" | sed 's/^/    /' >&2
                 die "Tailscale would not turn Funnel on. It needs HTTPS and Funnel enabled for your tailnet (https://login.tailscale.com/admin/dns)."
             fi
+            tell_server_away "$(funnel_address)"
             ok "Away from home: $(funnel_address)"
-            note "Add that address in the Encore app under Your server > Add an address, and invitations will use it."
+            note "Phones that are signed in learn this address by themselves, and invitations carry it."
             ;;
         off)
             command -v tailscale >/dev/null 2>&1 || die "Tailscale is not on this computer."
@@ -176,6 +193,7 @@ cmd_funnel() {
                 # the same in every version: change nothing and say so, rather than reset what is not Encore's.
                 die "Other things on this computer use Funnel as well, so nothing was changed. Encore's address is $mine. To take only that one away see  tailscale funnel --help  (or  tailscale funnel reset  removes them all)."
             fi
+            tell_server_away ""
             ok "Encore is no longer reachable from outside (Funnel is off)"
             ;;
         status)

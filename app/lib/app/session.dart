@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../core/clock.dart';
 import '../core/logger.dart';
+import '../core/network_policy.dart';
 import '../core/result.dart';
+import '../core/server_url.dart';
 import '../data/api/opensubsonic/opensubsonic_client.dart';
 import '../data/auth/credential_store.dart';
 import '../data/db/app_database.dart';
@@ -23,6 +25,7 @@ import '../data/repos/library_repository.dart';
 import '../data/sync/endpoint_resolver.dart';
 import '../data/sync/outbox.dart';
 import '../data/sync/playlist_mutations.dart';
+import '../data/sync/server_identity.dart';
 import '../data/sync/sync_engine.dart';
 import '../data/sync/sync_scheduler.dart';
 import '../data/sync/sync_state_store.dart';
@@ -59,6 +62,17 @@ Map<String, dynamic> serverCapabilities(ServerRow server) {
   }
 }
 
+/// The addresses the server told this phone about (`GET /encore/api/v1/server`), kept with what the phone learned about the server.
+List<ServerEndpoint> learnedAddresses(ServerRow server) {
+  final list = serverCapabilities(server)['learnedAddresses'];
+  if (list is! List) return const [];
+  return [
+    for (final e in list)
+      if (e is Map && e['url'] is String)
+        ServerEndpoint.fromJson(e.cast<String, dynamic>()),
+  ];
+}
+
 /// Everything that talks to one server, assembled once and shared.
 ///
 /// The UI never *waits* for a session: catalogue screens read the local
@@ -88,9 +102,13 @@ class ServerSession {
     required EncoreUpgrade upgradeRunner,
     required AppDatabase db,
     required Dio Function() probeDio,
+    required String? Function() knownKey,
+    required Future<void> Function() refreshAddresses,
   })  : _db = db,
         _upgradeRunner = upgradeRunner,
-        _probeDio = probeDio;
+        _probeDio = probeDio,
+        _knownKey = knownKey,
+        _refreshAddresses = refreshAddresses;
 
   /// Builds the network side for [server]. Cheap and non-blocking apart from
   /// one database read; no request is made until [start].
@@ -104,11 +122,23 @@ class ServerSession {
     /// Where the device sign-in is kept; without it (the background job, tests) there is no live channel.
     CredentialStore? credentialStore,
     String? appVersion,
+
+    /// Whether an address must prove it is this server before anything is sent to it (docs/11 ADR-R40). On in the app; the tests that
+    /// are not about it switch it off.
+    bool verifyAddresses = true,
+
+    /// How an address is asked who it is (tests replace it).
+    ServerIdentityProbe? identityProbe,
   }) async {
     final candidates = [
       for (final e in jsonDecode(server.endpointsJson) as List)
         ServerEndpoint.fromJson((e as Map).cast<String, dynamic>()),
     ];
+    // Addresses the server told this phone about earlier (docs/11 ADR-R40): kept beside the person's own, never in their list. Like any
+    // other, they are only used once they have proved who they are.
+    for (final e in learnedAddresses(server)) {
+      if (!candidates.any((c) => c.url == e.url)) candidates.add(e);
+    }
     final credentials =
         SubsonicCredentials(username: server.username, password: password);
     final http = dio ?? _buildDio();
@@ -128,9 +158,33 @@ class ServerSession {
       },
     ));
 
+    // The key this phone has pinned for the server, if it has learned one. A row from before keys has none: the first time its server
+    // proves a key it is pinned (trust on first use), and from then on only that server is accepted.
+    var pinned = serverCapabilities(server)['serverId'] as String?;
+    final identity = identityProbe ??
+        ServerIdentityProbe(dioFactory: () {
+          // A client of its own (no interceptors: asking who it is must not count as a request that worked), with the same adapter in tests.
+          final probe = _buildDio(connect: const Duration(seconds: 3));
+          if (dio != null) probe.httpClientAdapter = dio.httpClientAdapter;
+          return probe;
+        });
+
     endpoints = EndpointResolver(
       candidates: candidates,
+      requireVerified: verifyAddresses,
       probe: (base) async {
+        if (verifyAddresses) {
+          // Nothing secret is sent: a public question with a fresh challenge. Only an address that proves it is the server is ever used.
+          final proof = await identity.check(base, expectedId: pinned);
+          final learned = proof.serverId;
+          if (proof.verdict == EndpointVerdict.verified &&
+              learned != null &&
+              pinned == null) {
+            pinned = learned;
+            unawaited(_pinServerId(db, server.id, learned));
+          }
+          return proof.usable;
+        }
         final probeClient = OpenSubsonicClient(
           dio: _buildDio(connect: const Duration(seconds: 3)),
           baseUrl: () => base,
@@ -160,6 +214,35 @@ class ServerSession {
       auth: client.authQuery,
     );
     final encoreMode = serverCapabilities(server)['encore'] == true;
+
+    // Asks the server for the addresses it has and keeps the new ones (a signed-in phone is told, so nobody types them).
+    Future<void> refreshAddresses() async {
+      if (!encoreMode) return;
+      final told = (await encore.server()).valueOrNull;
+      if (told == null) return;
+      if (pinned != null && told.serverId != null && told.serverId != pinned) {
+        Log.warn('identity',
+            'the server named a key other than the one this phone knows: its address list is ignored');
+        return;
+      }
+      final found = <ServerEndpoint>[];
+      for (final a in told.addresses) {
+        final url = canonicalBaseUrl(a.url);
+        if (cleartextProblem(url) != null) continue;
+        found.add(ServerEndpoint(
+          label: switch (a.kind) {
+            'home' => 'Home',
+            'away' => 'Away',
+            _ => 'Server',
+          },
+          url: url,
+        ));
+      }
+      if (found.isEmpty) return;
+      endpoints.addCandidates(found);
+      await _rememberAddresses(db, server.id, found);
+    }
+
     // The live channel: the server tells this phone when something changed, so another phone's edit shows within a second or two.
     EncoreLive? live;
     if (encoreMode && credentialStore != null) {
@@ -267,7 +350,58 @@ class ServerSession {
       db: db,
       // A short look: a server that is not there must not hold the start of syncing back.
       probeDio: () => dio ?? _buildDio(connect: const Duration(seconds: 3)),
+      knownKey: () => pinned,
+      refreshAddresses: refreshAddresses,
     );
+  }
+
+  /// Remembers the key a server proved, with what else the phone has learned about it (`capabilitiesJson`).
+  /// Keeps the addresses the server named (new ones only), beside what else the phone has learned about it.
+  static Future<void> _rememberAddresses(
+      AppDatabase db, int serverId, List<ServerEndpoint> found) async {
+    try {
+      final row = await (db.select(db.servers)
+            ..where((s) => s.id.equals(serverId)))
+          .getSingleOrNull();
+      if (row == null) return;
+      final have = learnedAddresses(row);
+      final fresh = [
+        for (final e in found)
+          if (!have.any((h) => h.url == e.url)) e,
+      ];
+      if (fresh.isEmpty) return;
+      await (db.update(db.servers)..where((s) => s.id.equals(serverId))).write(
+        ServersCompanion(
+          capabilitiesJson: Value(jsonEncode({
+            ...serverCapabilities(row),
+            'learnedAddresses': [
+              for (final e in [...have, ...fresh]) e.toJson()
+            ],
+          })),
+        ),
+      );
+    } on Object catch (error) {
+      Log.warn(
+          'identity', 'could not remember the addresses of the server', error);
+    }
+  }
+
+  static Future<void> _pinServerId(
+      AppDatabase db, int serverId, String id) async {
+    try {
+      final row = await (db.select(db.servers)
+            ..where((s) => s.id.equals(serverId)))
+          .getSingleOrNull();
+      if (row == null) return;
+      final known = serverCapabilities(row);
+      if (known['serverId'] == id) return;
+      await (db.update(db.servers)..where((s) => s.id.equals(serverId))).write(
+        ServersCompanion(
+            capabilitiesJson: Value(jsonEncode({...known, 'serverId': id}))),
+      );
+    } on Object catch (error) {
+      Log.warn('identity', 'could not remember the key of the server', error);
+    }
   }
 
   static Dio _buildDio({Duration connect = const Duration(seconds: 6)}) => Dio(
@@ -311,7 +445,16 @@ class ServerSession {
   final AppDatabase _db;
   final EncoreUpgrade _upgradeRunner;
   final Dio Function() _probeDio;
+  final String? Function() _knownKey;
+  final Future<void> Function() _refreshAddresses;
+  StreamSubscription<ServerEndpoint>? _addressChanges;
   bool _disposed = false;
+
+  /// Asks the server which addresses it has and keeps the new ones (also done by itself once an address has proved itself).
+  Future<void> refreshAddresses() => _refreshAddresses();
+
+  /// The key of this server as this phone knows it (pinned the first time the server proved one), or `null` for a server that has none.
+  String? get knownKey => _knownKey();
 
   /// Where moving this phone onto an Encore server stands.
   final ValueNotifier<UpgradeStatus> upgrade =
@@ -326,9 +469,21 @@ class ServerSession {
     if (encoreMode) {
       scheduler.start();
       _startLive();
+      unawaited(_learnAddresses());
       return;
     }
     unawaited(_detectAndUpgrade());
+  }
+
+  /// Once an address has proved itself, and again whenever another one wins the race, ask the server which addresses it has.
+  Future<void> _learnAddresses() async {
+    _addressChanges ??= endpoints.changes.listen((_) => unawaited(
+          _refreshAddresses().catchError((Object e) {
+            Log.warn('identity', 'asking for the address list failed', e);
+          }),
+        ));
+    await endpoints.resolve();
+    if (!_disposed && endpoints.isVerified) await _refreshAddresses();
   }
 
   void _startLive() {
@@ -434,6 +589,7 @@ class ServerSession {
   Future<void> dispose() async {
     _disposed = true;
     upgrade.dispose();
+    await _addressChanges?.cancel();
     await _liveEvents?.cancel();
     await _liveConnection?.cancel();
     await live?.dispose();

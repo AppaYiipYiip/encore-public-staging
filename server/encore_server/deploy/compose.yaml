@@ -49,6 +49,9 @@ services:
       ENCORE_YOUTUBE: ${ENCORE_YOUTUBE:-1}
       # The server fetches, checks and switches to a newer yt-dlp by itself (docs/11 ADR-R39); 0 keeps the one in the image.
       ENCORE_AUTO_TOOLS: ${ENCORE_AUTO_TOOLS:-1}
+      # The addresses the server tells its phones (GET /encore/api/v1/server): the installer writes the first, `encore funnel on` the second.
+      ENCORE_HOME_URL: ${ENCORE_HOME_URL:-}
+      ENCORE_AWAY_URL: ${ENCORE_AWAY_URL:-}
     ports:
       - "${ENCORE_PORT:-4533}:4533"
     volumes:

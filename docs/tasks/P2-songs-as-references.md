@@ -162,6 +162,11 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   `app/lib/data/catalogue/deezer_client.dart`'s use in the app and lower the outside-host ratchet (`../30` §5).
 * **Acceptance.** Precision ≥ 99 % / recall ≥ 90 % on the labelled set; search p50 ≤ 400 ms (fast phase) on TYPICAL; "fairouz",
   "fairuz" and "فيروز" find the same artist.
+* **Found 2026-10-23 (owner, `AUDIT.md` F12 and F13), to be fixed here:** (1) **new releases**: Deezer lags (the EP KAIZEN of L'morphine was on YouTube Music and Spotify the day it came out and absent from Deezer, whose newest album for him was ten days older),
+  so the catalogue takes artist pages, albums and search from **YouTube Music as well as Deezer**, merged by the matching rules, and a release that YouTube Music has appears on the artist's page the same day; (2) **names**: "lmorphine chrono",
+  "l'morphine chrono" and "L'morphine - CHRONO" all find CHRONO first (Deezer finds none of them): an apostrophe, a space, a missing letter or the other order of artist and title never hides a song; (3) **several artists**: a song has an **ordered list** of artists
+  (MESSI MARADONA: Aymane Haqqi, L'morphine), the app shows all of them on rows, in the player, on the lock screen and on the song's page, and the song is on **every** credited artist's page; the app never shows a different artist on a row than the page header
+  it came from without saying why. Acceptance for these three: the pairs listed in `AUDIT.md` are in the labelled set and pass; a walk on the emulator shows KAIZEN on L'morphine's page and "Aymane Haqqi, L'morphine" under MESSI MARADONA.
 
 ## P2-13 — Downloads: formats, manifest, stale-file replacement (server + app) — Size M
 * **Why.** `../23` §1–2, H19, H20, H37.

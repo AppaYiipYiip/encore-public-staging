@@ -203,3 +203,40 @@ Fakes are fine inside unit tests for one rule; a journey passes only with real d
 * Any **S1** or **S2** found blocks the release; S3s are filed and scheduled.
 * A test that cannot run (tool broken, permission) is **"not run"**, never "pass".
 * The QA agent writes a short report per run: what was run, on which profiles/setup, results, new issues, what was not run.
+
+## 12. The walk record: expected, got, verdict (owner, 2026-10-24: "we don't have a *this is what is expected and this is what I got* document")
+
+Every walk (a journey, a charter, a device check, a fault test) is written in one shape, so anybody can see what was supposed to happen, what did, and whether the two agree. The **expected** column is filled in **before** the walk, and it is not invented while testing: it is copied from a row of the state tables (`31` connecting, `32` accounts and joining, `33` playback, `34` conflicts), from a story (`03a`) or from a journey step (§7). **If no row says what should happen, that is the first finding:** write the row (in the right table), then walk.
+
+| Column | What goes in it |
+|--------|-----------------|
+| **Row** | The id it is checked against: `CN-11`, `IV-8`, `J4 step 3`, a story number. Several walks may check one row; one walk usually checks several |
+| **Setup** | The state it starts in, in plain words: build and phone, server up or down, which addresses are saved, signed in or not, what is playing, which network. Enough for somebody else to arrive at the same state |
+| **Steps** | What the person does, in order, as taps and typing. No shortcut a person could not take |
+| **Expected** | Copied from the row. What the person sees or hears, a number with its limit where there is one. **What must not happen counts too** ("no request carries a login") and is checked the same way |
+| **Got** | What really happened: the text on the screen as shown, a number and how it was measured, a log line. Never "worked" or "fine" |
+| **Verdict** | **Pass**: got matches expected. **Fail**: it does not (a *better* result than expected is still Fail until the row is changed, on purpose, with the reason). **Not run**: it could not be run (say why). **Blocked**: something else has to be fixed first (say what) |
+| **Evidence** | The file in `docs/evidence/`: screenshot, log, timing output. A Pass without one is a "Not run" |
+| **If Fail** | Severity (S1 to S4, §11), the issue number, the row or task that will fix it |
+
+Rules that go with it:
+
+1. **One table per walk, at the top of its evidence document**, then the setup details, the findings that are not rows, **Not covered** (rows nobody walked: they are listed, never silently skipped) and the YouTube look-ups spent.
+2. **Walk a state, not a screen.** The unit is a row of `31` to `34`. A screen with no row behind it is a gap in the paper, and the gap list is simply the screens whose states nobody wrote: add a row first.
+3. **Negative and fault rows are first-class.** For every "happy" row there is a row for *the server does not answer*, *another server answers*, *the line drops mid-song*, *the answer is slow*, *the answer is garbage*; each has an expected line like any other.
+4. **A fix needs its walk repeated.** A Fail closed by a code change is re-walked on the same setup and the second record sits beside the first (same table, a new Got/Verdict pair), so "fixed" is an observation.
+5. **Before / after for any change that touches speed or security** (the first example is `evidence/b03-impostor-and-cold-start.md`): the same setup on the old and the new build, in the same session, and both numbers in the pull request.
+
+Template (copy it):
+
+```
+# <id> — <what was walked> (<date>, build <n>)
+
+| Row | Setup | Steps | Expected | Got | Verdict | Evidence | If Fail |
+|-----|-------|-------|----------|-----|---------|----------|---------|
+
+## Setup in detail
+## Findings that are not rows
+## Not covered
+## YouTube look-ups spent
+```

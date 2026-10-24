@@ -15,6 +15,7 @@ class InviteLink {
     required this.code,
     this.behindPeoplePrefix = true,
     this.encore = false,
+    this.serverId,
   });
 
   /// The front door of the server: scheme, host, port and any path in front of
@@ -32,6 +33,10 @@ class InviteLink {
   /// The link of an Encore server (`https://<server>/encore/join/<code>`): the invitation is checked and used on the server's own API, on
   /// the same address as everything else.
   final bool encore;
+
+  /// The key of the server that made the invitation (`?id=` on the link, docs/11 ADR-R40): the phone checks that the address answers with
+  /// this key before it sends the new person's name and password there. `null` for a link from before keys.
+  final String? serverId;
 
   /// Who invited, what the server is called, until when: asked before the
   /// person chooses a name.
@@ -71,10 +76,12 @@ class InviteLink {
       other.server == server &&
       other.code == code &&
       other.behindPeoplePrefix == behindPeoplePrefix &&
-      other.encore == encore;
+      other.encore == encore &&
+      other.serverId == serverId;
 
   @override
-  int get hashCode => Object.hash(server, code, behindPeoplePrefix, encore);
+  int get hashCode =>
+      Object.hash(server, code, behindPeoplePrefix, encore, serverId);
 
   @override
   String toString() => 'InviteLink($server, $code)';
@@ -83,7 +90,9 @@ class InviteLink {
 // `scheme://host[:port][/some/path]` then the join path, then the code.
 const _front = r'(https?)://([^\s/?#]+)((?:/[^\s/?#]+)*?)';
 const _code = r'([A-Za-z0-9_-]+)';
-final RegExp _encoreForm = RegExp('$_front/encore/join/$_code');
+final RegExp _encoreForm =
+    RegExp('$_front/encore/join/$_code${r'(?:\?id=([^\s&#]*))?'}');
+final RegExp _serverKey = RegExp(r'^[a-z2-7]{26}$');
 final RegExp _publicForm = RegExp('$_front/people/join/$_code');
 final RegExp _homeForm = RegExp('$_front/join/$_code');
 
@@ -101,11 +110,15 @@ InviteLink? findInviteLink(String text) {
     final server = Uri.tryParse('${m.group(1)}://${m.group(2)}${m.group(3)}');
     if (server == null || server.host.isEmpty) continue;
     if (cleartextProblem(server) != null) return null;
+    // A link that names a key badly is not a link without a key: it is refused, never relaxed into one.
+    final named = encore ? m.group(5) : null;
+    if (named != null && !_serverKey.hasMatch(named)) return null;
     return InviteLink(
         server: server,
         code: m.group(4)!,
         behindPeoplePrefix: prefixed,
-        encore: encore);
+        encore: encore,
+        serverId: named);
   }
   return null;
 }

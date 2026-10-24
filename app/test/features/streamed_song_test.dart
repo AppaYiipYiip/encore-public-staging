@@ -104,6 +104,7 @@ void main() {
         final db = ref.read(databaseProvider);
         final server = (await db.select(db.servers).get()).first;
         final session = await ServerSession.create(
+          verifyAddresses: false,
           db: db,
           server: server,
           password: 'x',

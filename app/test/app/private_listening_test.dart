@@ -31,6 +31,7 @@ void main() {
     });
     final server = (await db.select(db.servers).get()).first;
     session = await ServerSession.create(
+      verifyAddresses: false,
       db: db,
       server: server,
       password: 'x',

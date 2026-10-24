@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
@@ -10,6 +11,7 @@ import '../data/auth/credential_store.dart';
 import '../data/auth/server_setup_service.dart';
 import '../data/db/app_database.dart';
 import '../data/repos/library_repository.dart';
+import '../data/sync/server_identity.dart';
 import '../data/sync/sync_scheduler.dart';
 import 'session.dart';
 
@@ -82,9 +84,19 @@ final _sessionServerProvider = StreamProvider<ServerRow?>((ref) {
   return _profileInUse(db).watchSingleOrNull().distinct((a, b) =>
       a?.id == b?.id &&
       a?.endpointsJson == b?.endpointsJson &&
-      a?.capabilitiesJson == b?.capabilitiesJson &&
+      stableCapabilities(a) == stableCapabilities(b) &&
       a?.username == b?.username);
 });
+
+/// What the phone learns about a running session's server (its key, the addresses it names) is written to the row while the session runs,
+/// and must not rebuild it: those two are left out of the comparison.
+String? stableCapabilities(ServerRow? server) {
+  if (server == null) return null;
+  final all = Map<String, dynamic>.of(serverCapabilities(server))
+    ..remove('serverId')
+    ..remove('learnedAddresses');
+  return jsonEncode(all);
+}
 
 /// Repository over the local library; available as soon as the server row is.
 final libraryRepositoryProvider = Provider<LibraryRepository?>((ref) {
@@ -112,6 +124,10 @@ final sessionProvider = FutureProvider<ServerSession?>((ref) async {
   ref.onDispose(() => unawaited(session.dispose()));
   return session;
 });
+
+/// How a phone asks an address who it is, before it sends anything secret there (docs/11 ADR-R40). Tests replace it.
+final serverIdentityProbeProvider =
+    Provider<ServerIdentityProbe>((ref) => ServerIdentityProbe());
 
 final serverSetupServiceProvider = Provider<ServerSetupService>((ref) {
   return ServerSetupService(

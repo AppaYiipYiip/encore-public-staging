@@ -288,11 +288,14 @@ class _SessionLifecycleState extends ConsumerState<_SessionLifecycle>
     });
     // Mobile data is probed less often than Wi-Fi.
     ref.listen(networkKindProvider, (_, next) {
-      ref
-          .read(sessionProvider)
-          .value
-          ?.scheduler
-          .setMetered(next.value == NetworkKind.mobile);
+      final session = ref.read(sessionProvider).value;
+      session?.scheduler.setMetered(next.value == NetworkKind.mobile);
+      if (session != null && next.value != NetworkKind.none) {
+        // Another network: whatever answered at the old address is not known to be the server any more (a recycled address, a café). No request
+        // goes out until the addresses have been asked who they are again.
+        session.endpoints.invalidate();
+        unawaited(session.endpoints.resolve());
+      }
     });
     ref.listen(connectivityProvider, (_, next) {
       final online = next.value;

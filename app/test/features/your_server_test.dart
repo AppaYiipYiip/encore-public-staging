@@ -437,6 +437,7 @@ class _FakeSetup extends ServerSetupService {
     ServerEndpoint endpoint, {
     required String username,
     required String password,
+    String? expectedId,
   }) async =>
       endpoint.url.host == '192.168.1.10'
           ? const Duration(milliseconds: 38)

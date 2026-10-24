@@ -43,19 +43,32 @@ class ServerEndpoint {
 ///   candidate), so callers never wait for resolution.
 /// * Re-resolution is triggered by network changes, by repeated failures
 ///   ([reportFailure]) and by [resolve] with `force`.
+/// * With [requireVerified] (docs/11 ADR-R40) the probe is "has this address proved it is the server?", and [currentUrl] - the one address
+///   every request, stream and cover is built from - is only ever an address that has. Before the first race has finished, after a race that
+///   found nothing, and after [invalidate] (the network changed), it is [unverifiedUrl], which cannot leave the phone: no login, token or
+///   signed address is ever sent to an address nobody has checked.
 class EndpointResolver {
   EndpointResolver({
     required List<ServerEndpoint> candidates,
     required Future<bool> Function(Uri base) probe,
+    this.requireVerified = false,
     this.stagger = const Duration(milliseconds: 350),
     this.probeTimeout = const Duration(seconds: 4),
     this.failuresBeforeReresolve = 2,
     Future<void> Function(Duration)? delay,
   })  : assert(candidates.isNotEmpty, 'at least one endpoint is required'),
-        _candidates = List.unmodifiable(candidates),
+        _candidates = List.of(candidates),
         _probe = probe,
         _delay = delay ?? Future<void>.delayed,
-        _current = candidates.first;
+        _current = candidates.first,
+        _verified = !requireVerified;
+
+  /// An address that cannot be reached by anything (`.invalid` is reserved: it never resolves). What [currentUrl] is while nothing is verified.
+  static final Uri unverifiedUrl =
+      Uri(scheme: 'http', host: 'unverified.invalid', path: '/');
+
+  /// Whether [currentUrl] may only be an address that proved who it is.
+  final bool requireVerified;
 
   final List<ServerEndpoint> _candidates;
   final Future<bool> Function(Uri base) _probe;
@@ -67,6 +80,7 @@ class EndpointResolver {
   final StreamController<ServerEndpoint> _changes =
       StreamController<ServerEndpoint>.broadcast();
   ServerEndpoint _current;
+  bool _verified;
   Future<ServerEndpoint?>? _inFlight;
   int _consecutiveFailures = 0;
   bool _reachable = false;
@@ -79,10 +93,31 @@ class EndpointResolver {
     if (!_reachability.isClosed) _reachability.add(value);
   }
 
-  /// Base URL requests should use right now.
-  Uri get currentUrl => _current.url;
+  /// Base URL requests should use right now: the last winner of the race, or - when verification is required and no address has proved
+  /// itself (yet, or any more) - [unverifiedUrl].
+  Uri get currentUrl => _verified ? _current.url : unverifiedUrl;
+
+  /// The address shown to the person (its label and host), verified or not.
   ServerEndpoint get current => _current;
-  List<ServerEndpoint> get candidates => _candidates;
+  List<ServerEndpoint> get candidates => List.unmodifiable(_candidates);
+
+  /// Whether [currentUrl] is an address that has proved itself (always true when verification is not required).
+  bool get isVerified => _verified;
+
+  /// The network changed (or the phone woke up somewhere else): nothing is known about the address any more. Requests stop going out until
+  /// the next race has found an address that proves itself.
+  void invalidate() {
+    if (requireVerified) _verified = false;
+  }
+
+  /// Adds addresses the server itself told this phone about (`GET /encore/api/v1/server`); known ones are left alone. They are only ever
+  /// used after they have proved themselves in a race.
+  void addCandidates(Iterable<ServerEndpoint> found) {
+    for (final endpoint in found) {
+      if (_candidates.any((c) => c.url == endpoint.url)) continue;
+      _candidates.add(endpoint);
+    }
+  }
 
   /// `true` once a probe has succeeded and until a full resolution fails.
   bool get isReachable => _reachable;
@@ -101,7 +136,9 @@ class EndpointResolver {
 
   Future<ServerEndpoint?> _resolve() async {
     final completer = Completer<ServerEndpoint?>();
-    var pending = _candidates.length;
+    // The list as it is now: an address added while the race runs waits for the next one.
+    final raced = List.of(_candidates);
+    var pending = raced.length;
     var decided = false;
 
     void settle(ServerEndpoint? winner) {
@@ -115,8 +152,8 @@ class EndpointResolver {
       }
     }
 
-    for (var i = 0; i < _candidates.length; i++) {
-      final endpoint = _candidates[i];
+    for (var i = 0; i < raced.length; i++) {
+      final endpoint = raced[i];
       unawaited(() async {
         if (i > 0) {
           await _delay(stagger * i);
@@ -134,6 +171,7 @@ class EndpointResolver {
 
     final winner = await completer.future;
     if (winner != null) {
+      _verified = true;
       _setReachable(true);
       _consecutiveFailures = 0;
       if (winner != _current) {
@@ -142,6 +180,8 @@ class EndpointResolver {
         if (!_changes.isClosed) _changes.add(winner);
       }
     } else {
+      // Nothing proved itself: the last winner may now be somebody else's address (another network), so it is not used any more.
+      if (requireVerified) _verified = false;
       _setReachable(false);
       Log.info('endpoint', 'no endpoint reachable');
     }

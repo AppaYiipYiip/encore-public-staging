@@ -80,7 +80,9 @@ final encorePeopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
     // An invitation goes to somebody who is probably not at home: the server's address on the internet when it has one.
     address: () => EncorePeopleApi.invitationAddress(
         [for (final e in session.endpoints.candidates) e.url],
-        session.endpoints.currentUrl),
+        session.endpoints.current.url),
+    // The link carries the server's key, so the phone that opens it can tell the server from anything else at that address.
+    serverId: () => session.knownKey,
   );
 });
 

@@ -9,6 +9,7 @@ import '../../data/auth/server_setup_service.dart';
 import '../../data/encore/encore_device.dart';
 import '../../data/people/people_join_client.dart';
 import '../../data/sync/endpoint_resolver.dart';
+import '../../data/sync/server_identity.dart';
 import '../../design/tokens.dart';
 import '../../domain/invite_link.dart';
 import '../../domain/new_account_rules.dart';
@@ -55,6 +56,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   String? _step;
   String? _error;
 
+  /// The key the address proved when it was asked who it is; `null` for a server that has none.
+  String? _provenId;
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +72,27 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     super.dispose();
   }
 
+  /// Asks the address who it is, with nothing secret in the question, and only then what the invitation says. A link that names a key is
+  /// trusted for a server that proves that key and for nothing else: the password the new person chooses is never sent to anything
+  /// that merely answers at the address (docs/11 ADR-R40).
+  Future<Result<InvitationInfo>> _ask() async {
+    final proof = await ref
+        .read(serverIdentityProbeProvider)
+        .check(widget.link.server, expectedId: widget.link.serverId);
+    switch (proof.verdict) {
+      case EndpointVerdict.wrongKey:
+        return const Result.err(ServerFailure(
+            'This is not the server that invited you. Ask for a new invitation.'));
+      case EndpointVerdict.unreachable:
+        return const Result.err(NetworkFailure('Cannot reach the server'));
+      case EndpointVerdict.verified:
+        _provenId = proof.serverId;
+      case EndpointVerdict.legacy:
+        _provenId = null;
+    }
+    return ref.read(peopleJoinClientProvider).info(widget.link);
+  }
+
   Future<void> _check() async {
     setState(() {
       _checking = true;
@@ -75,14 +100,14 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       _problem = null;
     });
     final delays = ref.read(joinRetryDelaysProvider);
-    var result = await ref.read(peopleJoinClientProvider).info(widget.link);
+    var result = await _ask();
     for (final pause in delays) {
       if (!mounted) return;
       if (result case Err(:final failure) when failure is NetworkFailure) {
         setState(() => _reaching = true);
         await Future<void>.delayed(pause);
         if (!mounted) return;
-        result = await ref.read(peopleJoinClientProvider).info(widget.link);
+        result = await _ask();
       } else {
         break;
       }
@@ -138,6 +163,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       endpoints: endpoints,
       username: account.username,
       password: password,
+      expectedId: widget.link.serverId ?? _provenId,
     );
     if (!mounted) return;
     switch (checked) {
@@ -159,6 +185,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           username: account.username,
           password: password,
           ping: value.ping,
+          serverId: value.serverId ?? _provenId,
         );
         // The device the server made while it made the account is this phone's: keep it, so the live channel does not sign in again.
         final token = account.deviceToken;

@@ -1,0 +1,38 @@
+{"t": 1792802970.1, "method": "GET", "path": "/api/info", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802970.7, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802970.7, "method": "GET", "path": "/rest/getOpenSubsonicExtensions", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792802970.8, "method": "GET", "path": "/encore/api/v1/me", "query": ["s", "t", "u"], "headers": [], "body": false, "credential": true}
+{"t": 1792802971.7, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802972.6, "method": "GET", "path": "/rest/ping", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792802973.3, "method": "GET", "path": "/rest/getScanStatus", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792802973.6, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802973.7, "method": "GET", "path": "/rest/getArtists", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792802974.3, "method": "GET", "path": "/rest/getAlbumList2", "query": ["c", "f", "offset", "s", "size", "t", "type", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792802975.0, "method": "GET", "path": "/encore/api/v1/library/files", "query": ["limit", "s", "since", "t", "u"], "headers": [], "body": false, "credential": true}
+{"t": 1792802976.7, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802982.0, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792802996.0, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}
+{"t": 1792803007.7, "method": "GET", "path": "/rest/getScanStatus", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803008.3, "method": "GET", "path": "/rest/ping", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803008.8, "method": "GET", "path": "/rest/getScanStatus", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803009.5, "method": "GET", "path": "/rest/getArtists", "query": ["c", "f", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803010.0, "method": "GET", "path": "/rest/getAlbumList2", "query": ["c", "f", "offset", "s", "size", "t", "type", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803010.5, "method": "GET", "path": "/encore/api/v1/library/files", "query": ["limit", "s", "since", "t", "u"], "headers": [], "body": false, "credential": true}
+{"t": 1792803013.3, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.0, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.1, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.2, "method": "GET", "path": "/rest/scrobble", "query": ["c", "f", "id", "s", "submission", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.3, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.3, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.4, "method": "GET", "path": "/rest/scrobble", "query": ["c", "f", "id", "s", "submission", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.5, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.6, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.7, "method": "GET", "path": "/rest/scrobble", "query": ["c", "f", "id", "s", "submission", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.8, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803014.8, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803015.0, "method": "GET", "path": "/rest/scrobble", "query": ["c", "f", "id", "s", "submission", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803015.1, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803015.3, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803015.3, "method": "GET", "path": "/rest/scrobble", "query": ["c", "f", "id", "s", "submission", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803015.4, "method": "GET", "path": "/rest/stream", "query": ["c", "f", "id", "s", "t", "u", "v"], "headers": [], "body": false, "credential": true}
+{"t": 1792803023.3, "method": "GET", "path": "/encore/live", "query": [], "headers": [], "body": false, "credential": false}

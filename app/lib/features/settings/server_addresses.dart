@@ -70,7 +70,10 @@ class _ServerAddressesSectionState
           Duration? took;
           try {
             took = await service
-                .probe(e, username: server.username, password: password)
+                .probe(e,
+                    username: server.username,
+                    password: password,
+                    expectedId: ServerSetupService.pinnedKeyOf(server))
                 .timeout(const Duration(seconds: 6));
           } on Object {
             took = null;

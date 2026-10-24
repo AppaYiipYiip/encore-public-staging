@@ -189,4 +189,109 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(probes, 0, reason: 'only 1 consecutive failure at the end');
   });
+
+  group('when an address must prove itself before anything is sent to it', () {
+    EndpointResolver strict(List<ServerEndpoint> candidates,
+            Future<bool> Function(Uri) probe) =>
+        EndpointResolver(
+          candidates: candidates,
+          probe: probe,
+          requireVerified: true,
+          delay: (_) async {},
+        );
+
+    test('before the first race no request may go to any candidate', () {
+      final r = strict([home, tail], (_) async => true);
+
+      expect(r.currentUrl, EndpointResolver.unverifiedUrl);
+      expect(r.currentUrl.host, endsWith('.invalid'),
+          reason:
+              'a name that can never be resolved: nothing leaves the phone');
+      expect(r.isVerified, isFalse);
+      expect(r.current, home,
+          reason: 'the screen can still say which address it is trying');
+    });
+
+    test('once an address has proved itself, requests go to it', () async {
+      final r = strict([home, tail], (base) async => base == tail.url);
+
+      await r.resolve();
+
+      expect(r.currentUrl, tail.url);
+      expect(r.isVerified, isTrue);
+    });
+
+    test('an address that is not the server is never handed out, only asked',
+        () async {
+      final asked = <Uri>[];
+      final r = strict([home], (base) async {
+        asked.add(base);
+        return false; // another server, or nobody: it did not prove anything
+      });
+
+      await r.resolve();
+
+      expect(asked, [home.url]);
+      expect(r.currentUrl, EndpointResolver.unverifiedUrl);
+      expect(r.isVerified, isFalse);
+    });
+
+    test('a race that finds nothing takes back the address that worked before',
+        () async {
+      var theServerIsHere = true;
+      final r = strict([home], (_) async => theServerIsHere);
+      await r.resolve();
+      expect(r.currentUrl, home.url);
+
+      theServerIsHere =
+          false; // another network: the same address is somebody else's
+      await r.resolve();
+
+      expect(r.currentUrl, EndpointResolver.unverifiedUrl,
+          reason: 'the last good address is not used for anything any more');
+    });
+
+    test('a change of network stops requests until the next race has finished',
+        () async {
+      final r = strict([home], (_) async => true);
+      await r.resolve();
+      expect(r.currentUrl, home.url);
+
+      r.invalidate();
+
+      expect(r.currentUrl, EndpointResolver.unverifiedUrl);
+      await r.resolve();
+      expect(r.currentUrl, home.url);
+    });
+
+    test(
+        'an address the server named is raced like any other and never trusted before it answers',
+        () async {
+      final away = _ep('Away', 'https://encore-home.tail1234.ts.net');
+      final asked = <Uri>[];
+      final r = strict([home], (base) async {
+        asked.add(base);
+        return base == away.url;
+      });
+
+      r.addCandidates([away, home]); // a known address is not added twice
+      expect(r.candidates, [home, away]);
+      expect(r.currentUrl, EndpointResolver.unverifiedUrl);
+      await r.resolve();
+
+      expect(asked.toSet(), {home.url, away.url});
+      expect(r.currentUrl, away.url);
+    });
+
+    test(
+        'without the requirement nothing changes: the first candidate is used at once',
+        () {
+      final r = EndpointResolver(
+          candidates: [home], probe: (_) async => false, delay: (_) async {});
+
+      expect(r.currentUrl, home.url);
+      r.invalidate();
+      expect(r.currentUrl, home.url);
+    });
+  });
 }

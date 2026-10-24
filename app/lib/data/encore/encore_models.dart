@@ -295,6 +295,41 @@ class EncoreFiles {
 
 /// `GET /encore/api/v1/info`: what this server is and can do.
 @immutable
+
+/// One address the server says it can be reached at (`GET /encore/api/v1/server`): `home` (on the home network) or `away` (over the internet).
+class EncoreAddress {
+  const EncoreAddress({required this.kind, required this.url});
+
+  final String kind;
+  final Uri url;
+}
+
+/// What a signed-in phone is told about its server (docs/11 ADR-R40): who it is and the addresses it has, so nobody types one.
+class EncoreServerAddresses {
+  const EncoreServerAddresses(
+      {required this.serverId, required this.name, required this.addresses});
+
+  factory EncoreServerAddresses.fromJson(Map<String, dynamic> json) =>
+      EncoreServerAddresses(
+        serverId: readString(json['serverId']),
+        name: readString(json['name']) ?? '',
+        addresses: [
+          for (final a in (json['addresses'] as List? ?? const []))
+            if (a is Map &&
+                readString(a['url']) != null &&
+                Uri.tryParse(readString(a['url'])!) != null)
+              EncoreAddress(
+                kind: readString(a['kind']) ?? '',
+                url: Uri.parse(readString(a['url'])!),
+              ),
+        ],
+      );
+
+  final String? serverId;
+  final String name;
+  final List<EncoreAddress> addresses;
+}
+
 class EncoreInfo {
   const EncoreInfo({
     required this.apiVersion,

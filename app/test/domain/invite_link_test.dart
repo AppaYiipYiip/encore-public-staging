@@ -87,4 +87,59 @@ void main() {
           isTrue);
     });
   });
+
+  group('the key of the server in the link (docs/11 ADR-R40)', () {
+    const knownId = 'mw3am46w5weex4a4fqrc3avnua';
+
+    test('a link made by an Encore server carries the key and the code', () {
+      final link = findInviteLink(
+          'Join me: http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$knownId and see you there')!;
+
+      expect(link.encore, isTrue);
+      expect(link.code, 'ABCD-EFGH-JKLM');
+      expect(link.serverId, knownId);
+      expect(link.server, Uri.parse('http://192.168.1.50:4540'));
+    });
+
+    test('an older link has no key and is still a link', () {
+      final link = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM')!;
+
+      expect(link.serverId, isNull);
+    });
+
+    test(
+        'a link that names a key badly is refused, not read as a link without one',
+        () {
+      for (final bad in [
+        '',
+        'short',
+        'UPPERCASEUPPERCASEUPPERCASE',
+        '${knownId}x',
+        knownId.substring(1)
+      ]) {
+        expect(
+            findInviteLink(
+                'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM?id=$bad'),
+            isNull,
+            reason: 'id "$bad"');
+      }
+    });
+
+    test('the key makes two links different', () {
+      final a = findInviteLink(
+          'http://192.168.1.50:4540/encore/join/CODE1?id=$knownId')!;
+      final b = findInviteLink('http://192.168.1.50:4540/encore/join/CODE1')!;
+
+      expect(a, isNot(b));
+    });
+
+    test('only an Encore link carries a key; the other forms ignore a stray id',
+        () {
+      final link = findInviteLink(
+          'https://music.example/people/join/Code123?id=$knownId')!;
+
+      expect(link.serverId, isNull);
+    });
+  });
 }

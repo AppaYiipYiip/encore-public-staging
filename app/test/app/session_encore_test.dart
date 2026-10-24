@@ -66,6 +66,7 @@ void main() {
     encore = FakeEncoreServer();
     door = _OneDoor(music, encore);
     session = await ServerSession.create(
+        verifyAddresses: false,
         db: db,
         server: server,
         password: 'x',

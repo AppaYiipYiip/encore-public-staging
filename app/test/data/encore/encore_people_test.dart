@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:encore/data/encore/encore_api.dart';
 import 'package:encore/data/encore/encore_people.dart';
 import 'package:encore/data/people/people_client.dart';
+import 'package:encore/domain/invite_link.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_encore_server.dart';
@@ -175,5 +176,38 @@ void main() {
             .isOk,
         isTrue);
     expect(server.calls.keys.where((k) => k.contains('activity')), isEmpty);
+  });
+
+  group('the link an invitation is sent as', () {
+    const knownId = 'mw3am46w5weex4a4fqrc3avnua';
+
+    test('carries the key of the server when the phone knows it', () {
+      final link = EncorePeopleApi.joinLink(
+          Uri.parse('https://encore-home.tail1234.ts.net'), 'ABCD-EFGH-JKLM',
+          serverId: knownId);
+
+      expect(link.toString(),
+          'https://encore-home.tail1234.ts.net/encore/join/ABCD-EFGH-JKLM?id=$knownId');
+    });
+
+    test('has no query when the phone does not know a key yet', () {
+      final link = EncorePeopleApi.joinLink(
+          Uri.parse('http://192.168.1.50:4540'), 'ABCD-EFGH-JKLM');
+
+      expect(link.toString(),
+          'http://192.168.1.50:4540/encore/join/ABCD-EFGH-JKLM');
+    });
+
+    test('is read back by the app that receives it, key and all', () {
+      final sent = EncorePeopleApi.joinLink(
+          Uri.parse('https://encore-home.tail1234.ts.net'), 'ABCD-EFGH-JKLM',
+          serverId: knownId);
+
+      final received = findInviteLink('Come and listen: $sent')!;
+
+      expect(received.serverId, knownId);
+      expect(received.code, 'ABCD-EFGH-JKLM');
+      expect(received.server, Uri.parse('https://encore-home.tail1234.ts.net'));
+    });
   });
 }

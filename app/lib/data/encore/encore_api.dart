@@ -108,6 +108,10 @@ class EncoreApi {
   Future<Result<EncoreInfo>> info() =>
       guard(() async => EncoreInfo.fromJson(await _send('GET', '/info')));
 
+  /// The addresses this server says it has (signed in): the home one and the one over the internet.
+  Future<Result<EncoreServerAddresses>> server() => guard(() async =>
+      EncoreServerAddresses.fromJson(await _send('GET', '/server')));
+
   /// Signs in once for a device token (the live channel authenticates with it). The password is turned into a token by the server's
   /// check and not kept there.
   Future<Result<EncoreDeviceLogin>> login({
