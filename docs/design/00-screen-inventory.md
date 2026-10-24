@@ -40,6 +40,13 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | S-18 | **Album** (owned or from the catalogue) | `album/:id`, `catalogue/album/:id` | L, loaded, partly on the server (`album_gap`), O, "not on your server yet" | C, X, T | |
 | S-19 | **Artist** (credits of every artist on a song, new releases, "Songs", "Albums", "Appears on") | `artist/:id`, `catalogue/artist/:id` | L, loaded, a new release (the owner's F12), a song with two artists (F13), E, O | C, X, T | ★ |
 | S-20 | **Imported playlist** (progress per song) | `import/:id` | D, saved, a song that could not be found, failed | C, X | |
+| S-21 | **Discography / Show all** (all of an artist's albums, singles and EPs, "Appears on", a long shelf of any kind: a vertical list or grid with the same filter chips as the artist page) | new | L, loaded, E, O | C, X, T | |
+| S-22 | **Create** (the "+" menu: New playlist, Import a playlist, Start a Jam) and **New playlist** (name it, optionally add songs; a name that is taken) | new | closed, the menu open, naming, refused (`34`), created | C, X | |
+| S-23 | **Recently played** (history, newest first, grouped by day) | new (`P2` history) | E, loaded, O, private listening is not listed | C, X | |
+| S-24 | **What's new** (the bell: new releases from artists the person plays, an invitation used, an import finished; `23` notifications) | new | E, loaded, a notification that no longer applies | C, X | |
+| S-25 | **Song credits** (the ⋯ menu's "Show credits": artists, writers, source) | new | L, loaded, partly known | C, X | |
+| S-26 | **A person's profile** (name, picture, what they chose to share: playlists, what they play now; "Invite" or nothing else; nothing at all for a person who shares nothing) | new (`P4-03`) | loaded, shares nothing, a person on another server (only when the server allows it) | C, X | |
+| S-27 | **The profile menu** (the avatar at the top left of Home: Add account / switch profile, What's new, Recently played, Settings, Your server, Sign out) | new (today a bare Settings button) | the menu open, one profile, several profiles on a shared device | C, X, T | |
 
 ## Playing
 
