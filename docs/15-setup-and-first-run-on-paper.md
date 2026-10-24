@@ -40,6 +40,48 @@ gives you. What the terminal shows after pasting `curl -fsSL https://<get addres
 * Errors are sentences with the fix: "This computer has 1 GB of memory; Encore needs at least 2 GB", "No internet connection: check the
   cable or Wi-Fi and run the same line again". Running the line again is always safe.
 
+## 1b. The `encore` command: what each part prints (text, designed; owner 2026-10-24: the server side is on paper too)
+
+These are the outputs as `server/deploy/install.sh` and `server/deploy/encore` print them today, plus the one change decided in ADR-R40 (the installer's last screen offers a **pairing link and QR** instead of "Address: ... Username: ...", once P2-20 is built). Plain words, no "Docker" except where the Host must act; every error is a sentence with the fix.
+
+```
+$ encore status
+  Encore 0.1.0 (version main)
+  ✓ Encore server: running (healthy)
+  ✓ Music server: running (healthy)
+  ✓ It answers on port 4540
+
+        On your home network:  192.168.1.23:4540
+        Away from home:        not set up (encore funnel on)
+        Music folder:          /home/riley/Music
+        Last backup:           2026-10-24 03:12
+```
+```
+$ sudo encore update
+  ✓ A backup was made first
+  … Looking for a newer version
+  ✓ Encore is up to date (was 0.1.0, now 0.1.1)
+```
+```
+$ sudo encore funnel on
+  ✓ Away from home: https://our-music.tail1234.ts.net
+    Phones that are signed in learn this address by themselves, and invitations carry it.
+```
+```
+$ sudo encore backup
+  … Copying the databases
+  ✓ Backup made: /opt/encore/backups/encore-backup-20261024-031200.tar.gz (14M)
+    It holds the accounts, playlists and likes, and a login this install needs: keep it private. Your music is not in it.
+```
+```
+$ sudo encore pair                      (after P2-20; ADR-R40 slice B)
+  Open this on the phone where you want to be signed in (valid 10 minutes, works once):
+
+        https://our-music.tail1234.ts.net/encore/pair/7KQ4-MZ8P-2RTV?id=mw3am46w5weex4a4fqrc3avnua
+        ██████████████        (QR code of the same link)
+```
+The installer's last screen, once pairing exists: "Encore is ready. Open the Encore app on your phone and scan this: (QR)", then the two lines about `encore funnel on` and `encore status | update | uninstall`. Nothing in these outputs shows a password or a pairing code in a log (ADR-R40 D7).
+
 ## 2. The setup wizard in the browser (8 steps)
 
 Served by the Encore server at `http://encore.local/setup`. Works on a phone screen (the Host may only have their phone at hand) and

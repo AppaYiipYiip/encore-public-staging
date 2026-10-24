@@ -43,19 +43,20 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | S-21 | **Discography / Show all** (all of an artist's albums, singles and EPs, "Appears on", a long shelf of any kind: a vertical list or grid with the same filter chips as the artist page) | new | L, loaded, E, O | C, X, T | |
 | S-22 | **Create** (the "+" menu: New playlist, Import a playlist, Start a Jam) and **New playlist** (name it, optionally add songs; a name that is taken) | new | closed, the menu open, naming, refused (`34`), created | C, X | |
 | S-23 | **Recently played** (history, newest first, grouped by day) | new (`P2` history) | E, loaded, O, private listening is not listed | C, X | |
-| S-24 | **What's new** (the bell: new releases from artists the person plays, an invitation used, an import finished; `23` notifications) | new | E, loaded, a notification that no longer applies | C, X | |
+| S-24 | **What's new, the one channel for "news"** (the bell: X released a song, an invitation was used, an import finished, a Jam invitation; **nothing of this reaches the phone's notification shade unless the person switched that on**, `11` ADR-R44) | new | E, loaded, a notification that no longer applies | C, X | |
 | S-25 | **Song credits** (the ⋯ menu's "Show credits": artists, writers, source) | new | L, loaded, partly known | C, X | |
 | S-26 | **A person's profile** (name, picture, what they chose to share: playlists, what they play now; "Invite" or nothing else; nothing at all for a person who shares nothing) | new (`P4-03`) | loaded, shares nothing, a person on another server (only when the server allows it) | C, X | |
 | S-27 | **The profile menu** (the avatar at the top left of Home: Add account / switch profile, What's new, Recently played, Settings, Your server, Sign out) | new (today a bare Settings button) | the menu open, one profile, several profiles on a shared device | C, X, T | |
+| S-28 | **Your account / Edit profile** (from the profile menu): the picture (choose from the gallery or take one, remove it; the server stores a small avatar), the display name, change password, **your devices** (this phone and the others, sign one out: `32` DV-3), private listening, sign out, delete my account (later, `21` §6) | new (`32` DV-3; the avatar is a server item of `P3-01`) | loaded, a picture change in progress, a picture refused (too big, not a picture), a wrong current password, devices: one / several / one unreachable | C, X | |
 
 ## Playing
 
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
 | S-30 | **Mini player** (and the strip above it) | `player/mini_player.dart`, `connection_banner.dart` | playing, paused, B, waiting for the server, cannot play ("one plain sentence"), another device plays (`33`), the connection strip O/U | C (X and T use the bar) | ★ |
-| S-31 | **Now playing, as Spotify's mobile screen** (down chevron, "Playing from …", ⋯ menu; a large cover; title and artist left, heart right; scrubber with times; shuffle, previous, big play, next, repeat; a bottom row with the device icon left and small share and queue icons right; **lyrics as a card when scrolling down**; sleep timer and speed in the ⋯ menu; **no "Next:" card, no lyrics button**) | `now_playing_screen.dart` | playing, paused, B, waiting for the server (G-1), cannot play, another device plays, ended, a Jam song | C, X, T | ★ |
+| S-31 | **Now playing, as Spotify's mobile screen** (down chevron, "Playing from …", ⋯ menu; a large cover; title and artist left, heart right; scrubber with times; shuffle, previous, big play, next, repeat; a bottom row with the device icon left and small share and queue icons right; **lyrics as a card when scrolling down**; sleep timer and speed in the ⋯ menu; **no "Next:" card, no lyrics button**; **shuffle is Spotify's three states: off, shuffle, Smart Shuffle (shuffle with a small sparkle), the third only when the server has recommendations on**) | `now_playing_screen.dart` | playing, paused, B, waiting for the server (G-1), cannot play, another device plays, ended, a Jam song | C, X, T | ★ |
 | S-32 | **Lyrics** (synced, plain, none yet, "from the web") | `lyrics_screen.dart` | L, synced, plain, none, O | C, X, T | |
-| S-33 | **Queue** (reorder, remove, who added it, where a song comes from) | `queue_sheet.dart` | E, loaded, a song that is not ready, reordering | C, X, T | |
+| S-33 | **Queue, as Spotify's**: "Now playing", then sections whose **header words say where the songs come from**: "Next in queue" (added by the person), "Next from <playlist or album>", and, only when the server has recommendations on, a recommended section ("Recommended based on what you play"); **a recommended song carries a small sparkle in its row and one tap removes it** (the header words are what tell the person; the sparkle is secondary); reorder, remove, a song that is not ready | `queue_sheet.dart` | E, loaded, a song that is not ready, reordering | C, X, T | |
 | S-34 | **Song menu** (more options) and **Add to playlist** | `track_menu.dart`, `playlist_actions.dart` | loaded, E (no playlists), O (what still works) | C, X | |
 | S-35 | **Sleep timer**, **Speed**, **Equalizer** | `sleep_timer_sheet.dart`, `speed_sheet.dart`, `equalizer_screen.dart` | off, on, a value | C, X | |
 | S-36 | **Devices: play here, play there** (the other phone, the TV) | new (P4-07, `33`) | one device, several, one is unreachable, take over | C, X, T | |
@@ -84,7 +85,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 |----|--------|-------|--------|---------|---|
 | S-70 | **Settings** (the list) | `settings_page.dart` | loaded, the server card in each of O/U/W | C, X, T | |
 | S-71 | **Your server**, with the personality of the Welcome pages: a hero card (name, colour, a small illustration, one sentence of status), "How this phone reaches it" (At home, Away from home), one "Test the connection" button answered in a sentence, typed addresses under "Other ways to connect" (`03` row 6) | `your_server_screen.dart`, `server_addresses.dart` | Working, O, U, W, checking, learned addresses (`31` O-8) | C, X | ★ |
-| S-72 | Playback; Downloads and storage; Library and sync; Home; Notifications; Lyrics; Appearance; Privacy | `settings/*` | each: loaded, a value changed, a value the server refuses | C, X | |
+| S-72 | The settings pages, each drawn with these contents (the sections of Spotify's own settings, made smaller): **Playback** (crossfade, gapless, autoplay, volume levelling, equalizer, mono audio, offline mode, **streaming quality per network** and the best-quality tier when the Host switched it on); **Downloads and storage** (download quality, Wi-Fi only, used space, clear the cache, delete downloads); **Library and sync** ("Play adds a song to my library" on or off, update now, fix a library that looks wrong); **Home** (what Home shows); **Notifications** (**at most two opt-in phone categories, both off, one sentence each, e.g. "Jam invitations"**; Android's permission is asked only when one is switched on); **Lyrics**; **Appearance** (theme, black background, text size); **Privacy and social** (private listening, share what I play, taste match: all opt-in); **Devices** (this phone and the others, sign one out, DV-3) | `settings/*` | each: loaded, a value changed, a value the server refuses | C, X | |
 | S-73 | **People and household** (the owner: add, remove, roles) | `household_settings_screen.dart` | loaded, adding, removing with a reason | C, X | |
 | S-74 | **About and diagnostics** | `diagnostics_screen.dart` | loaded, a log copied | C | |
 | S-75 | **Language** and **Accessibility options** | new, later (`../tasks/P6-later.md`) | drawn once the owner asks; the layouts already allow them | C, X, T | |
@@ -101,6 +102,8 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 
 ## In the browser (the server's own site, and later the web player)
 
+*The browser pages (W-01 to W-08) are drawn in a fourth batch, after the app screens, so that the installer, the admin and the join page are on paper too before any of them is built (owner, 2026-10-24).*
+
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
 | W-01 | **Installer wizard** (`15` section 2: name and password, music folder, measuring, away from home, "all set") | server (`encore_server/setup`) | each page: Z, working, done, a step that failed with what to do | X (and C: the wizard is opened from a phone) | |
@@ -109,6 +112,9 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | W-04 | **Admin: library, away from home, backups, updates** | admin | each: loaded, working, failed | X | |
 | W-05 | **Join page** for a person without the app (`/encore/join/<code>`) | server | valid, used, expired, the app is not installed (download), the app opens | C | |
 | W-06 | **The web player** (everything in S-10 to S-52 at class X) | new (P6) | as the app | X | |
+| W-07 | **Admin: settings** (the server's name and colour, the feature switches the app follows: "Friends on other servers", recommendations, the quality tier, plays any song; YouTube state and rest) | admin | loaded, a switch changed, a switch the server cannot honour (said in words) | X | |
+| W-08 | **Admin: logs and diagnostics** (what the server has been saying, a copy to send to somebody, the versions) | admin | loaded, empty, a long log | X | |
+| T-01 | **The terminal** (text, not drawn: the installer's output from the first line to "Encore is ready" with the pairing link and QR, and what each `encore` command prints) | `server/deploy/install.sh`, `encore` | written in `15` §1 and §1b | text | |
 
 ## What this list does not contain, on purpose
 

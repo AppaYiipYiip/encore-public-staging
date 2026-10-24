@@ -183,7 +183,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** 30 songs from the test pool: lyrics shown when LRCLIB has them, offline for downloaded ones, Arabic lyrics right-to-left.
 
 ## P2-15 — Notifications without push (server + app) — Size S
-* **Why.** `../23` §4.
+* **Why.** `../23` §4. **Amended 2026-10-24 (ADR-R44): the in-app bell is the channel; phone notifications are opt-in (at most two categories, off by default) and the permission is asked only then; remove today's permission prompt after sign-in and the default new-release alerts (`background_sync` > `AlertsService`).**
 * **Do.** `GET notifications?since=`; live events → local notifications while running; periodic background check (≤ every 6 h);
   channels and the daily new-release digest; honest "not online" for Jam invites.
 * **Acceptance.** Each channel can be switched off; no more than one background wake-up per 6 h (battery check in `dumpsys`).

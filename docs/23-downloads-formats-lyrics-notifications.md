@@ -41,6 +41,8 @@ Gapless: Opus and FLAC files carry the encoder delay/padding; the player uses it
 
 ## 4. Notifications without a push service
 
+> **Amended 2026-10-24 (`11` ADR-R44, owner: "we all hate those"):** the table and the channel list below describe what *can* arrive. By default **nothing is posted to the phone**: news (a new release, an invitation used, an import finished) goes to the in-app bell (What's new); Settings > Notifications offers at most two opt-in phone categories, both off; the permission is asked only when one is switched on.
+
 Encore has no Google push (no central service, by design), so delivery depends on whether the app is running:
 
 | Situation | How it arrives | Delay |
