@@ -1,0 +1,1662 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-ts="1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encore, direction C: Warm home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* =====================================================================
+   TOKENS  (names follow app/lib/design/tokens.dart; additions are marked NEW)
+   Dark is the default. Light is a full second set.
+   ===================================================================== */
+:root,[data-theme="dark"]{
+  /* colour: surfaces (warm espresso instead of cold black) */
+  --bg:#1A1411;            /* EncoreColors.bg */
+  --surface:#251C17;       /* surface */
+  --surface-high:#33261F;  /* surfaceHigh */
+  --outline:#4B3B31;       /* outline: dividers only */
+  --outline-strong:#8A7566;/* NEW: borders of fields and ghost buttons, 3:1 or better */
+  --on-bg:#FFF4EA;         /* onBg: warm white */
+  --on-bg-muted:#D9C8BA;   /* onBgMuted: solid, not alpha, so the ratio is exact */
+  --on-bg-faint:#B09E90;   /* onBgFaint */
+  --accent:#FFA55E;        /* accent: apricot, the colour of this server */
+  --on-accent:#2B1405;     /* onAccent */
+  --danger:#FF8A7A;
+  --warning:#FFC857;
+  --ok:#86D6A5;            /* NEW: "working" */
+  --server:#FFA55E;        /* NEW: identity colour chosen at setup; accent = ensureContrast(server, bg) */
+  --focus:#FFF4EA;         /* NEW: focus ring (X and T) */
+  --focus-halo:rgba(255,244,234,.28); /* NEW */
+  --scrim:rgba(20,14,11,.74);         /* NEW: under text on artwork */
+  --stage:#0E0A08;         /* viewer only, not a product token */
+  --ill-a:#33261F;         /* NEW: illustration tone 1 (surface-high) */
+  --ill-b:#4B3B31;         /* NEW: illustration tone 2 (outline) */
+  --ill-c:var(--server);   /* NEW: illustration accent (a state colour inside waiting / cannot play) */
+  --shadow:0 10px 28px rgba(0,0,0,.45);
+  /* spacing (Space.*, plus NEW 3xl) */
+  --sp-xxs:2px;--sp-xs:4px;--sp-sm:8px;--sp-md:12px;--sp-lg:16px;--sp-xl:24px;--sp-xxl:32px;--sp-3xl:48px;
+  /* radii (Radii.*, rounder: this is the "warm" part) */
+  --r-art:10px;   /* was 4 */
+  --r-card:20px;  /* was 8 */
+  --r-hero:28px;  /* was 12 */
+  --r-sheet:28px; /* was 20 */
+  --r-chip:14px;  /* NEW */
+  --r-pill:999px;
+  /* motion (Motion.*) */
+  --m-quick:120ms;--m-standard:220ms;--m-emph:320ms;--m-colour:450ms;
+  --ease:cubic-bezier(.215,.61,.355,1); /* easeOutCubic */
+  --m-drift:48s;    /* NEW: cover wall, one screen width */
+  --m-breathe:2600ms;/* NEW: slow halo on a waiting song */
+  /* type */
+  --font-ui:"Figtree","Noto Sans Arabic","Segoe UI",system-ui,sans-serif;
+  --font-display:"Fraunces","Noto Sans Arabic",Georgia,"Times New Roman",serif;
+  --ts:1;
+  --tsl:1;  /* NEW: display and title sizes grow less than body text (nonlinear font scaling, as Android 14 does) */
+}
+:root[data-theme="light"],[data-theme="light"]{
+  --bg:#FFF9F2;--surface:#F6EBDD;--surface-high:#EDDDCB;--outline:#D8C3AC;--outline-strong:#7A6657;
+  --on-bg:#2A1E17;--on-bg-muted:#66534A;--on-bg-faint:#6B5849;
+  --accent:#9E4308;--on-accent:#FFFFFF;--danger:#A82015;--warning:#7A4800;--ok:#14602F;
+  --server:#FFA55E;--focus:#2A1E17;--focus-halo:rgba(42,30,23,.18);--scrim:rgba(255,249,242,.82);
+  --stage:#E4D5C4;--ill-a:#EDDDCB;--ill-b:#D8C3AC;--shadow:0 10px 24px rgba(74,48,28,.18);
+}
+html[data-ts="2"]{--ts:2;--tsl:1.5}
+
+/* =====================================================================
+   VIEWER CHROME (not part of the product)
+   ===================================================================== */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--stage);color:var(--on-bg);font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+a{color:inherit;text-decoration:none}
+select,input{font:inherit}
+.vb{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--outline);padding:8px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px}
+.vb .brand{display:flex;align-items:center;gap:8px;font-weight:700;margin-inline-end:6px}
+.vb .brand i{display:inline-flex;gap:2px;align-items:flex-end;height:16px}
+.vb .brand i b{display:block;width:4px;border-radius:2px;background:var(--accent)}
+.vb label,.vb .lab{color:var(--on-bg-muted);font-size:12px;font-weight:600}
+.vb select{background:var(--surface-high);color:var(--on-bg);border:1px solid var(--outline-strong);border-radius:10px;padding:6px 8px;min-height:34px;max-width:230px}
+.seg{display:inline-flex;border:1px solid var(--outline-strong);border-radius:10px;overflow:hidden}
+.seg button{padding:6px 11px;min-height:32px;font-weight:600;font-size:13px;color:var(--on-bg-muted);border-inline-start:1px solid var(--outline)}
+.seg button:first-child{border-inline-start:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.vb :is(button,select,a):focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.vb .grp{display:inline-flex;align-items:center;gap:6px}
+.vb .pages{display:flex;gap:4px;margin-inline-start:auto}
+.vb .pages button{padding:6px 12px;border-radius:10px;font-weight:600;font-size:13px;color:var(--on-bg-muted)}
+.vb .pages button[aria-pressed="true"]{background:var(--surface-high);color:var(--on-bg);box-shadow:inset 0 -2px 0 var(--accent)}
+body.nobar .vb{display:none}
+#stage{padding:18px 18px 60px;min-height:70vh}
+.fgroup{display:flex;flex-wrap:wrap;gap:26px 30px;align-items:flex-start}
+.fitem{display:flex;flex-direction:column;gap:8px}
+.fcap{font-size:12.5px;color:var(--on-bg-muted);display:flex;flex-wrap:wrap;gap:4px 12px;max-width:100%}
+.fcap b{color:var(--on-bg);font-weight:700}
+.fwrap{position:relative;direction:ltr;flex:none}
+.fwrap>.frame{position:absolute;inset-block-start:0;inset-inline-start:0;transform-origin:0 0}
+.fnote{font-size:12.5px;line-height:1.45;color:var(--on-bg-muted);max-width:760px;border-inline-start:3px solid var(--accent);padding:2px 12px}
+.fnote b{color:var(--on-bg)}
+.legend{font-size:12.5px;line-height:1.5;color:var(--on-bg-muted);max-width:1100px;background:var(--surface);border:1px solid var(--outline);border-radius:12px;padding:8px 12px}
+.legend kbd{font:600 11.5px var(--font-ui);background:var(--surface-high);border:1px solid var(--outline-strong);border-radius:6px;padding:1px 6px;color:var(--on-bg)}
+
+/* =====================================================================
+   FRAME BASICS (class tokens: C compact, X expanded, T ten-foot in dp)
+   ===================================================================== */
+.frame{position:relative;overflow:hidden;background:var(--bg);color:var(--on-bg);font-family:var(--font-ui);font-size:var(--fs-body);line-height:1.35;flex:none;
+  --fs-display:calc(28px*var(--tsl));--fs-title-l:calc(22px*var(--tsl));--fs-title:calc(17px*var(--ts));--fs-body:calc(15px*var(--ts));--fs-label:calc(14px*var(--ts));--fs-caption:calc(12px*var(--ts));--fs-tab:calc(11.5px*var(--tsl));
+  --hit:48px;--gutter:16px}
+.frame.C{width:360px;height:800px;border-radius:38px;box-shadow:0 0 0 1px var(--outline)}
+.frame.X{width:1280px;height:800px;border-radius:14px;box-shadow:0 0 0 1px var(--outline);
+  --fs-display:calc(34px*var(--tsl));--fs-title-l:calc(24px*var(--tsl));--fs-body:calc(14px*var(--ts));--fs-label:calc(14px*var(--ts));--hit:40px;--gutter:28px}
+.frame.T{width:960px;height:540px;border-radius:0;
+  --fs-display:calc(44px*var(--tsl));--fs-title-l:calc(30px*var(--tsl));--fs-title:calc(22px*var(--ts));--fs-body:calc(18px*var(--ts));--fs-label:calc(18px*var(--ts));--fs-caption:calc(15px*var(--ts));--hit:56px;--gutter:48px;
+  --focus-w:4px}
+.frame[dir="rtl"]{text-align:start}
+.frame *{min-width:0}
+.ic{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ic.s{width:18px;height:18px}.ic.l{width:32px;height:32px}.ic.xl{width:40px;height:40px}
+.frame.T .ic{width:28px;height:28px}.frame.T .ic.s{width:22px;height:22px}.frame.T .ic.l{width:40px;height:40px}
+.flip{transform:scaleX(1)}
+[dir="rtl"] .flip{transform:scaleX(-1)}
+.ill{width:100%;height:auto;display:block}
+.row{display:flex;align-items:center}
+.col{display:flex;flex-direction:column}
+.grow{flex:1 1 0}
+.gap-xs{gap:var(--sp-xs)}.gap-sm{gap:var(--sp-sm)}.gap-md{gap:var(--sp-md)}.gap-lg{gap:var(--sp-lg)}.gap-xl{gap:var(--sp-xl)}
+.wrapx{flex-wrap:wrap}
+.muted{color:var(--on-bg-muted)}.faint{color:var(--on-bg-faint)}
+.t-display{font:600 var(--fs-display)/1.12 var(--font-display);letter-spacing:-.01em;margin:0}
+.t-title-l{font:600 var(--fs-title-l)/1.18 var(--font-display);margin:0}
+.t-title{font:700 var(--fs-title)/1.25 var(--font-ui);margin:0}
+.t-body{font:400 var(--fs-body)/1.4 var(--font-ui)}
+.t-label{font:600 var(--fs-label)/1.25 var(--font-ui)}
+.t-cap{font:500 var(--fs-caption)/1.3 var(--font-ui)}
+.ov{overflow-wrap:break-word}
+.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* focus: a real ring on every control, and a drawn one (.is-focus) where the frame shows where focus is */
+.frame :is(button,a,[tabindex]):focus-visible,.frame .is-focus{outline:var(--focus-w,3px) solid var(--focus);outline-offset:3px;box-shadow:0 0 0 calc(3px + var(--focus-w,3px)) var(--focus-halo);z-index:3}
+.frame.T .is-focus{transform:scale(1.045);transition:transform var(--m-standard) var(--ease)}
+
+/* buttons */
+.btn{min-height:var(--hit);padding:0 var(--sp-xl);border-radius:var(--r-pill);font:600 var(--fs-label)/1.2 var(--font-ui);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--on-bg);position:relative}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.soft{background:var(--surface-high)}
+.btn.ghost{box-shadow:inset 0 0 0 1.5px var(--outline-strong)}
+.btn.text{color:var(--accent);padding:0 var(--sp-md)}
+.btn.block{display:flex;width:100%}
+.btn.danger{background:var(--danger);color:#2A0A06}
+.ibtn{width:var(--hit);height:var(--hit);border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
+.ibtn.fill{background:var(--surface-high)}
+.hit{min-height:var(--hit);display:inline-flex;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r-pill);font:700 var(--fs-caption)/1.25 var(--font-ui);background:var(--surface-high);color:var(--on-bg)}
+.pill.acc{background:var(--accent);color:var(--on-accent)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 12%,var(--surface));color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warning) 12%,var(--surface));color:var(--warning)}
+.pill.bad{background:color-mix(in srgb,var(--danger) 12%,var(--surface));color:var(--danger)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ok);flex:none}
+.dot.warn{background:var(--warning)}.dot.off{background:transparent;box-shadow:inset 0 0 0 2px var(--on-bg-faint)}
+
+/* covers: generated colour art */
+.cv{position:relative;overflow:hidden;border-radius:var(--r-art);aspect-ratio:1;background-size:cover;flex:none}
+.cv svg{position:absolute;inset:0;width:100%;height:100%}
+.cv.round{border-radius:50%}
+.cv.hero{border-radius:var(--r-hero)}
+.cv.card{border-radius:var(--r-card)}
+.mosaic{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;overflow:hidden;border-radius:var(--r-art);aspect-ratio:1;flex:none}
+.mosaic .cv{border-radius:0;aspect-ratio:auto}
+.scrimmed{position:relative}
+.scrimmed::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--scrim),transparent 70%);pointer-events:none}
+
+/* cards, rows */
+.card{background:var(--surface);border-radius:var(--r-card)}
+.card.high{background:var(--surface-high)}
+.card.pad{padding:var(--sp-lg)}
+.list-row{display:flex;align-items:center;gap:var(--sp-md);min-height:calc(var(--hit) + 8px);padding:4px 0;position:relative}
+.list-row .meta{flex:1 1 0;display:flex;flex-direction:column;gap:1px}
+.list-row .meta .tt{font:600 var(--fs-body)/1.25 var(--font-ui)}
+.list-row .meta .st{font:400 var(--fs-caption)/1.3 var(--font-ui);color:var(--on-bg-muted)}
+.sec{font:700 var(--fs-title)/1.25 var(--font-display);margin:0}
+.sk{background:var(--surface-high);border-radius:8px;animation:skp 1.8s var(--ease) infinite}
+.sk.r{border-radius:var(--r-art)}.sk.c{border-radius:50%}
+@keyframes skp{0%,100%{opacity:.55}50%{opacity:1}}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:14px;width:16px;flex:none}
+.eq i{display:block;width:3px;border-radius:2px;background:var(--accent);height:100%;transform-origin:50% 100%;animation:eqb 900ms ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-300ms}.eq i:nth-child(3){animation-delay:-600ms}
+.eq.still i{animation:none}.eq.still i:nth-child(1){transform:scaleY(.5)}.eq.still i:nth-child(2){transform:scaleY(.9)}.eq.still i:nth-child(3){transform:scaleY(.65)}
+@keyframes eqb{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--warning) 0%,transparent)}50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--warning) 22%,transparent)}}
+@keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-33.3333%,0,0)}}
+@media (prefers-reduced-motion:reduce){.sk,.eq i,.breathe,.wall-in{animation:none!important}}
+
+/* inputs */
+.field{display:flex;align-items:center;gap:var(--sp-sm);min-height:calc(var(--hit) + 4px);padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--outline-strong);font:500 var(--fs-body)/1.3 var(--font-ui)}
+.field .val{flex:1 1 0}
+.field.sq{border-radius:var(--r-card)}
+.caret{display:inline-block;width:2px;height:1.1em;background:var(--accent);vertical-align:text-bottom;margin-inline-start:1px;animation:cr 1.1s steps(1) infinite}
+@keyframes cr{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.caret{animation:none}}
+.chip{min-height:var(--hit);display:inline-flex;align-items:center;flex:none}
+.chip>span{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--surface-high);font:600 var(--fs-label)/1.2 var(--font-ui)}
+.chip[aria-pressed="true"]>span{background:var(--on-bg);color:var(--bg)}
+.frame.T .chip>span{min-height:48px}
+.track{position:relative;height:6px;border-radius:3px;background:color-mix(in srgb,var(--on-bg) 20%,transparent)}
+.track.hatch{background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--on-bg) 26%,transparent) 0 6px,transparent 6px 10px)}
+.track>i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:3px;background:var(--on-bg)}
+.track>b{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--on-bg);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+[dir="rtl"] .track>b{transform:translate(50%,-50%)}
+.scrub{min-height:var(--hit);display:flex;align-items:center}
+.scrub .track{flex:1}
+.times{display:flex;justify-content:space-between;font:500 var(--fs-caption)/1.2 var(--font-ui);color:var(--on-bg-muted);direction:ltr}
+
+/* system bar (phone) */
+.sysbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:600 12px var(--font-ui);flex:none;direction:ltr}
+.sysbar .ic{width:14px;height:14px;stroke-width:2.4}
+.sysbar .r{display:flex;gap:6px;align-items:center}
+.gesture{height:16px;flex:none;display:grid;place-items:center}
+.gesture i{display:block;width:110px;height:4px;border-radius:2px;background:var(--on-bg-faint)}
+
+/* C shell */
+.C .shell{display:flex;flex-direction:column;height:100%}
+.C .main{flex:1 1 0;min-height:0;overflow:hidden auto;scrollbar-width:none;position:relative}
+.C .main::-webkit-scrollbar{display:none}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--outline);flex:none;padding:6px 4px 2px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;padding:2px 0;font:600 var(--fs-tab)/1.15 var(--font-ui);color:var(--on-bg-muted);text-align:center;overflow-wrap:anywhere}
+.tab .pillbg{display:grid;place-items:center;width:56px;height:30px;border-radius:15px}
+.tab[aria-current="page"]{color:var(--on-bg);font-weight:700}
+.tab[aria-current="page"] .pillbg{background:color-mix(in srgb,var(--accent) 24%,transparent);color:var(--accent)}
+
+/* strips (S-90): the same shape, three different kinds */
+.strip{display:flex;align-items:center;gap:var(--sp-md);padding:8px var(--sp-lg);flex:none;font:600 var(--fs-label)/1.3 var(--font-ui);flex-wrap:wrap}
+.strip .msg{flex:1 1 140px}
+.strip .btn{min-height:var(--hit);padding:0 var(--sp-lg);font-size:var(--fs-label)}
+.strip.offline{background:var(--surface-high);color:var(--on-bg)}
+.strip.offline .ic{color:var(--on-bg-muted)}
+.strip.unreach{background:color-mix(in srgb,var(--warning) 20%,var(--surface));color:var(--on-bg);box-shadow:inset 0 2px 0 var(--warning)}
+.strip.unreach .ic{color:var(--warning)}
+.strip.unreach .btn{background:var(--warning);color:#2A1A00}
+.strip.wrong{background:color-mix(in srgb,var(--danger) 18%,var(--surface));color:var(--on-bg);box-shadow:inset 0 2px 0 var(--danger)}
+.strip.wrong .ic{color:var(--danger)}
+.frame .strip.unreach .btn{background:var(--warning)}
+.strip.wrong .btn{background:var(--danger);color:#2A0A06}
+:root[data-theme="light"] .strip.wrong .btn{color:#fff}
+:root[data-theme="light"] .strip.unreach .btn{color:#fff}
+
+/* mini player (S-30) */
+.mini{margin:0 8px 6px;border-radius:22px;background:var(--surface-high);position:relative;overflow:hidden;flex:none;padding:8px 8px 10px 8px;display:flex;align-items:center;gap:var(--sp-md);min-height:64px;box-shadow:var(--shadow)}
+.mini .cv{width:48px;height:48px;border-radius:12px}
+.mini .meta{flex:1 1 0;display:flex;flex-direction:column;gap:1px}
+.mini .tt{font:700 var(--fs-label)/1.25 var(--font-ui)}
+.mini .st{font:500 var(--fs-caption)/1.25 var(--font-ui);color:var(--on-bg-muted);display:flex;gap:6px;align-items:center}
+.mini .prog{position:absolute;inset-inline:14px;bottom:4px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--on-bg) 18%,transparent)}
+.mini .prog i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:2px;background:var(--on-bg)}
+.mini.waiting .prog i{background:var(--warning)}
+.mini.waiting .playb{box-shadow:inset 0 0 0 2px var(--warning)}
+.mini.cant .st{color:var(--danger)}
+.mini.cant .cv{filter:grayscale(.85) brightness(.8)}
+.mini.other{box-shadow:inset 0 0 0 1.5px var(--accent),var(--shadow)}
+.playb{background:var(--on-bg);color:var(--bg);border-radius:50%;width:var(--hit);height:var(--hit);display:grid;place-items:center;flex:none}
+.playb.acc{background:var(--accent);color:var(--on-accent)}
+
+/* =============== X shell: rail + main + player bar =============== */
+.X .shell{display:grid;grid-template-columns:248px 1fr;grid-template-rows:1fr auto;height:100%}
+.rail{grid-row:1 / span 2;background:var(--surface);display:flex;flex-direction:column;padding:20px 14px;gap:6px;border-inline-end:1px solid var(--outline)}
+.rail .srv{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-card);background:color-mix(in srgb,var(--server) 16%,var(--surface-high));margin-bottom:12px}
+.rail .srv .nm{font:700 15px/1.2 var(--font-display)}
+.rail .srv .sub{font:500 12px/1.3 var(--font-ui);color:var(--on-bg-muted);display:flex;gap:6px;align-items:center}
+.navi{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:14px;font:600 14px var(--font-ui);color:var(--on-bg-muted);position:relative}
+.navi[aria-current="page"]{background:var(--surface-high);color:var(--on-bg);font-weight:700}
+.navi[aria-current="page"]::before{content:"";position:absolute;inset-inline-start:0;top:10px;bottom:10px;width:4px;border-radius:2px;background:var(--accent)}
+.rail .hd{font:700 12px/1 var(--font-ui);color:var(--on-bg-faint);text-transform:none;padding:16px 12px 6px;letter-spacing:.02em}
+.X .main{overflow:hidden auto;min-height:0;position:relative;scrollbar-width:none}
+.X .main::-webkit-scrollbar{display:none}
+.pbar{grid-column:2;background:var(--surface);border-top:1px solid var(--outline);display:grid;grid-template-columns:1fr minmax(380px,520px) 1fr;align-items:center;gap:var(--sp-lg);padding:10px var(--gutter);min-height:84px}
+.pbar .ctr{display:flex;flex-direction:column;gap:2px;align-items:stretch}
+.pbar .tport{display:flex;justify-content:center;align-items:center;gap:6px;direction:ltr}
+.pbar .rt{display:flex;justify-content:flex-end;align-items:center;gap:4px}
+.xstrip{grid-column:2}
+
+/* =============== T shell =============== */
+.T .shell{display:flex;flex-direction:column;height:100%;padding:27px 0 0}
+.tnav{display:flex;align-items:center;gap:4px;padding:0 var(--gutter) 10px;white-space:nowrap}
+.tnav .sp{flex:1}
+.tnavi{min-height:var(--hit);display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:var(--r-pill);font:600 var(--fs-label)/1.2 var(--font-ui);color:var(--on-bg-muted)}
+.tnavi[aria-current="page"]{background:var(--surface-high);color:var(--on-bg);font-weight:700;box-shadow:inset 0 -3px 0 var(--accent)}
+.tbody{flex:1 1 0;min-height:0;overflow:hidden;padding:0 var(--gutter);position:relative;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 30px),transparent)}
+.tpbar{margin:0 var(--gutter) 24px;border-radius:var(--r-card);background:var(--surface-high);display:flex;align-items:center;gap:var(--sp-lg);padding:10px 18px;flex:none}
+.hintbar{display:flex;gap:22px;padding:0 var(--gutter) 14px;font:500 var(--fs-caption)/1.2 var(--font-ui);color:var(--on-bg-muted);flex:none}
+.hintbar span{display:inline-flex;align-items:center;gap:8px}
+.key{display:inline-grid;place-items:center;min-width:28px;height:24px;padding:0 6px;border-radius:7px;background:var(--surface-high);box-shadow:inset 0 0 0 1.5px var(--outline-strong);font:700 13px var(--font-ui);color:var(--on-bg)}
+.tile{display:flex;flex-direction:column;gap:8px;flex:none;position:relative}
+.tile .tt{font:700 var(--fs-body)/1.25 var(--font-ui)}
+.tile .st{font:500 var(--fs-caption)/1.3 var(--font-ui);color:var(--on-bg-muted)}
+.shelf{display:flex;gap:var(--sp-lg);overflow:hidden;padding:12px;margin:0 -12px}
+.shelf-h{display:flex;align-items:baseline;justify-content:space-between;margin:var(--sp-lg) 0 var(--sp-sm)}
+/* focus path (T): drawn arrows, not a description */
+.fp{position:absolute;inset:0;pointer-events:none;z-index:6}
+.fp path{fill:none;stroke:#FF4DA6;stroke-width:3;stroke-dasharray:7 6;stroke-linecap:round}
+.fp .k{fill:#FF4DA6}
+.fp text{font:700 13px var(--font-ui);fill:#fff}
+.anno{display:none}
+html[data-notes="1"] .anno{display:inline-flex}
+.anno{position:absolute;z-index:8;background:#FF4DA6;color:#1B0610;font:700 11px/1 var(--font-ui);padding:3px 7px;border-radius:6px;pointer-events:none}
+
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+.badge{display:block;flex:none}
+.bpair{position:relative;flex:none;display:inline-flex}
+.bpair .badge:first-child{opacity:.45}
+.bpair .badge:last-child{position:absolute;inset-inline-end:-8px;bottom:-8px;border-radius:9px;outline:3px solid var(--surface)}
+.pg{padding:2px var(--gutter) 22px;display:flex;flex-direction:column;gap:var(--sp-lg)}
+.hh{display:flex;align-items:center;gap:var(--sp-md);padding-top:4px}
+.srvcard{display:flex;align-items:center;gap:var(--sp-md);padding:14px;border-radius:var(--r-hero);background:linear-gradient(120deg,color-mix(in srgb,var(--server) 30%,var(--surface)),var(--surface) 72%);position:relative;overflow:hidden;min-height:86px;flex:none}
+.srvcard.stranger{background:linear-gradient(120deg,var(--surface-high),var(--surface))}
+.srvcard .srvill{width:84px;flex:none;margin-inline-end:-8px;margin-block:-12px;opacity:.95}
+html[data-ts="2"] .srvcard .srvill{display:none}
+.srvcard.big{padding:18px 24px;min-height:116px}
+.srvcard.big .srvill{width:150px;margin-block:-16px}
+.scgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none}
+.scgrid.x{grid-template-columns:repeat(3,1fr);gap:12px}
+.sc{display:flex;align-items:center;gap:10px;background:var(--surface-high);border-radius:var(--r-chip);overflow:hidden;min-height:56px;padding-inline-end:10px}
+.sc .cv{border-radius:0}
+.scgrid.x .sc{min-height:64px;border-radius:16px}
+.sc.dim{opacity:.5}
+.sc.on{box-shadow:inset 0 0 0 2px var(--accent)}
+.shw{margin-inline:calc(var(--gutter)*-1);flex:none}
+.shw .shelf-h{padding-inline:var(--gutter)}
+.shw .shelf{padding:12px var(--gutter);overflow:hidden;margin:-12px 0}
+.shw .shelf-h{margin:0 0 var(--sp-sm)}
+.tile{position:relative}
+.tile .cvo{position:absolute;top:0;inset-inline-start:0;pointer-events:none}
+.bdl{position:absolute;inset-inline-end:8px;bottom:8px;width:30px;height:30px;border-radius:50%;background:var(--bg);color:var(--ok);display:grid;place-items:center}
+.tile.dim .cv{opacity:.42;filter:grayscale(.7)}
+.tile.dim .tt,.tile.dim .st{opacity:.7}
+.year{display:flex;align-items:center;gap:12px;padding:18px;border-radius:var(--r-hero);background:linear-gradient(120deg,var(--server),color-mix(in srgb,var(--server) 55%,#FF7A7A));color:#2B1405;flex:none}
+.start{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:6px 0 0}
+.startill{width:200px}
+.start .act{width:100%}
+.act{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:calc(var(--hit) + 16px);background:var(--surface);border-radius:var(--r-card);text-align:start}
+.actic{width:44px;height:44px;flex:none;border-radius:14px;background:color-mix(in srgb,var(--accent) 22%,var(--surface-high));color:var(--accent);display:grid;place-items:center}
+.xp{padding:24px var(--gutter) 28px;display:flex;flex-direction:column;gap:var(--sp-xl)}
+.xp .start{flex-direction:row;text-align:start;align-items:center;gap:var(--sp-xl);flex-wrap:wrap}
+.xp .start>*{flex:1 1 300px}
+.xp .startill{flex:0 0 220px;width:220px}
+.xp .start .act{width:auto}
+.list-row .cv{width:48px;height:48px}
+.X .list-row .cv{width:44px;height:44px}
+.T .list-row .cv{width:64px;height:64px}
+.cvsk{width:48px;height:48px;flex:none}
+.nowmark{position:absolute;inset-inline-start:-14px}
+.lb{animation:lbar 1.1s ease-in-out infinite}
+@keyframes lbar{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.lb{animation:none}}
+.fpk{position:absolute;z-index:7;pointer-events:none;display:inline-flex}
+.fpk b{background:#FF4DA6;color:#1B0610;font:800 13px/1 var(--font-ui);padding:5px 8px;border-radius:8px;box-shadow:0 0 0 2px #1B0610}
+.fpk.r{inset-inline-end:-40px;top:56px}
+.fpk.l{inset-inline-start:-40px;top:56px}
+.fpk.d{bottom:-22px;inset-inline-start:calc(50% - 14px)}
+.fpk.u{top:-22px;inset-inline-start:calc(50% - 14px)}
+.btn .fpk{inset-inline-end:-44px;top:calc(50% - 12px)}
+
+/* =====================================================================
+   Pages: Tokens and Why
+   ===================================================================== */
+.page{max-width:1100px;margin:0 auto;color:var(--on-bg);font-size:calc(15px*var(--ts));line-height:1.5;--fs-display:calc(34px*var(--tsl));padding-bottom:40px}
+.page h1{margin:6px 0 10px}
+.page h2{font:600 calc(22px*var(--tsl))/1.2 var(--font-display);margin:34px 0 10px;border-bottom:1px solid var(--outline);padding-bottom:6px}
+table.tt{border-collapse:collapse;width:100%;font-size:calc(13px*var(--ts))}
+.tt th{text-align:start;color:var(--on-bg-muted);font-weight:700;padding:6px 10px;border-bottom:1px solid var(--outline-strong)}
+.tt td{padding:6px 10px;border-bottom:1px solid var(--outline);vertical-align:middle}
+.swc{display:inline-block;width:22px;height:22px;border-radius:7px;vertical-align:middle;margin-inline-end:8px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.55)}
+.pass b{color:var(--ok)}.fail b{color:var(--danger)}
+code{font:12.5px ui-monospace,Consolas,monospace;background:var(--surface-high);padding:1px 6px;border-radius:6px;color:var(--on-bg)}
+.swrow{display:flex;flex-wrap:wrap;gap:22px}
+.swbox{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.rules li{margin:6px 0}
+.why p{max-width:1100px;margin:6px 0;font-size:calc(15.5px*var(--ts));display:grid;grid-template-columns:170px 1fr;gap:12px}
+.why p b{color:var(--accent)}
+#stage.pagemode{padding-top:26px}
+.year.tall{flex-direction:column;align-items:flex-start;justify-content:space-between;flex:none}
+.year.tall svg{align-self:flex-end}
+.T .tbody .shelf{margin-inline-end:calc(var(--gutter)*-1)}
+.fpk.r{inset-inline-end:-20px}
+.fpk.l{inset-inline-start:-20px}
+.fpk.d{bottom:4px;inset-inline-end:8px;inset-inline-start:auto}
+
+html[data-ts="2"] .C .scgrid{grid-template-columns:1fr}
+html[data-ts="2"] .C .tile .tt{font-size:calc(15px*1.5)}
+
+/* =====================================================================
+   NOW PLAYING
+   ===================================================================== */
+.shell.nps{background:linear-gradient(180deg,color-mix(in srgb,var(--tint,#555) 58%,var(--bg)) 0,var(--bg) 78%)}
+.C .npmain{display:flex;flex-direction:column}
+.np{display:flex;flex-direction:column;gap:var(--sp-xs);padding:0 var(--gutter) 6px;height:100%;min-height:max-content}
+.nptop{display:flex;align-items:center;gap:var(--sp-sm);flex:none}
+.npcov{flex:1 1 0;min-height:120px;display:grid;place-items:center;padding:2px 0}
+.npc{aspect-ratio:1;height:100%;max-width:100%;border-radius:var(--r-hero);box-shadow:var(--shadow);position:relative;overflow:hidden;justify-self:center}
+.npc .cv{position:absolute;inset:0}
+.npc.gray .cv{filter:grayscale(.92) brightness(.72)}
+.npc.remote{overflow:visible;box-shadow:0 0 0 4px var(--accent),var(--shadow)}
+.npc.remote .cv{border-radius:var(--r-hero)}
+.nptitle{display:flex;align-items:flex-start;gap:var(--sp-sm);flex:none}
+.nptitle h1{margin:0}
+.artists{display:flex;flex-wrap:wrap;align-items:center;font:600 var(--fs-body)/1.2 var(--font-ui);color:var(--on-bg-muted)}
+.artists{gap:6px}
+.alink{min-height:var(--hit);display:inline-flex;align-items:center;color:var(--on-bg);position:relative;border-radius:var(--r-pill)}
+.ach{display:inline-flex;align-items:center;gap:8px;padding:3px 14px 3px 3px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--on-bg) 13%,transparent);font:600 var(--fs-body)/1.2 var(--font-ui);min-height:36px;overflow-wrap:anywhere}
+[dir="rtl"] .ach{padding:3px 3px 3px 14px}
+.T .ach{min-height:48px;padding-inline-end:20px}
+.T .alink{min-height:52px}
+.tport{display:flex;align-items:center;justify-content:space-between;direction:ltr;flex:none;padding:0 2px}
+.X .tport,.T .tport{justify-content:flex-start;gap:var(--sp-md)}
+.bigplay{width:72px;height:72px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;position:relative;flex:none}
+.X .bigplay{width:64px;height:64px}.T .bigplay{width:84px;height:84px}
+.bigplay.wait{background:var(--surface-high);color:var(--on-bg);box-shadow:inset 0 0 0 3px var(--warning)}
+.bigplay.wait::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:3px solid var(--warning);opacity:0;animation:halo var(--m-breathe) ease-in-out infinite}
+@keyframes halo{0%,100%{transform:scale(.9);opacity:0}50%{transform:scale(1.1);opacity:.75}}
+@media (prefers-reduced-motion:reduce){.bigplay.wait::after{animation:none;opacity:.55;transform:none}}
+.dis{opacity:.4}
+.notice{display:flex;gap:var(--sp-md);align-items:center;padding:var(--sp-md);border-radius:var(--r-card);background:var(--surface);flex:none}
+.notice.wait{background:color-mix(in srgb,var(--warning) 14%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warning) 55%,transparent);--ill-c:var(--warning)}
+.notice.bad{background:color-mix(in srgb,var(--danger) 12%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--danger) 55%,transparent);--ill-c:var(--on-bg-faint)}
+.nill{width:88px;flex:none}
+.X .nill{width:110px}.T .nill{width:130px}
+html[data-ts="2"] .C .nill{width:56px}
+.upnext{display:flex;align-items:center;gap:var(--sp-md);padding:8px 12px;border-radius:var(--r-card);background:var(--surface-high);min-height:56px;flex:none}
+.devcard{display:flex;flex-direction:column;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);border-radius:var(--r-card);background:var(--surface-high);box-shadow:inset 0 0 0 1.5px var(--accent);flex:none}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);flex:none}
+.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;font:600 calc(12px*var(--tsl))/1.15 var(--font-ui);color:var(--on-bg-muted);text-align:center;overflow-wrap:break-word}
+.minispec{margin:0 -8px}
+.minispec .mini{margin:0 8px}
+.npxw{min-height:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--tint) 46%,var(--bg)) 0,var(--bg) 64%);display:flex;flex-direction:column}
+.npxbody{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--sp-xl);padding:22px var(--gutter);flex:1}
+.npxl-wrap{display:flex;flex-direction:column;gap:var(--sp-lg);min-width:0}
+.npxl{display:flex;gap:var(--sp-xl);align-items:flex-end;flex-wrap:wrap}
+.npxm{display:flex;flex-direction:column;gap:var(--sp-md)}
+.queue{padding:14px 18px;align-self:start}
+.queue .list-row{min-height:56px}
+.npt{display:flex;gap:var(--sp-xl);align-items:flex-start;padding-top:10px}
+.npt .scrub{min-height:44px}
+.T .notice{max-width:520px}
+
+.T .npt{gap:var(--sp-xl);padding-top:0}
+.T .npt .grow.col{gap:8px}
+.T .bigplay{width:72px;height:72px}
+.T .nill{width:84px}
+.T .notice{padding:8px 14px}
+
+/* =====================================================================
+   SEARCH and ARTIST
+   ===================================================================== */
+.spad{padding:4px var(--gutter) 14px;display:flex;flex-direction:column;gap:var(--sp-sm)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;flex:none}
+.topres{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--r-hero);background:var(--surface-high);flex:none}
+.stillrow{display:flex;align-items:center;gap:10px;padding:6px 4px}
+.tried{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);background:var(--surface-high);font:600 var(--fs-label)/1.2 var(--font-ui)}
+.tried .ic{color:var(--on-bg-muted)}
+.nores{display:flex;flex-direction:column;gap:var(--sp-md);padding:var(--sp-md) 0}
+.nresill{width:150px;align-self:center}
+.T .nresill{width:170px}
+.apmain{padding:0!important}
+.apage{display:flex;flex-direction:column;min-height:100%}
+.ahero{position:relative;overflow:hidden;flex:none}
+.ahero .cv{position:absolute;inset:0;border-radius:0}
+.ascrim{position:absolute;inset:0;background:linear-gradient(0deg,var(--scrim) 0,var(--scrim) 36%,transparent 100%)}
+.ahb{position:absolute;top:8px;inset-inline-start:8px;background:var(--scrim);z-index:2}
+.T .ahb{display:none}
+.ahtx{position:absolute;inset-inline:var(--gutter);bottom:10px;color:var(--on-bg);z-index:2}
+.ahtx *{color:var(--on-bg)!important}
+.newtoday{display:flex;gap:14px;align-items:center;padding:12px;border-radius:var(--r-hero);background:color-mix(in srgb,var(--server) 18%,var(--surface));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--server) 45%,transparent);flex:none}
+.grid2{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:var(--sp-xxl)}
+.grid2n{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:var(--sp-xxl)}
+.kbd{width:330px;flex:none}
+.keys{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.keys.w12{grid-template-columns:repeat(12,1fr)}
+.k{display:grid;place-items:center;height:calc(var(--hit) - 6px);border-radius:12px;background:var(--surface-high);font:700 var(--fs-label) var(--font-ui);color:var(--on-bg)}
+.k.wide{flex:1;padding:0 20px}
+.res{flex:1 1 0;min-width:0}
+.t-art{display:flex;flex-direction:column;height:100%}
+
+/* =====================================================================
+   WELCOME
+   ===================================================================== */
+.wsh{display:flex;flex-direction:column;height:100%}
+.wtop{position:relative;flex:1 1 0;min-height:140px;overflow:hidden;background:var(--surface)}
+.wtop.short{flex:1 1 0;min-height:70px}
+.wall{position:absolute;inset:-30% -25%;transform:rotate(-7deg)}
+.wall-in{display:flex;flex-direction:column;gap:10px;width:max-content;animation:drift var(--m-drift) linear infinite;will-change:transform;filter:blur(2px)}
+.wrow{display:flex;gap:10px}
+@keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+.wtop::after,.wleft::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 72%,transparent),color-mix(in srgb,var(--bg) 92%,transparent));z-index:1}
+.wbrand{position:absolute;z-index:3;inset-inline:var(--gutter);bottom:38px;display:flex;align-items:flex-end;gap:12px}
+.sheet{flex:none;margin-top:-26px;position:relative;z-index:2;background:var(--surface);border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:20px var(--gutter) 6px;box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+.wb{display:flex;flex-direction:column;gap:var(--sp-md)}
+.wb h1{margin:0}
+.wbill{width:150px;align-self:center;margin-bottom:-4px}
+.more{display:flex;align-items:center;gap:12px;min-height:var(--hit);padding:0 4px;color:var(--on-bg)}
+.srvopt{display:flex;flex-direction:column;gap:var(--sp-md);padding:var(--sp-lg);border-radius:var(--r-card);background:color-mix(in srgb,var(--server) 14%,var(--surface-high));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--server) 50%,transparent);height:100%}
+.vf{position:relative;height:200px;border-radius:var(--r-card);overflow:hidden;background:radial-gradient(circle at 50% 40%,#3A2B20,#120D0A);flex:none}
+.vfin{position:absolute;inset:30px 52px;display:grid;place-items:center}
+.vfin i{position:absolute;width:30px;height:30px;border:0 solid #FFF4EA;border-radius:8px}
+.vfin .c1{top:0;inset-inline-start:0;border-block-start-width:4px;border-inline-start-width:4px}
+.vfin .c2{top:0;inset-inline-end:0;border-block-start-width:4px;border-inline-end-width:4px}
+.vfin .c3{bottom:0;inset-inline-start:0;border-block-end-width:4px;border-inline-start-width:4px}
+.vfin .c4{bottom:0;inset-inline-end:0;border-block-end-width:4px;border-inline-end-width:4px}
+.scanline{position:absolute;inset-inline:8px;top:18%;height:3px;border-radius:2px;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:scan 2.4s ease-in-out infinite alternate}
+@keyframes scan{from{transform:translateY(0)}to{transform:translateY(80px)}}
+@media (prefers-reduced-motion:reduce){.scanline,.wall-in{animation:none!important}}
+.qrdim{color:#FFF4EA;opacity:.4;--qrbg:#241911}
+.vfp{position:absolute;top:10px;inset-inline-start:10px}
+.alertp{display:flex;gap:var(--sp-md);align-items:center;padding:var(--sp-md);border-radius:var(--r-card);background:color-mix(in srgb,var(--danger) 12%,var(--surface-high));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--danger) 55%,transparent);--ill-c:var(--on-bg-faint)}
+.shell.wx{display:grid;grid-template-columns:1fr 1fr;height:100%}
+.wx .wleft{position:relative;overflow:hidden;background:var(--surface)}
+.wx .wbrand{bottom:48px;inset-inline:48px}
+.wx .wright{display:grid;place-items:center;background:var(--surface);padding:24px;overflow:hidden}
+.wx .wcard{width:440px;max-width:100%}
+.T .shell.wt{padding:0;position:relative}
+.wt .wcard{width:470px}
+.wt .wright{padding:var(--gutter) 40px}
+.wt .hintbar{position:absolute;inset-inline-start:calc(50% + 40px);bottom:12px;padding:0}
+.qrbox{padding:12px;background:var(--on-bg);color:var(--bg);--qrbg:var(--on-bg);border-radius:var(--r-card);flex:none;line-height:0}
+.codeb{font:700 calc(40px*var(--ts)) var(--font-display);letter-spacing:.08em;direction:ltr}
+
+/* =====================================================================
+   YOUR SERVER
+   ===================================================================== */
+.idcard{display:flex;align-items:center;gap:var(--sp-lg);padding:var(--sp-lg);border-radius:var(--r-hero);background:linear-gradient(120deg,color-mix(in srgb,var(--server) 28%,var(--surface)),var(--surface) 75%);position:relative;overflow:hidden;flex:none}
+.idcard .idill{width:92px;flex:none;margin-inline-end:-6px}
+html[data-ts="2"] .C .idill{display:none}
+.idcard.stack{flex-wrap:wrap}
+.idcard.stack .idill{display:none}
+.addrs{padding:6px 16px;display:flex;flex-direction:column;flex:none}
+.addr{display:flex;align-items:center;gap:var(--sp-md);padding:10px 0;min-height:72px;border-bottom:1px solid var(--outline);flex-wrap:wrap}
+.addr:last-child,.addr.bad{border-bottom:0}
+.addr .grow{flex:1 1 120px}
+.addrnote{display:flex;gap:8px;padding:10px 12px;margin:0 0 10px;border-radius:14px;background:color-mix(in srgb,var(--warning) 14%,var(--surface-high));color:var(--on-bg);align-items:flex-start}
+.addrnote .ic{color:var(--warning);margin-top:1px}
+.addr:has(+.addrnote){}
+.addr.bad + .addrnote{margin-top:2px}
+.addrs>.addrnote+.addr{border-top:1px solid var(--outline)}
+.chips{flex-wrap:nowrap;overflow:hidden}
+.C .chips{margin-inline:calc(var(--gutter)*-1);padding-inline:var(--gutter)}
+.C .list-row .dur{display:none}
+.dlmark{color:var(--ok);display:grid;place-items:center;width:28px;flex:none}
+.nres-near{margin-top:4px}
+.wt .wcard{width:100%;max-width:424px}
+.wt .wright{padding:var(--gutter) 28px 44px}
+.wt .wb h1{font-size:calc(27px*var(--ts))}
+.X .nresill{width:190px}
+.alink .fpk.r{top:calc(50% - 12px);inset-inline-end:-26px}
+.addr .pc{display:none;align-self:flex-start;margin-top:6px}
+.C .addr .pc{display:inline-flex}
+.C .addr .pr{display:none}
+.aaddr{overflow-wrap:normal}
+.C .idill{display:none}
+.wx .wall{inset:-45% -25%}
+.X .wx .wcard{width:470px}
+.X .wx .wb h1{font-size:calc(28px*var(--tsl))}
+.X .wx .wb .t-body{font-size:calc(16px*var(--ts))}
+.keys.w7{grid-template-columns:repeat(7,1fr)}
+.T .kbd{width:340px}
+.T .keys.w7 .k{height:46px}
+.T .list-row{padding:6px 12px;border-radius:var(--r-card)}
+.res .shelf-h{margin-bottom:12px}
+.res .fpk.d{bottom:-16px;inset-inline-end:auto;inset-inline-start:46%}
+.frame.T .btn.is-focus{transform:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+<!-- ICONS, 24 grid, drawn with the rounded 2px stroke of this direction -->
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.8V19a1 1 0 0 0 1 1H10v-5.5h4V20h3.5a1 1 0 0 0 1-1V9.8"/></symbol>
+<symbol id="i-home-fill" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="1.6" d="M12 4.2 4 10.6V19a1 1 0 0 0 1 1h4.2v-5.4h5.6V20H19a1 1 0 0 0 1-1v-8.4z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+<symbol id="i-library" viewBox="0 0 24 24"><path d="M5 4v16M10 4v16"/><path d="m15 5.5 4.2 14.5"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3.2 2.4-5.5 5.5-5.5s5.5 2.3 5.5 5.5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.2 14.2c2.8-.3 4.8 1.5 4.8 4.3"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.6.6 0 0 0 .9.5l10.6-6.8a.6.6 0 0 0 0-1L8.9 4.7a.6.6 0 0 0-.9.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.4" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5.8v12.4a.5.5 0 0 0 .8.4l8-6.2a.5.5 0 0 0 0-.8l-8-6.2a.5.5 0 0 0-.8.4z" fill="currentColor" stroke="none"/><rect x="16.5" y="5" width="2.6" height="14" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5.8v12.4a.5.5 0 0 1-.8.4l-8-6.2a.5.5 0 0 1 0-.8l8-6.2a.5.5 0 0 1 .8.4z" fill="currentColor" stroke="none"/><rect x="4.9" y="5" width="2.6" height="14" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.2c2.2 0 3.5 1.2 4.7 3.2l1.2 1.8c1.2 2 2.5 3.2 4.7 3.2H21"/><path d="M3 17h3.2c1.4 0 2.4-.5 3.2-1.4"/><path d="M13.6 8.4c.8-.9 1.8-1.4 3.2-1.4H21"/><path d="m18.5 4.5 2.5 2.5-2.5 2.5M18.5 14.5l2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 11V9.5A2.5 2.5 0 0 1 6.5 7H20"/><path d="m17 4 3 3-3 3"/><path d="M20 13v1.5a2.5 2.5 0 0 1-2.5 2.5H4"/><path d="m7 14-3 3 3 3"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.6 12 20 12 20z"/></symbol>
+<symbol id="i-heart-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20s-7.5-4.4-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.6 12 20 12 20z"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chev-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+<symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+<symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 6.5h11M4 11.5h11M4 16.5h6"/><path d="m16.5 14 4.5 3-4.5 3z" fill="currentColor" stroke-width="1.4"/></symbol>
+<symbol id="i-devices" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="9" rx="2"/><path d="M7 18h5M9.5 14v4"/><rect x="18" y="9" width="3.5" height="9" rx="1.4"/></symbol>
+<symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2.5"/><path d="M8 20.5h8"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2.6"/><path d="M11 18h2"/></symbol>
+<symbol id="i-lyrics" viewBox="0 0 24 24"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 16H11l-4.5 3.5V16H5a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 5z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19.5h14"/></symbol>
+<symbol id="i-downloaded" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.7 2.7 5-5.8"/></symbol>
+<symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M3.5 3.5 20.5 20.5"/><path d="M4.6 9.6A12.5 12.5 0 0 1 9 7.3M12.8 6.9a12.5 12.5 0 0 1 6.6 2.9M8.4 13.5A7.3 7.3 0 0 1 11 12.2M14.8 12.6a7.3 7.3 0 0 1 2 1.4"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-home-off" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.8V19a1 1 0 0 0 1 1H10v-5.5h4V20h3.5a1 1 0 0 0 1-1V9.8" stroke-dasharray="3.2 3.2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 4.5 21 19.5H3z"/><path d="M12 10v4.5"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h15m0 0-3.5-3.5M19 8l-3.5 3.5"/><path d="M20 16H5m0 0 3.5-3.5M5 16l3.5 3.5"/></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><path d="M14 14h2.5v2.5H14zM19.5 14v1.5M14 19.5h1.5M17.5 18.5H20v2"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.2-2h5.6L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M10.3 10h.01M13.7 10h.01M17 10h.01M8 14h8"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M17.5 12v3M20 12v2"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><circle cx="7.5" cy="17.5" r="2.7"/><circle cx="17" cy="15.5" r="2.7"/><path d="M10.2 17.5V6.3l9.5-2v11.2"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12A7.5 7.5 0 1 1 17 6.4"/><path d="M19.5 4.5v4h-4"/></symbol>
+<symbol id="i-signal" viewBox="0 0 24 24"><path d="M5 19v-4M10 19v-8M15 19V7M20 19V4" stroke-width="3"/></symbol>
+<symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2.5"/><path d="M21.5 10.5v3" stroke-width="2.5"/><rect x="5.5" y="9.5" width="9" height="5" rx="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 14V10M8.5 17V7M13 20V4M17.5 16V8M22 13v-2" stroke-width="2.6"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.3 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.3-3.8-8.5S9.4 5.9 12 3.5z"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.4L12 16.2 7.2 18.8l1-5.4-4-3.7 5.4-.7z"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.3M12 18.2v2.3M3.5 12h2.3M18.2 12h2.3M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/></symbol>
+
+<!-- ILLUSTRATIONS: simple shapes, two tones of the surface plus the accent, no faces, no text.
+     Colours come from --ill-a, --ill-b (surface tones), --ill-c (accent of the picture). -->
+<g id="g-note"><ellipse cx="0" cy="0" rx="5.6" ry="4.2" transform="rotate(-20)" style="fill:inherit"/><rect x="3.4" y="-18" width="2.5" height="18" rx="1.25" style="fill:inherit"/><path d="M5.9-18c3.4 1 6.4 3 5.6 8.2-1.2-3.2-3.2-4.4-5.6-4.6z" style="fill:inherit"/></g>
+<g id="g-house">
+  <rect x="42" y="52" width="76" height="52" rx="8" style="fill:var(--ill-b)"/>
+  <rect x="98" y="26" width="12" height="24" rx="3" style="fill:var(--ill-b)"/>
+  <path d="M36 57 80 25l44 32z" style="fill:var(--ill-c);stroke:var(--ill-c)" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M70 104V86a10 10 0 0 1 20 0v18z" style="fill:var(--ill-a)"/>
+  <circle cx="55" cy="74" r="6" style="fill:var(--ill-a)"/><circle cx="105" cy="74" r="6" style="fill:var(--ill-a)"/>
+</g>
+<symbol id="ill-house" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="107" rx="64" ry="8" style="fill:var(--ill-a)"/>
+  <use href="#g-house"/>
+  <use href="#g-note" transform="translate(22 52)" style="fill:var(--ill-c)"/>
+  <use href="#g-note" transform="translate(139 40) scale(.8)" style="fill:var(--on-bg-muted)"/>
+  <use href="#g-note" transform="translate(130 74) scale(.55)" style="fill:var(--ill-c)"/>
+</symbol>
+<symbol id="ill-radar" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="107" rx="64" ry="8" style="fill:var(--ill-a)"/>
+  <g transform="translate(80 64) scale(.62) translate(-80 -64)"><use href="#g-house"/></g>
+  <g fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 9" style="stroke:var(--ill-b)">
+    <path d="M38 38a50 50 0 0 0 0 52"/><path d="M122 38a50 50 0 0 1 0 52"/>
+    <path d="M24 28a70 70 0 0 0 0 72"/><path d="M136 28a70 70 0 0 1 0 72"/>
+  </g>
+  <use href="#g-note" transform="translate(80 26) scale(.55)" style="fill:var(--ill-b)"/>
+</symbol>
+<symbol id="ill-search" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="108" rx="60" ry="7" style="fill:var(--ill-a)"/>
+  <circle cx="70" cy="54" r="34" style="fill:var(--ill-a);stroke:var(--ill-b)" stroke-width="9"/>
+  <path d="M97 81 124 108" style="stroke:var(--ill-c)" stroke-width="12" stroke-linecap="round"/>
+  <use href="#g-note" transform="translate(66 68) scale(1.25)" style="fill:var(--ill-c)"/>
+  <g style="fill:var(--ill-b)"><circle cx="22" cy="36" r="3"/><circle cx="32" cy="22" r="2"/><circle cx="130" cy="30" r="3"/></g>
+</symbol>
+<symbol id="ill-wait" viewBox="0 0 160 120">
+  <ellipse cx="86" cy="107" rx="64" ry="8" style="fill:var(--ill-a)"/>
+  <g transform="translate(8 0)"><use href="#g-house"/></g>
+  <circle cx="63" cy="74" r="14" style="fill:var(--ill-c)" opacity=".28"/><circle cx="63" cy="74" r="6" style="fill:var(--ill-c)"/>
+  <path d="M78 104V88a10 10 0 0 1 20 0v16z" style="fill:var(--ill-c)" opacity=".55"/>
+  <path d="M78 104V88a10 10 0 0 1 6-9.2V104z" style="fill:var(--ill-a)"/>
+  <g style="fill:var(--ill-b)"><circle cx="12" cy="100" r="2.6"/><circle cx="22" cy="100" r="2.6"/><circle cx="32" cy="100" r="2.6"/></g>
+  <use href="#g-note" transform="translate(52 108) scale(.8)" style="fill:var(--ill-c)"/>
+</symbol>
+<symbol id="ill-broken" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="108" rx="62" ry="7" style="fill:var(--ill-a)"/>
+  <circle cx="80" cy="60" r="46" style="fill:var(--ill-b)"/>
+  <circle cx="80" cy="60" r="36" fill="none" stroke-width="2.5" style="stroke:var(--ill-a)"/>
+  <circle cx="80" cy="60" r="27" fill="none" stroke-width="2.5" style="stroke:var(--ill-a)"/>
+  <circle cx="80" cy="60" r="15" style="fill:var(--ill-c)"/><circle cx="80" cy="60" r="3.4" style="fill:var(--ill-a)"/>
+  <path d="M86 16 77 38l12 14-14 22 17 12-8 20" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--bg)"/>
+  <path d="M86 16 77 38l12 14-14 22 17 12-8 20" fill="none" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--danger)"/>
+</symbol>
+<symbol id="ill-stranger" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="107" rx="64" ry="8" style="fill:var(--ill-a)"/>
+  <rect x="44" y="40" width="72" height="64" rx="5" style="fill:var(--ill-b)"/>
+  <rect x="38" y="32" width="84" height="14" rx="4" style="fill:var(--on-bg-faint)"/>
+  <g style="fill:var(--ill-a)"><rect x="54" y="54" width="14" height="12" rx="2"/><rect x="73" y="54" width="14" height="12" rx="2"/><rect x="92" y="54" width="14" height="12" rx="2"/><rect x="54" y="74" width="14" height="12" rx="2"/><rect x="92" y="74" width="14" height="12" rx="2"/><rect x="72" y="76" width="16" height="28" rx="2"/></g>
+  <circle cx="122" cy="40" r="17" style="fill:var(--warning)"/>
+  <path d="M114 37h15m0 0-3.5-3.5M129 37l-3.5 3.5M115 44h15m-15 0 3.5-3.5M115 44l3.5 3.5" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="stroke:#2A1A00"/>
+</symbol>
+<symbol id="ill-offline" viewBox="0 0 160 120">
+  <ellipse cx="80" cy="108" rx="62" ry="7" style="fill:var(--ill-a)"/>
+  <path d="M62 56V46a8 8 0 0 1 8-8h20a8 8 0 0 1 8 8v10" fill="none" stroke-width="6" style="stroke:var(--ill-b)"/>
+  <rect x="38" y="52" width="84" height="54" rx="11" style="fill:var(--ill-b)"/>
+  <rect x="38" y="70" width="84" height="6" style="fill:var(--ill-a)"/><rect x="72" y="66" width="16" height="14" rx="4" style="fill:var(--ill-c)"/>
+  <path d="M52 40a28 28 0 0 1 56 0" fill="none" stroke-width="7" stroke-linecap="round" style="stroke:var(--ill-c)" transform="translate(0 -8)"/>
+  <rect x="45" y="26" width="10" height="17" rx="5" style="fill:var(--ill-c)"/><rect x="105" y="26" width="10" height="17" rx="5" style="fill:var(--ill-c)"/>
+</symbol>
+</defs>
+</svg>
+<header class="vb" id="vb"></header>
+<main id="stage" aria-live="polite"></main>
+<script>
+window.addEventListener('error',function(e){document.body.insertAdjacentHTML('beforeend','<pre id="jserr" style="position:fixed;inset:auto 0 0 0;z-index:99;margin:0;padding:8px 12px;background:#300;color:#fcc;font:12px monospace;white-space:pre-wrap">'+e.message+' (line '+e.lineno+')</pre>');});
+(function(){
+'use strict';
+/* ------------------------------------------------------------------
+   Viewer state. The URL hash carries it, so a frame can be linked:
+   #s=home&st=full&c=C&th=dark&tx=1&d=ltr&n=0&bar=1&p=screens
+   ------------------------------------------------------------------ */
+const DEF={p:'screens',s:'home',st:'full',c:'C',th:'dark',tx:'1',d:'ltr',n:'0',bar:'1'};
+const Q=Object.assign({},DEF);
+function readURL(){
+  const raw=(location.hash||'').replace(/^#/,'')||(location.search||'').replace(/^\?/,'');
+  const u=new URLSearchParams(raw);
+  for(const k of Object.keys(DEF)){ if(u.has(k)) Q[k]=u.get(k); }
+}
+function writeURL(){
+  const u=new URLSearchParams();
+  for(const k of Object.keys(DEF)){ if(Q[k]!==DEF[k]) u.set(k,Q[k]); }
+  const h='#'+u.toString();
+  if(location.hash!==h) history.replaceState(null,'',h||'#');
+}
+const rtl=()=>Q.d==='rtl';
+
+/* Arabic samples for the right-to-left switch (a handful, not a translation) */
+const AR={
+ "Home":"الرئيسية","Search":"بحث","Library":"المكتبة","People":"الأشخاص","Fairouz":"فيروز",
+ "Riley's Music":"موسيقى مروان","Good evening, Riley":"مساء الخير يا مروان",
+ "Can't reach your server.":"لا يمكن الوصول إلى خادمك.","Try again":"حاول مرة أخرى",
+ "You're offline. Downloaded music still plays.":"أنت غير متصل. الموسيقى المنزَّلة ما زالت تعمل.",
+ "Another server answers at this address, not yours.":"خادم آخر يردّ على هذا العنوان، وليس خادمك.",
+ "Play":"تشغيل","Connect":"اتصال","Liked Songs":"الأغاني المفضلة","Downloaded":"التنزيلات",
+ "Your playlists":"قوائم التشغيل الخاصة بك","Up next":"التالي","Cancel":"إلغاء",
+ "Other ways to connect":"طرق أخرى للاتصال","Look again":"ابحث مرة أخرى","Working":"يعمل",
+ "Fairouz in the morning":"فيروز في الصباح","Start with something":"ابدأ بأي شيء","Your server":"خادمك"
+};
+const T=s=>(rtl()&&AR[s])?AR[s]:s;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ------------------------------------------------------------------
+   Small builders
+   ------------------------------------------------------------------ */
+const ic=(n,c='')=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const icf=(n,c='')=>ic(n,'flip '+c);       // icons that point somewhere mirror in RTL
+const ill=(n,style='')=>`<svg class="ill" viewBox="0 0 160 120" aria-hidden="true" style="${style}"><use href="#ill-${n}"/></svg>`;
+const eqb=(still)=>`<span class="eq${still?' still':''}" aria-hidden="true"><i></i><i></i><i></i></span>`;
+
+/* Cover art: generated from gradients and shapes. Not real album art; no letters. */
+const COV={
+ wish:{bg:'linear-gradient(165deg,#F6B867 0%,#D4572C 52%,#2E1B2B 100%)',tint:'#C8602E',svg:'<circle cx="38" cy="56" r="25" fill="#FFF1D6" opacity=".92"/><circle cx="62" cy="56" r="25" fill="#2E1B2B" opacity=".5"/><path d="M0 80Q50 64 100 82V100H0Z" fill="#2E1B2B" opacity=".55"/>'},
+ dsotm:{bg:'radial-gradient(circle at 30% 22%,#7B55BE 0%,#2A1850 62%,#150B2A 100%)',tint:'#5B3E99',svg:'<g fill="none" stroke="#F4E9FF" stroke-opacity=".38" stroke-width="1.6"><circle cx="50" cy="52" r="12"/><circle cx="50" cy="52" r="22"/><circle cx="50" cy="52" r="32"/><circle cx="50" cy="52" r="42"/></g><circle cx="50" cy="52" r="5.5" fill="#F4E9FF"/><path d="M50 10a42 42 0 0 1 36 21" fill="none" stroke="#FFC857" stroke-width="3" stroke-linecap="round"/>'},
+ wall:{bg:'linear-gradient(180deg,#4A4540,#25211E)',tint:'#6A5F55',svg:'<g stroke="#8D8176" stroke-opacity=".5" stroke-width="1.4" fill="none"><path d="M0 20H100M0 40H100M0 60H100M0 80H100"/><path d="M25 0V20M75 0V20M50 20V40M0 20V40M100 20V40M25 40V60M75 40V60M50 60V80M25 80V100M75 80V100"/></g><rect x="38" y="30" width="24" height="40" rx="12" fill="#E9DCCB" opacity=".9"/>'},
+ okc:{bg:'linear-gradient(180deg,#D3E3F0 0%,#8FB0CE 48%,#3D5C7A 100%)',tint:'#5B84A8',svg:'<rect y="44" width="100" height="1.6" fill="#fff" opacity=".7"/><path d="M50 45 8 100M50 45 92 100M50 45V100" stroke="#fff" stroke-opacity=".55" stroke-width="2.2" fill="none"/><circle cx="72" cy="24" r="9" fill="#fff" opacity=".8"/>'},
+ inrb:{bg:'linear-gradient(180deg,#171310,#0E0B09)',tint:'#6B4FA0',svg:'<g opacity=".92"><circle cx="20" cy="50" r="13" fill="#F2545B"/><circle cx="36" cy="50" r="13" fill="#F7B32B" opacity=".9"/><circle cx="52" cy="50" r="13" fill="#2EC4B6" opacity=".9"/><circle cx="68" cy="50" r="13" fill="#5B8DEF" opacity=".9"/><circle cx="84" cy="50" r="13" fill="#B76CF0" opacity=".9"/></g>'},
+ kida:{bg:'linear-gradient(135deg,#EAF3F7,#9CC3D4 58%,#2C5A73)',tint:'#3E7C98',svg:'<path d="M0 100 24 52 42 80 64 36 100 100Z" fill="#1F4B63" opacity=".6"/><path d="M0 100 60 70 100 100Z" fill="#fff" opacity=".35"/>'},
+ berlin:{bg:'linear-gradient(180deg,#0B0A12,#2A0F3D 60%,#7A1E6A 130%)',tint:'#8B1F72',svg:'<g fill="#FF2E88" opacity=".92"><rect x="8" y="58" width="9" height="42" rx="2"/><rect x="20" y="40" width="9" height="60" rx="2"/><rect x="32" y="66" width="9" height="34" rx="2"/><rect x="44" y="28" width="9" height="72" rx="2"/><rect x="56" y="50" width="9" height="50" rx="2"/><rect x="68" y="34" width="9" height="66" rx="2"/><rect x="80" y="62" width="9" height="38" rx="2"/></g><rect x="44" y="28" width="9" height="12" rx="2" fill="#5CF2E8"/><rect x="68" y="34" width="9" height="10" rx="2" fill="#5CF2E8"/>'},
+ kifak:{bg:'linear-gradient(180deg,#F3D9A4 0%,#D9893F 55%,#5B3A1E 100%)',tint:'#B26F2E',svg:'<circle cx="50" cy="42" r="19" fill="#FFF0C9"/><path d="M0 68Q25 50 50 66T100 60V100H0Z" fill="#5B3A1E" opacity=".78"/><path d="M0 82Q25 74 50 82T100 80" fill="none" stroke="#F3D9A4" stroke-width="2.4" opacity=".8"/>'},
+ beirut:{bg:'linear-gradient(200deg,#1C7C7D,#0F3B4A)',tint:'#1C6E78',svg:'<circle cx="50" cy="36" r="14" fill="#F1C96B"/><path d="M0 62Q25 52 50 62T100 62V100H0Z" fill="#0A2733" opacity=".7"/><path d="M0 76Q25 68 50 76T100 76M0 88Q25 80 50 88T100 88" fill="none" stroke="#F1C96B" stroke-width="1.8" opacity=".8"/>'},
+ kaizen:{bg:'#0E0E0E',tint:'#C21F26',svg:'<path d="M-10 80 72 -10H102L12 100Z" fill="#E5262C"/><path d="M42 112 112 32V64L72 112Z" fill="#F4EFE6"/><circle cx="26" cy="28" r="7" fill="#F4EFE6"/>'},
+ rattrapage:{bg:'linear-gradient(145deg,#2E5E4E,#10241D)',tint:'#2E5E4E',svg:'<g fill="none" stroke="#E0B84C" stroke-width="2.4" opacity=".85"><circle cx="100" cy="100" r="78"/><circle cx="100" cy="100" r="58"/><circle cx="100" cy="100" r="38"/></g><circle cx="0" cy="0" r="30" fill="#E0B84C" opacity=".92"/>'},
+ messi:{bg:'linear-gradient(115deg,#7FC3EA 0 47%,#F4F7FA 47% 53%,#2C6E9E 53%)',tint:'#3D86B8',svg:'<circle cx="50" cy="50" r="17" fill="#FFD25A"/><circle cx="50" cy="50" r="17" fill="none" stroke="#10304A" stroke-width="2.4"/>'},
+ ram:{bg:'radial-gradient(circle at 50% 50%,#2A2118 0 18%,#9A7430 19% 24%,#1B1510 25% 40%,#D8B15A 41% 44%,#14100C 45% 100%)',tint:'#8E6A2B',svg:'<path d="M50 6V30M50 70V94M6 50H30M70 50H94" stroke="#D8B15A" stroke-width="2" stroke-linecap="round" opacity=".6"/>'},
+ disc:{bg:'linear-gradient(135deg,#FF7AC7,#6D3BFF 58%,#14083A)',tint:'#6D3BFF',svg:'<path d="M50 14 62 50 50 86 38 50Z" fill="#FFE86B"/><path d="M14 50 50 38 86 50 50 62Z" fill="#fff" opacity=".85"/>'},
+ liked:{bg:'linear-gradient(135deg,#8E5BFF,#FF77B7)',tint:'#A862E0',svg:'<path d="M50 74S25 60 25 42a13 13 0 0 1 25-5 13 13 0 0 1 25 5C75 60 50 74 50 74Z" fill="#fff"/>'},
+ dl:{bg:'linear-gradient(135deg,#2EC4B6,#2F7D9B)',tint:'#2F7D9B',svg:'<path d="M50 24V62M34 48 50 64 66 48M30 76H70" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>'},
+ sun:{bg:'linear-gradient(160deg,#FFD08A,#F0743E 60%,#7A2E3B)',tint:'#D9622F',svg:'<circle cx="50" cy="60" r="20" fill="#FFF0C9"/><path d="M0 74Q25 62 50 74T100 72V100H0Z" fill="#7A2E3B" opacity=".6"/>'},
+ rain:{bg:'linear-gradient(180deg,#5F7A92,#2B3A4A)',tint:'#44607A',svg:'<g stroke="#D3E3F0" stroke-width="2" stroke-linecap="round" opacity=".6"><path d="M20 20 14 40M40 10 34 30M60 24 54 44M80 12 74 32M30 54 24 74M54 58 48 78M76 50 70 70"/></g>'},
+ night:{bg:'linear-gradient(180deg,#120B2A,#3A1646 70%,#7A2E6B)',tint:'#4A2A70',svg:'<g fill="#5CF2E8" opacity=".85"><rect x="14" y="62" width="8" height="38" rx="2"/><rect x="26" y="50" width="8" height="50" rx="2"/><rect x="64" y="56" width="8" height="44" rx="2"/><rect x="76" y="42" width="8" height="58" rx="2"/></g><circle cx="52" cy="26" r="9" fill="#FFF0C9"/>'}
+};
+const cvx=(k,cls='',style='')=>{const c=COV[k];return `<div class="cv ${cls}" style="background:${c.bg};${style}"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${c.svg}</svg></div>`;};
+const cvs=(k,px,cls='')=>cvx(k,cls,`width:${px}px;height:${px}px`);
+const mosaic=(ks,px)=>`<div class="mosaic" style="width:${px}px;height:${px}px">${ks.map(k=>cvx(k)).join('')}</div>`;
+const avatar=(px,k='disc')=>cvs(k,px,'round');
+
+/* Data: real artists and albums; durations are as they appear in the catalogue, rounded. */
+const ART={pf:"Pink Floyd",rh:"Radiohead",pk:"Paul Kalkbrenner",fz:"Fairouz",lm:"L'morphine",ah:"Aymane Haqqi",dp:"Daft Punk",dg:"David Gilmour",rw:"Roger Waters"};
+const ARTCV={pf:'dsotm',rh:'okc',pk:'berlin',fz:'kifak',lm:'kaizen',ah:'rattrapage',dp:'ram',dg:'wish',rw:'wall'};
+const SONG={
+ wish:{t:"Wish You Were Here",a:['pf'],al:"Wish You Were Here",d:"5:34",cv:'wish'},
+ time:{t:"Time",a:['pf'],al:"The Dark Side of the Moon",d:"6:53",cv:'dsotm'},
+ numb:{t:"Comfortably Numb",a:['pf'],al:"The Wall",d:"6:22",cv:'wall'},
+ shine:{t:"Shine On You Crazy Diamond (Parts I–V)",a:['pf'],al:"Wish You Were Here",d:"13:30",cv:'wish'},
+ fishes:{t:"Weird Fishes/Arpeggi",a:['rh'],al:"In Rainbows",d:"5:18",cv:'inrb'},
+ pyramid:{t:"Pyramid Song",a:['rh'],al:"Amnesiac",d:"4:49",cv:'kida'},
+ paranoid:{t:"Paranoid Android",a:['rh'],al:"OK Computer",d:"6:23",cv:'okc'},
+ sky:{t:"Sky and Sand",a:['pk'],al:"Berlin Calling",d:"9:03",cv:'berlin'},
+ kifak:{t:"Kifak Inta",a:['fz'],al:"Kifak Inta",d:"5:04",cv:'kifak'},
+ beirut:{t:"Li Beirut",a:['fz'],al:"Li Beirut",d:"4:24",cv:'beirut'},
+ chrono:{t:"CHRONO",a:['lm'],al:"KAIZEN",d:"2:31",cv:'kaizen'},
+ messi:{t:"MESSI MARADONA",a:['ah','lm'],al:"MESSI MARADONA",d:"2:47",cv:'messi'},
+ lucky:{t:"Get Lucky",a:['dp'],al:"Random Access Memories",d:"6:09",cv:'ram'},
+ harder:{t:"Harder, Better, Faster, Stronger",a:['dp'],al:"Discovery",d:"3:45",cv:'disc'}
+};
+const names=(ids)=>ids.map(i=>ART[i]);
+const artistText=(s)=>names(s.a).map(esc).join(", ");
+const SERVER={n:"Riley's Music",col:'#FFA55E'};
+const NINA={n:"Nina's Tunes",col:'#4FC1B0'};
+
+/* Server identity: a squircle in the server's colour with a house shape. A shape, never a letter. */
+function badge(col,px,kind){
+  const body=kind==='stranger'
+   ? '<path d="M11 18h26v19a1.5 1.5 0 0 1-1.5 1.5h-23A1.5 1.5 0 0 1 11 37z" fill="#2B1405" opacity=".85"/><rect x="9" y="12" width="30" height="6" rx="2" fill="#2B1405"/><g fill="'+col+'"><rect x="15" y="22" width="5" height="5" rx="1"/><rect x="22" y="22" width="5" height="5" rx="1"/><rect x="29" y="22" width="5" height="5" rx="1"/><rect x="21" y="30" width="6" height="8" rx="1"/></g>'
+   : '<path d="M24 10 9.5 22.5h4V35a2 2 0 0 0 2 2h5.5v-8.5h6V37h5.5a2 2 0 0 0 2-2V22.5h4z" fill="#2B1405" opacity=".9" stroke="#2B1405" stroke-width="2" stroke-linejoin="round"/><circle cx="36.5" cy="12.5" r="3.4" fill="#2B1405" opacity=".9"/>';
+  return `<svg class="badge" width="${px}" height="${px}" viewBox="0 0 48 48" aria-hidden="true" style="flex:none"><rect width="48" height="48" rx="15" fill="${col}"/>${body}</svg>`;
+}
+function srvBadge(st,px){
+  if(st==='wrong') return `<span class="bpair">${badge(SERVER.col,px)}${badge('#8A7F78',Math.round(px*.52),'stranger')}</span>`;
+  return badge(SERVER.col,px);
+}
+/* The Encore mark: sound bars (placeholder, the logo is not decided). Moves only on Welcome. */
+function logo(px,anim){
+  const bars=[[4,14,24],[11.5,6,32],[19,10,28],[26.5,3,35]];
+  return `<svg width="${px}" height="${px}" viewBox="0 0 32 40" aria-hidden="true">${bars.map(([x,y,h],i)=>`<rect class="${anim?'lb':''}" style="${anim?`animation-delay:${-i*260}ms;`:''}transform-box:fill-box;transform-origin:50% 100%" x="${x}" y="${y}" width="5" height="${h}" rx="2.5" fill="var(--accent)"/>`).join('')}</svg>`;
+}
+
+/* ------------------------------------------------------------------
+   Shared components
+   ------------------------------------------------------------------ */
+const STRIP={
+ offline:{cls:'offline',icon:'wifi-off',msg:"You're offline. Downloaded music still plays."},
+ unreach:{cls:'unreach',icon:'home-off',msg:"Can't reach your server.",btn:"Try again"},
+ wrong:{cls:'wrong',icon:'swap',msg:"Another server answers at this address, not yours.",btn:"Look again"}
+};
+function strip(kind){
+  const s=STRIP[kind]; if(!s) return '';
+  return `<div class="strip ${s.cls}" role="status">${ic(s.icon)}<span class="msg">${T(s.msg)}</span>${s.btn?`<button class="btn" type="button">${ic('refresh','s')}${T(s.btn)}</button>`:''}</div>`;
+}
+
+/* Mini player (S-30) in six states. The play button is always 48 px or more. */
+function mini(kind,sk='wish'){
+  const s=SONG[sk]; const by=artistText(s);
+  const L={
+   playing:{c:'',st:`${eqb()}<span class="ov">${by}</span>`,b:'pause'},
+   paused:{c:'',st:`<span class="ov">${by}</span>`,b:'play'},
+   buffering:{c:'',st:`<span class="ov">Starting…</span>`,b:'pause'},
+   waiting:{c:'waiting',st:`${ic('home-off','s')}<span class="ov">Waiting for your server</span>`,b:'play'},
+   cant:{c:'cant',st:`${ic('warning','s')}<span class="ov">Couldn't play this song</span>`,b:'next'},
+   other:{c:'other',st:`${ic('tv','s')}<span class="ov">Playing on Living room TV</span>`,b:'pause'}
+  }[kind];
+  return `<a class="mini ${L.c}" href="#" data-go="now/${kind==='waiting'?'waiting':kind==='cant'?'cant':kind==='other'?'other':'playing'}">
+    ${cvx(s.cv)}<div class="meta"><div class="tt one">${esc(s.t)}</div><div class="st">${L.st}</div></div>
+    <span class="playb ${kind==='cant'?'acc':''}">${ic(L.b)}</span><div class="prog"><i style="width:${kind==='cant'?0:32}%"></i></div></a>`;
+}
+function sysbar(){
+  return `<div class="sysbar"><span>9:41</span><span class="r">${ic('signal')}${ic('battery')}</span></div>`;
+}
+function tabs(active){
+  const items=[['home','Home','home/full'],['search','Search','search/top'],['library','Library',''],['people','People','']];
+  return `<nav class="tabs" aria-label="Main">${items.map(([k,l,go])=>`<a class="tab" href="#" ${go?`data-go="${go}"`:''} ${k===active?'aria-current="page"':''}><span class="pillbg">${ic(k==='home'&&k===active?'home-fill':k)}</span><span>${T(l)}</span></a>`).join('')}</nav>`;
+}
+function shellC(main,o={}){
+  return `<div class="shell ${o.cls||''}" ${o.style?`style="${o.style}"`:''}>${sysbar()}${o.top||''}<div class="main ${o.mainCls||''}">${main}</div>${o.strip||''}${o.mini||''}${o.tabs===false?'':tabs(o.tab||'home')}<div class="gesture"><i></i></div></div>`;
+}
+
+/* X: side rail with the server at the top */
+function rail(active,st){
+  const dot=st==='unreach'||st==='wrong'?'<span class="dot warn"></span>':st==='offline'?'<span class="dot off"></span>':'<span class="dot"></span>';
+  const word=st==='unreach'?'Not answering':st==='offline'?'Offline':st==='wrong'?'Check this address':'Working';
+  const items=[['home','Home'],['search','Search'],['library','Library'],['people','People']];
+  const lists=[['Liked Songs','liked'],['Fairouz in the morning','kifak'],['Late night Berlin','night'],['Rainy day','rain']];
+  return `<aside class="rail" aria-label="Main">
+    <a class="srv" href="#" data-go="server/ok">${srvBadge(st,44)}<div class="grow"><div class="nm">${T("Riley's Music")}</div><div class="sub">${dot}<span>${T(word)}</span></div></div></a>
+    ${items.map(([k,l])=>`<a class="navi" href="#" ${k==='home'?'data-go="home/full"':k==='search'?'data-go="search/top"':''} ${k===active?'aria-current="page"':''}>${ic(k==='home'&&k===active?'home-fill':k)}<span>${T(l)}</span></a>`).join('')}
+    <div class="hd">${T("Your playlists")}</div>
+    ${lists.map(([l,k])=>`<a class="navi" href="#" style="min-height:44px;font-weight:500">${cvs(k,28)}<span class="ov">${T(l)}</span></a>`).join('')}
+    <div style="flex:1"></div>
+    <a class="navi" href="#" data-go="server/ok">${ic('gear')}<span>${T("Your server")}</span></a>
+  </aside>`;
+}
+function pbar(kind,sk='wish'){
+  const s=SONG[sk]; const by=artistText(s);
+  const waiting=kind==='waiting', cant=kind==='cant', other=kind==='other';
+  const sub=waiting?`${ic('home-off','s')} Waiting for your server`:cant?`${ic('warning','s')} Couldn't play this song`:other?`${ic('tv','s')} Playing on Living room TV`:by;
+  return `<div class="pbar">
+    <div class="row gap-md" style="min-width:0">${cvx(s.cv,'','width:56px;height:56px;border-radius:12px')}<div style="min-width:0" class="grow"><div class="t-label one">${esc(s.t)}</div><div class="t-cap muted row gap-xs ov" style="flex-wrap:wrap">${sub}</div></div></div>
+    <div class="ctr"><div class="tport"><span class="ibtn">${ic('shuffle')}</span><span class="ibtn">${ic('prev')}</span><span class="playb ${waiting?'':''}" style="${waiting?'box-shadow:inset 0 0 0 2px var(--warning)':''}">${ic(kind==='paused'||waiting?'play':'pause')}</span><span class="ibtn">${ic('next')}</span><span class="ibtn">${ic('repeat')}</span></div>
+      <div class="row gap-sm"><span class="t-cap muted" style="direction:ltr">1:48</span><div class="track grow ${waiting?'hatch':''}"><i style="width:32%"></i></div><span class="t-cap muted" style="direction:ltr">${s.d}</span></div></div>
+    <div class="rt"><span class="ibtn">${ic('heart')}</span><span class="ibtn">${ic('lyrics')}</span><span class="ibtn">${ic('queue')}</span><span class="ibtn">${ic('devices')}</span><span class="ibtn">${ic('volume')}</span><div class="track" style="width:84px"><i style="width:70%"></i></div></div>
+  </div>`;
+}
+function shellX(main,o={}){
+  return `<div class="shell">${rail(o.nav||'home',o.srv)}<div class="main" style="display:flex;flex-direction:column"><div style="flex:1 1 auto;min-height:0;overflow:hidden auto;position:relative">${main}</div></div>${o.bar===false?'':`<div style="grid-column:2">${o.strip||''}${o.bar||pbar('playing')}</div>`}</div>`;
+}
+/* T: top navigation, shelves, a bar, and the keys that work */
+function tnav(active,srvState){
+  const items=[['home','Home'],['search','Search'],['library','Library'],['people','People']];
+  const word=srvState==='unreach'?'Not answering':srvState==='offline'?'Offline':srvState==='wrong'?'Check this address':'Working';
+  const dot=srvState==='unreach'||srvState==='wrong'?'<span class="dot warn"></span>':srvState==='offline'?'<span class="dot off"></span>':'<span class="dot"></span>';
+  return `<div class="tnav">${srvBadge(srvState,44)}<span class="t-title" style="margin-inline:8px 14px;font-family:var(--font-display);font-size:calc(21px*var(--tsl))">${T("Riley's Music")}</span>
+    ${items.map(([k,l])=>`<a class="tnavi" href="#" ${k===active?'aria-current="page"':''}>${ic(k)}${T(l)}</a>`).join('')}<span class="sp"></span>
+    <span class="pill ${srvState==='unreach'||srvState==='wrong'?'warn':srvState==='offline'?'':'ok'}">${dot} ${T(word)}</span></div>`;
+}
+function hint(list){
+  return `<div class="hintbar">${list.map(([k,w])=>`<span><span class="key">${k}</span>${w}</span>`).join('')}</div>`;
+}
+function tpbar(kind,sk='wish',focus){
+  const s=SONG[sk]; const by=artistText(s);
+  const sub=kind==='waiting'?`${ic('home-off','s')} Waiting for your server`:kind==='cant'?`${ic('warning','s')} Couldn't play this song`:kind==='other'?`${ic('tv','s')} Playing on Living room TV`:by;
+  return `<div class="tpbar">${cvx(s.cv,'','width:56px;height:56px;border-radius:12px')}<div class="grow" style="min-width:0"><div class="t-label one">${esc(s.t)}</div><div class="t-cap muted row gap-xs ov" style="flex-wrap:wrap">${sub}</div></div>
+   <div class="track ${kind==='waiting'?'hatch':''}" style="width:240px"><i style="width:32%"></i></div>
+   <span class="playb ${focus?'is-focus':''}" style="${kind==='waiting'?'box-shadow:inset 0 0 0 2px var(--warning)':''}">${ic(kind==='paused'||kind==='waiting'?'play':'pause')}</span></div>`;
+}
+function shellT(body,o={}){
+  return `<div class="shell ${o.cls||''}" ${o.style?`style="${o.style}"`:''}>${o.nav===false?'':tnav(o.nav||'home',o.srv)}<div class="tbody">${body}</div>${o.strip||''}${o.bar===false?'':(o.bar||tpbar('playing'))}${o.hint?hint(o.hint):''}</div>`;
+}
+/* focus key chips (T): they show where the D-pad goes next */
+const fpk=(dir,label)=>`<span class="fpk ${dir}" aria-hidden="true"><b>${label}</b></span>`;
+const ARW={l:'◀',r:'▶',u:'▲',d:'▼'};
+const nextKey=()=>rtl()?ARW.l:ARW.r;
+const prevKey=()=>rtl()?ARW.r:ARW.l;
+
+/* tiles, rows, shelves */
+function tile(k,t,s,o={}){
+  const w=o.w||148;
+  const badgeHtml=(o.badge||'')+(o.dl?`<span class="bdl">${ic('downloaded','s')}</span>`:'');
+  return `<a class="tile ${o.dim?'dim':''}" href="#" ${o.go?`data-go="${o.go}"`:''} style="width:${w}px">${cvx(k,'card'+(o.f?' is-focus':''),`width:${w}px;height:${w}px`)}<div class="cvo" style="width:${w}px;height:${w}px">${badgeHtml}</div><div class="tt ov">${t}</div><div class="st ov">${s}</div>${o.extra||''}</a>`;
+}
+function songRow(id,o={}){
+  const s=SONG[id];
+  const trail=(o.dl?`<span class="dlmark" title="Downloaded">${ic('downloaded','s')}</span>`:'')+`<span class="ibtn">${ic('more')}</span>`;
+  const by=o.by||`${artistText(s)} · ${esc(s.al)}`;
+  return `<a class="list-row ${o.f?'is-focus':''}" href="#" ${o.go?`data-go="${o.go}"`:''}>${o.now?`<span class="nowmark">${eqb()}</span>`:''}${cvx(s.cv,'','')}<div class="meta"><div class="tt ov">${esc(s.t)}</div><div class="st ov">${by}</div></div><span class="t-cap muted dur" style="direction:ltr">${s.d}</span>${trail}${o.tag?`<span class="anno" style="top:0;inset-inline-start:62px">${o.tag}</span>`:''}</a>`;
+}
+function skRows(n){
+  return Array.from({length:n},()=>`<div class="list-row"><div class="sk r cvsk"></div><div class="meta"><div class="sk" style="height:14px;width:62%"></div><div class="sk" style="height:11px;width:40%;margin-top:6px"></div></div></div>`).join('');
+}
+
+/* ------------------------------------------------------------------
+   Frames: true size, scaled to fit, with a label that says the scale
+   ------------------------------------------------------------------ */
+const BASE={C:[360,800,1],X:[1280,800,1],T:[960,540,2]};
+const SIZELABEL={C:'C compact phone · 360 × 800 dp',X:'X expanded browser · 1280 × 800 dp',T:'T ten-foot TV · 1920 × 1080 px = 960 × 540 dp at 2×'};
+function frameBox(cls,inner,cap){
+  const b=BASE[cls];
+  return `<div class="fitem"><div class="fwrap" data-cls="${cls}" data-w="${b[0]*b[2]}" data-h="${b[1]*b[2]}" data-k="${b[2]}"><div class="frame ${cls}" dir="${Q.d}">${inner}</div></div>
+   <div class="fcap"><span><b>${esc(cap.title)}</b></span><span>${SIZELABEL[cls]}</span><span class="scl" data-for="${cls}"></span></div>${cap.note?`<div class="fnote">${cap.note}</div>`:''}${cap.legend?`<div class="legend" style="max-width:${cls==='C'?360:1100}px">${cap.legend}</div>`:''}</div>`;
+}
+function fit(){
+  const stage=document.getElementById('stage'); if(!stage) return;
+  const avail=Math.max(300,stage.clientWidth-36);
+  stage.querySelectorAll('.fwrap').forEach(w=>{
+    const bw=+w.dataset.w,bh=+w.dataset.h,k=+w.dataset.k;
+    const f=Math.min(1,avail/bw);
+    w.style.width=(bw*f)+'px'; w.style.height=(bh*f)+'px'; w.parentElement.style.width=(bw*f)+'px';
+    const fr=w.firstElementChild; fr.style.transform=`scale(${k*f})`;
+    const cap=w.parentElement.querySelector('.scl');
+    if(cap) cap.textContent=(f>=0.999)?'scale 100 % (true size)':`scale ${Math.round(f*100)} % of true size (fitted to the window)`;
+  });
+}
+window.addEventListener('resize',fit);
+
+
+/* ==================================================================
+   S-10 HOME
+   ================================================================== */
+const SC=[['Liked Songs','liked'],['Downloaded','dl'],['Fairouz in the morning','kifak'],['Late night Berlin','night'],['Rainy day','rain'],['Road trip','sun']];
+const HOME_STATES=[
+ ['full','Full Home'],['new','New person: "Start with something"'],['offline','Offline strip'],['unreach','"Can\'t reach your server." strip'],['wrong','Another server answers'],['loading','Loading skeleton']
+];
+const DLSET={wish:1,berlin:1,time:1,kaizen:0};
+const srvWords=st=>({ok:['ok','Working'],offline:['off','Offline'],unreach:['warn','Not answering'],wrong:['warn','Another server answers'],loading:['','Looking for your server…']}[st==='full'||st==='new'?'ok':st]);
+
+function srvCard(st,big){
+  const [d,w]=srvWords(st);
+  const dot=d==='ok'?'<span class="dot"></span>':d==='warn'?'<span class="dot warn"></span>':d==='off'?'<span class="dot off"></span>':'';
+  const wicon=d==='ok'?ic('check','s'):d==='warn'?ic('warning','s'):'';
+  const px=big?64:52;
+  return `<a class="srvcard ${big?'big':''}${st==='wrong'?' stranger':''}" href="#" data-go="server/ok">${srvBadge(st,px)}
+    <div class="grow col" style="gap:2px"><div class="t-title" style="font-family:var(--font-display);font-size:calc(${big?22:19}px*var(--tsl))">${T("Riley's Music")}</div>
+    <div class="t-cap row gap-xs wrapx" style="color:var(--on-bg)">${dot}${wicon}<span>${T(w)}</span></div>
+    <div class="t-cap muted">4,213 songs</div></div>
+    <div class="srvill">${ill('house','width:100%')}</div></a>`;
+}
+function homeShelves(st,tw,count,yearTile){
+  const off=st==='offline';
+  const mk=(k,t,s,o={})=>tile(k,t,(off&&!o.keep&&o.dim!==false)?'Not downloaded':s,Object.assign({w:tw,dim:off&&!o.keep,dl:off&&o.keep,go:'now/playing'},o));
+  const kaizen=`<span class="pill acc" style="position:absolute;inset-block-start:8px;inset-inline-start:8px">Out today</span>`;
+  const pl=(ks,t,s)=>`<a class="tile" href="#">${mosaic(ks,tw).replace('class="mosaic"','class="mosaic" ')}<div class="tt ov">${t}</div><div class="st ov">${s}</div></a>`;
+  const s1=[
+    mk('kaizen','KAIZEN',"EP · L'morphine",{badge:kaizen,dim:false,dl:false,go:'search/artist'}),
+    mk('rattrapage','Rattrapage',"Album · L'morphine",{go:'search/artist'})
+  ];
+  if(yearTile) s1.push(yearCard(tw));
+  const s2=[
+    mk('berlin','Berlin Calling','Paul Kalkbrenner',{keep:1}),
+    mk('kifak','Kifak Inta','Fairouz'),
+    mk('wish','Wish You Were Here','Pink Floyd',{keep:1}),
+    mk('okc','OK Computer','Radiohead'),
+    mk('ram','Random Access Memories','Daft Punk'),
+    mk('inrb','In Rainbows','Radiohead')
+  ].slice(0,count);
+  const s3=[
+    pl(['kifak','beirut','sun','night'],T('Fairouz in the morning'),'Playlist'),
+    pl(['berlin','night','disc','ram'],'Late night Berlin','Playlist'),
+    pl(['rain','okc','kida','inrb'],'Rainy day','Playlist'),
+    pl(['sun','wish','kifak','ram'],'Road trip','Playlist'),
+    pl(['liked','disc','berlin','wish'],'Weekend','Playlist'),
+    pl(['dsotm','wall','wish','okc'],'Pink Floyd, in order','Playlist')
+  ].slice(0,count);
+  const sh=(h,items)=>`<section class="shw"><div class="shelf-h"><h2 class="sec">${h}</h2><a class="btn text" href="#">See all</a></div><div class="shelf">${items.join('')}</div></section>`;
+  return sh(off?'New from artists you play':'New from artists you play',s1)+sh('Recently added to Riley\'s Music',s2)+sh(T('Your playlists'),s3);
+}
+function yearCard(tw){
+  return `<a class="year ${tw?'tall':''}" href="#" ${tw?`style="width:${tw*2+16}px;height:${tw}px"`:''}><div class="grow col" style="gap:4px"><div class="t-cap" style="font-weight:700;opacity:.9">Your Year in Music</div><div class="t-title-l">Your year is taking shape</div><div class="t-cap">1,204 songs so far</div></div>
+   <svg viewBox="0 0 100 100" width="84" height="84" aria-hidden="true" style="flex:none"><circle cx="50" cy="50" r="12" fill="#2B1405" opacity=".85"/><circle cx="50" cy="50" r="26" fill="none" stroke="#2B1405" stroke-opacity=".6" stroke-width="5"/><circle cx="50" cy="50" r="42" fill="none" stroke="#2B1405" stroke-opacity=".35" stroke-width="5" stroke-dasharray="60 30"/></svg></a>`;
+}
+function startBlock(compact){
+  const acts=[['search','Find a song','Search the catalogue and your server'],['link','Bring your playlists','From Spotify or YouTube Music'],['plus','Ask for music','For songs your server does not have yet']];
+  return `<section class="start"><div class="startill">${ill('house','width:100%')}</div>
+    <h2 class="t-title-l">${T("Start with something")}</h2>
+    <p class="t-body muted" style="margin:0">Search for a song you love, bring your playlists over, or ask for music your server doesn't have yet.</p>
+    <div class="col gap-sm" style="align-self:stretch;margin-top:var(--sp-sm)">${acts.map(([i,t,s],n)=>`<a class="act ${n===0&&compact==='T'?'is-focus':''}" href="#" ${i==='search'?'data-go="search/top"':''}><span class="actic">${ic(i)}</span><span class="grow col"><b class="t-label">${t}</b><span class="t-cap muted">${s}</span></span>${icf('chev-right','muted')}</a>`).join('')}</div></section>`;
+}
+function skHome(cls){
+  const tw=cls==='C'?148:cls==='X'?164:160;
+  const sk=(n)=>Array.from({length:n},()=>`<div class="tile" style="width:${tw}px"><div class="sk r" style="width:${tw}px;height:${tw}px;border-radius:var(--r-card)"></div><div class="sk" style="height:14px;width:80%"></div><div class="sk" style="height:11px;width:55%"></div></div>`).join('');
+  return `<div class="shelf-h"><div class="sk" style="height:20px;width:180px"></div></div><div class="shelf">${sk(cls==='C'?2:cls==='X'?6:5)}</div><div class="shelf-h"><div class="sk" style="height:20px;width:220px"></div></div><div class="shelf">${sk(cls==='C'?2:cls==='X'?6:5)}</div>`;
+}
+
+function homeC(st){
+  const hdr=`<header class="hh"><h1 class="t-display grow">${T("Good evening, Riley")}</h1><a class="ibtn" href="#" aria-label="Profile">${avatar(44,'sun')}</a></header>`;
+  let main;
+  if(st==='loading'){
+    main=`<div class="pg">${hdr}${srvCard('loading')}<div class="scgrid">${SC.map(()=>`<div class="sk" style="height:56px;border-radius:14px"></div>`).join('')}</div>${skHome('C')}</div>`;
+  }else if(st==='new'){
+    main=`<div class="pg">${hdr}${srvCard('full')}${startBlock('C')}<section class="shw"><div class="shelf-h"><h2 class="sec">Recently added to Riley's Music</h2></div><div class="shelf">${[['berlin','Berlin Calling','Paul Kalkbrenner'],['kifak','Kifak Inta','Fairouz'],['wish','Wish You Were Here','Pink Floyd']].map(([k,t,s])=>tile(k,t,s,{w:148,go:'now/playing'})).join('')}</div></section></div>`;
+  }else{
+    const off=st==='offline';
+    const sc=SC.map(([t,k],i)=>`<a class="sc ${off&&i>1?'dim':''} ${off&&i===1?'on':''}" href="#">${cvs(k,56,'')}<span class="t-label ov grow">${T(t)}</span></a>`).join('');
+    main=`<div class="pg">${hdr}${srvCard(st)}<div class="scgrid">${sc}</div>${homeShelves(st,148,4)}${yearCard()}</div>`;
+  }
+  const miniKind={full:'playing',offline:'playing',unreach:'waiting',wrong:'paused'}[st];
+  const m=miniKind?mini(miniKind,st==='offline'?'wish':'wish'):'';
+  return {h:shellC(main,{strip:strip(st==='offline'?'offline':st==='unreach'?'unreach':st==='wrong'?'wrong':''),mini:m,tab:'home'}),
+   note:{
+    full:'The server is the first thing on Home: its name and colour, and one word that says whether it works. The mini player is a rounded card over the tab bar.',
+    new:'The first-ever Home: one picture, one sentence, three things to do. Under it the server\'s own library, so there is already something to tap.',
+    offline:'Offline (CN-1): a slim strip above the player, the "Downloaded" shortcut lit, everything that needs the network is dimmed <b>and</b> says "not downloaded" in words. The song that is playing still plays.',
+    unreach:'The server does not answer (CN-14): the strip is amber, has a house with a broken line and a <b>Try again</b> button. Home still shows the library; the mini player keeps the song and says it is waiting (it does not hop).',
+    wrong:'Another server answers (CN-11): the strip is red with a swap icon, the server badge turns grey and shows a building, not our house. The phone sent it nothing.',
+    loading:'Loading: skeleton shapes in the surface tones, a gentle pulse (off under "Remove animations"), no spinner. The server card says what it is doing, in words.'
+   }[st]};
+}
+function homeX(st){
+  const hdr=`<div class="row" style="justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap"><h1 class="t-display">${T("Good evening, Riley")}</h1><div class="row gap-sm"><a class="field" href="#" style="min-width:300px;color:var(--on-bg-muted)">${ic('search')}<span class="val">What do you want to hear?</span></a><a class="ibtn" href="#">${avatar(40,'sun')}</a></div></div>`;
+  let main;
+  const off=st==='offline';
+  if(st==='loading'){
+    main=`<div class="xp">${hdr}${srvCard('loading',true)}<div class="scgrid x">${SC.map(()=>`<div class="sk" style="height:64px;border-radius:16px"></div>`).join('')}</div>${skHome('X')}</div>`;
+  }else if(st==='new'){
+    main=`<div class="xp">${hdr}<div class="newgrid">${srvCard('full',true)}</div>${startBlock('X')}<section class="shw"><div class="shelf-h"><h2 class="sec">Recently added to Riley's Music</h2></div><div class="shelf">${[['berlin','Berlin Calling','Paul Kalkbrenner'],['kifak','Kifak Inta','Fairouz'],['wish','Wish You Were Here','Pink Floyd'],['okc','OK Computer','Radiohead'],['ram','Random Access Memories','Daft Punk'],['inrb','In Rainbows','Radiohead']].map(([k,t,s])=>tile(k,t,s,{w:164,go:'now/playing'})).join('')}</div></section></div>`;
+  }else{
+    const sc=SC.map(([t,k],i)=>`<a class="sc ${off&&i>1?'dim':''} ${off&&i===1?'on':''} ${i===0&&!off?'is-focus':''}" href="#">${cvs(k,64,'')}<span class="t-label ov grow">${T(t)}</span></a>`).join('');
+    main=`<div class="xp">${hdr}${srvCard(st,true)}<div class="scgrid x">${sc}</div>${homeShelves(st,164,6,true)}</div>`;
+  }
+  const bk={full:'playing',offline:'playing',unreach:'waiting',wrong:'paused',new:'paused',loading:'paused'}[st];
+  return {h:shellX(main,{nav:'home',srv:st,strip:strip(st==='offline'?'offline':st==='unreach'?'unreach':st==='wrong'?'wrong':''),bar:st==='new'||st==='loading'?false:pbar(bk)}),
+   note:{full:'Expanded: the rail is the server and the four places. Focus is drawn on the first shortcut (a 3 px cream ring with a gap, plus a soft halo); every control shows the same ring when tabbed to.',
+    new:'First-ever Home at X: same words and the same three things to do, laid out in two columns.',
+    offline:'Offline at X: the strip sits above the player bar, same words as on the phone.',
+    unreach:'"Can\'t reach your server." at X: the strip above the bar; the rail dot turns amber and says "Not answering"; the bar keeps the song and says it is waiting.',
+    wrong:'Another server answers at X: red strip; the rail badge and the card turn grey; nothing in the page borrows the server\'s name or colour for the stranger.',
+    loading:'Loading at X: skeletons; the server card says "Looking for your server…".'}[st]};
+}
+function homeT(st){
+  const off=st==='offline';
+  const kaizen=`<span class="pill acc" style="position:absolute;inset-block-start:8px;inset-inline-start:8px">Out today</span>`;
+  let body;
+  const W=146;
+  const tl=(k,t,s,o)=>tile(k,t,s,Object.assign({w:W},o));
+  if(st==='loading'){
+    body=`<div class="shelf-h"><div class="sk" style="height:26px;width:260px"></div></div><div class="shelf">${Array.from({length:5},()=>`<div class="tile" style="width:${W}px"><div class="sk r" style="width:${W}px;height:${W}px;border-radius:var(--r-card)"></div><div class="sk" style="height:16px;width:80%"></div></div>`).join('')}</div>`;
+  }else if(st==='new'){
+    body=`<div class="row gap-xl" style="align-items:center;padding-top:6px"><div style="width:250px;flex:none">${ill('house','width:100%')}</div><div class="grow col gap-md"><h2 class="t-title-l">${T("Start with something")}</h2><p class="t-body muted" style="margin:0">Search for a song you love, bring your playlists over, or ask for music your server doesn't have yet.</p>
+      <div class="row gap-md wrapx" style="margin-top:8px"><a class="btn primary is-focus" href="#">${ic('search')}Find a song${fpk('r',nextKey())}</a><a class="btn soft" href="#">${ic('link')}Bring your playlists</a><a class="btn soft" href="#">${ic('plus')}Ask for music</a></div></div></div>
+      <div class="shelf-h" style="margin-top:8px"><h2 class="sec">Recently added to Riley's Music</h2></div><div class="shelf">${[['berlin','Berlin Calling','Paul Kalkbrenner'],['kifak','Kifak Inta','Fairouz'],['wish','Wish You Were Here','Pink Floyd'],['okc','OK Computer','Radiohead'],['ram','Random Access Memories','Daft Punk']].map(([k,t,s])=>tile(k,t,s,{w:W})).join('')}</div>`;
+  }else{
+    const f0=tl('wish','Wish You Were Here','Pink Floyd',{f:true,go:'now/playing',extra:fpk('r',nextKey())+fpk('d','▼'),dl:off});
+    const rest=[
+      tl('dsotm','Time','Pink Floyd',{dim:off,dl:false}),tl('berlin','Berlin Calling','Paul Kalkbrenner',{dl:off,dim:false}),tl('kifak','Kifak Inta','Fairouz',{dim:off}),tl('okc','OK Computer','Radiohead',{dim:off}),tl('ram','Random Access Memories','Daft Punk',{dim:off})
+    ];
+    const shelf2=[tl('kaizen','KAIZEN',"EP · L'morphine",{badge:kaizen,dim:false}),tl('rattrapage','Rattrapage',"Album · L'morphine",{dim:off}),tl('inrb','In Rainbows','Radiohead',{dim:off})];
+    body=`<div class="shelf-h"><h2 class="sec">Continue listening</h2></div><div class="shelf">${[f0].concat(rest).slice(0,5).join('')}</div>
+      <div class="shelf-h" style="margin-top:2px"><h2 class="sec">New from artists you play</h2></div><div class="shelf">${shelf2.join('')}</div>`;
+  }
+  const bk={full:'playing',offline:'playing',unreach:'waiting',wrong:'paused',new:'paused',loading:'paused'}[st];
+  const hn=st==='new'?[['OK','choose'],[nextKey(),'next button'],['Back','leave']]:[['OK','play'],[prevKey()+' '+nextKey(),'along the shelf'],['▼','next shelf'],['▲','top bar'],['Back','up one level']];
+  return {h:shellT(body,{srv:st,strip:strip(st==='offline'?'offline':st==='unreach'?'unreach':st==='wrong'?'wrong':'').replace('class="strip','style="margin:0 var(--gutter) 8px;border-radius:var(--r-card)" class="strip'),bar:st==='new'||st==='loading'?false:tpbar(bk),hint:hn}),
+   note:{full:'Ten-foot: rows of shelves, one focused tile (4 dp cream ring, a gap, a halo and a 4.5 % lift). The pink keys show where the D-pad goes from here.',
+    new:'First-ever Home on a TV: the first button holds the focus; typing is never asked here.',
+    offline:'Offline on a TV: the strip above the bar; what cannot play is dimmed and says so in words.',
+    unreach:'The server does not answer: amber strip with the same words; the bar shows the song as waiting.',
+    wrong:'Another server answers: red strip; the badge in the top bar turns grey.',
+    loading:'Skeleton tiles, no spinner.'}[st],
+   legend:'<b>D-pad on this frame.</b> Focus starts on the first tile. <kbd>'+nextKey()+'</kbd> / <kbd>'+prevKey()+'</kbd> move along the shelf, <kbd>▼</kbd> goes to the next shelf (the tile under it takes the focus), <kbd>▲</kbd> from the first shelf goes to the top bar, <kbd>OK</kbd> plays, <kbd>Back</kbd> goes up one level and never exits from the middle of a page. Nothing needs hover or a long press.'};
+}
+const HOME={states:HOME_STATES,title:'Home',id:'S-10',draw:{C:homeC,X:homeX,T:homeT}};
+
+
+/* ==================================================================
+   S-31 NOW PLAYING (and S-30 the mini player)
+   ================================================================== */
+const NOW_STATES=[
+ ['playing','Playing'],['waiting','Waiting for the server (G-1)'],['cant','Cannot play'],['two','Two credited artists'],['other','Another device is playing'],['minis','Mini player, all six states (S-30)']
+];
+function artistLinks(ids,o={}){
+  return ids.map((a,i)=>`<a class="alink" href="#" data-go="search/artist"><span class="ach ${o.f===i?'is-focus':''}">${avatar(o.px||28,ARTCV[a])}<span>${esc(ART[a])}</span></span>${o.keys&&i===0&&ids.length>1?fpk('r',nextKey()):''}</a>`).join('');
+}
+function scrubber(kind,dur){
+  const pct=kind==='cant'?0:32;
+  const t=kind==='cant'?'0:00':'1:48';
+  return `<div class="${kind==='cant'?'dis':''}"><div class="scrub"><div class="track ${kind==='waiting'?'hatch':''}"><i style="width:${pct}%"></i><b style="inset-inline-start:${pct}%"></b></div></div><div class="times"><span>${t}</span><span>${dur}</span></div></div>`;
+}
+function transport(kind,focusPlay){
+  const waiting=kind==='waiting',cant=kind==='cant';
+  const playIcon=(kind==='playing'||kind==='two'||kind==='other')?'pause':'play';
+  return `<div class="tport"><span class="ibtn ${cant?'dis':''}">${ic('shuffle')}</span><span class="ibtn ${cant?'dis':''}">${ic('prev','l')}</span>
+   <span class="bigplay ${waiting?'wait breathe':''} ${cant?'dis':''} ${focusPlay?'is-focus':''}">${ic(playIcon,'l')}</span>
+   <span class="ibtn">${ic('next','l')}</span><span class="ibtn ${cant?'dis':''}">${ic('repeat')}</span></div>`;
+}
+function noticeBox(kind,s,focus){
+  if(kind==='waiting') return `<div class="notice wait"><div class="nill">${ill('wait')}</div><p class="t-label" style="margin:0">Waiting for your server. This song starts again where it stopped.</p></div>`;
+  if(kind==='cant') return `<div class="notice bad"><div class="nill">${ill('broken')}</div><div class="col gap-sm"><p class="t-label" style="margin:0">Couldn't play ${esc(s.t)}. It has been removed.</p><button class="btn primary ${focus?'is-focus':''}" type="button">${ic('next')}Play next song</button></div></div>`;
+  return '';
+}
+function upNextRow(id){
+  const s=SONG[id];
+  return `<a class="upnext" href="#">${cvx(s.cv,'','width:40px;height:40px;border-radius:10px')}<span class="grow col"><span class="t-cap muted">${T("Up next")}</span><span class="t-label ov">${esc(s.t)} · ${artistText(s)}</span></span>${ic('queue','muted')}</a>`;
+}
+function devCard(){
+  return `<div class="devcard"><div class="row gap-md">${ic('tv','l')}<div class="grow col"><b class="t-label">Living room TV</b><span class="t-cap row gap-xs" style="color:var(--accent)">${eqb()}Playing</span></div></div>
+    <div class="row gap-md">${ic('volume')}<div class="track grow"><i style="width:62%;background:var(--accent)"></i></div></div>
+    <div class="row gap-md" style="justify-content:space-between;flex-wrap:wrap"><div class="row gap-md">${ic('phone','l')}<div class="col"><b class="t-label">This phone</b><span class="t-cap muted">Controlling the TV</span></div></div><button class="btn primary" type="button">Play here</button></div></div>`;
+}
+const QUEUE=['time','numb','shine','fishes'];
+
+function nowC(st){
+  if(st==='minis') return minisC();
+  const id=st==='two'?'messi':st==='cant'?'pyramid':'wish';
+  const s=SONG[id]; const tint=COV[s.cv].tint;
+  const top=`<div class="nptop"><a class="ibtn" href="#" data-go="home/full" aria-label="Close player">${ic('chev-down')}</a><div class="grow col" style="align-items:center;text-align:center"><span class="t-cap muted">Playing from</span><span class="t-label ov">${esc(s.al)}</span></div><span class="ibtn">${ic('more')}</span></div>`;
+  const pill=st==='other'?`<div style="display:flex;justify-content:center"><span class="pill acc">${ic('tv','s')}Playing on Living room TV</span></div>`:'';
+  const cover=`<div class="npcov"><div class="npc ${st==='cant'?'gray':''} ${st==='other'?'remote':''}">${cvx(s.cv,'hero','width:100%;height:100%')}</div></div>`;
+  const meta=`<div class="nptitle"><div class="grow col"><h1 class="t-title-l ov" style="font-size:calc(24px*var(--tsl))">${esc(s.t)}</h1><div class="artists">${artistLinks(s.a)}</div></div><a class="ibtn" href="#" aria-label="Like">${ic('heart')}</a></div>`;
+  const body=`${noticeBox(st,s)}${st==='other'?devCard():(st==='cant'?'':upNextRow(st==='waiting'?'time':'time'))}`;
+  const tools=`<div class="tools">${[['devices','Devices'],['lyrics','Lyrics'],['moon','Sleep'],['queue','Queue']].map(([i,l])=>`<a class="tool" href="#">${ic(i)}<span>${l}</span></a>`).join('')}</div>`;
+  const main=`<div class="np" style="--tint:${tint}">${top}${pill}${cover}${meta}${scrubber(st,s.d)}${transport(st)}${body}${st==='waiting'||st==='cant'?'':tools}</div>`;
+  return {h:shellC(main,{tabs:false,cls:'nps',style:`--tint:${tint}`,top:st==='waiting'?strip('unreach'):''}),
+   note:{
+    playing:'Playing: the colour of the cover tints the top of the page (450 ms when the song changes); the play button is the accent. Every control is 48 px or more.',
+    waiting:'<b>Waiting for the server</b> (G-1): the song, the position (1:48) and the next song stay exactly where they were. Amber, not red: a lit window and a note on the doorstep. The play button keeps a slow halo (still under "Remove animations"). Nothing hops. The amber strip carries the table\'s own sentence and the button. The sentence in the card is proposed wording.',
+    cant:'<b>Cannot play</b>: this is different from waiting. The cover goes grey, the record is cracked, the colour is red, the progress is empty, and the button <b>does</b> something that works ("Play next song"): retrying a removed song would not.',
+    two:'<b>Two credited artists</b> (F13): both names, in the order the catalogue gives them, each its own 48 px target; each opens that artist\'s page (tap one to see). The same two names appear on the mini player, the lock screen and the rows.',
+    other:'<b>Another device is playing</b> (PB-7, designed): the page says so at the top, the cover wears the accent ring, and "Play here" is the one button that moves the music to this phone. A volume for each device.'
+   }[st]};
+}
+function minisC(){
+  const items=[['playing','Playing'],['paused','Paused'],['buffering','Buffering'],['waiting','Waiting for the server'],['cant','Cannot play'],['other','Another device plays']];
+  const main=`<div class="pg" style="gap:6px"><h1 class="t-title-l" style="margin:6px 0">Mini player</h1>${items.map(([k,l],i)=>`<div class="t-cap muted" style="margin-top:8px">${l}</div><div class="minispec">${mini(k,k==='cant'?'pyramid':k==='other'?'time':'wish')}</div>`).join('')}</div>`;
+  return {h:shellC(main,{tabs:false}),note:'The six states of the mini player. The play/pause or next button is 48 px; the second line always says something in words and the "waiting" and "cannot play" lines carry an icon that is not just a colour. Tapping the bar opens Now playing in the same state.'};
+}
+function nowX(st){
+  if(st==='minis') return minisX();
+  const id=st==='two'?'messi':st==='cant'?'pyramid':'wish';
+  const s=SONG[id]; const tint=COV[s.cv].tint;
+  const pill=st==='other'?`<span class="pill acc" style="align-self:flex-start">${ic('tv','s')}Playing on Living room TV</span>`:'';
+  const left=`<div class="npxl"><div class="npc ${st==='cant'?'gray':''} ${st==='other'?'remote':''}" style="width:300px;height:300px">${cvx(s.cv,'hero','width:100%;height:100%')}</div>
+    <div class="col gap-sm" style="flex:1 1 260px">${pill}<span class="t-cap muted">Playing from ${esc(s.al)}</span><h1 class="t-display ov" style="font-size:calc(32px*var(--tsl))">${esc(s.t)}</h1><div class="artists" style="font-size:calc(17px*var(--tsl))">${artistLinks(s.a,{f:st==='two'?0:-1})}</div></div></div>`;
+  const mid=`<div class="npxm">${noticeBox(st,s)}<div style="max-width:560px">${scrubber(st,s.d)}</div>${transport(st,st!=='two')}${st==='other'?devCard():''}</div>`;
+  const queue=`<aside class="queue card"><div class="row gap-sm" style="margin-bottom:6px">${['Up next','Lyrics','Devices'].map((t,i)=>`<a class="chip" href="#" aria-pressed="${i===0}"><span>${t}</span></a>`).join('')}</div>
+    ${songRow(id,{now:true,by:'Playing now'})}${QUEUE.map(q=>songRow(q)).join('')}</aside>`;
+  const main=`<div class="npxw" style="--tint:${tint}">${st==='waiting'?strip('unreach'):''}<div class="npxbody"><div class="npxl-wrap">${left}${mid}</div>${queue}</div></div>`;
+  return {h:shellX(main,{nav:'home',srv:st==='waiting'?'unreach':'full',bar:false}),
+   note:{playing:'Expanded: cover, title and credited artists on the left; the queue on the right. Focus is drawn on the play button; every control shows the same ring with Tab.',
+    waiting:'Waiting for the server at X: the amber strip is at the top of the page (there is no bar to put it above), the rail turns amber, the song and the next song do not move.',
+    cant:'Cannot play at X: grey cover, cracked record, red wording, a button that works.',
+    two:'Two credited artists at X: the first name is focused (ring drawn); both are separate targets.',
+    other:'Another device at X: the page says where the music is; the device card has "Play here".'}[st]};
+}
+function minisX(){
+  const items=[['playing','Playing'],['paused','Paused'],['waiting','Waiting for the server'],['cant','Cannot play'],['other','Another device plays']];
+  const main=`<div class="xp"><h1 class="t-display">Player bar</h1>${items.map(([k,l])=>`<div class="col gap-sm"><span class="t-cap muted">${l}</span><div style="border-radius:var(--r-card);overflow:hidden;border:1px solid var(--outline)">${pbar(k,k==='cant'?'pyramid':'wish')}</div></div>`).join('')}</div>`;
+  return {h:shellX(main,{nav:'home',bar:false}),note:'The player bar at X in five states. The title and the second line say it in words; the bar keeps its song and its position in every one of them.'};
+}
+function nowT(st){
+  if(st==='minis') return minisT();
+  const id=st==='two'?'messi':st==='cant'?'pyramid':'wish';
+  const s=SONG[id]; const tint=COV[s.cv].tint;
+  const pill=st==='other'?`<span class="pill acc">${ic('tv','s')}Playing on Living room TV</span>`:'';
+  const body=`<div class="npt" style="--tint:${tint}"><div class="npc ${st==='cant'?'gray':''} ${st==='other'?'remote':''}" style="width:250px;height:250px;flex:none">${cvx(s.cv,'hero','width:100%;height:100%')}</div>
+    <div class="grow col gap-md" style="min-width:0"><div class="row gap-md wrapx"><span class="t-cap muted">Playing from ${esc(s.al)}</span>${pill}</div>
+    <h1 class="t-display ov" style="font-size:calc(40px*var(--tsl))">${esc(s.t)}</h1>
+    <div class="artists" style="font-size:calc(22px*var(--ts))">${artistLinks(s.a,{f:st==='two'?0:-1,keys:st==='two',px:36})}</div>
+    ${noticeBox(st,s,true)}${st==='other'?devCard():''}
+    ${scrubber(st,s.d)}${transport(st,st!=='two'&&st!=='cant')}${st==='playing'||st==='two'?upNextRow('time'):''}</div></div>`;
+  return {h:shellT(body,{cls:'nps',style:`--tint:${tint}`,nav:false,bar:false,strip:st==='waiting'?strip('unreach').replace('class="strip','style="margin:0 var(--gutter) 8px;border-radius:var(--r-card)" class="strip'):'',hint:[['OK',st==='cant'?'play next song':'pause or play'],[prevKey()+' '+nextKey(),'along the controls'],['▲','artists'],['▼','queue'],['Back','close the player']]}),
+   note:{playing:'Ten-foot: the cover and the title are read from the sofa (40 dp title); focus is on the play button (4 dp cream ring, a gap, a halo, a lift). A song never needs typing.',
+    waiting:'Waiting for the server on a TV: the amber strip with its button at the bottom edge, the song and position kept, the same calm card and halo.',
+    cant:'Cannot play on a TV: red, grey cover, and "Play next song" is the button that works; focus starts there because nothing else can help.',
+    two:'Two credited artists on a TV: focus is drawn on the first name; the pink key shows that the next press goes to the second name. Each opens that artist.',
+    other:'Another device at T: "Play here" is on the device card; the D-pad reaches it with the down key.'}[st],
+   legend:'<b>D-pad on this frame.</b> Focus starts on '+(st==='two'?'the first artist name':st==='cant'?'"Play next song"':'the play button')+'. <kbd>'+prevKey()+'</kbd> <kbd>'+nextKey()+'</kbd> move along the controls, <kbd>▲</kbd> goes to the artist names, <kbd>▼</kbd> to the queue, <kbd>OK</kbd> acts, <kbd>Back</kbd> closes the player.'};
+}
+function minisT(){
+  const items=[['playing','Playing'],['waiting','Waiting for the server'],['cant','Cannot play'],['other','Another device plays']];
+  const body=`<div class="col gap-md">${items.map(([k,l])=>`<div class="col gap-xs"><span class="t-cap muted">${l}</span>${tpbar(k,k==='cant'?'pyramid':'wish').replace('class="tpbar"','class="tpbar" style="margin:0"')}</div>`).join('')}</div>`;
+  return {h:shellT(body,{bar:false}),note:'The TV player bar in four states. On a TV it is a rounded card above the safe margin.'};
+}
+const NOW={states:NOW_STATES,title:'Now playing',id:'S-31',draw:{C:nowC,X:nowX,T:nowT}};
+
+
+/* ==================================================================
+   S-12 SEARCH RESULTS + S-19 ARTIST (one flow)
+   ================================================================== */
+const SEARCH_STATES=[
+ ['top','Results: Top result, owned and catalogue rows look the same'],['partial','Partly loaded: library first, catalogue second'],['none','No results: "lmorphine chrono"'],['artist','Artist page: new release out today, two credited artists']
+];
+const PFSONGS=['wish','time','numb','shine'];
+function searchField(q,o={}){
+  return `<div class="field ${o.f?'is-focus':''}">${ic('search')}<span class="val ov">${esc(q)}${o.caret?'<i class="caret"></i>':''}</span>${o.clear===false?'':`<span class="ibtn" style="margin-inline-end:-10px">${ic('close','s')}</span>`}</div>`;
+}
+function chips(act){
+  return `<div class="chips">${['All','Songs','Albums','Artists','Playlists'].map(c=>`<a class="chip" href="#" aria-pressed="${c===act}"><span>${c}</span></a>`).join('')}</div>`;
+}
+function topResult(big,f){
+  return `<a class="topres ${f?'is-focus':''}" href="#" data-go="search/artist">${avatar(big?112:92,'dsotm')}<div class="grow col" style="gap:2px;min-width:0"><span class="t-cap muted">Top result</span><span class="t-title-l ov">Pink Floyd</span><span class="t-cap muted">Artist</span></div><span class="playb acc" style="width:${big?60:52}px;height:${big?60:52}px">${ic('play','l')}</span></a>`;
+}
+function hdrSection(t,more){return `<div class="shelf-h" style="margin:var(--sp-md) 0 var(--sp-xs)"><h2 class="sec">${t}</h2>${more?`<a class="btn text" href="#">${more}</a>`:''}</div>`;}
+function albumShelf(w){
+  return `<div class="shelf" style="padding-inline:0;margin:0">${[['wish','Wish You Were Here','1975'],['dsotm','The Dark Side of the Moon','1973'],['wall','The Wall','1979']].map(([k,t,y])=>tile(k,t,'Album · '+y,{w})).join('')}</div>`;
+}
+function artistShelf(px){
+  return `<div class="shelf" style="padding-inline:0;margin:0;gap:var(--sp-xl)">${[['David Gilmour','wish'],['Roger Waters','wall'],['Richard Wright','dsotm']].map(([n,k])=>`<a class="tile" href="#" style="width:${px}px;align-items:center;text-align:center">${avatar(px,k)}<div class="tt ov">${n}</div><div class="st">Artist</div></a>`).join('')}</div>`;
+}
+function skShelf(w,n){return `<div class="shelf" style="padding-inline:0;margin:0">${Array.from({length:n},()=>`<div class="tile" style="width:${w}px"><div class="sk r" style="width:${w}px;height:${w}px;border-radius:var(--r-card)"></div><div class="sk" style="height:14px;width:80%"></div></div>`).join('')}</div>`;}
+function tried(){
+  return `<div class="row gap-sm wrapx" style="align-items:flex-start">${['lmorphine chrono',"l'morphine chrono",'chrono'].map(t=>`<span class="tried">${ic('search','s')}<span>${esc(t)}</span></span>`).join('')}</div>`;
+}
+function nearest(){
+  return `<div class="col">${hdrSection('The closest we have')}<a class="list-row" href="#" data-go="search/artist">${avatar(52,'kaizen')}<div class="meta"><div class="tt">L'morphine</div><div class="st">Artist · the closest to "lmorphine"</div></div>${icf('chev-right','muted')}</a>
+   <a class="list-row" href="#" data-go="search/artist">${cvs('rattrapage',52)}<div class="meta"><div class="tt">Rattrapage</div><div class="st">Album · L'morphine</div></div>${icf('chev-right','muted')}</a></div>`;
+}
+function noneBlock(inclNearest){
+  return `<div class="nores"><div class="nresill">${ill('search')}</div><h2 class="t-title-l" style="margin:0">Nothing found for “lmorphine chrono”.</h2>
+   <p class="t-body muted" style="margin:0">We looked on your server and in the catalogue. We tried:</p>${tried()}
+   ${inclNearest?nearest():''}
+   <div class="row gap-sm wrapx" style="margin-top:var(--sp-xs)"><a class="btn primary" href="#">${ic('plus')}Ask for “lmorphine chrono”</a><a class="btn ghost" href="#">Try “chrono” alone</a></div></div>`;
+}
+function songBlock(rows){return `<div class="col">${rows}</div>`;}
+
+function searchC(st){
+  if(st==='artist') return artistC();
+  const q=st==='none'?'lmorphine chrono':'pink floyd';
+  const top=`<div class="spad">${searchField(q,{caret:st==='none'})}</div>`;
+  let body;
+  if(st==='none'){
+    body=`<div class="spad">${noneBlock(true)}</div>`;
+  }else if(st==='partial'){
+    body=`<div class="spad">${chips('All')}${topResult(false)}${hdrSection('Songs')}${songBlock(songRow('wish',{dl:true})+songRow('time'))}
+      <div class="stillrow">${eqb()}<span class="t-cap muted">Still looking for more…</span></div>${skRows(3)}${hdrSection('Albums')}${skShelf(148,2)}</div>`;
+  }else{
+    body=`<div class="spad">${chips('All')}${topResult(false)}${hdrSection('Songs','See all')}${songBlock(PFSONGS.map((s,i)=>songRow(s,{dl:i%2===0})).join(''))}${hdrSection('Albums','See all')}${albumShelf(148)}${hdrSection('Artists')}${artistShelf(96)}</div>`;
+  }
+  const o=st==='none'||st==='top'||st==='partial';
+  return {h:shellC(top+body,{tab:'search',mini:mini(st==='none'?'paused':'playing','wish'),strip:''}),
+   note:{top:'Top result with the library and the catalogue answering in one list: the rows are the same component, so nothing tells you which song is on your server and which is not (switch Notes on to see the tags). The check mark means "downloaded" and can appear on either.',
+    partial:'Partly loaded (P): the library answered first (two songs, a Top result), the catalogue has not yet: three skeleton rows and one quiet sentence. No spinner, nothing jumps when the rest arrives.',
+    none:'No results never dead-ends: it says what was searched and tried, offers the closest thing that exists and a way to ask for the song. Note: once P2-12 is built "lmorphine chrono" finds CHRONO; this page stays for real misses.'}[st]};
+}
+function artistHero(h,r){
+  return `<div class="ahero" style="height:${h}px">${cvx('kaizen','', 'position:absolute;inset:0;width:100%;height:100%;border-radius:0')}<div class="ascrim"></div>
+   <a class="ibtn ahb" href="#" data-go="search/top" aria-label="Back">${icf('chev-left')}</a>
+   <div class="ahtx"><span class="t-cap" style="color:#fff;opacity:.92;font-weight:700">Artist</span><h1 class="t-display" style="color:#fff;font-size:calc(${r}px*var(--tsl))">L'morphine</h1></div></div>`;
+}
+function newToday(w){
+  return `<a class="newtoday" href="#">${cvs('kaizen',w?110:84,'card')}<div class="grow col" style="gap:4px;min-width:0"><span class="pill acc" style="align-self:flex-start">Out today</span><span class="t-title ov" style="font-size:calc(19px*var(--ts))">KAIZEN</span><span class="t-cap muted">EP · L'morphine</span><span class="btn soft" style="align-self:flex-start;min-height:var(--hit)">${ic('play','s')}Play</span></div></a>`;
+}
+function artistRows(){
+  return songRow('chrono',{by:`L'morphine · KAIZEN`})+songRow('messi',{by:`${artistText(SONG.messi)} · single`,dl:false});
+}
+function artistC(){
+  const main=`<div class="apage">${artistHero(184,30)}<div class="spad" style="margin-top:-6px"><div class="row gap-md" style="margin:6px 0 4px"><span class="bigplay" style="width:56px;height:56px">${ic('play','l')}</span><a class="btn ghost" href="#">Follow</a><span class="grow"></span><span class="ibtn">${ic('more')}</span></div>
+    ${hdrSection('New today')}${newToday()}${hdrSection('Songs')}${artistRows()}${hdrSection('Albums')}<div class="shelf" style="padding-inline:0;margin:0">${tile('kaizen','KAIZEN','EP · 2026',{w:148})}${tile('rattrapage','Rattrapage','Album · 2026',{w:148})}</div></div></div>`;
+  return {h:shellC(main,{tab:'search',mini:mini('playing','wish'),mainCls:'apmain'}),
+   note:'Artist page: the new release is on the page the day it is out (F12), with a pill that says so in words. MESSI MARADONA lists both credited artists, in catalogue order, and is on each of their pages (F13). The cover is behind a scrim so the name is readable on any artwork.'};
+}
+function searchX(st){
+  if(st==='artist') return artistX();
+  const q=st==='none'?'lmorphine chrono':'pink floyd';
+  const head=`<div class="row gap-md" style="justify-content:space-between;flex-wrap:wrap"><div style="flex:1 1 420px;max-width:620px">${searchField(q,{caret:st==='none',f:true})}</div></div>`;
+  let body;
+  if(st==='none') body=`<div class="grid2n"><div>${noneBlock()}</div><div>${nearest()}</div></div>`;
+  else if(st==='partial') body=`${chips('All')}<div class="grid2"><div>${topResult(true)}</div><div>${hdrSection('Songs')}${songRow('wish',{dl:true})}${songRow('time')}<div class="stillrow">${eqb()}<span class="t-cap muted">Still looking for more…</span></div>${skRows(3)}</div></div>${hdrSection('Albums')}${skShelf(164,5)}`;
+  else body=`${chips('All')}<div class="grid2"><div>${topResult(true)}${hdrSection('Artists')}${artistShelf(96)}</div><div>${hdrSection('Songs','See all')}${PFSONGS.map((s,i)=>songRow(s,{dl:i%2===0})).join('')}</div></div>${hdrSection('Albums','See all')}${albumShelf(164)}`;
+  return {h:shellX(`<div class="xp" style="gap:var(--sp-md)">${head}${body}</div>`,{nav:'search',bar:pbar(st==='none'?'paused':'playing')}),
+   note:{top:'Expanded: the Top result and the Artists on the left, the songs on the right in one list. The field has focus (ring drawn).',
+    partial:'Expanded, partly loaded: the library\'s two songs are there, the catalogue rows are skeletons; the albums row waits.',
+    none:'Expanded, no results: the picture, what was tried, the one button that asks for it, and the closest things on the right.'}[st]};
+}
+function artistX(){
+  const main=`<div class="apage">${artistHero(280,52)}<div class="xp" style="padding-top:18px;gap:var(--sp-md)"><div class="row gap-md"><span class="bigplay is-focus">${ic('play','l')}</span><a class="btn ghost" href="#">Follow</a><span class="grow"></span><span class="ibtn">${ic('more')}</span></div>
+    <div class="grid2"><div>${hdrSection('Songs')}${artistRows()}</div><div>${hdrSection('New today')}${newToday(true)}${hdrSection('Albums')}<div class="shelf" style="padding-inline:0;margin:0">${tile('kaizen','KAIZEN','EP · 2026',{w:150})}${tile('rattrapage','Rattrapage','Album · 2026',{w:150})}</div></div></div></div></div>`;
+  return {h:shellX(main,{nav:'search',bar:pbar('playing')}),note:'Artist at X: the same page with the new release on the right, next to the songs. Focus is drawn on the big play button; both names of MESSI MARADONA are in the song\'s second line.'};
+}
+const KEYS='abcdefghijklmnopqrstuvwxyz'.split('');
+function searchT(st){
+  const q=st==='none'?'lmorphine chrono':'pink floyd';
+  if(st==='artist') return artistT();
+  const kb=`<div class="kbd"><div class="field sq" style="margin-bottom:10px">${ic('search')}<span class="val ov">${esc(q)}<i class="caret"></i></span></div><div class="keys w7">${KEYS.map(k=>`<span class="k">${k}</span>`).join('')}<span class="k">123</span><span class="k">${ic('chev-left','s')}</span></div></div>`;
+  let res;
+  if(st==='none') res=`<div class="res">${noneBlock()}</div>`;
+  else if(st==='partial') res=`<div class="res"><div class="shelf-h" style="margin-top:0"><h2 class="sec">Songs</h2></div>${songRow('wish',{dl:true,f:true})}${songRow('time')}<div class="stillrow">${eqb()}<span class="t-cap muted">Still looking for more…</span></div>${skRows(2)}</div>`;
+  else res=`<div class="res"><div class="shelf-h" style="margin-top:0"><h2 class="sec">Songs</h2></div><div style="position:relative">${songRow('wish',{dl:true,f:true})}${fpk('d','▼')}</div>${songRow('time')}${songRow('numb',{dl:true})}${songRow('shine')}</div>`;
+  const body=`<div class="row gap-xl" style="align-items:flex-start;height:100%">${kb}${res}</div>`;
+  return {h:shellT(body,{nav:'search',bar:tpbar(st==='none'?'paused':'playing'),hint:[['OK','choose'],[prevKey()+' '+nextKey(),'keys / results'],['▼','next row'],['Back','clear, then leave']]}),
+   note:{top:'Ten-foot search: the keys are 56 dp targets; the result list holds the focus because the person has finished typing. Typing on a TV is slow, so a pairing from the phone is the better way (later).',
+    partial:'Partly loaded on a TV: two library songs now, two skeleton rows for the catalogue.',
+    none:'No results on a TV: the same picture, the tried phrases and the one button.'}[st],
+   legend:'<b>D-pad on this frame.</b> Focus starts on the first result. <kbd>▼</kbd> moves down the list, <kbd>'+prevKey()+'</kbd> goes back to the keys, <kbd>OK</kbd> plays, <kbd>Back</kbd> clears the text and then leaves.'};
+}
+function artistT(){
+  const body=`<div class="t-art">${artistHero(104,46)}<div class="row gap-xl" style="margin-top:12px;align-items:flex-start"><div class="grow">${hdrSection('Songs')}${songRow('chrono',{by:`L'morphine · KAIZEN`,f:true})}${songRow('messi',{by:`${artistText(SONG.messi)} · single`})}</div><div style="width:300px;flex:none">${hdrSection('New today')}${newToday(true)}</div></div></div>`;
+  return {h:shellT(body,{nav:'search',bar:tpbar('playing'),hint:[['OK','play'],['▼','next song'],[nextKey(),'New today'],['Back','back to results']]}),
+   note:'Artist on a TV: a short banner behind a scrim, songs as big rows, the new release beside them. Focus on the first song.',
+   legend:'<b>D-pad on this frame.</b> Focus starts on the first song. <kbd>▼</kbd> goes to the next song, <kbd>'+nextKey()+'</kbd> to the "New today" card, <kbd>OK</kbd> plays, <kbd>Back</kbd> returns to the results.'};
+}
+const SEARCH={states:SEARCH_STATES,title:'Search and Artist',id:'S-12 · S-19',draw:{C:searchC,X:searchX,T:searchT}};
+
+
+/* ==================================================================
+   S-01 WELCOME: FIND MY SERVER   and   S-71 YOUR SERVER
+   ================================================================== */
+const WELCOME_STATES=[
+ ['none','Nothing found nearby'],['one','Found one: "Riley\'s Music"'],['two','Found two'],['scan','Scanning a QR code'],['typed','A typed address, under "Other ways to connect"'],['wrong','Another server answers at this address']
+];
+const WALLK=['wish','dsotm','okc','inrb','kida','berlin','kifak','beirut','kaizen','rattrapage','ram','disc','night','sun','rain','messi'];
+function wall(size){
+  const row=(off)=>Array.from({length:32},(_,i)=>cvx(WALLK[(i+off*3)%16],'',`width:${size}px;height:${size}px;border-radius:${Math.round(size*.16)}px`)).join('');
+  return `<div class="wall"><div class="wall-in">${[0,1,2,3,4,5,6,7].map(o=>`<div class="wrow">${row(o)}</div>`).join('')}</div></div>`;
+}
+function brand(big){
+  return `<div class="wbrand">${logo(big?54:40,true)}<div class="col" style="gap:2px"><span class="t-title-l" style="font-size:calc(${big?36:28}px*var(--tsl))">Encore</span><span class="t-body" style="color:var(--on-bg);font-weight:500">Your music, at home.</span></div></div>`;
+}
+function qrSvg(px,seed){
+  const n=21; let s=seed||7; const rnd=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};
+  const fin=(x,y)=>`<rect x="${x}" y="${y}" width="7" height="7" rx="1.4" fill="currentColor"/><rect x="${x+1}" y="${y+1}" width="5" height="5" rx=".8" fill="var(--qrbg,#1A1411)"/><rect x="${x+2}" y="${y+2}" width="3" height="3" rx=".5" fill="currentColor"/>`;
+  let m='';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const inF=(x<8&&y<8)||(x>n-9&&y<8)||(x<8&&y>n-9);
+    if(inF) continue;
+    if(rnd()>.52) m+=`<rect x="${x}" y="${y}" width="1" height="1" fill="currentColor"/>`;
+  }
+  return `<svg width="${px}" height="${px}" viewBox="0 0 21 21" aria-hidden="true" shape-rendering="crispEdges">${fin(0,0)}${fin(14,0)}${fin(0,14)}${m}</svg>`;
+}
+const moreRow=(open)=>`<a class="more" href="#">${ic('plus')}<span class="grow t-label">Other ways to connect</span>${ic(open?'chev-up':'chev-down','muted')}</a>`;
+function srvOption(srv,o={}){
+  return `<div class="srvopt ${o.f?'is-focus':''}" style="--server:${srv.col};--accent:${srv.col};--on-accent:${srv.on||'#2B1405'}"><div class="row gap-md">${badge(srv.col,56)}<div class="grow col" style="min-width:0"><b class="t-title ov" style="font-family:var(--font-display);font-size:calc(19px*var(--tsl))">${srv.n}</b><span class="t-cap muted">${srv.sub}</span></div></div><a class="btn primary block ${o.f?'is-focus':''}" href="#" data-go="home/new">${T('Connect')}</a></div>`;
+}
+const S_ONE={n:"Riley's Music",col:'#FFA55E',sub:'On this Wi-Fi · 4,213 songs'};
+const S_TWO={n:"Nina's Tunes",col:'#4FC1B0',on:'#04201B',sub:'On this Wi-Fi · 1,870 songs'};
+function altRows(cls){
+  return `<div class="col gap-sm">${[['qr','Scan a QR code'],['key','Enter a pairing code'],['link','Open an invitation link']].map(([i,t])=>`<a class="act" href="#"><span class="actic">${ic(i)}</span><span class="grow t-label">${t}</span>${icf('chev-right','muted')}</a>`).join('')}</div>`;
+}
+function wbody(st,cls){
+  const prim=cls==='T'?['key','Use a code from my phone']:['qr','Scan a QR code'];
+  const f=cls!=='C';   /* focus drawn on X and T */
+  if(st==='none') return `<div class="wb"><div class="wbill">${ill('radar')}</div><h1 class="t-title-l">No server found near you.</h1>
+    <p class="t-body muted" style="margin:0">${cls==='T'?'Is this TV on the same Wi-Fi as your server? You can also use a code from your phone.':'Is this '+(cls==='X'?'browser':'phone')+' on the same Wi-Fi as your server? You can also scan a QR code or open an invitation link.'}</p>
+    <div class="col gap-sm"><a class="btn primary block ${f?'is-focus':''}" href="#">${ic(prim[0])}${prim[1]}${cls==='T'?fpk('r','▼'):''}</a><a class="btn ghost block" href="#">${ic('refresh')}${T('Look again')}</a></div>${moreRow(false)}</div>`;
+  if(st==='one') return `<div class="wb"><h1 class="t-title-l">${cls==='T'?'This TV':cls==='X'?'This browser':'This phone'} found a server nearby.</h1>${srvOption(S_ONE,{f})}<a class="btn text" href="#" style="align-self:flex-start">Not this one</a>${moreRow(false)}</div>`;
+  if(st==='two') return `<div class="wb"><h1 class="t-title-l">${cls==='T'?'This TV':cls==='X'?'This browser':'This phone'} found two servers nearby.</h1><p class="t-body muted" style="margin:0">Which one is yours?</p><div class="${cls==='C'?'col':'row'} gap-md" style="${cls==='C'?'':'align-items:stretch'}"><div class="grow">${srvOption(S_ONE,{f})}</div><div class="grow">${srvOption(S_TWO)}</div></div>${moreRow(false)}</div>`;
+  if(st==='scan'){
+    if(cls==='T') return `<div class="wb"><h1 class="t-title-l">Use your phone to connect this TV.</h1><p class="t-body muted" style="margin:0">A TV has no camera. On your phone, open Encore, choose Add a TV and scan this code, or type the numbers.</p>
+      <div class="row gap-xl" style="align-items:center"><div class="qrbox">${qrSvg(150,11)}</div><div class="col gap-sm"><span class="t-cap muted">Or type this code on your phone</span><span class="codeb">472 918</span></div></div><a class="btn ghost block is-focus" href="#">${T('Cancel')}</a></div>`;
+    return `<div class="wb"><div class="vf"><div class="vfin"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><span class="qrdim">${qrSvg(110,5)}</span><b class="scanline"></b></div><span class="pill vfp">${ic('camera','s')}Camera is on</span></div>
+      <h1 class="t-title-l">Scan the QR code.</h1><p class="t-body muted" style="margin:0">Point the camera at the code on your server's screen, or in the invitation you were sent.</p>
+      <div class="col gap-sm"><a class="btn ghost block ${f?'is-focus':''}" href="#">${T('Cancel')}</a><a class="btn text block" href="#">${ic('key')}Enter a pairing code instead</a></div></div>`;
+  }
+  if(st==='typed'){
+    const kb=cls==='T'?`<div class="keys w12">${'abcdefghijklmnopqrstuvwxyz.-'.split('').map(k=>`<span class="k">${k}</span>`).join('')}</div>`:'';
+    return `<div class="wb">${moreRow(true)}<div class="col" style="gap:6px"><label class="t-cap muted">Server address</label><div class="field sq ${f?'is-focus':''}">${ic('keyboard')}<span class="val ov">rileys-music.local<i class="caret"></i></span></div><span class="t-cap muted">Ask the person who runs the server. It looks like a web address.</span></div>
+     ${kb}<a class="btn primary block" href="#">${T('Connect')}</a>${cls==='T'?'':altRows(cls)}</div>`;
+  }
+  /* wrong */
+  return `<div class="wb"><div class="alertp"><div class="nill" style="width:${cls==='C'?96:120}px">${ill('stranger')}</div><div class="col gap-sm"><h1 class="t-title-l" style="margin:0">Another server answers at this address, not yours.</h1><p class="t-body" style="margin:0">Your password was not sent to it.</p></div></div>
+    <div class="col gap-sm"><a class="btn primary block ${f?'is-focus':''}" href="#">${ic('refresh')}${T('Look again')}</a><a class="btn ghost block" href="#">Type a different address</a></div>${moreRow(false)}</div>`;
+}
+const WNOTE={
+ none:'Nothing found nearby: a calm picture (a house with nothing signalling), one sentence of cause, and two ways forward. "Other ways to connect" is collapsed but one row away.',
+ one:'Found one: the server shows up as a place, with its own name and colour, before anything is typed. The button says Connect, not "Add server".',
+ two:'Found two: each server keeps its own colour and name, so a person knows which door they are opening (apricot and teal); each card has its own Connect button.',
+ scan:'Scanning: the camera sees the QR from the server or from the invitation. The camera permission sentence comes before the system prompt (not drawn). A TV has no camera, so there the TV shows the code.',
+ typed:'A typed address lives under "Other ways to connect", not first (docs/15 A1). The words are "server address" and "web address", never IP, port or token.',
+ wrong:'<b>Another server answers at this address</b> (CN-11): not the name or the colour of the saved server, a grey building with a swap badge, red wording, and the fact that matters (nothing was sent). This is different from "no server found": there is something there, and it is not ours.'
+};
+function welcomeC(st){
+  const typed=st==='typed';
+  const h=`<div class="shell wsh">${sysbar()}<div class="wtop ${typed?'short':''}">${wall(76)}${typed?'':brand(false)}</div><div class="sheet">${wbody(st,'C')}</div><div class="gesture"><i></i></div></div>`;
+  return {h,note:WNOTE[st]};
+}
+function welcomeX(st){
+  const h=`<div class="shell wx"><div class="wleft">${wall(110)}${brand(true)}</div><div class="wright"><div class="wcard">${wbody(st,'X')}</div></div></div>`;
+  return {h,note:WNOTE[st]+' At X the picture takes half the page and the card is 440 px wide; focus is drawn on the first button.'};
+}
+function welcomeT(st){
+  const h=`<div class="shell wx wt"><div class="wleft">${wall(130)}${brand(true)}</div><div class="wright"><div class="wcard">${wbody(st,'T')}</div></div>${hint([['OK','choose'],['▲ ▼','move between buttons'],['Back','leave']])}</div>`;
+  const where={none:'the first button',one:'Connect',two:'the first server\'s Connect',scan:'Cancel',typed:'the address field',wrong:'Look again'}[st];
+  return {h,note:WNOTE[st]+' On a TV nothing is typed unless it has to be: the first thing offered is a code from the phone.',
+   legend:'<b>D-pad on this frame.</b> Focus starts on '+where+'. <kbd>▲</kbd> <kbd>▼</kbd> move between the buttons in reading order, <kbd>'+nextKey()+'</kbd> moves to the next server card when there are two, <kbd>OK</kbd> acts, <kbd>Back</kbd> leaves the app only from this first page.'};
+}
+const WELCOME={states:WELCOME_STATES,title:'Welcome: find my server',id:'S-01',draw:{C:welcomeC,X:welcomeX,T:welcomeT}};
+
+/* ---------------- S-71 Your server ---------------- */
+const YS_STATES=[['ok','Working: Home, Away and a typed address'],['down','One address is not answering']];
+function addrRows(st,cls){
+  const rows=[
+   ['home','Home','rileys-music.local','From your server','ok'],
+   ['globe','Away','rileys-music.ts.net','From your server',st==='down'?'down':'ok'],
+   ['link','Typed address','music.riley.<wbr>example','You typed this','ok']
+  ];
+  const pill=(s,c)=>s==='ok'?`<span class="pill ok ${c}">${ic('check','s')}Answering</span>`:`<span class="pill warn ${c}">${ic('warning','s')}Not answering</span>`;
+  return `<div class="addrs card">${rows.map(([i,t,a,tag,s])=>`<div class="addr ${s==='down'?'bad':''}"><span class="actic">${ic(i)}</span><div class="grow col" style="gap:1px;min-width:0"><b class="t-label">${t}</b><span class="t-cap muted aaddr">${a}</span><span class="t-cap faint">${tag}</span>${pill(s,'pc')}</div>${pill(s,'pr')}</div>${s==='down'?`<div class="addrnote t-cap">${ic('warning','s')}<span>Away is not answering. Encore still works at home, but may not work when you leave. Check that the away address is switched on, then try again.</span></div>`:''}`).join('')}</div>`;
+}
+function worksList(st){
+  const w=[['Your music',true],['Songs from the catalogue',true],['Downloads',true],['Away from home',st!=='down']];
+  return `<div class="addrs card">${w.map(([t,ok])=>`<div class="addr" style="min-height:52px"><span class="grow t-label">${t}</span>${ok?`<span class="pill ok">${ic('check','s')}Works</span>`:`<span class="pill warn">${ic('warning','s')}Not right now</span>`}</div>`).join('')}</div>`;
+}
+function idCard(st,big){
+  return `<div class="idcard">${badge(SERVER.col,big?84:72)}<div class="grow col" style="gap:4px;min-width:0"><h1 class="t-display" style="font-size:calc(${big?32:26}px*var(--tsl));overflow-wrap:break-word">${T("Riley's Music")}</h1><div class="row gap-sm wrapx">${st==='down'?`<span class="pill warn">${ic('warning','s')}Working at home only</span>`:`<span class="pill ok">${ic('check','s')}${T('Working')}</span>`}</div><span class="t-cap muted">Signed in as Riley · 4,213 songs</span></div><div class="idill">${ill('house','width:100%')}</div></div>`;
+}
+function serverC(st){
+  const main=`<div class="pg"><div class="row gap-sm"><a class="ibtn" href="#" data-go="home/full" aria-label="Back">${icf('chev-left')}</a><h2 class="t-title">${T('Your server')}</h2></div>${idCard(st)}
+    <h3 class="sec" style="margin:4px 0 -4px">How this phone reaches it</h3>${addrRows(st,'C')}<div class="row gap-sm wrapx"><a class="btn primary" href="#">${ic('refresh')}Check addresses</a><a class="btn ghost" href="#">${ic('plus')}Add an address</a></div>
+    <h3 class="sec" style="margin:8px 0 -4px">What works from here</h3>${worksList(st)}</div>`;
+  return {h:shellC(main,{tabs:false,mini:mini(st==='down'?'playing':'playing','wish')}),
+   note:{ok:'Your server: the place, its name and its colour, and one word. The three ways the phone can reach it, each with a plain name (Home, Away, the one you typed), where it came from, and whether it answers.',
+    down:'One of them does not answer: the row and a sentence say which one and what it means for the person ("works at home, may not work away"). The top says "Working at home only", with the warning icon; nothing is red because nothing is broken yet.'}[st]};
+}
+function serverX(st){
+  const main=`<div class="xp"><div class="row gap-sm"><h2 class="t-title-l" style="margin:0">${T('Your server')}</h2></div><div class="grid2"><div class="col gap-lg">${idCard(st,true)}<h3 class="sec">What works from here</h3>${worksList(st)}</div><div class="col gap-md"><h3 class="sec">How this phone reaches it</h3>${addrRows(st,'X')}<div class="row gap-sm wrapx"><a class="btn primary is-focus" href="#">${ic('refresh')}Check addresses</a><a class="btn ghost" href="#">${ic('plus')}Add an address</a></div></div></div></div>`;
+  return {h:shellX(main,{nav:'home',srv:st==='down'?'full':'full',bar:pbar('playing')}),note:'At X the identity and what works sit on the left, the addresses on the right; "Check addresses" holds the drawn focus.'};
+}
+function serverT(st){
+  const body=`<div class="row gap-xl" style="align-items:flex-start"><div class="col gap-md" style="width:310px;flex:none">${idCard(st,true).replace('class="idcard"','class="idcard stack"')}<a class="btn primary block is-focus" href="#">${ic('refresh')}Check addresses${fpk('r',nextKey())}</a></div><div class="grow col gap-md">${addrRows(st,'T')}</div></div>`;
+  return {h:shellT(body,{nav:'home',bar:tpbar('playing'),hint:[['OK','check addresses'],[nextKey(),'to the list'],['Back','back']]}),note:'Drawn for the comparison: the inventory lists S-71 for C and X only. On a TV the server card in Settings would show the same words.',
+   legend:'<b>D-pad on this frame.</b> Focus starts on "Check addresses". <kbd>'+nextKey()+'</kbd> goes to the address list, <kbd>OK</kbd> checks, <kbd>Back</kbd> returns to Settings.'};
+}
+const YOURSERVER={states:YS_STATES,title:'Your server',id:'S-71',draw:{C:serverC,X:serverX,T:serverT}};
+
+
+/* ==================================================================
+   TOKENS PAGE: read from the live custom properties, contrast computed here
+   ================================================================== */
+function probeTheme(th){
+  const el=document.createElement('div'); el.setAttribute('data-theme',th); el.style.cssText='position:absolute;visibility:hidden;width:0;height:0';
+  document.body.appendChild(el); const cs=getComputedStyle(el);
+  const g=n=>cs.getPropertyValue(n).trim();
+  const out={}; ['--bg','--surface','--surface-high','--outline','--outline-strong','--on-bg','--on-bg-muted','--on-bg-faint','--accent','--on-accent','--server','--danger','--warning','--ok','--focus','--focus-halo','--scrim','--ill-a','--ill-b'].forEach(n=>out[n]=g(n));
+  document.body.removeChild(el); return out;
+}
+const hex2=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
+const lum=([r,g,b])=>{const f=c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);};
+const ratio=(a,b)=>{const la=lum(a),lb=lum(b);const hi=Math.max(la,lb),lo=Math.min(la,lb);return (hi+0.05)/(lo+0.05);};
+const mixc=(a,b,pa)=>a.map((v,i)=>Math.round(v*pa+b[i]*(1-pa)));
+const rgba=s=>{const m=s.match(/rgba?\(([^)]+)\)/);if(!m)return null;const p=m[1].split(',').map(x=>parseFloat(x));return {c:p.slice(0,3),a:p[3]===undefined?1:p[3]};};
+const hx=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+
+function tokensPage(){
+  const D=probeTheme('dark'),L=probeTheme('light');
+  const rows=[
+   ['--bg','bg','page background (warm espresso / warm paper)','same name'],
+   ['--surface','surface','cards, rail, tab bar','same name'],
+   ['--surface-high','surfaceHigh','mini player, chips, fields','same name'],
+   ['--outline','outline','dividers only (not a control boundary)','same name'],
+   ['--outline-strong','NEW','border of a field or ghost button, 3:1 or better','added'],
+   ['--on-bg','onBg','text','warm white, not #FFF'],
+   ['--on-bg-muted','onBgMuted','secondary text','solid, not 70 % alpha, so the ratio is exact'],
+   ['--on-bg-faint','onBgFaint','captions, hints','solid, kept above 4.5:1'],
+   ['--accent','accent','text, icons, primary buttons (ensureContrast of the server colour)','apricot #FFA55E (was mint #19E68C)'],
+   ['--on-accent','onAccent','text on accent','same name'],
+   ['--server','NEW','the colour the owner picks at setup: badge, hero card tint, illustrations','added'],
+   ['--danger','danger','something is wrong now (cannot play, another server)','warm red'],
+   ['--warning','warning','waiting for the server, not answering','amber'],
+   ['--ok','NEW','"Working"','added'],
+   ['--focus','NEW','focus ring on X and T','added']
+  ];
+  const sw=(v)=>`<span class="swc" style="background:${v}"></span><code>${v}</code>`;
+  const colourTable=`<table class="tt"><thead><tr><th>Token</th><th>Flutter</th><th>Dark</th><th>Light</th><th>Used for</th></tr></thead><tbody>${rows.map(([n,f,u,c])=>`<tr><td><code>${n}</code></td><td>${f}</td><td>${sw(D[n])}</td><td>${sw(L[n])}</td><td>${u}</td></tr>`).join('')}
+   <tr><td><code>--focus-halo</code></td><td>NEW</td><td colspan="2"><code>${D['--focus-halo']}</code> / <code>${L['--focus-halo']}</code></td><td>soft glow outside the ring</td></tr>
+   <tr><td><code>--scrim</code></td><td>NEW</td><td colspan="2"><code>${D['--scrim']}</code> / <code>${L['--scrim']}</code></td><td>under any text that sits on artwork</td></tr>
+   <tr><td><code>--ill-a</code>, <code>--ill-b</code></td><td>NEW</td><td>${sw(D['--ill-a'])}<br>${sw(D['--ill-b'])}</td><td>${sw(L['--ill-a'])}<br>${sw(L['--ill-b'])}</td><td>the two tones of every illustration (the third is <code>--server</code> or a state colour)</td></tr></tbody></table>`;
+
+  /* contrast pairs, computed */
+  const pairs=[
+   ['on-bg','--on-bg','--bg',4.5],['on-bg','--on-bg','--surface',4.5],['on-bg','--on-bg','--surface-high',4.5],
+   ['on-bg-muted','--on-bg-muted','--bg',4.5],['on-bg-muted','--on-bg-muted','--surface',4.5],['on-bg-muted','--on-bg-muted','--surface-high',4.5],
+   ['on-bg-faint','--on-bg-faint','--bg',4.5],['on-bg-faint','--on-bg-faint','--surface',4.5],['on-bg-faint','--on-bg-faint','--surface-high',4.5],
+   ['accent (text, icon)','--accent','--bg',4.5],['accent (text, icon)','--accent','--surface',4.5],['accent (text, icon)','--accent','--surface-high',4.5],
+   ['on-accent on accent (buttons)','--on-accent','--accent',4.5],
+   ['danger','--danger','--bg',4.5],['danger','--danger','--surface',4.5],['warning','--warning','--bg',4.5],['warning','--warning','--surface',4.5],['danger','--danger','--surface-high',4.5],['warning','--warning','--surface-high',4.5],['ok','--ok','--surface-high',4.5],['ok','--ok','--bg',4.5],['ok','--ok','--surface',4.5],
+   ['outline-strong (field border)','--outline-strong','--bg',3],['outline-strong (field border)','--outline-strong','--surface',3],['outline-strong (on chip)','--outline-strong','--surface-high',3],
+   ['focus ring','--focus','--bg',3],['focus ring','--focus','--surface',3]
+  ];
+  const calc=(P,f,b)=>ratio(hex2(P[f]),hex2(P[b]));
+  const extra=(P,th)=>{
+    const list=[];
+    const wBg=mixc(hex2(P['--warning']),hex2(P['--surface']),.20);
+    list.push(['on-bg on the amber strip',ratio(hex2(P['--on-bg']),wBg),4.5]);
+    const wBtn=th==='dark'?'#2A1A00':'#FFFFFF';
+    list.push(['button text on warning (strip button)',ratio(hex2(wBtn),hex2(P['--warning'])),4.5]);
+    const dBg=mixc(hex2(P['--danger']),hex2(P['--surface-high']),.12);
+    list.push(['on-bg on the red strip',ratio(hex2(P['--on-bg']),dBg),4.5]);
+    list.push(['ok on the "Working" pill (12 % tint on surfaceHigh)',ratio(hex2(P['--ok']),mixc(hex2(P['--ok']),hex2(P['--surface-high']),.12)),4.5]);
+    list.push(['warning on its pill',ratio(hex2(P['--warning']),mixc(hex2(P['--warning']),hex2(P['--surface-high']),.12)),4.5]);
+    list.push(['danger on its pill',ratio(hex2(P['--danger']),mixc(hex2(P['--danger']),hex2(P['--surface-high']),.12)),4.5]);
+    const sc=rgba(P['--scrim']);
+    [['white','#FFFFFF'],['black','#000000']].forEach(([n,h])=>{const under=mixc(sc.c,hex2(h),sc.a);list.push([`on-bg on artwork with scrim (worst case: ${n} art)`,ratio(hex2(P['--on-bg']),under),4.5]);});
+    return list;
+  };
+  const cell=(r,need)=>`<td class="${r>=need?'pass':'fail'}">${r.toFixed(2)}:1 <b>${r>=need?'✓ pass':'✗ below '+need}</b></td>`;
+  const pr=pairs.map(([n,f,b,need])=>`<tr><td>${n} on <code>${b}</code></td><td>${need===3?'UI 3:1':'text 4.5:1'}</td>${cell(calc(D,f,b),need)}${cell(calc(L,f,b),need)}</tr>`).join('');
+  const ed=extra(D,'dark'),el=extra(L,'light');
+  const pr2=ed.map((e,i)=>`<tr><td>${e[0]}</td><td>text 4.5:1</td>${cell(e[1],e[2])}${cell(el[i][1],el[i][2])}</tr>`).join('');
+  const contrast=`<table class="tt"><thead><tr><th>Pair</th><th>Needs</th><th>Dark</th><th>Light</th></tr></thead><tbody>${pr}${pr2}</tbody></table>`;
+
+  const radii=[['--r-art','10 px (was 4)','covers in rows'],['--r-card','20 px (was 8)','cards, tiles, covers on shelves'],['--r-hero','28 px (was 12)','server card, hero, big covers'],['--r-sheet','28 px (was 20)','bottom sheets'],['--r-chip','14 px (NEW)','shortcut tiles'],['--r-pill','999 px','buttons, chips, fields']];
+  const radiiHtml=`<div class="swrow">${radii.map(([n,v,u])=>`<div class="swbox"><div style="width:84px;height:62px;background:var(--surface-high);border:1.5px solid var(--outline-strong);border-radius:var(${n})"></div><code>${n}</code><span>${v}</span><span class="muted">${u}</span></div>`).join('')}</div>`;
+  const sp=[['--sp-xxs',2],['--sp-xs',4],['--sp-sm',8],['--sp-md',12],['--sp-lg',16],['--sp-xl',24],['--sp-xxl',32],['--sp-3xl',48]];
+  const spHtml=`<div class="col gap-sm">${sp.map(([n,v])=>`<div class="row gap-md" style="font-size:13px"><code style="width:90px">${n}</code><span style="width:44px">${v} px</span><span style="display:block;height:12px;width:${v*3}px;border-radius:6px;background:var(--accent)"></span></div>`).join('')}<div class="muted" style="font-size:13px">Page gutter: C 16 px, X 28 px, T 48 dp (the TV safe area is 5 % of 960 × 540 dp).</div></div>`;
+  const type=`<table class="tt"><thead><tr><th>Role</th><th>Face</th><th>C (dp)</th><th>X (dp)</th><th>T (dp, drawn at 2×)</th></tr></thead><tbody>
+   <tr><td>display</td><td>Fraunces 600</td><td>28</td><td>34</td><td>44</td></tr>
+   <tr><td>title-l</td><td>Fraunces 600</td><td>22</td><td>24</td><td>30</td></tr>
+   <tr><td>title / section</td><td>Figtree 700</td><td>17</td><td>17</td><td>22</td></tr>
+   <tr><td>body</td><td>Figtree 400</td><td>15</td><td>14</td><td>18</td></tr>
+   <tr><td>label (buttons, rows)</td><td>Figtree 600</td><td>14</td><td>14</td><td>18</td></tr>
+   <tr><td>caption</td><td>Figtree 500</td><td>12</td><td>12</td><td>15</td></tr>
+   <tr><td>tab label</td><td>Figtree 600</td><td>11.5</td><td>n/a</td><td>n/a</td></tr></tbody></table>
+   <p class="muted" style="font-size:13px;max-width:760px">Body, label and caption sizes are <code>size × --ts</code> (the switch sets 1 or 2); display and title sizes use <code>--tsl</code>, which is 1 and 1.5 (large text grows less, as Android 14 does), and so do the tab and tool labels. At 200 % a row grows, a name wraps, a cover shrinks; nothing is cut. Figtree stays (SIL Open Font Licence, as today); Fraunces (SIL OFL) is added for the greeting, the server's name and the headings, and Noto Sans Arabic (SIL OFL) is the Arabic fallback. Both come from the Google Fonts stylesheet.</p>`;
+  const motion=`<table class="tt"><thead><tr><th>What moves</th><th>Token</th><th>Time</th><th>Under "Remove animations"</th></tr></thead><tbody>
+   <tr><td>press, toggle, tab change</td><td><code>--m-quick</code></td><td>120 ms</td><td>no change of size, colour only</td></tr>
+   <tr><td>sheet, card expand, focus lift on T (4.5 % scale)</td><td><code>--m-standard</code></td><td>220 ms</td><td>cross-fade</td></tr>
+   <tr><td>cover grows into its page (shared element)</td><td><code>--m-emph</code></td><td>320 ms</td><td>cross-fade</td></tr>
+   <tr><td>player tint changes with the song</td><td><code>--m-colour</code></td><td>450 ms</td><td>instant</td></tr>
+   <tr><td>cover wall on Welcome, one screen width</td><td><code>--m-drift</code></td><td>48 s, transform only</td><td>still</td></tr>
+   <tr><td>sound bars on the logo (Welcome) and on the playing row</td><td>n/a</td><td>0.9 s loop, 3 bars, transform only</td><td>still bars</td></tr>
+   <tr><td>slow halo around a song that waits for the server</td><td><code>--m-breathe</code></td><td>2.6 s loop on one button</td><td>still ring (the colour stays)</td></tr>
+   <tr><td>skeleton pulse</td><td>n/a</td><td>1.8 s opacity only</td><td>still</td></tr></tbody></table>
+   <p class="muted" style="font-size:13px;max-width:760px">Easing is <code>cubic-bezier(.215,.61,.355,1)</code> (easeOutCubic). Nothing blurs per frame; the blurred cover wall is one static layer that only translates. Animations run only while visible and stop in battery saver.</p>`;
+  const rules=`<ul class="rules"><li><b>Touch targets:</b> 48 px or more on C (every button, tab, chip and each artist name), 40 px on X, 56 dp on T.</li>
+   <li><b>Focus:</b> a ${'3 px'} ring (4 dp on T) in <code>--focus</code>, 3 px off the control so the gap shows the page behind it, plus a soft halo; every control gets it with Tab, and frames show it drawn (<code>.is-focus</code>).</li>
+   <li><b>Right to left:</b> logical properties only (<code>margin-inline-start</code>, <code>inset-inline-end</code>); back chevrons mirror; the transport (previous, play, next) keeps its left-to-right order and so do times and progress, as media controls do.</li>
+   <li><b>200 % text:</b> nothing has a fixed height except the bars; rows grow, names wrap, the cover on Now playing shrinks first.</li>
+   <li><b>Never colour alone:</b> every state has an icon <i>and</i> a sentence (amber strip + house with a broken line + words; red strip + swap arrows + words).</li></ul>`;
+  return `<div class="page"><h1 class="t-display">Tokens</h1><p class="muted" style="max-width:760px">Every value below is read from the live CSS custom properties of this file, and every ratio is computed here from those values, so this page cannot drift from the frames. Names follow <code>tokens.dart</code>; additions are marked NEW.</p>
+   <h2>Colour</h2>${colourTable}<h2>Contrast pairs</h2>${contrast}
+   <h2>Radii</h2>${radiiHtml}<h2>Spacing</h2>${spHtml}<h2>Type</h2>${type}<h2>Motion</h2>${motion}<h2>Rules that go with the tokens</h2>${rules}</div>`;
+}
+
+function whyPage(){
+  return `<div class="page why"><h1 class="t-display">Why: Warm home</h1>
+   <p><b>The idea</b><span>The server is a place: its name and colour are on every screen, and first run suits someone who has never run one.</span></p>
+   <p><b>Good at</b><span>Honest states: "nothing found", "waiting", "another server answers" and "cannot play" each look and read differently.</span></p>
+   <p><b>Also good at</b><span>Big rounded targets (48 px, 56 dp on a TV) and plain words survive 200 % text, right-to-left and a remote.</span></p>
+   <p><b>Bad at</b><span>Music-first drama: covers are calmer than in A, artwork colour is only a tint, and the soft serif feels homely, not "pro audio".</span></p>
+   <p><b>Flutter, cheap</b><span>New values in <code>EncoreColors</code> and <code>Radii</code>; restyled <code>NavigationBar</code>, <code>NavigationRail</code>, <code>Card</code>, <code>Chip</code>; one bundled font; no shaders.</span></p>
+   <p><b>Flutter, new widgets</b><span><code>ServerBadge</code>, <code>ServerCard</code>, <code>ConnectionStrip</code>, <code>MiniPlayer</code>, eight <code>flutter_svg</code> illustrations, <code>FocusTraversalGroup</code> for the TV.</span></p>
+   <p><b>Flutter, medium</b><span>A per-server accent (<code>ensureContrast</code> exists) and a light-theme accent that differs from the dark one.</span></p>
+   <p><b>Others do better</b><span>A makes the music the show (artwork-coloured headers and player); B reads better from the sofa and at 200 % with less decoration.</span></p></div>`;
+}
+
+/* ==================================================================
+   ROUTER and viewer bar
+   ================================================================== */
+const REG={home:HOME,now:NOW,search:SEARCH,welcome:WELCOME,server:YOURSERVER};
+const ORDER=['home','now','search','welcome','server'];
+function opt(v,l,sel){return `<option value="${v}"${sel?' selected':''}>${esc(l)}</option>`;}
+function segHtml(key,opts){return `<div class="seg" data-k="${key}" role="group">${opts.map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${Q[key]===v}">${l}</button>`).join('')}</div>`;}
+function buildBar(){
+  const vb=document.getElementById('vb');
+  vb.innerHTML=`<div class="brand"><i><b style="height:7px"></b><b style="height:14px"></b><b style="height:10px"></b><b style="height:16px"></b></i><span>Encore · C · Warm home</span></div>
+   <div class="pages only-p" role="group" aria-label="Page">${[['screens','Screens'],['tokens','Tokens'],['why','Why']].map(([v,l])=>`<button type="button" data-p="${v}" aria-pressed="${Q.p===v}">${l}</button>`).join('')}</div>
+   <span class="grp only-screens"><label for="selS">Screen</label><select id="selS">${ORDER.map(k=>opt(k,REG[k].id+' '+REG[k].title,Q.s===k)).join('')}</select></span>
+   <span class="grp only-screens"><label for="selSt">State</label><select id="selSt"></select></span>
+   <span class="grp only-screens"><span class="lab">Class</span>${segHtml('c',[['C','C'],['X','X'],['T','T']])}</span>
+   <span class="grp"><span class="lab">Theme</span>${segHtml('th',[['dark','Dark'],['light','Light']])}</span>
+   <span class="grp"><span class="lab">Text</span>${segHtml('tx',[['1','100 %'],['2','200 %']])}</span>
+   <span class="grp"><span class="lab">Writing</span>${segHtml('d',[['ltr','LTR'],['rtl','RTL']])}</span>
+   <span class="grp only-screens"><span class="lab">Notes</span>${segHtml('n',[['0','Off'],['1','On']])}</span>`;
+  vb.addEventListener('change',e=>{
+    if(e.target.id==='selS'){Q.s=e.target.value;Q.st=REG[Q.s].states[0][0];render();}
+    if(e.target.id==='selSt'){Q.st=e.target.value;render();}
+  });
+  vb.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.p){Q.p=b.dataset.p;render();return;}
+    const seg=b.closest('.seg'); if(seg){Q[seg.dataset.k]=b.dataset.v;render();}
+  });
+}
+function syncBar(){
+  const vb=document.getElementById('vb'); if(!vb.firstChild) return;
+  vb.dataset.p=Q.p;
+  vb.querySelectorAll('[data-p]').forEach(b=>{if(b.closest('.pages'))b.setAttribute('aria-pressed',String(b.dataset.p===Q.p));});
+  vb.querySelectorAll('.seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(Q[s.dataset.k]===b.dataset.v))));
+  const sc=REG[Q.s]; const selS=document.getElementById('selS'); selS.value=Q.s;
+  const st=document.getElementById('selSt');
+  st.innerHTML=sc.states.map(([v,l])=>opt(v,l,Q.st===v)).join('')+opt('all','All states of this screen',Q.st==='all');
+  st.value=Q.st;
+  document.querySelectorAll('.only-screens').forEach(e=>e.style.display=Q.p==='screens'?'':'none');
+}
+function renderScreens(){
+  const sc=REG[Q.s]; const keys=sc.states.map(s=>s[0]);
+  if(Q.st!=='all' && !keys.includes(Q.st)) Q.st=keys[0];
+  const list=Q.st==='all'?keys:[Q.st];
+  const fr=list.map(st=>{
+    const label=sc.states.find(x=>x[0]===st)[1];
+    const fn=sc.draw[Q.c];
+    if(!fn) return `<div class="fitem"><div class="fnote"><b>${sc.title} at ${Q.c}:</b> ${sc.missing&&sc.missing[Q.c]||'not drawn'}</div></div>`;
+    const r=fn(st);
+    return frameBox(Q.c,r.h,{title:`${sc.id} ${sc.title} · ${label}`,note:r.note,legend:r.legend});
+  }).join('');
+  return `<div class="fgroup">${fr}</div>`;
+}
+/* self-check: every frame of every screen, state and class is built and its tags are balanced (open #p=check) */
+function balance(html){
+  const VOID=new Set(['br','img','input','hr','meta','link','wbr']);
+  const st=[]; const re=/<(\/?)([a-zA-Z][a-zA-Z0-9]*)(\s[^>]*?)?(\/?)>/g; let m;
+  while((m=re.exec(html))){
+    const close=m[1],t=m[2].toLowerCase(),self=m[4];
+    if(self||VOID.has(t)) continue;
+    if(close){ if(!st.length||st[st.length-1]!==t) return 'unexpected </'+t+'> (open: '+st.slice(-3).join('>')+')'; st.pop(); }
+    else st.push(t);
+  }
+  return st.length?'unclosed <'+st.join('>')+'>':'';
+}
+function selfCheck(){
+  let n=0; const bad=[];
+  for(const k of ORDER){ const sc=REG[k];
+    for(const c of ['C','X','T']){ const fn=sc.draw[c]; if(!fn) continue;
+      for(const [st] of sc.states){
+        try{ const r=fn(st); n++; const b=balance(r.h); if(b) bad.push(k+'/'+st+'/'+c+': '+b); if(/undefined|NaN|\[object/.test(r.h)) bad.push(k+'/'+st+'/'+c+': undefined text'); }
+        catch(e){ bad.push(k+'/'+st+'/'+c+': '+e.message); }
+      } } }
+  return '<pre id="balance" style="color:var(--on-bg);padding:20px">CHECK '+(bad.length?'FAILED':'OK')+': '+n+' frames built\n'+bad.join('\n')+'</pre>';
+}
+function render(){
+  const de=document.documentElement;
+  de.dataset.theme=Q.th; de.dataset.ts=Q.tx; de.dataset.notes=Q.n;
+  document.body.classList.toggle('nobar',Q.bar==='0');
+  const stage=document.getElementById('stage'); stage.setAttribute('dir',Q.d);
+  syncBar();
+  stage.innerHTML=Q.p==='check'?selfCheck():Q.p==='tokens'?tokensPage():Q.p==='why'?whyPage():renderScreens();
+  stage.classList.toggle('pagemode',Q.p!=='screens');
+  fit(); writeURL();
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href="#"]'); if(a) e.preventDefault();
+  const g=e.target.closest('[data-go]');
+  if(g){const [s,st]=g.dataset.go.split('/'); if(REG[s]){Q.s=s;Q.st=st;Q.p='screens';render();window.scrollTo(0,0);}}
+});
+window.addEventListener('hashchange',()=>{readURL();render();});
+function boot(){readURL();buildBar();render();}
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(fit);
+boot();
+})();
+</script>
+</body>
+</html>
