@@ -69,7 +69,7 @@ class EncoreColors extends ThemeExtension<EncoreColors> {
     );
   }
 
-  factory EncoreColors.light({Color accent = const Color(0xFF0BA862)}) {
+  factory EncoreColors.light({Color accent = const Color(0xFF07703F)}) {
     return EncoreColors(
       bg: const Color(0xFFFFFFFF),
       surface: const Color(0xFFF4F4F6),
@@ -80,8 +80,8 @@ class EncoreColors extends ThemeExtension<EncoreColors> {
       onBgFaint: const Color(0xFF0E0E10).withValues(alpha: 0.42),
       accent: accent,
       onAccent: const Color(0xFFFFFFFF),
-      danger: const Color(0xFFD92D20),
-      warning: const Color(0xFFB54708),
+      danger: const Color(0xFFBC2318),
+      warning: const Color(0xFFA63F06),
     );
   }
 
