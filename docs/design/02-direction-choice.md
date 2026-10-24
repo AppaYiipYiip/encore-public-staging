@@ -1,5 +1,7 @@
 # Design 02 — Which direction (2026-10-24, decided by the advisor model after looking at the three drawings)
 
+> **Closed by the owner, 2026-10-24: only the cover-led direction (A) continues, in Spotify-like colours and layout. The other two drawings are dropped and removed from the repository (they stay in the git history); nothing below about borrowing from them is to be followed any more.** What survives from them is simply part of A's specification: the state marks (a song that waits, cannot play or is offline is told apart by words and shapes, never by colour alone), the rules for text at 200 % and right-to-left, and the friendly personality of the first-run and connection screens. The matrix is kept only as the record of how the choice was made.
+
 Inputs: the three files in `directions/` (open one in a browser; every view has a link, for example `a-cover-led.html#screen=np&state=waiting&cls=C&theme=dark&text=100&dir=ltr`; the top bar switches screen, state, class C/X/T, theme, text size and writing direction; each has a Tokens page and a Why page), the brief (`01`), the owner's words and `../16`. Each file was drawn by a separate agent from the same brief and checked in a headless browser (tag balance, 200 % text, right-to-left, light and dark, contrast pairs computed by the file itself). The drawings use invented song lengths and some sentences that are not in the state tables; each file marks the wording that is new.
 
 ## The matrix (brief `01`, "How the choice is made")

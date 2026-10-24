@@ -6,7 +6,7 @@ The design of Encore, drawn before it is built (owner, 2026-10-24: *"we have not
 |------|------|
 | [00-screen-inventory.md](00-screen-inventory.md) | **Every screen**, today and later, with the states each must show and the layout classes (phone C, browser X, TV T). A screen or a state that is not here is not designed |
 | [01-brief-three-directions.md](01-brief-three-directions.md) | The brief the three directions were drawn from |
-| [directions/](directions/) | The three drawings of the four anchor screens (Home, Now playing, Search and Artist, Welcome and Your server): `a-cover-led.html`, `b-quiet-editorial.html`, `c-warm-home.html` |
+| [directions/a-cover-led.html](directions/a-cover-led.html) | **The drawing**: the four anchor screens (Home, Now playing, Search and Artist, Welcome and Your server) in the cover-led direction, Spotify-like colours and layout. Open it in a browser; every view has a link. (Two other directions were drawn and **dropped by the owner on 2026-10-24**; they are in the git history only) |
 | [02-direction-choice.md](02-direction-choice.md) | **The choice**: A as the base, B's state marks and 200 % rules everywhere, C only for first run and identity; three tabs; one pattern for "the server does not answer" |
 | [03-owner-review-2026-10-24.md](03-owner-review-2026-10-24.md) | **The owner's review of the three drawings, one verdict per point**: copy Spotify's familiar screens (Now playing), personality on first-run screens, no owned/catalogue marker, a neutral server name, the UI follows the server's capabilities, opt-in taste comparison |
 
