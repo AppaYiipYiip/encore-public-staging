@@ -31,7 +31,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 |----|--------|-------|--------|---------|---|
 | S-10 | **Home** (greeting, shortcuts, "New from artists you play", your playlists, Year in Music card) | `features/home/home_screen.dart` | Z ("Start with something"), loaded, L, P, O, U, W, S, refreshing | C, X, T | ★ |
 | S-11 | **Search** (empty: recents, genres, "type a song") | `search_screen.dart` | E, Z, typing, voice (later) | C, X, T | ★ |
-| S-12 | **Search results** (Top result, songs, albums, artists, playlists; owned and catalogue look the same) | `search_results.dart` | L, P (the library answers first, the catalogue second), loaded, no results, O (library only, said once), U, X | C, X, T | ★ |
+| S-12 | **Search results** (Top result, songs, albums, artists, playlists; owned and catalogue look the same, **with no marker of what is on the server**; rows carry only Spotify's icons: downloaded, liked, explicit) | `search_results.dart` | L, P (the library answers first, the catalogue second), loaded, no results, O (library only, said once), U, X | C, X, T | ★ |
 | S-13 | **Genre or mood page** | `catalogue/genre_screen.dart` | L, loaded, E | C, X, T | |
 | S-14 | **Your Library** (Playlists, Albums, Artists, Downloads; sort and filter) | `library/library_screen.dart` | E per tab, loaded, O (only what is on the phone is not greyed), L | C, X, T | |
 | S-15 | **Liked Songs** | `liked` | E, loaded, O | C, X, T | |
@@ -46,7 +46,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
 | S-30 | **Mini player** (and the strip above it) | `player/mini_player.dart`, `connection_banner.dart` | playing, paused, B, waiting for the server, cannot play ("one plain sentence"), another device plays (`33`), the connection strip O/U | C (X and T use the bar) | ★ |
-| S-31 | **Now playing** (cover, title, every credited artist, scrubber, controls, shuffle, repeat, queue, lyrics peek, devices, sleep timer, speed) | `now_playing_screen.dart` | playing, paused, B, waiting for the server (G-1), cannot play, another device plays, ended, a Jam song | C, X, T | ★ |
+| S-31 | **Now playing, as Spotify's mobile screen** (down chevron, "Playing from …", ⋯ menu; a large cover; title and artist left, heart right; scrubber with times; shuffle, previous, big play, next, repeat; a bottom row with the device icon left and small share and queue icons right; **lyrics as a card when scrolling down**; sleep timer and speed in the ⋯ menu; **no "Next:" card, no lyrics button**) | `now_playing_screen.dart` | playing, paused, B, waiting for the server (G-1), cannot play, another device plays, ended, a Jam song | C, X, T | ★ |
 | S-32 | **Lyrics** (synced, plain, none yet, "from the web") | `lyrics_screen.dart` | L, synced, plain, none, O | C, X, T | |
 | S-33 | **Queue** (reorder, remove, who added it, where a song comes from) | `queue_sheet.dart` | E, loaded, a song that is not ready, reordering | C, X, T | |
 | S-34 | **Song menu** (more options) and **Add to playlist** | `track_menu.dart`, `playlist_actions.dart` | loaded, E (no playlists), O (what still works) | C, X | |
@@ -59,9 +59,10 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
 | S-50 | **Jam** (lobby, in a Jam as host or guest, reconnecting) | `jam_screen.dart` | not in one, lobby, in a Jam, reconnecting, ended, U | C, X, T | |
-| S-51 | **People** (friends, who is listening) and **Invite someone** (link and QR) | `people_screen.dart`, `invite_dialog.dart` | E, loaded, invite made, invite used, O | C, X | |
+| S-51 | **People on this server** (nobody has to "add" them; what they share is opt-in, `../03a` US-62) and **Invite someone** (link and QR). Friends on *other* servers appear only when the server allows it (`03` row 5) | `people_screen.dart`, `invite_dialog.dart` | E, loaded, invite made, invite used, O | C, X | |
 | S-52 | **Year in Music** (a designed, shareable sequence) | `year_screen.dart` | L, E (too little listening), the sequence, share | C, X, T | |
-| S-53 | **Friend activity** (later) | new (P6) | E, loaded | C, X | |
+| S-53 | **Friend activity** (later; opt-in, `../03a` US-62) | new (P6) | E, loaded | C, X | |
+| S-54 | **Taste match** (later; opt-in on both sides, `03` row 8): what two people both like, their favourite genres, a shared playlist (Spotify's Blend is the pattern); the switch to take part and to withdraw | new (P4-17) | off (the default: the switch and one sentence on what is shared), waiting for the other person, matched, withdrawn at once, the other has not agreed (nothing is shown) | C, X | |
 
 ## Import and requests
 
@@ -75,7 +76,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
 | S-70 | **Settings** (the list) | `settings_page.dart` | loaded, the server card in each of O/U/W | C, X, T | |
-| S-71 | **Your server** (addresses typed and "From your server", check addresses, what works, signed in as) | `your_server_screen.dart`, `server_addresses.dart` | Working, O, U, W, checking, learned addresses (`31` O-8) | C, X | ★ |
+| S-71 | **Your server**, with the personality of the Welcome pages: a hero card (name, colour, a small illustration, one sentence of status), "How this phone reaches it" (At home, Away from home), one "Test the connection" button answered in a sentence, typed addresses under "Other ways to connect" (`03` row 6) | `your_server_screen.dart`, `server_addresses.dart` | Working, O, U, W, checking, learned addresses (`31` O-8) | C, X | ★ |
 | S-72 | Playback; Downloads and storage; Library and sync; Home; Notifications; Lyrics; Appearance; Privacy | `settings/*` | each: loaded, a value changed, a value the server refuses | C, X | |
 | S-73 | **People and household** (the owner: add, remove, roles) | `household_settings_screen.dart` | loaded, adding, removing with a reason | C, X | |
 | S-74 | **About and diagnostics** | `diagnostics_screen.dart` | loaded, a log copied | C | |

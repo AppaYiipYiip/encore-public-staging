@@ -135,6 +135,13 @@ who share are playing. Off by default; turning it off removes it at once.
 
 **US-64 Year in Music.** As a Listener, I want my year (and month) in music from my own plays, including songs played from YouTube.
 
+**US-65 Compare tastes (owner, 2026-10-24; later, opt-in).** As a Listener on a server with other people, I can choose to compare my listening with another person's: "you both like X, your favourite genre is Y", and a playlist made from what we both like (the pattern is Spotify's Blend).
+* **Off by default.** Nothing is compared, shown or even computed for a person who has not switched it on, and nobody sees that they could be compared.
+* **Both sides opt in** before either sees anything; **either can withdraw at any moment** and the comparison disappears at once (no copy is kept by the other).
+* Listening marked **private** is never counted.
+* Between people on the same server first; with a friend on another server only when the server allows connecting with other servers (`../design/03` row 5).
+* The server computes it; the other phone gets the result and nothing about individual plays.
+
 ## Devices and friends everywhere (owner 2026-10-21; design `13`)
 
 **US-70 Control my other device.** As a Listener with the same account on a phone and a tablet, I want to control what the tablet

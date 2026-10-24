@@ -143,6 +143,11 @@ and activity).
   editorial lists imported with "Follow the original", P2-17); a full **Recently played** screen from `play_event`; playlist descriptions.
 * **Acceptance.** Browse is never empty on a brand-new server; Recently played matches the server's history for a test person.
 
+## P4-17 — Compare tastes (opt-in on both sides) — Size M
+* **Why.** US-65 (owner, 2026-10-24: *"a listening-habits comparison between users of the same server, and between friends; but sometimes I don't want to share what I listen to, so it should be opt-in"*). Later: after the owner has used the app daily.
+* **Do.** Server: a per-person switch `taste_sharing` (off by default) and a match computed from the plays of the two people who have **both** switched it on: artists and genres they share, a score, a shared playlist (the pattern is Spotify's Blend); listening marked private is excluded; withdrawing deletes the match at once. App: the switch in Settings > Privacy (one sentence on what is shared), the screen S-54 (`design/00`), and nothing at all for a person who has not agreed. Across servers only when the server allows connecting with other servers (P4-09).
+* **Acceptance.** Two emulators: both off, nothing appears anywhere; one on, the other sees nothing and the first sees "waiting for <name>"; both on, the match shows within 5 s; one withdraws, it disappears on both within 2 s and the server holds no copy; a private play never changes the match (a test with a model: Hypothesis, `ADR-R41` T3).
+
 ## P4-16 — Profiles on a shared device (tablet, TV, a family phone) — Size L
 * **Why.** Owner, 2026-10-22: *"In a shared tablet, Android TV, same app, same server, multiple users, we should implement switching users,
   after signing in I mean: you can leave the session, someone else signs in, but it is a trusted device, no need to sign out."* And: offline mode

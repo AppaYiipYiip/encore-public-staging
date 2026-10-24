@@ -60,10 +60,11 @@ Nothing to fill. Shows the computer's name and that it is ready.
   Your name            [ Riley          ]
   Username             [ riley          ]   (used to sign in)
   Password             [ ••••••••••      ]   ▂▄▆ strong
-  Name your server     [ Riley's Music  ]   shown to people you invite
+  Name your server     [ Our music       ]   shown to people you invite: a place, not a person ("Our music", "Home", "The flat")
   Pick a colour        ● ● ● ● ●
                                              [ Continue ]
 ```
+* **The server's name is the household's, never one person's** (owner, 2026-10-24: "why would I call a server that is not meant for one person by my name?"): the field is pre-filled with "Our music", the hint shows two more place names, and a person's own name appears only in "invited by Riley" and in the greeting.
 * Password rules: ≥ 10 characters; a strength line; "show password" eye.
 * Creates the Host as owner (an administrator of the music server is made behind the scenes with a generated password that nobody
   types; the Host's own account is a normal person with the owner role).
@@ -119,7 +120,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
      1. Create a free Tailscale account          [ Open Tailscale ]   ✓ done
      2. Turn on two settings (2 clicks)          [ Show me how ]      (screenshots in a side panel)
      3. Paste the key Tailscale gives you        [ ______________ ]
-                                                 [ Check ]  → ✓ Your address: https://rileys-music.tail1234.ts.net
+                                                 [ Check ]  → ✓ Your address: https://our-music.tail1234.ts.net
                                              [ Do this later ]  [ Continue ]
 ```
 * The check is automatic and explains failures ("The key was already used — make a new one"). The 180-day key expiry is turned off
@@ -154,7 +155,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
 ### Page 9 — All set   *Step 8 of 8*
 ```
   [the Host's own album covers fill the background as a slowly drifting mosaic; empty server: illustration]
-  Riley's Music is ready 🎉
+  Our music is ready 🎉
   ✓ 5,616 songs   ✓ Away from home: on   ✓ Friends on other servers: allowed   ✓ 1 phone
   Manage your server any time at  http://encore.local   (bookmark it)
                                              [ Open my server's page ]
@@ -165,7 +166,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
 | # | Page | Content | Notes |
 |---|------|---------|-------|
 | A1 | **Welcome** | Logo animation; "Listen to your music, and everything else" ; **[Scan an invite]** **[I have an invite link]**; small "Other ways to connect" | Background: slow mosaic of album art (bundled generic artwork for the very first screen) |
-| A2 | **Join** | "Join **Riley's Music** — invited by Riley" (server colour); your name, username, password (or, for the Host's pairing QR: "Sign in as Riley?" → one tap) | Errors in words; the invite's expiry shown if close |
+| A2 | **Join** | "Join **Our music** — invited by Riley" (server colour); your name, username, password (or, for the Host's pairing QR: "Sign in as Riley?" → one tap) | Errors in words; the invite's expiry shown if close |
 | A3 | **How songs reach you** (only if the server's YouTube source is on) | One card: "Songs that aren't on Riley's server come from YouTube. When you save them, they're kept on the server for everyone." [Got it] | Shown once per person |
 | A4 | **Bring your music** (US-05) | "From Spotify" / "From YouTube Music" / "Skip for now" | Import starts here; list appears in ≤ 5 s |
 | A5 | **Pick some artists** (recommendations' cold start, US-60) | A grid of artist photos (from the import if any, else popular in the server's country); "Pick 3 or more" ; [Done] / [Skip] | Feeds the person's profile |
