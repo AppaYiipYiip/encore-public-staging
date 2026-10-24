@@ -20,12 +20,16 @@ class FakeResolver implements SourceResolver {
   final Set<String> local = {};
   int resolveCount = 0;
 
+  /// The server does not answer: the address of a song that is not a file cannot be made (the real resolver throws this).
+  bool serverAway = false;
+
   @override
   Future<AudioSourceSpec> resolve(QueueItem item) async {
     resolveCount++;
     final direct = item.directUri;
     if (direct != null) return AudioSourceSpec(uid: item.uid, uri: direct);
     final isLocal = local.contains(item.id);
+    if (serverAway && !isLocal) throw const ServerNotAnswering();
     return AudioSourceSpec(
       uid: item.uid,
       uri: isLocal
@@ -96,6 +100,10 @@ class Harness {
   /// Whether the server can be reached (the phone has a network). Songs that are not downloaded need it.
   bool reachable = true;
 
+  /// Whether the server answers when the engine asks (the phone has a network either way), and how often it was asked.
+  bool serverUp = true;
+  int serverAsked = 0;
+
   static Future<Harness> start({
     int tracks = 5,
     MemoryPlaybackStateStore? store,
@@ -128,6 +136,11 @@ class Harness {
       moreComing: () => h.moreComing,
       loadTimeout: loadTimeout,
       canReachServer: () => h.reachable,
+      serverAnswers: () async {
+        h.serverAsked++;
+        return h.serverUp;
+      },
+      serverRetryDelays: const [Duration(milliseconds: 15)],
       findByName: findByName,
       catalogueLookupBudget: lookupBudget,
       clock: h.clock,
@@ -1500,6 +1513,185 @@ void main() {
 
       expect(h.backend.state.playing, isFalse);
       expect(h.backend.setSourcesCount, 0);
+      await h.dispose();
+    });
+
+    // ------------------------------------------------ the server does not answer (docs/33 G-1)
+
+    test(
+        'PB-F7: a song that fails while the server does not answer is waited for and never hopped over',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.serverUp = false; // the phone has a network, the server has gone
+
+      h.backend.failCurrent();
+      await h.settle();
+
+      expect(h.currentId, 't1', reason: 'the song is not broken');
+      expect(h.backend.state.playing, isFalse);
+      expect(h.notices.where((n) => n.isError), isEmpty,
+          reason: 'no "Could not play" notice for a server that is away');
+      expect(h.notices.last.message, 'Waiting for your server.');
+      expect(h.serverAsked, greaterThan(0),
+          reason: 'one fresh look at the server before judging the song');
+      await h.dispose();
+    });
+
+    test(
+        'PB-F8: when the server answers again the song carries on from where it stopped, by itself',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.backend.emitPosition(const Duration(seconds: 42));
+      h.serverUp = false;
+      h.backend.failCurrent();
+      await h.settle();
+      final loadsWhileWaiting = h.backend.setSourcesCount;
+
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(h.backend.setSourcesCount, loadsWhileWaiting,
+          reason: 'nothing is loaded while the server is away');
+      expect(h.serverAsked, greaterThan(2),
+          reason: 'it keeps asking, by itself');
+
+      h.serverUp = true; // a restart takes 2 to 5 seconds
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.backend.setSourcesCount, loadsWhileWaiting + 1);
+      expect(h.backend.calls.lastWhere((c) => c.startsWith('setSources')),
+          contains('+42s'),
+          reason: 'from the second it stopped at');
+      await h.dispose();
+    });
+
+    test(
+        'PB-F7: a tap while the server does not answer waits for it and plays by itself when it is back',
+        () async {
+      final h = await Harness.start();
+      h.resolver.serverAway = true;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.backend.setSourcesCount, 0);
+      expect(h.currentId, 't1', reason: 'and does not hop to the next one');
+      expect(h.notices.last.message, 'Waiting for your server.');
+      expect(h.notices.last.isError, isFalse);
+
+      h.resolver.serverAway = false;
+      h.serverUp = true;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'PB-F8: the platform player hopping to the next source after the failure does not move the song',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.backend.emitPosition(const Duration(seconds: 42));
+      h.serverUp = false;
+
+      h.backend.failCurrentAndHop();
+      await h.settle();
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(h.currentId, 't1',
+          reason: 'a failure is not the end of the song: the queue stays');
+      expect(h.backend.state.playing, isFalse);
+
+      h.serverUp = true;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.backend.calls.lastWhere((c) => c.startsWith('setSources')),
+          contains('+42s'));
+      await h.dispose();
+    });
+
+    test(
+        'PB-F7: after ten minutes the engine stops asking by itself, and pressing play still tries',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.serverUp = false;
+      h.backend.failCurrent();
+      await h.settle();
+
+      h.clock.advance(const Duration(minutes: 11));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      final asked = h.serverAsked;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(h.serverAsked, asked,
+          reason: 'no more questions after ten minutes');
+
+      h.serverUp = true;
+      await h.engine.play();
+      await h.settle();
+      expect(h.backend.state.playing, isTrue);
+      expect(h.currentId, 't1');
+      await h.dispose();
+    });
+
+    test('PB-F7: a downloaded song plays while the server is away', () async {
+      final h = await Harness.start();
+      h.resolver
+        ..local.add('t1')
+        ..serverAway = true;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.notices, isEmpty);
+      await h.dispose();
+    });
+
+    test(
+        'PB-F7: a song that fails while the server answers is still a bad song (one quiet retry, then the next)',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      h.backend.failCurrent();
+      await h.settle();
+      h.backend.failCurrent();
+      await h.settle();
+
+      expect(h.currentId, 't2',
+          reason: 'the server answers, so it is the song');
+      expect(h.notices.any((n) => n.isError && n.message.contains("Couldn't")),
+          isTrue);
+      await h.dispose();
+    });
+
+    test('PB-F7: pausing while a song waits for its server ends the waiting',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.serverUp = false;
+      h.backend.failCurrent();
+      await h.settle();
+      await h.engine.pause(); // the person gives up on it
+      final loads = h.backend.setSourcesCount;
+
+      h.serverUp = true;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await h.settle();
+
+      expect(h.backend.state.playing, isFalse);
+      expect(h.backend.setSourcesCount, loads);
       await h.dispose();
     });
   });

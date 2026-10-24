@@ -195,6 +195,17 @@ class FakeAudioBackend implements AudioBackend {
     _errors$.add(BackendError(message, index: _index));
   }
 
+  /// The platform player reports a failure for the current source and then moves on to the next source of the window by itself (just_audio
+  /// on Android does: seekTo(next), prepare, play), as seen on a phone with the server stopped mid-song (docs/evidence b04).
+  void failCurrentAndHop([String message = 'Source error']) {
+    final from = _index;
+    _errors$.add(BackendError(message, index: from));
+    if (from != null && from + 1 < sources.length) {
+      _position = Duration.zero;
+      _setIndex(from + 1);
+    }
+  }
+
   /// The platform player reports a failure for another source of the window
   /// (typically the next one, while the current song plays fine).
   void failSlot(int index, [String message = 'Source error']) {

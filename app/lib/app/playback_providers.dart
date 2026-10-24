@@ -24,6 +24,7 @@ import '../playback/playback_engine.dart';
 import '../playback/playback_state_store.dart';
 import '../playback/queue_model.dart';
 import '../playback/source_resolver.dart';
+import 'connection.dart' show serverReachableProvider;
 import 'providers.dart';
 import 'session.dart';
 
@@ -80,6 +81,11 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
               .timeout(const Duration(seconds: 8));
       if (s == null) {
         throw StateError('Not signed in to a server');
+      }
+      // No address of the server has proved itself yet (a cold start, a change of network): the first look is part of getting the song,
+      // so a tap in the first second waits a round trip instead of failing. When nothing proves itself the server is not answering.
+      if (!s.endpoints.isVerified && await s.endpoints.resolve() == null) {
+        throw const ServerNotAnswering();
       }
       if (s.encoreMode) {
         // A song is a ref: its kept file (if the server has one) plays through the one door, any other song from the server's stream.
@@ -143,6 +149,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
     canReachServer: () =>
         ref.read(networkKindProvider).value != NetworkKind.none,
+    // One fresh look at the server's addresses: a song that failed with a network but no server is waited for, not skipped (docs/33 G-1).
+    serverAnswers: () async {
+      final s = session() ??
+          await ref
+              .read(sessionProvider.future)
+              .timeout(const Duration(seconds: 8), onTimeout: () => null);
+      return s == null || await s.endpoints.resolve() != null;
+    },
     replayGain: () {
       final s = ref.read(settingsProvider);
       return ReplayGainSettings(
@@ -158,6 +172,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     networkKindProvider,
     (_, next) => unawaited(
         engine.networkChanged(online: next.value != NetworkKind.none)),
+  );
+  // ... and so does a song that waited for its server, the moment the server answers again (the engine also asks by itself every few
+  // seconds, so this only makes it quicker).
+  ref.listen(
+    serverReachableProvider,
+    (_, next) {
+      if (next.value == true) unawaited(engine.networkChanged(online: true));
+    },
   );
   // The preferred speed applies to everything, including after a restart.
   unawaited(engine.setSpeed(ref.read(settingsProvider).playbackSpeed));

@@ -11,6 +11,15 @@ abstract interface class SourceResolver {
   Future<AudioSourceSpec> resolve(QueueItem item);
 }
 
+/// The address of a song could not be made because the music server does not answer (no address of it has proved itself). The song is not
+/// broken: the player waits for the server instead of trying the next song (docs/33 G-1).
+class ServerNotAnswering implements Exception {
+  const ServerNotAnswering();
+
+  @override
+  String toString() => 'ServerNotAnswering';
+}
+
 typedef LocalPathLookup = Future<String?> Function(String trackId);
 typedef StreamUrlBuilder = Future<Uri> Function(
   String trackId, {

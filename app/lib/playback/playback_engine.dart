@@ -78,11 +78,19 @@ class PlaybackEngine implements PlaybackFacade {
     PeriodicTimerFactory? periodicTimer,
     bool Function()? moreComing,
     bool Function()? canReachServer,
+    Future<bool> Function()? serverAnswers,
+    this.serverRetryDelays = const [
+      Duration(seconds: 1),
+      Duration(seconds: 1),
+      Duration(seconds: 2),
+      Duration(seconds: 3),
+    ],
     this.catalogueLookupBudget = const Duration(seconds: 4),
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
   })  : _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
+        _serverAnswers = serverAnswers ?? (() async => true),
         _findByName = findByName,
         _backend = backend,
         _resolver = resolver,
@@ -136,6 +144,18 @@ class PlaybackEngine implements PlaybackFacade {
 
   /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
   final bool Function() _canReach;
+
+  /// Asks the server whether it answers *now* (one fresh look at its addresses). A phone with a network and a server that does not answer is
+  /// not a phone with a bad song (docs/33 PB-F7, PB-F8, G-1).
+  final Future<bool> Function() _serverAnswers;
+
+  /// How long to wait before asking again while a song waits for its server; the last value repeats for two minutes, then it is every
+  /// 15 s, and after ten minutes the engine stops asking by itself (pressing play, or the server being seen again, still start the song).
+  final List<Duration> serverRetryDelays;
+
+  Timer? _serverRetry;
+  int _serverRetries = 0;
+  DateTime? _serverWaitSince;
 
   /// A song that could not load for lack of a connection waits for it: the value of [_intent] when it started waiting, so that
   /// pausing (or starting something else) since cancels the wait. `null` when nothing waits.
@@ -348,6 +368,7 @@ class PlaybackEngine implements PlaybackFacade {
     await _persistNow();
     _persistDebounce?.cancel();
     _sleepTicker?.cancel();
+    _serverRetry?.cancel();
     for (final s in _subscriptions) {
       await s.cancel();
     }
@@ -793,6 +814,8 @@ class PlaybackEngine implements PlaybackFacade {
     final waiting = _waitingSince;
     if (waiting == null) return;
     _waitingSince = null;
+    _serverRetry?.cancel();
+    _serverRetries = 0;
     if (waiting != _intent || _queue.current == null) return;
     try {
       await _run(() async {
@@ -844,6 +867,67 @@ class PlaybackEngine implements PlaybackFacade {
     _notify(PlaybackNotice(message, isError: isError));
     PerfMonitor.instance.cancel('play.tap->playing');
     _emitAll();
+  }
+
+  /// The phone has a network and the server does not answer (it restarts, the home Wi-Fi has no internet, the Funnel is down): the song is
+  /// not broken. Same as [_waitForConnection], and the server is asked again by itself (after 1, 1, 2, then every 3 s: one small question each time) until it answers, so the
+  /// song carries on from where it stopped without the person doing anything. Nothing hops to the next song.
+  void _waitForServer({required Duration position}) {
+    _waitForConnection('Waiting for your server.',
+        isError: false, position: position);
+    _serverWaitSince = _clock.now();
+    _serverRetries = 0;
+    _scheduleServerRetry();
+  }
+
+  void _scheduleServerRetry() {
+    _serverRetry?.cancel();
+    if (_disposed) return;
+    final waited = _clock.now().difference(_serverWaitSince ?? _clock.now());
+    if (waited > const Duration(minutes: 10)) return;
+    final delays = serverRetryDelays;
+    final wait = waited > const Duration(minutes: 2)
+        ? const Duration(seconds: 15)
+        : delays[min(_serverRetries, delays.length - 1)];
+    _serverRetries++;
+    _serverRetry = Timer(wait, () => unawaited(_retryServer()));
+  }
+
+  Future<void> _retryServer() async {
+    if (_disposed) return;
+    final waiting = _waitingSince;
+    if (waiting == null) return;
+    if (waiting != _intent) {
+      // The person paused or started something else since: nothing waits any more.
+      _waitingSince = null;
+      _serverRetries = 0;
+      return;
+    }
+    var answers = false;
+    try {
+      answers = await _serverAnswers();
+    } on Object catch (error) {
+      Log.warn('playback', 'asking whether the server answers failed', error);
+    }
+    if (_disposed || _waitingSince == null) return;
+    if (answers) {
+      await networkChanged(online: true);
+    } else {
+      _scheduleServerRetry();
+    }
+  }
+
+  /// Whether [item] is a file on this phone (a song that is not cannot play while the server is away). A lookup that fails or takes
+  /// long says no.
+  Future<bool> _isLocal(QueueItem item) async {
+    try {
+      return (await _resolver.resolve(item).timeout(const Duration(seconds: 2)))
+          .isLocal;
+    } on Object catch (error) {
+      Log.debug('playback',
+          'could not tell whether ${item.id} is a file: ${error.runtimeType}');
+      return false;
+    }
   }
 
   // ------------------------------------------------------------ internals
@@ -913,12 +997,24 @@ class PlaybackEngine implements PlaybackFacade {
     final next = _loopOne || _sleepAtEnd ? null : _queue.peekNext;
     final List<AudioSourceSpec> results;
     try {
-      results = await Future.wait([
-        _resolver.resolve(item),
-        if (next != null) _resolver.resolve(next),
-      ]);
+      // The next song is only a preload: when its address cannot be made (the server is away and it is not a file) this one still plays.
+      final nextSpec = next == null
+          ? Future<AudioSourceSpec?>.value()
+          : _resolver
+              .resolve(next)
+              .then<AudioSourceSpec?>((s) => s, onError: (Object _) => null);
+      final first = await _resolver.resolve(item);
+      final second = await nextSpec;
+      results = [first, if (second != null) second];
     } on Object catch (error) {
       Log.warn('playback', 'could not resolve ${item.id}', error);
+      // The address of the song could not be made because the server does not answer: wait for it (the song stays, nothing is skipped).
+      if (_canReach() &&
+          (error is ServerNotAnswering || !await _serverAnswers())) {
+        await _backend.pause();
+        _waitForServer(position: position);
+        return;
+      }
       _notify(const PlaybackNotice(
           "Can't reach your server yet. Check your connection and try again.",
           isError: true));
@@ -1089,6 +1185,10 @@ class PlaybackEngine implements PlaybackFacade {
       // A load finished meanwhile: this event describes the window that was
       // replaced, and acting on it would skip a song (B15).
       if (serial != _loadSerial) return;
+      // An earlier queued operation may have taken the window away: a song that waits for its server or its connection has nothing loaded.
+      // The platform player moves on to the next source by itself after a failure (just_audio does on Android); that is not a song that
+      // ended, and the queue must not follow it (G-1).
+      if (!_loaded) return;
       // Re-check: an earlier queued operation may have re-based the window.
       if (index == _lastIndex) return;
       if (_expectedIndex == index) {
@@ -1168,6 +1268,13 @@ class PlaybackEngine implements PlaybackFacade {
         await _backend.pause();
         _waitForConnection('Waiting for a connection.',
             isError: false, position: _lastPosition);
+        return;
+      }
+      // The phone has a network. Before judging the song, look once at whether its server answers at all (the stream may have died
+      // because the server restarted, or because the line changed): a server that does not answer is waited for, not hopped over.
+      if (!await _serverAnswers() && !await _isLocal(item)) {
+        await _backend.pause();
+        _waitForServer(position: _lastPosition);
         return;
       }
       if (_retried.add(item.uid)) {
