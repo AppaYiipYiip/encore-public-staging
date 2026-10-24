@@ -161,6 +161,9 @@ class PlaybackEngine implements PlaybackFacade {
   /// pausing (or starting something else) since cancels the wait. `null` when nothing waits.
   int? _waitingSince;
 
+  /// Where the song being loaded comes from, for the `play.audible` measurement: a file on this phone or a stream.
+  String _sourceKind = 'stream';
+
   final List<StreamSubscription<Object?>> _subscriptions = [];
   final StreamController<PlaybackSnapshot> _snapshots =
       StreamController<PlaybackSnapshot>.broadcast();
@@ -394,6 +397,7 @@ class PlaybackEngine implements PlaybackFacade {
   }) {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
+    PerfMonitor.instance.begin('play.audible');
     final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
@@ -453,6 +457,7 @@ class PlaybackEngine implements PlaybackFacade {
   }) {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
+    PerfMonitor.instance.begin('play.audible');
     final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
@@ -519,6 +524,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (!autoplay) return false;
     if (_opIntent == _intent) return true;
     PerfMonitor.instance.cancel('play.tap->playing');
+    PerfMonitor.instance.cancel('play.audible');
     return false;
   }
 
@@ -866,6 +872,7 @@ class PlaybackEngine implements PlaybackFacade {
     _waitingSince = _intent;
     _notify(PlaybackNotice(message, isError: isError));
     PerfMonitor.instance.cancel('play.tap->playing');
+    PerfMonitor.instance.cancel('play.audible');
     _emitAll();
   }
 
@@ -1019,11 +1026,13 @@ class PlaybackEngine implements PlaybackFacade {
           "Can't reach your server yet. Check your connection and try again.",
           isError: true));
       PerfMonitor.instance.cancel('play.tap->playing');
+      PerfMonitor.instance.cancel('play.audible');
       _emitAll();
       return;
     }
     if (generation != null && generation != _generation) return;
     final resolveMs = timer.elapsedMilliseconds;
+    _sourceKind = results.first.isLocal ? 'file' : 'stream';
 
     // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
     if (!results.first.isLocal && !_canReach()) {
@@ -1303,6 +1312,14 @@ class PlaybackEngine implements PlaybackFacade {
 
   void _onPosition(Duration position) {
     _lastPosition = position;
+    // What the person waits for ends when the music is really moving: the position has passed 200 ms while the player plays (P1-06; the span
+    // `play.tap->playing` ends earlier, when the player only says it plays).
+    if (position > const Duration(milliseconds: 200) &&
+        _backend.state.playing &&
+        PerfMonitor.instance.isOpen('play.audible')) {
+      PerfMonitor.instance.end('play.audible',
+          detail: 'source=$_sourceKind id=${_queue.current?.id}');
+    }
     if (!_positions.isClosed) _positions.add(position);
     final last = _lastPersist;
     if (_backend.state.playing &&

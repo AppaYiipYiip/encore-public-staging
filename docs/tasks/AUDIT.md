@@ -50,7 +50,7 @@ Diagnosed the same day against the real services (home line, 5 requests to Deeze
 * P1-03: random 5-20 s spacing of background look-ups, the doubling rest up to 24 h on the **legacy** server (the new server has it: `sources/youtube/rest.py`),
   "interactive at most one look-up per 5 s while resting", the comparison with an import running (J-02).
 * P1-04: preparing the first 3 songs of an opened album/playlist and the next 2 of the queue, cancelling stale prepares, dropping prepares first under back-off.
-* P1-06: the app's `play.audible` span (the server side logs are there).
+* P1-06: ~~the app's `play.audible` span~~ built 2026-10-24 (tap to the position passing 200 ms with the player playing; `[perf] span play.audible ms=… (source=file|stream id=…)`, in logs of debug and profile builds and in the Diagnostics spans; `evidence/b03`'s `cold_start_timing.py` measures the same thing from outside on a release build). Open: `play_timing.py` reading the span from logcat (release builds print nothing there).
 * P1-07: keystroke-to-results timing; the miss of Oum Kalthoum's Arabic title. **Fixed 2026-10-22 (build 114): "Beach House Space Song"** - the catalogue's text
   search never lists Beach House's own song (not in its first 11 results), only covers and look-alike titles; when none of the results is a song by an
   artist named at one end of what was typed, the app now looks the artist up, searches its popular songs for the title and puts the hit first

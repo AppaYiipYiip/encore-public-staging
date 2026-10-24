@@ -174,6 +174,45 @@ void main() {
   setUpAll(() => PerfMonitor.instance.logToConsole = false);
 
   group('starting playback', () {
+    test(
+        'P1-06: play.audible ends when the music is really moving (position past 200 ms), not when the player says it plays',
+        () async {
+      final h = await Harness.start();
+      PerfMonitor.instance.logToConsole = false;
+      final before = PerfMonitor.instance.spans.length;
+      h.resolver.local.add('t1');
+
+      await h.engine.playTracks(h.tracks.sublist(0, 2));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isTrue,
+          reason: 'the player says it plays, nothing is audible yet');
+
+      h.backend.emitPosition(const Duration(milliseconds: 120));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isTrue);
+
+      h.backend.emitPosition(const Duration(milliseconds: 420));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isFalse);
+      final span = PerfMonitor.instance.spans
+          .skip(before)
+          .lastWhere((s) => s.name == 'play.audible');
+      expect(span.detail, 'source=file id=t1');
+      await h.dispose();
+    });
+
+    test('P1-06: a streamed song says source=stream', () async {
+      final h = await Harness.start();
+      PerfMonitor.instance.logToConsole = false;
+      final before = PerfMonitor.instance.spans.length;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 2));
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+
+      final span = PerfMonitor.instance.spans
+          .skip(before)
+          .lastWhere((s) => s.name == 'play.audible');
+      expect(span.detail, 'source=stream id=t1');
+      await h.dispose();
+    });
+
     test('loads current + next into the window and plays', () async {
       final h = await Harness.start();
       await h.engine.playTracks(h.tracks, sourceName: 'Mix', sourceId: 'p:1');
