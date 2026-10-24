@@ -14,7 +14,7 @@ dependencies = [
 
 [project.optional-dependencies]
 youtube = ["yt-dlp", "ytmusicapi", "mutagen"]
-dev = ["pytest>=8", "ruff", "mypy"]
+dev = ["pytest>=8", "hypothesis>=6", "ruff", "mypy"]
 
 [tool.setuptools.packages.find]
 include = ["encore_server*"]

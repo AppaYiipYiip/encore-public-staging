@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/logger.dart';
+import '../../core/result.dart';
 import '../auth/credential_store.dart';
 import 'encore_api.dart';
 
@@ -18,7 +19,9 @@ class EncoreDevice {
     required String password,
     this.deviceName = 'Android phone',
     this.appVersion,
-  })  : _api = api,
+    DateTime Function()? now,
+  })  : _now = now ?? DateTime.now,
+        _api = api,
         _store = store,
         _key = secretKey(serverId),
         _username = username,
@@ -39,6 +42,16 @@ class EncoreDevice {
   final String deviceName;
   final String? appVersion;
 
+  /// The server refused the password this phone holds (changed, removed, locked): it is not tried again for [retryRefusedAfter]. Twenty wrong tries lock the account, and
+  /// a phone that went on trying with an old password locked the owner out within minutes (found on 2026-10-24 with a second phone left signed in).
+  /// A new sign-in makes a new [EncoreDevice] with the new password, which tries again.
+  DateTime? _passwordRefusedAt;
+  final DateTime Function() _now;
+
+  /// How long after a refusal the password is tried again: a server that was only busy must not leave the live channel dead, and four tries an
+  /// hour is far from the twenty that lock an account.
+  static const Duration retryRefusedAfter = Duration(minutes: 15);
+
   /// The device token: the saved one, or a new one from signing in. `null` when the server cannot be asked just now.
   Future<String?> token() async {
     final saved = await _store.readSecret(_key);
@@ -56,6 +69,10 @@ class EncoreDevice {
             'the saved device sign-in is unreadable: ${error.runtimeType}');
       }
     }
+    final refused = _passwordRefusedAt;
+    if (refused != null && _now().difference(refused) < retryRefusedAfter) {
+      return null;
+    }
     final result = await _api.login(
       username: _username,
       password: _password,
@@ -63,6 +80,7 @@ class EncoreDevice {
       appVersion: appVersion,
     );
     final login = result.valueOrNull;
+    if (result.failureOrNull is AuthFailure) _passwordRefusedAt = _now();
     if (login == null || login.deviceToken.isEmpty) {
       Log.debug('encore-live',
           'device sign-in failed: ${result.failureOrNull?.message}');
@@ -71,6 +89,35 @@ class EncoreDevice {
     await _store.writeSecret(_key, encode(login.deviceToken, login.deviceId));
     _api.deviceId = login.deviceId;
     return login.deviceToken;
+  }
+
+  /// Signing out of this phone: the server is asked to end this device (best effort, five seconds at most), and the saved sign-in is deleted
+  /// whatever the answer. A phone that never made a device sign-in (no live channel yet) has nothing to end. Returns whether the server did.
+  Future<bool> signOut() async {
+    var ended = false;
+    final saved = await _store.readSecret(_key);
+    if (saved != null) {
+      try {
+        _api.deviceId =
+            (jsonDecode(saved) as Map<String, dynamic>)['id'] as String?;
+      } on Object catch (error) {
+        Log.debug('signout',
+            'the saved device sign-in is unreadable: ${error.runtimeType}');
+      }
+      if (_api.deviceId != null) {
+        try {
+          final result =
+              await _api.logout().timeout(const Duration(seconds: 5));
+          ended = result.failureOrNull == null;
+        } on Object catch (error) {
+          Log.debug('signout',
+              'the server could not end this device: ${error.runtimeType}');
+        }
+      }
+    }
+    await _store.deleteSecret(_key);
+    _api.deviceId = null;
+    return ended;
   }
 
   /// The server refused the saved token: forget it, so the next [token] signs in again.

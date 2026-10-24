@@ -49,6 +49,11 @@ Future<void> signOut(WidgetRef ref) async {
   final setup = ref.read(serverSetupServiceProvider);
 
   await step('stop playback', facade.stopAndClear);
+  // This phone's device on the server ends (DV-2): its token stops working and it leaves the person's list of devices.
+  await step(
+      "end this phone's sign-in on the server",
+      () async =>
+          ref.read(sessionProvider).value?.endDevice() ?? Future<void>.value());
   await step('delete downloads', downloads.removeAll);
   await step('forget the request portal login',
       () => credentials.deleteSecret(kPortalPasswordKey));

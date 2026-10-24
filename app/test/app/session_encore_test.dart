@@ -4,7 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:encore/app/session.dart';
+import 'package:encore/data/auth/credential_store.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/data/encore/encore_device.dart';
 import 'package:encore/data/encore/encore_mutations.dart';
 import 'package:encore/data/sync/playlist_mutations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,7 +53,10 @@ void main() {
   late ServerRow server;
   late ServerSession session;
 
-  Future<void> start({Map<String, Object?> capabilities = const {}}) async {
+  Future<void> start({
+    Map<String, Object?> capabilities = const {},
+    CredentialStore? credentialStore,
+  }) async {
     db = AppDatabase(NativeDatabase.memory());
     final id = await db.into(db.servers).insert(ServersCompanion.insert(
           name: 'Home',
@@ -70,6 +75,7 @@ void main() {
         db: db,
         server: server,
         password: 'x',
+        credentialStore: credentialStore,
         dio: Dio()..httpClientAdapter = door);
   }
 
@@ -115,6 +121,20 @@ void main() {
     expect(music.adapter.count('search3'), 0);
     expect(music.adapter.count('getArtists'), 1,
         reason: 'the browse index still comes from the music server');
+  });
+
+  test(
+      'DV-2: ending the device of a session tells the server which phone it was and forgets the saved sign-in',
+      () async {
+    final store = InMemoryCredentialStore();
+    await store.writeSecret(
+        'encore.device.1', EncoreDevice.encode('ed_saved', 'dv_9'));
+    await start(capabilities: {'encore': true}, credentialStore: store);
+
+    await session.endDevice();
+
+    expect(encore.logouts, ['dv_9']);
+    expect(await store.readSecret('encore.device.1'), isNull);
   });
 
   test('a plain music server is synced the old way and never upgraded',

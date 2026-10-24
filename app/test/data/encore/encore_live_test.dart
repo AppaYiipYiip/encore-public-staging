@@ -301,6 +301,67 @@ void main() {
       expect(await store.readSecret('encore.device.7'), isNull);
     });
 
+    test(
+        'DV-2: signing out ends the device of this phone on the server and deletes the saved sign-in',
+        () async {
+      await device.token();
+
+      expect(await device.signOut(), isTrue);
+
+      expect(server.logouts, ['dv_1'],
+          reason: 'the server is told which device, by its header');
+      expect(await store.readSecret('encore.device.7'), isNull);
+      expect(api.deviceId, isNull);
+    });
+
+    test(
+        'DV-2: signing out with no connection still forgets the sign-in, and says the server was not told',
+        () async {
+      await device.token();
+      server.online = false;
+
+      expect(await device.signOut(), isFalse);
+
+      expect(await store.readSecret('encore.device.7'), isNull);
+      expect(server.logouts, isEmpty);
+    });
+
+    test('DV-2: a phone that never signed in as a device has nothing to end',
+        () async {
+      expect(await device.signOut(), isFalse);
+
+      expect(server.logouts, isEmpty);
+      expect(await store.readSecret('encore.device.7'), isNull);
+    });
+
+    test(
+        'CN-24: a password the server refused is not tried again for a while (twenty wrong tries lock the account)',
+        () async {
+      var now = DateTime.utc(2026, 10, 24, 6);
+      device = EncoreDevice(
+          api: api,
+          store: store,
+          serverId: 7,
+          username: 'tester',
+          password: 'old',
+          now: () => now);
+      server.failLogin = true;
+
+      expect(await device.token(), isNull);
+      for (var i = 0; i < 5; i++) {
+        now = now.add(const Duration(minutes: 1));
+        expect(await device.token(), isNull);
+      }
+      expect(server.logins, 1,
+          reason: 'the live channel asks again and again; the server is not');
+
+      now = now.add(EncoreDevice.retryRefusedAfter);
+      server.failLogin = false;
+      expect(await device.token(), 'ed_fake2',
+          reason:
+              'after a while it is tried again, in case the server was only busy');
+    });
+
     test('the token lives in the secure store, not anywhere else', () async {
       await device.token();
 

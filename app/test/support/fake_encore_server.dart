@@ -40,6 +40,10 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/invites'] = _invitesRoot;
     _handlers['/encore/api/v1/imports'] = _importsRoot;
     _handlers['/encore/api/v1/people'] = (r) => _ok({'items': people});
+    _handlers['/encore/api/v1/auth/logout'] = (r) {
+      logouts.add(r.headers['x-encore-device']);
+      return _ok(<String, Object?>{});
+    };
     _handlers['/encore/api/v1/auth/login'] = (r) {
       logins++;
       if (failLogin) return _error(401, 'unauthorized');
@@ -50,6 +54,9 @@ class FakeEncoreServer {
       });
     };
   }
+
+  /// The device ids the phone asked to end (`POST /auth/logout`, named by `X-Encore-Device`).
+  final List<String?> logouts = [];
 
   /// How many times a phone signed in as a device, and whether the server refuses that.
   int logins = 0;

@@ -266,7 +266,11 @@ def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONRe
 def logout(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     if p.device_id is not None:
         with services(request).db.tx() as conn:
-            conn.execute("UPDATE device SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL", (now_ms(), p.device_id))
+            # The device id may come from a header sent with the music server's login: it only counts when it is this person's own device.
+            conn.execute(
+                "UPDATE device SET revoked_at = ? WHERE id = ? AND person = ? AND revoked_at IS NULL",
+                (now_ms(), p.device_id, p.person_id),
+            )
     return _ok()
 
 

@@ -122,22 +122,32 @@ class EncoreApi {
   }) =>
       guard(() async {
         // The token login does not apply here: this call carries the password itself, over the same address.
-        final response = await _dio.postUri<Object?>(
-          _baseUrl().replace(
-              path:
-                  '${_baseUrl().path.replaceAll(RegExp(r'/+$'), '')}$_prefix/auth/login',
-              query: ''),
-          data: {
-            'username': username,
-            'password': password,
-            'deviceName': deviceName,
-            'deviceKind': 'phone',
-            if (appVersion != null) 'appVersion': appVersion,
-          },
-          options: Options(contentType: Headers.jsonContentType),
-        );
-        return EncoreDeviceLogin.fromJson(readMap(response.data) ?? const {});
+        try {
+          final response = await _dio.postUri<Object?>(
+            _baseUrl().replace(
+                path:
+                    '${_baseUrl().path.replaceAll(RegExp(r'/+$'), '')}$_prefix/auth/login',
+                query: ''),
+            data: {
+              'username': username,
+              'password': password,
+              'deviceName': deviceName,
+              'deviceKind': 'phone',
+              if (appVersion != null) 'appVersion': appVersion,
+            },
+            options: Options(contentType: Headers.jsonContentType),
+          );
+          return EncoreDeviceLogin.fromJson(readMap(response.data) ?? const {});
+        } on DioException catch (e) {
+          // A refused password is an AuthFailure like everywhere else (not an unexpected error): callers must tell it from a busy server.
+          throw _failure(e);
+        }
       });
+
+  /// Ends this phone's device on the server (`X-Encore-Device` names it; the music server's login proves who is asking). Only the person's own
+  /// device can be ended this way.
+  Future<Result<void>> logout() =>
+      guard(() async => _send('POST', '/auth/logout'));
 
   // ------------------------------------------------------------------ songs
 

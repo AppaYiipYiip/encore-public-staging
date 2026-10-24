@@ -99,6 +99,21 @@ class TestSigningIn:
         assert client.get(f"{V1}/me", headers=phone).status_code == 401
         assert client.get(f"{V1}/me", headers=tablet).status_code == 200
 
+    def test_dv_2_the_app_signs_its_device_out_with_its_normal_login_and_its_device_header(self, client: TestClient) -> None:
+        # The app asks for everything with the music server's login (`u`, `t`, `s`) and `X-Encore-Device`; only the live channel holds the device token.
+        phone = sign_in(client, "marwa", "Phone")
+        phone_id = client.get(f"{V1}/me/devices", headers=phone).json()["items"][0]["id"]
+        assert client.post(f"{V1}/auth/logout", params=creds("marwa"), headers={"X-Encore-Device": phone_id}).status_code == 200
+        assert client.get(f"{V1}/me", headers=phone).status_code == 401
+
+    def test_dv_2_signing_out_never_ends_somebody_elses_device(self, client: TestClient) -> None:
+        sign_in(client, "marwa", "Phone")
+        hers = sign_in(client, "nina", "Her phone")
+        her_id = client.get(f"{V1}/me/devices", headers=hers).json()["items"][0]["id"]
+        # Marwa's own login with Nina's device id in the header: nothing of Nina's is touched.
+        assert client.post(f"{V1}/auth/logout", params=creds("marwa"), headers={"X-Encore-Device": her_id}).status_code == 200
+        assert client.get(f"{V1}/me", headers=hers).status_code == 200
+
     def test_a_person_sees_their_devices_and_can_revoke_one(self, client: TestClient) -> None:
         phone, tablet = sign_in(client, device="Phone"), sign_in(client, device="Tablet")
         items = client.get(f"{V1}/me/devices", headers=phone).json()["items"]

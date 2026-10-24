@@ -99,6 +99,7 @@ class ServerSession {
     required this.encore,
     required this.encoreMode,
     required this.live,
+    this.device,
     required EncoreUpgrade upgradeRunner,
     required AppDatabase db,
     required Dio Function() probeDio,
@@ -245,8 +246,9 @@ class ServerSession {
 
     // The live channel: the server tells this phone when something changed, so another phone's edit shows within a second or two.
     EncoreLive? live;
+    EncoreDevice? device;
     if (encoreMode && credentialStore != null) {
-      final device = EncoreDevice(
+      device = EncoreDevice(
         api: encore,
         store: credentialStore,
         serverId: server.id,
@@ -346,6 +348,7 @@ class ServerSession {
       encore: encore,
       encoreMode: encoreMode,
       live: live,
+      device: device,
       upgradeRunner: upgrade,
       db: db,
       // A short look: a server that is not there must not hold the start of syncing back.
@@ -437,8 +440,18 @@ class ServerSession {
   /// This server is an Encore server and this phone has been moved over to it.
   final bool encoreMode;
 
+  /// Signing out of this phone (docs/32 DV-2): the server ends this phone's device, so its token stops working and the person's device list is
+  /// right; best effort (offline is fine, the person can end it from another device). Then the saved sign-in is deleted.
+  Future<void> endDevice() async {
+    await live?.stop();
+    await device?.signOut();
+  }
+
   /// The server's live channel (Encore mode, foreground session only); `null` otherwise.
   final EncoreLive? live;
+
+  /// This phone's sign-in on an Encore server as a device (Encore mode with a credential store); `null` otherwise.
+  final EncoreDevice? device;
   StreamSubscription<LiveEvent>? _liveEvents;
   StreamSubscription<bool>? _liveConnection;
 
