@@ -24,6 +24,7 @@ from .db import Database
 from .errors import ApiError
 from .ids import is_id, new_id, now_ms
 from .navidrome_admin import NameTaken, NavidromeAdmin
+from .notifications import Notifications
 
 log = logging.getLogger("encore_server.accounts")
 
@@ -104,10 +105,20 @@ class Limiter:
 
 
 class Accounts:
-    def __init__(self, db: Database, admin: NavidromeAdmin | None, *, clock: Callable[[], float] = time.time) -> None:
+    def __init__(
+        self,
+        db: Database,
+        admin: NavidromeAdmin | None,
+        *,
+        clock: Callable[[], float] = time.time,
+        notifications: Notifications | None = None,
+        server_name: str = "this server",
+    ) -> None:
         self._db = db
         self._admin = admin
         self._clock = clock
+        self._notifications = notifications
+        self._server_name = server_name
 
     def _now_ms(self) -> int:
         return int(self._clock() * 1000)
@@ -217,6 +228,15 @@ class Accounts:
             admin.delete_user(name)  # nobody is left half-made
             raise
         log.info("%s joined", name)
+        if self._notifications is not None and invite["created_by"]:
+            # The owner who made the invitation hears of it in the bell, once, however often this is retried.
+            self._notifications.tell(
+                invite["created_by"],
+                "invite_used",
+                f"{shown} joined {self._server_name}",
+                body="With the invitation you made.",
+                dedupe=f"invite:{invite['id']}",
+            )
         return {
             "deviceToken": token,
             "device": {"id": device_id, "name": device_name},

@@ -349,3 +349,50 @@ def test_a_file_import_may_name_a_picture_only_on_a_host_the_readers_allow(rig: 
 
     assert good["playlist"]["cover"] == "https://i.scdn.co/image/x"
     assert bad["playlist"]["cover"] is None and insecure["playlist"]["cover"] is None
+
+
+def test_an_import_that_finishes_in_the_background_is_told_in_the_bell_once(rig: Rig) -> None:
+    rig.source.missing = {"Song 2"}
+    made = rig.imported()
+    assert rig.get("marwa", "/notifications")["items"] == [], "it is still running: nothing to tell yet"
+
+    rig.svc.scheduler.drain("background")
+
+    items = rig.get("marwa", "/notifications")["items"]
+    assert [(i["kind"], i["title"], i["body"], i["route"]) for i in items] == [
+        ("import_done", "Your import is ready", "Road trip: 4 of 5 songs", "/settings/import")
+    ]
+
+    rig.svc.scheduler.drain("background")
+    assert len(rig.get("marwa", "/notifications")["items"]) == 1, "told once, however often the server settles it"
+    assert made["import"]["id"]
+
+
+def test_an_import_that_was_done_at_once_says_nothing_in_the_bell(rig: Rig) -> None:
+    rig.playlist = Playlist("Albums", "youtube", "playlist", tracks(3, official=True), False)
+
+    made = rig.imported()
+
+    assert made["import"]["state"] == "done"
+    assert rig.get("marwa", "/notifications")["items"] == [], "the person watched it finish"
+
+
+def test_a_stopped_import_is_not_announced(rig: Rig) -> None:
+    made = rig.imported()
+    rig.client.post(f"{V1}/imports/{made['import']['id']}/stop", params=creds("marwa"))
+
+    rig.svc.scheduler.drain("background")
+
+    assert rig.get("marwa", "/notifications")["items"] == []
+
+
+def test_a_bell_that_cannot_ring_does_not_fail_the_matching(rig: Rig, monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(*args: Any, **kwargs: Any) -> bool:
+        raise RuntimeError("database is locked")
+
+    monkeypatch.setattr(rig.svc.notifications, "push", broken)
+    made = rig.imported()
+
+    rig.svc.scheduler.drain("background")
+
+    assert rig.get("marwa", f"/imports/{made['import']['id']}")["import"]["state"] == "done"

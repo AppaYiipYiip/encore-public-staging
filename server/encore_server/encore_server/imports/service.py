@@ -19,6 +19,7 @@ from ..errors import ApiError
 from ..ids import is_id, new_id, now_ms
 from ..keeper.triggers import want_kept
 from ..live import Hub
+from ..notifications import Notifications
 from ..scheduler import Retry, Scheduler, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
@@ -78,9 +79,11 @@ class ImportService:
         finder: Finder | None,
         *,
         read: Callable[[str], Playlist] | None = None,
+        notifications: Notifications | None = None,
     ) -> None:
         self._db = db
         self._hub = hub
+        self._notifications = notifications
         self._scheduler: Scheduler | None = None
         self._finder = finder
         self._read = read if read is not None else default_reader()
@@ -328,6 +331,21 @@ class ImportService:
         for import_id, person in persons.items():
             record = self.get(person, import_id)
             self._publish(person, record)
+            if record["state"] == "done":
+                self._announce(person, record)
+
+    def _announce(self, person: str, record: dict[str, Any]) -> None:
+        """An import that finished in the background is told in the bell, once. (One that was done at once was watched, and says nothing.)"""
+        if self._notifications is None:
+            return
+        self._notifications.tell(
+            person,
+            "import_done",
+            "Your import is ready",
+            body=f"{record['name']}: {record['matched']} of {record['total']} songs",
+            route="/settings/import",
+            dedupe=f"import:{record['id']}",
+        )
 
     @staticmethod
     def _settle(conn: sqlite3.Connection, import_id: str) -> None:

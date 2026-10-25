@@ -53,6 +53,7 @@ from .live import Hub
 from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
+from .notifications import DEFAULT_PAGE, MAX_PAGE, Notifications
 from .quiet import InFlight, InFlightMiddleware
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
@@ -81,6 +82,7 @@ class Services:
     linker: LibraryLinker | None = None
     imports: ImportService | None = None
     accounts: Accounts | None = None
+    notifications: Notifications | None = None
     limiter: Limiter | None = None
     music_as: Callable[[str, str, str], SubsonicUser] | None = None
     #: The yt-dlp updater and the restart that waits for a quiet moment (docs/11 ADR-R39); `None` when off.
@@ -217,6 +219,12 @@ def accounts_of(request: Request) -> Accounts:
     return service
 
 
+def notifications_of(request: Request) -> Notifications:
+    service = services(request).notifications
+    assert service is not None
+    return service
+
+
 def limiter_of(request: Request) -> Limiter:
     limiter = services(request).limiter
     assert limiter is not None
@@ -336,6 +344,29 @@ def check_invite(request: Request, code: str = "") -> JSONResponse:
     """What the join screen shows for a code before a name is chosen (no sign-in: the code is the key)."""
     limiter_of(request).refuse(f"join-address:{client_address(request)}", 20, 60)
     return _ok(accounts_of(request).check_invite(code))
+
+
+@router.get("/notifications")
+def list_notifications(
+    request: Request, since: str = "0", limit: int = DEFAULT_PAGE, p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """The bell: the person's news, newest first (docs/tasks P2-15). `since` is the cursor the last answer gave."""
+    if not since.isdigit():
+        raise ApiError("validation", "The cursor is a number, as the server gave it.")
+    if not 1 <= limit <= MAX_PAGE:
+        raise ApiError("validation", f"Ask for between 1 and {MAX_PAGE} items.")
+    return _ok(notifications_of(request).list(p.person_id, since=int(since), limit=limit))
+
+
+@router.post("/notifications/read")
+def read_notifications(
+    request: Request, body: dict[str, Any] = Depends(optional_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """Marks the news read, all of it or up to an id (`upTo`); safe to repeat."""
+    up_to = body.get("upTo")
+    if up_to is not None and (not isinstance(up_to, int) or isinstance(up_to, bool) or up_to < 0):
+        raise ApiError("validation", "`upTo` is the id of an item.")
+    return _ok({"unread": notifications_of(request).mark_read(p.person_id, up_to)})
 
 
 @router.post("/invites")
@@ -1030,7 +1061,12 @@ def _default_tools(
 
 
 def _background(
-    settings: Settings, database: Database, hub: Hub, youtube: YoutubeSource | None, client: NavidromeClient
+    settings: Settings,
+    database: Database,
+    hub: Hub,
+    youtube: YoutubeSource | None,
+    client: NavidromeClient,
+    notifications: Notifications,
 ) -> tuple[Scheduler | None, Keeper | None, ImportService]:
     """The background work: matching the songs of imports to uploads, and the keeper. Without a way to fetch songs nothing is queued,
     and without a music-server account that can find what was kept the keeper is off: every song still plays by streaming, and the
@@ -1062,7 +1098,7 @@ def _background(
             find_cover_=deezer_lookup,
         )
         handlers["keep"] = keeper.handle
-    imports = ImportService(database, hub, youtube)
+    imports = ImportService(database, hub, youtube, notifications=notifications)
     if youtube is not None:
         handlers["match"] = imports.match
     scheduler = Scheduler(database, handlers, workers={"interactive": 1, "background": 2}) if handlers else None
@@ -1092,11 +1128,14 @@ def create_app(
     )
     with database.tx() as conn:
         identity = load_or_create(conn)
-    scheduler, keeper, imports = _background(settings, database, hub, youtube, client)
+    notifications = Notifications(database, hub)
+    scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
     accounts = Accounts(
         database,
         navidrome_admin
         or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
+        notifications=notifications,
+        server_name=settings.server_name,
     )
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
 
@@ -1148,6 +1187,7 @@ def create_app(
         linker=linker,
         imports=imports,
         accounts=accounts,
+        notifications=notifications,
         limiter=Limiter(),
         tools=tools,
         identity=identity,

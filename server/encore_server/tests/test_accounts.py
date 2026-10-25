@@ -413,3 +413,34 @@ def test_the_database_has_the_new_tables(tmp_path: Path) -> None:
         names = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert {"invite", "reset_code"} <= names
     assert time.time() > 0
+
+
+def test_the_owner_hears_in_the_bell_that_an_invitation_was_used(rig: Rig) -> None:
+    invite = rig.invite(note="for Sara")
+    assert rig.join(invite["code"], username="sara", displayName="Sara").status_code == 201
+
+    owner = rig.client.get(f"{V1}/notifications", params=creds("marwa")).json()
+    assert [(i["kind"], i["title"], i["body"], i["read"]) for i in owner["items"]] == [
+        ("invite_used", "Sara joined My music server", "With the invitation you made.", False)
+    ]
+    assert owner["unread"] == 1
+    assert rig.client.get(f"{V1}/notifications", params=creds("nina")).json()["items"] == [], "only the one who made it"
+
+
+def test_a_refused_join_tells_nobody(rig: Rig) -> None:
+    assert rig.join("AAAA-BBBB-CCCC", username="sara").status_code in (400, 401, 404, 409, 410)
+
+    assert rig.client.get(f"{V1}/notifications", params=creds("marwa")).json()["items"] == []
+
+
+def test_a_bell_that_cannot_ring_does_not_fail_the_join(rig: Rig, monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(*args: Any, **kwargs: Any) -> bool:
+        raise RuntimeError("database is locked")
+
+    monkeypatch.setattr(rig.client.app.state.services.notifications, "push", broken)  # type: ignore[attr-defined]
+    invite = rig.invite()
+
+    joined = rig.join(invite["code"], username="sara")
+
+    assert joined.status_code == 201, "the friend is in; only the owner's news was lost"
+    assert rig.person_of("sara")["username"] == "sara"
