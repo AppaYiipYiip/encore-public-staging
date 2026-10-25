@@ -32,3 +32,58 @@ The owner: *"there are so many things we have not thought of: changing the profi
 | 4 | Changing the profile picture and the rest of "my account" | A new page **S-28 Your account / Edit profile**: picture, display name, change password, your devices, private listening, sign out, delete my account (later). The server stores a small avatar | `00` S-28 |
 | 5 | The server's side of the UI | **Drawn too**: the installer wizard, the admin pages and the join page (W-01 to W-08) in a fourth batch of drawings after the app screens; the **terminal** (installer output and what each `encore` command prints) is text, written in `../15` §1 and §1b | `00` W-07, W-08, T-01, `../15` |
 | 6 | "I don't know what else is missing" | **A gap pass by reading**: every story of `../03a` (US-01 to US-76) mapped to a screen, the four state tables mapped **by area** (connecting `31` to S-01, S-71, S-90; accounts and joining `32` to S-02 to S-08, S-28, S-73, W-01, W-03, W-05; playback `33` to S-30 to S-36, S-90; conflicts `34` to S-17, S-91), and Spotify's own settings sections walked (Account, Content and display, Privacy and social, Playback, Notifications, Devices, Data saving and offline, Media quality, About). What was missing is added to `00` (S-21 to S-28, W-07, W-08, T-01, the contents of S-72). A row-by-row check of `31` to `34` against the frames is still to do once the drawings are in (the drawings' frame labels carry the row ids, so `tools/check_rows.py`-style tooling can list rows that no frame shows) | `00` |
+
+## Third round (2026-10-24, evening): what the app-screen batch raised, decided by the advisor model
+
+The drawing agent for the first-run, account and settings screens (172 frames, `directions/screens-first-run-and-settings.html`) listed seven conflicts between the documents and the code and some items "for the owner". Decided without the owner (standing authority, `feedback_advisor-decides-when-owner-away`):
+
+| Conflict | Decision | Fixed in |
+|----------|----------|----------|
+| The sign-in code of Quick Connect: 6 digits (`32` AC-8) or 7 characters (the Welcome TV frame) | **6 digits everywhere**; the 5-minute life is the proposal in `32` JN-8 | the Welcome TV frame (corrections list below) |
+| Password minimum: 10 (`15`) or 8 (`32`, the app, the server) | **8; the code wins** | `15` page 2 |
+| "Normal" streaming and download quality: Opus 128 (`23`) or Opus 96 (the code) | **The code wins: Opus 96** | `23` §1 |
+| Away-from-home streaming quality: one fixed profile (`23`) or the person's choice (the app) | **The person picks, as in Spotify**; the Host may cap away quality in the admin (W-07) and the app mentions a cap only when one exists | `23` §1 |
+| Three notification switches in the app, at most two in ADR-R44 | **The drawings show the ADR's target (two, both off)**; the app is trimmed when the bell exists (PR for ADR-R44 says so) | the drawings |
+| The strip's Try again: 48 px or 40 px | **48 px** (the touch-target rule) | the corrections list |
+| Home and Privacy: separate pages (drawing) or one page "Privacy & your music" (app) | **Separate**, as drawn | the drawings |
+
+Accepted as drafted: the refusal sentences, the 5 MB picture limit, "Invited by Riley" (as `15` A2), and the "Ask the owner of Our music to update the server." sentence without a person's name. **Owner-locked "Explicit songs"** stays because `explicit_ok` is per person in the server (`accounts.update_person`). **YouTube Music's third way in "Bring your music" (a data file) is marked "later"**: the server has no reader for such a file (`imports/readers.py` reads links and playlists only), and a drawing must not show a capability that does not exist.
+
+### Corrections the drawings still need (applied in one pass when the browser pages are drawn)
+
+1. The Welcome TV frame shows a 7-character code: make it **6 digits**.
+2. The strip's "Try again" in the direction-A anchors is 40 px: make it **48 px**.
+3. "Bring your music": the YouTube Music **data file** way is drawn "later" (grey, one line), not as a working option.
+4. The Notifications settings page shows **two** opt-in categories (both off), not three.
+
+### The library and browse screens (130 frames, `directions/screens-library-and-browse.html`): eight open points, all accepted by the advisor model
+
+1. "Partly on the server" album: **no "Not in your library" heading** (it is a layout marker the rule forbids): all songs in order, the only sign is "11 of 14 songs" under the title, the song just tapped shows a plain spinner. 2. Your Library: the scope switch moves into the Sort sheet; the tab is "Downloads" as in Spotify; Liked Songs leads the Playlists list; offline the frame shows Playlists so the grey is visible (the app today opens on Downloads when offline: unchanged until the screen is built). 3. Offline rows: "Not downloaded" replaces the artist line, a downloaded song gets a check. 4. Album pages: the heart is "in your library", rows are plain two-line rows on a phone, numbered on browser and TV. 5. New playlist: full screen on a phone, a dialog in the browser; the "name is taken" check is new (server and app). 6. Import a playlist, Start a Jam, "Ask for it" and shared playlists show only when the server has them on; with none on, the + menu is just "New playlist". 7. A refused edit is parked with its reason (`34` CF-26, gap G-6) instead of vanishing. 8. Editing a playlist needs no drag or long press in the browser (Move up / Move down / Remove) and on the TV (OK picks up, Up/Down move, OK drops).
+
+### Lyrics, Devices, Jam, People, Year in Music, Import and the rest (164 frames, `directions/screens-player-together-and-more.html`): decided by the advisor model
+
+* **People's names inside the app are fine** (Nina, Mia, "Hosted by Riley", "Added by Nina" on every Jam song): the rule is about the *server's* name, not about the people who use it.
+* The invitation link carries a letter-and-digit code that is never shown to be typed; a code that **is** typed (Quick Connect, a Jam code) is six digits.
+* Frames owned by the Home author that need the same touch-target fix (a 48 px scrubber hit area on a phone, a 48 px device button) go into the final consistency pass with the corrections list above; the profile menu opens from the avatar, which is drawn at the top left of Home (the drawn Home still shows it at the top right: to be corrected in the same pass).
+* Not drawn on purpose: the Queue and the three-state shuffle (drawn with Now playing), the Notifications settings page (drawn with the settings), Friend activity and Taste match at the phone size only (both are "later").
+
+## Fourth group (2026-10-25): the server's browser pages, decided by the advisor model
+
+The drawing agent for the browser pages (68 frames, `directions/screens-server-and-browser.html`: the installer wizard in 18 states, the admin's Home, People, Library, Away from home, Backups, Updates, Settings and Logs, the join page that an invitation link opens, and the web player) listed some conflicts and "owner decisions". Decided without the owner (standing authority, `feedback_advisor-decides-when-owner-away`); he can override any of them:
+
+| Open point | Decision | Fixed in |
+|------------|----------|----------|
+| Three groupings of the admin pages (`15` §4, today's admin, the drawn rail) | **The drawn rail of eight is canonical**: Home, People, Library, Away from home, Backups, Updates, Settings, Logs | `15` §4 |
+| Backups and Updates: one page or two | **Two**, as drawn (one has a restore command and no button, the other a version list and one command) | as drawn |
+| The five server colours | **As drawn** | as drawn |
+| New wording (for example "Music server is not answering.", "The update went back to 0.1.0.") and the brand names on the Host's pages (Tailscale, Soulseek, YouTube, yt-dlp) | **Accepted**: the Host needs the real names to act, as `15` and today's admin already do | as drawn |
+| "Recommendations" drawn as a switch | **A grey "later" line with no switch**, as YouTube Music's data file is: a switch for a feature that does not exist breaks the rule that the screens follow what the server offers | the Settings frames |
+| The installer's music folder shown as `/home/riley/Music` | **`/home/host/Music`**: a person's name does not belong in a server's page | `15` |
+| `15` page 3 preselects "I don't have music files yet" but page 9 said "5,616 songs" | **The drawing is right**: page 9 now says "Ready for your first songs" and notes the other case | `15` |
+| Used and expired invitation: two frames in the brief, one in the drawing | **One**: `IV-4` gives both the same sentence on purpose | as drawn |
+| The admin's own sign-in page | **Not drawn**: it is the normal account sign-in of `15` page 2; it is not in the inventory | none |
+| Today's admin adds a person with a temporary password | **Not carried over**: `32` has invitations and reset links only | as drawn |
+
+Applied in this round to the earlier drawings: the strip's "Try again" is 48 px in all five files (the strip is 56 px tall, a little less than before), the Welcome TV frame shows a six-digit code, the YouTube Music data file is a grey "later" line, the Notifications page shows two categories, the Playback refusal comes from the owner's cap in the admin, and the three left-over wording fixes of rounds 2 and 3.
+
+Still to do in the final consistency pass: the 48 px scrubber hit area and device button on the phone Now playing frame, and the profile avatar at the top left of the drawn Home (Spotify's place; the drawing still shows it at the top right).

@@ -12,9 +12,9 @@ Encore has no push service, so "notifications" cannot simply arrive.
 | The Host's own files | untouched (FLAC, MP3, AAC, …) | read-only |
 | Quality tier (P4-04) | FLAC from Lidarr/Soulseek | lossless |
 | **Streaming at home on Wi-Fi** | the original file | the LAN is fast |
-| **Streaming on mobile data / away from home** | Opus 128 kbps transcoded by Navidrome (fixed profiles, `ND_ENABLETRANSCODINGCONFIG=false`) | the Host's upload and the listener's data plan |
+| **Streaming on mobile data / away from home** | **the person picks, as in Spotify** (Settings > Playback > streaming quality per network: Original, High Opus 160, Normal Opus 96, Data saver Opus 48); the Host may cap it for away from home in the admin (`design/00` W-07), and only then does the app say so (the capabilities rule, ADR-R42 point 8) | the Host's upload and the listener's data plan |
 | **Data saver** | Opus 64 kbps | one switch (U13) |
-| **Downloads to the phone** | setting: Normal = Opus 128 (default, ~1 MB/min), High = Opus 192, Original | phone storage |
+| **Downloads to the phone** | setting: Normal = **Opus 96** (default, ~0.7 MB/min; what the app defines in `audio_quality.dart`), High = Opus 192, Original | phone storage |
 Gapless: Opus and FLAC files carry the encoder delay/padding; the player uses it (test with a live album in P4-12).
 
 ## 2. Downloads

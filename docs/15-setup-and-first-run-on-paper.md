@@ -53,7 +53,7 @@ $ encore status
 
         On your home network:  192.168.1.23:4540
         Away from home:        not set up (encore funnel on)
-        Music folder:          /home/riley/Music
+        Music folder:          /home/host/Music
         Last backup:           2026-10-24 03:12
 ```
 ```
@@ -107,7 +107,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
                                              [ Continue ]
 ```
 * **The server's name is the household's, never one person's** (owner, 2026-10-24: "why would I call a server that is not meant for one person by my name?"): the field is pre-filled with "Our music", the hint shows two more place names, and a person's own name appears only in "invited by Riley" and in the greeting.
-* Password rules: ≥ 10 characters; a strength line; "show password" eye.
+* Password rules: 8 to 128 characters (`32` AC-1, the same as the app and the server); a strength line; "show password" eye. *(Corrected 2026-10-24: this said 10; the code and `32` say 8, and the code wins.)*
 * Creates the Host as owner (an administrator of the music server is made behind the scenes with a generated password that nobody
   types; the Host's own account is a normal person with the owner role).
 * Error: username taken / invalid characters, in words, next to the field.
@@ -115,7 +115,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
 ### Page 3 — Your music   *Step 2 of 8*
 ```
   Where is your music?
-  ( ) Music folder on this computer   /home/riley/Music     2,340 songs found   38 GB
+  ( ) Music folder on this computer   /home/host/Music       2,340 songs found   38 GB
   ( ) Another disk                    /mnt/disk2/music       5,616 songs found   49 GB
   ( ) A different folder…             [ browse ]
   (•) I don't have music files yet — start empty (songs you play and save will be kept here)
@@ -198,7 +198,8 @@ Nothing to fill. Shows the computer's name and that it is ready.
 ```
   [the Host's own album covers fill the background as a slowly drifting mosaic; empty server: illustration]
   Our music is ready 🎉
-  ✓ 5,616 songs   ✓ Away from home: on   ✓ Friends on other servers: allowed   ✓ 1 phone
+  ✓ Ready for your first songs   ✓ Away from home: on   ✓ Friends on other servers: allowed   ✓ 1 phone
+  (With a music folder chosen on page 3 it reads "✓ 2,340 songs" instead; the drawing starts empty, as page 3 preselects.)
   Manage your server any time at  http://encore.local   (bookmark it)
                                              [ Open my server's page ]
 ```
@@ -222,16 +223,17 @@ Manual connection ("Other ways to connect"): address + username + password, for 
 
 At `http://encore.local` (home network only by default; never on the public address). Sign in with the Host's normal account.
 
+The eight pages below are the ones **drawn** (`design/directions/screens-server-and-browser.html`, W-02 to W-08; decided 2026-10-25, `design/03`). They replace the nine-row grouping this section had before, which split one switch per page.
+
 | Page | What it shows / does |
 |------|----------------------|
-| **Home** | Health in plain words (music server, songs from YouTube, away-from-home address, disk, updates), "needs you" items first, recent activity counts (no titles) |
-| **People** | Who has an account, role, invited by, last seen, devices; invite, reset password, lock, remove; pending invitations |
-| **Music** | Music folders and counts, scan now, songs kept by Encore (count, size), duplicates report, "remove songs nobody saved" |
-| **Songs from YouTube** | On/off, background download speed, status (OK / paused because YouTube is busy, until when), Advanced: pace |
-| **Best quality** | Off/on with the plain risk text (D-12), progress, songs upgraded |
+| **Home** | "Everything is working." in words, then one plain row per part (music server, songs from YouTube, away-from-home address with the days the key has left, disk, last backup, Encore's version, people, today's counts); "needs you" rows come first; counts only, never titles |
+| **People** | Who has an account, role, invited by, last seen, devices; invite, reset-password link, unlock a locked person, remove with its reason; pending invitations |
+| **Library** | Music folders with counts (read-only, said in words), scan now, what Encore itself kept (count, size, where), duplicates, "songs nobody saved" with a Remove button that asks first |
 | **Away from home** | Address, status, key expiry, re-run the Tailscale steps |
-| **Other servers** | Allow on/off (D-13), connected servers (names only), allow keeping copies (D-16) |
-| **Problems** | Opt-in crash/problem reports from phones (P4-13), export for a bug report |
-| **Updates & backup** | Version, "run `encore update`", last backup, restore instructions |
+| **Backups** | Last backup (when, size, where), how often, what is in it and what is not, Back up now, the restore command (never a button) |
+| **Updates** | Versions (Encore, music server, fetching tool), "run `sudo encore update`", update automatically at night (off by default) |
+| **Settings** | The server's name ("Our music"), friends on other servers (D-13), recommendations (a grey "later" line until they exist), best quality with its plain risk text (D-12), plays any song (YouTube), the highest quality away from home (a cap, only mentioned by the app when set), songs from YouTube status and background downloads |
+| **Logs** | What the server has been saying in the last hour, in plain words (no password, login or song title), filtered by part; copy or download for a bug report; the versions. Opt-in problem reports from phones (P4-13) are not drawn yet |
 
 Each admin page is drawn on paper the same way before its task starts (P3-06 begins by adding them here).
