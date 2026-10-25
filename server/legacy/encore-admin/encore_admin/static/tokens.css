@@ -45,10 +45,10 @@
     --on-bg: #0E0E10;
     --on-bg-muted: rgba(14, 14, 16, 0.65);
     --on-bg-faint: rgba(14, 14, 16, 0.42);
-    --accent: #0BA862;
+    --accent: #07703F;
     --on-accent: #FFFFFF;
-    --danger: #D92D20;
-    --warning: #B54708;
+    --danger: #BC2318;
+    --warning: #A63F06;
   }
 }
 :root[data-theme="light"] {
@@ -60,8 +60,8 @@
   --on-bg: #0E0E10;
   --on-bg-muted: rgba(14, 14, 16, 0.65);
   --on-bg-faint: rgba(14, 14, 16, 0.42);
-  --accent: #0BA862;
+  --accent: #07703F;
   --on-accent: #FFFFFF;
-  --danger: #D92D20;
-  --warning: #B54708;
+  --danger: #BC2318;
+  --warning: #A63F06;
 }
