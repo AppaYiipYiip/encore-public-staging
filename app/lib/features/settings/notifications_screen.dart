@@ -76,8 +76,10 @@ class NotificationsSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const SettingsPage(
         title: 'Notifications',
-        description: 'What Encore may tell you about. Nothing here is sent '
-            'to anybody: the checks happen on your phone.',
+        description: 'Encore does not notify your phone unless you ask it to: '
+            'everything on this page is off, and Android asks for its '
+            'permission only when you switch one on. Nothing here is sent to '
+            'anybody: the checks happen on your phone.',
         children: [NotificationSwitches()],
       );
 }

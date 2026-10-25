@@ -35,9 +35,9 @@ class AppSettings {
     this.libraryScope = LibraryScope.mine,
     this.showNewOnServer = true,
     this.privateListening = false,
-    this.alertsOnServer = true,
-    this.alertsReleases = true,
-    this.alertsImports = true,
+    this.alertsOnServer = false,
+    this.alertsReleases = false,
+    this.alertsImports = false,
     this.perfOverlay = false,
   });
 
@@ -261,9 +261,9 @@ class SettingsController extends Notifier<AppSettings> {
       libraryScope: LibraryScope.byName(p.getString(_kScope)),
       showNewOnServer: p.getBool(_kShowNew) ?? true,
       privateListening: p.getBool(_kPrivate) ?? false,
-      alertsOnServer: p.getBool(kAlertsOnServer) ?? true,
-      alertsReleases: p.getBool(kAlertsReleases) ?? true,
-      alertsImports: p.getBool(kAlertsImports) ?? true,
+      alertsOnServer: p.getBool(kAlertsOnServer) ?? false,
+      alertsReleases: p.getBool(kAlertsReleases) ?? false,
+      alertsImports: p.getBool(kAlertsImports) ?? false,
       perfOverlay: p.getBool(_kPerfOverlay) ?? false,
     );
   }
@@ -475,9 +475,9 @@ Future<AlertSettings> readAlertSettings() async {
   try {
     final p = await SharedPreferences.getInstance();
     return AlertSettings(
-      onServer: p.getBool(SettingsController.kAlertsOnServer) ?? true,
-      releases: p.getBool(SettingsController.kAlertsReleases) ?? true,
-      imports: p.getBool(SettingsController.kAlertsImports) ?? true,
+      onServer: p.getBool(SettingsController.kAlertsOnServer) ?? false,
+      releases: p.getBool(SettingsController.kAlertsReleases) ?? false,
+      imports: p.getBool(SettingsController.kAlertsImports) ?? false,
     );
   } on Object {
     return const AlertSettings();

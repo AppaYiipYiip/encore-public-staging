@@ -35,6 +35,37 @@ void main() {
       expect(s.libraryScope, LibraryScope.mine);
     });
 
+    test(
+        'no phone notification unless asked: nothing saved, every alert is off',
+        () async {
+      // The settings screen, the app's start-up and the background job each read the switches their own way (ADR-R44).
+      final prefs = await prefsWith({});
+
+      final fromPrefs = SettingsController.fromPrefs(prefs);
+      expect(fromPrefs.alertsOnServer, isFalse);
+      expect(fromPrefs.alertsReleases, isFalse);
+      expect(fromPrefs.alertsImports, isFalse);
+      expect(const AppSettings().alerts.onServer, isFalse);
+      expect(const AppSettings().alerts.releases, isFalse);
+      expect(const AppSettings().alerts.imports, isFalse);
+
+      final background = await readAlertSettings();
+      expect(background.onServer, isFalse);
+      expect(background.releases, isFalse);
+      expect(background.imports, isFalse);
+    });
+
+    test('a switch the person turned on is still on for the background job',
+        () async {
+      await prefsWith({'encore.alerts.releases': true});
+
+      final background = await readAlertSettings();
+
+      expect(background.releases, isTrue);
+      expect(background.onServer, isFalse);
+      expect(background.imports, isFalse);
+    });
+
     test('nothing saved gives the defaults', () async {
       final s = SettingsController.fromPrefs(await prefsWith({}));
 

@@ -71,10 +71,17 @@ void main() {
     expect(find.textContaining('download service'), findsNothing);
     final container =
         ProviderScope.containerOf(tester.element(find.byType(Scaffold).first));
-    expect(container.read(settingsProvider).alertsOnServer, isTrue);
+    final defaults = container.read(settingsProvider);
+    expect([
+      defaults.alertsOnServer,
+      defaults.alertsReleases,
+      defaults.alertsImports
+    ], everyElement(isFalse),
+        reason: 'ADR-R44: nothing is posted to the phone unless the person '
+            'switches it on, so nothing asks for the permission at first run');
     await tester.tap(find.text('New on your server'));
     await settle(tester);
-    expect(container.read(settingsProvider).alertsOnServer, isFalse);
+    expect(container.read(settingsProvider).alertsOnServer, isTrue);
     await closeApp(tester, db);
   });
 }

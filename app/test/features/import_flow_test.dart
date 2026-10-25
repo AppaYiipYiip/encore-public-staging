@@ -10,6 +10,7 @@ import 'package:encore/data/fetch/fetch_client.dart';
 import 'package:encore/data/fetch/import_models.dart';
 import 'package:encore/features/import/import_providers.dart';
 import 'package:encore/features/instant/instant_controller.dart';
+import 'package:encore/features/settings/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -587,6 +588,8 @@ void main() {
       final container = makeContainer(overrides: [
         playlistImportBackendProvider.overrideWithValue(server),
         localNotificationsProvider.overrideWithValue(notifications),
+        initialSettingsProvider
+            .overrideWithValue(const AppSettings(alertsImports: true)),
       ]);
       addTearDown(container.dispose);
       server.jobs = [running(done: 2)];
@@ -621,12 +624,34 @@ void main() {
       final container = makeContainer(overrides: [
         playlistImportBackendProvider.overrideWithValue(server),
         localNotificationsProvider.overrideWithValue(_Notifications(shown)),
+        initialSettingsProvider
+            .overrideWithValue(const AppSettings(alertsImports: true)),
       ]);
       addTearDown(container.dispose);
       server.jobs = [finished()];
       await container.read(importsProvider.notifier).refresh();
       expect(shown, isEmpty);
       expect(container.read(importsProvider).jobs, hasLength(1));
+    });
+
+    test('with the alert off (the default), nothing is shown in the shade',
+        () async {
+      final shown = <AlertNotification>[];
+      final container = makeContainer(overrides: [
+        playlistImportBackendProvider.overrideWithValue(server),
+        localNotificationsProvider.overrideWithValue(_Notifications(shown)),
+      ]);
+      addTearDown(container.dispose);
+      server.jobs = [running(done: 2)];
+      final controller = container.read(importsProvider.notifier);
+      await controller.refresh();
+      server.jobs = [finished(missing: 0)];
+      await controller.refresh();
+
+      expect(shown, isEmpty,
+          reason: 'ADR-R44: no phone notification unless asked');
+      expect(container.read(importsProvider).jobs, hasLength(1),
+          reason: 'the page still shows it');
     });
   });
 }

@@ -27,7 +27,7 @@ void main() {
   late FakeCatalogue catalogue;
   List<ImportSnapshot>? imports;
 
-  const all = AlertSettings();
+  const all = AlertSettings(onServer: true, releases: true, imports: true);
 
   AlertsService service({bool withCatalogue = true}) => AlertsService(
         db: db,

@@ -39,9 +39,9 @@ abstract interface class AlertSink {
 /// Which alerts the person wants (Settings > Get new music).
 class AlertSettings {
   const AlertSettings({
-    this.onServer = true,
-    this.releases = true,
-    this.imports = true,
+    this.onServer = false,
+    this.releases = false,
+    this.imports = false,
   });
 
   /// "Songs of an imported playlist arrived" and "what I requested is
