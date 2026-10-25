@@ -9,14 +9,19 @@ from __future__ import annotations
 
 import logging
 import secrets
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
 
 from .auth import subsonic_token
+from .sources.youtube.stream import Upstream
 from .textnorm import norm_artist, norm_title, ratio, version_signature
 
 log = logging.getLogger("encore_server.navidrome")
+
+#: The biggest picture passed on to a phone (a cover is a few hundred kilobytes; this stops a wrong answer from filling memory).
+_MAX_COVER = 3 * 1024 * 1024
 
 
 class NavidromeClient:
@@ -30,18 +35,21 @@ class NavidromeClient:
     def configured(self) -> bool:
         return bool(self._user and self._password)
 
-    def _call(self, method: str, **params: object) -> dict[str, Any] | None:
-        """The `subsonic-response` when the music server said ok; `None` for anything else (a busy music server is not an exception)."""
+    def _query(self, **params: object) -> dict[str, str]:
+        """A call as the server's own account: its login, never a person's."""
         salt = secrets.token_hex(6)
-        query = {
+        return {
             "u": self._user,
             "t": subsonic_token(self._password, salt),
             "s": salt,
             "v": "1.16.1",
             "c": "encore-server",
-            "f": "json",
             **{k: str(v) for k, v in params.items()},
         }
+
+    def _call(self, method: str, **params: object) -> dict[str, Any] | None:
+        """The `subsonic-response` when the music server said ok; `None` for anything else (a busy music server is not an exception)."""
+        query = self._query(f="json", **params)
         try:
             response = self._client.get(f"{self._base}/rest/{method}.view", params=query)
             body = response.json().get("subsonic-response", {})
@@ -49,6 +57,62 @@ class NavidromeClient:
             log.info("the music server did not answer %s: %s", method, type(error).__name__)
             return None
         return body if isinstance(body, dict) and body.get("status") == "ok" else None
+
+    # ------------------------------------------------------------------ what a phone is given (docs/tasks P2-20)
+
+    def open_stream(
+        self, song_id: str, range_header: str | None, *, max_bit_rate: int | None = None, fmt: str | None = None
+    ) -> Upstream | None:
+        """A kept song's audio, passed on as it arrives, with `Range`, as the server's own account: the phone never needs the music server's
+        login. `None` when the music server does not answer or has no such song (it says so with a 200 and a text body, not an audio one)."""
+        extra: dict[str, object] = {"id": song_id}
+        if max_bit_rate:
+            extra["maxBitRate"] = max_bit_rate
+        if fmt:
+            extra["format"] = fmt
+        request = self._client.build_request(
+            "GET",
+            f"{self._base}/rest/stream.view",
+            params=self._query(**extra),
+            headers={"Range": range_header} if range_header else {},
+        )
+        try:
+            response = self._client.send(request, stream=True)
+        except httpx.HTTPError as error:
+            log.info("the music server did not answer a stream: %s", type(error).__name__)
+            return None
+        kind = response.headers.get("content-type", "")
+        if response.status_code not in (200, 206) or not (
+            kind.startswith("audio/") or kind.startswith("video/") or kind == "application/octet-stream"
+        ):
+            response.close()
+            log.info("the music server had no song %s to stream (HTTP %s, %s)", song_id, response.status_code, kind or "no type")
+            return None
+        keep = ("content-type", "content-length", "content-range", "accept-ranges")
+        headers = {name: value for name, value in response.headers.items() if name.lower() in keep}
+
+        def body() -> Iterator[bytes]:
+            try:
+                yield from response.iter_raw(64 * 1024)
+            finally:
+                response.close()
+
+        return Upstream(status=response.status_code, headers=headers, body=body(), close=response.close)
+
+    def cover(self, cover_id: str, size: int | None = None) -> tuple[bytes, str] | None:
+        """The picture the music server has under [cover_id] (and its type), or `None`."""
+        extra: dict[str, object] = {"id": cover_id}
+        if size:
+            extra["size"] = size
+        try:
+            response = self._client.get(f"{self._base}/rest/getCoverArt.view", params=self._query(**extra))
+        except httpx.HTTPError as error:
+            log.info("the music server did not answer a cover: %s", type(error).__name__)
+            return None
+        kind = response.headers.get("content-type", "")
+        if response.status_code != 200 or not kind.startswith("image/") or len(response.content) > _MAX_COVER:
+            return None
+        return response.content, kind
 
     def ping(self) -> bool:
         return self._call("ping") is not None

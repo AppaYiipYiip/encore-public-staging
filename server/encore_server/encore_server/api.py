@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import importlib.util
 import logging
+import re
 import secrets
 import sqlite3
 import time
@@ -20,7 +21,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, playback, refs
@@ -86,6 +87,8 @@ class Services:
     tools: Tools | None = None
     #: Who this server is: its key and the id made from it (docs/11 ADR-R40).
     identity: ServerIdentity | None = None
+    #: The music server as this server's own account: kept songs and covers are passed on through it, so a phone needs no login of the music server.
+    music: NavidromeClient | None = None
 
 
 def services(request: Request) -> Services:
@@ -537,6 +540,51 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
     return _ok({"url": f"/encore/stream/{ref_id}?p={p.person_id}&e={expires}&sig={sig}", "expiresAt": expires * 1000})
 
 
+_COVER_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
+
+
+@router.get("/covers/{cover_id}/url")
+def cover_url(cover_id: str, request: Request, size: int | None = None, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The address of a picture the server has (a cover), signed like a stream so an image view that cannot set headers can load it, and so a phone
+    needs no login of the music server (docs/tasks P2-20)."""
+    if not _COVER_ID.match(cover_id):
+        raise ApiError("not_found", "There is no such picture.")
+    if size is not None and not 16 <= size <= 2000:
+        raise ApiError("validation", "A picture is asked for between 16 and 2000 pixels.")
+    with services(request).db.tx() as conn:
+        secret = stream_secret(conn)
+    expires = int(time.time()) + STREAM_URL_TTL_S
+    sig = sign_stream(secret, p.person_id, f"cover:{cover_id}", expires)
+    tail = f"&size={size}" if size else ""
+    return _ok({"url": f"/encore/cover/{cover_id}?p={p.person_id}&e={expires}&sig={sig}{tail}", "expiresAt": expires * 1000})
+
+
+def cover(cover_id: str, request: Request) -> Response:
+    """`GET /encore/cover/{id}`: a picture from the music server, behind a signed address."""
+    svc = services(request)
+    query = request.query_params
+    with svc.db.tx() as conn:
+        secret = stream_secret(conn)
+    try:
+        expires = int(query.get("e", "0"))
+        size = int(query["size"]) if query.get("size") else None
+    except ValueError:
+        raise ApiError("validation", "That address is not right.") from None
+    if not _COVER_ID.match(cover_id) or not valid_stream_signature(
+        secret, query.get("p", ""), f"cover:{cover_id}", expires, query.get("sig", "")
+    ):
+        raise ApiError("unauthorized", "This picture address has expired. Ask the app for it again.")
+    if size is not None and not 16 <= size <= 2000:
+        raise ApiError("validation", "A picture is asked for between 16 and 2000 pixels.")
+    found = svc.music.cover(cover_id, size) if svc.music is not None and svc.music.configured else None
+    if found is None:
+        raise ApiError("not_found", "There is no such picture.")
+    content, kind = found
+    return Response(
+        content=content if request.method != "HEAD" else b"", media_type=kind, headers={"Cache-Control": "private, max-age=86400"}
+    )
+
+
 _UNAVAILABLE_REASON = {"not_found": "not_found", "unavailable": "removed", "age_restricted": "age_restricted"}
 
 
@@ -565,6 +613,18 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
         if not valid_stream_signature(secret, person, ref_id, expires, query.get("sig", "")):
             raise ApiError("unauthorized", "This song address has expired. Ask the app to play it again.")
         ref = refs.get_ref(conn, ref_id)
+    # The server decides where the audio comes from: its own copy when it keeps one (as its own account at the music server, `Range` and all),
+    # YouTube otherwise. The phone asks for the same address either way (docs/tasks P2-20).
+    kept = (ref.get("file") or {}).get("navidromeSongId")
+    if kept and svc.music is not None and svc.music.configured:
+        own = svc.music.open_stream(
+            str(kept),
+            request.headers.get("range"),
+            max_bit_rate=_bit_rate(query.get("maxBitRate")),
+            fmt=_audio_format(query.get("format")),
+        )
+        if own is not None:
+            return _pass_on(own, request)
     if svc.youtube is None:
         raise ApiError("source_unreachable", "This server cannot fetch songs from YouTube.")
     try:
@@ -573,11 +633,38 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
         raise _stream_error(error, svc.youtube) from error
     except DownloadError as error:
         raise _stream_error(StreamError(error.code), svc.youtube) from error
+    return _pass_on(upstream, request)
+
+
+def _pass_on(upstream: Any, request: Request) -> StreamingResponse:
     headers = {**upstream.headers, "Cache-Control": "no-store"}
     body = iterate_in_threadpool(upstream.body) if request.method != "HEAD" else iter(())
+    if request.method == "HEAD":
+        upstream.close()
     return StreamingResponse(
         body, status_code=upstream.status, headers=headers, media_type=headers.pop("Content-Type", None), background=None
     )
+
+
+_BIT_RATES = frozenset({0, 32, 48, 64, 96, 112, 128, 160, 192, 224, 256, 320})
+_FORMATS = frozenset({"mp3", "opus", "aac", "raw"})
+
+
+def _bit_rate(value: str | None) -> int | None:
+    """The quality cap a phone asks for (the setting for its network): one of the usual rates, or an error in words."""
+    if value is None or value == "":
+        return None
+    if not value.isdigit() or int(value) not in _BIT_RATES:
+        raise ApiError("validation", "That is not a quality this server offers.")
+    return int(value) or None
+
+
+def _audio_format(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    if value not in _FORMATS:
+        raise ApiError("validation", "That is not an audio format this server offers.")
+    return None if value == "raw" else value
 
 
 # ------------------------------------------------------------------------------------------------ the library
@@ -1064,10 +1151,12 @@ def create_app(
         limiter=Limiter(),
         tools=tools,
         identity=identity,
+        music=client,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
+    app.add_api_route("/encore/cover/{cover_id}", cover, methods=["GET", "HEAD"])
     app.add_api_websocket_route("/encore/live", live)
     gateway.mount(app, settings.navidrome_url, client=gateway_client)
 
