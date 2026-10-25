@@ -8,6 +8,12 @@ import '../support/test_app.dart';
 /// P1-12 (E11-E13, owner: "sometimes there are buttons under the 3 navigation buttons ... we should be testing all cases"):
 /// every main screen and every bottom sheet is opened as it looks on a phone with three navigation buttons, with the gesture bar,
 /// and on a small phone with the largest text, and nothing the person can tap may lie under the system bar at the bottom.
+/// Closes the sheet that is open, as the back gesture does (the scrim of a tall sheet on a small phone is not reachable).
+void closeTopSheet(WidgetTester tester) {
+  Navigator.of(tester.element(find.byType(Scaffold).first), rootNavigator: true)
+      .pop();
+}
+
 void main() {
   setUpAll(loadAppFonts);
 
@@ -55,15 +61,33 @@ void main() {
         await open(tester, '/player');
         await expectReachable(tester, profile, 'the player');
 
-        for (final label in ['Speed', 'Sleep timer', 'Queue']) {
+        // Spotify's arrangement (docs/design/03 row 9): the speed and the sleep timer are in the "..." menu, the queue is the small icon.
+        await tester.ensureVisible(find.byTooltip('More options'));
+        await tester.tap(find.byTooltip('More options'));
+        await settle(tester);
+        await expectReachable(tester, profile, 'the player menu');
+        closeTopSheet(tester);
+        await settle(tester);
+        for (final label in ['Playback speed', 'Sleep timer']) {
+          if (find.text(label).evaluate().isEmpty) {
+            await tester.ensureVisible(find.byTooltip('More options'));
+            await tester.tap(find.byTooltip('More options'));
+            await settle(tester);
+          }
           await tester.ensureVisible(find.text(label));
           await tester.tap(find.text(label));
           await settle(tester);
           await expectReachable(tester, profile, '$label sheet');
-          await tester.tapAt(
-              const Offset(10, 60)); // the scrim above the sheet closes it
+          closeTopSheet(
+              tester); // a sheet on a small phone covers the scrim: close it as the back gesture does
           await settle(tester);
         }
+        await tester.ensureVisible(find.byTooltip('Queue'));
+        await tester.tap(find.byTooltip('Queue'));
+        await settle(tester);
+        await expectReachable(tester, profile, 'Queue sheet');
+        closeTopSheet(tester);
+        await settle(tester);
         await closeApp(tester, app.db);
         semantics.dispose();
       });

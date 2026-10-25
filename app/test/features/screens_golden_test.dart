@@ -1,3 +1,4 @@
+import 'package:encore/app/connection.dart';
 import 'package:encore/domain/lyrics.dart';
 import 'package:encore/features/player/lyrics_screen.dart';
 import 'package:flutter/material.dart';
@@ -116,6 +117,27 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/now_playing.png'),
+    );
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets('now playing, waiting for the server', (tester) async {
+    final app = await pumpApp(
+      tester,
+      playing: samplePlaying(isPlaying: false),
+      overrides: [
+        connectionGraceProvider.overrideWithValue(Duration.zero),
+        serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+        currentLyricsProvider.overrideWith((ref, id) async => _sampleLyrics),
+      ],
+    );
+    await goTo(tester, '/player');
+    app.facade.emitPosition(const Duration(seconds: 62));
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/now_playing_waiting.png'),
     );
     await closeApp(tester, app.db);
   });

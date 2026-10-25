@@ -24,8 +24,10 @@ void main() {
     await tester.tap(find.text('Opening The').first);
     await settle(tester);
 
-    expect(find.byTooltip('Playback speed'), findsOneWidget);
-    await tester.tap(find.byTooltip('Playback speed'));
+    // The speed is a line of the "..." menu (as in Spotify).
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    await tester.tap(find.text('Playback speed'));
     await settle(tester);
     expect(find.text('Playback speed'), findsWidgets);
     expect(find.text('1.25x'), findsOneWidget);
@@ -37,8 +39,10 @@ void main() {
     final container = ProviderScope.containerOf(
         tester.element(find.text('Opening The').first));
     expect(container.read(settingsProvider).playbackSpeed, 1.5);
-    // The player shows that a non-default speed is active.
-    expect(find.text('1.5x'), findsOneWidget);
+    // The menu shows that a non-default speed is active.
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    expect(find.text('Playback speed (1.5x)'), findsOneWidget);
     await closeApp(tester, app.db);
   });
 }

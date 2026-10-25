@@ -2,15 +2,19 @@ import 'dart:async';
 
 import 'package:encore/core/result.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/domain/lyrics.dart';
 import 'package:encore/features/common/widgets.dart' show PlayButton;
 import 'package:encore/features/jam/jam_providers.dart';
 import 'package:encore/features/jam/jam_speaker.dart';
 import 'package:encore/features/jam/jam_wiring.dart';
+import 'package:encore/features/player/lyrics_screen.dart'
+    show currentLyricsProvider;
 import 'package:encore/features/player/now_playing_screen.dart';
 import 'package:encore/features/providers.dart';
 import 'package:encore_session/encore_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -72,7 +76,9 @@ void main() {
           playerDeviceId: player);
 
   Future<({AppDatabase db, FakePlaybackFacade engine})> open(
-      WidgetTester tester) async {
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
     api = FakeJamApi();
     final app = await pumpApp(tester,
         size: const Size(390, 1800),
@@ -83,6 +89,7 @@ void main() {
               .overrideWithValue(const [Duration(milliseconds: 1)]),
           jamClockEveryProvider.overrideWithValue(const Duration(days: 1)),
           jamSongPlayerProvider.overrideWithValue(_AlwaysPlays()),
+          ...overrides,
         ]);
     final element = tester.element(find.byType(Scaffold).first);
     container = ProviderScope.containerOf(element);
@@ -174,11 +181,16 @@ void main() {
 
   testWidgets(
       'on a phone that only listens along, the Jam\'s song has its lyrics '
-      'button, as on the phone that plays', (tester) async {
+      'card, as on the phone that plays', (tester) async {
     // Seen on two real phones (2026-10-17): the friend's player had no Lyrics
-    // button and no lyrics under the controls, because a song with a cover
+    // and no lyrics under the controls, because a song with a cover
     // from the catalogue was taken for a 30-second clip.
-    final app = await open(tester);
+    final app = await open(tester, overrides: [
+      currentLyricsProvider('jam:cat:9')
+          .overrideWith((ref) async => const TrackLyrics(synced: false, lines: [
+                LyricLine(startMs: null, text: 'Spiral out, keep going'),
+              ])),
+    ]);
     api.pushState(session(
         player: 'mia',
         queue: const [
@@ -197,7 +209,8 @@ void main() {
     await settle(tester);
 
     expect(find.byType(NowPlayingScreen), findsOneWidget);
-    expect(find.text('Lyrics'), findsWidgets);
+    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.text('Spiral out, keep going'), findsOneWidget);
     await closeApp(tester, app.db);
   });
 

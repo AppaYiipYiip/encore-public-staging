@@ -23,6 +23,7 @@ Future<void> showTrackMenu(
   BuildContext context,
   TrackRow track, {
   ({String playlistId, String playlistName, int position})? fromPlaylist,
+  List<MenuAction> extraActions = const [],
 }) {
   return showEncoreSheet<void>(
     context: context,
@@ -30,6 +31,53 @@ Future<void> showTrackMenu(
       track: track,
       parent: context,
       fromPlaylist: fromPlaylist,
+      extraActions: extraActions,
+    ),
+  );
+}
+
+/// One more line at the end of a track's menu (the player puts the speed, the sleep timer and private listening here, as Spotify's "..." menu does).
+class MenuAction {
+  const MenuAction(this.icon, this.label, this.onTap);
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+/// A menu with only [actions]: for a song that has no library row to act on (a sample, a song still being added). [note] is a line of plain
+/// words above them (why the library lines are missing).
+Future<void> showActionsMenu(
+  BuildContext context,
+  List<MenuAction> actions, {
+  String? note,
+}) {
+  return showEncoreSheet<void>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (note != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  Space.xl, Space.sm, Space.xl, Space.md),
+              child: Text(note,
+                  style: sheetContext.text.bodyMedium
+                      ?.copyWith(color: sheetContext.colors.onBgMuted)),
+            ),
+          for (final a in actions)
+            _Action(
+              icon: a.icon,
+              label: a.label,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                a.onTap();
+              },
+            ),
+          const SizedBox(height: Space.md),
+        ],
+      ),
     ),
   );
 }
@@ -39,9 +87,11 @@ class _TrackMenu extends ConsumerWidget {
     required this.track,
     required this.parent,
     this.fromPlaylist,
+    this.extraActions = const [],
   });
 
   final TrackRow track;
+  final List<MenuAction> extraActions;
   final ({String playlistId, String playlistName, int position})? fromPlaylist;
 
   /// Context of the screen that opened the sheet (used for navigation, since
@@ -184,6 +234,15 @@ class _TrackMenu extends ConsumerWidget {
                 onTap: () {
                   close();
                   Nav.artist(parent, track.artistId!);
+                },
+              ),
+            for (final a in extraActions)
+              _Action(
+                icon: a.icon,
+                label: a.label,
+                onTap: () {
+                  close();
+                  a.onTap();
                 },
               ),
             const SizedBox(height: Space.md),

@@ -58,7 +58,9 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('a catalogue sample has no library menu', (tester) async {
+  testWidgets(
+      'a catalogue sample has only the player\'s own menu: no library lines',
+      (tester) async {
     final app = await pumpApp(
       tester,
       playing: PlaybackSnapshot(
@@ -78,7 +80,12 @@ void main() {
     await tester.tap(find.text('Sample song').first);
     await settle(tester);
 
-    expect(find.byTooltip('More options'), findsNothing);
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+
+    expect(find.text('Sleep timer'), findsOneWidget);
+    expect(find.text('Add to playlist'), findsNothing);
+    expect(find.text('Go to album'), findsNothing);
     await closeApp(tester, app.db);
   });
 
@@ -115,7 +122,9 @@ void main() {
     final app = await pumpApp(tester, playing: samplePlaying());
     await openPlayer(tester);
 
-    await tester.tap(find.byTooltip('Sleep timer'));
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    await tester.tap(find.text('Sleep timer'));
     await settle(tester);
     expect(find.text('15 minutes'), findsOneWidget);
     expect(find.text('End of this song'), findsOneWidget);
@@ -130,7 +139,9 @@ void main() {
   testWidgets('end of song sets the end-of-track timer', (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying());
     await openPlayer(tester);
-    await tester.tap(find.byTooltip('Sleep timer'));
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    await tester.tap(find.text('Sleep timer'));
     await settle(tester);
     await tester.tap(find.text('End of this song'));
     await settle(tester);

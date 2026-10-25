@@ -5,12 +5,15 @@ import 'package:encore/app/session.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/fetch/fetch_client.dart';
+import 'package:encore/domain/lyrics.dart';
 import 'package:encore/features/catalogue/catalogue_screens.dart'
     show CatalogueArtistScreen;
 import 'package:encore/features/detail/detail_screens.dart' show ArtistScreen;
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/instant_play.dart';
 import 'package:encore/features/instant/library_resolver.dart';
+import 'package:encore/features/player/lyrics_screen.dart'
+    show currentLyricsProvider;
 import 'package:encore/features/player/now_playing_screen.dart';
 import 'package:encore/features/player/playback_facade.dart';
 import 'package:encore/features/player/streamed_song.dart';
@@ -23,6 +26,14 @@ import '../support/factories.dart';
 import '../support/fake_catalogue.dart';
 import '../support/fake_http.dart';
 import '../support/test_app.dart';
+
+const _lyrics = TrackLyrics(
+  synced: false,
+  lines: [
+    LyricLine(startMs: null, text: 'First line of the song'),
+    LyricLine(startMs: null, text: 'Second line of the song'),
+  ],
+);
 
 /// A song the instant-play service fetched plays from the service's stream
 /// at once, but it can only be liked or put in a playlist once the music
@@ -94,6 +105,7 @@ void main() {
     String? catalogueArtistId,
     String artist = 'Alcest',
     FakeCatalogue? catalogue,
+    TrackLyrics? lyrics,
   }) async {
     final app = await pumpApp(
       tester,
@@ -123,6 +135,8 @@ void main() {
           Duration(milliseconds: 5),
         ]),
         if (status != null) instantStatusProvider(id).overrideWithValue(status),
+        if (lyrics != null)
+          currentLyricsProvider(id).overrideWith((ref) async => lyrics),
       ],
     );
     final element = tester.element(find.byType(Scaffold).first);
@@ -156,7 +170,13 @@ void main() {
     await settle(tester);
     expect(find.textContaining('Still being added to your library'),
         findsOneWidget);
+    expect(find.text('Playback speed'), findsOneWidget,
+        reason: 'the player\'s own lines are there');
+    expect(find.text('Add to playlist'), findsNothing,
+        reason: 'the library lines wait for the song');
 
+    await tester.tapAt(const Offset(10, 10)); // the scrim closes the menu
+    await settle(tester);
     await tester.tap(find.byTooltip('Add to Liked Songs'));
     await settle(tester);
     // Nothing was queued or sent for an id the server has never heard of.
@@ -414,22 +434,26 @@ void main() {
       tester,
       resolver: _Resolver(const {}),
       status: null, // not fetched by the service: a catalogue sample
+      lyrics: _lyrics, // even if some were at hand, the clip does not show them
     );
 
     expect(find.byType(NowPlayingScreen), findsOneWidget);
     expect(find.text('Lyrics'), findsNothing);
+    expect(find.text('First line of the song'), findsNothing);
     await closeApp(tester, app.db);
   });
 
-  testWidgets('a song the service fetched keeps its lyrics button',
+  testWidgets('a song the service fetched shows its lyrics card',
       (tester) async {
     final app = await openPlayer(
       tester,
       resolver: _Resolver(const {}, after: 1000),
       status: ready,
+      lyrics: _lyrics,
     );
 
     expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.text('First line of the song'), findsOneWidget);
     await closeApp(tester, app.db);
   });
 
@@ -522,15 +546,23 @@ void main() {
     });
   });
 
-  testWidgets('a 30-second sample cannot be liked and has no menu',
-      (tester) async {
+  testWidgets(
+      'a 30-second sample cannot be liked and its menu has only the '
+      'player\'s own lines', (tester) async {
     final app = await openPlayer(
       tester,
       resolver: _Resolver(const {}),
       status: null, // not fetched by the service: a catalogue sample
     );
 
-    expect(find.byTooltip('More options'), findsNothing);
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    expect(find.text('Playback speed'), findsOneWidget);
+    expect(find.text('Add to playlist'), findsNothing);
+    expect(find.textContaining('Still being added'), findsNothing,
+        reason: 'a sample is not on its way to the library');
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
     final heart = tester.widget<IconButton>(
         find.widgetWithIcon(IconButton, Icons.favorite_border_rounded));
     expect(heart.onPressed, isNull);

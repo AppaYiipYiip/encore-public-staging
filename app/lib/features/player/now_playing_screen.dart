@@ -4,14 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/audio_output.dart';
+import '../../app/connection.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
 import '../../domain/artwork_color.dart';
 import '../common/artwork_color.dart';
+import '../common/connection_banner.dart';
 import '../common/cover_art.dart';
-import '../common/format.dart';
 import '../common/open_artist.dart';
 import '../common/track_menu.dart';
 import '../common/widgets.dart';
@@ -67,6 +68,8 @@ class NowPlayingScreen extends ConsumerWidget {
     final libraryRow = ref.watch(playingLibraryRowProvider(track)).value;
     final fromService = ref.watch(isServiceSongProvider(track));
     final waiting = fromService && libraryRow == null;
+    final serverAway = ref.watch(connectionProblemProvider) ==
+        ConnectionProblem.serverUnreachable;
     final sample = track.imageUrl != null && !track.fullSong && !fromService;
 
     return GestureDetector(
@@ -85,52 +88,61 @@ class NowPlayingScreen extends ConsumerWidget {
             ),
           ),
           child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxHeight < 640;
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Space.xl),
-                      child: Column(
-                        children: [
-                          _TopBar(
-                            source: snapshot!.sourceName,
-                            // A 30-second sample has no library entry to act
-                            // on; a song on its way into the library has one
-                            // in a moment.
-                            row: libraryRow,
-                            waiting: waiting,
+            child: Column(
+              children: [
+                // The same thin strip as everywhere else (docs/31 CN-14): a song waiting for its server shows it here, at the top, because the
+                // full player has no bottom bar to carry it.
+                const ConnectionBanner(),
+                Expanded(child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxHeight < 640;
+                    return SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: Space.xl),
+                          child: Column(
+                            children: [
+                              _TopBar(
+                                source: snapshot!.sourceName,
+                                // A 30-second sample has no library entry to act
+                                // on; a song on its way into the library has one
+                                // in a moment.
+                                row: libraryRow,
+                                waiting: waiting,
+                              ),
+                              SizedBox(height: compact ? Space.sm : Space.xl),
+                              _Artwork(track: track, facade: facade),
+                              SizedBox(height: compact ? Space.md : Space.xl),
+                              _TitleRow(
+                                track: track,
+                                row: libraryRow,
+                                waiting: waiting,
+                                sample: sample,
+                              ),
+                              const SizedBox(height: Space.sm),
+                              Scrubber(
+                                  waiting: serverAway && !snapshot.isPlaying),
+                              const SizedBox(height: Space.xs),
+                              _Transport(snapshot: snapshot, facade: facade),
+                              const SizedBox(height: Space.md),
+                              const _BottomRow(),
+                              const SizedBox(height: Space.lg),
+                              // The lyrics belong to the whole song, not to a
+                              // 30-second clip of it (docs/23, B34).
+                              if (!sample) _LyricsPreview(trackId: track.id),
+                              const SizedBox(height: Space.xl),
+                            ],
                           ),
-                          SizedBox(height: compact ? Space.sm : Space.xl),
-                          _Artwork(track: track, facade: facade),
-                          SizedBox(height: compact ? Space.md : Space.xl),
-                          _TitleRow(
-                            track: track,
-                            row: libraryRow,
-                            waiting: waiting,
-                            sample: sample,
-                          ),
-                          const SizedBox(height: Space.sm),
-                          const Scrubber(),
-                          const SizedBox(height: Space.xs),
-                          _Transport(snapshot: snapshot, facade: facade),
-                          const SizedBox(height: Space.md),
-                          _BottomRow(track: track, sample: sample),
-                          const SizedBox(height: Space.lg),
-                          // The lyrics belong to the whole song, not to a
-                          // 30-second clip of it (docs/23, B34).
-                          if (!sample) _LyricsPreview(trackId: track.id),
-                          const SizedBox(height: Space.xl),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
+                    );
+                  },
+                )),
+              ],
             ),
           ),
         ),
@@ -178,22 +190,21 @@ class _TopBar extends ConsumerWidget {
             ],
           ),
         ),
-        if (row == null && !waiting)
-          const SizedBox(width: 48) // balance the close button
-        else
-          IconButton(
-            tooltip: 'More options',
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () async {
-              final found = row;
-              if (found == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text(kWaitingForLibrary)));
-                return;
-              }
-              await showTrackMenu(context, found);
-            },
-          ),
+        IconButton(
+          tooltip: 'More options',
+          icon: const Icon(Icons.more_horiz_rounded),
+          onPressed: () async {
+            final extra = _playerActions(context, ref);
+            final found = row;
+            if (found == null) {
+              // A sample, or a song still being added: no library row to act on, but the player's own options are there.
+              await showActionsMenu(context, extra,
+                  note: waiting ? kWaitingForLibrary : null);
+              return;
+            }
+            await showTrackMenu(context, found, extraActions: extra);
+          },
+        ),
       ],
     );
   }
@@ -431,154 +442,73 @@ class _Transport extends StatelessWidget {
   }
 }
 
-class _BottomRow extends ConsumerWidget {
-  const _BottomRow({required this.track, required this.sample});
-
-  final NowPlayingTrack track;
-
-  /// A 30-second catalogue clip: no lyrics button (docs/23, B34).
-  final bool sample;
+/// Spotify's last row of the player: the device icon on the left, the queue on the right. Everything else it used to carry (the speed, the sleep timer,
+/// private listening) is in the "..." menu, and the quality label is in the track menu's header (docs/design/03 row 9).
+class _BottomRow extends StatelessWidget {
+  const _BottomRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.colors;
-    final quality = qualityLabel(suffix: track.suffix, bitRate: track.bitRate);
-    final sleep = ref.watch(sleepTimerProvider).value;
-    final sleeping = sleep != null && sleep.mode != SleepTimerMode.off;
-    final speed = ref.watch(settingsProvider.select((s) => s.playbackSpeed));
-    final private =
-        ref.watch(settingsProvider.select((s) => s.privateListening));
-
-    // An icon with its name under it: a bare symbol (a lock, a moon) is not
-    // understood by somebody who has not seen it before.
-    Widget action(
-            IconData icon, String label, String tooltip, VoidCallback onTap,
-            {bool active = false, String? badge}) =>
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  IconButton(
-                    tooltip: tooltip,
-                    icon: Icon(icon, color: active ? c.accent : c.onBg),
-                    onPressed: onTap,
-                  ),
-                  if (badge != null)
-                    Positioned(
-                      right: 2,
-                      top: 2,
-                      child: IgnorePointer(
-                        child: Text(badge,
-                            style: context.text.labelSmall
-                                ?.copyWith(color: c.accent, fontSize: 10)),
-                      ),
-                    ),
-                ],
-              ),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.text.labelSmall?.copyWith(
-                    color: active ? c.accent : c.onBgMuted, fontSize: 11),
-              ),
-            ],
-          ),
-        );
-
-    return Column(
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        Row(
-          children: [
-            if (quality.isNotEmpty)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: c.onBg.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: Text(quality, style: context.text.labelMedium),
-              ),
-            const Spacer(),
-            if (!sample)
-              TextButton.icon(
-                onPressed: () => Nav.lyrics(context),
-                icon: const Icon(Icons.lyrics_outlined),
-                label: const Text('Lyrics'),
-                style: TextButton.styleFrom(foregroundColor: c.onBg),
-              ),
-          ],
+        IconButton(
+          tooltip: 'Choose where to play',
+          icon: const Icon(Icons.speaker_group_outlined),
+          onPressed: () async {
+            final shown = await AudioOutput.showSwitcher();
+            if (!shown && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content:
+                      Text('Use quick settings to switch the audio output.')));
+            }
+          },
         ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            action(
-              Icons.speaker_group_outlined,
-              'Devices',
-              'Choose where to play',
-              () async {
-                final shown = await AudioOutput.showSwitcher();
-                if (!shown && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'Use quick settings to switch the audio output.')));
-                }
-              },
-            ),
-            action(
-              Icons.speed_rounded,
-              'Speed',
-              'Playback speed',
-              () => showSpeedSheet(context),
-              active: speed != 1.0,
-              badge: speed != 1.0 ? speedLabel(speed) : null,
-            ),
-            action(
-              Icons.bedtime_outlined,
-              'Sleep timer',
-              'Sleep timer',
-              () => showSleepTimerSheet(context),
-              active: sleeping,
-              badge: sleeping ? sleepRemainingLabel(sleep) : null,
-            ),
-            action(
-              private ? Icons.lock_rounded : Icons.lock_open_rounded,
-              'Private',
-              private
-                  ? 'Private listening is on. Tap to turn it off'
-                  : 'Private listening is off. Tap to turn it on',
-              () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setPrivateListening(!private);
-                // Said once, in words: what a lock changes is not obvious.
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(SnackBar(
-                    content: Text(private
-                        ? 'Private listening is off.'
-                        : 'Private listening is on: what you play is not '
-                            'shared with friends and not counted in your '
-                            'history.'),
-                  ));
-              },
-              active: private,
-            ),
-            action(
-              Icons.queue_music_rounded,
-              'Queue',
-              'Queue',
-              () => showQueueSheet(context),
-            ),
-          ],
+        const Spacer(),
+        IconButton(
+          tooltip: 'Queue',
+          icon: const Icon(Icons.queue_music_rounded),
+          onPressed: () => showQueueSheet(context),
         ),
       ],
     );
   }
+}
+
+/// What the "..." menu of the player adds to a track's own menu.
+List<MenuAction> _playerActions(BuildContext context, WidgetRef ref) {
+  final settings = ref.read(settingsProvider);
+  final speed = settings.playbackSpeed;
+  final sleep = ref.read(sleepTimerProvider).value;
+  final sleeping = sleep != null && sleep.mode != SleepTimerMode.off;
+  final private = settings.privateListening;
+  return [
+    MenuAction(
+      Icons.speed_rounded,
+      speed == 1.0 ? 'Playback speed' : 'Playback speed (${speedLabel(speed)})',
+      () => showSpeedSheet(context),
+    ),
+    MenuAction(
+      Icons.bedtime_outlined,
+      sleeping ? 'Sleep timer (${sleepRemainingLabel(sleep)})' : 'Sleep timer',
+      () => showSleepTimerSheet(context),
+    ),
+    MenuAction(
+      private ? Icons.lock_rounded : Icons.lock_open_rounded,
+      private ? 'Private listening: on' : 'Private listening: off',
+      () {
+        ref.read(settingsProvider.notifier).setPrivateListening(!private);
+        // Said once, in words: what a lock changes is not obvious.
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+            content: Text(private
+                ? 'Private listening is off.'
+                : 'Private listening is on: what you play is not shared '
+                    'with friends and not counted in your history.'),
+          ));
+      },
+    ),
+  ];
 }
 
 /// Spotify-style preview card: a few lines around the current one; tap opens

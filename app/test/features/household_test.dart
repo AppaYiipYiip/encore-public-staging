@@ -250,20 +250,22 @@ void main() {
       await closeApp(tester, app.db);
     });
 
-    testWidgets('private listening has a one-tap switch in the player',
+    testWidgets('private listening is a line of the player\'s "..." menu',
         (tester) async {
       final app = await pumpApp(tester, playing: samplePlaying());
       await tester.tap(find.text('Opening The').first);
       await settle(tester);
 
-      await tester
-          .tap(find.byTooltip('Private listening is off. Tap to turn it on'));
+      await tester.tap(find.byTooltip('More options'));
+      await settle(tester);
+      await tester.tap(find.text('Private listening: off'));
       await settle(tester);
 
       expect(
           containerOf(tester).read(settingsProvider).privateListening, isTrue);
-      expect(find.byTooltip('Private listening is on. Tap to turn it off'),
-          findsOneWidget);
+      await tester.tap(find.byTooltip('More options'));
+      await settle(tester);
+      expect(find.text('Private listening: on'), findsOneWidget);
       await closeApp(tester, app.db);
     });
   });
