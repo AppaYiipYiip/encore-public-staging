@@ -84,8 +84,15 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
               () => ref.invalidate(catalogueArtistTopProvider(artist.id))),
           data: (items) {
             if (items.isEmpty) {
-              return retrySliver(
-                  () => ref.invalidate(catalogueArtistTopProvider(artist.id)));
+              // The catalogue answered and has no popular songs for this artist (a small or new one): that is not "could not be reached"
+              // (AUDIT F25). Its releases are listed below.
+              return const SliverToBoxAdapter(
+                child: EmptyState(
+                  icon: Icons.music_note_rounded,
+                  title: 'No popular songs yet',
+                  message: "This artist's releases are below.",
+                ),
+              );
             }
             final shown = collapsible && !_expanded
                 ? items.take(widget.collapsedCount).toList()

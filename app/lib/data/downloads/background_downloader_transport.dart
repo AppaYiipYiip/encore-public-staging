@@ -93,27 +93,11 @@ class BackgroundDownloaderTransport implements DownloadTransport {
   Future<Set<String>> activeTaskIds() async =>
       (await FileDownloader().allTaskIds(group: group)).toSet();
 
-  bool _askedForNotifications = false;
-
-  /// Android 13+ shows download progress only with the notification
-  /// permission; ask once, in context (the user just pinned something).
-  Future<void> _ensureNotificationPermission() async {
-    if (_askedForNotifications) return;
-    _askedForNotifications = true;
-    try {
-      final permissions = FileDownloader().permissions;
-      final status = await permissions.status(PermissionType.notifications);
-      if (status != PermissionStatus.granted) {
-        await permissions.request(PermissionType.notifications);
-      }
-    } on Object catch (error) {
-      Log.debug('downloads', 'notification permission check failed: $error');
-    }
-  }
-
+  // No notification permission is asked for here (ADR-R44, AUDIT F29): nothing reaches the phone's notification area unless the person
+  // switched it on in Settings > Notifications. A download runs without the permission; its progress notification shows only when the
+  // person has allowed notifications for Encore.
   @override
   Future<void> start(TransferRequest request) async {
-    await _ensureNotificationPermission();
     final relativeDir = p.dirname(request.relativePath);
     final name = p.basename(request.relativePath);
     final task = DownloadTask(

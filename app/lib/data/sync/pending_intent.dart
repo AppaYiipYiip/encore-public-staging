@@ -37,11 +37,14 @@ Future<Set<String>> pendingStarTargets(AppDatabase db, int serverId) async {
 }
 
 /// Edits of this account that have not reached the server: waiting, or turned
-/// down. Signing out deletes them, so the person is told how many (B31).
+/// down. Signing out deletes them, so the person is told how many (B31). A play
+/// mark (a scrobble) is not something the person edited and is not counted
+/// (AUDIT F26: a play the server refused made the warning say "1 change" for ever).
 Future<int> unsentEditCount(AppDatabase db, int serverId) async {
   final count = db.outbox.id.count();
   final query = db.selectOnly(db.outbox)
     ..addColumns([count])
-    ..where(db.outbox.serverId.equals(serverId));
+    ..where(db.outbox.serverId.equals(serverId) &
+        db.outbox.kind.equals(OutboxKind.scrobble).not());
   return (await query.getSingle()).read(count) ?? 0;
 }
