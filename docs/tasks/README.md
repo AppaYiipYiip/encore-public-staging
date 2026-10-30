@@ -16,6 +16,9 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 
 ## Status board (planning agent keeps this current; GitHub Issues mirror it once P0-07 is done)
 
+**Read first: [RELEASE-CANDIDATE.md](RELEASE-CANDIDATE.md)**, the plan before the owner is told a build is ready: what "pass" means now (walked as a real user on the published image and a same-commit APK, to the end state), the ordered blockers, the rehearsal's journeys, what a fresh test will still show, and every other open item. Update it, do not write a second list.
+
+
 | Phase | File | State |
 |-------|------|-------|
 | P0 Reset | [P0-reset.md](P0-reset.md) | P0-01 to P0-08 done; P0-09, P0-10 and branch protection open |

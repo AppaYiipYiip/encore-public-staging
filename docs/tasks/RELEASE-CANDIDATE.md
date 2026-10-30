@@ -1,0 +1,56 @@
+# Release candidate 1: what must be true before the owner is told "ready" (kept current; update it, do not rewrite it)
+
+Written 2026-10-30 after the owner's feedback: *"your test standards are very low and what you consider a pass is not really it. Each time you claim something is tested and ready and done and when I get to use it, it is not working or has weird bugs... the quality of the product matters way more than claiming that things have been done."* The advisor went through the session transcript and agreed. This file is the plan that follows from it. Every status below is **honest**: "built, not walked" means exactly that.
+
+## 1. The definition of "pass" (from now on)
+
+* A row **passes** only if it was **walked** on the **release-candidate pair**: the **published `:main` server image** installed **by the guide on a clean machine**, and an **APK built from the same commit**, installed fresh. Each walk is **watched to its end state** (not a snapshot), **recorded** (`adb shell screenrecord`) and written as **expected / got / verdict**.
+* Anything else is labelled **"built, not walked"**. Never "done", "tested" or "fixed" for it. **Unit tests alone are never a walk.** A walk on the dev machine with hand-copied files is **not** a walk of the product (it said the opposite once: `b09`).
+* **Merge rules:** merge only when **every check has finished**, polled **by run id** (a poll that timed out is not a result); after a merge, confirm **`main`'s own run** is green before the next step; **freeze `main`** from the moment the owner is told a build is ready.
+* **Advisor checkpoints:** before each PR's design, before each merge, before scoring a walk, and **before telling the owner anything is ready**.
+* Nothing goes to the owner until **`b11`** (the rehearsal's record) exists and the advisor has read it.
+
+## 2. The blockers, in order
+
+| # | Blocker | State (2026-10-30, 16:12) |
+|---|---------|---------------------------|
+| B0 | `main` CI green for the merges of #43 and #44 (the run for #43's merge was cancelled by the next push; the run for #44 is `verify` in progress; #44's own debug build had not finished when it was merged, which was a mistake) | **In progress**: `main` at `a271a2a`, App run for `be5ed2a` running. Server and image runs for the newest server change (`c8a1853`) succeeded |
+| B1 | **F30**: a fresh sign-in leaves the app in the **old music-server mode for about two minutes** (1:59 and 2:50 measured, `b10`), so a new person's first minute runs the old Download. Hypothesis (not proved): the first `_look()` runs before the address is verified, fails without making a request, then waits 2 minutes (`ServerSession._detectAndUpgrade`). Fix: react to the first verified address, or mark the server as Encore from the sign-in's own verified `/info`. **Test first** with a fake server whose identity check finishes after ~500 ms; then walk it **with a stopwatch from the tap on Connect** | **Not started** |
+| B2 | A downloaded release shows as **one entry named by the release** (like an album pin), not as loose songs (decided by the advisor 2026-10-30, **D-22**). Today Settings > Downloads & storage lists it as "Song". Also look at Library > Downloaded | **Not started** |
+| B3 | The **upgrade path**: `git diff 52a7214 HEAD -- app/lib/data/db`, then install build 121 and 122 over it, as well as fresh | **Not started** |
+| B4 | **Build the release candidate**: arm64 APK at the frozen commit, versionCode 122 or higher, archived by commit; note the `sha-<commit>` tag of the `:main` image and verify its image job succeeded | **Not started** |
+| B5 | **The rehearsal** (section 3), written up as `b11` | **Not started** |
+| B6 | The advisor reads `b11`; only then the owner is told | **Not started** |
+
+## 3. The rehearsal on VM 107 (the owner allows full use; he will delete it)
+
+1. `vzdump 107` first (insurance). 2. Roll back to the `clean` snapshot (a genuinely fresh machine). 3. Re-apply the `qm set` line of `local/credentials-map.md` section 4 with **4 GiB** of memory. 4. Run the guide **exactly as a stranger would**: `gh` login, `install.sh` from `ref=main`, an empty music folder; time it; read the last screen; open the address in a browser and record what a newcomer sees. 5. Walk the journeys below on a **fresh emulator install**, each to its end state. At most **10 YouTube look-ups**, never while the owner is testing.
+
+| # | Journey (to its end state) | Status |
+|---|---------------------------|--------|
+| J1 | First run with a stopwatch: from Connect to Encore mode (F30) | not walked |
+| J2 | Search an artist, Download a **single** and a **3 to 4 song release**: watch the ring to the end, then Library > Downloaded, Settings > Downloads & storage, **airplane mode**, play offline | not walked |
+| J3 | Add to library on its own (chip only after the server confirmed) | not walked |
+| J4 | Kill the app **mid-download**, reopen it: the download carries on | not walked |
+| J5 | Stop the server **mid-song** and **at a tap**: "Waiting for your server.", no hop, resumes | walked once on the dev server (`b08`), not on the published image |
+| J6 | A tiny import (3 songs or fewer), then the bell and What's new (#35) | not walked (#35 never walked) |
+| J7 | Lyrics for a song that has them, and for one that appeared later (F22: a miss is remembered for a day) | partly walked (`b08`) |
+| J8 | Sign out: the dialog counts only edits (F26), the device ends on the server | dialog fix not walked; device end walked on dev (`b08`) |
+| J9 | The first download raises **no** permission dialog (F29) | fix built (#44), not walked |
+| J10 | A friend joins by invitation from a **second emulator**, and the `invite_used` bell item appears (journey 3) | walked once on the old build; not on this one |
+| J11 | Install by the guide: time, last screen, empty server, the address in a browser | not walked on the published image since the last installer change (#38) |
+
+## 4. What the owner's fresh test will still show (not blockers: said up front)
+
+A **terminal** installer, not a browser wizard (F14, P3-06); **Navidrome's page** at the address in a browser (F16; the Encore front page and the pairing QR are P2-19 slice B); **no admin page** (F20, P3-06: the pages W-02 to W-08 are drawn in `docs/design`, not coded); **Tailscale** explained only in text (F17); the server address **typed by hand** (F24, P2-19 slices B and C); an **empty** server's first screen is not designed in code (F23). Advice for the owner's new VM: **Ubuntu 26.04** (the only system the installer was proven on), **4 GiB**, the commit hash that was frozen.
+
+## 5. Everything else still open (not blocking release candidate 1)
+
+**Findings:** F12 and F13 (issues #13, #14: the catalogue lags new releases; a two-artist song shows one artist; fix = P2-12 the catalogue on the server) · F14 browser installer · F15/D-19 the "Where songs come from" step · F16 Encore front page and pairing QR · F17 Tailscale in the wizard · F19/D-20 the wizard's "no YouTube account needed" line · F20 admin pages · F22 shorter memory of a missed lyrics lookup + a "Try again", lyrics on the server (P2-14) · F23 empty-server first run · F24 find-my-server (P2-19 B, C) · F26 which song the server refused, and whether history and Year in Music lose play marks (not checked) · F28 the guide and the wizard state a **RAM minimum** from a measurement · F29 (fixed in #44, not walked) · F30 (B1).
+**Plan items:** P1-04 prepare the next songs; P1-07 search timing and the Arabic miss; P1-12 big text and right-to-left; P2-05..P2-18 as needed (resume anywhere P2-08, one device at a time P2-09); P3-06 browser wizard and admin (PC only); P3-08 update rollback; P3-11 reuse-what-you-have install; **P3-12 the friend milestone** (check 2: `encore funnel on` has **never run for real**; X-7: the live connection through Funnel; five days of the owner's own use); P4 (recommendations, Jam on the new server, devices, other servers) and P5 (release signing key, field test, going public) **not started**.
+**Debts:** the app still calls **Deezer and LRCLIB itself** (thin-client rule ADR-R38; goal zero); **61 "Built" rows in the state tables have no test at all**; **#35 (the bell) merged without a walk**; the account-model test is flaky (**issue #41**); mypy in a newer version reports one unused `type: ignore` (`keeper/tagging.py`); the app is signed with this PC's **debug key** (back it up; release key P5-01); `main` is **not protected**; the plan documents still name the owner's homelab (scrub before going public); Gradle / AGP / Kotlin upgrade before Flutter drops them; a real phone has never run any of this.
+**Parked on purpose (D-18, advisor 2026-10-30):** a web player on a PC, TV, tablet-specific layouts, an admin on a phone or TV, a desktop client.
+
+## 6. Status log
+
+* **2026-10-30 16:12**: this file written. B0 in progress; B1 to B6 not started. Dev VM 106 and the emulator are stopped. The owner's VM 107 holds his install and is untouched until the rehearsal starts (backup first).
