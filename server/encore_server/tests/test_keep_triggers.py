@@ -203,3 +203,71 @@ def test_asking_to_keep_what_is_not_known_is_not_found_and_a_server_that_does_no
 
     assert missing.status_code == 404
     assert none.json()["state"] == "unavailable"
+
+
+# ----------------------------------------------------------------------------------------- saving a release (docs/17, D-21)
+
+
+def _release(rig: Rig, *titles: str) -> list[str]:
+    return [str(resolve(rig.client, "marwa", song(title))[0]["id"]) for title in titles]
+
+
+def _saved(rig: Rig, album: str) -> dict[str, Any] | None:
+    feed = rig.client.get(f"{V1}/library/changes", params={**creds("marwa"), "since": "0"}).json()
+    return next((item for item in feed["savedAlbums"] if item["id"] == album), None)
+
+
+def test_saving_a_release_with_its_songs_records_the_save_and_keeps_them_first_in_line(rig: Rig) -> None:
+    older = str(resolve(rig.client, "marwa", song("Reckoner"))[0]["id"])
+    rig.client.put(f"{V1}/likes/{older}", params=creds("marwa"))  # an older keep waits in the queue
+    first, second = _release(rig, "Weird Fishes / Arpeggi", "Nude")
+
+    saved = rig.client.put(f"{V1}/saved-albums/cat-in-rainbows", params=creds("marwa"), json={"refs": [first, second]})
+
+    assert saved.status_code == 200, saved.text
+    body = saved.json()
+    assert body["changed"] is True
+    assert body["keep"] == {first: {"state": "queued"}, second: {"state": "queued"}}, "the answer says how each song goes"
+    item = _saved(rig, "cat-in-rainbows")
+    assert item is not None and item["removed"] is False, "the change feed delivers the save"
+    rig.svc.scheduler.run_one("background")
+    assert rig.source.asked[0].title == "Weird Fishes / Arpeggi", "the release goes before the older keep"
+    rig.drain()
+    assert rig.file_of(first) is not None and rig.file_of(second) is not None and rig.file_of(older) is not None
+
+
+def test_saving_a_release_twice_changes_nothing_the_second_time_and_does_not_queue_its_songs_again(rig: Rig) -> None:
+    refs = _release(rig, "Weird Fishes / Arpeggi", "Nude")
+    rig.client.put(f"{V1}/saved-albums/cat-in-rainbows", params=creds("marwa"), json={"refs": refs})
+    queued = rig.queued()
+
+    again = rig.client.put(f"{V1}/saved-albums/cat-in-rainbows", params=creds("marwa"), json={"refs": refs})
+
+    assert again.status_code == 200 and again.json()["changed"] is False
+    assert rig.queued() == queued == 2
+
+
+def test_a_release_with_a_song_the_server_does_not_know_is_refused_in_words_and_nothing_is_saved(rig: Rig) -> None:
+    (known,) = _release(rig, "Weird Fishes / Arpeggi")
+
+    refused = rig.client.put(
+        f"{V1}/saved-albums/cat-in-rainbows", params=creds("marwa"), json={"refs": [known, f"sr_{'0' * 26}"]}
+    )
+
+    assert refused.status_code == 404
+    assert "not known to this server" in refused.json()["error"]["message"]
+    assert _saved(rig, "cat-in-rainbows") is None and rig.queued() == 0, "all or nothing"
+
+
+def test_saving_a_release_asks_for_a_list_of_songs_not_anything_else(rig: Rig) -> None:
+    for refs in ("sr_x", [1, 2], ["sr_a"] * 501):
+        bad = rig.client.put(f"{V1}/saved-albums/cat-x", params=creds("marwa"), json={"refs": refs})
+        assert bad.status_code in (400, 422), (refs, bad.text)
+    assert _saved(rig, "cat-x") is None
+
+
+def test_saving_an_album_with_no_songs_named_works_as_it_always_did(rig: Rig) -> None:
+    saved = rig.client.put(f"{V1}/saved-albums/some-music-server-id", params=creds("marwa"), json={})
+
+    assert saved.status_code == 200 and saved.json()["changed"] is True and saved.json()["keep"] == {}
+    assert rig.queued() == 0

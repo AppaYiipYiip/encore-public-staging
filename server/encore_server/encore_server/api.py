@@ -760,9 +760,48 @@ def unlike(ref_id: str, request: Request, p: Principal = Depends(get_principal))
     return _item_route("like", request, ref_id, p, add=False)
 
 
+#: How many songs one release may name when it is saved.
+MAX_RELEASE_SONGS = 500
+
+
+def _release_refs(body: dict[str, Any]) -> list[str]:
+    """The songs a phone names with a saved release: a list of song ids, or nothing."""
+    named = body.get("refs")
+    if named is None:
+        return []
+    if not isinstance(named, list) or len(named) > MAX_RELEASE_SONGS or not all(isinstance(r, str) for r in named):
+        raise ApiError("validation", f"A release names its songs as a list of at most {MAX_RELEASE_SONGS} song ids.")
+    return list(dict.fromkeys(named))
+
+
 @router.put("/saved-albums/{album_id}")
-def save_album(album_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
-    return _item_route("saved_album", request, album_id[:100], p, add=True)
+def save_album(
+    album_id: str,
+    request: Request,
+    body: dict[str, Any] = Depends(optional_body),
+    p: Principal = Depends(get_principal),
+) -> JSONResponse:
+    """Saves an album. A release the server does not hold yet names its songs (`refs`, the ones the phone resolved): one call saves it,
+    and the server keeps those songs in the background, first in line, whether or not the phone stays (D-21). All or nothing: a song the
+    server does not know refuses the whole call, in words. The answer says how each song goes; the change feed delivers the save."""
+    ref_ids = _release_refs(body)
+    svc = services(request)
+    with svc.db.tx() as conn:
+        for ref_id in ref_ids:
+            if not refs.ref_exists(conn, ref_id):
+                raise ApiError("not_found", "That song is not known to this server.", details={"ref": ref_id})
+        changed = library.set_item(conn, p.person_id, "saved_album", album_id[:100], at=body.get("at"))
+        # Songs whose keep failed before are asked for again, like a download does (`keep_now`); the rest are kept once.
+        want_kept(svc, conn, p.person_id, [r for r in ref_ids if _keep_state(svc, conn, r)["state"] in ("none", "failed")])
+        cursor = library.latest_cursor(conn, p.person_id)
+    if svc.scheduler is not None:
+        for ref_id in ref_ids:
+            svc.scheduler.promote("keep", ref_id)
+    if changed:
+        _changed(svc, p, cursor)
+    with svc.db.read() as conn:
+        keep = {ref_id: _keep_state(svc, conn, ref_id) for ref_id in ref_ids}
+    return _ok({"changed": changed, "cursor": str(cursor), "keep": keep})
 
 
 @router.delete("/saved-albums/{album_id}")

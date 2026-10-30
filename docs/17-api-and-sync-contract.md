@@ -33,7 +33,7 @@ Each has one plain message per language, owned by the server (`server/encore_ser
 |--------|-----------|
 | info/accounts | `GET info` · `POST auth/login` · `POST auth/pair` (Host's QR pairing) · `POST auth/logout` · `GET me` · `PATCH me` · `GET me/devices` · `DELETE me/devices/{dv}` |
 | catalogue | `GET search?q=&types=` · `POST refs/resolve` · `GET refs/{sr}` · `GET albums/{id}` · `GET artists/{id}` · `POST refs/{sr}/report` (wrong song, `19` §5) |
-| library | `GET library/changes` · `PUT/DELETE likes/{sr}` · `PUT/DELETE saved-albums/{id}` · `PUT/DELETE follows/{artistId}` · playlists CRUD · `POST playlists/{pl}/entries` · `DELETE …/entries` · `PUT …/order` · `POST plays` |
+| library | `GET library/changes` · `PUT/DELETE likes/{sr}` · `PUT/DELETE saved-albums/{id}` (a release the server does not hold yet names its songs, see "Saving a release" below) · `PUT/DELETE follows/{artistId}` · playlists CRUD · `POST playlists/{pl}/entries` · `DELETE …/entries` · `PUT …/order` · `POST plays` |
 | playback | `GET playback` · `PUT playback` (with `rev`) · `POST playback/claim` · `POST playback/transfer` |
 | devices | `GET devices` · `POST devices/{dv}/command` · `PUT devices/{dv}` (name, shared, always-ready) |
 | imports | `POST imports` · `GET imports/{im}` · `POST imports/{im}/stop` · `GET imports` |
@@ -64,6 +64,7 @@ Each has one plain message per language, owned by the server (`server/encore_ser
   both survive; a removed entry stays removed; a move of a removed entry is dropped; renames are last-writer-wins by server arrival;
   operations on a deleted playlist are dropped and reported (`conflict`) so the phone shows "That playlist was deleted on another
   device".
+* **Saving a release (D-21, decided by the advisor 2026-10-30).** On an Encore server "Add to library" and "Download" on a catalogue release are server operations, and the screen shows only what the server confirms. `PUT saved-albums/{id}` takes an optional body `{"refs": [song ids]}` (at most 500; the ids the phone got from `refs/resolve`). One call: the save is recorded (the change feed delivers it), and the server **keeps those songs in the background, first in line, whether or not the phone stays** (the thin-client rule: a web client needs the same). All or nothing: a song the server does not know refuses the whole call, `404 not_found`, "That song is not known to this server." with the id in `details`, and nothing is saved. Safe to repeat: the second call changes nothing and queues nothing twice (a song whose keep failed is asked for again). The answer is `{changed, cursor, keep: {songId: {state: queued|keeping|kept|failed|none|unavailable[, reason]}}}`, the states of `GET refs/{id}/keep`. A download is this call plus a pin on the phone, written at once so it survives the app being killed. Likes stay likes: saving an album never fills Liked Songs.
 * Likes are a set; like/unlike conflicts resolve by **arrival order at the server** (decided 2026-10-23, `34` G-1: with a live connection two phones of one person see the real order within about 2.5 s; the like's own time only keeps the order of Liked Songs). Every pair of operations, with its test, is in **`34`**.
 * Playback state uses `rev` (optimistic concurrency): a write with an old `rev` gets `conflict` and the current state.
 * Journey **J-15** (`14` §3) is the acceptance test.
