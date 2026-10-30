@@ -28,6 +28,16 @@
 | **D-17** | Android developer verification / paying to publish | **Decided by the owner (2026-10-21): distribute on GitHub only, pay nothing; not now.** If Google's rule blocks installs later, revisit (a free limited account covers 20 devices) | Owner: "let's leave it at GitHub, I don't want to pay anything" | P5-07 parked |
 | **D-14** | "Always ready to play" (a device your other devices can wake) | **Off by default**, one switch per device, battery cost explained | Android needs a persistent notification for it (`13` H1) | P4-07 |
 
+### Decided by the advisor (2026-10-30, reversible)
+
+The user said the advisor owns the product decisions. After the first real install (`tasks/AUDIT.md`, owner's findings of 2026-10-30):
+
+| # | Question | Decision | Why |
+|---|----------|----------|-----|
+| **D-18** | Which surfaces are designed and built now | **The phone app and the PC only.** The PC surface is the installer and wizard, the admin, and the front page and invitation page a browser or QR opens. The admin is PC-only. **Parked** (`tasks/P6-later.md`): a web player on a PC, TV, tablet-specific layouts, an admin on a phone or TV | The installer and admin are used from a computer; drawing and coding surfaces nobody has asked for is waste |
+| **D-19** | A Soulseek choice at install | The wizard has a **"Where songs come from"** step: YouTube on by default; the higher-quality (Soulseek) source is an explicit, **off-by-default** choice with the plain-words legal note; the same switch in the admin; until P4-04 exists it shows as a grey "later" line, neither hidden nor faked | Supersedes D-12's "only in the admin": the owner expected to choose at install; the legal exposure still needs an explicit, informed switch |
+| **D-20** | A YouTube sign-in | **None in v1 and none in the wizard.** The wizard says: "No YouTube account needed. Songs you don't have are fetched gently in the background." Revisit only if X-1 or real use shows refusals hurting someone | The account can be banned, it is the person's Gmail and photos, yt-dlp's OAuth sign-in no longer works (`02` Q5). The felt slowness of downloads was a bug (AUDIT F21) |
+
 ## Part B — Experiments (questions only a test can answer)
 
 Run by an implementing agent before or inside the task named. Each must stay small and safe (`06` §8).
