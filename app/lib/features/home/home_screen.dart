@@ -14,6 +14,7 @@ import '../common/format.dart';
 import '../common/widgets.dart';
 import '../import/import_card.dart';
 import '../instant/instant_controller.dart' show fetchServiceProvider;
+import '../jam/jam_providers.dart' show jamEntryShownProvider;
 import '../news/news_providers.dart';
 import '../people/friends_shelf.dart';
 import '../people/people_providers.dart';
@@ -256,16 +257,17 @@ class _Header extends ConsumerWidget {
             Expanded(
                 child:
                     ChipRow(labels: chips, selected: chip, onSelected: onChip)),
-            // Listening together: always in sight on Home, where people look for it.
-            Padding(
-              padding: const EdgeInsets.only(right: Space.gutter),
-              child: ActionChip(
-                avatar: Icon(Icons.groups_2_rounded,
-                    size: 18, color: context.colors.accent),
-                label: const Text('Jam'),
-                onPressed: () => Nav.jam(context),
+            // Listening together: in sight on Home, but only where the server has Jam (AUDIT F50, D-33): a server without it gets no dead end.
+            if (ref.watch(jamEntryShownProvider))
+              Padding(
+                padding: const EdgeInsets.only(right: Space.gutter),
+                child: ActionChip(
+                  avatar: Icon(Icons.groups_2_rounded,
+                      size: 18, color: context.colors.accent),
+                  label: const Text('Jam'),
+                  onPressed: () => Nav.jam(context),
+                ),
               ),
-            ),
           ],
         ),
       ],

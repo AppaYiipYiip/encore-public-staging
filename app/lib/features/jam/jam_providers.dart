@@ -94,6 +94,17 @@ final jamApiProvider = FutureProvider<JamApi?>((ref) async {
   return JamClient(baseUrl: uri, auth: auth);
 });
 
+/// Whether Home offers Jam: only where the server has the hub, or while the person is already in a Jam (so a Jam is never lost from sight
+/// because the network moved). A server without Jam gets no way in: the page behind it would only say it is not there (AUDIT F50, D-33).
+bool jamEntryShown({required bool hubThere, required bool inJam}) =>
+    hubThere || inJam;
+
+/// [jamEntryShown] for the running app. The Jam page reads the same [jamApiProvider], so the chip and the page cannot disagree.
+final jamEntryShownProvider = Provider<bool>((ref) => jamEntryShown(
+      hubThere: ref.watch(jamApiProvider.select((hub) => hub.value != null)),
+      inJam: ref.watch(jamControllerProvider.select((jam) => jam.inJam)),
+    ));
+
 /// How long to wait before listening again after the connection dropped; the
 /// last value repeats.
 final jamBackoffProvider = Provider<List<Duration>>((ref) => const [
