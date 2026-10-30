@@ -10,6 +10,7 @@ import '../../data/downloads/background_downloader_transport.dart';
 import '../../data/downloads/disk_space.dart';
 import '../../data/downloads/download_manager.dart';
 import '../../data/downloads/download_transport.dart';
+import '../../data/encore/signed_addresses.dart' show withQuality;
 import '../../data/repos/downloads_repository.dart';
 import '../../domain/audio_quality.dart';
 import '../../domain/storage_guard.dart';
@@ -204,6 +205,7 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
         {quality = AudioQuality.original, sourceSuffix, sourceBitRate}) async {
       final session = await ref.read(sessionProvider.future);
       if (session == null) throw StateError('Not signed in to a server');
+      final refId = id;
       if (session.encoreMode) {
         // The file to download is the server's kept copy of the song, named by the music server's id.
         final row = await (db.select(db.tracks)
@@ -220,6 +222,17 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
           sourceBitRate != null &&
           sourceBitRate <= cap &&
           _lossy.contains(sourceSuffix?.toLowerCase());
+      if (session.encoreMode) {
+        // The server's signed address of the song (its kept file, as it is or at the quality asked for): no login of the music server.
+        final signed = await session.streams.forRef(refId);
+        if (quality.isOriginal || alreadySmall) return signed;
+        return withQuality(
+          signed,
+          format: quality.format,
+          maxBitRate: cap,
+          estimateContentLength: true,
+        );
+      }
       if (quality.isOriginal || alreadySmall) {
         return session.client.downloadUrl(id);
       }

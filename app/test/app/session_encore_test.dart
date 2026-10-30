@@ -124,6 +124,65 @@ void main() {
   });
 
   test(
+      'P2-20: in Encore mode a picture is asked for with the cover ticket, never with the music server\'s login',
+      () async {
+    await start(capabilities: {'encore': true});
+
+    expect(session.coverArtUrl('al-1', size: 300), isNull,
+        reason: 'no ticket yet: a placeholder, not a login in an address');
+
+    await session.covers.ensure();
+    final url = session.coverArtUrl('al-1', size: 300)!;
+
+    expect(url.host, 'home.test');
+    expect(url.path, '/encore/cover/al-1');
+    expect(url.queryParameters['sig'], 'coversig');
+    for (final login in ['u', 't', 's', 'p_']) {
+      expect(url.queryParameters.containsKey(login), isFalse, reason: login);
+    }
+    expect(music.adapter.requests, isEmpty,
+        reason: 'the music server was not asked anything');
+  });
+
+  test(
+      'P2-20: a catalogue picture stays its own address, and a plain music server keeps its own cover address and login',
+      () async {
+    await start(capabilities: {'encore': true});
+    expect(
+        session.coverArtUrl('https://cdn.example/a.jpg')!.host, 'cdn.example');
+    await session.dispose();
+    await db.close();
+
+    await start();
+    final url = session.coverArtUrl('al-1', size: 300)!;
+
+    expect(url.path, endsWith('/rest/getCoverArt'));
+    expect(url.queryParameters['u'], 'tester');
+  });
+
+  test(
+      'P2-20: in Encore mode a song is played from the server\'s signed address, kept or not, and the music server is never asked for it',
+      () async {
+    await start(capabilities: {'encore': true});
+    final kept = encore.addRef('Kept', 'Artist', fileId: 'nd-1');
+    final streamed = encore.addRef('Streamed', 'Artist');
+
+    final a = await session.streams.forRef(kept);
+    final b = await session.streams.forRef(streamed);
+    final again = await session.streams.forRef(kept);
+
+    expect(a.path, '/encore/stream/$kept');
+    expect(b.path, '/encore/stream/$streamed');
+    expect(again, a);
+    expect(
+        encore.adapter.requests
+            .where((r) => r.uri.path.endsWith('/stream-url')),
+        hasLength(2),
+        reason: 'the kept song was asked for once');
+    expect(music.adapter.requests, isEmpty);
+  });
+
+  test(
       'DV-2: ending the device of a session tells the server which phone it was and forgets the saved sign-in',
       () async {
     final store = InMemoryCredentialStore();

@@ -61,7 +61,13 @@ class NavidromeClient:
     # ------------------------------------------------------------------ what a phone is given (docs/tasks P2-20)
 
     def open_stream(
-        self, song_id: str, range_header: str | None, *, max_bit_rate: int | None = None, fmt: str | None = None
+        self,
+        song_id: str,
+        range_header: str | None,
+        *,
+        max_bit_rate: int | None = None,
+        fmt: str | None = None,
+        estimate_length: bool = False,
     ) -> Upstream | None:
         """A kept song's audio, passed on as it arrives, with `Range`, as the server's own account: the phone never needs the music server's
         login. `None` when the music server does not answer or has no such song (it says so with a 200 and a text body, not an audio one)."""
@@ -70,6 +76,8 @@ class NavidromeClient:
             extra["maxBitRate"] = max_bit_rate
         if fmt:
             extra["format"] = fmt
+        if estimate_length:
+            extra["estimateContentLength"] = "true"
         request = self._client.build_request(
             "GET",
             f"{self._base}/rest/stream.view",

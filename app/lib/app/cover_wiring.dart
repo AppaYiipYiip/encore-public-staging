@@ -21,9 +21,14 @@ final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {
     isCached: (key) async =>
         await coverCacheManager.getFileFromCache(key) != null,
     fetch: (id, size) async {
+      // On an Encore server the address is written with the cover ticket: get it first (it is kept for days, so this is one question at most).
+      await session.covers.ensure();
+      final url = session.coverArtUrl(id, size: size);
+      // No ticket yet (the server did not answer): the next prefetch asks again.
+      if (url == null) return;
       try {
         await coverCacheManager.downloadFile(
-          session.coverArtUrl(id, size: size).toString(),
+          url.toString(),
           key: CoverSize.key(serverId, id, size),
         );
       } on HttpExceptionWithStatus catch (error) {

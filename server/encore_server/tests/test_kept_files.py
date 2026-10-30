@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -172,3 +173,46 @@ def test_covers_are_refused_without_the_signature_and_for_ids_that_are_not_ids(r
     assert client.get(f"{V1}/covers/../etc/url", params=creds("marwa")).status_code == 404
     assert client.get(f"{V1}/covers/al-1/url", params={**creds("marwa"), "size": 5}).status_code == 400
     assert client.get(client.get(f"{V1}/covers/al-9/url", params=creds("marwa")).json()["url"]).status_code == 404
+
+
+def test_one_cover_pass_opens_any_picture_for_a_week_and_nothing_else(rig) -> None:  # type: ignore[no-untyped-def]
+    client, _source, _music = rig
+    answer = client.get(f"{V1}/covers/pass", params=creds("marwa"))
+    assert answer.status_code == 200, answer.text
+    body = answer.json()
+    ticket = body["pass"]
+    assert set(ticket) == {"p", "e", "sig"}
+    week_s = 7 * 24 * 3600
+    assert week_s - 60 <= int(ticket["e"]) - time.time() <= week_s + 60
+    assert body["expiresAt"] == int(ticket["e"]) * 1000
+
+    # The same pass opens every picture, at any size, with no further round trip to the server.
+    for cover_id, size in (("al-1", 300), ("al-1", 64)):
+        response = client.get(f"/encore/cover/{cover_id}", params={**ticket, "size": size})
+        assert response.status_code == 200 and response.content == PICTURE
+
+    # A pass is for pictures: it is not the address of a song, and a changed or an old one is refused.
+    ref = kept_ref(client)
+    assert client.get(f"/encore/stream/{ref}", params=ticket).status_code == 401
+    assert client.get("/encore/cover/al-1", params={**ticket, "sig": "0" * 32}).status_code == 401
+    assert client.get("/encore/cover/al-1", params={**ticket, "e": "1"}).status_code == 401
+    assert client.get("/encore/cover/al-1", params={**ticket, "p": "someone-else"}).status_code == 401
+    assert client.get("/encore/cover/al-1", params={"size": 300}).status_code in (400, 401)
+
+
+def test_a_cover_pass_needs_a_signed_in_device(rig) -> None:  # type: ignore[no-untyped-def]
+    client, _source, _music = rig
+
+    assert client.get(f"{V1}/covers/pass").status_code == 401
+
+
+def test_a_download_can_ask_for_the_length_of_a_transcoded_song(rig) -> None:  # type: ignore[no-untyped-def]
+    client, _source, music = rig
+    url = address(client, kept_ref(client))
+
+    assert client.get(url + "&maxBitRate=128&format=mp3&estimateContentLength=true").status_code == 200
+    assert music.requests[-1].url.params["estimateContentLength"] == "true"
+
+    assert client.get(url).status_code == 200
+    assert "estimateContentLength" not in music.requests[-1].url.params
+    assert client.get(url + "&estimateContentLength=maybe").status_code == 400

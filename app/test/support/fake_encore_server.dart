@@ -264,6 +264,12 @@ class FakeEncoreServer {
       if (body['locked'] != null) row['locked'] = body['locked'];
       return _ok(row);
     }
+    if (path == '/encore/api/v1/covers/pass') {
+      return _ok({
+        'pass': {'p': 'pn_x', 'e': 9999999999, 'sig': 'coversig'},
+        'expiresAt': 9999999999000,
+      });
+    }
     final streamMatch =
         RegExp(r'^/encore/api/v1/refs/(sr_\w+)/stream-url$').firstMatch(path);
     if (streamMatch != null) {

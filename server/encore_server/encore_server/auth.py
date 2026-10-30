@@ -152,6 +152,12 @@ def require(principal: Principal | None) -> Principal:
 #: How long a stream address works. Long, because a player keeps using the same address for a whole listen (a two-hour recitation).
 STREAM_URL_TTL_S = 6 * 3600
 
+#: How long a cover pass works: a week. One pass opens every picture (a screen shows thirty), so the phone asks for it rarely.
+COVER_PASS_TTL_S = 7 * 24 * 3600
+
+#: What a cover pass is signed over, in place of one picture's id (a song address cannot be mistaken for it: no ref has this id).
+COVER_PASS_SCOPE = "cover-pass:*"
+
 
 def stream_secret(conn) -> bytes:  # type: ignore[no-untyped-def]
     """The server's secret for signing addresses: made once, kept in the database."""

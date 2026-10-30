@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../core/result.dart';
 import '../api/opensubsonic/json_read.dart';
 import 'encore_models.dart';
+import 'signed_addresses.dart';
 
 /// The Encore server's own API (docs/17): song refs, the person's library, playlists, plays.
 ///
@@ -15,13 +16,16 @@ class EncoreApi {
     required Uri Function() baseUrl,
     required Map<String, String> Function() auth,
     this.deviceId,
+    DateTime Function() clock = DateTime.now,
   })  : _dio = dio,
         _baseUrl = baseUrl,
-        _auth = auth;
+        _auth = auth,
+        _clock = clock;
 
   final Dio _dio;
   final Uri Function() _baseUrl;
   final Map<String, String> Function() _auth;
+  final DateTime Function() _clock;
 
   /// This device's id on the server (`dv_...`), once signed in: lets the server tell a change made here from one made elsewhere.
   String? deviceId;
@@ -164,16 +168,50 @@ class EncoreApi {
   Future<Result<EncoreRef>> ref(String id) =>
       guard(() async => EncoreRef.fromJson(await _send('GET', '/refs/$id')));
 
-  /// The address to play a song from the server's stream (signed, valid for hours): for songs it does not keep.
-  Future<Result<Uri>> streamUrl(String refId) => guard(() async {
+  /// The address to play a song from (signed, valid for hours), and when it stops working. The server picks where the audio comes from: its own
+  /// kept file when it has one, YouTube otherwise.
+  Future<Result<SignedAddress>> streamAddress(String refId) => guard(() async {
         final body = await _send('GET', '/refs/$refId/stream-url');
         final url = readString(body['url']);
         if (url == null) {
           throw const ServerFailure('The server gave no stream address.');
         }
         final base = _baseUrl();
-        return Uri.parse(url).isAbsolute ? Uri.parse(url) : base.resolve(url);
+        final address =
+            Uri.parse(url).isAbsolute ? Uri.parse(url) : base.resolve(url);
+        return SignedAddress(address, _expiry(body));
       });
+
+  Future<Result<Uri>> streamUrl(String refId) =>
+      streamAddress(refId).then((r) => r.map((a) => a.url));
+
+  /// One ticket for every picture of the server, valid for days (`GET /covers/pass`).
+  Future<Result<CoverPass>> coverPass() => guard(() async {
+        final body = await _send('GET', '/covers/pass');
+        final ticket = readMap(body['pass']);
+        final person = readString(ticket?['p']);
+        final signature = readString(ticket?['sig']);
+        if (person == null || signature == null) {
+          throw const ServerFailure('The server gave no ticket for pictures.');
+        }
+        return CoverPass(
+            person: person, signature: signature, expiresAt: _expiry(body));
+      });
+
+  /// When an address stops working, counted by this phone's own clock: the server says when (`expiresAt`) and what time it is (`serverTime`),
+  /// and what is left is the difference, so a phone whose clock is hours out does not keep an address that has run out (or drop one that
+  /// has not). Without the server's time the date is taken as given; without any date the address is taken as run out, so it is asked again.
+  DateTime _expiry(Map<String, dynamic> body) {
+    final expires = readInt(body['expiresAt']);
+    if (expires == null) {
+      return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    }
+    final serverNow = readInt(body['serverTime']);
+    if (serverNow == null) {
+      return DateTime.fromMillisecondsSinceEpoch(expires, isUtc: true);
+    }
+    return _clock().add(Duration(milliseconds: expires - serverNow));
+  }
 
   // ------------------------------------------------------------------ the library
 

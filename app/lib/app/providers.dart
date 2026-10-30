@@ -198,14 +198,25 @@ class CoverArtResolver {
   /// The size a widget of [px] device pixels fetches (two sizes only: [CoverSize]).
   static int bucket(int px) => CoverSize.forPixels(px);
 
-  ({Uri url, String cacheKey}) resolve(String coverArtId, int px) {
+  /// `ready` is false while the address is a placeholder (no session yet, or the cover ticket has not arrived): a picture already in the disk
+  /// cache still shows, and the widget asks again when `ready` turns true, because the cache key does not change.
+  ({Uri url, String cacheKey, bool ready}) resolve(String coverArtId, int px) {
     final size = bucket(px);
-    final url = coverArtId.startsWith('https://')
+    final real = coverArtId.startsWith('https://')
         ? Uri.parse(coverArtId)
-        : session?.coverArtUrl(coverArtId, size: size) ??
-            Uri.parse(
-                'https://cover-cache.invalid/$serverId/$coverArtId/$size');
-    return (url: url, cacheKey: CoverSize.key(serverId, coverArtId, size));
+        : session?.coverArtUrl(coverArtId, size: size);
+    // Not an address anybody is asked: it only has to be well formed, and the cache is looked in by key.
+    final url = real ??
+        Uri(
+          scheme: 'https',
+          host: 'cover-cache.invalid',
+          pathSegments: ['$serverId', coverArtId, '$size'],
+        );
+    return (
+      url: url,
+      cacheKey: CoverSize.key(serverId, coverArtId, size),
+      ready: real != null,
+    );
   }
 
   /// The cache key of the *other* size of the cover [resolve] would fetch: what stands in for it when it is not cached.
@@ -213,9 +224,19 @@ class CoverArtResolver {
       CoverSize.key(serverId, coverArtId, CoverSize.otherThan(bucket(px)));
 }
 
+/// How many cover tickets this session has had: pictures asked for before the first one were placeholders, so everything that shows a picture
+/// is rebuilt when one arrives (and when a new one replaces an old one).
+final coverPassGenerationProvider = StreamProvider<int>((ref) async* {
+  final covers = ref.watch(sessionProvider).value?.covers;
+  if (covers == null) return;
+  yield covers.generation;
+  yield* covers.changes;
+});
+
 final coverArtResolverProvider = Provider<CoverArtResolver?>((ref) {
   final server = ref.watch(activeServerProvider).value;
   if (server == null) return null;
   final session = ref.watch(sessionProvider).value;
+  ref.watch(coverPassGenerationProvider);
   return CoverArtResolver(serverId: server.id, session: session);
 });

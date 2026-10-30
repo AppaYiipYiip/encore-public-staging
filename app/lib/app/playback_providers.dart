@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/clock.dart';
 import '../core/logger.dart';
 import '../data/db/app_database.dart';
+import '../data/encore/signed_addresses.dart' show withQuality;
 import '../data/repos/downloads_repository.dart';
 import '../data/sync/outbox.dart';
 import '../data/sync/sync_state_store.dart';
@@ -66,8 +67,7 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
         (await coverCacheManager.getFileFromCache(key))?.file,
     download: (url, key) async =>
         (await coverCacheManager.downloadFile(url, key: key)).file,
-    urlFor: (id, size) =>
-        session()?.client.coverArtUrl(id, size: size).toString(),
+    urlFor: (id, size) => session()?.coverArtUrl(id, size: size)?.toString(),
   );
   handler.setBrowser(browser, coverArt: art.resolve);
 
@@ -88,16 +88,10 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
         throw const ServerNotAnswering();
       }
       if (s.encoreMode) {
-        // A song is a ref: its kept file (if the server has one) plays through the one door, any other song from the server's stream.
-        final row = await (db.select(db.tracks)
-              ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
-            .getSingleOrNull();
-        final fileId = row?.fileId;
-        if (fileId != null) {
-          return s.client
-              .streamUrl(fileId, maxBitRate: maxBitRate, format: format);
-        }
-        return (await s.encore.streamUrl(id)).getOrThrow();
+        // A song is a ref, and the server signs one address for it: it picks where the audio comes from (its own kept file, or YouTube), and
+        // the phone needs no login of the music server. The address is kept until just before it ends; the quality rides on it.
+        return withQuality(await s.streams.forRef(id),
+            maxBitRate: maxBitRate, format: format);
       }
       return s.client.streamUrl(id, maxBitRate: maxBitRate, format: format);
     },

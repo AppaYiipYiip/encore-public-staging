@@ -141,6 +141,8 @@ class CoverArt extends ConsumerWidget {
 
         final r = resolver.resolve(id, px);
         return CachedNetworkImage(
+          // The cache key stays the same when the cover ticket arrives; the key of the widget says "now there is a real address".
+          key: ValueKey(r.ready),
           imageUrl: r.url.toString(),
           cacheKey: r.cacheKey,
           cacheManager: coverCacheManager,

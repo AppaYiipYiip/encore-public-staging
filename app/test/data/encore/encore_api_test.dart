@@ -163,6 +163,46 @@ void main() {
     expect(url.path, '/encore/stream/$id');
   });
 
+  test('the address of a song says when it stops working', () async {
+    final id = server.addRef('A', 'X');
+
+    final address = (await api.streamAddress(id)).getOrThrow();
+
+    expect(address.url.queryParameters['sig'], 'abc');
+  });
+
+  test(
+      'an address lives as long as the server says it does, counted by the '
+      "phone's own clock (a phone whose clock is out keeps no dead address)",
+      () async {
+    final id = server.addRef('A', 'X');
+    final phoneNow = DateTime.utc(2030, 1, 1, 12);
+    final skewed = EncoreApi(
+      dio: Dio()..httpClientAdapter = server.adapter,
+      baseUrl: () => Uri.parse('http://home.test:4540'),
+      auth: () => {'u': 'tester', 't': 'tok', 's': 'salt'},
+      clock: () => phoneNow,
+    );
+
+    // The fake server says it is `clockMs` and that the address ends at 9999999999000.
+    final address = (await skewed.streamAddress(id)).getOrThrow();
+
+    expect(address.expiresAt,
+        phoneNow.add(Duration(milliseconds: 9999999999000 - server.clockMs)));
+  });
+
+  test('one ticket opens every picture, and says when it ends', () async {
+    final pass = (await api.coverPass()).getOrThrow();
+
+    expect(pass.person, 'pn_x');
+    expect(pass.signature, 'coversig');
+    expect(
+        pass.expiresAt.isAfter(DateTime.now().add(const Duration(days: 365))),
+        isTrue);
+    expect(
+        server.adapter.requests.single.uri.path, '/encore/api/v1/covers/pass');
+  });
+
   test('the files feed lists what the server keeps, then only what changed',
       () async {
     final a = server.addRef('A', 'X', fileId: 'nd-1');

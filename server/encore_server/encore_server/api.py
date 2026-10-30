@@ -27,6 +27,8 @@ from starlette.concurrency import iterate_in_threadpool
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, playback, refs
 from .accounts import Accounts, Limiter
 from .auth import (
+    COVER_PASS_SCOPE,
+    COVER_PASS_TTL_S,
     STREAM_URL_TTL_S,
     NavidromeVerifier,
     Principal,
@@ -574,6 +576,17 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
 _COVER_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 
 
+@router.get("/covers/pass")
+def cover_pass(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    """One ticket that opens every picture for a week: a screen shows thirty covers, and a phone should not ask thirty times. It opens pictures
+    and nothing else (it is signed over its own scope, never over a song)."""
+    with services(request).db.tx() as conn:
+        secret = stream_secret(conn)
+    expires = int(time.time()) + COVER_PASS_TTL_S
+    sig = sign_stream(secret, p.person_id, COVER_PASS_SCOPE, expires)
+    return _ok({"pass": {"p": p.person_id, "e": expires, "sig": sig}, "expiresAt": expires * 1000})
+
+
 @router.get("/covers/{cover_id}/url")
 def cover_url(cover_id: str, request: Request, size: int | None = None, p: Principal = Depends(get_principal)) -> JSONResponse:
     """The address of a picture the server has (a cover), signed like a stream so an image view that cannot set headers can load it, and so a phone
@@ -601,8 +614,10 @@ def cover(cover_id: str, request: Request) -> Response:
         size = int(query["size"]) if query.get("size") else None
     except ValueError:
         raise ApiError("validation", "That address is not right.") from None
-    if not _COVER_ID.match(cover_id) or not valid_stream_signature(
-        secret, query.get("p", ""), f"cover:{cover_id}", expires, query.get("sig", "")
+    person, sig = query.get("p", ""), query.get("sig", "")
+    if not _COVER_ID.match(cover_id) or not (
+        valid_stream_signature(secret, person, f"cover:{cover_id}", expires, sig)
+        or valid_stream_signature(secret, person, COVER_PASS_SCOPE, expires, sig)
     ):
         raise ApiError("unauthorized", "This picture address has expired. Ask the app for it again.")
     if size is not None and not 16 <= size <= 2000:
@@ -653,6 +668,7 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
             request.headers.get("range"),
             max_bit_rate=_bit_rate(query.get("maxBitRate")),
             fmt=_audio_format(query.get("format")),
+            estimate_length=_flag(query.get("estimateContentLength")),
         )
         if own is not None:
             return _pass_on(own, request)
@@ -688,6 +704,15 @@ def _bit_rate(value: str | None) -> int | None:
     if not value.isdigit() or int(value) not in _BIT_RATES:
         raise ApiError("validation", "That is not a quality this server offers.")
     return int(value) or None
+
+
+def _flag(value: str | None) -> bool:
+    """A download asking for the length of a transcoded song up front (so its progress can be shown): `true`, or nothing."""
+    if value is None or value == "":
+        return False
+    if value != "true":
+        raise ApiError("validation", "That is not something this server understands.")
+    return True
 
 
 def _audio_format(value: str | None) -> str | None:

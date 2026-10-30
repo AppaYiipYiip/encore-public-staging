@@ -20,6 +20,7 @@ import '../data/encore/encore_models.dart';
 import '../data/encore/encore_mutations.dart';
 import '../data/encore/encore_sync.dart';
 import '../data/encore/encore_upgrade.dart';
+import '../data/encore/signed_addresses.dart';
 import '../data/navidrome/play_history_client.dart';
 import '../data/repos/library_repository.dart';
 import '../data/sync/endpoint_resolver.dart';
@@ -98,6 +99,8 @@ class ServerSession {
     required this.playHistory,
     required this.encore,
     required this.encoreMode,
+    required this.streams,
+    required this.covers,
     required this.live,
     this.device,
     required EncoreUpgrade upgradeRunner,
@@ -347,6 +350,11 @@ class ServerSession {
       playHistory: playHistory,
       encore: encore,
       encoreMode: encoreMode,
+      streams: StreamAddresses(fetch: encore.streamAddress),
+      covers: CoverPassHolder(
+        fetch: encore.coverPass,
+        baseUrl: () => endpoints.currentUrl,
+      ),
       live: live,
       device: device,
       upgradeRunner: upgrade,
@@ -440,6 +448,12 @@ class ServerSession {
   /// This server is an Encore server and this phone has been moved over to it.
   final bool encoreMode;
 
+  /// The signed address of every song, kept until it nearly ends (used in [encoreMode]: no login of the music server on a song's address).
+  final StreamAddresses streams;
+
+  /// The one ticket that opens every picture (used in [encoreMode]).
+  final CoverPassHolder covers;
+
   /// Signing out of this phone (docs/32 DV-2): the server ends this phone's device, so its token stops working and the person's device list is
   /// right; best effort (offline is fine, the person can end it from another device). Then the saved sign-in is deleted.
   Future<void> endDevice() async {
@@ -483,6 +497,7 @@ class ServerSession {
       scheduler.start();
       _startLive();
       unawaited(_learnAddresses());
+      unawaited(covers.ensure());
       return;
     }
     unawaited(_detectAndUpgrade());
@@ -516,7 +531,10 @@ class ServerSession {
   /// The app came to the front: check at once and listen to the server again.
   void onForeground() {
     scheduler.onForeground();
-    if (encoreMode) _startLive();
+    if (encoreMode) {
+      _startLive();
+      unawaited(covers.ensure());
+    }
   }
 
   /// The app went to the background: nothing is checked and no connection is held (the battery, and Android would cut it anyway).
@@ -596,11 +614,19 @@ class ServerSession {
     );
   }
 
-  Uri coverArtUrl(String id, {int size = 300}) =>
-      client.coverArtUrl(id, size: size);
+  /// The address of a picture. On an Encore server it is written with the cover ticket (no login of the music server in it), and is `null`
+  /// until the ticket has arrived (a second after the app starts): the image cache is keyed by picture and size, so a cached cover shows
+  /// either way. A plain music server is asked with its own login, as before.
+  Uri? coverArtUrl(String id, {int size = 300}) {
+    if (!encoreMode || id.startsWith('https://')) {
+      return client.coverArtUrl(id, size: size);
+    }
+    return covers.urlFor(id, size);
+  }
 
   Future<void> dispose() async {
     _disposed = true;
+    unawaited(covers.dispose());
     upgrade.dispose();
     await _addressChanges?.cancel();
     await _liveEvents?.cancel();
