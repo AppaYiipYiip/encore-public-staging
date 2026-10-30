@@ -42,7 +42,7 @@ It asks, in this order:
 | Your username / a password (twice) | Your own Encore login. 8 or more characters. |
 | Where is your music? | A folder with your music (it is only read), or press Enter for `/srv/music` and add music later. |
 
-Then it downloads Encore, starts it and prints the address, your username and a QR code.
+Then it downloads Encore, starts it and prints the address and your username to type into the app, the commands for looking after the server (there is no admin page in the browser yet), and what `encore funnel on` is for (optional; it needs a free Tailscale account). It prints no QR code: the one it used to print opened the music server's own page in a phone's browser and the app cannot scan it; a code that carries an Encore setup link comes with the pairing link (AUDIT F16).
 
 **3. Sign in on the Encore app.** On a phone on the same Wi-Fi: Encore app, *Connect*, the address it printed (like `192.168.1.23:4533`),
 your username and your password. Your library arrives in a few seconds.

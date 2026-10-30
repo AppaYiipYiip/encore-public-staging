@@ -345,20 +345,30 @@ fi
 # ---------------------------------------------------------------------------------------------------------------- done
 
 HOST_IP="$(host_ip)"
-URL="http://${HOST_IP}:${PORT}"
 
 say ""
-say "  ${BOLD}Encore is ready.${OFF} In the Encore app on your phone (on the same Wi-Fi) sign in with:"
+say "  ${BOLD}Encore is ready.${OFF} In the Encore app on your phone (on the same Wi-Fi), tap Connect and sign in with:"
 say ""
 say "        Address:   ${HOST_IP}:${PORT}"
 if [ "$NEED_OWNER" = 1 ]; then say "        Username:  ${OWNER}"; say "        Password:  the one you just chose"; fi
 say ""
-if command -v qrencode >/dev/null 2>&1 || { apt-get install -y -qq qrencode >>"$LOG" 2>&1 && command -v qrencode >/dev/null 2>&1; }; then
-    qrencode -t ANSIUTF8 -m 2 "$URL" 2>>"$LOG" | sed 's/^/        /' || true
-    say ""
-fi
-say "  To use it away from home, then invite friends:   encore funnel on"
-say "  To see how it is doing, update or remove it:       encore status | encore update | encore uninstall"
+# No QR code here: it used to encode the bare address, which a phone's camera opens in the browser as the music server's own page, not Encore,
+# and the app cannot scan it. A QR that carries an Encore setup link comes with the pairing link (docs/tasks AUDIT F16, P2-19 slice B).
+say "  Please do not open that address in a browser: it shows the music server's own page, not Encore."
+say "  There is no Encore admin page yet (it is being built). Until then this computer's command line"
+say "  is how you look after the server:"
+say ""
+say "        encore status             is it running, at which address, which version"
+say "        encore logs               what it is saying (Ctrl-C to stop)"
+say "        encore update             a backup first, then the newest version"
+say "        encore backup | restore   a copy of the accounts, playlists and likes; put one back"
+say "        encore start | stop       switch it on or off"
+say "        encore uninstall          remove it (your music is never touched)"
+say ""
+say "  ${BOLD}Away from home (optional):${OFF}   encore funnel on"
+say "  Lets your phone, and friends you invite, reach Encore from anywhere. It needs a free Tailscale"
+say "  account: the command shows a link, you sign in there in a browser, and it prints an https"
+say "  address. You can skip this and use Encore at home."
 say ""
 note "Installed in $(($(since) / 60)) min $(($(since) % 60)) s (the time you spent answering is in it)."
 log "=== done after $(since) s"
