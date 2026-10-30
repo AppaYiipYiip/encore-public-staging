@@ -7,6 +7,7 @@ import 'package:encore/core/clock.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_api.dart';
 import 'package:encore/data/encore/encore_sync.dart';
+import 'package:encore/data/repos/release_store.dart';
 import 'package:encore/data/sync/outbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -53,6 +54,19 @@ void main() {
 
   Future<TrackRow> track(String id) =>
       (db.select(db.tracks)..where((t) => t.id.equals(id))).getSingle();
+
+  group('saved releases (D-35)', () {
+    test(
+        'a release saved on the server is remembered by the phone, so it still says "In your library" after a restart or on a second phone',
+        () async {
+      server.savedReleases['cat:100'] = ['sr_1'];
+
+      await sync.pull();
+
+      expect(await ReleaseStore(db, serverId).saved(), {'cat:100'},
+          reason: 'a fresh store over the same database is a restart');
+    });
+  });
 
   group('the server\'s files', () {
     test(

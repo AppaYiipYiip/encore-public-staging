@@ -6,7 +6,9 @@ import '../../core/result.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/encore/encore_models.dart';
 import '../../data/repos/downloads_repository.dart';
+import '../../data/repos/release_store.dart';
 import '../downloads/download_providers.dart';
+import '../settings/settings_controller.dart';
 import 'instant_controller.dart';
 
 /// What happened when a release was saved or downloaded (D-21, docs/17 "Saving a release").
@@ -49,7 +51,12 @@ class ReleaseOutcome {
 /// Saves or downloads a catalogue release on an Encore server: the songs are resolved, ONE call asks the server to save the release and
 /// keep them (whether or not the phone stays), and only what the server confirmed is pinned on the phone. The pieces are injected.
 class ReleaseSaver {
-  ReleaseSaver({required this.resolve, required this.save, required this.pin});
+  ReleaseSaver({
+    required this.resolve,
+    required this.save,
+    required this.pin,
+    this.onSaved,
+  });
 
   /// Gives a song its id on the server, or `null` when it could not (the title is only for logs and tests).
   final Future<String?> Function(String id, String title) resolve;
@@ -60,6 +67,10 @@ class ReleaseSaver {
 
   /// Pins one song on the phone: it downloads when the server has it.
   final Future<void> Function(String refId) pin;
+
+  /// Called once the server confirmed the save, **before the first song is pinned**: the phone writes down what it saved, so that an app that
+  /// is killed in the middle of the pins can finish them when it starts again (D-35).
+  final Future<void> Function(List<String> refIds)? onSaved;
 
   Future<ReleaseOutcome> run({
     required String releaseId,
@@ -94,6 +105,7 @@ class ReleaseSaver {
         failed.add((title: r.title, reason: keep.reason));
       }
     }
+    await onSaved?.call([for (final r in resolved) r.ref]);
     if (download) {
       for (final r in resolved) {
         await pin(r.ref);
@@ -151,6 +163,8 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
     String releaseId,
     List<CatalogueTrack> tracks, {
     required bool download,
+    String? title,
+    String? artist,
   }) async {
     if (state[releaseId]?.phase == ReleasePhase.saving) return null;
     state = {
@@ -165,6 +179,7 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
     final byId = {for (final t in tracks) t.id: t};
     final controller = ref.read(instantControllerProvider.notifier);
     final actions = ref.read(downloadActionsProvider);
+    final store = await _store();
     final saver = ReleaseSaver(
       resolve: (id, title) async {
         final status = await controller.fetch(byId[id]!, bulk: true);
@@ -172,6 +187,21 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
       },
       save: session.encore.saveRelease,
       pin: (refId) => actions.pin(PinTargetType.track, refId),
+      // Written down before the first pin: what the phone keeps after a restart is the phone's own record of this release (D-35).
+      onSaved: store == null
+          ? null
+          : (refIds) async {
+              final before = (await store.phone())[releaseId];
+              await store.put(
+                releaseId,
+                PhoneRelease(
+                  refIds: refIds,
+                  title: title ?? before?.title,
+                  artist: artist ?? before?.artist,
+                  download: download || (before?.download ?? false),
+                ),
+              );
+            },
     );
     final outcome = await saver.run(
       releaseId: releaseId,
@@ -190,12 +220,17 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
     return outcome.message;
   }
 
-  /// Takes the downloaded copies of a release off the phone (the songs stay on the server and in the library).
+  /// Takes the downloaded copies of a release off the phone (the songs stay on the server and in the library). The songs come from what the
+  /// phone wrote down, so this also works after a restart, when the page's own memory is empty (D-35).
   Future<void> removeDownload(String releaseId) async {
     final actions = ref.read(downloadActionsProvider);
-    for (final refId in state[releaseId]?.refIds ?? const <String>[]) {
+    final store = await _store();
+    final remembered = (await store?.phone())?[releaseId];
+    final refIds = {...?state[releaseId]?.refIds, ...?remembered?.refIds};
+    for (final refId in refIds) {
       await actions.unpin(PinTargetType.track, refId);
     }
+    await store?.clearDownload(releaseId);
     final now = state[releaseId];
     if (now != null) {
       state = {
@@ -204,10 +239,88 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
       };
     }
   }
+
+  /// Finishes what an app that was killed in the middle of a download had started: the songs of every release the person asked to download,
+  /// that the phone wrote down and that have no pin yet, are pinned now (D-35). Answers how many were pinned.
+  ///
+  /// It reads and writes the pins through a repository built here from the server it awaited, not through the providers the screens start: as
+  /// the app starts nothing else has (a read of an auto-disposed stream nobody listens to fails, and the repository provider is still empty), and a
+  /// failure here would be swallowed without a word.
+  Future<int> resume() async {
+    final server = await ref.read(activeServerProvider.future);
+    if (server == null) return 0;
+    final db = ref.read(databaseProvider);
+    final store = ReleaseStore(db, server.id);
+    final repo =
+        DownloadsRepository(db, server.id, clock: ref.read(clockProvider));
+    final quality = ref.read(settingsProvider).downloadQuality;
+    final pinned = {
+      for (final p in await repo.pins())
+        if (p.targetType == PinTargetType.track.name) p.targetId,
+    };
+    var count = 0;
+    for (final release in (await store.phone()).values) {
+      if (!release.download) continue;
+      for (final refId in release.refIds) {
+        if (pinned.contains(refId)) continue;
+        await repo.pin(PinTargetType.track, refId, quality: quality);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  Future<ReleaseStore?> _store() async {
+    final server = await ref.read(activeServerProvider.future);
+    return server == null
+        ? null
+        : ReleaseStore(ref.read(databaseProvider), server.id);
+  }
 }
 
 final releaseSavesProvider =
     NotifierProvider<ReleaseSaves, Map<String, ReleaseState>>(ReleaseSaves.new);
+
+/// The releases the sync says are saved (`cat:<id>`): what keeps "In your library" true after a restart, a reinstall and on a second phone.
+final savedReleasesProvider = StreamProvider.autoDispose<Set<String>>((ref) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null) return Stream.value(const <String>{});
+  return ReleaseStore(ref.watch(databaseProvider), server.id).watchSaved();
+});
+
+/// What this phone saved and downloaded here, as it wrote it down (songs, title, artist, whether to keep them on the phone).
+final phoneReleasesProvider =
+    StreamProvider.autoDispose<Map<String, PhoneRelease>>((ref) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null) return Stream.value(const <String, PhoneRelease>{});
+  return ReleaseStore(ref.watch(databaseProvider), server.id).watchPhone();
+});
+
+/// Where a release stands, wherever a person looks (D-35). A save on its way, or just finished or failed in this run, is in memory and wins.
+/// Otherwise what the phone wrote down proves the server confirmed the save (even before the next sync), and a release the sync names is
+/// saved too: on a second phone it is simply in the library, with no downloads (those belong to each phone).
+final releaseStateProvider =
+    Provider.autoDispose.family<ReleaseState?, String>((ref, releaseId) {
+  final live = ref.watch(releaseSavesProvider)[releaseId];
+  if (live != null) return live;
+  final mine = ref.watch(phoneReleasesProvider).value?[releaseId];
+  if (mine != null) {
+    return ReleaseState(ReleasePhase.saved,
+        download: mine.download, refIds: mine.refIds);
+  }
+  if ((ref.watch(savedReleasesProvider).value ?? const <String>{})
+      .contains(releaseId)) {
+    return const ReleaseState(ReleasePhase.saved);
+  }
+  return null;
+});
+
+/// Run once for each person who is using the phone, as the app starts: finishes the downloads a kill left half done ([ReleaseSaves.resume]).
+final releaseResumeProvider = FutureProvider<int>((ref) async {
+  final server = await ref.watch(activeServerProvider.future);
+  if (server == null) return 0;
+  return ref.read(releaseSavesProvider.notifier).resume();
+});
 
 /// The download state of a saved release: the pins of its songs added up. [joined] is the song ids, comma separated.
 final releasePinStateProvider =

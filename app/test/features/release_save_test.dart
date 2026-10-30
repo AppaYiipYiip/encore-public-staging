@@ -12,7 +12,11 @@ void main() {
   late Map<String, String> keep; // by ref: the state the server answers with
   late Result<EncoreReleaseSave> Function() answer;
 
-  ReleaseSaver saver({Set<String> unresolved = const {}}) => ReleaseSaver(
+  ReleaseSaver saver({
+    Set<String> unresolved = const {},
+    bool remember = false,
+  }) =>
+      ReleaseSaver(
         resolve: (id, title) async {
           events.add('resolve $title');
           return unresolved.contains(id) ? null : id;
@@ -22,6 +26,9 @@ void main() {
           return answer();
         },
         pin: (refId) async => events.add('pin $refId'),
+        onSaved: remember
+            ? (refIds) async => events.add('remember ${refIds.join(",")}')
+            : null,
       );
 
   final songs = [
@@ -67,6 +74,36 @@ void main() {
     expect(pins.every((i) => i > save), isTrue);
     expect(events.where((e) => e.startsWith('pin ')),
         ['pin sr_1', 'pin sr_2', 'pin sr_3']);
+  });
+
+  test(
+      'D-35: what the phone saved is written down once the server confirmed and before the first pin, so a kill in the middle of the pins can be finished',
+      () async {
+    await saver(remember: true)
+        .run(releaseId: 'cat:1', songs: songs, download: true);
+
+    expect(
+        events.where((e) =>
+            e.startsWith('save ') ||
+            e.startsWith('remember ') ||
+            e.startsWith('pin ')),
+        [
+          'save cat:1 sr_1,sr_2,sr_3',
+          'remember sr_1,sr_2,sr_3',
+          'pin sr_1',
+          'pin sr_2',
+          'pin sr_3',
+        ]);
+  });
+
+  test('D-35: nothing is written down when the server did not confirm',
+      () async {
+    answer = () => Result.err(const NetworkFailure('Network error'));
+
+    await saver(remember: true)
+        .run(releaseId: 'cat:1', songs: songs, download: true);
+
+    expect(events.where((e) => e.startsWith('remember ')), isEmpty);
   });
 
   test(

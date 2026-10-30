@@ -553,7 +553,11 @@ class FakeEncoreServer {
     return _ok({
       'refs': [for (final id in wanted.toList()..sort()) refs[id]!],
       'likes': likeItems,
-      'savedAlbums': const <Object?>[],
+      // The releases saved with `PUT /saved-albums/{id}`: the feed names them (their songs are not in it, as on the real server).
+      'savedAlbums': [
+        for (final id in savedReleases.keys)
+          {'id': id, 'at': 1, 'removed': false},
+      ],
       'follows': const <Object?>[],
       'playlists': playlistItems,
       'entries': entryItems,

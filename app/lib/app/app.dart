@@ -15,6 +15,7 @@ import '../features/downloads/download_providers.dart';
 import '../features/downloads/lyrics_for_downloads.dart';
 import '../features/import/import_providers.dart';
 import '../features/instant/instant_controller.dart' show jsonDecodeEndpoints;
+import '../features/instant/release_save.dart' show releaseResumeProvider;
 import '../features/jam/jam_providers.dart';
 import '../features/jam/jam_wiring.dart';
 import '../features/people/people_providers.dart';
@@ -112,6 +113,9 @@ class EncoreApp extends ConsumerWidget {
     // The accounts on this phone are known from the start, not when something first asks: a link that started the app asks at once
     // (below), and Home used to be what kept them in step.
     ref.listen(profilesProvider, (_, __) {});
+    // A download that was killed half way is finished as the app starts (D-35): the songs of a release the person asked to keep on the phone that
+    // have no pin yet are pinned now.
+    ref.listen(releaseResumeProvider, (_, __) {});
     // A link shared from Spotify / YouTube Music opens the import page with
     // the link already in it.
     ref.listen(sharedTextProvider, (_, next) {

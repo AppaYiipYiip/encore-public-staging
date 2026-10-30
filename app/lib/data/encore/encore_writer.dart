@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
+import '../repos/release_store.dart';
 import '../sync/fingerprint.dart';
 import '../sync/pending_intent.dart';
 import 'encore_models.dart';
@@ -127,6 +128,9 @@ class EncoreWriter {
     required Iterable<EncoreSetItem> follows,
     required int nowMs,
   }) async {
+    // The releases the person saved from the catalogue (`cat:<id>`) are no row of the library, so they are remembered by id: it is what keeps
+    // "In your library" true after a restart and on a second phone (D-35).
+    await ReleaseStore(_db, serverId).applySaved(albums);
     final pending = await pendingStarTargets(_db, serverId);
     for (final a in albums) {
       if (a.id.isEmpty || pending.contains(a.id)) continue;

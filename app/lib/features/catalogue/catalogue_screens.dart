@@ -30,9 +30,15 @@ class _AddToLibraryButton extends ConsumerWidget {
     required this.tracks,
     required this.releaseId,
     required this.encore,
+    this.title,
+    this.artist,
   });
 
   final List<CatalogueTrack> tracks;
+
+  /// Who the release is, written down with the save so Library > Downloaded can name it offline.
+  final String? title;
+  final String? artist;
 
   /// `cat:<catalogue album id>`: how the server knows this release (docs/17 "Saving a release").
   final String releaseId;
@@ -74,7 +80,7 @@ class _AddToLibraryButton extends ConsumerWidget {
   }
 
   Widget _encoreButton(BuildContext context, WidgetRef ref) {
-    final release = ref.watch(releaseSavesProvider)[releaseId];
+    final release = ref.watch(releaseStateProvider(releaseId));
     final c = context.colors;
     if (release?.phase == ReleasePhase.saved) {
       return Chip(
@@ -98,7 +104,8 @@ class _AddToLibraryButton extends ConsumerWidget {
               final messenger = ScaffoldMessenger.of(context);
               final problem = await ref
                   .read(releaseSavesProvider.notifier)
-                  .save(releaseId, tracks, download: false);
+                  .save(releaseId, tracks,
+                      download: false, title: title, artist: artist);
               if (problem != null) {
                 messenger
                   ..hideCurrentSnackBar()
@@ -158,7 +165,7 @@ class _CatalogueDownloadButton extends ConsumerWidget {
   /// On an Encore server (D-21): the server saves the release and keeps its songs; the phone pins them at once and downloads each as the
   /// server has it. The ring shows from the tap until the files are on the phone, and a failure is said in words.
   Widget _encoreButton(WidgetRef ref) {
-    final release = ref.watch(releaseSavesProvider)[releaseId];
+    final release = ref.watch(releaseStateProvider(releaseId));
     final asked = release?.download ?? false;
     final PinState state;
     if (release?.phase == ReleasePhase.saving && asked) {
@@ -175,9 +182,9 @@ class _CatalogueDownloadButton extends ConsumerWidget {
       name: album.title,
       stateOverride: tracks.isEmpty ? PinState.none : state,
       preparingLabel: 'Getting ${album.title} on your server',
-      onPin: () => ref
-          .read(releaseSavesProvider.notifier)
-          .save(releaseId, tracks, download: true),
+      onPin: () => ref.read(releaseSavesProvider.notifier).save(
+          releaseId, tracks,
+          download: true, title: album.title, artist: album.artistName),
       onRemove: () =>
           ref.read(releaseSavesProvider.notifier).removeDownload(releaseId),
     );
@@ -305,7 +312,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     final instant = ref.watch(instantAvailableProvider);
     final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final saves =
-        encore ? ref.watch(releaseSavesProvider)['cat:$albumId'] : null;
+        encore ? ref.watch(releaseStateProvider('cat:$albumId')) : null;
     final savedSongs = saves?.phase == ReleasePhase.saved
         ? saves!.refIds.toSet()
         : const <String>{};
@@ -343,7 +350,11 @@ class CatalogueAlbumScreen extends ConsumerWidget {
             // Spotify's words: add it to the library, download it. Asking for
             // the original files is rare and lives in the menu (ADR-067).
             _AddToLibraryButton(
-                tracks: list, releaseId: 'cat:$albumId', encore: encore),
+                tracks: list,
+                releaseId: 'cat:$albumId',
+                encore: encore,
+                title: album.title,
+                artist: album.artistName),
             const SizedBox(width: Space.xs),
             _CatalogueDownloadButton(
                 album: album,
