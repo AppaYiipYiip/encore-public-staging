@@ -22,6 +22,10 @@ class DownloadButton extends ConsumerWidget {
     required this.targetId,
     required this.name,
     this.size = 34,
+    this.stateOverride,
+    this.onPin,
+    this.onRemove,
+    this.preparingLabel,
   });
 
   final PinTargetType type;
@@ -31,10 +35,23 @@ class DownloadButton extends ConsumerWidget {
   final String name;
   final double size;
 
+  /// For a target the pins table does not know as one thing (a catalogue release on an Encore server: its songs' pins added up).
+  final PinState? stateOverride;
+
+  /// Replaces the plain pin; answers a sentence for the person when it could not be done (shown instead of "Downloading").
+  final Future<String?> Function()? onPin;
+
+  /// Replaces the plain unpin.
+  final Future<void> Function()? onRemove;
+
+  /// What the button says while the songs are not on the phone yet because the server is still getting them.
+  final String? preparingLabel;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state =
-        ref.watch(pinStateProvider((type, targetId))).value ?? PinState.none;
+    final state = stateOverride ??
+        ref.watch(pinStateProvider((type, targetId))).value ??
+        PinState.none;
     final waiting = ref.watch(downloadsWaitProvider);
     final c = context.colors;
 
@@ -50,9 +67,11 @@ class DownloadButton extends ConsumerWidget {
           Icons.arrow_downward_rounded,
           c.accent,
           null,
-          waiting == null
-              ? 'Downloading $name, ${(state.progress * 100).round()} percent'
-              : '$waiting to download $name',
+          state.phase == PinPhase.preparing && preparingLabel != null
+              ? preparingLabel!
+              : waiting == null
+                  ? 'Downloading $name, ${(state.progress * 100).round()} percent'
+                  : '$waiting to download $name',
         ),
       PinPhase.complete => (
           Icons.arrow_downward_rounded,
@@ -129,11 +148,16 @@ class DownloadButton extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
 
     if (state.phase == PinPhase.off) {
-      await actions.pin(type, targetId);
+      String? problem;
+      if (onPin != null) {
+        problem = await onPin!();
+      } else {
+        await actions.pin(type, targetId);
+      }
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: Text('Downloading $name for offline listening'),
+          content: Text(problem ?? 'Downloading $name for offline listening'),
         ));
       return;
     }
@@ -144,7 +168,11 @@ class DownloadButton extends ConsumerWidget {
           name: name, state: state, waiting: ref.read(downloadsWaitProvider)),
     );
     if (remove == true) {
-      await actions.unpin(type, targetId);
+      if (onRemove != null) {
+        await onRemove!();
+      } else {
+        await actions.unpin(type, targetId);
+      }
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(

@@ -25,3 +25,9 @@ PR #33 (songs and pictures by the server's signed address, no music-server login
 ## Why the permission is asked (read in the code)
 
 `BackgroundDownloaderTransport._ensureNotificationPermission` (`data/downloads/background_downloader_transport.dart`) asks "once, in context (the user just pinned something)" and configures running, complete and error notifications for the download group. #29 (ADR-R44) switched off the three alert switches and the request at sign-in; it did not touch this one. Downloads work without the permission (the walk declined it). Seen on this build, which carries `main`'s #29; not tested on `main` alone. Recorded as AUDIT F29.
+
+## Correction (written later the same day)
+
+* **The Server row above is wrong about #33.** The dev container ran `main` at `346bd75`, which **lacked #33's own server half** (the cover pass, `GET covers/pass`, and the length hint for quality extras; both arrived with #33). "#33 needs nothing newer on the server" was false. The "Pictures" row therefore exercised the fallback path, not the one-ticket path #33 introduced.
+* **The phone may have been in the old mode.** The first two minutes after a sign-in run the old music-server code path (AUDIT F30, `b10`), and this walk did not look at the page's wording. That the album downloaded is therefore not shown to be the Encore path.
+* Checked again against the complete server in `b10`: the cover pass answers (401 without a login, so the route exists), the phone asked for it twice at its upgrade, and Home drew its covers.

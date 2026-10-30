@@ -122,6 +122,11 @@ class FakeEncoreServer {
   int clockMs = 1790000000000;
   bool online = true;
 
+  /// The releases the phone saved with their songs (`PUT /saved-albums/{id}` with `refs`), by release id, and how the server says it goes
+  /// about each song (`queued` unless a test says otherwise).
+  final Map<String, List<String>> savedReleases = {};
+  final Map<String, String> keepStates = {};
+
   /// How many requests of each route were made (`PUT /likes/...` is counted under `PUT likes`).
   final Map<String, int> calls = {};
 
@@ -262,6 +267,29 @@ class FakeEncoreServer {
         _touch('like', ref);
       }
       return _ok({'changed': true, 'cursor': '$_seq'});
+    }
+    final savedMatch =
+        RegExp(r'^/encore/api/v1/saved-albums/([^/]+)$').firstMatch(path);
+    if (savedMatch != null && r.method == 'PUT') {
+      final Map<String, Object?> body = r.body.isEmpty
+          ? const <String, Object?>{}
+          : (jsonDecode(r.body) as Map).cast<String, Object?>();
+      final asked = [
+        for (final id in (body['refs'] as List? ?? const [])) '$id'
+      ];
+      if (asked.any((id) => !refs.containsKey(id))) {
+        return _error(404, 'not_found');
+      }
+      final id = Uri.decodeComponent(savedMatch.group(1)!);
+      final changed = !savedReleases.containsKey(id);
+      savedReleases[id] = asked;
+      return _ok({
+        'changed': changed,
+        'cursor': '$_seq',
+        'keep': {
+          for (final id in asked) id: {'state': keepStates[id] ?? 'queued'}
+        },
+      });
     }
     final inviteMatch =
         RegExp(r'^/encore/api/v1/invites/(iv_\w+)$').firstMatch(path);

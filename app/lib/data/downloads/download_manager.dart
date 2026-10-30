@@ -22,6 +22,15 @@ typedef DownloadUrlBuilder = Future<Uri> Function(
   int? sourceBitRate,
 });
 
+/// Thrown by a [DownloadUrlBuilder] for a song the server does not keep yet (D-21: a release was saved and the server is still getting
+/// its songs). The song WAITS: it is not failed, it does not use up a slot, and it starts by itself once the server has it.
+class SongNotKeptYet implements Exception {
+  const SongNotKeptYet();
+
+  @override
+  String toString() => 'The server does not keep this song yet';
+}
+
 /// Policy the manager reads each time it schedules work.
 @immutable
 class DownloadPolicy {
@@ -98,6 +107,10 @@ class DownloadManager {
   Timer? _debounce;
   Future<void> _serial = Future<void>.value();
   bool _disposed = false;
+
+  /// Songs whose address could not be made because the server does not keep them yet, as of this pass: they stay queued, and the next
+  /// pass (a pin change, a finished sync, a finished transfer) asks again.
+  final Set<String> _waitingForServer = <String>{};
 
   static String _taskId(int serverId, String trackId) =>
       'enc:$serverId:$trackId';
@@ -184,6 +197,7 @@ class DownloadManager {
 
   Future<void> _reconcileOnce(bool immediateRemoval) async {
     if (_disposed) return;
+    _waitingForServer.clear();
     try {
       final policy = _policy();
       final desired = await _repo.desired();
@@ -232,12 +246,18 @@ class DownloadManager {
     if (slots <= 0) return;
     // Rows already handed to the transport stay `downloading`, so the first
     // `slots` queued rows are always fresh work.
-    final queued = await _repo.rowsInState(DownloadState.queued, limit: slots);
+    // Songs waiting for the server are skipped, and do not count against the slots, so the ones behind them still start.
+    final queued = [
+      for (final row in await _repo.rowsInState(DownloadState.queued,
+          limit: slots + _waitingForServer.length))
+        if (!_waitingForServer.contains(row.trackId)) row
+    ].take(slots).toList();
     if (queued.isEmpty) {
       _setVerdict(StorageVerdict.ok);
       return;
     }
 
+    final waitingBefore = _waitingForServer.length;
     final guard = StorageGuard(
       limitBytes: policy.limitBytes,
       minFreeBytes: policy.minFreeBytes,
@@ -278,6 +298,8 @@ class DownloadManager {
       }
     }
     _setVerdict(StorageVerdict.ok);
+    // Rows found waiting just now took the places of ones that could have started: look at the rows behind them.
+    if (_waitingForServer.length > waitingBefore) await _pump();
   }
 
   Future<int> _estimateFor(DownloadRow row) async {
@@ -321,6 +343,9 @@ class DownloadManager {
         relativePath: target,
         requiresWifi: policy.wifiOnly,
       ));
+    } on SongNotKeptYet {
+      _inFlight.remove(row.trackId);
+      _waitingForServer.add(row.trackId);
     } on Object catch (error) {
       _inFlight.remove(row.trackId);
       await _repo.markFailed(row.trackId, '$error');

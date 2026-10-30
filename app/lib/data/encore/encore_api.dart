@@ -246,6 +246,15 @@ class EncoreApi {
   Future<Result<void>> unlike(String refId) =>
       guard(() async => _send('DELETE', '/likes/$refId'));
 
+  /// Saves a release the server may not hold yet and names the songs the phone resolved for it: the server records the save and keeps those
+  /// songs in the background, first in line, whether or not the phone stays (D-21, docs/17 "Saving a release"). All or nothing: a song the
+  /// server does not know refuses the whole call. Safe to repeat.
+  Future<Result<EncoreReleaseSave>> saveRelease(
+          String releaseId, List<String> refIds) =>
+      guard(() async => EncoreReleaseSave.fromJson(await _send(
+          'PUT', '/saved-albums/${Uri.encodeComponent(releaseId)}',
+          body: {'refs': refIds})));
+
   Future<Result<void>> saveAlbum(String albumId) =>
       guard(() async => _send('PUT', '/saved-albums/$albumId', body: const {}));
 

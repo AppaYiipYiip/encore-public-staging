@@ -213,7 +213,8 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
             .getSingleOrNull();
         final fileId = row?.fileId;
         if (fileId == null) {
-          throw StateError('The server does not keep this song yet');
+          // Waiting, not failing: the server is getting it (a saved release, D-21); the next pass asks again.
+          throw const SongNotKeptYet();
         }
         id = fileId;
       }

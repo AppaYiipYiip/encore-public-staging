@@ -691,3 +691,48 @@ class EncoreNewsList {
   final int unread;
   final String cursor;
 }
+
+/// How the server is getting one song of a saved release (`GET refs/{id}/keep`, and the answer to saving a release): `queued`, `keeping`,
+/// `kept`, `failed`, `none` or `unavailable` (a server that does not keep songs).
+@immutable
+class EncoreKeep {
+  const EncoreKeep(this.state, {this.reason});
+
+  factory EncoreKeep.fromJson(Map<String, dynamic> json) => EncoreKeep(
+        readString(json['state']) ?? 'none',
+        reason: readString(json['reason']),
+      );
+
+  final String state;
+
+  /// A sentence for a person when [state] is `failed` or `unavailable`.
+  final String? reason;
+
+  bool get isKept => state == 'kept';
+  bool get isFailed => state == 'failed' || state == 'unavailable';
+}
+
+/// The answer to saving a release (`PUT saved-albums/{id}` with the songs, docs/17 "Saving a release"): whether the save was new, and how
+/// the server goes about each song.
+@immutable
+class EncoreReleaseSave {
+  const EncoreReleaseSave({required this.changed, required this.keep});
+
+  factory EncoreReleaseSave.fromJson(Map<String, dynamic> json) {
+    final keep = <String, EncoreKeep>{};
+    final raw = readMap(json['keep']);
+    if (raw != null) {
+      for (final entry in raw.entries) {
+        final one = readMap(entry.value);
+        if (one != null) keep[entry.key] = EncoreKeep.fromJson(one);
+      }
+    }
+    return EncoreReleaseSave(
+        changed: readBool(json['changed']), keep: Map.unmodifiable(keep));
+  }
+
+  final bool changed;
+
+  /// By song id.
+  final Map<String, EncoreKeep> keep;
+}

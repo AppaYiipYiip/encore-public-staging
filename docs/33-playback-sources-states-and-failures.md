@@ -25,6 +25,19 @@ The app decides **what** to play in one place, `DefaultSourceResolver.resolve`, 
 **Next song:** the player keeps the current and the next song loaded (a window of two, gapless); the next is only prepared when it can play (`_syncWindowTail`).
 **Not built:** preparing the next *catalogue* songs ahead so that Next is instant (P1-04).
 
+### 1a. Saving or downloading a release the server does not hold yet (D-21, decided 2026-10-30; `17` "Saving a release")
+
+On an Encore server "Add to library" and "Download" on a catalogue release are **server operations**, and the screen shows only what the server confirmed. Before (AUDIT F21, `evidence/b08`) both only resolved the songs into the phone's own database and the green "In your library" meant "resolved": nothing was saved or kept.
+
+| ID | Situation | What happens | What the person sees | Status | Test |
+|----|-----------|--------------|----------------------|--------|------|
+| PB-33 | **Add to library** on a catalogue release | the songs are resolved, then **one call** names them (`PUT saved-albums/{id}` with `refs`); the server records the save and keeps the songs first in line whether or not the phone stays | "Adding to your library" with a ring; "In your library" and the row checks only **after the server confirmed** | Built | `PB-33: adding to the library resolves the songs, makes one call naming them in order, and pins nothing` |
+| PB-34 | **Download** on a catalogue release | the same call; then each song is **pinned on the phone only after the server confirmed**, so the download survives the app being killed | a ring from the tap until the files are on the phone ("Getting it on your server", then the normal progress), then the filled circle | Built | `PB-34: a download pins each song only after the server confirmed the save, so it survives the app being killed` |
+| PB-35 | **A pinned song the server has not got yet** | the download manager treats "the server does not keep this song yet" as **waiting**: not failed, no back-off, no slot used, ready songs behind it still start; it starts by itself when the library feed delivers the file | the ring stays; nothing red | Built | `PB-35: a song the server does not keep yet waits: not failed, not started, still queued` |
+| PB-36 | **The server does not answer, refuses, or no song could be resolved** | nothing is saved and nothing is pinned | a sentence: "Can't reach your server. Nothing was saved." / "Your server did not know one of these songs. Nothing was saved. Try again." / "Couldn't get any of these songs. Nothing was saved." | Built | `PB-36: a server that does not answer saves nothing, pins nothing, and says so in words` |
+| PB-37 | **Some songs cannot be resolved, or the server could not keep one** | the others are still saved; the save stands | "Couldn't get 1 song: Nude." or "…: Reckoner (YouTube is resting)." Never silence | Built | `PB-37: a song that cannot be resolved is named in words; the others are still saved` |
+| PB-38 | **The first download and Android's notification permission** | the downloader asks "once, in context" (against ADR-R44) | Android's "Allow Encore to send you notifications?" covers the page | Open (AUDIT F29) | — |
+
 ## 2. The server's side of PB-3 (what a stream is made of, and what it can answer)
 
 | ID | Server state | Meaning | The app is told | Status | Where | Test |
