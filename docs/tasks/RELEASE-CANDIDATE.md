@@ -46,6 +46,8 @@ Written 2026-10-30 after the owner's feedback: *"your test standards are very lo
 
 ## 4. What the owner's fresh test will still show (not blockers: said up front)
 
+**Added 2026-10-30 (advisor, D-26):** a playlist's **description and picture** and **multi-select** are RC2 (P2-21, drawn first); **F36 Bluetooth** (switching back to the headset after moving the music to the phone) cannot be proved without a real headset and phone: the app only opens Android's own output chooser.
+
 A **terminal** installer, not a browser wizard (F14, P3-06); **Navidrome's page** at the address in a browser (F16; the Encore front page and the pairing QR are P2-19 slice B); **no admin page** (F20, P3-06: the pages W-02 to W-08 are drawn in `docs/design`, not coded); **Tailscale** explained only in text (F17); the server address **typed by hand** (F24, P2-19 slices B and C); an **empty** server's first screen is not designed in code (F23). Advice for the owner's new VM: **Ubuntu 26.04** (the only system the installer was proven on), **4 GiB**, the commit hash that was frozen.
 
 ## 5. Everything else still open (not blocking release candidate 1)
@@ -59,4 +61,5 @@ A **terminal** installer, not a browser wizard (F14, P3-06); **Navidrome's page*
 
 * **2026-10-30 16:12**: this file written. B0 in progress; B1 to B6 not started. Dev VM 106 and the emulator are stopped. The owner's VM 107 holds his install and is untouched until the rehearsal starts (backup first).
 * **2026-10-30 16:3x**: B0 closed (see its row). B1 built in PR #47, CI running, **not walked**. B3: no database change; install-over not walked. B2, B4, B5, B6 not started. Waiting on #47's CI; the advisor is consulted before it merges.
+* **2026-10-30 evening**: decisions D-23 (player menu), D-24 (never a silent 30-second snippet), D-25 (the build identifies itself: `0.1.0 (build N · commit)`, release candidate 1 is build 123 or higher), D-26 (wire the existing menus in RC1; description, picture and multi-select are RC2). **Work order (advisor):** merge #47 when every check has finished and `main` is green; F33; F34; B2; F35; the D-26 menu wiring; write `CONTROLS-AUDIT.md` from the code (every `onTap`, `onPressed`, `onLongPress` per screen, with its label and what it should do); build one frozen commit (arm64 build 123 for the owner, x64 for the emulator); the rehearsal J1 to J13; `b11`; the advisor; the owner.
 * **2026-10-30 16:4x**: B2 designed (D-22 above) and the Downloaded tab code read; not started. #47 (B1) CI running; it merges only when every check has finished (by run id) and `main`'s own run afterwards is green.
