@@ -50,6 +50,44 @@ class _Door implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// A plain music server: nothing under `/encore/`.
+class _PlainDoor implements HttpClientAdapter {
+  _PlainDoor(this.music);
+
+  final FakeSubsonicServer music;
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options,
+      Stream<Uint8List>? requestStream, Future<void>? cancelFuture) {
+    if (options.uri.path.startsWith('/encore/')) {
+      return Future.value(ResponseBody.fromString(
+          jsonEncode({
+            'error': {'code': 'not_found'}
+          }),
+          404,
+          headers: {
+            Headers.contentTypeHeader: ['application/json'],
+          }));
+    }
+    return music.adapter.fetch(options, requestStream, cancelFuture);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// Nothing answers: no address is reachable.
+class _NoNetwork implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(RequestOptions options,
+          Stream<Uint8List>? requestStream, Future<void>? cancelFuture) =>
+      Future.error(DioException.connectionError(
+          requestOptions: options, reason: 'no route to host'));
+
+  @override
+  void close({bool force = false}) {}
+}
+
 /// AUDIT F30 (found in `b10`): on a fresh sign-in the app stayed in the OLD music-server mode for about two minutes, so a person who
 /// tapped at once got the old Download. The first look at "is this an Encore server?" came before any address had proved itself, was made
 /// to a reserved name that cannot be reached (no request at all), failed, and the next look came two minutes later.
@@ -124,5 +162,69 @@ void main() {
     expect(looks.where((r) => r.uri.host.endsWith('.invalid')), isEmpty,
         reason:
             'no look at "is this an Encore server?" was sent to the address that cannot be reached');
+  });
+
+  Future<void> plainSession(HttpClientAdapter door) async {
+    db = AppDatabase(NativeDatabase.memory());
+    final id = await db.into(db.servers).insert(ServersCompanion.insert(
+          name: 'Home',
+          username: 'tester',
+          endpointsJson: '[{"label":"Home","url":"http://home.test:4540"}]',
+          createdAtMs: 0,
+        ));
+    server = await (db.select(db.servers)..where((s) => s.id.equals(id)))
+        .getSingle();
+    encore = FakeEncoreServer();
+    session = await ServerSession.create(
+        verifyAddresses: false,
+        db: db,
+        server: server,
+        password: 'hunter2-hunter2',
+        dio: Dio()..httpClientAdapter = door);
+  }
+
+  test(
+      'F33: a plain session is "still finding out" from the moment it is built, and never says otherwise on the way to Encore mode',
+      () async {
+    await signInFresh();
+    expect(session.detecting.value, isTrue,
+        reason: 'before start(): a tap in the first frame must wait too');
+
+    await session.start();
+    await until(() => encore.migrations > 0);
+    await until(() => false, tries: 60); // let the move finish
+
+    final caps = jsonDecode((await (db.select(db.servers)
+              ..where((s) => s.id.equals(server.id)))
+            .getSingle())
+        .capabilitiesJson) as Map;
+    expect(caps['encore'], isTrue, reason: 'the phone is now an Encore phone');
+    expect(session.detecting.value, isTrue,
+        reason:
+            'the session is replaced by one in Encore mode at this point: a waiting tap must not see "not Encore" in between');
+  });
+
+  test(
+      'F33: a server that answers "not found" under /encore/ is KNOWN to be a plain music server: only then does detecting end',
+      () async {
+    await plainSession(
+        _PlainDoor(FakeSubsonicServer()..seed(songCount: 3, albumCount: 1)));
+
+    await session.start();
+    await until(() => !session.detecting.value);
+
+    expect(session.detecting.value, isFalse);
+    expect(session.encoreMode, isFalse);
+  });
+
+  test(
+      'F33: a server that cannot be reached is NOT known to be plain: detecting stays on, so a tap never falls back to a preview',
+      () async {
+    await plainSession(_NoNetwork());
+
+    await session.start();
+    await until(() => false, tries: 40); // 0.6 s
+
+    expect(session.detecting.value, isTrue);
   });
 }

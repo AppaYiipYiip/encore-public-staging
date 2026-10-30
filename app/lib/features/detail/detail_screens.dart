@@ -28,6 +28,7 @@ import '../common/widgets.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'album_gap.dart';
 import 'hero_header.dart';
@@ -284,13 +285,13 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
         final playingId = snapshot?.track?.id;
         final current = playingId == t.id ||
             (status?.track != null && playingId == status!.track!.id);
-        void preview() => playPreviewRun(
+        void preview() => unawaited(playExplicitPreview(
               facade,
               gap.missing,
               index: i,
               sourceName: album.name,
               sourceId: sourceId,
-            );
+            ));
         return PreviewTrackTile(
           track: t,
           number: t.trackNumber ?? i + 1,
@@ -298,14 +299,8 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
           isPlaying: current && (snapshot?.isPlaying ?? false),
           instant: instant,
           status: status,
-          onTap: instant
-              ? () => unawaited(ref
-                  .read(instantControllerProvider.notifier)
-                  .playRun(gap.missing,
-                      startIndex: i,
-                      sourceName: album.name,
-                      sourceId: sourceId))
-              : preview,
+          onTap: () => unawaited(tapPlayRun(ref, gap.missing,
+              startIndex: i, sourceName: album.name, sourceId: sourceId)),
           onLongPress: instant && t.previewUrl != null ? preview : null,
         );
       },

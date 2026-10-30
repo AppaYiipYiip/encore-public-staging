@@ -15,6 +15,7 @@ import '../common/track_menu.dart';
 import '../common/track_swipe.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/tap_play.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart';
 import '../requests/request_ui.dart';
@@ -259,22 +260,8 @@ void _play(WidgetRef ref, SongHit hit, {List<SongHit> songs = const []}) {
     return;
   }
   final track = hit.catalogue!;
-  if (ref.read(instantAvailableProvider)) {
-    unawaited(ref.read(instantControllerProvider.notifier).play(track));
-    return;
-  }
-  final preview = track.previewUrl;
-  if (preview == null) return;
-  unawaited(facade.playPreview(
-    id: track.id,
-    title: track.title,
-    uri: Uri.parse(preview),
-    artist: track.artistName,
-    catalogueArtistId: track.artistId,
-    album: track.albumTitle,
-    imageUrl: track.coverUrl,
-    duration: const Duration(seconds: 30),
-  ));
+  // The full song; the tap waits for the backend instead of starting a 30-second preview (D-24, AUDIT F33).
+  unawaited(tapPlayOne(ref, track));
 }
 
 // ------------------------------------------------------------------- songs

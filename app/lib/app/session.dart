@@ -484,6 +484,15 @@ class ServerSession {
   String? get knownKey => _knownKey();
 
   /// Where moving this phone onto an Encore server stands.
+  /// `true` from the moment a plain session is built until the phone KNOWS what the server is: a definite "not an Encore server" answer, or
+  /// a move onto Encore that failed. It stays on while the server cannot be reached, and on the way to Encore mode (the session is replaced
+  /// then). A tap on a catalogue song waits for it instead of starting a 30-second preview (D-24, AUDIT F33).
+  late final ValueNotifier<bool> detecting = ValueNotifier<bool>(!encoreMode);
+
+  void _detected() {
+    if (!_disposed) detecting.value = false;
+  }
+
   final ValueNotifier<UpgradeStatus> upgrade =
       ValueNotifier(const UpgradeStatus.idle());
 
@@ -554,18 +563,22 @@ class ServerSession {
 
     var pause = const Duration(minutes: 2);
     while (!_disposed) {
-      final info = await _look();
+      final look = await _look();
       if (_disposed) return;
+      final info = look.info;
       if (info == null) {
-        // Not reachable now, or not an Encore server: sync the old way meanwhile, and look again later in case it was only the line.
+        // Not reachable now, or not an Encore server: sync the old way meanwhile, and look again later in case it was only the line (at
+        // once when the network comes back). Only a definite answer from the server ("not found") ends the finding out.
+        if (look.knownPlain) _detected();
         syncTheOldWay();
-        await Future<void>.delayed(pause);
+        await _pauseOrUntilReachable(pause);
         pause = pause * 2 > const Duration(hours: 1)
             ? const Duration(hours: 1)
             : pause * 2;
         continue;
       }
       if (info.apiVersion.isEmpty || !info.hasRefs) {
+        _detected();
         syncTheOldWay();
         return;
       }
@@ -579,8 +592,11 @@ class ServerSession {
         case Ok():
           _status(const UpgradeStatus.idle());
           await _markEncore(info);
-          return; // the session is rebuilt in Encore mode by the change of the server's profile
+          // `detecting` stays on: the session is rebuilt in Encore mode by the change of the server's profile, and a tap that is waiting must
+          // not see "not an Encore server" in between.
+          return;
         case Err(:final failure):
+          _detected();
           Log.warn('session',
               'the move onto the Encore server did not finish: ${failure.message}');
           _status(UpgradeStatus.failed(failure.message));
@@ -595,7 +611,7 @@ class ServerSession {
   }
 
   /// Asks the address of this server whether it is an Encore server; `null` when it is not, or cannot be reached.
-  Future<EncoreInfo?> _look() async {
+  Future<({EncoreInfo? info, bool knownPlain})> _look() async {
     // On a fresh sign-in no address has proved itself yet, and the address to use is then a reserved name that can never be reached: the look
     // failed without a request and the next one came two minutes later, so a new person's first minutes ran the old music-server code
     // (AUDIT F30, `b10`). Race the addresses first; when none answers the look fails honestly and the retry pause applies.
@@ -604,7 +620,29 @@ class ServerSession {
         dio: _probeDio(),
         baseUrl: () => endpoints.currentUrl,
         auth: client.authQuery);
-    return (await probe.info()).valueOrNull;
+    final result = await probe.info();
+    // An answer that is not an Encore server's ("not found", a page that is not JSON) is a plain music server; a line that does not answer is
+    // not known yet.
+    return (
+      info: result.valueOrNull,
+      knownPlain: result.failureOrNull != null &&
+          result.failureOrNull is! NetworkFailure,
+    );
+  }
+
+  /// Waits [pause], or until the network comes back, whichever is first.
+  Future<void> _pauseOrUntilReachable(Duration pause) {
+    final done = Completer<void>();
+    final sub = endpoints.reachability.listen((up) {
+      if (up && !done.isCompleted) done.complete();
+    });
+    final timer = Timer(pause, () {
+      if (!done.isCompleted) done.complete();
+    });
+    return done.future.whenComplete(() {
+      timer.cancel();
+      unawaited(sub.cancel());
+    });
   }
 
   Future<void> _markEncore(EncoreInfo info) async {
@@ -632,6 +670,7 @@ class ServerSession {
     _disposed = true;
     unawaited(covers.dispose());
     upgrade.dispose();
+    detecting.dispose();
     await _addressChanges?.cancel();
     await _liveEvents?.cancel();
     await _liveConnection?.cancel();

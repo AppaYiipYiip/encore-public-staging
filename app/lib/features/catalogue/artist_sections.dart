@@ -7,6 +7,7 @@ import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'catalogue_providers.dart';
 import 'catalogue_widgets.dart';
@@ -105,13 +106,13 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
                 final playingId = snapshot?.track?.id;
                 final current = playingId == t.id ||
                     (status?.track != null && playingId == status!.track!.id);
-                void preview() => playPreviewRun(
+                void preview() => unawaited(playExplicitPreview(
                       facade,
                       items,
                       index: i,
                       sourceName: artist.name,
                       sourceId: widget.sourceId,
-                    );
+                    ));
                 return PreviewTrackTile(
                   track: t,
                   showCover: true,
@@ -119,14 +120,10 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
                   isPlaying: current && (snapshot?.isPlaying ?? false),
                   instant: instant,
                   status: status,
-                  onTap: instant
-                      ? () => unawaited(ref
-                          .read(instantControllerProvider.notifier)
-                          .playRun(items,
-                              startIndex: i,
-                              sourceName: artist.name,
-                              sourceId: widget.sourceId))
-                      : preview,
+                  onTap: () => unawaited(tapPlayRun(ref, items,
+                      startIndex: i,
+                      sourceName: artist.name,
+                      sourceId: widget.sourceId)),
                   onLongPress: instant && t.previewUrl != null ? preview : null,
                 );
               },

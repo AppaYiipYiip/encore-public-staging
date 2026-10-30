@@ -15,6 +15,7 @@ import '../detail/hero_header.dart';
 import '../instant/instant_controller.dart';
 import '../instant/instant_warmup.dart';
 import '../instant/release_save.dart';
+import '../instant/tap_play.dart';
 import '../providers.dart';
 import '../requests/request_ui.dart';
 import 'adding_music_help.dart';
@@ -360,20 +361,10 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                 ? null
                 : () => isCurrent
                     ? facade.togglePlayPause()
-                    : instant
-                        ? unawaited(ref
-                            .read(instantControllerProvider.notifier)
-                            .playRun(list,
-                                startIndex: firstPlayable,
-                                sourceName: album.title,
-                                sourceId: sourceId))
-                        : playPreviewRun(
-                            facade,
-                            list,
-                            index: firstPlayable,
-                            sourceName: album.title,
-                            sourceId: sourceId,
-                          ),
+                    : unawaited(tapPlayRun(ref, list,
+                        startIndex: firstPlayable,
+                        sourceName: album.title,
+                        sourceId: sourceId)),
           ),
         ],
       ),
@@ -411,13 +402,13 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                             !savedSongs.contains(live!.track?.id)
                         ? null
                         : live;
-                    void preview() => playPreviewRun(
+                    void preview() => unawaited(playExplicitPreview(
                           facade,
                           items,
                           index: i,
                           sourceName: album.title,
                           sourceId: sourceId,
-                        );
+                        ));
                     return PreviewTrackTile(
                       track: t,
                       number: i + 1,
@@ -425,14 +416,10 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                       isPlaying: current && (snapshot?.isPlaying ?? false),
                       instant: instant,
                       status: status,
-                      onTap: instant
-                          ? () => unawaited(ref
-                              .read(instantControllerProvider.notifier)
-                              .playRun(items,
-                                  startIndex: i,
-                                  sourceName: album.title,
-                                  sourceId: sourceId))
-                          : preview,
+                      onTap: () => unawaited(tapPlayRun(ref, items,
+                          startIndex: i,
+                          sourceName: album.title,
+                          sourceId: sourceId)),
                       onLongPress:
                           instant && t.previewUrl != null ? preview : null,
                     );
@@ -525,20 +512,10 @@ class CatalogueArtistScreen extends ConsumerWidget {
                 ? null
                 : () => isCurrent
                     ? facade.togglePlayPause()
-                    : instant
-                        ? unawaited(ref
-                            .read(instantControllerProvider.notifier)
-                            .playRun(topList,
-                                startIndex: firstPlayable,
-                                sourceName: artist.name,
-                                sourceId: sourceId))
-                        : playPreviewRun(
-                            facade,
-                            topList,
-                            index: firstPlayable,
-                            sourceName: artist.name,
-                            sourceId: sourceId,
-                          ),
+                    : unawaited(tapPlayRun(ref, topList,
+                        startIndex: firstPlayable,
+                        sourceName: artist.name,
+                        sourceId: sourceId)),
           ),
         ],
       ),

@@ -8,6 +8,7 @@ import '../../design/tokens.dart';
 import '../common/cover_art.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'catalogue_providers.dart';
 import 'catalogue_widgets.dart';
@@ -25,7 +26,6 @@ class CatalogueGenreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chart = ref.watch(catalogueGenreChartProvider(genreId));
     final instant = ref.watch(instantAvailableProvider);
-    final facade = ref.watch(playbackFacadeProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final sourceId = 'catalogue-genre:$genreId';
     final title = name ?? 'Genre';
@@ -62,15 +62,10 @@ class CatalogueGenreScreen extends ConsumerWidget {
                       isPlaying: current && (snapshot?.isPlaying ?? false),
                       instant: instant,
                       status: status,
-                      onTap: instant
-                          ? () => unawaited(ref
-                              .read(instantControllerProvider.notifier)
-                              .playRun(c.tracks,
-                                  startIndex: i,
-                                  sourceName: title,
-                                  sourceId: sourceId))
-                          : () => playPreviewRun(facade, c.tracks,
-                              index: i, sourceName: title, sourceId: sourceId),
+                      onTap: () => unawaited(tapPlayRun(ref, c.tracks,
+                          startIndex: i,
+                          sourceName: title,
+                          sourceId: sourceId)),
                     );
                   },
                 ),
