@@ -13,6 +13,7 @@ import '../features/import/import_screen.dart';
 import '../features/import/imported_playlist_screen.dart';
 import '../features/jam/jam_screen.dart';
 import '../features/library/library_screen.dart';
+import '../features/news/news_screen.dart';
 import '../features/onboarding/connect_screen.dart';
 import '../features/onboarding/join_screen.dart';
 import '../features/people/people_screen.dart';
@@ -85,6 +86,7 @@ List<RouteBase> _detailRoutes() => [
       ),
       GoRoute(path: 'liked', builder: (_, __) => const LikedScreen()),
       GoRoute(path: 'jam', builder: (_, __) => const JamScreen()),
+      GoRoute(path: 'news', builder: (_, __) => const NewsScreen()),
       GoRoute(path: 'year', builder: (_, __) => const YearInMusicScreen()),
       GoRoute(
         path: 'downloaded',

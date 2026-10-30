@@ -76,6 +76,9 @@ abstract final class Nav {
 
   static void jam(BuildContext c) => c.push('/${_branch(c)}/jam');
 
+  /// What's new: the bell's page.
+  static void news(BuildContext c) => c.push('/${_branch(c)}/news');
+
   /// A genre of the public catalogue (the Browse grid), by its id.
   static void catalogueGenre(BuildContext c, int id, String name) =>
       c.push('/${_branch(c)}/catalogue/genre/$id', extra: name);

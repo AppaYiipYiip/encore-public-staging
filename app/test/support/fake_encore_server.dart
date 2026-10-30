@@ -74,6 +74,29 @@ class FakeEncoreServer {
   /// This person's role on the server (`owner` or `member`).
   String myRole = 'owner';
 
+  /// The bell: the person's news as the server would list it (ids ascending; a test adds with [addNews]).
+  final List<Map<String, Object?>> news = [];
+  int _newsSeq = 0;
+
+  /// What a phone sent to `POST /notifications/read` (`null` is "all").
+  final List<int?> newsRead = [];
+
+  /// Adds a piece of news (as the server's own events do) and returns its id.
+  int addNews(String kind, String title,
+      {String? body, String? route, int? ago}) {
+    final id = ++_newsSeq;
+    news.add({
+      'id': id,
+      'kind': kind,
+      'title': title,
+      'body': body,
+      'route': route,
+      'createdAt': clockMs - (ago ?? 0),
+      'read': false,
+    });
+    return id;
+  }
+
   /// The people the owner sees, and the invitations (what a test arranges or reads back).
   final List<Map<String, Object?>> people = [];
   final List<Map<String, Object?>> inviteRows = [];
@@ -278,6 +301,30 @@ class FakeEncoreServer {
             '/encore/stream/${streamMatch.group(1)}?p=pn_x&e=9999999999&sig=abc',
         'expiresAt': 9999999999000
       });
+    }
+    if (path == '/encore/api/v1/notifications') {
+      final since = int.tryParse(r.uri.queryParameters['since'] ?? '0') ?? 0;
+      final limit = int.tryParse(r.uri.queryParameters['limit'] ?? '50') ?? 50;
+      final newer = [
+        for (final n in news.reversed)
+          if ((n['id']! as int) > since) n
+      ].take(limit).toList();
+      return _ok({
+        'items': newer,
+        'unread': news.where((n) => n['read'] == false).length,
+        'cursor': newer.isEmpty ? '$since' : '${newer.first['id']}',
+      });
+    }
+    if (path == '/encore/api/v1/notifications/read') {
+      final raw = r.body.isEmpty
+          ? const <String, Object?>{}
+          : jsonDecode(r.body) as Map;
+      final upTo = raw['upTo'] as int?;
+      newsRead.add(upTo);
+      for (final n in news) {
+        if (upTo == null || (n['id']! as int) <= upTo) n['read'] = true;
+      }
+      return _ok({'unread': news.where((n) => n['read'] == false).length});
     }
     final refMatch = RegExp(r'^/encore/api/v1/refs/(sr_\w+)$').firstMatch(path);
     if (refMatch != null) {

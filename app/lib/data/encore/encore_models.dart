@@ -599,3 +599,95 @@ class EncoreImportMade {
   final EncoreImport import;
   final String? playlistId;
 }
+
+/// The four kinds of news the bell has and no others (docs/design S-24, ADR-R44): a release from an artist the person plays, a Jam
+/// invitation, an invitation of theirs that was used, an import that finished.
+enum EncoreNewsKind {
+  release('release'),
+  jam('jam'),
+  inviteUsed('invite_used'),
+  importDone('import_done');
+
+  const EncoreNewsKind(this.wire);
+
+  /// The word the server uses.
+  final String wire;
+
+  static EncoreNewsKind? fromWire(String? word) {
+    for (final kind in values) {
+      if (kind.wire == word) return kind;
+    }
+    return null;
+  }
+}
+
+/// One piece of news, written by the server in words (so every client shows the same).
+@immutable
+class EncoreNews {
+  const EncoreNews({
+    required this.id,
+    required this.kind,
+    required this.title,
+    this.body,
+    this.route,
+    required this.createdAtMs,
+    required this.read,
+  });
+
+  /// `null` for a kind this app does not know (a newer server): such news is left out, not shown wrongly.
+  static EncoreNews? fromJson(Map<String, dynamic> json) {
+    final kind = EncoreNewsKind.fromWire(readString(json['kind']));
+    final id = readInt(json['id']);
+    final title = readString(json['title']);
+    if (kind == null || id == null || title == null) return null;
+    return EncoreNews(
+      id: id,
+      kind: kind,
+      title: title,
+      body: readString(json['body']),
+      route: readString(json['route']),
+      createdAtMs: readInt(json['createdAt']) ?? 0,
+      read: readBool(json['read']),
+    );
+  }
+
+  final int id;
+  final EncoreNewsKind kind;
+  final String title;
+  final String? body;
+
+  /// Where a tap goes in the app (`/settings/import`), when it goes anywhere.
+  final String? route;
+  final int createdAtMs;
+  final bool read;
+
+  EncoreNews asRead() => EncoreNews(
+        id: id,
+        kind: kind,
+        title: title,
+        body: body,
+        route: route,
+        createdAtMs: createdAtMs,
+        read: true,
+      );
+}
+
+/// The bell's list, newest first, with how many are unread in all and the cursor to ask "only what is newer" with.
+@immutable
+class EncoreNewsList {
+  const EncoreNewsList(
+      {required this.items, required this.unread, required this.cursor});
+
+  factory EncoreNewsList.fromJson(Map<String, dynamic> json) => EncoreNewsList(
+        items: [
+          for (final r in readObjectList(json['items']))
+            if (EncoreNews.fromJson(r) case final news?) news
+        ],
+        unread: readInt(json['unread']) ?? 0,
+        cursor: readString(json['cursor']) ?? '0',
+      );
+
+  final List<EncoreNews> items;
+  final int unread;
+  final String cursor;
+}

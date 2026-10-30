@@ -14,6 +14,7 @@ import '../common/format.dart';
 import '../common/widgets.dart';
 import '../import/import_card.dart';
 import '../instant/instant_controller.dart' show fetchServiceProvider;
+import '../news/news_providers.dart';
 import '../people/friends_shelf.dart';
 import '../people/people_providers.dart';
 import '../providers.dart';
@@ -227,6 +228,21 @@ class _Header extends ConsumerWidget {
                   style: context.text.headlineMedium,
                 ),
               ),
+              // The bell is there only where the server keeps news (an Encore server); a green dot says there is some.
+              if (ref.watch(newsProvider.select((n) => n.available)))
+                IconButton(
+                  tooltip: ref.watch(newsProvider.select((n) => n.unread)) > 0
+                      ? "What's new, unread"
+                      : "What's new",
+                  icon: Badge(
+                    isLabelVisible:
+                        ref.watch(newsProvider.select((n) => n.unread)) > 0,
+                    smallSize: 8,
+                    backgroundColor: context.colors.accent,
+                    child: const Icon(Icons.notifications_none_rounded),
+                  ),
+                  onPressed: () => Nav.news(context),
+                ),
               IconButton(
                 tooltip: 'Settings',
                 icon: const Icon(Icons.settings_outlined),

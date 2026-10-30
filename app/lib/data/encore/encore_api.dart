@@ -182,6 +182,22 @@ class EncoreApi {
         return SignedAddress(address, _expiry(body));
       });
 
+  // ------------------------------------------------------------------ the bell
+
+  /// The person's news, newest first (`GET /notifications`); with [since] only what is newer than the cursor the last answer gave.
+  Future<Result<EncoreNewsList>> notifications(
+          {String? since, int limit = 50}) =>
+      guard(() async => EncoreNewsList.fromJson(await _send(
+          'GET', '/notifications',
+          query: {if (since != null) 'since': since, 'limit': limit})));
+
+  /// Marks the news read, all of it or up to [upTo]; answers how many are still unread.
+  Future<Result<int>> markNewsRead({int? upTo}) => guard(() async {
+        final body = await _send('POST', '/notifications/read',
+            body: {if (upTo != null) 'upTo': upTo});
+        return readInt(body['unread']) ?? 0;
+      });
+
   Future<Result<Uri>> streamUrl(String refId) =>
       streamAddress(refId).then((r) => r.map((a) => a.url));
 
