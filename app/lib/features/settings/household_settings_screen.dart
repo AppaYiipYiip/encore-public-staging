@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../design/tokens.dart';
-import '../../domain/household.dart';
 import '../people/share_listening_tile.dart';
 import 'settings_controller.dart';
 import 'settings_page.dart';
@@ -17,22 +15,6 @@ class HouseholdSettingsScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
     final server = ref.watch(activeServerProvider).value;
-    final c = context.colors;
-
-    Widget scopeTile(LibraryScope scope, String title, String detail) {
-      final selected = settings.libraryScope == scope;
-      return ListTile(
-        leading: Icon(
-          selected
-              ? Icons.radio_button_checked_rounded
-              : Icons.radio_button_unchecked_rounded,
-          color: selected ? c.accent : null,
-        ),
-        title: Text(title),
-        subtitle: Text(detail),
-        onTap: () => notifier.setLibraryScope(scope),
-      );
-    }
 
     return SettingsPage(
       title: 'Privacy & your music',
@@ -42,19 +24,7 @@ class HouseholdSettingsScreen extends ConsumerWidget {
           'stay separate; these switches decide how much of everyone else '
           'you see.',
       children: [
-        const SettingsSection('Your library'),
-        scopeTile(
-          LibraryScope.mine,
-          'Only my music',
-          'Songs you play, like, rate or download, and what is in your own '
-              'playlists. Search always covers everything.',
-        ),
-        scopeTile(
-          LibraryScope.everything,
-          'Everything on the server',
-          'Every album and artist, including what other people added, and '
-              'their public playlists.',
-        ),
+        // "Only your music / the whole server" lives on the Library page, where it applies (AUDIT F41, D-27): one control, not two.
         const SettingsSection('Home'),
         SwitchListTile(
           title: const Text('Show "New on the server"'),

@@ -230,23 +230,41 @@ void main() {
   });
 
   group('Settings > Home, library & privacy', () {
-    testWidgets('chooses the scope and private listening', (tester) async {
+    testWidgets(
+        'F41: the page has no second copy of "my music / everything on the server" (it is on the Library page), and chooses private listening',
+        (tester) async {
       final app = await pumpApp(tester, size: tall);
       await openRoute(tester, '/settings/home');
 
       expect(find.text('Automatic'), findsNothing);
-      expect(find.text('Only my music'), findsOneWidget);
-      expect(find.text('Everything on the server'), findsOneWidget);
+      expect(find.text('Only my music'), findsNothing);
+      expect(find.text('Everything on the server'), findsNothing,
+          reason: 'one control, on the Library page, where it applies');
       expect(find.text('Signed in as marwa'), findsOneWidget);
 
-      await tester.tap(find.text('Everything on the server'));
-      await settle(tester);
       await tester.tap(find.text('Private listening'));
       await settle(tester);
 
       final settings = containerOf(tester).read(settingsProvider);
-      expect(settings.libraryScope, LibraryScope.everything);
+      expect(settings.libraryScope, LibraryScope.mine,
+          reason: 'nothing here moves the scope any more');
       expect(settings.privateListening, isTrue);
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'F41: searching Settings for the control that moved finds nothing, rather than a page without it',
+        (tester) async {
+      final app = await pumpApp(tester, size: tall);
+      await openRoute(tester, '/settings');
+
+      for (final word in ['scope', 'mine', 'whole server']) {
+        await tester.enterText(find.byType(TextField).first, word);
+        await settle(tester);
+        expect(find.textContaining('No settings match'), findsOneWidget,
+            reason:
+                '"$word" must not lead to Privacy & your music: the control is on the Library page');
+      }
       await closeApp(tester, app.db);
     });
 

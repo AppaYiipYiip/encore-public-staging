@@ -88,9 +88,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _Group(
         Icons.groups_outlined,
         'Privacy & your music',
-        'Private listening, what Home and Library show',
+        'Private listening, what Home shows',
         '/settings/home',
-        'household family shared server private listening privacy library home scope everyone account scrobble history new on the server mine everything'),
+        'household family shared server private listening privacy home account scrobble history new on the server'),
     _Group(
         Icons.move_to_inbox_rounded,
         'Import music',

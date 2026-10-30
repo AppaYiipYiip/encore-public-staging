@@ -611,7 +611,7 @@ class _ScopeBar extends ConsumerWidget {
                 .read(settingsProvider.notifier)
                 .setLibraryScope(
                     mine ? LibraryScope.everything : LibraryScope.mine),
-            child: Text(mine ? 'Show the whole server' : 'Only my music'),
+            child: Text(mine ? 'Show the whole server' : 'Only your music'),
           ),
         ],
       ),
