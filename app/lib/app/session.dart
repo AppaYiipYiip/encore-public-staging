@@ -596,6 +596,10 @@ class ServerSession {
 
   /// Asks the address of this server whether it is an Encore server; `null` when it is not, or cannot be reached.
   Future<EncoreInfo?> _look() async {
+    // On a fresh sign-in no address has proved itself yet, and the address to use is then a reserved name that can never be reached: the look
+    // failed without a request and the next one came two minutes later, so a new person's first minutes ran the old music-server code
+    // (AUDIT F30, `b10`). Race the addresses first; when none answers the look fails honestly and the retry pause applies.
+    if (!endpoints.isVerified) await endpoints.resolve();
     final probe = EncoreApi(
         dio: _probeDio(),
         baseUrl: () => endpoints.currentUrl,
