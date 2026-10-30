@@ -186,9 +186,6 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final server = ref.watch(activeServerProvider).value;
     final initial = (server?.username ?? '?').characters.first.toUpperCase();
-    // Watched, so it is known when the avatar is tapped (a read of a stream nobody listens to is still loading).
-    final people =
-        ref.watch(profilesProvider.select((p) => p.value?.length ?? 1));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,14 +196,12 @@ class _Header extends ConsumerWidget {
             children: [
               Semantics(
                 button: true,
-                label: 'Settings and profile',
+                label: 'Your account',
                 excludeSemantics: true,
                 child: InkWell(
                   customBorder: const CircleBorder(),
-                  // On a device with several people the avatar is how to change who is listening; otherwise it opens Settings.
-                  onTap: () => people > 1
-                      ? context.push('/profiles')
-                      : Nav.settings(context),
+                  // The drawer of S-27 (D-34): who is listening, and one row per place. It was Settings (one person) or Who's listening (several).
+                  onTap: () => Scaffold.of(context).openDrawer(),
                   // 48 dp target around the 36 dp avatar.
                   child: SizedBox.square(
                     dimension: 48,

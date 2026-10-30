@@ -1,5 +1,6 @@
 import 'package:encore/app/connection.dart';
 import 'package:encore/domain/lyrics.dart';
+import 'package:encore/features/jam/jam_providers.dart';
 import 'package:encore/features/player/lyrics_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,21 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/home.png'),
+    );
+    await closeApp(tester, app.db);
+  });
+
+  // S-27 (D-34): the drawer the Home avatar opens. A plain server: only the rows that exist.
+  testWidgets('you drawer', (tester) async {
+    final app = await pumpApp(tester, playing: samplePlaying(), overrides: [
+      jamApiProvider.overrideWith((ref) async => null),
+    ]);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(CircleAvatar, 'M').first);
+    await settle(tester);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/you_drawer.png'),
     );
     await closeApp(tester, app.db);
   });

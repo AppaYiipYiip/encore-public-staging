@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/common/connection_banner.dart';
+import '../features/home/you_drawer.dart';
 import '../features/player/mini_player.dart';
 
 /// Bottom navigation + persistent mini-player around the tab branches
@@ -32,6 +33,9 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The drawer the Home avatar opens (S-27, D-34); it opens only from there, never from an edge swipe on a tab.
+      drawer: const YouDrawer(),
+      drawerEnableOpenDragGesture: false,
       body: navigationShell,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,

@@ -109,6 +109,9 @@ class EncoreApp extends ConsumerWidget {
     // The server's imports are asked about as soon as the app starts (also what
     // lets a restarted server carry on in this person's name) and kept in step.
     ref.listen(importsProvider, (_, __) {});
+    // The accounts on this phone are known from the start, not when something first asks: a link that started the app asks at once
+    // (below), and Home used to be what kept them in step.
+    ref.listen(profilesProvider, (_, __) {});
     // A link shared from Spotify / YouTube Music opens the import page with
     // the link already in it.
     ref.listen(sharedTextProvider, (_, next) {
