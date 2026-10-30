@@ -20,18 +20,16 @@ void main() {
   }
 
   testWidgets(
-      'the player has the device icon on the left and the queue on '
-      'the right, and no lyrics button, no speed or sleep buttons',
-      (tester) async {
+      'the player has the queue on the right and no device icon (D-28), '
+      'no lyrics button, no speed or sleep buttons', (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying());
     await openPlayer(tester);
 
     expect(find.byTooltip('Close player'), findsOneWidget);
     expect(find.byTooltip('More options'), findsOneWidget);
-    final device = tester.getCenter(find.byTooltip('Choose where to play'));
-    final queue = tester.getCenter(find.byTooltip('Queue'));
-    expect(device.dx, lessThan(queue.dx));
-    expect(device.dy, closeTo(queue.dy, 1), reason: 'one row');
+    // D-28 (AUDIT F45): the icon opened Android's system-wide output chooser, so it moved every app's sound. It is gone.
+    expect(find.byTooltip('Choose where to play'), findsNothing);
+    expect(find.byTooltip('Queue'), findsOneWidget);
     expect(find.text('Lyrics'), findsNothing,
         reason: 'lyrics are a card further down, not a button');
     expect(find.text('Speed'), findsNothing);
@@ -41,7 +39,7 @@ void main() {
   });
 
   testWidgets(
-      'the speed, the sleep timer and private listening are in the "..." menu',
+      'D-23: the sleep timer is in the "..." menu; there is no speed and no private listening',
       (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying());
     await openPlayer(tester);
@@ -49,9 +47,9 @@ void main() {
     await tester.tap(find.byTooltip('More options'));
     await settle(tester);
 
-    expect(find.text('Playback speed'), findsOneWidget);
     expect(find.text('Sleep timer'), findsOneWidget);
-    expect(find.text('Private listening: off'), findsOneWidget);
+    expect(find.text('Playback speed'), findsNothing);
+    expect(find.text('Private listening: off'), findsNothing);
     await closeApp(tester, app.db);
   });
 

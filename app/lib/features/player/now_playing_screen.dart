@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/audio_output.dart';
 import '../../app/connection.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
@@ -17,14 +16,12 @@ import '../common/open_artist.dart';
 import '../common/track_menu.dart';
 import '../common/widgets.dart';
 import '../providers.dart';
-import '../settings/settings_controller.dart';
 import 'lyrics_screen.dart';
 import 'pending_likes.dart';
 import 'playback_facade.dart';
 import 'queue_sheet.dart';
 import 'scrubber.dart';
 import 'sleep_timer_sheet.dart';
-import 'speed_sheet.dart';
 import 'streamed_song.dart';
 
 /// Full-screen player (docs/06-ux-spec.md 4.6): artwork, like, scrubber,
@@ -451,18 +448,8 @@ class _BottomRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          tooltip: 'Choose where to play',
-          icon: const Icon(Icons.speaker_group_outlined),
-          onPressed: () async {
-            final shown = await AudioOutput.showSwitcher();
-            if (!shown && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content:
-                      Text('Use quick settings to switch the audio output.')));
-            }
-          },
-        ),
+        // D-28 (AUDIT F45): no device icon. It opened Android's system-wide output chooser, so choosing there moved every app's sound. Encore's
+        // own Devices sheet comes with P4-07.
         const Spacer(),
         IconButton(
           tooltip: 'Queue',
@@ -476,37 +463,14 @@ class _BottomRow extends StatelessWidget {
 
 /// What the "..." menu of the player adds to a track's own menu.
 List<MenuAction> _playerActions(BuildContext context, WidgetRef ref) {
-  final settings = ref.read(settingsProvider);
-  final speed = settings.playbackSpeed;
   final sleep = ref.read(sleepTimerProvider).value;
   final sleeping = sleep != null && sleep.mode != SleepTimerMode.off;
-  final private = settings.privateListening;
+  // D-23 (AUDIT F35): no "Playback speed" for music and no "Private listening" here (it stays in Settings > Privacy & your music).
   return [
-    MenuAction(
-      Icons.speed_rounded,
-      speed == 1.0 ? 'Playback speed' : 'Playback speed (${speedLabel(speed)})',
-      () => showSpeedSheet(context),
-    ),
     MenuAction(
       Icons.bedtime_outlined,
       sleeping ? 'Sleep timer (${sleepRemainingLabel(sleep)})' : 'Sleep timer',
       () => showSleepTimerSheet(context),
-    ),
-    MenuAction(
-      private ? Icons.lock_rounded : Icons.lock_open_rounded,
-      private ? 'Private listening: on' : 'Private listening: off',
-      () {
-        ref.read(settingsProvider.notifier).setPrivateListening(!private);
-        // Said once, in words: what a lock changes is not obvious.
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text(private
-                ? 'Private listening is off.'
-                : 'Private listening is on: what you play is not shared '
-                    'with friends and not counted in your history.'),
-          ));
-      },
     ),
   ];
 }

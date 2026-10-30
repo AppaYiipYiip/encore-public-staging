@@ -42,6 +42,10 @@ ThemeData buildEncoreTheme(EncoreColors c, {required Brightness brightness}) {
     visualDensity: VisualDensity.standard,
     dividerTheme: DividerThemeData(color: c.outline, thickness: 0.5, space: 0),
     iconTheme: IconThemeData(color: c.onBg, size: 24),
+    // A hint (an example) is visibly quieter than what a person typed, in every theme (AUDIT F38).
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: c.onBgMuted.withValues(alpha: 0.7)),
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: c.bg,
       foregroundColor: c.onBg,

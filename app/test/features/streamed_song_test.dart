@@ -170,8 +170,8 @@ void main() {
     await settle(tester);
     expect(find.textContaining('Still being added to your library'),
         findsOneWidget);
-    expect(find.text('Playback speed'), findsOneWidget,
-        reason: 'the player\'s own lines are there');
+    expect(find.text('Sleep timer'), findsOneWidget,
+        reason: 'the player\'s own line is there (D-23: the sleep timer)');
     expect(find.text('Add to playlist'), findsNothing,
         reason: 'the library lines wait for the song');
 
@@ -557,7 +557,7 @@ void main() {
 
     await tester.tap(find.byTooltip('More options'));
     await settle(tester);
-    expect(find.text('Playback speed'), findsOneWidget);
+    expect(find.text('Sleep timer'), findsOneWidget);
     expect(find.text('Add to playlist'), findsNothing);
     expect(find.textContaining('Still being added'), findsNothing,
         reason: 'a sample is not on its way to the library');

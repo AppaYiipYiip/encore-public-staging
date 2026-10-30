@@ -85,7 +85,7 @@ void main() {
       expect(s.themeMode, ThemeMode.dark);
       expect(s.lyricsTextScale, 1.6);
       expect(s.backgroundSyncHours, 0);
-      expect(s.playbackSpeed, 2.0);
+      expect(s.playbackSpeed, 1.0, reason: 'D-23: a saved speed is dropped');
     });
   });
 

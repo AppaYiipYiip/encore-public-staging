@@ -68,7 +68,8 @@ void main() {
         await expectReachable(tester, profile, 'the player menu');
         closeTopSheet(tester);
         await settle(tester);
-        for (final label in ['Playback speed', 'Sleep timer']) {
+        // D-23: the speed and "Private listening" are not in the music player; the sleep timer is the one line of the menu.
+        for (final label in ['Sleep timer']) {
           if (find.text(label).evaluate().isEmpty) {
             await tester.ensureVisible(find.byTooltip('More options'));
             await tester.tap(find.byTooltip('More options'));

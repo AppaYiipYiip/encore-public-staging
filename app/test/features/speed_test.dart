@@ -1,13 +1,9 @@
 import 'package:encore/features/player/speed_sheet.dart';
 import 'package:encore/features/settings/settings_controller.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../support/test_app.dart';
-
 void main() {
-  setUpAll(loadAppFonts);
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('labels read naturally', () {
@@ -18,31 +14,14 @@ void main() {
     expect(speedLabel(0.75), '0.75x');
   });
 
-  testWidgets('the player offers speeds, applies and remembers the choice',
-      (tester) async {
-    final app = await pumpApp(tester, playing: samplePlaying());
-    await tester.tap(find.text('Opening The').first);
-    await settle(tester);
+  test(
+      'D-23: a speed saved by an earlier version is dropped, so nobody stays at 1.25x with no way back',
+      () async {
+    SharedPreferences.setMockInitialValues({'encore.playbackSpeed': 1.25});
+    final prefs = await SharedPreferences.getInstance();
 
-    // The speed is a line of the "..." menu (as in Spotify).
-    await tester.tap(find.byTooltip('More options'));
-    await settle(tester);
-    await tester.tap(find.text('Playback speed'));
-    await settle(tester);
-    expect(find.text('Playback speed'), findsWidgets);
-    expect(find.text('1.25x'), findsOneWidget);
+    final s = SettingsController.fromPrefs(prefs);
 
-    await tester.tap(find.text('1.5x'));
-    await settle(tester);
-
-    expect(app.facade.calls, contains('speed(1.5)'));
-    final container = ProviderScope.containerOf(
-        tester.element(find.text('Opening The').first));
-    expect(container.read(settingsProvider).playbackSpeed, 1.5);
-    // The menu shows that a non-default speed is active.
-    await tester.tap(find.byTooltip('More options'));
-    await settle(tester);
-    expect(find.text('Playback speed (1.5x)'), findsOneWidget);
-    await closeApp(tester, app.db);
+    expect(s.playbackSpeed, 1.0);
   });
 }

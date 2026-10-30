@@ -250,7 +250,8 @@ void main() {
       await closeApp(tester, app.db);
     });
 
-    testWidgets('private listening is a line of the player\'s "..." menu',
+    testWidgets(
+        'D-23: private listening is NOT a line of the player\'s "..." menu (it lives in Settings)',
         (tester) async {
       final app = await pumpApp(tester, playing: samplePlaying());
       await tester.tap(find.text('Opening The').first);
@@ -258,14 +259,9 @@ void main() {
 
       await tester.tap(find.byTooltip('More options'));
       await settle(tester);
-      await tester.tap(find.text('Private listening: off'));
-      await settle(tester);
 
-      expect(
-          containerOf(tester).read(settingsProvider).privateListening, isTrue);
-      await tester.tap(find.byTooltip('More options'));
-      await settle(tester);
-      expect(find.text('Private listening: on'), findsOneWidget);
+      expect(find.text('Private listening: off'), findsNothing);
+      expect(find.text('Private listening: on'), findsNothing);
       await closeApp(tester, app.db);
     });
   });

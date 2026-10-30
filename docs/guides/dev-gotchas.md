@@ -22,7 +22,7 @@ the tool and fix the line. Rules about *what* to do are in `docs/30-engineering-
 
 ## Building and testing
 
-* Release APK for an emulator: `flutter build apk --release --target-platform android-x64`; for phones, arm64. The app's launch component is `app.encore.player/app.encore.player.MainActivity`.
+* Release APK for an emulator: `flutter build apk --release --target-platform android-x64`; for phones, arm64. **Always add `--dart-define=BUILD_NUMBER=<versionCode> --dart-define=GIT_SHA=$(git rev-parse --short HEAD)`** (AUDIT F34, D-25): without them About says `build unknown · commit unknown`, and a report cannot be tied to an APK. The app's launch component is `app.encore.player/app.encore.player.MainActivity`.
 * Server (`server/encore_server`): `pip install -e '.[youtube,dev]'`, then `ruff check . && ruff format --check . && mypy encore_server && pytest`. Plain `pytest` does not put the project folder on
   the path, which is why `pyproject.toml` sets `pythonpath`. The legacy server suites use `python -m unittest discover -s tests` (not `-I`).
 * Integration suite (a real music server in Docker): `docker compose -f tests/integration/compose.yaml up --build --abort-on-container-exit --exit-code-from tests`; run `down -v` before each run.

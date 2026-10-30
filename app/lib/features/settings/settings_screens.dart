@@ -9,6 +9,7 @@ import '../../app/branding.dart';
 import '../../app/providers.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../data/sync/sync_scheduler.dart';
+import '../../design/theme_rules.dart';
 import '../../design/tokens.dart';
 import '../../domain/audio_quality.dart';
 import '../common/format.dart';
@@ -308,6 +309,9 @@ class AppearanceSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(settingsProvider);
     final ctrl = ref.read(settingsProvider.notifier);
+    // True black only means something in a dark theme (AUDIT F42).
+    final dark =
+        darkThemeInUse(s.themeMode, MediaQuery.platformBrightnessOf(context));
     return _Page(
       title: 'Appearance',
       description: 'How the app looks. Colours adapt to the music playing.',
@@ -334,9 +338,11 @@ class AppearanceSettingsScreen extends ConsumerWidget {
         const Divider(),
         SwitchListTile(
           title: const Text('True black background'),
-          subtitle: const Text('Saves battery on OLED screens (dark theme).'),
+          subtitle: Text(dark
+              ? 'Saves battery on OLED screens.'
+              : 'Only in the dark theme: choose Dark (or a dark phone) first.'),
           value: s.amoledBlack,
-          onChanged: ctrl.setAmoled,
+          onChanged: dark ? ctrl.setAmoled : null,
         ),
       ],
     );
@@ -653,7 +659,7 @@ class AboutSettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           title: Text(AppBranding.name),
-          subtitle: Text('Version ${AppBranding.version}'),
+          subtitle: Text('Version ${AppBranding.versionLine}'),
         ),
         ListTile(
           leading: const Icon(Icons.favorite_outline_rounded),
@@ -662,7 +668,7 @@ class AboutSettingsScreen extends StatelessWidget {
           onTap: () => showLicensePage(
             context: context,
             applicationName: AppBranding.name,
-            applicationVersion: AppBranding.version,
+            applicationVersion: AppBranding.versionLine,
           ),
         ),
         ListTile(

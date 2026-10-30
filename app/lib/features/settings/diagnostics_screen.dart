@@ -73,7 +73,7 @@ class DiagnosticsScreen extends ConsumerWidget {
         .join('\n');
 
     final sections = <String, String>{
-      'App': '${AppBranding.name} ${AppBranding.version} (${mode()})\n'
+      'App': '${AppBranding.name} ${AppBranding.versionLine} (${mode()})\n'
           '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
       'Server': 'name: ${server?.name ?? '-'}\n'
           'tracks in library: ${tracks ?? '-'}\n'

@@ -252,7 +252,9 @@ class SettingsController extends Notifier<AppSettings> {
           fallback: AudioQuality.high),
       downloadLimitBytes: p.getInt(_kDownloadLimit),
       backgroundSyncHours: (p.getInt(_kBackgroundSync) ?? 6).clamp(0, 168),
-      playbackSpeed: (p.getDouble(_kSpeed) ?? 1.0).clamp(0.5, 2.0),
+      // D-23 (AUDIT F35): music has no speed control any more, so a speed saved by an earlier version is dropped (nobody stays at 1.25x with
+      // no way back).
+      playbackSpeed: 1.0,
       replayGainMode: ReplayGainMode.values.firstWhere(
         (m) => m.name == p.getString(_kReplayGain),
         orElse: () => ReplayGainMode.track,
