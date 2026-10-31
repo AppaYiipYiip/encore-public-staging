@@ -79,11 +79,16 @@ What the player is **supposed to do** in each condition below (and what it does 
 
 | Condition | How | What a person must see |
 |-----------|-----|------------------------|
-| Offline from the start | airplane mode, cold start | Home from the phone's database ≤ 0.7 s; downloaded music plays; other rows greyed; no banner |
+| Offline from the start | airplane mode, cold start | Home from the phone's database ≤ 0.7 s; downloaded music plays; other rows greyed; one calm strip, once (`31` CN-1, D-45) |
 | Lose network mid-song | airplane on at 1:00 of a streamed song | the song plays what is buffered, then pauses with "Waiting for connection"; **no skipping**; resumes by itself ≤ 5 s after the network returns |
 | Flaky network | toggle airplane every 20 s for 5 min while playing a playlist | never stuck; no duplicate plays; play/pause always present |
 | Slow network | `adb emu network speed edge` | tap → audible ≤ 10 s; a spinner, then sound; nothing frozen |
 | Server down | `docker stop encore-server` on the VM | library and downloads work; "Your server isn't answering" only on actions that need it; recovers by itself |
+| **Radio on, no data** (the state most phones live in away from home; **airplane mode is not it**) | stop `encore-server` on the dev VM while the phone is on Wi-Fi, or block the server address with the emulator's network controls; a real phone with mobile data switched off but the radio on | one strip once; downloaded songs play; a list with songs that are not downloaded plays only the downloaded ones (Play, Shuffle, Next, the end of a song); the title and cover shown are always those of the song heard (Now playing, mini player, notification, lock screen); lyrics say "no lyrics" within ~12 s, never a spinner |
+| A partly downloaded list | download a playlist, take one song in the middle off the phone, go to the state above | Play and Shuffle start at a downloaded song; rows show which songs are downloaded (arrow) and, offline, dim the rest |
+| A list deleted while downloaded (also an imported one) | delete the playlist | Library > Downloaded and "N songs on this phone" fall within seconds; the files are gone from Settings > Downloads & storage |
+| A long outage | server stopped for 10 minutes | the strip appears once and goes by itself; not again until everything has worked for 10 s; the person is never asked for a password |
+| A Wi-Fi sign-in page (captive portal) | a public Wi-Fi before its page is accepted (a real network; not simulated) | the app opens on Home with the saved server, never on the page that asks for a server; the page's answer is never read as the server's (a 200 page is no answer, a bare 401/403 is not "sign in again") |
 | YouTube refusing | server fault flag `ENCORE_FAULT=youtube_refuse` (to add in P1-02) | taps fail in ≤ 10 s with one plain sentence; imports pause; admin Health explains |
 | Hard kill while playing | `adb shell am force-stop app.encore.player` | reopen: same song, paused at the same second (± 2 s) |
 | System kill in background | HOME, then `adb shell am kill app.encore.player` | same as above |
