@@ -1,0 +1,56 @@
+# The backend review, 2026-10-30/31: findings, triage and the order to fix them
+
+The owner: *"if the backend is flawed, the entire app is flawed."* A testing agent ran the server's own suite, measured coverage, reviewed the server against `docs/17` and the engineering guide, and wrote 18 **proof tests** (each passes because the defect is present). Everything ran on a copy of the working tree with a plugin that refused every non-loopback connection: no machine on the owner's network and no outside service was contacted. **The full report** (33 findings, the contract table, what is solid, the coverage table) is `scratchpad\qa-backend\REPORT.md` of the session that made it; this file keeps what is needed to act on it. It names real weaknesses of a public server: **scrub it before the repository goes public.**
+
+**Headline:** the server's own suite passes (640 tests, 91.5 % line coverage; 17 of its tests reach `api.deezer.com` for real; one known flaky test is a wrong test, not a wrong server). The privacy between people, the invitations, the tokens, the signed addresses, the SQL, the paths and the migrations are **sound**. The defects are at the **edge that faces the internet**, and in revocation.
+
+## Triage by D-29, with the advisor's sixth category (D-41)
+
+**D-41 (advisor, 2026-10-30, reversible): D-29's list of what enters RC1 gets a sixth category: a hole a stranger can use from the internet, or one member can use against another member's data or privacy.** Everything else in the report stays *later*.
+
+| ID | Finding | D-29 category | Fix first batch |
+|---|---|---|---|
+| B1 | Passwords can be guessed without limit on every route except `/auth/login` (60 wrong guesses: 60 answers of 401, count 0) | stranger | S1 |
+| B2 | A stranger can lock the **only owner** out for good with 20 wrong passwords (nobody is left to unlock) | stranger | S1 |
+| B11 | Rate limits trust an address the client writes (`X-Forwarded-For`): **a prerequisite for B1** | stranger | S1 |
+| B9 | No limit on request size: one request can run the server out of memory | stranger | S1 |
+| B19 | `/openapi.json` lists all 43 routes to anyone; `/info` says the version | stranger | S1 |
+| B12 | The music server's own web page, `/api`, `/auth/login`, `/auth/createAdmin` and `/rest` are public through Funnel; a stranger's sign-ins can block the Encore server's own admin login (invitations, joins, resets fail) | stranger | S1 (blocked paths, if the app uses none of them); `/rest` narrowing later |
+| B3 | A song added to a deleted playlist is dropped without a word (the server answers `not_found`, the same code as an unknown song) | silent failure | S2 (server and app in one change) |
+| B7 | A keep whose file the music server never finds is retried every 30 s for ever and never says "failed" | silent failure | S2 |
+| B8 | While YouTube rests the server, every tap still makes 2 to 3 YouTube Music searches and they are not counted: **breaks the owner's "never burst YouTube" rule** | silent failure | S2 |
+| B15 | Joining is not safe to repeat: if the answer is lost on a mobile network, the retry says "That invitation is not valid any more" although the account was made | friend's first minute | with W-05 |
+| B4 | A removed person keeps working for 10 minutes and comes back as a new person | member against member | S3 |
+| B5 | A signed-out device keeps receiving live updates (`library.changed`, the full playback state) | member against member | S3 |
+| B13 | Signed song addresses (6 h) and picture passes (7 days) outlive a lock or a removal | member against member | S3 |
+| B6 | Whoever first describes a song decides its audio and picture for everyone; any https picture address is loaded by every phone | member against member | S3 (picture allow-list); the audio part and a "wrong song" route are RC2 |
+
+**Later (not RC1):** B10 fair sharing breaks past 200 queued items · B14 one import keeps the home line at YouTube for a day and a half (budget it) · B16 raw error text reaches the phone · B17 the container can write the whole music library · B18 backups may reveal friends' passwords (no `ND_PASSWORDENCRYPTIONKEY`) · B20 migration backups never pruned · B21 a job that crashes the server is retried at every start · B22 live channel has no limits and never reads · B23 a partial playback write clears the song · B24 a stranger's import id is a 500 · B26 unpinned dependencies · B30 lists cut off silently · B31 unbounded data and memory · B32 leftover files after a crash · **B33 the installer opens the port to every interface (`ufw allow` from anywhere)**.
+
+**CI and test hygiene (batch S0):** **B25** the image is published on every push to `main` or `task/**` without waiting for the tests (so every server branch push builds an image: it multiplies the cost of everything below) · **B28** the flaky `test_account_model` has a wrong model (a lock signs devices out; the model forgets): 4 of 10 runs fail · **B27** 17 tests call Deezer for real · B29 the deploy-script tests pick the WSL bash on Windows (17 false failures here).
+
+## The advisor's corrections to my first designs (2026-10-30)
+
+* **B2.** The real defect is that **automatic failures write the same `locked` state as the owner's manual lock, and that also signs out every device.** Split them: failures only **throttle** further attempts and never lock or sign out; the manual lock stays; **the lock is checked before the password**, so a locked account's answer never confirms a right password. With the split, "never lock the last owner" is unnecessary (on its own it would have removed lockout for the owner entirely).
+* **B1.** Every app call carries `u`, `t`, `s`, so a limiter must **never refuse a correct login because of someone else's failures** (an attacker would shut down the owner's own phones). Key refusals on **(name, address)** plus a cap per address; a counter per name may only slow *failed* answers. Test: 100 wrong guesses for `marwa` from address A, then a correct call from address B answers at once.
+* **B11 is a prerequisite for B1.** Keys per address are worthless while `X-Forwarded-For` is the client's to write (the server believes its first value whenever the connection looks private, and over Funnel it does). Trust the header only from the configured proxy, take the right-most untrusted entry, use `ipaddress`.
+* **B3.** First read how the app's outbox handles `not_found` and `conflict` on an entry add: which case actually loses the data, and what does an older build (the owner's 120) do with a 409 (does it retry for ever)? Then change the server and the app **in one PR**.
+* **B12.** Facts first: grep the app for every Navidrome path it calls in Encore mode. If it uses none of `/auth`, `/api` or the web UI, block those on the away host in S1; narrowing `/rest` comes later. **How Funnel sets `X-Forwarded-For` cannot be learned without the owner's Funnel: open.**
+
+## The order (all local until the Actions minutes reset, then pushed in this order)
+
+1. **S0, CI hygiene, the first push after the reset:** B25 (build the image only on `main` and tags, only after the tests pass), B28, B27.
+2. **S1, safety on the public internet:** B2, B1, B11, B9, B19, B12's blocked paths. **Blocks the friend milestone and blocks telling the owner he can turn Funnel on.**
+3. **S2, silent failures:** B3, B7, B8.
+4. **W-05 plus B15**, the friend's first minute (W-05 is committed locally on `task/W05-join-page`).
+5. **S3, revocation:** B4, B5, B13 through one shared "end this device or person" path, plus B6's picture allow-list.
+
+**Test-first:** each fix starts by copying its proof test into the repository, **inverted**, as a failing regression test. Before that, the agent's whole proof file is run against a clean worktree of `origin/main`, to confirm the eight RC1 defects exist in the code that ships (the agent ran them on a copy of the working tree).
+
+## What the owner is told
+
+*B1, B2 and B12 are live on any server whose Funnel is on today.* Do not turn Funnel on for a friend until S1 is merged. If a Funnel is on now (the October 17 reference stack; whether VM 107 has one is unknown), turning it off with `encore funnel off` is the owner's decision; nothing of the owner's machines is touched by us.
+
+## Not verified, and how to find out
+
+Whether Navidrome 0.64.2 throttles `/rest` sign-ins and whether its limiter reads `X-Real-IP` or `True-Client-IP` (read its `server/subsonic` middleware, or 50 wrong `/rest/ping` calls in the integration compose) · how Tailscale Funnel sets `X-Forwarded-For` (replaced or appended: needs a real Funnel) · Navidrome's default password encryption key · whether it accepts usernames in any case · the integration suite (needs Docker).
