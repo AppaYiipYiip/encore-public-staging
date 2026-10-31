@@ -83,7 +83,7 @@ documents are history; read one only when a task links it.
 * **Never print, commit or screenshot a password.** Login files live outside the repository.
 * **Say what was measured and on what setup.** "Tests pass" is not "it works".
 
-## State (2026-10-23)
+## State (2026-10-31)
 
 The list of what is still open, task by task, with the owner's findings and the proof for each, is **[tasks/AUDIT.md](tasks/AUDIT.md)**; it is
 kept current and this table only says where the phases stand.
@@ -91,7 +91,7 @@ kept current and this table only says where the phases stand.
 | Item | State |
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
-| Repository | On GitHub (private). `main` has five CI workflows (app, server, server image, docs and secret scan, screen pictures; the latest run of each succeeded on 2026-10-23) and four merged pull requests; **`main` is not protected yet** |
+| Repository | On GitHub (private). `main` has the CI workflows (app, server, server image, hygiene, screen pictures; Actions minutes were measured and cut in D-44); about 75 pull requests are merged; **`main` is not protected yet** |
 | Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice |
 | P0 Reset | Done except P0-09 (environments as code), P0-10 (licence inventory and check), branch protection and the project board |
 | P1 Instant play | Core done (lean resolver, a player that cannot stick, offline, queue restore, covers); open items are listed in AUDIT (P1-03 legacy side, P1-04, P1-06, P1-07, P1-12, P1-13) |
@@ -99,6 +99,6 @@ kept current and this table only says where the phases stand.
 | P3 One server, one-command install | Installer slice, nightly backup and restore, and a resumable install are proved on clean machines (`evidence/c01` to `c03`); wizard, admin pages, update rollback, arm64 and the rest are open |
 | P4 Full feature set, P5 Public release | Not started (the artist page and a first slice of profiles on a shared device exist) |
 | **Current milestone** | The first outside user (P3-12, ADR-R34). Five checks, in order: the owner installed and uses the server; the away-from-home address works on mobile data; the data can come back (**done**); the friend's guide is final (draft); five days of the owner's own use |
-| Next, in order | 1. Owner's install and phone (needs the owner). 2. The weekly rebuild of the server image is in, and so is the in-server updater (P3-08b, PR #9: run for real, `evidence/c04`); a server gets it with the next `encore update`. 3. Journey 4 in full, the friend's guide, the live connection through the public address (X-7). 4. **P2-19 slices A and B (a key as the server's identity, the server's own addresses, a first screen without an IP address: ADR-R40; it also closes the credential-probe finding S2)**, then P1-06 and P1-04, then lyrics and Arabic search (P2-14, P1-07); slice C ("Servers on this Wi-Fi") when the owner's phone exists. 5. Wizard and admin pages (P3-06, drawings first), the toolchain upgrade, then P4 |
+| Next, in order | **Release candidate 1** (`tasks/RELEASE-CANDIDATE.md`): the fixes of the two review walks are committed and tested locally (pushed in order from 1 November), then three QA rounds with a testing agent, a clean-VM install test and a critic whose wishes the owner filters (section 5a); then the friend milestone below. The owner's one-page status is outside the repository |
 | Before going public (P5-06) | The plan documents still name the owner's own machines and containers in several places (`06`, `09`, `11` and others); scrub them first |
 | The old documents | History, kept only in the old repository's archive |
