@@ -2,15 +2,15 @@
 
 Why this page exists: `tasks/P2` had only an endpoint sketch. Without fixed conventions every agent invents its own error format,
 ids and retry rules, which is how the old project got six services with six habits. Everything here is binding for the Encore
-server and every client (Android now, web/PC later). The machine-readable form is `server/api/openapi.yaml` (P2-01), generated
-from the server code and checked in CI.
+server and every client (Android now, web/PC later). The machine-readable form is **planned, not built**: an `openapi.json` written into the repository
+by the server and checked by a server test (`11` ADR-R41 T5). Today there is no such file and no such check, and since S1 (B19) the running server no longer serves `/openapi.json`.
 
 ## 1. Conventions
 
 | Topic | Rule |
 |-------|------|
 | Base | One origin per server; all Encore routes under `/encore/api/v1/…`; the live channel at `/encore/live`; audio at `/encore/stream/…` |
-| Auth | `Authorization: Bearer <device token>` (P3-03). Never in the URL, except audio URLs, which use a short-lived signed `?sig=` (5 min) because players cannot set headers everywhere |
+| Auth | `Authorization: Bearer <device token>` (P3-03). Never in the URL, except audio URLs, which use a signed `?sig=` (6 hours for a song address, 7 days for a cover address: `auth.py` `STREAM_URL_TTL_S`, `COVER_PASS_TTL_S`) because players cannot set headers everywhere |
 | Ids | Server-made ids are opaque strings with a type prefix: `sr_` song ref, `pl_` playlist, `pe_` playlist entry, `dv_` device, `im_` import, `jm_` Jam. Clients create ids for things they create (`pl_`/`pe_` as ULIDs) so an offline create can be retried without duplicates |
 | Time | All timestamps are UTC milliseconds from the server clock (`at`); the server returns `serverTime` in every response so clients can measure their clock offset |
 | Writes | Every write is **idempotent**: `Idempotency-Key` header (a ULID per user action); the server remembers keys for 7 days |
@@ -18,14 +18,14 @@ from the server code and checked in CI.
 | Changes | `GET /library/changes?since=<cursor>` returns everything changed for this person since the cursor, including deletions (tombstones), in order |
 | Errors | One shape everywhere: `{"error": {"code": "song_unavailable", "message": "This song isn't available in your country.", "retryable": false, "retryAfterMs": null, "details": {}}}`; `message` is a plain sentence the app may show as is; `code` is for logic |
 | Rate limits | `429` with `retryAfterMs`; per person and per device |
-| Versions | `GET /encore/api/v1/info` → `{apiVersion: "1.4", minAppVersion: "0.9.0", serverVersion, features[]}`; additive changes bump the minor; a breaking change is a new `/v2` while `/v1` keeps working for **two app releases**; the app refuses to run against a server whose `apiVersion` major it does not know and says "Update Encore" (or "Ask Riley to update the server"). `info` also carries `youtube` (`{state: ok|resting|off, resumesInSec}`) and, on a server that keeps its own yt-dlp fresh (ADR-R39), `tools: {ytDlp: {running, pending, state: ok|degraded}}`. Decided 2026-10-23 (ADR-R40, not built): `GET /info?challenge=<nonce>` also returns `serverId`, `publicKey` and a signature over the nonce and the id; a signed-in `GET /encore/api/v1/server` returns `{serverId, name, addresses: [{kind: home|away, url}]}`: `pending` is a newer version that waits for a quiet moment to be switched to, `degraded` means songs from YouTube are not working right now |
+| Versions | `GET /encore/api/v1/info` → `{apiVersion: "1.0", minAppVersion: "0.1.0", serverVersion, features[]}` (today's values); additive changes bump the minor; a breaking change is a new `/v2` while `/v1` keeps working for **two app releases**; the app refuses to run against a server whose `apiVersion` major it does not know and says "Update Encore" (or "Ask the owner of <the server's name> to update the server", with no person's name: `design/03`, designed, not built). `info` also carries `youtube` (`{state: ok|resting|off, resumesInSec}`) and, on a server that keeps its own yt-dlp fresh (ADR-R39), `tools: {ytDlp: {running, pending, state: ok|degraded}}`: `pending` is a newer version that waits for a quiet moment to be switched to, `degraded` means songs from YouTube are not working right now. Built (ADR-R40, decided 2026-10-23): `info` always carries `serverId` and `publicKey`, and `GET /info?challenge=<nonce>` adds a signature over the nonce and the id (`identity.py`); a signed-in `GET /encore/api/v1/server` returns `{serverId, name, addresses: [{kind: home|away, url}]}` |
 
 ## 2. Error codes (the closed list; new codes need a doc change)
 
 `unauthorized`, `forbidden`, `not_found`, `conflict` (stale revision), `validation`, `rate_limited`, `song_unavailable`
 (`details.reason`: `not_found` | `region_blocked` | `age_restricted` | `removed`), `source_busy` (YouTube pushing back; retryable),
 `source_unreachable`, `storage_full`, `server_busy`, `upstream_timeout`, `federation_disabled`, `peer_unreachable`, `internal`.
-Each has one plain message per language, owned by the server (`server/encore_server/messages.py`), so all clients say the same thing.
+Each has one plain message, owned by the server (`server/encore_server/encore_server/errors.py`; English only today), so all clients say the same thing.
 
 ## 3. Endpoint inventory (v1)
 
