@@ -42,7 +42,7 @@ progress, consistent counts · P2-06 Spotify beyond 100 songs · P2-07 remove ho
 P2-08 playback state and resume anywhere · P2-09 one device at a time · P2-10 invite-first sign-in and "Bring your music" ·
 P2-11 migrate today's installs · P2-12 catalogue: search, matching, duplicates · P2-13 downloads, formats, manifest ·
 P2-14 lyrics on the server · P2-15 notifications without push · P2-16 self-describing, self-healing library ·
-P2-17 "Follow the original" playlists. Design: `17`, `18`, `19`, `23`, `26`.
+P2-17 "Follow the original" playlists · P2-18 a changed or expired login is a normal event · P2-19 find your server (a key, the server's own addresses, a first screen without an IP address) · P2-20 Encore mode: the app holds only the device token. Design: `17`, `18`, `19`, `23`, `26`.
 **Exit:** J-01, J-03, J-04, J-05, J-09, J-12 pass; a like on a catalogue song survives the song being kept, re-tagged and moved
 (integration test); migration from an existing install keeps every like and playlist (test on a copy of CT 104's database).
 
@@ -52,7 +52,7 @@ Tasks: P3-01 people, sources, keeper, admin moved into the Encore server; the ga
 images · P3-03 device tokens, the gateway signs requests to Navidrome, one-way mirror · P3-04 remove Docker-socket control, Firefox,
 Google sign-in · P3-05 install script, `encore.local`, `encore` CLI · P3-06 setup wizard and admin pages · P3-07 clean-machine proof ·
 P3-08 updates with rollback, yt-dlp freshness, backups, moving computers · P3-09 security and privacy as written ·
-P3-10 devices, settings and the Host's safety nets · P3-11 the Tinkerer's door. Design: `15`, `21`, `22`, `26`.
+P3-10 devices, settings and the Host's safety nets · P3-11 the Tinkerer's door · P3-12 the first outside user. Design: `15`, `21`, `22`, `26`.
 **Exit:** J-14 passes on a fresh Ubuntu 26.04 VM (x86) and on an ARM64 machine or VM, in ≤ 15 min; one published port; the admin
 Health page explains every state in plain words.
 
@@ -62,7 +62,7 @@ Tasks: P4-01 listening profile and recommendations per person · P4-02 Jam on th
 P4-04 quality tier on song refs · P4-05 Year in Music from the server's play history · P4-06 the whole app walked again ·
 P4-07 Encore Connect (devices, handover, remote volume) · P4-08 home-server relay (the app only talks to its own server) ·
 P4-09 connecting with people on other servers (federation core) · P4-10 Jam across servers, sharing, collaborative playlists · P4-11 tablets and large screens ·
-P4-12 Spotify-class extras · P4-13 problem reports and battery-saver guidance · P4-14 "Wrong song?" and metadata fixes · P4-15 Browse, history and playlist details.
+P4-12 Spotify-class extras · P4-13 problem reports and battery-saver guidance · P4-14 "Wrong song?" and metadata fixes · P4-15 Browse, history and playlist details · P4-16 profiles on a shared device · P4-17 compare tastes (US-65, opt-in).
 Design: `13`, `14`, `16`, `19`, `20`.
 **OPEN (needs owner/advisor):** D-18 (`10`) parks tablet-specific layouts, yet P4-11 above, `03` (the v1 features), `03a` US-75 and `14` U1 still plan a tablet layout, and `14` U1 notes that Android 16 shows a stretched phone layout on large screens anyway. Decide: keep P4-11 (and read D-18 as "no separate drawings first"), or move it to P6 (`tasks/P6-later.md`) and say what a tablet shows meanwhile.
 **Exit:** US-60 … US-64 and US-70 … US-76 pass as journeys (incl. J-15 … J-20 of `14` section 3) on profiles A and B with two people on two emulators; recommendations judged by the owner
