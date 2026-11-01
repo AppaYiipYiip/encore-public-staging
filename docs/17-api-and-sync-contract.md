@@ -49,7 +49,8 @@ Each has one plain message per language, owned by the server (`server/encore_ser
 
 * One connection per running app; authenticated by the device token in the first message; the server sends `hello {serverTime,
   cursor}`; ping/pong every 25 s; reconnect with jittered back-off (1, 2, 4 … 30 s); on reconnect the app calls `library/changes`
-  and `GET playback`, so no event is ever needed to be correct (events only make things faster).
+  and `GET playback`, so no event is ever needed to be correct (events only make things faster). The server ends a connection whose device is signed out, revoked,
+  locked or removed: it closes the socket with code **4401** within a moment (built, S3 B5: `live.py` `Hub.end`), and the app takes 4401 as "token refused" (`31` CN-23).
 * Events (server → app): `library.changed {cursor}`, `playback.changed {state, rev}`, `device.takeover {by}`, `device.command
   {command, rev}`, `device.state {dv, state}`, `import.progress {im, counts}`, `jam.state {…}`, `friend.request {…}`,
   `activity {…}`, `server.notice {code, message}`.
