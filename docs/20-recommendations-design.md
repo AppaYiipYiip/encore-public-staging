@@ -37,7 +37,7 @@ Never "what other people on this server play": it would leak friends' listening 
 |-----|---------|---------|
 | Made for you (2–6 mixes) | clusters of the person's taste (artists that are often played together), 30 songs each, ~40 % new to them | nightly |
 | Because you play *X* | for the top 3 recent artists, related artists' best songs | nightly |
-| New from artists you love | releases from the last 4 weeks, unseen first; a notification once per release | daily |
+| New from artists you love | releases from the last 4 weeks, unseen first; one entry in the in-app bell per release, and no phone notification unless the person switches one on (`11` ADR-R44) | daily |
 | Rediscover / Deeper cuts | from the person's own past | weekly |
 | Radio (from any song/artist) | seed's artist + related artists' top songs + matching songs from the library | on demand, ≤ 2 s |
 | Smart shuffle | while shuffling a playlist, about 1 in 5 songs is a suggestion, marked, one tap to keep or skip | live |

@@ -27,7 +27,7 @@ setup in my browser, so that I don't need to understand Docker. Every page is dr
 **US-04 Listener joins.** As a Listener, I want to be listening within a minute of installing the app.
 * First screen: "Scan an invite" and "I have an invite link". Manual server address is under "Other ways to connect".
 * After joining, Home is never empty: it shows "Start with something" (popular songs from the catalogue) until I have my own.
-* No permission is asked until it is needed (notifications are asked the first time something would notify me).
+* No permission is asked until it is needed (the notification permission is asked only when I switch a notification on, `11` ADR-R44).
 
 **US-05 First run: bring your music (owner asked 2026-10-21).** As a new Listener coming from Spotify or YouTube Music, I want to
 be offered to bring my playlists right after joining, so that Encore feels like *my* music from minute one.
