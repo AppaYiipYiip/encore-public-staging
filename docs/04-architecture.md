@@ -195,7 +195,7 @@ tokens. Change:
 | Live updates | 3 s adaptive probe | websocket `live` channel; probe only as fallback |
 | Playback | engine wrapped by `JamPlaybackFacade` | engine + `TrackSource` resolver (download / file / catalogue stream) + **playback sync** (state to server on pause/seek/track change and every 15 s; takeover handling); Jam later as a separate layer |
 | Covers | URL per widget size; letter-tile fallback | one canonical cover per album/song ref, stored with downloads and in a bounded disk cache, resized locally; letter tiles only when no cover exists anywhere |
-| Offline | banner + rows look playable | rows greyed when unavailable; no banner; engine never auto-skips on "unavailable" |
+| Offline | banner + rows look playable | rows greyed when not downloaded and the phone cannot reach the server; one calm strip, said once per outage (`31` CN-1, D-45); Play, Shuffle, Next and the end of a song go to downloaded songs only (D-46); a song that fails is waited for, never hopped over (`33` PB-F7) |
 | Auth | password stored, Subsonic token per request | device token from `accounts`; password never stored |
 | Removed | portal client/discovery/download-service sheet, second import screen, ServiceFinder, multi-service capability probing | |
 

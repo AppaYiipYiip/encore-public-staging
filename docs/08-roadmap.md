@@ -28,7 +28,7 @@ P0-09 environments as code · P0-10 licence inventory and checks.
 
 Tasks: P1-01 lean resolver · P1-02 stream first, limits only for keeping, fault flags · P1-03 two pools + YouTube pacing/back-off ·
 P1-04 prepare (top result, page, queue) · P1-05 imported songs use their known video id · P1-06 measurement spans + harness ·
-P1-07 search: Top result and one list · P1-08 the player never gets stuck · P1-09 offline without banner or skipping ·
+P1-07 search: Top result and one list · P1-08 the player never gets stuck · P1-09 offline without skipping (one calm strip, no permanent banner) ·
 P1-10 covers everywhere, offline too · P1-11 resume after a hard kill; media-session position · P1-12 accessibility, insets, big
 text, device-profile tests, small UX fixes · P1-13 one volume, consistent loudness · P1-14 stop the sync storm.
 **Exit:** journeys J-02, J-03 (owned part), J-06, J-07, J-08, J-10, J-11 pass on profiles A and B on TYPICAL; J-02 also on SLOW
