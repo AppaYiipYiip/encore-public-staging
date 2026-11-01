@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Encore Design Choice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout concept: one column of plain reading, one card per drawing file that opens it. */
+  :root {
+    --bg: #f7f8f7;
+    --surface: #ffffff;
+    --line: #dfe4e1;
+    --fg: #141816;
+    --muted: #4c5651;
+    --accent: #07703f;
+    --accent-ink: #ffffff;
+    --font: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1110; --surface: #171b19; --line: #2a302d; --fg: #f1f4f2; --muted: #a7b1ab;
+      --accent: #19e68c; --accent-ink: #05140d; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1110; --surface: #171b19; --line: #2a302d; --fg: #f1f4f2; --muted: #a7b1ab;
+    --accent: #19e68c; --accent-ink: #05140d; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.55;
+    padding-block: 32px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(1.9rem, 4.5vw, 2.5rem); line-height: 1.12; margin: 0; font-weight: 700; text-wrap: balance; letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; margin: 0 0 8px; font-weight: 700; }
+  p { margin: 0; max-width: 66ch; }
+  .lead { font-size: 1.1rem; color: var(--muted); }
+  .kicker { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  .card { background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .open { align-self: flex-start; display: inline-block; padding: 10px 16px; min-height: 44px; border-radius: 8px; font-weight: 600; text-decoration: none; background: var(--accent); color: var(--accent-ink); }
+  .open:hover { filter: brightness(1.08); }
+  a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  ul, ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; max-width: 66ch; }
+  .note { color: var(--muted); font-size: 0.92rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Encore, updated 1 November 2026</p>
+    <h1>How Encore will look</h1>
+    <p class="lead">One direction, Spotify-like in colours and layout: the cover is the biggest thing on every page, and the screens people know (Now playing, Search, Library) are arranged as in the app they already use. Only the first-run screens, where Encore finds your server, have a personality of their own.</p>
+  </header>
+
+  <section aria-labelledby="read">
+    <h2 id="read">How to read these drawings</h2>
+    <p>The drawings below were made on 24 and 25 October. The app has changed since, and the app as built is the reference for every screen that exists: it is arranged like Spotify's, which is the aim. A redraw of Now playing, the sleep timer, Your server and the first-run screens was tried on 31 October and not taken, so these files have not been redrawn.</p>
+    <p>Use them for pages that are not built yet (the installer wizard, the admin pages, the server's own front page) and as history. Where a screen exists, these are the known differences from the app:</p>
+    <ul>
+      <li><strong>Now playing</strong> draws a device icon and a share icon: the app has neither, because nothing is behind them yet.</li>
+      <li><strong>The sleep timer and equalizer</strong> frames draw a playback speed control: the app has none.</li>
+      <li><strong>Your server</strong> draws a "Testing…" button: the app has no such button. It checks each address by itself and shows its answer next to it.</li>
+      <li><strong>Home</strong> draws your profile picture at the top right: in the app it is at the top left, as in Spotify, and opens the profile menu.</li>
+      <li><strong>Settings, Notifications</strong> draws two phone categories, both off: the app still has three switches. Trimming them to two is planned for the second release candidate.</li>
+      <li><strong>Devices, Share and Jam</strong> are not in this release: the app hides every way into them.</li>
+      <li><strong>TV, tablet and car frames</strong> are parked: Encore is for phone and PC for now. The files keep those frames as history.</li>
+    </ul>
+    <p class="note">New pages are drawn only when they are about to be built, and only for phone and PC.</p>
+  </section>
+
+  <section class="card" aria-labelledby="draw">
+    <h2 id="draw">The drawing</h2>
+    <p>Four screens (Home, Now playing, Search with an artist page, Welcome and Your server), each for phone and PC (the TV frames are parked), dark and light, normal and double-size text, left-to-right and right-to-left. The buttons at the top switch between them. It has the changes you asked for on 24 October: Now playing is Spotify's, the yellow boxes are gone, the server is called "Our music", and "Your server" was redrawn. It was not redrawn after that. Now playing (states: Playing, Waiting for the server, Cannot play, Scrolled down: the lyrics card) and Your server are the two frames with known differences, so read them together with the list above.</p>
+    <a class="open" href="a-cover-led.html">Open the drawing</a>
+  </section>
+
+  <section class="card" aria-labelledby="play">
+    <h2 id="play">Lyrics, devices, Jam, people, Year in Music and more</h2>
+    <p>Lyrics, the song menu and Add to playlist, sleep timer and equalizer (the app has no speed control), Devices (play here, play there), Share, Jam, People and Invite someone, Year in Music as a story, Import and Requests, Recently played, What's new (the bell), Song credits, a person's profile, the profile menu, and the two later features (Friend activity, Taste match, both off until you say yes). Devices, Share and Jam are not in this release. 164 frames.</p>
+    <a class="open" href="screens-player-together-and-more.html">Open these screens</a>
+  </section>
+
+  <section class="card" aria-labelledby="lib">
+    <h2 id="lib">Library, albums, playlists and search</h2>
+    <p>The search start page, genre pages, Your Library (every tab, sort and filter, empty and offline), Liked Songs, Downloaded, Playlist (yours, shared, editing, a refused edit), Album (on the server, partly on it, from the catalogue), the imported playlist, Show all, and Create. 130 frames.</p>
+    <a class="open" href="screens-library-and-browse.html">Open these screens</a>
+  </section>
+
+  <section class="card" aria-labelledby="more">
+    <h2 id="more">More screens</h2>
+    <p>The first-run and account screens (Join, Sign in, Sign in again, Who is listening, Bring your music, Pick a server; signing in on a TV is parked), Your account with the profile picture, the whole Settings list and its nine pages, People and household, About, the permission and update screens, and the lock screen and notification (the car display is parked). 172 frames; Compare states shows every state of a screen side by side.</p>
+    <a class="open" href="screens-first-run-and-settings.html">Open these screens</a>
+  </section>
+
+  <section class="card" aria-labelledby="web">
+    <h2 id="web">The server's own pages</h2>
+    <p>What the person who runs the server sees in a browser: the installer (eight steps, with its refusals, such as a name that is taken or a disk that is almost full), the admin pages (Home, People, Library, Away from home, Backups, Updates, Settings, Logs), and the page an invitation link opens. The web player is drawn too and is parked. 68 frames.</p>
+    <a class="open" href="screens-server-and-browser.html">Open these screens</a>
+  </section>
+
+  <section aria-labelledby="said">
+    <h2 id="said">What you said, and what changed</h2>
+    <ul>
+      <li><strong>Three buttons at the bottom</strong> (Home, Search, Your Library): kept.</li>
+      <li><strong>Now playing</strong> is Spotify's: chevron, "Playing from", big cover, title and heart, scrubber, shuffle, previous, play, next, repeat, then the queue icon at the bottom. Lyrics appear as a card. The "Next:" card is gone. The drawing also has a device icon and a share icon. The app has neither, because nothing is behind them yet (decided on 30 October).</li>
+      <li><strong>No "owned" or "catalogue" labels.</strong> Songs show only Spotify's icons: downloaded, liked, explicit. You do not need to know what is on the server.</li>
+      <li><strong>The server is named for the household</strong> ("Our music"), never one person.</li>
+      <li><strong>Welcome and "Your server"</strong> keep the friendly personality. "Your server" has "At home" and "Away from home", and the app has no test button (decided on 30 October): each address is checked by itself when the page opens and shows its own answer. The drawing still has the button.</li>
+      <li><strong>Servers that do not talk to other servers</strong> simply do not show anything about friends elsewhere: no empty boxes, no greyed-out menus.</li>
+      <li><strong>Comparing listening habits</strong> (you both like this artist, your favourite genre is that) is written down as a later feature, off by default, and only when both people say yes.</li>
+      <li><strong>Adding a friend in Spotify</strong> means following them (Search, then Profiles, or their profile link or code). In Encore, people on your server are already there; others join with an invitation link.</li>
+    </ul>
+    <p class="note">The two other directions that were drawn first are dropped.</p>
+  </section>
+
+  <section aria-labelledby="decided">
+    <h2 id="decided">Decided for you while you were away</h2>
+    <p>Everything the drawings left open was decided and written down (in <code>docs/design/03</code>). Tell me which ones to undo.</p>
+    <ul>
+      <li><strong>The admin has eight pages</strong>: Home, People, Library, Away from home, Backups, Updates, Settings, Logs. Backups and Updates stay two pages.</li>
+      <li><strong>Recommendations</strong> shows in the admin only as a grey "later" line, not a switch, until they exist. The same goes for YouTube Music's data file when you bring your music.</li>
+      <li><strong>The six-digit code</strong> is what you would type on a TV (parked); the invitation link carries a longer code you never type.</li>
+      <li><strong>The phone shows no notifications unless you switch them on.</strong> News goes to the bell inside the app. The app still has three switches in Settings, Notifications where this decision allows two; they are trimmed after the first test rounds.</li>
+      <li><strong>Tablet layouts are parked</strong>, like the TV, as your phone-and-PC decision says. The phone layout scales up.</li>
+      <li><strong>The person chooses the streaming quality away from home</strong>, as in Spotify; the server's owner may cap it, and the app mentions a cap only when there is one.</li>
+      <li><strong>No person's name in a server's pages</strong> ("Our music", a folder called Host).</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="next">
+    <h2 id="next">What happens next</h2>
+    <ol>
+      <li><strong>The first release candidate is tested as the app is built now.</strong> Restyling every screen first would make the test meaningless. Afterwards a screen changes only when there is a reason, and it stays arranged like Spotify's.</li>
+      <li>New pages, such as the installer wizard and the server's front page, are drawn only when they are about to be built, and only for phone and PC.</li>
+      <li><strong>The second release candidate builds the pages that do not exist yet.</strong> In this order: the new person's Home and the album wall on the Welcome pages, the installer wizard, the server's front page, the admin pages, a person's profile and account, and Recently played.</li>
+    </ol>
+    <p class="note">If a screen feels wrong, tell me which one.</p>
+  </section>
+</main>
+</body>
+</html>

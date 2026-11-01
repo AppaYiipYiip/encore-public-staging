@@ -43,6 +43,8 @@ Inputs: the three files in `directions/` (open one in a browser; every view has 
 
 ## Next
 
+**Status 2026-11-01.** Items 1 and 2 are done: the five drawing files exist, and the owner was shown them on a private page (now `directions/index.html`), chose on 2026-10-24 and answered again on 2026-10-31 (D-43). Item 3 became the rule of D-43: the built screen is the reference, and a page is drawn only when it is new and about to be built.
+
 1. Draw the rest of `00-screen-inventory.md` in direction A (Library, Album, Playlist, Lyrics, Queue, Song menu, Settings, Import, Jam, Year in Music, Join, the browser pages), each with its states, at C, X and T. One file per group, in `directions/` or `screens/`.
 2. Show the owner the choice and the three drawings (a private page), with the reasons above in his words. Nothing is coded before the owner has had the chance to say no.
 3. Code, screen by screen, **golden pictures first** (text 1.0 and 2.0, left-to-right and right-to-left, dark and light), then the screen (ADR-R41 T6). The first three: the light tokens, the state marks in the player, then Home.
