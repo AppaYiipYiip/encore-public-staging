@@ -30,8 +30,6 @@ log = logging.getLogger("encore_server.accounts")
 
 INVITE_TTL_S = 7 * 24 * 3600
 RESET_TTL_S = 3600
-#: Wrong passwords for one account before it is locked until the owner unlocks it (docs/21 section 4).
-LOCK_AFTER_FAILURES = 20
 
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"  # no 0/O, 1/I/L: a code is read out and typed
 _USERNAME = re.compile(r"^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$")
@@ -102,6 +100,66 @@ class Limiter:
         wait = self.allow(key, limit, window_s)
         if wait is not None:
             raise ApiError("rate_limited", "Too many tries. Wait a moment and try again.", retry_after_ms=wait)
+
+    def peek(self, key: str, limit: int, window_s: float) -> int | None:
+        """Like [allow], but without counting this one: how many milliseconds to wait, or `None` when the key is under its limit."""
+        now = self._clock()
+        with self._lock:
+            hits = self._hits.get(key)
+            if not hits:
+                return None
+            while hits and now - hits[0] >= window_s:
+                hits.popleft()
+            if len(hits) >= limit:
+                return int((hits[0] + window_s - now) * 1000) + 1
+        return None
+
+    def hit(self, key: str, window_s: float) -> None:
+        """Counts one for [key] without asking anything."""
+        now = self._clock()
+        with self._lock:
+            hits = self._hits[key]
+            while hits and now - hits[0] >= window_s:
+                hits.popleft()
+            hits.append(now)
+            if len(self._hits) > 5000:  # a flood of different keys must not grow this for ever
+                for stale in [k for k, v in self._hits.items() if not v or now - v[-1] >= window_s]:
+                    del self._hits[stale]
+
+
+class LoginGuard:
+    """Wrong guesses are **slowed**, never punished with a lock (AUDIT B1 and B2, docs/32 AC-21).
+
+    What is counted is a *wrong* answer, per name and address and per address, in a minute. A request that is about to be checked is refused first when
+    its address has been wrong too often, so a guesser is not allowed to keep asking the music server. Nothing here is ever held against a name on
+    its own: a stranger's wrong guesses from his address change nothing for the owner's phones, which are at another address, and a *correct*
+    login is never refused because of somebody else's wrong ones. Nobody is locked and no device is signed out by a guess.
+    """
+
+    PAIR = (5, 60.0)
+    ADDRESS = (30, 60.0)
+
+    def __init__(self, limiter: Limiter) -> None:
+        self._limiter = limiter
+
+    @staticmethod
+    def _pair(name: str, address: str) -> str:
+        return f"guess:{name.strip().lower()[:64]}@{address}"
+
+    def refuse(self, name: str, address: str) -> None:
+        waits = [
+            self._limiter.peek(self._pair(name, address), *self.PAIR),
+            self._limiter.peek(f"guess-address:{address}", *self.ADDRESS),
+        ]
+        wait = max((w for w in waits if w is not None), default=None)
+        if wait is not None:
+            raise ApiError(
+                "rate_limited", "Too many wrong passwords from here. Wait a moment and try again.", retry_after_ms=wait
+            )
+
+    def failed(self, name: str, address: str) -> None:
+        self._limiter.hit(self._pair(name, address), self.PAIR[1])
+        self._limiter.hit(f"guess-address:{address}", self.ADDRESS[1])
 
 
 class Accounts:
@@ -371,19 +429,13 @@ class Accounts:
     # ------------------------------------------------------------------ wrong passwords
 
     def failed_login(self, username: str) -> None:
-        """A wrong password for a person who exists: counted; at [LOCK_AFTER_FAILURES] the account is locked until the owner unlocks it."""
+        """A wrong password for a person who exists: counted for the owner to see, **and nothing more**. It used to lock the account after twenty and
+        sign out every device, which let a stranger lock the only owner out of his own server (AUDIT B2). Slowing the guesses is [LoginGuard]'s job;
+        a lock is only ever the owner's own act."""
         with self._db.tx() as conn:
-            row = conn.execute("SELECT id, failed_logins, locked FROM person WHERE navidrome_user = ?", (username,)).fetchone()
-            if row is None or row["locked"]:
-                return
-            count = row["failed_logins"] + 1
             conn.execute(
-                "UPDATE person SET failed_logins = ?, locked = ? WHERE id = ?",
-                (count, 1 if count >= LOCK_AFTER_FAILURES else 0, row["id"]),
+                "UPDATE person SET failed_logins = failed_logins + 1 WHERE navidrome_user = ? AND locked = 0", (username,)
             )
-            if count >= LOCK_AFTER_FAILURES:
-                conn.execute("UPDATE device SET revoked_at = ? WHERE person = ? AND revoked_at IS NULL", (now_ms(), row["id"]))
-                log.warning("%s was locked after %d wrong passwords", username, count)
 
     def good_login(self, person_id: str) -> None:
         with self._db.tx() as conn:

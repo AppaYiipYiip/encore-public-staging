@@ -73,6 +73,12 @@ class NavidromeVerifier:
             return None
         return body if isinstance(body, dict) else None
 
+    def known_good(self, user: str, token: str, salt: str) -> bool:
+        """Has the music server already said yes to exactly these credentials, a moment ago? Such a login is never held up by a limit: the limit is
+        for guesses, and a guess is by definition not a login the music server has vouched for (AUDIT B1)."""
+        seen = self._ok.get((user, token, salt))
+        return seen is not None and self._clock() - seen < self._ttl
+
     def verify(self, user: str, token: str, salt: str) -> bool:
         key = (user, token, salt)
         seen = self._ok.get(key)

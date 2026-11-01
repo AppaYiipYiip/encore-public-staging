@@ -9,7 +9,7 @@ own logins; nothing is added or removed here except what a proxy must (the hop-b
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 
 import httpx
 from fastapi import FastAPI, Request
@@ -41,8 +41,19 @@ def _forward(headers: httpx.Headers | dict[str, str] | object) -> dict[str, str]
     return {k: v for k, v in items if k.lower() not in _HOP and k.lower() != "content-length"}
 
 
-def mount(app: FastAPI, upstream: str, *, client: httpx.AsyncClient | None = None) -> None:
-    """Adds the catch-all route that passes everything not handled by this server to [upstream]. Call it after every other route."""
+def mount(
+    app: FastAPI,
+    upstream: str,
+    *,
+    client: httpx.AsyncClient | None = None,
+    public: Callable[[Request], bool] | None = None,
+) -> None:
+    """Adds the catch-all route that passes everything not handled by this server to [upstream]. Call it after every other route.
+
+    A request that comes in from the public internet ([public] says so) is passed on only for the Subsonic API (`/rest/...`), which is all the app
+    and the Subsonic apps people already use ask for. The music server's own web page, its sign-in and its `/api` stay on the home network: through
+    Funnel they would put a second, unguarded front door on the internet (AUDIT B12).
+    """
     base = upstream.rstrip("/")
     http = client or httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0), follow_redirects=False)
 
@@ -50,6 +61,8 @@ def mount(app: FastAPI, upstream: str, *, client: httpx.AsyncClient | None = Non
     async def pass_on(path: str, request: Request) -> Response:
         if path.startswith("encore/") or path == "encore":
             # An unknown route of our own is ours to say "not found" about, not Navidrome's.
+            return JSONResponse(ApiError("not_found").body(), status_code=404)
+        if public is not None and public(request) and path != "rest" and not path.startswith("rest/"):
             return JSONResponse(ApiError("not_found").body(), status_code=404)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
         headers = _forward(request.headers)

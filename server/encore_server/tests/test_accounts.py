@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from encore_server.accounts import LOCK_AFTER_FAILURES, Accounts, Limiter, hash_code, new_code
+from encore_server.accounts import Accounts, Limiter, hash_code, new_code
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.db import Database
@@ -340,29 +340,24 @@ def test_five_tries_a_minute_for_one_name_and_then_a_wait_that_says_how_long(rig
     assert attempts[5].json()["error"]["retryAfterMs"] > 0
 
 
-def test_twenty_wrong_passwords_lock_the_account_until_the_owner_unlocks_it(rig: Rig) -> None:
+def test_wrong_passwords_never_lock_an_account_or_sign_out_its_phones(rig: Rig) -> None:
+    """AUDIT B2: twenty wrong guesses used to lock the account and sign out every device, which let a stranger lock the only owner out of his own
+    server. Wrong passwords are slowed (see test_public_edge), never punished; a lock is only an owner's own act."""
     accounts: Accounts = rig.client.app.state.services.accounts  # type: ignore[attr-defined]
     token = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).json()["deviceToken"]
 
-    for _ in range(LOCK_AFTER_FAILURES):
+    for _ in range(60):
         accounts.failed_login("nina")
 
-    assert rig.person_of("nina")["locked"] is True
-    assert rig.client.get(f"{V1}/me", headers=rig.bearer(token)).status_code == 401
-    # and right after a good sign-in the count starts again
-    nina = rig.person_of("nina")["id"]
-    rig.client.patch(f"{V1}/people/{nina}", params=creds("marwa"), json={"locked": False})
-    for _ in range(LOCK_AFTER_FAILURES - 1):
-        accounts.failed_login("nina")
-    assert rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).status_code == 200
-    accounts.failed_login("nina")
     assert rig.person_of("nina")["locked"] is False
+    assert rig.client.get(f"{V1}/me", headers=rig.bearer(token)).status_code == 200, "her phone is still signed in"
+    assert rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).status_code == 200
 
 
 def test_a_name_nobody_has_is_not_counted_or_locked(rig: Rig) -> None:
     accounts: Accounts = rig.client.app.state.services.accounts  # type: ignore[attr-defined]
 
-    for _ in range(LOCK_AFTER_FAILURES + 5):
+    for _ in range(25):
         accounts.failed_login("nobody")
 
     assert [p["username"] for p in rig.client.get(f"{V1}/people", params=creds("marwa")).json()["items"]] == ["marwa", "nina"]

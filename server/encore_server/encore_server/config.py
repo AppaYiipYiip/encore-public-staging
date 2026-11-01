@@ -22,6 +22,9 @@ class Settings:
     host: str = "0.0.0.0"  # noqa: S104 - a container: the published port is the only way in
     port: int = 4533
     server_name: str = "My music server"
+    #: Addresses (or networks, `10.0.0.0/8`) of the proxies in front of this server whose `X-Forwarded-For` is believed, besides this machine, the
+    #: home and Docker networks and Tailscale, which always are (AUDIT B11). Empty is right for the guided install.
+    trusted_proxies: tuple[str, ...] = ()
     log_level: str = "INFO"
     youtube: bool = True
     #: The server fetches, checks and switches to a newer yt-dlp by itself (docs/11 ADR-R39). Off for a Host who pins versions or has no outside access.
@@ -60,6 +63,7 @@ class Settings:
             host=e.get("ENCORE_HOST", "0.0.0.0"),  # noqa: S104
             port=int(e.get("ENCORE_PORT", "4533")),
             server_name=e.get("ENCORE_SERVER_NAME", "My music server"),
+            trusted_proxies=tuple(p.strip() for p in e.get("ENCORE_TRUSTED_PROXIES", "").split(",") if p.strip()),
             log_level=e.get("ENCORE_LOG_LEVEL", "INFO").upper(),
             youtube=e.get("ENCORE_YOUTUBE", "1").strip().lower() not in ("0", "false", "no"),
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),

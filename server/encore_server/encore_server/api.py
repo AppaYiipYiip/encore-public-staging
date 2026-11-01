@@ -17,6 +17,7 @@ import time
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
@@ -24,8 +25,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
-from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, playback, refs
-from .accounts import Accounts, Limiter
+from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refs
+from .accounts import Accounts, Limiter, LoginGuard
 from .auth import (
     COVER_PASS_SCOPE,
     COVER_PASS_TTL_S,
@@ -42,6 +43,7 @@ from .auth import (
     subsonic_token,
     valid_stream_signature,
 )
+from .bodylimit import BodyLimit
 from .config import Settings
 from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
@@ -125,8 +127,17 @@ def get_principal(request: Request) -> Principal:
     if creds is None:
         raise ApiError("unauthorized")
     user, subsonic, salt = creds
-    if not svc.verifier.verify(user, subsonic, salt):
-        raise ApiError("unauthorized", "The music server did not accept that login.")
+    known = getattr(svc.verifier, "known_good", None)
+    if known is None or not known(user, subsonic, salt):
+        # Not a login the music server has already vouched for: a guesser is slowed before the music server is asked, a locked account says so
+        # whatever the password (so its answer never confirms a right one), and a wrong answer is counted (AUDIT B1, B2).
+        address = client_address(request)
+        guard = LoginGuard(limiter_of(request))
+        guard.refuse(user, address)
+        _refuse_locked(svc, user)
+        if not svc.verifier.verify(user, subsonic, salt):
+            guard.failed(user, address)
+            raise ApiError("unauthorized", "The music server did not accept that login.")
     with svc.db.tx() as conn:
         existing = conn.execute("SELECT * FROM person WHERE navidrome_user = ?", (user,)).fetchone()
         admin = existing is None and svc.verifier.is_admin(user, subsonic, salt)
@@ -135,6 +146,14 @@ def get_principal(request: Request) -> Principal:
             raise ApiError("forbidden", "This account is locked.")
         device = request.headers.get("x-encore-device")
         return Principal(person["id"], user, person["role"], device if device and is_id(device, "dv") else None)
+
+
+def _refuse_locked(svc: Services, user: str) -> None:
+    """A locked account is refused before its password is looked at, so the answer never tells anybody whether a guess was right."""
+    with svc.db.read() as conn:
+        row = conn.execute("SELECT locked FROM person WHERE navidrome_user = ?", (user,)).fetchone()
+    if row is not None and row["locked"]:
+        raise ApiError("forbidden", "This account is locked. Ask the owner of this server to unlock it.")
 
 
 async def json_body(request: Request) -> dict[str, Any]:
@@ -208,11 +227,22 @@ def server_addresses(request: Request, p: Principal = Depends(get_principal)) ->
 
 
 def client_address(request: Request) -> str:
-    """Who is asking: the address of the connection, or - when that is the tunnel on this machine or home network - what the tunnel says."""
+    """Who is asking, for every limit: the address of the connection; and only when that connection is a proxy of ours (this machine, the home or
+    Docker network, Tailscale, or one the owner listed) the address it says it forwarded: the right-most one that is not itself a proxy, never the
+    client-written first one (AUDIT B11, `netaddr`)."""
     peer = request.client.host if request.client else ""
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    private = peer.startswith(("127.", "10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "::1", "fd", "fc"))
-    return forwarded if forwarded and private else peer
+    extra = netaddr.networks(services(request).settings.trusted_proxies)
+    return netaddr.client_address(peer, request.headers.get("x-forwarded-for"), extra)
+
+
+def is_public_request(request: Request) -> bool:
+    """Did this request come in from the public internet (through the away address, or from an address that is not ours)? The gateway lets such a
+    request reach only the Subsonic API of the music server (AUDIT B12)."""
+    away = services(request).settings.away_url
+    host = (request.headers.get("host") or "").rsplit(":", 1)[0].lower() if "]" not in (request.headers.get("host") or "") else ""
+    if away and host and host == (urlparse(away).hostname or "").lower():
+        return True
+    return netaddr.is_public(client_address(request))
 
 
 def accounts_of(request: Request) -> Accounts:
@@ -241,18 +271,21 @@ def require_owner(p: Principal) -> None:
 @router.post("/auth/login")
 def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONResponse:
     """Signs in with the music server's login, once: the password is turned into a Subsonic token, checked, and dropped. The app keeps
-    the device token it gets back instead. Five tries a minute for one name and twenty for one address; twenty wrong passwords in all lock
-    the account until the owner unlocks it."""
+    the device token it gets back instead. Wrong passwords are slowed (five a minute for one name from one address, thirty for one address)
+    and never lock anybody: a lock is only the owner's own act (AUDIT B2)."""
     svc = services(request)
     user = body.get("username")
     password = body.get("password")
     if not isinstance(user, str) or not isinstance(password, str) or not user or not password:
         raise ApiError("validation", "Enter your username and password.")
-    limiter_of(request).refuse(f"login:{user.lower()}", 5, 60)
-    limiter_of(request).refuse(f"login-address:{client_address(request)}", 20, 60)
+    address = client_address(request)
+    guard = LoginGuard(limiter_of(request))
+    guard.refuse(user, address)
+    _refuse_locked(svc, user)
     salt = secrets.token_hex(6)
     token = subsonic_token(password, salt)
     if subsonic_credentials({"u": user, "t": token, "s": salt}, {}) is None or not svc.verifier.verify(user, token, salt):
+        guard.failed(user, address)
         accounts_of(request).failed_login(user)
         raise ApiError("unauthorized", "The username or the password was not accepted.")
     name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
@@ -447,9 +480,12 @@ def change_password(
     old = body.get("oldPassword")
     if not isinstance(old, str) or not old:
         raise ApiError("validation", "Enter your current password.")
-    limiter_of(request).refuse(f"login:{p.navidrome_user.lower()}", 5, 60)
+    address = client_address(request)
+    guard = LoginGuard(limiter_of(request))
+    guard.refuse(p.navidrome_user, address)
     salt = secrets.token_hex(6)
     if not services(request).verifier.verify(p.navidrome_user, subsonic_token(old, salt), salt):
+        guard.failed(p.navidrome_user, address)
         accounts_of(request).failed_login(p.navidrome_user)
         raise ApiError("unauthorized", "The current password was not accepted.")
     accounts_of(request).change_password(p.navidrome_user, body.get("newPassword"))
@@ -1239,7 +1275,7 @@ def create_app(
             if scheduler is not None:
                 scheduler.stop()
 
-    app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, lifespan=lifespan)
+    app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.services = Services(
         settings=settings,
         db=database,
@@ -1258,11 +1294,12 @@ def create_app(
         music=client,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
+    app.add_middleware(BodyLimit)
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
     app.add_api_route("/encore/cover/{cover_id}", cover, methods=["GET", "HEAD"])
     app.add_api_websocket_route("/encore/live", live)
-    gateway.mount(app, settings.navidrome_url, client=gateway_client)
+    gateway.mount(app, settings.navidrome_url, client=gateway_client, public=is_public_request)
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, error: ApiError) -> JSONResponse:
