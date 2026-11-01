@@ -18,6 +18,8 @@ Written 2026-10-30 after the owner's feedback: *"your test standards are very lo
 
 ## 2. The blockers, in order
 
+**Status 2026-11-01.** The State column below is the snapshot of 2026-10-30 16:12 and has not been edited since; the log in section 6 and the Progress of `CLOUD-RESUME.md` are the record. What is on `main` since then: B1 as #47 (`7ac8321`); B2 as #62 (`a6aef94`) and #63 (`513d875`); in B7 and B8, F33 as #52 (`f1e27b0`) and F34, F35, F38 and F42 as RC1 batch A, #57 (`699fa56`); the rest of what B7 and B8 name is in the phone batch, #91 (`451d4dc`), according to the docs audit. All of it is built and tested, not walked on a phone. B4 to B6 (the build, the rehearsal, the advisor's reading of `b11`) have not started: they need a local session.
+
 | # | Blocker | State (2026-10-30, 16:12) |
 |---|---------|---------------------------|
 | B0 | `main` CI green for the merges of #43 and #44 (the run for #43's merge was cancelled by the next push; the run for #44 is `verify` in progress; #44's own debug build had not finished when it was merged, which was a mistake) | **Closed 16:30.** The App run for the merge of #44 (`be5ed2a`) first **failed** in `android-debug-build` (the runner's `sdkmanager` could not unpack the NDK: an infrastructure error, not the code; #44's own debug build had not finished when I merged it, which was my mistake). Re-run of that job by run id: **success**. The run for #43's merge was cancelled by the next push, but #43's own PR run was fully green. Server and image runs for the newest server change (`c8a1853`) succeeded |
