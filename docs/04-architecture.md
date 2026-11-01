@@ -67,16 +67,18 @@ people). PostgreSQL would add a container and an administrator for no benefit.
 ## 3. The data model: songs are references; files are attached (ADR-R4)
 
 ```
-song_ref (id: "enc_…")         one row per real-world recording Encore knows about
+song_ref (id: "sr_…")          one row per real-world recording Encore knows about
   title, artists[], album, duration_ms, isrc?, mbid?, deezer_id?, ytm_video_id?, cover_url?
-  file_id? ──► navidrome_song_id (when the server keeps a copy), path, codec, bitrate
-person_library(person, song_ref, kind: like|saved_album|…, at)
-playlist(id, owner, name, cover?, …)   playlist_entry(playlist, position, song_ref, added_by, at)
-play_event(person, song_ref, at, ms_played, device)          → Year in Music, history, "recently played"
-playback_state(person, song_ref, position_ms, queue[], context, shuffle, repeat, active_device, updated_at)
-device(id, person, name, token_hash, last_seen)
-keep_job(song_ref, state, attempts, last_error, priority)     import(id, person, source, state, counts)
+song_file(ref ──► song_ref)    the copy the server keeps: navidrome_song_id, path, codec, bitrate_kbps, source, preferred
+library_item(person, kind: like|saved_album|follow_artist, target, at)
+playlist(id, owner, name, cover?, …)   playlist_entry(playlist, position, ref, added_by, at)
+play_event(person, ref, at, ms_played, device)               → Year in Music, history, "recently played"
+playback_state(person, ref, position_ms, queue[], idx, context, shuffle, repeat, playing, active_device, rev, updated_at)
+device(id, person, name, token_hash, last_seen, revoked_at, …)
+work_item(kind, ref, state, attempts, error, priority)        import(id, person, source, state) + import_entry
 ```
+
+The columns of every table are in `18` section 1; the migrations (`server/encore_server/encore_server/migrations/`) are the source.
 
 * A **song ref** exists the moment anyone sees a song (search, import, recommendation). It is the identity used everywhere:
   likes, playlists, queues, playback state, history.

@@ -7,20 +7,24 @@ the owner's existing data or keep the old model alongside the new one forever.
 
 | Table | Key columns | Notes |
 |-------|-------------|-------|
-| `person` | id, navidrome_user, display_name, role (`owner`, `member`), invited_by, created_at, locked, explicit_ok, federation_ok | Navidrome keeps the password; Encore keeps everything else |
-| `device` | id, person, name, kind, token_hash, app_version, last_seen, available, shared, always_ready, volume | `13` §2 |
-| `song_ref` | id, title, artists (json), album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id, ytm_video_id, cover_url, explicit, norm_key, created_at | `norm_key` = normalised artist+title+duration bucket (`19` §2); unique on isrc, on ytm_video_id, on deezer_id where present |
-| `song_file` | id, ref, navidrome_song_id, path, codec, bitrate, loudness_lufs, source (`library`, `youtube`, `quality`), added_at | one ref may have several files; `preferred` chosen by quality; the old file kept 14 days after an upgrade |
+| `person` | id, navidrome_user, display_name, role (`owner`, `member`), invited_by, created_at, locked, explicit_ok, federation_ok, failed_logins | Navidrome keeps the password; Encore keeps everything else |
+| `device` | id, person, name, kind, token_hash, app_version, created_at, last_seen, revoked_at, available, shared, always_ready, volume | `13` §2 |
+| `song_ref` | id, title, artists (json), album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id, ytm_video_id, cover_url, explicit, norm_key, created_at, cover_tried_at | `norm_key` = normalised artist+title+duration bucket (`19` §2); unique on isrc, on ytm_video_id, on deezer_id where present; `cover_tried_at` = when the server last looked for a picture, so a song nobody has one for is not asked about every hour |
+| `song_file` | id, ref, navidrome_song_id, path, codec, bitrate_kbps, loudness_lufs, source (`library`, `youtube`, `quality`), preferred, added_at, meta (json: the music server's ids for the album, artist and cover, size, suffix, replay gain) | one ref may have several files; `preferred` chosen by quality; the old file kept 14 days after an upgrade |
 | `library_item` | person, kind (`like`, `saved_album`, `follow_artist`), target, at | per-person set; tombstones in `change_log` |
-| `playlist` / `playlist_entry` | id, owner, name, cover, collaborative / id, playlist, position (fractional index), ref, added_by, at | fractional positions make concurrent moves mergeable (`17` §5) |
-| `play_event` | person, ref, at, ms_played, device, context | Year in Music, history, recommendations |
-| `playback_state` | person, ref, position_ms, queue (json of refs), index, context, shuffle, repeat, playing, active_device, rev, updated_at | `13` §2, ADR-R9 |
+| `playlist` / `playlist_entry` | id, owner, name, cover, collaborative, created_at, updated_at, deleted_at, source_id (`nd:<the music server's playlist id>`, so bringing a library over is done once per source playlist) / id, playlist, position (fractional index), ref, added_by, at, deleted_at | fractional positions make concurrent moves mergeable (`17` §5) |
+| `play_event` | id (made by the phone: a retried report is one play), person, ref, at, ms_played, device, context | Year in Music, history, recommendations |
+| `playback_state` | person, ref, position_ms, queue (json of refs), idx, context, shuffle, repeat, playing, active_device, rev, updated_at | `13` §2, ADR-R9 |
 | `work_item` / `work_item_person` | id, kind (`play`, `prepare`, `download`, `match`, `keep`, `measure`), ref, priority, state (`queued`, `running`, `done`, `failed`, `cancelled`), attempts, next_try_at, error / item, person | the scheduler of `04` §10 lives here, so a restart resumes. One active item per kind and song (single flight); `work_item_person` says who wants it, so Stop cancels only what nobody else needs (built in `server/encore_server/encore_server/scheduler.py`) |
-| `import` / `import_entry` | id, person, source, url, state, counts / import, position, raw (json), ref, state | |
-| `change_log` | person, seq, kind, payload, at | feeds `library/changes` cursors and tombstones |
-| `profile` | person, vectors (json), updated_at | recommendations (`20`) |
-| `friend` / `remote_server` | person, remote_handle, server, state / server, public_key, first_seen, allowed | federation (`13` §4) |
-| `invite`, `session_code`, `idempotency_key`, `problem_report`, `setting` | | |
+| `import` / `import_entry` | id, person, source (`youtube`, `spotify`, `file`), url, name, playlist, state (`running`, `done`, `stopped`, `failed`), truncated, error, created_at, updated_at / import, position, ref, state (`pending`, `matched`, `not_found`), video | the counts a person sees are counted from `import_entry`, not stored |
+| `change_log` | seq, person, kind (`like`, `saved_album`, `follow_artist`, `playlist`, `entry`), target, at | feeds `library/changes` cursors: a row says "this thing was touched"; the current state is read from the tables (a deleted playlist or entry keeps its row with `deleted_at`), so a phone that misses a row or asks twice still ends right |
+| `file_log` | seq, ref, at | which songs' files changed, in order: the feed of `GET /library/files?since=` |
+| `invite` / `reset_code` | id, code_hash, role, created_by, note, created_at, expires_at, used_by, used_at, revoked_at / id, person, code_hash, created_at, expires_at, used_at | `21`; only the hash of a code is kept, the code is shown once |
+| `notification` | id, person, kind (`release`, `jam`, `invite_used`, `import_done`), title, body, route, dedupe, created_at, read_at | the bell (ADR-R44): news kept per person and said in words, the same news told twice is made once |
+| `idempotency_key`, `setting` | person, key, response, status, at / key, value | a write that is not naturally idempotent remembers its answer for 7 days (the `Idempotency-Key` header); settings |
+| `profile` | person, vectors (json), updated_at | **planned, no migration yet**: recommendations (`20`) |
+| `friend` / `remote_server` | person, remote_handle, server, state / server, public_key, first_seen, allowed | **planned, no migration yet**: federation (`13` §4) |
+| `session_code`, `problem_report` | | **planned, no migration yet** |
 
 Migrations: numbered SQL files run at start-up inside a transaction, with a backup copy of the database taken first
 (`/data/backups/encore-<version>-<time>.db`); a failed migration restores it and the server refuses to start with a plain message.
