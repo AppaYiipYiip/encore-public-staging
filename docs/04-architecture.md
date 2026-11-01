@@ -61,7 +61,7 @@ to be.
 **Why Python.** yt-dlp is Python; running it *in the same process* (warm workers, cached player code) is the measured speed win
 (B3). Most of the existing server code is Python and well-tested; it can be moved, not rewritten.
 
-**Why SQLite.** One file, no admin, trivial backup (`VACUUM INTO`), fast enough for a household (thousands of songs, tens of
+**Why SQLite.** One file, no admin, trivial backup (SQLite's online backup, run while the server keeps running: `11` ADR-R37), fast enough for a household (thousands of songs, tens of
 people). PostgreSQL would add a container and an administrator for no benefit.
 
 ## 3. The data model: songs are references; files are attached (ADR-R4)
@@ -134,9 +134,11 @@ and the app falls back to the server proxy. Use it for downloads only in v1; pla
 Encore will run on residential lines, CGNAT addresses shared with strangers, VPS addresses YouTube distrusts, and in countries
 where YouTube is slow or blocked. The source module must protect the Host's address and degrade honestly.
 
-* **No bursts.** A token bucket per server: interactive look-ups always allowed at a human pace; background look-ups default to
-  **≤ 120 per hour** with random spacing, configurable in Advanced. (One burst on 2026-10-21 passed without refusal; that is one
-  sample on one address and not a basis for defaults.)
+* **No bursts.** Interactive look-ups are always allowed at a human pace; background look-ups take turns and are **spaced a random few seconds
+  apart** (built: `sources/youtube/pace.py`, a gap of 6 to 18 s, 12 s on average, so about 300 an hour at most; the average is `ENCORE_YOUTUBE_PACE_S`).
+  **Planned, not built in the new server:** an hourly cap (**≤ 120 per hour**) and the setting in Advanced (the older fetch service has an hourly import
+  budget, `IMPORT_MAX_PER_HOUR`, default 120; the new server has none). The rest after a refusal is built (`rest.py`: 30 minutes, doubling up to a day).
+  (One burst on 2026-10-21 passed without refusal; that is one sample on one address and not a basis for defaults.)
 * **Back-off on the first sign of trouble** ("Sign in to confirm you're not a bot", HTTP 429, repeated 403): background stops for
   30 min, doubling up to 24 h; interactive continues at a trickle; the admin Health page says so in plain words.
 * **Share work:** one resolution per video at a time (others wait on it), URL cache ~5 h, kept files reused by everyone.

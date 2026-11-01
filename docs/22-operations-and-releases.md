@@ -6,8 +6,9 @@ designed: the old stack updated by hand-run scripts, yt-dlp freshness depended o
 ## 1. Updating the server
 
 * **`encore update`** (and a button-free notice in the admin: "Encore 1.3 is available — run `encore update` on the server"):
-  1. back up the databases (§3) → 2. pull the new pinned images → 3. start them; the server runs its migrations (`18` §1) → 4. health
-  check for 2 minutes → 5. on failure, **roll back automatically** to the previous images and the pre-update backup, and say so.
+  1. back up the databases (§3) → 2. pull the new image → 3. start it; the server runs its migrations (`18` §1) → 4. wait until it answers (up to 3 minutes) → 5. on failure, say so:
+  the old deployment file is kept as `compose.yaml.before-update` and the backup of step 1 is in the backup folder. **Planned, not built:** pinned image versions
+  and an automatic roll back to the previous images and the pre-update backup.
 * Releases: a **monthly** feature release, **hotfix** releases any time, never a breaking API change without the two-release overlap
   (`17` §1). Release notes in plain words.
 * Optional "update automatically at night" (off by default; the Host chooses in the admin).
@@ -19,7 +20,7 @@ YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the 
   The server also keeps a **runtime copy** in `/data/tools/yt-dlp/` that it updates itself (**built, P3-08b; decision and reasons: `11` ADR-R39**): a daily check of
   PyPI at a random time; only releases **older than 24 hours** (protects against a broken or malicious release); the wheel's sha256 must match PyPI's; stored beside the
   current one; a **canary** must pass before anything changes. The canary runs in a child process with the new wheel first on its path, through the server's own
-  `YoutubeSource` (same format selector, same fast client), on one fixed 19-second video, and reads 64 KB of audio. It is a look-up like any other: it takes the pacer's
+  `YoutubeSource` (same format selector, same fast client), on one fixed, long-lived video that is not music (Blender Foundation's open film "Big Buck Bunny"; the first choice, YouTube's first upload, is not playable on the song path), and reads 64 KB of audio. It is a look-up like any other: it takes the pacer's
   turn, does not run while the server rests, is counted, and a refusal during it starts the rest; at most four runs a day. On a pass a pointer file is written and the
   server **restarts itself, but only once nothing has gone through it for a minute and never by force**; Docker starts it again on the new copy (`/info` says which
   version runs and which waits). On a fail the server stays on its copy; if the running copy fails the same canary, YouTube is the problem, the release stays eligible
@@ -33,24 +34,27 @@ YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the 
 
 | What | When | Where | Size |
 |------|------|-------|------|
-| `encore.db` (`VACUUM INTO`), Navidrome's database (its own backup), `.env` and the server's federation key | nightly 03:30, keep 7 + 4 weekly | `/data/backups/` on the same disk (default) or any folder the Host picks (another disk, a share) | MBs |
+| `encore.db` and Navidrome's database, each copied with SQLite's online backup (a throwaway container of the Encore image, one run per database, each checked with SQLite's integrity check), plus a copy of `.env` and `manifest.txt`, in one `encore-backup-<time>.tar.gz`. The server's own identity key (`11` ADR-R40) lives inside `encore.db`, so it is in the archive | nightly at about 03:30 (up to ten minutes later by chance; a systemd timer the installer switches on; `encore autobackup on\|off\|status`), the newest 7 are kept | `/opt/encore/backups` on the same disk (default, mode 700, files 600) or the folder `ENCORE_BACKUP_DIR` in `.env` names (another disk, a share) | MBs |
 | Music files | never automatically (Host's choice, ADR-077) | — | GBs |
-* `encore backup` makes one now; `encore restore <file>` restores and restarts; **CI restores a real backup every night** on a fresh
-  server and compares counts, so restore is never untested.
-* Backups contain secrets (`.env`, the federation key): stored with owner-only permissions; the admin warns when the backup folder is on
+* `encore backup` makes one now; `encore restore <file>` checks it, asks, stops the servers, **sets the current files aside** in `before-restore-<time>/` (never deletes them),
+  puts the two databases back, starts again and waits until the server answers. The decision and its reasons: `11` ADR-R37; run on real machines, including a move to another
+  computer: `evidence/c02-backup-restore.md`. A backup is also taken before every `encore update`.
+* **Planned, not built:** CI that restores a real backup every night on a fresh server and compares counts (today restore was proved by hand, `evidence/c02-backup-restore.md`).
+* Backups contain secrets (`.env` holds the music server's administrator login): stored with owner-only permissions. **Planned, not built:** the admin warning when the backup folder is on
   a share others can read.
 
 ## 4. Moving to a new computer
 
-`encore backup --full` (databases + settings + federation key, optionally a list of the music folders) → copy the file and the music
-→ on the new computer run the installer with `--restore <file>`. The public address (Tailscale) and the federation identity move with
-it, so friends on other servers and installed phones keep working. A guide page with screenshots (P5).
+Today: `encore backup` → copy the file **and the music folder** (the music is not in the backup, nor the songs Encore kept in `Encore/` inside it) → on the new computer install
+Encore, then `encore restore <file>` (same Encore version or newer; the install-time password is replaced by the original one; a device sign-in made on the old computer is still accepted). The public address
+(Tailscale) is set up again on the new computer with `encore funnel on`. **Planned, not built:** `encore backup --full` (databases + settings, optionally a list of the music
+folders) and the installer's `--restore <file>` option in one step; a guide page with screenshots (P5).
 
 ## 5. Health and problems
 
 * The admin Home shows each part (music server, YouTube, away-from-home address, disk, backups, updates) as OK / needs you / broken, in
   words, with the action.
-* Owners also get an in-app notice on their phone for "needs you" items (disk 90 % full, backups failing, Tailscale key ending,
+* Owners also get an in-app notice on their phone for "needs you" items (disk 90 % full, backups failing, the Tailscale sign-in on the server's computer running out,
   YouTube not working for 24 h).
 * Logs: rotated, capped (50 MB total), no personal data (`21` §2); `encore logs` shows the last hour in plain text.
 
@@ -58,7 +62,7 @@ it, so friends on other servers and installed phones keep working. A guide page 
 
 | Machine | Expected (to verify) |
 |---------|----------------------|
-| Raspberry Pi 4 (4 GB) / 2-vCPU VM | 5 people streaming at once, 1 import being matched, keeping ≤ 120 songs/hour, search ≤ 1 s |
+| Raspberry Pi 4 (4 GB) / 2-vCPU VM | 5 people streaming at once, 1 import being matched, background YouTube look-ups spaced 6 to 18 s apart (about 300 an hour at most; an hourly cap is not built, see `04` §5), search ≤ 1 s |
 | Mini-PC / old laptop (4 cores) | 20+ streaming, 3 imports, everything else comfortable |
 | Away from home | limited by the Host's **upload**: about 1 listener per 150 kbit/s (Opus 128 + overhead); the wizard prints the number (`15` page 4) |
 The keeper, the loudness measurer (P1-13) and recommendations run as **background** work that yields to people playing (`04` §10).

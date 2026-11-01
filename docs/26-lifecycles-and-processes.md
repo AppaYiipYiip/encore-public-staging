@@ -66,7 +66,7 @@ uninstalled, the forgotten password (including the Host's own: `encore reset-pas
 |------|-----|--------|
 | Always | play, prepare, download (people waiting) | first, never delayed |
 | Always, background | import matching, keeping, loudness measuring | yields to the above; paced (`04` §5) |
-| 03:00 | database backups | minutes |
+| 03:00 and about 03:30 | database backups: the music server's own copy at 03:00, then `encore backup` (the Encore server's database and the music server's, `11` ADR-R37) at 03:30, up to ten minutes later by chance | minutes |
 | 03:30 | recommendations for everyone | ≤ 2 s CPU per person |
 | 04:00 | "Follow the original" playlist checks; new-release checks | one request per playlist/artist, spaced |
 | 04:30 | yt-dlp/ytmusicapi/Deno update check + canary | 1 look-up |
