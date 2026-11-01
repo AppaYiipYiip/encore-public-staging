@@ -2,6 +2,28 @@
 
 For a session that starts with **only this repository** (Claude Code on the web, or a new PC): it has none of the earlier session's memory. Read `AGENTS.md`, `docs/README.md`, then this file, then the last log entry (22) of `RELEASE-CANDIDATE.md`. The owner is not a tester and is not asked to test; he is asked only what only he can decide (section 6).
 
+## Work order
+
+Given by the owner on 2026-11-01 after the section 0 report, copied word for word. It replaces the "stop and wait" of section 0 and the merge order of section 3 (the phone batch is now merged last). Progress, below it, is the channel to the next local session and to the owner.
+
+STANDING WORK ORDER (you can work from this for a long while without asking me anything; if you are unsure, choose the safer option and record it in Progress). STEP 0, FIRST: in your first docs PR copy this whole order into docs/tasks/CLOUD-RESUME.md as a section "Work order" with an empty section "Progress" under it; after every merge and at the end of every phase update Progress (on main, through a small docs PR; you may batch these) with PR numbers, merge shas, the head sha of any branch you pushed, and what is blocked and why: Progress on main is the channel to the next local session and to the owner, not this chat, and it survives your context being compacted.
+
+PHASE 1, MERGES in this order: S0, #63, S1, W05, S2, S3, then the phone batch last (S2 and S3 are server-only and must not wait for a goldens or Flutter problem); follow CLOUD-RESUME section 3 for commands; merge only after every check run on that exact head sha is green, via gh api PUT pulls/N/merge with merge_method=squash and sha=<full head sha>, area-prefixed title, then read main's own run. The S0 PR (84) is all green now: merge it first, and check whether your encore-fetch test fix already covers the flaky legacy test (test_stops_looking_when_the_service_has_stopped) before doing anything else about it. For the server branches: pip install the server dependencies and run ruff, mypy and pytest --ignore=tests/integration in server/encore_server before pushing any rebased branch; resolve purely mechanical rebase conflicts (imports, adjacent lines, docs) yourself and rerun the suite; stop on a conflict only where choosing a side changes behaviour. For the phone batch CI decides: if anything other than the two Linux goldens (library_list, now_playing_waiting) goes red, install Flutter 3.47.7 in the session and work the failure locally before pushing again; if the redrawn goldens cannot be delivered, leave the PR open with everything else green, write it in Progress and move on.
+
+PHASE 2, DOCS COHERENCE PASS from docs/tasks/DOCS-AUDIT-2026-11-01.md: small PRs, one family of files each, run python -I tools/check_rows.py --max-missing 61 before each, flip a "Decided ... not on main yet" row to Built only once its test is on main (after the phone batch merges), reuse the docs/22 draft on backup/docs/coherence-pass-1 only after checking it against ADR-R37 and the code, and for a real product choice write an "OPEN (needs owner/advisor)" line in the doc and in Progress and do not decide it.
+
+PHASE 3, TESTS for state-table rows that have none: server rows first (pytest runs here), then app rows with Flutter installed locally, batched into few PRs so Actions minutes are not spent one PR at a time; whenever the untested count drops, lower --max-missing in docs.yml in the same PR.
+
+PHASE 4, the small code-review leftovers, test first: the released map in the download providers keeps one release per song, the track menu says Removed for a song that is still wanted by another pin, and nothing else; then stop. Do not touch rc2/*, integration/* or any RC2 feature.
+
+HARD RULES: never make the repository public, never admin-merge, never force-push main, never delete branches, no tags or releases (read the server-image.yml triggers first: a tag may publish an image), no workflow edits except to repair a broken one, no pushes to branch names matching task/**, no secrets, no billing, keep total GitHub Actions use this week under about 1,200 minutes including the merges, at most two agents at a time.
+
+WHEN BLOCKED: write it in Progress and go on to the next independent item; stop completely only for a red main you cannot fix at once, a security question, or credits about to run out. The two owner questions (turning the public address on after S1, and scrubbing the history before publishing) go only into Progress, never ask them. Post two lines in this chat at the end of each phase.
+
+## Progress
+
+<!-- One entry per merge and per phase, newest last: PR number, merge sha, the head sha of any branch pushed, and what is blocked and why. -->
+
 ## 0. First thing to do: report what this session can do, then stop
 
 Before touching anything, answer in a short list and wait for the owner's go:
