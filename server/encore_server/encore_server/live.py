@@ -10,11 +10,15 @@ import asyncio
 import threading
 from typing import Any
 
+#: What the hub puts in a connection's queue to tell its socket to close (never sent to the app).
+END: dict[str, Any] = {"type": "_end"}
+
 
 class Connection:
     def __init__(self, person: str, device: str | None) -> None:
         self.person = person
         self.device = device
+        self.ended = False
         self.queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=200)
 
 
@@ -39,6 +43,22 @@ class Hub:
                 members.discard(connection)
                 if not members:
                     del self._connections[connection.person]
+
+    def end(self, person: str, *, device: str | None = None, except_device: str | None = None) -> None:
+        """Closes the live connections of a person (or of one of their devices, or of all but one) that was signed out, revoked, locked or removed: a
+        connection is checked only when it opens, so without this it went on receiving everything (AUDIT B5). Safe from any thread."""
+        loop = self._loop
+        if loop is None:
+            return
+        with self._lock:
+            targets = [
+                c
+                for c in self._connections.get(person, ())
+                if (device is None or c.device == device) and (except_device is None or c.device != except_device)
+            ]
+        for connection in targets:
+            connection.ended = True
+            loop.call_soon_threadsafe(self._offer, connection, END)
 
     def count(self, person: str | None = None) -> int:
         with self._lock:

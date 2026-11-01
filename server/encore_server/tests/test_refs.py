@@ -52,9 +52,13 @@ def test_ids_from_the_catalogue_and_youtube_find_the_ref(db: Database) -> None:
 def test_what_a_ref_lacked_is_filled_in_by_a_later_description(db: Database) -> None:
     first = resolve(db)
     assert first["isrc"] is None and first["videoId"] is None
-    richer = resolve(db, isrc="GBAYE0701234", videoId="bgsmr7t8zGE", coverUrl="https://img.example/c.jpg")
+    richer = resolve(db, isrc="GBAYE0701234", videoId="bgsmr7t8zGE", coverUrl="https://e-cdns-images.dzcdn.net/c.jpg")
     assert richer["id"] == first["id"]
-    assert (richer["isrc"], richer["videoId"], richer["coverUrl"]) == ("GBAYE0701234", "bgsmr7t8zGE", "https://img.example/c.jpg")
+    assert (richer["isrc"], richer["videoId"], richer["coverUrl"]) == (
+        "GBAYE0701234",
+        "bgsmr7t8zGE",
+        "https://e-cdns-images.dzcdn.net/c.jpg",
+    )
 
 
 def test_an_id_another_ref_owns_is_never_taken_from_it(db: Database) -> None:
@@ -160,3 +164,27 @@ def test_an_upload_another_ref_owns_is_not_taken(db: Database) -> None:
     with db.tx() as conn:
         assert refs.remember_video(conn, str(b["id"]), "aaaaaaaaaaa") is False
         assert refs.get_ref(conn, str(a["id"]))["videoId"] == "aaaaaaaaaaa"
+
+
+def test_a_picture_address_is_kept_only_from_the_hosts_the_server_itself_would_fetch_from(db: Database) -> None:
+    """B6 (QA-BACKEND): any https address a phone named as a song's picture was stored and then loaded by EVERY phone that shows the song: a
+    member could make every other phone ask a host of their choosing (showing each phone's address to it). The keeper's own allow-list of picture
+    hosts, which it already applies to what it fetches, applies here too."""
+    for bad in (
+        "https://evil.example/pixel.gif",
+        "https://dzcdn.net.evil.example/x.jpg",
+        "https://notdzcdn.net/x.jpg",
+        "http://e-cdns-images.dzcdn.net/x.jpg",
+        "https://user@evil.example/x.jpg",
+        "javascript:alert(1)",
+    ):
+        assert resolve(db, title=f"Song for {bad}", coverUrl=bad)["coverUrl"] is None, bad
+
+    for good in (
+        "https://e-cdns-images.dzcdn.net/images/cover/abc/500x500.jpg",
+        "https://i.ytimg.com/vi/abc/hqdefault.jpg",
+        "https://lh3.googleusercontent.com/abc=w544",
+        "https://coverartarchive.org/release/1/front",
+        "https://i.scdn.co/image/abc",
+    ):
+        assert resolve(db, title=f"Song for {good}", coverUrl=good)["coverUrl"] == good, good

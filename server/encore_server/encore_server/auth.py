@@ -79,6 +79,13 @@ class NavidromeVerifier:
         seen = self._ok.get((user, token, salt))
         return seen is not None and self._clock() - seen < self._ttl
 
+    def forget(self, user: str) -> None:
+        """Drops what is remembered about [user]: after the person was removed or locked, or their password changed, the music server's earlier
+        yes must not carry on for the ten minutes it is kept (AUDIT B4)."""
+        wanted = user.lower()
+        for key in [k for k in self._ok if k[0].lower() == wanted]:
+            del self._ok[key]
+
     def verify(self, user: str, token: str, salt: str) -> bool:
         key = (user, token, salt)
         seen = self._ok.get(key)
@@ -138,6 +145,19 @@ def issue_device(conn, person_id: str, name: str, kind: str = "phone", app_versi
         ),
     )
     return device_id, token
+
+
+def forget_credentials(verifier: object, user: str | None) -> None:
+    """Tells a verifier that keeps a memory of yeses to forget [user] (a verifier without one has nothing to forget)."""
+    forget = getattr(verifier, "forget", None)
+    if user and callable(forget):
+        forget(user)
+
+
+def person_may_listen(conn, person: str) -> bool:  # type: ignore[no-untyped-def]
+    """A signed address (a song, a cover pass) was made for somebody who is still here and not locked out: it is worth what its person is worth,
+    however much of its six hours or seven days is left (AUDIT B13)."""
+    return conn.execute("SELECT 1 FROM person WHERE id = ? AND locked = 0", (person,)).fetchone() is not None
 
 
 def bearer_token(authorization: str | None) -> str | None:

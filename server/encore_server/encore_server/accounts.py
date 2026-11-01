@@ -174,12 +174,20 @@ class Accounts:
         clock: Callable[[], float] = time.time,
         notifications: Notifications | None = None,
         server_name: str = "this server",
+        on_ended: Callable[[str, str | None], None] | None = None,
     ) -> None:
         self._db = db
         self._admin = admin
         self._clock = clock
         self._notifications = notifications
         self._server_name = server_name
+        self._on_ended = on_ended
+
+    def _ended(self, person_id: str, user: str | None) -> None:
+        """This person's devices (and, with [user], the music server's remembered yes for them) have ended: whoever holds a live connection or a
+        remembered login for them is told to let go (AUDIT B4, B5)."""
+        if self._on_ended is not None:
+            self._on_ended(person_id, user)
 
     def _now_ms(self) -> int:
         return int(self._clock() * 1000)
@@ -392,6 +400,8 @@ class Accounts:
             )
             if locked:
                 conn.execute("UPDATE device SET revoked_at = ? WHERE person = ? AND revoked_at IS NULL", (now_ms(), person_id))
+        if locked:
+            self._ended(person_id, row["navidrome_user"])
         return next(p for p in self.people() if p["id"] == person_id)
 
     def remove_person(self, by: str, person_id: str) -> None:
@@ -407,6 +417,7 @@ class Accounts:
         with self._db.tx() as conn:
             conn.execute("DELETE FROM playlist_entry WHERE added_by = ?", (person_id,))
             conn.execute("DELETE FROM person WHERE id = ?", (person_id,))
+        self._ended(person_id, row["navidrome_user"])
 
     # ------------------------------------------------------------------ passwords
 
@@ -439,6 +450,8 @@ class Accounts:
             conn.execute("UPDATE person SET failed_logins = 0, locked = 0 WHERE id = ?", (row["id"],))
             conn.execute("UPDATE device SET revoked_at = ? WHERE person = ? AND revoked_at IS NULL", (now_ms(), row["id"]))
             device_id, token = issue_device(conn, row["id"], device_name, "phone", app_version)
+        # Every device that was there is signed out and the old password's remembered yes is forgotten (the new device is made after, below).
+        self._ended(row["id"], row["navidrome_user"])
         return {
             "deviceToken": token,
             "device": {"id": device_id, "name": device_name},

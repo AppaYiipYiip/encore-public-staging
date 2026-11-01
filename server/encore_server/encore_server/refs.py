@@ -13,6 +13,7 @@ from typing import Any
 
 from .errors import ApiError
 from .ids import new_id, now_ms
+from .keeper.covers import cover_url_ok
 from .textnorm import norm_artist, norm_title, version_signature
 
 #: Two recordings with the same normalised name are the same song when their lengths differ by no more than this.
@@ -78,8 +79,10 @@ def _video_id(value: object) -> str | None:
 
 
 def _cover(value: object) -> str | None:
+    """A picture address a phone describes a song with: kept only from the hosts the keeper itself fetches pictures from. Every phone that shows
+    the song loads this address, so "any https address" let a member pick the host every phone asks (AUDIT B6)."""
     text = _clean(value, 500)
-    return text if text is not None and text.startswith("https://") else None
+    return text if text is not None and cover_url_ok(text) and "@" not in text.split("/", 3)[2] else None
 
 
 def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:

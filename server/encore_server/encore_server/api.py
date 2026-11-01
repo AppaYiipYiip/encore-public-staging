@@ -36,8 +36,10 @@ from .auth import (
     Principal,
     Verifier,
     bearer_token,
+    forget_credentials,
     hash_token,
     issue_device,
+    person_may_listen,
     sign_stream,
     stream_secret,
     subsonic_credentials,
@@ -54,7 +56,7 @@ from .ids import is_id, now_ms
 from .imports.service import ImportService
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
-from .live import Hub
+from .live import END, Hub
 from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
@@ -325,6 +327,7 @@ def logout(request: Request, p: Principal = Depends(get_principal)) -> JSONRespo
                 "UPDATE device SET revoked_at = ? WHERE id = ? AND person = ? AND revoked_at IS NULL",
                 (now_ms(), p.device_id, p.person_id),
             )
+        services(request).hub.end(p.person_id, device=p.device_id)
     return _ok()
 
 
@@ -376,6 +379,7 @@ def revoke_device(device_id: str, request: Request, p: Principal = Depends(get_p
             "UPDATE device SET revoked_at = ? WHERE id = ? AND person = ? AND revoked_at IS NULL",
             (now_ms(), device_id, p.person_id),
         )
+    services(request).hub.end(p.person_id, device=device_id)  # its live connection closes too (AUDIT B5)
     return _ok()
 
 
@@ -514,6 +518,9 @@ def change_password(
             "UPDATE device SET revoked_at = ? WHERE person = ? AND id IS NOT ? AND revoked_at IS NULL",
             (now_ms(), p.person_id, p.device_id),
         )
+    # The old password's remembered yes is forgotten, and the other devices' live connections are closed (AUDIT B4, B5).
+    forget_credentials(services(request).verifier, p.navidrome_user)
+    services(request).hub.end(p.person_id, except_device=p.device_id)
     return _ok()
 
 
@@ -697,9 +704,15 @@ def cover(cover_id: str, request: Request) -> Response:
     except ValueError:
         raise ApiError("validation", "That address is not right.") from None
     person, sig = query.get("p", ""), query.get("sig", "")
-    if not _COVER_ID.match(cover_id) or not (
-        valid_stream_signature(secret, person, f"cover:{cover_id}", expires, sig)
-        or valid_stream_signature(secret, person, COVER_PASS_SCOPE, expires, sig)
+    with svc.db.read() as conn:
+        still_here = person_may_listen(conn, person)
+    if (
+        not still_here
+        or not _COVER_ID.match(cover_id)
+        or not (
+            valid_stream_signature(secret, person, f"cover:{cover_id}", expires, sig)
+            or valid_stream_signature(secret, person, COVER_PASS_SCOPE, expires, sig)
+        )
     ):
         raise ApiError("unauthorized", "This picture address has expired. Ask the app for it again.")
     if size is not None and not 16 <= size <= 2000:
@@ -738,7 +751,9 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
             expires = int(query.get("e", "0"))
         except ValueError:
             expires = 0
-        if not valid_stream_signature(secret, person, ref_id, expires, query.get("sig", "")):
+        if not valid_stream_signature(secret, person, ref_id, expires, query.get("sig", "")) or not person_may_listen(
+            conn, person
+        ):
             raise ApiError("unauthorized", "This song address has expired. Ask the app to play it again.")
         ref = refs.get_ref(conn, ref_id)
     # The server decides where the audio comes from: its own copy when it keeps one (as its own account at the music server, `Range` and all),
@@ -1155,6 +1170,9 @@ async def live(websocket: WebSocket) -> None:
                 event = await asyncio.wait_for(connection.queue.get(), timeout=PING_EVERY_S)
             except TimeoutError:
                 event = {"type": "ping", "serverTime": now_ms()}
+            if connection.ended or event is END:
+                await websocket.close(code=4401)  # the device was signed out, revoked, locked or removed (AUDIT B5)
+                return
             await websocket.send_json(event)
     except WebSocketDisconnect:
         pass
@@ -1276,12 +1294,20 @@ def create_app(
         identity = load_or_create(conn)
     notifications = Notifications(database, hub)
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
+    the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
+
+    def ended(person_id: str, user: str | None) -> None:
+        # Locked, removed or given a new password: the live connections of the person close and the music server's remembered yes is forgotten.
+        hub.end(person_id)
+        forget_credentials(the_verifier, user)
+
     accounts = Accounts(
         database,
         navidrome_admin
         or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
         notifications=notifications,
         server_name=settings.server_name,
+        on_ended=ended,
     )
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
 
@@ -1326,7 +1352,7 @@ def create_app(
         settings=settings,
         db=database,
         hub=hub,
-        verifier=verifier or NavidromeVerifier(settings.navidrome_url),
+        verifier=the_verifier,
         youtube=youtube,
         scheduler=scheduler,
         keeper=keeper,

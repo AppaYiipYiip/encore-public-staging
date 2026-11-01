@@ -18,6 +18,9 @@ COVER_HOSTS = (
     "googleusercontent.com",
     "coverartarchive.org",
     "archive.org",
+    # What a playlist import's own picture allow-list (imports/readers.py) also trusts: a song described by an import carries these.
+    "scdn.co",
+    "spotifycdn.com",
 )
 
 
