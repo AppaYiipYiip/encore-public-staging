@@ -40,7 +40,7 @@ documents are history; read one only when a task links it.
 | 08 | [Roadmap](08-roadmap.md) | Phases P0–P6 with exit criteria (P4 = full feature set, P5 = public release) |
 | 09 | [Research and measurements](09-research-and-measurements.md) | Every number and external fact, with setup and sources |
 | 10 | [Decisions for the owner, and experiments](10-decisions-needed.md) | **Owner: please read Part A** |
-| 11 | [Decision log (ADR-R1…R14)](11-decision-log.md) | The reset decisions with options compared |
+| 11 | [Decision log (ADR-R1…R44)](11-decision-log.md) | The reset decisions with options compared |
 | 12 | [The app's signing key](12-app-signing-key.md) | What it is, why losing it is bad, the agreed plan (plain words) |
 | 13 | [Devices, volume, Jam and friends across servers](13-devices-jam-and-friends-across-servers.md) | Control the tablet from the phone (incl. volume), the volume bug, one account per person with servers that talk to each other, friends and Jams across servers |
 | 14 | [Usability gaps and hidden risks](14-usability-and-hidden-risks.md) | What a Spotify user expects or a real phone will do that was not covered yet, with owners and new journeys |
@@ -91,14 +91,14 @@ kept current and this table only says where the phases stand.
 | Item | State |
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
-| Repository | On GitHub (private). `main` has the CI workflows (app, server, server image, hygiene, screen pictures; Actions minutes were measured and cut in D-44); about 75 pull requests are merged; **`main` is not protected yet** |
-| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice |
+| Repository | On GitHub (private). `main` has the CI workflows (app, server, server legacy, server image, hygiene, screen pictures; the Actions-minute cuts of D-44 are merged); the merged pull requests are listed on GitHub; **`main` is not protected yet** |
+| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice. D-18 to D-44 are in `10` with their states (D-21 and D-22 have no row there; D-45 to D-47 are written in `tasks/QA-ROUND1-2026-10-31.md`) |
 | P0 Reset | Done except P0-09 (environments as code), P0-10 (licence inventory and check), branch protection and the project board |
 | P1 Instant play | Core done (lean resolver, a player that cannot stick, offline, queue restore, covers); open items are listed in AUDIT (P1-03 legacy side, P1-04, P1-06, P1-07, P1-12, P1-13) |
 | P2 Songs as references | Server core and the app's data layer done and walked; open items in AUDIT |
 | P3 One server, one-command install | Installer slice, nightly backup and restore, and a resumable install are proved on clean machines (`evidence/c01` to `c03`); wizard, admin pages, update rollback, arm64 and the rest are open |
 | P4 Full feature set, P5 Public release | Not started (the artist page and a first slice of profiles on a shared device exist) |
 | **Current milestone** | The first outside user (P3-12, ADR-R34). Five checks, in order: the owner installed and uses the server; the away-from-home address works on mobile data; the data can come back (**done**); the friend's guide is final (draft); five days of the owner's own use |
-| Next, in order | **Release candidate 1** (`tasks/RELEASE-CANDIDATE.md`): the fixes of the two review walks are committed and tested locally (pushed in order from 1 November), then three QA rounds with a testing agent, a clean-VM install test and a critic whose wishes the owner filters (section 5a); then the friend milestone below. The owner's one-page status is outside the repository |
+| Next, in order | **Release candidate 1** (`tasks/RELEASE-CANDIDATE.md`): the fixes of the two review walks are being merged in order (live status: `tasks/CLOUD-RESUME.md`, Progress), then three QA rounds with a testing agent, a clean-VM install test and a critic whose wishes the owner filters (section 5a); then the friend milestone below. The owner's one-page status is outside the repository |
 | Before going public (P5-06) | The plan documents still name the owner's own machines and containers in several places (`06`, `09`, `11` and others); scrub them first |
 | The old documents | History, kept only in the old repository's archive |

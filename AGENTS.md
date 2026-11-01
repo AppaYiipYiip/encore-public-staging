@@ -34,7 +34,7 @@ If you start with no memory of earlier work: `docs/README.md` has the current st
 |-|-|
 | App | `app/` (Flutter project root: run `flutter` commands there) |
 | Shared Dart package | `packages/encore_session` |
-| Server | `server/legacy/*` today; `server/encore_server` after task P2-01 |
+| Server | `server/encore_server` (the one server, since task P2-01); `server/legacy/*` are the older services, tested only when their own folder changes (D-44) |
 | Checks | `tools/check.ps1` (`-Quick`, `-Server`, `-Live`) |
 | Emulator driving | `tools/journeys/ui.py` (never tap blind: `dump` first) |
 | Traps on this PC and how to avoid them | `docs/guides/dev-gotchas.md` |

@@ -19,7 +19,7 @@ love on your own disk, and lets your family and friends listen too. No subscript
 | Folder | What it is |
 |--------|-----------|
 | [`app/`](app) | The Android app (Flutter) |
-| [`server/`](server) | The Encore server. Today: separate services in `server/legacy/`; being merged into one program (see the roadmap) |
+| [`server/`](server) | The Encore server: `server/encore_server` is the one program; `server/legacy/` still holds the older separate services (see the roadmap) |
 | [`packages/encore_session`](packages/encore_session) | Shared Dart rules for listening together |
 | [`tools/`](tools) | Developer scripts: the check gate, emulator journeys, measurements |
 | [`docs/`](docs) | Product, design, architecture, roadmap, tasks. **Start with [`docs/README.md`](docs/README.md)** |
