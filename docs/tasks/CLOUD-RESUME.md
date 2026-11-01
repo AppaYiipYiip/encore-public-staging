@@ -32,11 +32,11 @@ Every PR below was squash-merged with `gh api PUT pulls/N/merge` and `sha=<head>
 |---|----|-------------------|----------------------|------|----------------|
 | 1 | #84 | `8b7cb8a` | `b92d6bb` on `backup/task/S0-ci-hygiene` (the S0 commits plus one of mine) | S0: CI cuts (D-44), the server image only after tests on main and `v*` tags (B25), B27, B28 | Server, Server legacy, Hygiene and Server image green (first real run of the `tests` and `image` jobs); App `verify` green, its Android build cancelled by the next merge's push |
 | 2 | #85 | `c42d411` | `72d7f18` on the session branch | this work order | Hygiene green |
-| 3 | #63 | `513d875` | `2c924ec` on `task/B2-one-entry-per-release` | B2 second half: a downloaded release is one entry | Hygiene green; App run still going at 13:46 UTC (see the next entry that mentions it) |
+| 3 | #63 | `513d875` | `2c924ec` on `task/B2-one-entry-per-release` | B2 second half: a downloaded release is one entry | Hygiene, App `verify` and the Android build all green (the first Android build on main under the D-44 `if`) |
 | 4 | #86 | `9aba607` | `2e2b823` on `backup/task/S1-public-edge` | S1: the public edge (B1, B2, B9, B11, B12, B19) | Server, Hygiene and Server image green |
 | 5 | #88 | `b90435b` | `2a1995f` on the session branch (W05 rebased with `git rebase --onto origin/main 2e2b823`) | W-05 join page (D-39), B15 | Hygiene green; its Server runs were cancelled by the next push, whose run covers it |
 | 6 | #87 | `9ba6dd4` | `749d423` on `backup/task/S2-silent-failures` | S2: B8 (no search while YouTube rests, every search counted), B7 (a never-found file ends as a failed keep) | Server, Hygiene and Server image green |
-| 7 | #89 | `4b9d957` | `f728c61` on the session branch (S3 rebased with `--onto origin/main 309ebbd`) | S3: B4, B5, B13, B6 (revocation) | Hygiene green; Server and Server image still going at 13:46 UTC |
+| 7 | #89 | `4b9d957` | `f728c61` on the session branch (S3 rebased with `--onto origin/main 309ebbd`) | S3: B4, B5, B13, B6 (revocation) | Server, Hygiene and Server image green |
 
 What else happened, for the next session:
 
@@ -53,7 +53,23 @@ OWNER QUESTIONS (recorded here only, not asked):
 1. Turn the public address (Funnel) on? S1 (B1, B2, B9, B11, B12, B19) and S3 (B4, B5, B13, B6) are merged, but two things stay open: whether the Funnel really sets `X-Forwarded-For` as B11 assumes (only checkable on the owner's Funnel), and narrowing `/rest`; the app also still sends the old login, not the Bearer token. Turning it on exposes the owner's server to the internet. `docs/guides/install-test.md` step 5 tells a person to run `encore funnel on` without this warning.
 2. Scrub the history and publish the repository? It is not needed (the Actions minutes reset); it cannot be undone; the history holds the owner's tailnet name, first name, real artist names in the design drawings and machine names.
 
-Blocked: nothing yet. Next: the phone batch (rebase `task/RC1-app-batch` onto main; CI decides; two Linux goldens, `library_list` and `now_playing_waiting`).
+### Phase 1 end and Phase 2 so far (2026-11-01, 14:10 UTC)
+
+**Blocked: the phone batch, PR #91 (head `30a6b0c` on the session branch `claude/zealous-maxwell-7s5nio`).** It is the 20 commits of `task/RC1-app-batch` rebased onto main after #63 and the server merges (`git rebase --onto origin/main 2c924ec`, no conflicts, 82 files). CI on that head: Hygiene green; App `verify` red **only** on the two expected Linux goldens. Format and analyze passed and **2,135 tests passed, 2 failed**: `library list` (`goldens/linux/library_list.png`, 0.07 %, 2,100 px) and `now playing, waiting for the server` (`goldens/linux/now_playing_waiting.png`, 34.63 %, 1,025,972 px). `goldens.yml` was dispatched on the same head (run 41313093095, green) and uploaded the artifact `goldens-linux` (id 13085687754, 3.8 MB, kept until 2027-01-30), but **this session cannot fetch it**: the proxy denies `productionresultssa18.blob.core.windows.net` (403 on CONNECT, also for the link the GitHub MCP tool returns).
+
+To finish (any machine that can reach GitHub's artifact host): download the artifact; look at the two pictures; copy only `library_list.png` and `now_playing_waiting.png` into `app/test/features/goldens/linux/` on the PR's branch; push; wait for App to go green on the new head; squash-merge #91 with the sha guard. Then flip the two rows that say "marked built when it lands": CN-4b (`docs/31`) and PB-F7b (`docs/33`), and do the audit items that describe the phone batch's behaviour (the offline strip D-45, the refused offline tap D-42, D-46: audit slice 2 items 1, 2 and 4).
+
+OPEN (needs owner): Flutter 3.47.7 is installed in this session (tarball checked against Google's sha256). Running the three golden test files on the PR branch here fails the same two goldens with the same pixel counts as CI (2,100 and 1,025,972), and the 24 other tests in those files, which compare the other Linux pictures, pass at zero tolerance. So `flutter test --update-goldens` here would very likely draw what the workflow draws. Nothing was drawn or committed: the code comment in `app/test/flutter_test_config.dart` says the Linux pictures are "drawn by the Goldens (Linux) workflow, never by hand", and the order says this step waits. If the owner allows a local Linux redraw, CI on the new head is the check.
+
+**Phase 2, docs coherence** (`docs/tasks/DOCS-AUDIT-2026-11-01.md`), merged so far, each from its own `docs/` branch (the session branch holds #91; these are new non-`task/**` branches and none was deleted): #92 backups, updates, canary, pacing (docs 22, 04, 10, 26, P1-03; from the unfinished docs/22 draft, every claim re-checked against `deploy/encore`, `backup.py`, `canary.py`, `pace.py`; merge `91a43f9`); #93 revocation rows (docs 32, 31, 17; `9df7fee`); #94 entry points (AGENTS, README, docs/README; `5abfd2d`); #95 audio numbers and the installer's disk minimum (docs 23, P3-05; `d0600a4`); #96 away from home is the computer's own Tailscale (docs 04, 15, 03a, 25; `60c30dc`).
+
+OPEN (needs owner/advisor), also written in the doc: `docs/15` page 6 (Away from home): whether the wizard page runs the Tailscale sign-in step itself or shows the Host `encore funnel on`.
+
+**Ratchet:** do not lower `--max-missing` in `docs.yml` before #91 merges. `tools/check_rows.py` counts 60 untested Built rows on main but 61 on the phone-batch checkout; lower it in the first Phase 3 PR after #91.
+
+**Actions:** about 267 minutes since 2026-11-01 (56 runs at 14:08 UTC; per job rounded up to whole minutes).
+
+**Next:** more Phase 2 docs PRs that do not depend on #91, then Phase 3 (tests for state rows, server first) and Phase 4.
 
 ## 0. First thing to do: report what this session can do, then stop
 
