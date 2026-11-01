@@ -66,7 +66,7 @@ encore/                          one repository, one product
 │  └─ history/                   01, 02, 09 of this plan (why we reset); old docs are NOT copied
 ├─ tools/                        dev scripts: journeys (adb walk), perf, kit
 └─ .github/
-   ├─ workflows/ app.yml  server.yml  release.yml  docs.yml
+   ├─ workflows/ app.yml  server.yml  server-legacy.yml  server-image.yml  docs.yml  goldens.yml
    ├─ ISSUE_TEMPLATE/ bug.yml  feature.yml
    └─ pull_request_template.md
 ```
@@ -118,8 +118,8 @@ Rules (also in `06` §2):
 3. **One branch per task** (`task/P1-01-lean-resolver`), opened as a **draft PR on the first push** so progress is visible; marked
    ready when acceptance criteria are met; squash-merged into `main` after CI and review.
 4. **Before committing**, run the quick check (`tools/check --quick`: format, analyze, unit tests of the touched area); CI runs the rest.
-5. **Never commit**: passwords, login files, cookies, `.env`, APK/AAB/zip files, build folders. A pre-commit secret scan
-   (`gitleaks`) blocks them.
+5. **Never commit**: passwords, login files, cookies, `.env`, APK/AAB/zip files, build folders. The pre-commit hook blocks them
+   by file name, and CI scans for secrets with gitleaks.
 6. **The owner must allow pushing once**: add to `~/.claude/settings.json` → `permissions.allow`: `"Bash(git push:*)"` and
    `"Bash(gh pr create:*)"`, `"Bash(gh pr ready:*)"`, `"Bash(gh pr merge:*)"`. Agents cannot change their own permissions
    (owner decision D-8). Until then, agents commit locally and the final message of every task says "not pushed: permission".

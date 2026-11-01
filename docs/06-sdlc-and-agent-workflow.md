@@ -25,8 +25,8 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
    `gateway`, `youtube`, `keeper`, `people`, `admin`, `install`, `ci`, `docs`). Body: why, and `Refs #issue`.
 4. Squash-merge; the PR title becomes the commit on `main`.
 5. Versions: `0.MINOR.PATCH` until 1.0. App `versionCode` = CI build number. Server image tags = the same version.
-6. Tags and Releases only from CI (`release.yml`), never from a laptop.
-7. Never commit secrets or binaries; `gitleaks` pre-commit hook and CI step; `.gitignore` covers `*.apk`, `*.aab`, `*.env`,
+6. Tags and Releases only from CI, never from a laptop (`release.yml` is planned, section 7).
+7. Never commit secrets or binaries; the pre-commit hook (`tools/hooks/pre-commit`) refuses logins, keys, cookies, environment files and binaries by file name, and CI runs gitleaks (Hygiene `secrets`); `.gitignore` covers `*.apk`, `*.aab`, `*.env`,
    `*login*.txt`, `*cookies*.txt`, `build/`.
 
 ## 3. Tracking
@@ -81,13 +81,16 @@ and the evidence. It must:
 
 ## 7. CI (GitHub Actions)
 
-| Workflow | Runs on | Steps |
-|----------|---------|-------|
-| `app.yml` | PRs touching `app/` or `packages/`; push to `main` | `flutter pub get` → codegen → format check → `dart analyze --fatal-infos` → unit + widget + golden tests (incl. the device-profile matrix of `07` §6) → debug APK build |
-| `server.yml` | PRs touching `server/` | ruff + mypy → unit tests → contract tests (API schema) → integration tests against a real Navidrome container → image build (amd64+arm64) |
-| `release.yml` | tag `v*` | signed release APK (key from repository secrets) → server images pushed to GHCR → GitHub Release with notes and checksums |
-| `docs.yml` | PRs touching `docs/` or `website/` | link check, markdown lint, website build |
-| nightly | schedule | emulator journeys (`07` §6) on 2 profiles against a freshly installed server in the runner; yt-dlp update canary (1 look-up) |
+| Workflow (name) | Runs on | Steps |
+|-----------------|---------|-------|
+| `app.yml` (App) | push to `main` and pull requests touching `app/`, `packages/` or the workflow; by hand | job `verify`: `flutter pub get` → code generation (Drift) → format check → `dart analyze --fatal-infos` → all tests except the `perf` and `live` tags (including the screen pictures; the Linux set is drawn by `goldens.yml`) → the `perf` budgets → the shared package's format, analyze and tests; job `android-debug-build` (only on `main` and by hand, after `verify`): a debug APK |
+| `server.yml` (Server) | push to `main` and pull requests touching `server/`, `packages/`, the admin colour files (`tools/gen_admin_tokens.py`, `app/lib/design/tokens.dart`) or the workflow | `encore-server`: ruff, ruff format, mypy, pytest (without the integration tests); `install-scripts`: shellcheck of the installer and `encore`; `encore-server-navidrome`: the integration tests against a real music server and ffmpeg in Docker |
+| `server-legacy.yml` (Server legacy) | push to `main` and pull requests touching `server/legacy/` | the five older Python services (unittest) and the Jam hub (Dart analyze and test) |
+| `server-image.yml` (Server image) | push to `main` that touches `server/encore_server/`; `v*` tags; weekly (Monday 04:17 UTC); by hand | `tests` (the server's lint, types and tests; skipped for the weekly rebuild), then `image`: build and publish to GitHub's container registry (`:main`, `:<tag>`, `:sha-<commit>`); amd64 only |
+| `docs.yml` (Hygiene) | push to `main` and every pull request | `secrets`: gitleaks over the history; `checks`: no logins, keys, cookies, environment files or binaries are tracked, and the untested-rows ratchet (`tools/check_rows.py`, `11` ADR-R41 T2) |
+| `goldens.yml` (Goldens (Linux)) | by hand | draws the Linux screen pictures and uploads them as an artifact, to be looked at and committed |
+
+**Planned, not built:** `release.yml` (a tag makes the signed APK, the server images and a GitHub Release with checksums; today a `v*` tag only makes `server-image.yml` publish the server image, and the APK is built by hand with the signing key); a documentation link check, markdown lint and website build; a nightly run of the emulator journeys (`07` section 6) and of the yt-dlp canary; arm64 server images.
 
 ## 8. Live environments and safety
 
