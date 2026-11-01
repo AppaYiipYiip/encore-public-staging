@@ -24,6 +24,37 @@ WHEN BLOCKED: write it in Progress and go on to the next independent item; stop 
 
 <!-- One entry per merge and per phase, newest last: PR number, merge sha, the head sha of any branch pushed, and what is blocked and why. -->
 
+### Phase 1, merges (2026-11-01)
+
+Every PR below was squash-merged with `gh api PUT pulls/N/merge` and `sha=<head>` after every check run on that exact head was green. The rebased server branches were checked locally first (`ruff check`, `ruff format --check`, `mypy encore_server`, `pytest --ignore=tests/integration` in `server/encore_server`, all clean) and were pushed only to the session branch `claude/zealous-maxwell-7s5nio`; no `task/**` branch was pushed.
+
+| # | PR | Merge sha on main | Head that was merged | What | main's own run |
+|---|----|-------------------|----------------------|------|----------------|
+| 1 | #84 | `8b7cb8a` | `b92d6bb` on `backup/task/S0-ci-hygiene` (the S0 commits plus one of mine) | S0: CI cuts (D-44), the server image only after tests on main and `v*` tags (B25), B27, B28 | Server, Server legacy, Hygiene and Server image green (first real run of the `tests` and `image` jobs); App `verify` green, its Android build cancelled by the next merge's push |
+| 2 | #85 | `c42d411` | `72d7f18` on the session branch | this work order | Hygiene green |
+| 3 | #63 | `513d875` | `2c924ec` on `task/B2-one-entry-per-release` | B2 second half: a downloaded release is one entry | Hygiene green; App run still going at 13:46 UTC (see the next entry that mentions it) |
+| 4 | #86 | `9aba607` | `2e2b823` on `backup/task/S1-public-edge` | S1: the public edge (B1, B2, B9, B11, B12, B19) | Server, Hygiene and Server image green |
+| 5 | #88 | `b90435b` | `2a1995f` on the session branch (W05 rebased with `git rebase --onto origin/main 2e2b823`) | W-05 join page (D-39), B15 | Hygiene green; its Server runs were cancelled by the next push, whose run covers it |
+| 6 | #87 | `9ba6dd4` | `749d423` on `backup/task/S2-silent-failures` | S2: B8 (no search while YouTube rests, every search counted), B7 (a never-found file ends as a failed keep) | Server, Hygiene and Server image green |
+| 7 | #89 | `4b9d957` | `f728c61` on the session branch (S3 rebased with `--onto origin/main 309ebbd`) | S3: B4, B5, B13, B6 (revocation) | Hygiene green; Server and Server image still going at 13:46 UTC |
+
+What else happened, for the next session:
+
+* S0's first real run showed one red: `test_stops_looking_when_the_service_has_stopped` in `server/legacy/encore-fetch` (the same assertion had failed on main on 2026-10-25, run 40153063719). Cause: the fake service lived 2 s and the update loop looks every 1 s, so the loop's second look fell exactly when the service ended. Fixed on S0's branch (commit `b92d6bb`, only the timing of the test: the service lives 3 s, the loop looks every 2 s; the assertion is unchanged). Checked: 2 of 20 runs failed before, 0 of 20 after, and the test still fails (`7 != 4`) when the loop's `kill -0` guard is removed from `entrypoint.sh`. Someone also re-ran the first attempt of the legacy workflow on GitHub; that does not remove the cause.
+* On main before S0, `pytest` could fail in `test_account_model.py` when Hypothesis found a lock followed by an unlock (the model said the device works again, the server correctly kept it dead). That is B28, fixed by S0.
+* The B25 change works: pushing to main ran `tests` and then `image` and published the image to the private registry; a task branch no longer builds one.
+* #63 was merged as soon as S0's `verify` job on main was green. Its push cancelled S0's Android build through the workflow's own `cancel-in-progress`; #63's run builds the APK on the combined tree.
+* `tools/check_rows.py` reports 60 Built rows with no test on main at `4b9d957` (S1's docs edit made CN-25 cite its test); `.github/workflows/docs.yml` still says `--max-missing 61`. The ratchet is lowered in the Phase 3 PR, together with the tests.
+* GitHub Actions used since 2026-11-01: about 187 minutes over 41 runs at 13:46 UTC (job durations rounded up to whole minutes; runs still going are not counted).
+* Decisions taken without asking: every rebased branch went through the session branch and no other branch was created; the session branch is reset to `origin/main` and force-pushed with a lease after each merge (it holds no work that is not on main).
+
+OWNER QUESTIONS (recorded here only, not asked):
+
+1. Turn the public address (Funnel) on? S1 (B1, B2, B9, B11, B12, B19) and S3 (B4, B5, B13, B6) are merged, but two things stay open: whether the Funnel really sets `X-Forwarded-For` as B11 assumes (only checkable on the owner's Funnel), and narrowing `/rest`; the app also still sends the old login, not the Bearer token. Turning it on exposes the owner's server to the internet. `docs/guides/install-test.md` step 5 tells a person to run `encore funnel on` without this warning.
+2. Scrub the history and publish the repository? It is not needed (the Actions minutes reset); it cannot be undone; the history holds the owner's tailnet name, first name, real artist names in the design drawings and machine names.
+
+Blocked: nothing yet. Next: the phone batch (rebase `task/RC1-app-batch` onto main; CI decides; two Linux goldens, `library_list` and `now_playing_waiting`).
+
 ## 0. First thing to do: report what this session can do, then stop
 
 Before touching anything, answer in a short list and wait for the owner's go:
