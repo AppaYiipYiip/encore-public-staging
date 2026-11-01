@@ -114,7 +114,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 | W-06 | **The web player** (everything in S-10 to S-52 at class X) | new (P6) | as the app | X | |
 | W-07 | **Admin: settings** (the server's name and colour, the feature switches the app follows: "Friends on other servers", recommendations, the quality tier, plays any song; YouTube state and rest) | admin | loaded, a switch changed, a switch the server cannot honour (said in words) | X | |
 | W-08 | **Admin: logs and diagnostics** (what the server has been saying, a copy to send to somebody, the versions) | admin | loaded, empty, a long log | X | |
-| T-01 | **The terminal** (text, not drawn: the installer's output from the first line to "Encore is ready" with the pairing link and QR, and what each `encore` command prints) | `server/deploy/install.sh`, `encore` | written in `15` §1 and §1b | text | |
+| T-01 | **The terminal** (text, not drawn: the installer's output from the first line to "Encore is ready" with the pairing link and QR, and what each `encore` command prints) | `server/encore_server/deploy/install.sh`, `encore` | written in `15` §1 and §1b | text | |
 
 ## What this list does not contain, on purpose
 

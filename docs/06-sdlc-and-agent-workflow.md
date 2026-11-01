@@ -76,6 +76,7 @@ and the evidence. It must:
 * Decisions: one ADR file each in `docs/adr/` (Context → Options → Decision → Why it beats the others → Consequences → Revisit
   when). Superseding an ADR edits its status line and links the new one.
 * A doc that disagrees with the code is a bug: fix one of them in the same PR.
+* **OPEN (needs owner/advisor):** these rules name folders that were never made (`docs/adr/`, `docs/product/`, `docs/architecture/`, `docs/engineering/`, `docs/history/`) and a limit of about 300 lines per file and "no dated narratives" that the practice does not keep: the decisions are one log (`11`, over 580 lines), and `10`, `tasks/AUDIT.md` and `tasks/RELEASE-CANDIDATE.md` are dated logs. Either the rules change to the practice (numbered documents, logs under `tasks/`, which is what `05` §2 now shows) or the files are split into the folders. Until it is decided the rules above are the intention and `05` §2 is the layout.
 * The planning agent owns `docs/product/`, `docs/architecture/` and the roadmap; implementing agents update `docs/guides/` and
   `docs/engineering/` when their change affects them.
 
@@ -88,7 +89,7 @@ and the evidence. It must:
 | `server-legacy.yml` (Server legacy) | push to `main` and pull requests touching `server/legacy/` | the five older Python services (unittest) and the Jam hub (Dart analyze and test) |
 | `server-image.yml` (Server image) | push to `main` that touches `server/encore_server/`; `v*` tags; weekly (Monday 04:17 UTC); by hand | `tests` (the server's lint, types and tests; skipped for the weekly rebuild), then `image`: build and publish to GitHub's container registry (`:main`, `:<tag>`, `:sha-<commit>`); amd64 only |
 | `docs.yml` (Hygiene) | push to `main` and every pull request | `secrets`: gitleaks over the history; `checks`: no logins, keys, cookies, environment files or binaries are tracked, and the untested-rows ratchet (`tools/check_rows.py`, `11` ADR-R41 T2) |
-| `goldens.yml` (Goldens (Linux)) | by hand | draws the Linux screen pictures and uploads them as an artifact, to be looked at and committed |
+| `goldens.yml` (Goldens (Linux)) | by hand, on the branch that needs the pictures (never `main`) | draws the Linux screen pictures, commits the changed `goldens/linux/*.png` back to that branch (and nothing else) and uploads them as an artifact; App is then started by hand on the new commit (`dev-gotchas.md`, `tasks/CLOUD-RESUME.md`) |
 
 **Planned, not built:** `release.yml` (a tag makes the signed APK, the server images and a GitHub Release with checksums; today a `v*` tag only makes `server-image.yml` publish the server image, and the APK is built by hand with the signing key); a documentation link check, markdown lint and website build; a nightly run of the emulator journeys (`07` section 6) and of the yt-dlp canary; arm64 server images.
 

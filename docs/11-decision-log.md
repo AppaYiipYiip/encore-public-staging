@@ -1,7 +1,7 @@
 # 11 — Decision log (the reset decisions, ADR-R1 …)
 
-Format: Context → Options → Decision → Why it beats the others → Consequences → Revisit when. In the new repository each becomes
-`docs/adr/00NN-*.md`. The 109 old ADRs (`old docs/03`) are history; where one is reversed, it is named.
+Format: Context → Options → Decision → Why it beats the others → Consequences → Revisit when. It was planned to
+become one file each in `docs/adr/`; that was not done and the log stays in this one file (`06` §6 has the OPEN line). The 109 old ADRs (`old docs/03`) are history; where one is reversed, it is named.
 
 ---
 

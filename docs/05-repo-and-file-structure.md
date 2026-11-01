@@ -31,45 +31,40 @@ The old repository's full history is `..\releases-archive\old-repo-2026-10-22.bu
 uncommitted service-finder work, which the reset superseded, sits next to it in two `wip-` files. The old working folder itself was
 deleted on 2026-10-22 (owner: "we are no longer related to that project").
 
-## 2. Target layout (the new repository `encore`)
+## 2. The layout (checked against the repository on 2026-11-01; what is only planned is marked)
 
 ```
 encore/                          one repository, one product
-├─ README.md                     what Encore is, screenshots, install in 3 steps, links to docs
-├─ LICENSE                       GPL-3.0 (owner decision D-1)
-├─ AGENTS.md                     rules for coding agents (copy of 06 §5, short); CLAUDE.md = one line pointing to it
-├─ CHANGELOG.md                  one line per user-visible change, per release
-├─ SECURITY.md                   how to report a vulnerability
+├─ README.md  LICENSE  CHANGELOG.md  SECURITY.md  PRIVACY.md
+├─ AGENTS.md                     rules for coding agents; CLAUDE.md = one line pointing to it
 ├─ app/                          the Android app (Flutter project root)
-│  ├─ lib/ … (app, core, data, domain, features, playback, design)
-│  ├─ test/                      unit + widget + golden tests
-│  ├─ integration_test/          on-device journeys (07 §6)
+│  ├─ lib/                       app, core, data, design, domain, features, playback
+│  ├─ test/                      unit, widget and golden tests (features/goldens/windows and /linux), architecture_test.dart
 │  ├─ android/                   package app.encore.player, namespace app.encore.player
-│  ├─ assets/  drift_schemas/  pubspec.yaml  analysis_options.yaml …
+│  ├─ assets/  drift_schemas/  pubspec.yaml  analysis_options.yaml  analysis_options_strict.yaml  build.yaml  dart_test.yaml
 ├─ packages/
-│  └─ encore_session/            shared Dart (Jam, later)
+│  └─ encore_session/            shared Dart (Jam engine, dormant until Jam returns)
 ├─ server/
-│  ├─ encore_server/             ONE Python package: gateway, accounts, library, playback, live, catalogue,
-│  │                             sources/youtube, keeper, imports, people, admin (04 §2)
-│  ├─ admin_web/                 the admin/setup web app (built into the image)
-│  ├─ tests/                     unit, contract (API), integration (real Navidrome in Docker)
-│  ├─ deploy/                    compose.yaml, .env.example, install.sh, encore (CLI), tailscale/serve.json
-│  ├─ Dockerfile  pyproject.toml
-├─ website/                      the public site: landing, guide, downloads (static; built from docs/guides)
-├─ docs/
-│  ├─ README.md                  index (this plan's README, adapted)
-│  ├─ product/                   03, 03a
-│  ├─ architecture/              04 + diagrams
-│  ├─ adr/                       0001-*.md … (one file per decision; ADR-R1… from 11 become 0001…)
-│  ├─ engineering/               06 SDLC, 07 testing, dev setup, release
-│  ├─ guides/                    install, away-from-home, troubleshooting, for-friends (source of the website)
-│  └─ history/                   01, 02, 09 of this plan (why we reset); old docs are NOT copied
-├─ tools/                        dev scripts: journeys (adb walk), perf, kit
+│  ├─ encore_server/             the Encore server
+│  │  ├─ encore_server/          ONE Python package: gateway, accounts, library, playback, live, sources/youtube, keeper, imports,
+│  │  │                          scanner, scheduler, notifications, migrations/ (04 §2)
+│  │  ├─ tests/                  unit, contract (API) and tests/integration (a real Navidrome in Docker)
+│  │  ├─ deploy/                 compose.yaml, install.sh, encore (the CLI)
+│  │  ├─ Dockerfile  entrypoint.sh  compose.dev.yaml  pyproject.toml
+│  └─ legacy/                    the earlier Python services and the Jam hub, moved into encore_server module by module (P2, P3, P4)
+├─ docs/                         the numbered documents 01 to 34 and README.md (the plan)
+│  ├─ tasks/                     task files, QA and audit logs, CLOUD-RESUME
+│  ├─ design/                    screen inventory, directions and reviews (HTML and markdown)
+│  ├─ evidence/                  walks, measurements, drawings of what was seen
+│  └─ guides/                    install-test, friend, dev-gotchas
+├─ tools/                        check.ps1 (the one command), check_rows.py, hooks/, journeys/ (the adb walk), profile/, vmprobe/, benches
 └─ .github/
    ├─ workflows/ app.yml  server.yml  server-legacy.yml  server-image.yml  docs.yml  goldens.yml
    ├─ ISSUE_TEMPLATE/ bug.yml  feature.yml
    └─ pull_request_template.md
 ```
+
+**Planned and not made:** `website/` (the public site, built from `docs/guides`, P5), an admin and setup web app for the image (04 §2), `app/integration_test/` (on-device journeys, 07 §6; today they are scripts in `tools/journeys`), and the split of `docs/` into `product/`, `architecture/`, `adr/`, `engineering/` and `history/` (see the OPEN line in `06` §6).
 
 **Outside the repository, never committed:**
 ```
@@ -117,7 +112,7 @@ Rules (also in `06` §2):
    hour** after the last push. A day's work never exists only on one machine.
 3. **One branch per task** (`task/P1-01-lean-resolver`), opened as a **draft PR on the first push** so progress is visible; marked
    ready when acceptance criteria are met; squash-merged into `main` after CI and review.
-4. **Before committing**, run the quick check (`tools/check --quick`: format, analyze, unit tests of the touched area); CI runs the rest.
+4. **Before committing**, run the quick check (`tools/check.ps1 -Quick`: format, analyze, unit tests of the touched area); CI runs the rest.
 5. **Never commit**: passwords, login files, cookies, `.env`, APK/AAB/zip files, build folders. The pre-commit hook blocks them
    by file name, and CI scans for secrets with gitleaks.
 6. **The owner must allow pushing once**: add to `~/.claude/settings.json` → `permissions.allow`: `"Bash(git push:*)"` and

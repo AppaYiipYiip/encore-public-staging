@@ -1,4 +1,4 @@
-# One command that proves a change is good (docs/engineering/testing.md).
+# One command that proves a change is good (docs/07-testing-and-device-matrix.md).
 #   .\tools\check.ps1            # codegen + format + analyze + every app test + the shared package
 #   .\tools\check.ps1 -Quick     # skip codegen (when already generated) and the slow widget/golden suite
 #   .\tools\check.ps1 -Server    # also run every server test suite (Python and the Dart hub)

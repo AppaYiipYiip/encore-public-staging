@@ -42,7 +42,7 @@ gives you. What the terminal shows after pasting `curl -fsSL https://<get addres
 
 ## 1b. The `encore` command: what each part prints (text, designed; owner 2026-10-24: the server side is on paper too)
 
-These are the outputs as `server/deploy/install.sh` and `server/deploy/encore` print them today, plus the one change decided in ADR-R40 (the installer's last screen offers a **pairing link and QR** instead of "Address: ... Username: ...", once P2-20 is built). Plain words, no "Docker" except where the Host must act; every error is a sentence with the fix.
+These are the outputs as `server/encore_server/deploy/install.sh` and `server/encore_server/deploy/encore` print them today, plus the one change decided in ADR-R40 (the installer's last screen offers a **pairing link and QR** instead of "Address: ... Username: ...", once P2-20 is built). Plain words, no "Docker" except where the Host must act; every error is a sentence with the fix.
 
 ```
 $ encore status
