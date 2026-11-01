@@ -74,8 +74,8 @@ server profile row in its database (name, addresses, capabilities).
 
 | ID | Situation | Words today | Words wanted | Status | Test |
 |----|-----------|-------------|--------------|--------|------|
-| CN-30 | server reachable, login wrong (typed form) | "The server is there, but the username or password was not accepted." | same | Built | none |
-| CN-31 | no candidate reachable (typed form) | "Can't reach <host>. Are you on the same Wi-Fi?" | "Can't reach your server from here" + why when known: away access is off, or this network blocks it | Built (first half) / Designed (second) | none |
+| CN-30 | server reachable, login wrong (typed form) | "The server is there, but the username or password was not accepted." | same | Built | `connect_form_test.dart` `CN-30: the server is there but the login is not accepted` |
+| CN-31 | no candidate reachable (typed form) | "Can't reach <host>. Are you on the same network (or connected through Tailscale)?" | "Can't reach your server from here" + why when known: away access is off, or this network blocks it | Built (first half) / Designed (second) | `connect_form_test.dart` `CN-31: no address answers` (the first half) |
 | CN-32 | an invitation link while the phone is still waking up | "Reaching the server…" and 3 retries (2, 4, 8 s) before "Can't reach" | same | Built | `join_invitation_test.dart` |
 | CN-33 | an invitation for a server this phone already has an account on | says so | same | Built | `invite_link_test.dart` |
 | CN-34 | an address that answers with another key (CN-11) | the typed form and the join screen say it ("Another server answers at … not the one you know.", "This is not the server that invited you. Ask for a new invitation.") | the strip says the one offline sentence (D-45). **OPEN (needs owner/advisor):** D-45 gave every outage one sentence, so a wrong key reads "You're offline" although the phone is online, while O-6 had decided on 2026-10-23 that it gets a line of its own. Which one holds? | Built (forms, and the strip's one sentence) / **Open** (a line of its own for the wrong key) | `join_invitation_test.dart`, `server_identity_test.dart` |
