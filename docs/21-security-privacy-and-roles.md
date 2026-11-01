@@ -35,17 +35,19 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 | Server-to-server (`/encore/federation/…`) | — | ✓ (only if D-13 allows) |
 | Setup wizard | ✓ with the setup code (`15` §1) | ✗ |
 | Admin site | ✓ | ✗ (reach it remotely only through the Host's own Tailscale, Advanced) |
-| Navidrome's own web UI and Subsonic API (through the gateway) | ✓ | ✓ for members' Subsonic apps, rate-limited |
+| Navidrome's own web UI (through the gateway) | ✓ | ✗ (since S1, B12 `gateway.py`) |
+| Navidrome's Subsonic API under `/rest/` (through the gateway) | ✓ | ✓ for members' Subsonic apps, rate-limited |
 
 ## 4. Credentials
 
 * Passwords live only in Navidrome (which needs them reversible for the Subsonic protocol: the installer generates a strong
   `ND_PASSWORDENCRYPTIONKEY`). Phones never store passwords after sign-in: they hold a **device token** (256-bit random, stored hashed),
-  revocable per device, expired after 180 days unused.
+  revocable per device (**planned, not built:** expiry after 180 days unused, `32` DV-6).
 * One-time codes: setup code (until the owner exists), pairing QR (10 min), invite (7 days, one person), friend code (24 h), Jam code
   (until the Jam ends), password-reset link (1 h).
-* Rate limits: sign-in 5 tries per minute per person and per address, then a growing wait; 20 failures lock the account until the owner
-  unlocks it (the owner is told). Navidrome's own limiter sees real client addresses (the existing secret-header rule, ADR's D-2).
+* Rate limits: wrong passwords are slowed, never punished with a lock: 5 wrong answers a minute for one name from one address and 30 for one
+  address, then a wait that says how long (`LoginGuard`; `32` AC-21 and §7). **A wrong password never locks an account and never signs a device out**;
+  only an owner locks an account (S1, AUDIT B2). Navidrome's own limiter sees real client addresses (the existing secret-header rule, ADR's D-2).
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).
 
@@ -66,7 +68,7 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 
 | Who | Tries | Stopped by |
 |-----|-------|-----------|
-| Stranger on the internet | guess passwords; reach the admin; exhaust the server | rate limits and locks; admin not public; per-address limits on public routes |
+| Stranger on the internet | guess passwords; reach the admin; exhaust the server | rate limits (a wrong password slows a guesser and never locks an account); admin not public; per-address limits on public routes; only the music server's Subsonic API passes through the public address (S1) |
 | Stranger on the home Wi-Fi | claim a fresh server; sniff traffic | setup code (H36); tokens not passwords; pinned HTTPS later |
 | Curious member | see others' listening; read others' playlists | the privacy matrix enforced server-side, tested (one test per cell of §2) |
 | Malicious remote server | spam friend requests; pull a library; stream everything | codes from a person, signed requests, pinned keys, grants scoped to one song in one live Jam, per-server rate limits, Host switch |
