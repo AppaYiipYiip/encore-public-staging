@@ -267,13 +267,15 @@ class JamPlaybackFacade implements PlaybackFacade {
     String? sourceName,
     String? sourceId,
     bool shuffle = false,
+    bool skipUnavailable = false,
   }) {
     if (!_jam) {
       return _engine.playTracks(tracks,
           startIndex: startIndex,
           sourceName: sourceName,
           sourceId: sourceId,
-          shuffle: shuffle);
+          shuffle: shuffle,
+          skipUnavailable: skipUnavailable);
     }
     if (tracks.isEmpty) return Future<void>.value();
     // The song that was tapped plays now, in the Jam. The rest of the album is

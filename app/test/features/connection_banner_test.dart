@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:encore/app/connection.dart';
 import 'package:encore/app/providers.dart';
+import 'package:encore/features/providers.dart' show downloadedIdsProvider;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/test_app.dart';
@@ -16,6 +17,7 @@ void main() {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
       networkKindProvider.overrideWith((ref) => Stream.value(NetworkKind.none)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
     ]);
     await tester.pump(const Duration(milliseconds: 50));
     await settle(tester);
@@ -25,17 +27,45 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('a server that does not answer says so, and offers to try again',
+  testWidgets(
+      'without internet and with nothing downloaded it does not promise music that is not there (Q30 note, Q31)',
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      networkKindProvider.overrideWith((ref) => Stream.value(NetworkKind.none)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value(<String>{})),
     ]);
     await tester.pump(const Duration(milliseconds: 50));
     await settle(tester);
 
-    expect(find.text('Can\'t reach your server.'), findsOneWidget);
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('You\'re offline'), findsOneWidget);
+    expect(find.textContaining('Downloaded music still plays'), findsNothing,
+        reason: 'nothing is downloaded');
+    expect(find.textContaining('Nothing can play until you reconnect'),
+        findsOneWidget);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'a server that does not answer says the same calm thing as no internet, and can be put away (field test 2026-10-31)',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      connectionGraceProvider.overrideWithValue(Duration.zero),
+      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+
+    expect(find.textContaining("You're offline"), findsOneWidget);
+    expect(find.textContaining('Downloaded music still plays'), findsOneWidget);
+    expect(find.textContaining("Can't reach"), findsNothing,
+        reason: 'the radio is on and there is no data: that is being offline');
+
+    await tester.tap(find.byTooltip('Dismiss'));
+    await settle(tester);
+
+    expect(find.textContaining("You're offline"), findsNothing);
     await closeApp(tester, app.db);
   });
 

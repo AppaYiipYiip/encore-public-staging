@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/logger.dart';
 import '../data/catalogue/catalogue_models.dart';
+import '../data/db/app_database.dart' show ServerRow;
 import '../domain/invite_link.dart';
 import '../features/auth/login_problem.dart';
 import '../features/catalogue/catalogue_screens.dart';
@@ -111,6 +113,40 @@ Page<void> _slideUp(GoRouterState state, Widget child) =>
       },
     );
 
+/// Where a navigation goes, given the saved server. The page that asks for a server is for a phone that has none, and for nothing else: a
+/// database that did not answer is not "no server" (field test 2026-10-31: after a glimpse of public Wi-Fi the app opened on it, as if it
+/// had forgotten the server, and after a restart it opened normally).
+String? redirectFor({
+  required AsyncValue<ServerRow?> server,
+  required String location,
+  required bool hasInviteLink,
+}) {
+  // Still reading the (local) database: stay put for a few milliseconds. Not answering is the same: wait, never conclude.
+  if (server.isLoading) return null;
+  if (server.hasError && server.value == null) {
+    Log.warn('router', 'the saved server could not be read: ${server.error}');
+    return null;
+  }
+  final configured = server.value != null;
+  final onOnboarding = location == '/onboarding';
+  // An invitation is opened by the app itself (docs/39 F3); it needs the
+  // link it came with, so without one the person starts at the usual
+  // sign-in.
+  final onJoin = location == '/join';
+  if (onJoin && !hasInviteLink) return '/onboarding';
+  // Who's listening: only where somebody has signed in. (Adding another person opens the sign-in screens from there.)
+  final onProfiles = location.startsWith('/profiles');
+  if (!configured && !onOnboarding && !onJoin) {
+    Log.info('router', 'no saved server: the page that asks for one opens');
+    return '/onboarding';
+  }
+  if (configured && onOnboarding) return '/home';
+  // An invitation opened on a device that already has somebody signed in adds that person (a shared tablet).
+  if (configured && onJoin && !hasInviteLink) return '/home';
+  if (onProfiles && !configured) return '/onboarding';
+  return null;
+}
+
 /// Router is rebuilt-free: redirects react to the configured server.
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -120,26 +156,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/home',
     refreshListenable: refresh,
-    redirect: (context, state) {
-      final server = ref.read(activeServerProvider);
-      // Still reading the (local) database: stay put for a few milliseconds.
-      if (server.isLoading) return null;
-      final configured = server.value != null;
-      final onOnboarding = state.matchedLocation == '/onboarding';
-      // An invitation is opened by the app itself (docs/39 F3); it needs the
-      // link it came with, so without one the person starts at the usual
-      // sign-in.
-      final onJoin = state.matchedLocation == '/join';
-      if (onJoin && state.extra is! InviteLink) return '/onboarding';
-      // Who's listening: only where somebody has signed in. (Adding another person opens the sign-in screens from there.)
-      final onProfiles = state.matchedLocation.startsWith('/profiles');
-      if (!configured && !onOnboarding && !onJoin) return '/onboarding';
-      if (configured && onOnboarding) return '/home';
-      // An invitation opened on a device that already has somebody signed in adds that person (a shared tablet).
-      if (configured && onJoin && state.extra is! InviteLink) return '/home';
-      if (onProfiles && !configured) return '/onboarding';
-      return null;
-    },
+    redirect: (context, state) => redirectFor(
+      server: ref.read(activeServerProvider),
+      location: state.matchedLocation,
+      hasInviteLink: state.extra is InviteLink,
+    ),
     routes: [
       GoRoute(
         path: '/onboarding',

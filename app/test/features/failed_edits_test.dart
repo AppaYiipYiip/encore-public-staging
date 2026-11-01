@@ -34,7 +34,7 @@ void main() {
     final app = await pumpApp(tester);
     await openSync(tester);
 
-    expect(find.text('Songs on this device'), findsOneWidget);
+    expect(find.text('Songs in your library'), findsOneWidget);
     expect(find.textContaining('could not be saved'), findsNothing);
     await closeApp(tester, app.db);
   });

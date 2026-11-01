@@ -143,6 +143,20 @@ void main() {
   });
 
   test(
+      'what a session asks in its first moments waits for an address to prove itself instead of failing for good (QA round 1, R1-1)',
+      () async {
+    await start(pinned: await real.id(), signer: real, encore: true);
+
+    await session.whenAddressKnown();
+    final result = await session.encore.me();
+
+    expect(session.endpoints.isVerified, isTrue);
+    expect(result.failureOrNull, isNot(isA<NetworkFailure>()),
+        reason: 'the ask reached the address (this fake has no /me)');
+    expect(door.toHome().any((r) => r.uri.path == '/encore/api/v1/me'), isTrue);
+  });
+
+  test(
       'an impostor at the saved address is asked who it is, answers wrongly and is never sent a login, a token or a request',
       () async {
     // The phone knows the server by the key of `real`; at this address now answers `other`, which copies the id.

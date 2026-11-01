@@ -169,16 +169,54 @@ class _ServiceInviteState extends ConsumerState<ServiceInviteDialog> {
               const SizedBox(height: Space.sm),
               Text('Valid until ${_day(made.expiresAt)}, for one person.',
                   style: context.text.bodySmall?.copyWith(color: c.onBgMuted)),
-              // A link with a home-network address opens only for somebody on that network: say so before it is sent.
+              // A link with a home-network address opens only for somebody on that network: say so before it is sent, in the order a
+              // person needs it - what is the matter, what fixes it, how - and not as an error: nothing is wrong with the link (F39).
               if (!EncorePeopleApi.worksAway(
                   Uri.tryParse(made.url) ?? Uri())) ...[
-                const SizedBox(height: Space.sm),
-                Text(
-                  'This link opens only on your home network. To invite '
-                  'somebody who is away, add the address you reach your '
-                  'server at from outside, under Your server.',
+                const SizedBox(height: Space.md),
+                Column(
                   key: const Key('invite-home-only'),
-                  style: context.text.bodySmall?.copyWith(color: c.danger),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            size: 18, color: c.onBgMuted),
+                        const SizedBox(width: Space.sm),
+                        Expanded(
+                          child: Text(
+                            'This link only works on your home Wi-Fi.',
+                            style: context.text.titleSmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Space.xs),
+                    Text(
+                      'A friend who is away from home cannot open it. To '
+                      'invite them, your server needs an internet address.',
+                      style:
+                          context.text.bodySmall?.copyWith(color: c.onBgMuted),
+                    ),
+                    const SizedBox(height: Space.xs),
+                    // On an Encore server the server hands its addresses to a signed-in phone, so nothing is typed here; a plain
+                    // music server cannot, and has no `encore` command.
+                    Text(
+                      encore
+                          ? 'Tailscale, which is free, can give it one. On the '
+                              'computer that runs your server, run "encore funnel on" '
+                              'and sign in to Tailscale when it asks. Then open '
+                              'Encore again: it learns the new address by itself, '
+                              'and the next invitation uses it.'
+                          : 'Tailscale, which is free, can give it one. Install it '
+                              'on the computer that runs your server, then add the '
+                              'address it gives you under Your server > Add an '
+                              'address.',
+                      style:
+                          context.text.bodySmall?.copyWith(color: c.onBgMuted),
+                    ),
+                  ],
                 ),
               ],
               const SizedBox(height: Space.lg),

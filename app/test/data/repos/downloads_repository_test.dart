@@ -83,6 +83,59 @@ void main() {
       expect(s.phase, PinPhase.preparing);
     });
 
+    test(
+        'an empty playlist, once pinned, has nothing to download: it is not "preparing" for ever (Q1)',
+        () async {
+      await db.into(db.playlists).insert(PlaylistsCompanion.insert(
+          serverId: serverId, id: 'plEmpty', name: 'Blank'));
+      await repo.pin(PinTargetType.playlist, 'plEmpty');
+      final s =
+          await repo.watchPinState(PinTargetType.playlist, 'plEmpty').first;
+      expect(s.pinned, isTrue);
+      expect(s.total, 0);
+      expect(s.phase, isNot(PinPhase.preparing),
+          reason: 'an arrow that spins at 0 % for ever promises a download '
+              'that cannot happen');
+      expect(s.phase.name, 'empty');
+    });
+
+    test(
+        'an album pinned before its songs reached the phone is "preparing", not "nothing to download" (code review: only a playlist can be confirmed empty)',
+        () async {
+      await repo.pin(PinTargetType.album, 'alb-not-synced-yet');
+      final s = await repo
+          .watchPinState(PinTargetType.album, 'alb-not-synced-yet')
+          .first;
+
+      expect(s.confirmedEmpty, isFalse);
+      expect(s.phase, PinPhase.preparing);
+    });
+
+    test(
+        'a pinned song whose row has not reached the phone yet is still "preparing" (it is on its way, not absent)',
+        () async {
+      await repo.pin(PinTargetType.track, 'not-synced-yet');
+      final s =
+          await repo.watchPinState(PinTargetType.track, 'not-synced-yet').first;
+      expect(s.pinned, isTrue);
+      expect(s.phase, PinPhase.preparing);
+    });
+
+    test(
+        'a playlist the server says has songs, with no entries on this phone yet, is "preparing" and not "nothing to download" (Q1)',
+        () async {
+      await db.into(db.playlists).insert(PlaylistsCompanion.insert(
+          serverId: serverId,
+          id: 'plLate',
+          name: 'Forty songs',
+          songCount: const Value(5)));
+      await repo.pin(PinTargetType.playlist, 'plLate');
+      final s =
+          await repo.watchPinState(PinTargetType.playlist, 'plLate').first;
+      expect(s.total, 0);
+      expect(s.phase, PinPhase.preparing);
+    });
+
     test('progress follows the downloads table', () async {
       await repo.pin(PinTargetType.album, 'alb1');
       await setDownload('a1', DownloadState.done);

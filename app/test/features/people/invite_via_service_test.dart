@@ -4,6 +4,7 @@ import 'package:encore/app/share_out.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/people/people_client.dart';
+import 'package:encore/design/tokens.dart';
 import 'package:encore/features/common/link_code.dart';
 import 'package:encore/features/people/people_providers.dart';
 import 'package:flutter/material.dart';
@@ -59,10 +60,11 @@ void main() {
 
   const link = 'https://music.example.ts.net/people/join/abc';
 
-  Future<AppDatabase> openServerPage(
-      WidgetTester tester, FakePeopleApi api) async {
+  Future<AppDatabase> openServerPage(WidgetTester tester, FakePeopleApi api,
+      {bool encore = false}) async {
     final app = await pumpApp(tester, size: const Size(390, 1800), overrides: [
       peopleApiProvider.overrideWith((ref) async => api),
+      if (encore) encorePeopleApiProvider.overrideWith((ref) async => api),
     ]);
     final element = tester.element(find.byType(Scaffold).first);
     unawaited(GoRouter.of(element).push<void>('/settings/server'));
@@ -70,8 +72,9 @@ void main() {
     return app.db;
   }
 
-  Future<AppDatabase> openInvite(WidgetTester tester, FakePeopleApi api) async {
-    final db = await openServerPage(tester, api);
+  Future<AppDatabase> openInvite(WidgetTester tester, FakePeopleApi api,
+      {bool encore = false}) async {
+    final db = await openServerPage(tester, api, encore: encore);
     await tester.scrollUntilVisible(find.text('Invite someone'), 200,
         scrollable: find.byType(Scrollable).first);
     await settle(tester);
@@ -117,7 +120,8 @@ void main() {
     await closeApp(tester, db);
   });
 
-  testWidgets('a link with a home-network address says it opens only there',
+  testWidgets(
+      'a link with a home-network address says, in plain words and not in red, who it will not open for and how to fix that (F39)',
       (tester) async {
     final api = FakePeopleApi(me_: owner)
       ..createAnswer = Result.ok(CreatedInvite(
@@ -130,8 +134,55 @@ void main() {
     await tester.tap(find.text('Create invitation link'));
     await settle(tester);
 
-    expect(find.byKey(const Key('invite-home-only')), findsOneWidget);
-    expect(find.textContaining('only on your home network'), findsOneWidget);
+    final note = find.byKey(const Key('invite-home-only'));
+    expect(note, findsOneWidget);
+    Finder inNote(String part) =>
+        find.descendant(of: note, matching: find.textContaining(part));
+    // In order: what is wrong, what fixes it, how.
+    expect(inNote('only works on your home Wi-Fi'), findsOneWidget);
+    expect(inNote('away from home'), findsOneWidget);
+    expect(inNote('internet address'), findsOneWidget);
+    expect(inNote('Tailscale'), findsOneWidget,
+        reason: 'the name the person will meet, with what it is');
+    expect(inNote('free'), findsOneWidget);
+    expect(inNote('encore funnel on'), findsNothing,
+        reason: 'a plain music server has no such command');
+    expect(inNote('Add an address'), findsOneWidget,
+        reason: 'on a plain server the person adds the address by hand');
+    // Not an error: nothing is wrong with the link, it is a thing to know before it is sent.
+    final danger = tester.element(note).colors.danger;
+    for (final t in tester.widgetList<Text>(
+        find.descendant(of: note, matching: find.byType(Text)))) {
+      expect(t.style?.color, isNot(danger), reason: '"${t.data}" is red');
+    }
+    await closeApp(tester, db);
+  });
+
+  testWidgets(
+      'on an Encore server the note says what really happens: the phone learns the new address by itself, there is nothing to add (F39)',
+      (tester) async {
+    final api = FakePeopleApi(me_: owner)
+      ..createAnswer = Result.ok(CreatedInvite(
+        id: '1',
+        url: 'http://192.168.50.133:4540/encore/join/ABCD-EFGH-JK1',
+        expiresAt: DateTime(2026, 10, 24),
+      ));
+    final db = await openInvite(tester, api, encore: true);
+
+    await tester.tap(find.text('Create invitation link'));
+    await settle(tester);
+
+    final note = find.byKey(const Key('invite-home-only'));
+    expect(note, findsOneWidget);
+    Finder inNote(String part) =>
+        find.descendant(of: note, matching: find.textContaining(part));
+    expect(inNote('encore funnel on'), findsOneWidget,
+        reason: 'the one command, on the computer that runs the server');
+    expect(inNote('learns the new address by itself'), findsOneWidget,
+        reason: 'the server tells a signed-in phone its addresses (ADR-R40); '
+            'the link is made from them');
+    expect(inNote('Add an address'), findsNothing,
+        reason: 'nothing to type: that step is the fallback of a plain server');
     await closeApp(tester, db);
   });
 

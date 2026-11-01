@@ -8,6 +8,7 @@ import '../core/logger.dart';
 import '../data/db/app_database.dart';
 import '../data/encore/signed_addresses.dart' show withQuality;
 import '../data/repos/downloads_repository.dart';
+import '../data/sync/endpoint_resolver.dart' show EndpointResolver;
 import '../data/sync/outbox.dart';
 import '../data/sync/sync_state_store.dart';
 import '../features/common/cover_art.dart' show coverCacheManager;
@@ -39,6 +40,13 @@ final audioBackendProvider = Provider<JustAudioBackend>(
 final audioHandlerProvider = Provider<Future<EncoreAudioHandler>>(
   (ref) => throw UnimplementedError('audioHandlerProvider must be overridden'),
 );
+
+/// Whether a song that is not downloaded can be asked for now: the phone has a network AND the server is not known to be out of reach.
+/// A network alone is not enough: with the 4G radio on and no data the player believed it was online, waited for the server on the first
+/// song that was not downloaded and never reached the downloaded ones behind it (field test 2026-10-31). Before anybody has looked
+/// (the first second of the app) and without a session, the network decides alone.
+bool canReachServerNow(NetworkKind? network, EndpointResolver? endpoints) =>
+    network != NetworkKind.none && !(endpoints?.isKnownUnreachable ?? false);
 
 /// The playback engine for the configured server.
 ///
@@ -141,7 +149,9 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     // waits for the next one instead of stopping the music.
     moreComing: () => ref.read(instantControllerProvider.notifier).fetchingMore,
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
-    canReachServer: () =>
+    canReachServer: () => canReachServerNow(
+        ref.read(networkKindProvider).value, session()?.endpoints),
+    networkPresent: () =>
         ref.read(networkKindProvider).value != NetworkKind.none,
     // One fresh look at the server's addresses: a song that failed with a network but no server is waited for, not skipped (docs/33 G-1).
     serverAnswers: () async {

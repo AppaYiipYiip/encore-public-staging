@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/encore/encore_api.dart';
@@ -15,9 +17,56 @@ EncoreApi apiFor(FakeEncoreServer server, {String? deviceId}) {
   );
 }
 
+/// What the Wi-Fi of a cafe or a station answers instead of the server: a web page asking the visitor to sign in.
+class _Portal implements HttpClientAdapter {
+  _Portal(this.status);
+
+  final int status;
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options,
+          Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async =>
+      ResponseBody.fromString(
+          '<html><body>Sign in to the Wi-Fi network</body></html>', status,
+          headers: {
+            Headers.contentTypeHeader: ['text/html'],
+          });
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   late FakeEncoreServer server;
   late EncoreApi api;
+
+  group(
+      'a Wi-Fi sign-in page answering instead of the server (field test 2026-10-31)',
+      () {
+    EncoreApi behind(int status) => EncoreApi(
+          dio: Dio()..httpClientAdapter = _Portal(status),
+          baseUrl: () => Uri.parse('http://home.test:4540'),
+          auth: () => {'u': 'tester', 't': 'tok', 's': 'salt'},
+        );
+
+    test('a page is not an answer: nothing is read from it', () async {
+      final result = await behind(200).me();
+
+      expect(result, isA<Err<Object?>>(),
+          reason: 'an empty person with the role of a guest is not who I am');
+      expect(result.failureOrNull, isNot(isA<AuthFailure>()));
+    });
+
+    test('a refusal that is not the own of the server is not "sign in again"',
+        () async {
+      for (final status in [401, 403]) {
+        final result = await behind(status).me();
+
+        expect(result.failureOrNull, isA<NetworkFailure>(),
+            reason: 'status $status from a page: this is not your server');
+      }
+    });
+  });
 
   setUp(() {
     server = FakeEncoreServer();

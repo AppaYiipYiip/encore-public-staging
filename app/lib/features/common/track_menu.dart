@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
+import '../downloads/download_providers.dart';
+import '../instant/release_save.dart';
 import '../providers.dart';
 import 'cover_art.dart';
 import 'encore_sheet.dart';
@@ -106,6 +109,15 @@ class _TrackMenu extends ConsumerWidget {
     final facade = ref.watch(playbackFacadeProvider);
     final c = context.colors;
     final quality = qualityLabel(suffix: track.suffix, bitRate: track.bitRate);
+    // Three states of "is this song on the phone" (D-32): chosen by the person for this song alone, there only because of a downloaded
+    // playlist or album (cannot be removed from here: that one still wants it), or not there.
+    final ownDownload = ref
+            .watch(pinStateProvider((PinTargetType.track, track.id)))
+            .value
+            ?.pinned ??
+        false;
+    final onPhone =
+        ref.watch(downloadedIdsProvider).value?.contains(track.id) ?? false;
 
     void close() => Navigator.of(context).pop();
 
@@ -185,6 +197,45 @@ class _TrackMenu extends ConsumerWidget {
                 ));
               },
             ),
+            if (ownDownload)
+              _Action(
+                icon: Icons.arrow_circle_down_rounded,
+                iconColor: c.accent,
+                label: 'Remove download',
+                onTap: () async {
+                  final repo = ref.read(downloadsRepositoryProvider);
+                  final remove = ref.read(releaseSavesProvider.notifier);
+                  close();
+                  await remove.removeSongDownload(track.id);
+                  // Another pin (a downloaded playlist or album) may still want it: then it did not leave the phone.
+                  final stays = onPhone &&
+                      repo != null &&
+                      (await repo.desired()).containsKey(track.id);
+                  toast(stays
+                      ? '"${track.title}" stays on this phone: it is part of a downloaded playlist or album.'
+                      : 'Removed "${track.title}" from this phone');
+                },
+              )
+            else if (onPhone)
+              const _Action(
+                icon: Icons.arrow_circle_down_rounded,
+                label: 'Downloaded',
+                subtitle: 'It is on this phone with its playlist or album.',
+                enabled: false,
+                onTap: _noop,
+              )
+            else
+              _Action(
+                icon: Icons.arrow_circle_down_outlined,
+                label: 'Download',
+                onTap: () {
+                  unawaited(ref
+                      .read(downloadActionsProvider)
+                      .pin(PinTargetType.track, track.id));
+                  close();
+                  toast('Downloading "${track.title}" for offline listening');
+                },
+              ),
             if (fromPlaylist != null)
               _Action(
                 icon: Icons.remove_circle_outline_rounded,
@@ -253,6 +304,8 @@ class _TrackMenu extends ConsumerWidget {
   }
 }
 
+void _noop() {}
+
 class _Action extends StatelessWidget {
   const _Action({
     required this.icon,
@@ -260,6 +313,7 @@ class _Action extends StatelessWidget {
     required this.onTap,
     this.iconColor,
     this.enabled = true,
+    this.subtitle,
   });
 
   final IconData icon;
@@ -267,6 +321,7 @@ class _Action extends StatelessWidget {
   final VoidCallback onTap;
   final Color? iconColor;
   final bool enabled;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -274,6 +329,7 @@ class _Action extends StatelessWidget {
       enabled: enabled,
       leading: Icon(icon, color: iconColor),
       title: Text(label, style: context.text.bodyLarge),
+      subtitle: subtitle == null ? null : Text(subtitle!),
       onTap: enabled ? onTap : null,
     );
   }

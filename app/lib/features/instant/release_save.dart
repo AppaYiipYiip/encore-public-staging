@@ -240,6 +240,27 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
     }
   }
 
+  /// Takes ONE downloaded song off the phone (the song menu's "Remove download"). The phone's record of the release is written first: a kill
+  /// between the two steps must not leave a song that [resume] pins again at the next start, undoing what the person chose (D-35).
+  Future<void> removeSongDownload(String refId) async {
+    final store = await _store();
+    await store?.dropSong(refId);
+    await ref.read(downloadActionsProvider).unpin(PinTargetType.track, refId);
+    // What the open release page remembers: the song is no longer one of its downloaded songs.
+    final changed = {
+      for (final e in state.entries)
+        if (e.value.refIds.contains(refId))
+          e.key: ReleaseState(e.value.phase,
+              download: e.value.download,
+              refIds: [
+                for (final r in e.value.refIds)
+                  if (r != refId) r
+              ],
+              message: e.value.message),
+    };
+    if (changed.isNotEmpty) state = {...state, ...changed};
+  }
+
   /// Finishes what an app that was killed in the middle of a download had started: the songs of every release the person asked to download,
   /// that the phone wrote down and that have no pin yet, are pinned now (D-35). Answers how many were pinned.
   ///

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:drift/native.dart';
 import 'package:encore/data/db/app_database.dart';
@@ -52,6 +54,45 @@ void main() {
       MediaAction.skipToNext,
     ]);
     expect(state.queueIndex, 0);
+  });
+
+  test(
+      'the next song\'s title reaches the lock screen and the notification at once, however long its cover takes (field test 2026-10-31)',
+      () async {
+    final never = Completer<Uri?>();
+    final slow = EncoreAudioHandler()
+      ..attach(facade, coverArt: (_) => never.future);
+
+    facade.emit(samplePlaying());
+    await pumpEventQueue();
+    expect(slow.mediaItem.value?.title, 'Opening The');
+
+    facade.emit(PlaybackSnapshot(
+      track: const NowPlayingTrack(
+        id: 'al3-t2',
+        title: 'Next Song',
+        artist: 'Periphery',
+        album: 'The Walk',
+        albumId: 'al3',
+        artistId: 'ar2',
+        suffix: 'flac',
+        bitRate: 900,
+        duration: Duration(minutes: 4),
+        coverArt: 'al3',
+      ),
+      isPlaying: true,
+      duration: const Duration(minutes: 4),
+      queueIndex: 1,
+      queueLength: 5,
+      hasNext: true,
+      sourceName: 'The Walk',
+    ));
+    await pumpEventQueue();
+
+    expect(slow.mediaItem.value?.title, 'Next Song',
+        reason: 'the title does not wait for the cover');
+    expect(slow.mediaItem.value?.artUri, isNull,
+        reason: 'and the previous song\'s cover is not kept under it');
   });
 
   test('shows a play button when paused', () async {

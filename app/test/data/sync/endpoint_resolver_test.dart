@@ -42,6 +42,38 @@ void main() {
     expect(told, [true, false, true]);
   });
 
+  test(
+      'it is known to be unreachable only after a look found nothing, not before the first look',
+      () async {
+    var up = false;
+    final r = EndpointResolver(
+      candidates: [home],
+      probe: (_) async => up,
+      delay: (_) async {},
+    );
+    expect(r.isKnownUnreachable, isFalse,
+        reason:
+            'nobody has looked yet: a song tapped in the first second is not refused');
+
+    await r.resolve();
+    expect(r.isKnownUnreachable, isTrue,
+        reason: 'the radio is on, nothing answers (4G without data)');
+
+    r.invalidate();
+    expect(r.isKnownUnreachable, isFalse,
+        reason: 'the network changed: what was known is stale');
+
+    await r.resolve();
+    up = true;
+    await r.resolve();
+    expect(r.isKnownUnreachable, isFalse);
+
+    up = false;
+    await r.resolve();
+    r.reportSuccess();
+    expect(r.isKnownUnreachable, isFalse, reason: 'a request that worked');
+  });
+
   test('a request that works marks the server reachable again', () async {
     final r = EndpointResolver(
       candidates: [home],

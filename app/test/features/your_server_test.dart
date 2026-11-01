@@ -24,6 +24,15 @@ import '../support/test_app.dart';
 
 /// What the app tells a person about their server (ADR-052, ADR-056): the
 /// empty server is not "unreachable", and "your server" says what is there.
+/// Scrolls the page to its top, then pulls it down: the pull-to-refresh only starts from the top.
+Future<void> pullDown(WidgetTester tester) async {
+  final page = find.byType(Scrollable).first;
+  await tester.fling(page, const Offset(0, 4000), 6000);
+  await tester.pumpAndSettle();
+  await tester.fling(page, const Offset(0, 400), 1200);
+  await settle(tester);
+}
+
 void main() {
   setUpAll(loadAppFonts);
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -218,7 +227,8 @@ void main() {
       await closeApp(tester, app.db);
     });
 
-    testWidgets('checking shows which address answers and how fast',
+    testWidgets(
+        'opening the page checks each address by itself, and there is no button to press (F40)',
         (tester) async {
       final app = await pumpApp(
         tester,
@@ -244,17 +254,87 @@ void main() {
       await settle(tester);
       await showAddresses(tester);
 
-      await tester.tap(find.text('Check addresses'));
-      await settle(tester);
-
+      expect(find.text('Check addresses'), findsNothing,
+          reason: 'it looked like a broken button; each address shows its own '
+              'answer instead');
       expect(find.text('38 ms'), findsOneWidget);
       expect(find.text('No answer'), findsOneWidget);
       await closeApp(tester, app.db);
     });
 
     testWidgets(
-        'checking the addresses also looks again for friends and "play any '
-        'song" (a name that did not resolve a minute ago may now)',
+        'pulling the page down asks every address again; offline nothing is asked (F40)',
+        (tester) async {
+      final asked = <String>[];
+      final app = await pumpApp(
+        tester,
+        size: const Size(390, 1800),
+        overrides: [
+          serverSetupServiceProvider.overrideWith((ref) => _FakeSetup(
+                db: ref.watch(databaseProvider),
+                credentials: ref.watch(credentialStoreProvider),
+                asked: asked,
+              )),
+        ],
+      );
+      await app.db.update(app.db.servers).write(ServersCompanion(
+            endpointsJson: Value(jsonEncode([
+              {'label': 'Home', 'url': 'http://192.168.1.10:4533'},
+              {'label': 'Tailscale', 'url': 'http://100.101.102.103:4533'},
+            ])),
+          ));
+      final element = tester.element(find.byType(Scaffold).first);
+      final server = await app.db.select(app.db.servers).getSingle();
+      await ProviderScope.containerOf(element)
+          .read(credentialStoreProvider)
+          .writePassword(server.id, 'secret');
+      await settle(tester);
+      await showAddresses(tester);
+      expect(asked.toSet(), {'192.168.1.10', '100.101.102.103'},
+          reason: 'both were asked when the page opened');
+      final first = asked.length;
+
+      await pullDown(tester);
+
+      expect(asked.length, greaterThan(first),
+          reason: 'a pull asks them again');
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets('offline, the page asks nobody and shows no answers (F40)',
+        (tester) async {
+      final asked = <String>[];
+      final app = await pumpApp(
+        tester,
+        size: const Size(390, 1800),
+        overrides: [
+          networkKindProvider
+              .overrideWith((ref) => Stream.value(NetworkKind.none)),
+          serverSetupServiceProvider.overrideWith((ref) => _FakeSetup(
+                db: ref.watch(databaseProvider),
+                credentials: ref.watch(credentialStoreProvider),
+                asked: asked,
+              )),
+        ],
+      );
+      final element = tester.element(find.byType(Scaffold).first);
+      final server = await app.db.select(app.db.servers).getSingle();
+      await ProviderScope.containerOf(element)
+          .read(credentialStoreProvider)
+          .writePassword(server.id, 'secret');
+      await settle(tester);
+      await showAddresses(tester);
+
+      expect(asked, isEmpty);
+      expect(find.text('No answer'), findsNothing,
+          reason: 'an address does not "not answer" when the phone has no '
+              'network at all');
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'checking the addresses (a pull on the page) also looks again for '
+        'friends and "play any song" (a name that did not resolve a minute ago may now)',
         (tester) async {
       var peopleLooks = 0;
       var fetchLooks = 0;
@@ -286,8 +366,7 @@ void main() {
       final peopleBefore = peopleLooks;
       final fetchBefore = fetchLooks;
 
-      await tester.tap(find.text('Check addresses'));
-      await settle(tester);
+      await pullDown(tester);
 
       expect(peopleLooks, greaterThan(peopleBefore),
           reason: 'the Your server page showed no People tile because the '
@@ -430,7 +509,10 @@ void main() {
 
 /// Answers for the home address only (as when Tailscale is off).
 class _FakeSetup extends ServerSetupService {
-  _FakeSetup({required super.db, required super.credentials});
+  _FakeSetup({required super.db, required super.credentials, this.asked});
+
+  /// Every address it was asked about, in order.
+  final List<String>? asked;
 
   @override
   Future<Duration?> probe(
@@ -438,8 +520,10 @@ class _FakeSetup extends ServerSetupService {
     required String username,
     required String password,
     String? expectedId,
-  }) async =>
-      endpoint.url.host == '192.168.1.10'
-          ? const Duration(milliseconds: 38)
-          : null;
+  }) async {
+    asked?.add(endpoint.url.host);
+    return endpoint.url.host == '192.168.1.10'
+        ? const Duration(milliseconds: 38)
+        : null;
+  }
 }

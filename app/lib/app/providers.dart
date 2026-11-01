@@ -173,6 +173,11 @@ final networkKindProvider = StreamProvider<NetworkKind>((ref) async* {
   yield* connectivity.onConnectivityChanged.map(kindOf).distinct();
 });
 
+/// Whether the phone has a network at all (`true` while that is not known yet). The address resolver keeps saying "reachable" after the
+/// phone lost its network (nothing tells it), so a page that says the server is working must ask this as well (Q31).
+final phoneOnlineProvider = Provider<bool>(
+    (ref) => ref.watch(networkKindProvider).value != NetworkKind.none);
+
 /// Raw connectivity hint (not truth - see EndpointResolver).
 final connectivityProvider = StreamProvider<bool>((ref) async* {
   final connectivity = Connectivity();

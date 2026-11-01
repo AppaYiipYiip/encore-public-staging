@@ -30,8 +30,8 @@ class YouDrawer extends ConsumerWidget {
     final news = ref.watch(newsProvider);
     final canManage = ref.watch(peopleProvider).value?.canManage ?? false;
     final jam = ref.watch(jamEntryShownProvider);
-    final reachable =
-        ref.watch(sessionProvider).value?.endpoints.isReachable ?? false;
+    final reachable = ref.watch(phoneOnlineProvider) &&
+        (ref.watch(sessionProvider).value?.endpoints.isReachable ?? false);
     final several = profiles.length > 1;
 
     // Closes the drawer, then opens the place (both in the same breath, while the context is still there).

@@ -84,10 +84,12 @@ class EndpointResolver {
   Future<ServerEndpoint?>? _inFlight;
   int _consecutiveFailures = 0;
   bool _reachable = false;
+  bool _knownDown = false;
   final StreamController<bool> _reachability =
       StreamController<bool>.broadcast();
 
   void _setReachable(bool value) {
+    if (value) _knownDown = false;
     if (value == _reachable) return;
     _reachable = value;
     if (!_reachability.isClosed) _reachability.add(value);
@@ -108,6 +110,8 @@ class EndpointResolver {
   /// the next race has found an address that proves itself.
   void invalidate() {
     if (requireVerified) _verified = false;
+    // What was learned about the old network says nothing about this one.
+    _knownDown = false;
   }
 
   /// Adds addresses the server itself told this phone about (`GET /encore/api/v1/server`); known ones are left alone. They are only ever
@@ -121,6 +125,11 @@ class EndpointResolver {
 
   /// `true` once a probe has succeeded and until a full resolution fails.
   bool get isReachable => _reachable;
+
+  /// A look at every address found none that answers (the radio is on and there is no data, a captive Wi-Fi, the server is off), and
+  /// nothing has worked since. Unlike `!isReachable` it is `false` before the first look and after the network changed: not knowing is not
+  /// a reason to refuse a song (field test 2026-10-31: with 4G on and no data the player waited on a song that was not downloaded).
+  bool get isKnownUnreachable => _knownDown;
 
   /// Emits whenever the chosen endpoint changes.
   Stream<ServerEndpoint> get changes => _changes.stream;
@@ -182,6 +191,7 @@ class EndpointResolver {
     } else {
       // Nothing proved itself: the last winner may now be somebody else's address (another network), so it is not used any more.
       if (requireVerified) _verified = false;
+      _knownDown = true;
       _setReachable(false);
       Log.info('endpoint', 'no endpoint reachable');
     }

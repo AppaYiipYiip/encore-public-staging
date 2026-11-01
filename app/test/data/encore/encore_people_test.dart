@@ -23,6 +23,12 @@ void main() {
     );
   });
 
+  test(
+      'F57: an Encore server cannot show what a person listens to to friends, so the people API says so (the switch is not offered)',
+      () {
+    expect(people.sharesListening, isFalse);
+  });
+
   group('which address an invitation is made with', () {
     final home = Uri.parse('http://192.168.50.133:4540');
     final tailnet = Uri.parse('http://100.101.102.103:4540');

@@ -84,7 +84,8 @@ class FakePlaybackFacade implements PlaybackFacade {
       {int startIndex = 0,
       String? sourceName,
       String? sourceId,
-      bool shuffle = false}) async {
+      bool shuffle = false,
+      bool skipUnavailable = false}) async {
     calls.add('playTracks(${tracks.length}, start=$startIndex, '
         'source=$sourceName, shuffle=$shuffle)');
     _simulate(

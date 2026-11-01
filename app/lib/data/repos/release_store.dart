@@ -118,6 +118,28 @@ class ReleaseStore {
     await _writePhone(all);
   }
 
+  /// The person took ONE song off the phone (the song menu): the phone's own record stops listing it, so the next start does not pin it
+  /// again (D-35); a release left with no song is saved on the server without the intent to keep it here.
+  Future<void> dropSong(String refId) async {
+    final all = await phone();
+    var changed = false;
+    for (final e in all.entries.toList()) {
+      if (!e.value.refIds.contains(refId)) continue;
+      final left = [
+        for (final r in e.value.refIds)
+          if (r != refId) r
+      ];
+      all[e.key] = PhoneRelease(
+        refIds: left,
+        title: e.value.title,
+        artist: e.value.artist,
+        download: left.isEmpty ? false : e.value.download,
+      );
+      changed = true;
+    }
+    if (changed) await _writePhone(all);
+  }
+
   Future<void> _writePhone(Map<String, PhoneRelease> all) => _state.set(
         phoneKey,
         jsonEncode({for (final e in all.entries) e.key: e.value.toJson()}),

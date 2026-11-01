@@ -147,7 +147,17 @@ class DownloadManager {
         _inFlight.add(row.trackId);
       }
     }
-    _pins = _repo.watchPins().listen((_) => requestReconcile());
+    // A pin that goes (a playlist deleted, a download switched off) is the person's own act: what only it held leaves the phone now. The
+    // grace period is for songs that merely left a list that is regenerated (field test 2026-10-31: "x songs downloaded" a day after the
+    // playlist was deleted). The first emission is the pins as they were at the start, not an act, and a pin that is only added or written
+    // again changes nothing for the songs that left a list: only a pin that is gone counts.
+    Set<String>? known;
+    _pins = _repo.watchPins().listen((pins) {
+      final now = {for (final p in pins) '${p.targetType}:${p.targetId}'};
+      final removed = known != null && known!.difference(now).isNotEmpty;
+      known = now;
+      requestReconcile(immediateRemoval: removed);
+    });
     requestReconcile();
   }
 
@@ -162,11 +172,17 @@ class DownloadManager {
   /// Coalesces bursts of triggers (pin edits, sync completions).
   void requestReconcile({bool immediateRemoval = false}) {
     if (_disposed) return;
+    // Sticky until the pass runs: a later, ordinary trigger inside the window must not turn the person's removal back into a grace period.
+    _removeNow = _removeNow || immediateRemoval;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      unawaited(reconcile(immediateRemoval: immediateRemoval));
+      final now = _removeNow;
+      _removeNow = false;
+      unawaited(reconcile(immediateRemoval: now));
     });
   }
+
+  bool _removeNow = false;
 
   /// Transport callbacks join the same FIFO as reconciles, so a completion
   /// can never race with a planning pass.

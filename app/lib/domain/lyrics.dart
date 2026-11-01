@@ -46,6 +46,11 @@ class TrackLyrics {
   }
 }
 
+/// A line that only names a detail of the song, as the lines of a tag sheet do.
+final _detailsLine = RegExp(
+    r'^(artist|album|title|track|song|composer|lyricist|writer|length|year|genre)\s*:\s*\S?.*$',
+    caseSensitive: false);
+
 /// Parses LRC text (`[mm:ss.xx] words`, multiple stamps per line, metadata
 /// tags ignored). Falls back to unsynced plain lines when no stamp is found.
 TrackLyrics parseLrc(String content, {String? source}) {
@@ -92,6 +97,15 @@ TrackLyrics parseLrc(String content, {String? source}) {
   }
   while (plain.isNotEmpty && plain.last.isBlank) {
     plain.removeLast();
+  }
+  // Some catalogue entries hold only the song's own details ("Artist: ... / Album: ... / Title: ...") where the words should be (found on
+  // "Any Colour You Like", an instrumental): that is no lyrics, and the player says so instead of showing it as a poem.
+  final words = [
+    for (final l in plain)
+      if (!l.isBlank) l.text
+  ];
+  if (words.isNotEmpty && words.every(_detailsLine.hasMatch)) {
+    return TrackLyrics(lines: const [], synced: false, source: source);
   }
   return TrackLyrics(lines: plain, synced: false, source: source);
 }

@@ -290,6 +290,8 @@ class TrackTile extends StatelessWidget {
         opacity: available ? 1 : 0.45,
         child: InkWell(
           onTap: onTap,
+          // A long press opens the same menu as the three dots (D-26).
+          onLongPress: onMore,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 56),
             child: Padding(
@@ -324,31 +326,34 @@ class PlayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Semantics(
-      button: true,
-      label: isPlaying ? 'Pause' : 'Play',
-      excludeSemantics: true,
-      child: Material(
-        color: filled ? c.accent : Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onPressed == null
-              ? null
-              : () {
-                  HapticFeedback.selectionClick();
-                  onPressed!();
-                },
-          child: SizedBox.square(
-            dimension: size,
-            child: Icon(
-              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              size: size * 0.6,
-              color: filled ? c.onAccent : c.onBg,
-            ),
+    final button = Material(
+      color: filled ? c.accent : Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed == null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                onPressed!();
+              },
+        child: SizedBox.square(
+          dimension: size,
+          child: Icon(
+            isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: size * 0.6,
+            color: filled ? c.onAccent : c.onBg,
           ),
         ),
       ),
+    );
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: isPlaying ? 'Pause' : 'Play',
+      excludeSemantics: true,
+      // A Play that cannot play (an empty playlist) must not look like the one that can (Q2).
+      child: onPressed == null ? Opacity(opacity: 0.38, child: button) : button,
     );
   }
 }

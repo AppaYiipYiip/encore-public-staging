@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:encore/app/connection.dart';
 import 'package:encore/app/providers.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/people/people_client.dart';
@@ -109,6 +110,56 @@ void main() {
       final c = containerWith(null);
 
       expect(await c.read(peopleProvider.future), isNull);
+    });
+
+    test(
+        'an ask that went out before the server could be reached is made again when it can (QA round 1, R1-1: an owner without Invite and People)',
+        () async {
+      final api = FakePeopleApi(
+          me_: const PeopleMe(
+              user: 'owner', isAdmin: true, sharing: false, canInvite: true))
+        ..meAnswers.add(const Result.err(NetworkFailure('Cannot reach')));
+      final reachable = StreamController<bool>();
+      addTearDown(reachable.close);
+      final c = ProviderContainer(overrides: [
+        peopleApiProvider.overrideWith((ref) async => api),
+        serverReachableProvider.overrideWith((ref) => reachable.stream),
+      ]);
+      addTearDown(c.dispose);
+      // The screens that show the tiles are listening, and a provider nobody listens to is paused.
+      addTearDown(c.listen(peopleProvider, (_, __) {}).close);
+
+      expect(await c.read(peopleProvider.future), isNull,
+          reason: 'the first ask found nobody to answer');
+      reachable.add(true);
+      await pumpEventQueue();
+
+      expect((await c.read(peopleProvider.future))?.canInvite, isTrue,
+          reason:
+              'the owner gets Invite and People as soon as the server answers');
+    });
+
+    test('a person already known is not forgotten when the line blinks',
+        () async {
+      final api = FakePeopleApi(
+          me_: const PeopleMe(user: 'owner', isAdmin: true, sharing: false));
+      final reachable = StreamController<bool>();
+      addTearDown(reachable.close);
+      final c = ProviderContainer(overrides: [
+        peopleApiProvider.overrideWith((ref) async => api),
+        serverReachableProvider.overrideWith((ref) => reachable.stream),
+      ]);
+      addTearDown(c.dispose);
+      addTearDown(c.listen(peopleProvider, (_, __) {}).close);
+      await c.read(peopleProvider.future);
+      api.meAnswers.add(const Result.err(NetworkFailure('Cannot reach')));
+
+      reachable
+        ..add(false)
+        ..add(true);
+      await pumpEventQueue();
+
+      expect(c.read(peopleProvider).value?.user, 'owner');
     });
 
     test('switching sharing on shows at once and is sent', () async {

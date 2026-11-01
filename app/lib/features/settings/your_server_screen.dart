@@ -34,7 +34,8 @@ class YourServerScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final c = context.colors;
 
-    final reachable = session?.endpoints.isReachable ?? false;
+    final online = ref.watch(phoneOnlineProvider);
+    final reachable = online && (session?.endpoints.isReachable ?? false);
     final extensions = session?.client.extensions ?? const <String>{};
     final serverLyrics = extensions.contains('songLyrics');
     final serviceUrl = settings.requestPortalUrl;
@@ -53,6 +54,10 @@ class YourServerScreen extends ConsumerWidget {
       title: 'Your server',
       description: 'Encore plays music from your own server. This is what it '
           'found there, and what is missing.',
+      // Pull the page down to ask the addresses again (F40).
+      onRefresh: () async {
+        ref.read(addressRecheckProvider.notifier).ask();
+      },
       children: [
         const SettingsSection('Music server'),
         ListTile(
@@ -64,7 +69,11 @@ class YourServerScreen extends ConsumerWidget {
           subtitle: Text(
             [
               if (server != null) 'Signed in as ${server.username}',
-              if (session != null)
+              if (!online)
+                ref.watch(hasDownloadsProvider)
+                    ? 'No internet. Songs you downloaded still play.'
+                    : 'No internet. Nothing can play until you reconnect.'
+              else if (session != null)
                 '${session.endpoints.current.label} (${session.endpoints.current.url.host})',
             ].join(' - '),
           ),
@@ -74,7 +83,7 @@ class YourServerScreen extends ConsumerWidget {
         ),
         ListTile(
           leading: const Icon(Icons.library_music_outlined),
-          title: Text('${plural(tracks, 'song')} on this phone'),
+          title: Text('${plural(tracks, 'song')} in your library'),
           subtitle: Text('Library $synced. Play, sync, offline copies and '
               'playlists need only this.'),
         ),

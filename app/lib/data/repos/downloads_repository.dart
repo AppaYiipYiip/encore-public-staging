@@ -20,6 +20,9 @@ enum PinPhase {
   /// Pinned, waiting for members to be known or for the first file.
   preparing,
 
+  /// Pinned, and it holds no songs (an empty playlist): nothing to wait for. Songs added later download by themselves.
+  empty,
+
   /// Some files are on the phone, others still coming.
   downloading,
 
@@ -39,6 +42,7 @@ class PinState {
     this.active = 0,
     this.failed = 0,
     this.bytes = 0,
+    this.confirmedEmpty = false,
   });
 
   static const PinState none = PinState();
@@ -50,9 +54,13 @@ class PinState {
   final int failed;
   final int bytes;
 
+  /// The members were counted and there are none, as opposed to songs that have not reached this phone yet (a pinned song whose row has
+  /// not synced, a release the server is still getting, a playlist whose entries were not fetched): only the first is "nothing to download".
+  final bool confirmedEmpty;
+
   PinPhase get phase {
     if (!pinned) return PinPhase.off;
-    if (total == 0) return PinPhase.preparing;
+    if (total == 0) return confirmedEmpty ? PinPhase.empty : PinPhase.preparing;
     if (done >= total) return PinPhase.complete;
     if (active == 0 && failed > 0) return PinPhase.attention;
     if (done == 0 && active == 0) return PinPhase.preparing;
@@ -70,10 +78,12 @@ class PinState {
       other.done == done &&
       other.active == active &&
       other.failed == failed &&
-      other.bytes == bytes;
+      other.bytes == bytes &&
+      other.confirmedEmpty == confirmedEmpty;
 
   @override
-  int get hashCode => Object.hash(pinned, total, done, active, failed, bytes);
+  int get hashCode =>
+      Object.hash(pinned, total, done, active, failed, bytes, confirmedEmpty);
 
   @override
   String toString() => 'PinState($phase, $done/$total, active: $active, '
@@ -154,7 +164,9 @@ SELECT
     AND d.state = ${DownloadState.failed}) AS failed,
   (SELECT COALESCE(SUM(d.bytes), 0) FROM m JOIN downloads d
      ON d.server_id = ?1 AND d.track_id = m.id
-    AND d.state = ${DownloadState.done}) AS bytes
+    AND d.state = ${DownloadState.done}) AS bytes,
+  (SELECT p.song_count FROM playlists p
+    WHERE p.server_id = ?1 AND p.id = ?2 AND ?3 = 'playlist') AS declared
 ''';
     return _db
         .customSelect(
@@ -169,6 +181,7 @@ SELECT
             _db.downloads,
             _db.tracks,
             _db.playlistEntries,
+            _db.playlists,
           },
         )
         .watchSingle()
@@ -179,6 +192,17 @@ SELECT
               active: row.read<int>('active'),
               failed: row.read<int>('failed'),
               bytes: row.read<int>('bytes'),
+              // A playlist is empty when the server says it holds no songs; "no entries on this phone yet" is a playlist whose songs are
+              // still on their way (offline, or before its entries were fetched).
+              confirmedEmpty: switch (type) {
+                PinTargetType.track => false,
+                PinTargetType.playlist =>
+                  row.readNullable<int>('declared') == 0,
+                // Songs added to the Liked Songs list come by themselves; an album or an artist does not gain songs by being added to, so
+                // one whose songs have not reached the phone yet is on its way, not empty.
+                PinTargetType.liked => true,
+                _ => false,
+              },
             ))
         .distinct();
   }

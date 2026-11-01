@@ -82,6 +82,25 @@ void main() {
     expect((await row('t1')).state, DownloadState.downloading);
   });
 
+  test(
+      'a pinned playlist that was empty downloads the song that is added to it later (Q1)',
+      () async {
+    await db.into(db.playlists).insert(PlaylistsCompanion.insert(
+        serverId: serverId, id: 'plE', name: 'Blank'));
+    await repo.pin(PinTargetType.playlist, 'plE');
+    await manager.reconcile();
+    expect(transport.started, isEmpty);
+
+    await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+        serverId: serverId, playlistId: 'plE', position: 0, trackId: 't2'));
+    await manager.reconcile();
+
+    expect(transport.started.length, 1);
+    expect((await row('t2')).state, DownloadState.downloading);
+    final pin = await repo.watchPinState(PinTargetType.playlist, 'plE').first;
+    expect(pin.total, 1);
+  });
+
   test('original quality keeps the source extension', () async {
     await repo.pin(PinTargetType.album, 'al1');
     await manager.reconcile();
@@ -240,6 +259,73 @@ void main() {
     expect(transport.deleted, contains('/app/downloads/$serverId/t1.opus'));
     expect(transport.canceled.length, greaterThanOrEqualTo(3),
         reason: 'unfinished transfers were cancelled');
+  });
+
+  test(
+      'a pin the person removed (a playlist deleted) takes its songs off the phone at once, not a day later (field test 2026-10-31: "x songs downloaded" after deleting a playlist)',
+      () async {
+    await db.into(db.playlists).insert(
+        PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
+    await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+        serverId: serverId, playlistId: 'pl1', position: 0, trackId: 't1'));
+    await repo.pin(PinTargetType.playlist, 'pl1', quality: AudioQuality.high);
+    await manager.reconcile();
+    transport.complete('t1');
+    await manager.settled();
+
+    // What deleting the playlist does to its pin: the pin goes, nothing asks the manager for an immediate removal.
+    await repo.unpin(PinTargetType.playlist, 'pl1');
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await manager.settled();
+
+    expect(await repo.rowsFor(['t1']), isEmpty,
+        reason:
+            'the songs are not held for the grace period of a regenerated list');
+    expect(transport.deleted, isNotEmpty);
+  });
+
+  test(
+      'a pin written again with nothing removed (a resume, a refreshed quality) does not end the grace period of songs that left a list',
+      () async {
+    await db.into(db.playlists).insert(
+        PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
+    await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+        serverId: serverId, playlistId: 'pl1', position: 0, trackId: 't1'));
+    await repo.pin(PinTargetType.playlist, 'pl1', quality: AudioQuality.high);
+    await manager.reconcile();
+    transport.complete('t1');
+    await manager.settled();
+    await db.delete(db.playlistEntries).go();
+    await manager.reconcile();
+    expect((await row('t1')).orphanedAtMs, isNotNull);
+
+    await repo.pin(PinTargetType.playlist, 'pl1', quality: AudioQuality.high);
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await manager.settled();
+
+    expect(await repo.rowsFor(['t1']), isNotEmpty,
+        reason: 'nobody removed anything: the day of grace goes on');
+    expect(transport.deleted, isEmpty);
+  });
+
+  test('a song still wanted by another pin stays when one pin is removed',
+      () async {
+    await db.into(db.playlists).insert(
+        PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
+    await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+        serverId: serverId, playlistId: 'pl1', position: 0, trackId: 't1'));
+    await repo.pin(PinTargetType.playlist, 'pl1', quality: AudioQuality.high);
+    await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+    await manager.reconcile();
+    transport.complete('t1');
+    await manager.settled();
+
+    await repo.unpin(PinTargetType.playlist, 'pl1');
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await manager.settled();
+
+    expect((await row('t1')).orphanedAtMs, isNull);
+    expect(transport.deleted, isEmpty);
   });
 
   test('server-side drop keeps the file for the grace period', () async {

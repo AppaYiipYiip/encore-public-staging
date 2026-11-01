@@ -24,6 +24,13 @@ void main() {
 
   late PeopleClient client;
 
+  test(
+      'the people service shares what a person listens to with friends: the switch is offered (F57)',
+      () {
+    adapter = FakeHttpAdapter();
+    expect(at('https://music.test').sharesListening, isTrue);
+  });
+
   FakeResponse ok(Object body, {int status = 200}) =>
       FakeResponse.json(body, status: status);
 

@@ -228,6 +228,68 @@ void main() {
       expect(await db.select(db.pins).get(), isEmpty);
     });
 
+    test(
+        'one song taken off from the song menu is not given back by the next start (D-35, D-32)',
+        () async {
+      await ReleaseStore(db, serverId).put('cat:1', release);
+      final repo = DownloadsRepository(db, serverId,
+          clock: FakeClock(DateTime.utc(2026, 10, 30, 21)));
+      for (final id in release.refIds) {
+        await repo.pin(PinTargetType.track, id);
+      }
+
+      await restart()
+          .read(releaseSavesProvider.notifier)
+          .removeSongDownload('sr_2');
+      expect((await db.select(db.pins).get()).map((p) => p.targetId),
+          unorderedEquals(['sr_1', 'sr_3']),
+          reason: 'the song is off the phone');
+
+      final count =
+          await restart().read(releaseSavesProvider.notifier).resume();
+
+      expect(count, 0,
+          reason: 'the next start must not pin it again: the person said no');
+      expect((await db.select(db.pins).get()).map((p) => p.targetId),
+          unorderedEquals(['sr_1', 'sr_3']));
+      final record = (await ReleaseStore(db, serverId).phone())['cat:1']!;
+      expect(record.refIds, ['sr_1', 'sr_3'],
+          reason: 'the phone\'s own record of the release no longer lists it');
+      expect(record.download, isTrue,
+          reason: 'the other songs are still wanted on the phone');
+    });
+
+    test(
+        'taking the last downloaded song of a release off leaves the release saved without the download intent',
+        () async {
+      const one = PhoneRelease(
+          refIds: ['sr_1'], title: 'Single', artist: 'A', download: true);
+      await ReleaseStore(db, serverId).put('cat:2', one);
+      await DownloadsRepository(db, serverId,
+              clock: FakeClock(DateTime.utc(2026, 10, 30, 21)))
+          .pin(PinTargetType.track, 'sr_1');
+
+      await restart()
+          .read(releaseSavesProvider.notifier)
+          .removeSongDownload('sr_1');
+
+      final record = (await ReleaseStore(db, serverId).phone())['cat:2']!;
+      expect(record.download, isFalse);
+      expect(await restart().read(releaseSavesProvider.notifier).resume(), 0);
+    });
+
+    test('a song that is in no release is simply unpinned', () async {
+      await DownloadsRepository(db, serverId,
+              clock: FakeClock(DateTime.utc(2026, 10, 30, 21)))
+          .pin(PinTargetType.track, 'loose');
+
+      await restart()
+          .read(releaseSavesProvider.notifier)
+          .removeSongDownload('loose');
+
+      expect(await db.select(db.pins).get(), isEmpty);
+    });
+
     test('a person who took the download off is not given it back', () async {
       await ReleaseStore(db, serverId).put('cat:1', release);
       await restart()

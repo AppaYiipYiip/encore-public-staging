@@ -19,6 +19,38 @@ void main() {
     expect(text, endsWith('line two\n'));
   });
 
+  group('F53: which kind of server the session is talking to', () {
+    test('an Encore server is said so', () {
+      expect(
+          describeSessionMode(
+              signedIn: true, encoreMode: true, detecting: false),
+          'Encore server');
+    });
+
+    test(
+        'a plain music server that is still being looked at says it is still looking',
+        () {
+      expect(
+          describeSessionMode(
+              signedIn: true, encoreMode: false, detecting: true),
+          'plain music server, still looking for an Encore server');
+    });
+
+    test('a plain music server that answered as one is only plain', () {
+      expect(
+          describeSessionMode(
+              signedIn: true, encoreMode: false, detecting: false),
+          'plain music server');
+    });
+
+    test('nobody signed in has no session to describe', () {
+      expect(
+          describeSessionMode(
+              signedIn: false, encoreMode: false, detecting: false),
+          'none (nobody is signed in, or it is still starting)');
+    });
+  });
+
   test('an empty log still yields a valid report', () {
     final text = buildDiagnosticsReport(sections: {}, log: []);
     expect(text.trim(), '== Recent log ==');

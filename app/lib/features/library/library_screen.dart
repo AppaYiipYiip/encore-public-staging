@@ -12,6 +12,7 @@ import '../../data/repos/library_repository.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
 import '../../domain/household.dart';
+import '../common/collection_menu.dart';
 import '../common/cover_art.dart';
 import '../common/encore_sheet.dart';
 import '../common/format.dart';
@@ -361,6 +362,7 @@ class _LibraryEntry {
         coverArt = a.coverArt,
         count = a.songCount,
         artistName = a.artist,
+        artistId = a.artistId,
         playlist = null;
 
   final _Kind kind;
@@ -376,6 +378,55 @@ class _LibraryEntry {
 
   /// Album entries: artist, so a missing cover can come from the catalogue.
   String? artistName;
+
+  /// Album entries: the artist's id, for "Go to artist" in the menu.
+  String? artistId;
+
+  /// Whether the row has a menu (D-26): Liked Songs, a playlist and an album of the library. An artist, a loose downloaded song and a
+  /// downloaded catalogue release open their page and have nothing a collection menu would add.
+  bool get hasMenu =>
+      kind == _Kind.liked ||
+      kind == _Kind.playlist ||
+      (kind == _Kind.album && releaseId == null);
+
+  Future<List<TrackRow>> _songs(WidgetRef ref) async => switch (kind) {
+        _Kind.liked => await _first(ref, likedTracksProvider),
+        _Kind.playlist => await _first(ref, playlistTracksProvider(id)),
+        _Kind.album when releaseId == null =>
+          await _first(ref, albumTracksProvider(id)),
+        _ => const <TrackRow>[],
+      };
+
+  /// The first answer of a list nobody is watching right now. An auto-disposed stream that is only read is disposed while it loads and
+  /// fails, so it is held open for the read.
+  static Future<List<TrackRow>> _first(
+      WidgetRef ref, StreamProvider<List<TrackRow>> provider) async {
+    final hold = ref.listenManual(provider, (_, __) {});
+    try {
+      return await ref.read(provider.future);
+    } finally {
+      hold.close();
+    }
+  }
+
+  /// The collection menu of this row (the same one the page's three dots open): rename and delete for a playlist the person made, and
+  /// what applies to the songs in it.
+  Future<void> openMenu(BuildContext context, WidgetRef ref) async {
+    if (!hasMenu) return;
+    final songs = await _songs(ref);
+    if (!context.mounted) return;
+    final username = ref.read(activeServerProvider).value?.username;
+    final mine = playlist;
+    final editable =
+        mine != null && isEditablePlaylist(mine, username) ? mine : null;
+    await showCollectionMenu(
+      context,
+      title: title,
+      tracks: songs,
+      artistId: artistId,
+      playlist: editable,
+    );
+  }
 
   /// Set for a catalogue release the person downloaded (D-35): one entry for all its songs, and how far it is is added up over them.
   String? releaseId;
@@ -469,6 +520,8 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
       return _EntryState(
           '${s.done} of ${s.total} downloaded • some did not come',
           usable: !offline || s.done > 0);
+    case PinPhase.empty:
+      return const _EntryState('Nothing to download yet');
     case PinPhase.preparing:
     case PinPhase.off:
       return _EntryState('Getting ready to download', usable: !offline);
@@ -513,55 +566,79 @@ class _ListEntry extends ConsumerWidget {
     final line = _lineFor(ref, entry);
     final offline = ref
         .watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
-    return Semantics(
-      button: true,
-      label: '${entry.title}, ${line.subtitle}',
-      excludeSemantics: true,
-      child: Opacity(
-        opacity: line.usable ? 1 : 0.45,
-        child: InkWell(
-          onTap: () => entry.open(context, offline: offline),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: Space.gutter, vertical: Space.xs + 2),
-            child: Row(
-              children: [
-                SizedBox.square(
-                  dimension: 56,
-                  child: _EntryArt(entry: entry),
-                ),
-                const SizedBox(width: Space.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    // For a screen reader the row is one button (title and line, the long press as an action of it); the three dots are a button of their
+    // own beside it, outside what the row hides.
+    return Opacity(
+      opacity: line.usable ? 1 : 0.45,
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: '${entry.title}, ${line.subtitle}',
+              onLongPress: entry.hasMenu
+                  ? () => unawaited(entry.openMenu(context, ref))
+                  : null,
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: () => entry.open(context, offline: offline),
+                onLongPress: entry.hasMenu
+                    ? () => unawaited(entry.openMenu(context, ref))
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Space.gutter, Space.xs + 2, 0, Space.xs + 2),
+                  child: Row(
                     children: [
-                      Text(entry.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.text.bodyLarge),
-                      Row(
-                        children: [
-                          if (line.complete)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 4),
-                              child: Icon(Icons.arrow_circle_down_rounded,
-                                  size: 16, color: context.colors.accent),
-                            ),
-                          Expanded(
-                            child: Text(line.subtitle,
+                      SizedBox.square(
+                        dimension: 56,
+                        child: _EntryArt(entry: entry),
+                      ),
+                      const SizedBox(width: Space.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(entry.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: context.text.bodyMedium),
-                          ),
-                        ],
+                                style: context.text.bodyLarge),
+                            Row(
+                              children: [
+                                if (line.complete)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Icon(Icons.arrow_circle_down_rounded,
+                                        size: 16, color: context.colors.accent),
+                                  ),
+                                Expanded(
+                                  child: Text(line.subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.text.bodyMedium),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          if (entry.hasMenu)
+            Padding(
+              padding: const EdgeInsets.only(right: Space.gutter - 12),
+              child: IconButton(
+                tooltip: 'More options for ${entry.title}',
+                icon: Icon(Icons.more_vert_rounded,
+                    color: context.colors.onBgMuted),
+                onPressed: () => unawaited(entry.openMenu(context, ref)),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -585,6 +662,9 @@ class _GridEntry extends ConsumerWidget {
         opacity: line.usable ? 1 : 0.45,
         child: InkWell(
           onTap: () => entry.open(context, offline: offline),
+          onLongPress: entry.hasMenu
+              ? () => unawaited(entry.openMenu(context, ref))
+              : null,
           borderRadius: BorderRadius.circular(Radii.card),
           child: Column(
             crossAxisAlignment: entry.kind == _Kind.artist

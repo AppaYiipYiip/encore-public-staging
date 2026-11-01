@@ -245,6 +245,9 @@ abstract interface class PlaybackFacade {
     String? sourceName,
     String? sourceId,
     bool shuffle = false,
+
+    /// Play and Shuffle on a list: without a connection, songs that are not downloaded are passed over. A tapped row asks for its song.
+    bool skipUnavailable = false,
   });
 
   Future<void> togglePlayPause();
@@ -330,7 +333,8 @@ class NoopPlaybackFacade implements PlaybackFacade {
       {int startIndex = 0,
       String? sourceName,
       String? sourceId,
-      bool shuffle = false}) async {}
+      bool shuffle = false,
+      bool skipUnavailable = false}) async {}
   @override
   Future<void> togglePlayPause() async {}
   @override

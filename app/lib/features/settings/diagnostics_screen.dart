@@ -21,6 +21,21 @@ import '../downloads/download_providers.dart';
 import '../providers.dart';
 import 'settings_controller.dart';
 
+/// Which kind of server the session is talking to, in words (AUDIT F53): every mode-dependent behaviour (the first minutes after a sign-in, a tap
+/// on a catalogue song, Download, Import, Jam) depends on it, and a report that cannot say it has to be read from the outside. A phone that has
+/// just signed in to an Encore server starts as a plain music server "still looking" and becomes an Encore server within seconds (F30).
+String describeSessionMode({
+  required bool signedIn,
+  required bool encoreMode,
+  required bool detecting,
+}) {
+  if (!signedIn) return 'none (nobody is signed in, or it is still starting)';
+  if (encoreMode) return 'Encore server';
+  return detecting
+      ? 'plain music server, still looking for an Encore server'
+      : 'plain music server';
+}
+
 /// Builds the plain-text report shown on screen and copied to the clipboard.
 /// Pure (all inputs passed in) so its format is unit-tested.
 String buildDiagnosticsReport({
@@ -72,10 +87,12 @@ class DiagnosticsScreen extends ConsumerWidget {
             '${s.detail == null ? '' : ' (${s.detail})'}')
         .join('\n');
 
+    final session = ref.watch(sessionProvider).value;
     final sections = <String, String>{
       'App': '${AppBranding.name} ${AppBranding.versionLine} (${mode()})\n'
           '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-      'Server': 'name: ${server?.name ?? '-'}\n'
+      'Server': 'session: ${describeSessionMode(signedIn: session != null, encoreMode: session?.encoreMode ?? false, detecting: session?.detecting.value ?? false)}\n'
+          'name: ${server?.name ?? '-'}\n'
           'tracks in library: ${tracks ?? '-'}\n'
           'network: ${network?.name ?? '-'}\n'
           'last sync: ${sync?.lastSuccessAt?.toIso8601String() ?? 'never'}\n'

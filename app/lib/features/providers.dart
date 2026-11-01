@@ -182,6 +182,10 @@ final downloadedIdsProvider = StreamProvider.autoDispose<Set<String>>(
       _none(),
 );
 
+/// Whether any song is on the phone. The words about being offline promise that "downloaded songs still play" only when there are some.
+final hasDownloadsProvider = Provider.autoDispose<bool>((ref) =>
+    (ref.watch(downloadedIdsProvider).value ?? const <String>{}).isNotEmpty);
+
 final albumProvider = StreamProvider.autoDispose.family<AlbumRow?, String>(
   (ref, id) => _repo(ref)?.watchAlbum(id) ?? _none(),
 );

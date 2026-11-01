@@ -60,7 +60,15 @@ class EncoreApi {
             method: method,
             contentType: body == null ? null : Headers.jsonContentType),
       );
-      return readMap(response.data) ?? const {};
+      final parsed = readMap(response.data);
+      // A page (the sign-in page of a cafe's Wi-Fi) is not an answer: reading "nothing" from it made an owner a guest with an empty library.
+      if (parsed == null &&
+          response.data is String &&
+          (response.data as String).trim().isNotEmpty) {
+        throw const NetworkFailure(
+            'This address did not answer like your server');
+      }
+      return parsed ?? const {};
     } on DioException catch (e) {
       throw _failure(e);
     }
@@ -78,7 +86,9 @@ class EncoreApi {
         case 'forbidden':
           return AuthFailure(message ?? 'Sign in again.', cause: e);
         case 'not_found':
-          return NotFoundFailure(message ?? 'Not found.', cause: e);
+          return NotFoundFailure(message ?? 'Not found.',
+              unknownRef: readString(readMap(error['details'])?['ref']),
+              cause: e);
         default:
           return ServerFailure(message ?? 'The server could not do that.',
               statusCode: status, code: code, cause: e);
@@ -95,8 +105,11 @@ class EncoreApi {
       case DioExceptionType.cancel:
         return const CancelledFailure();
       case DioExceptionType.badResponse:
+        // The server's own refusals carry its error shape (handled above). A bare 401 or 403 is somebody else's page, for instance a
+        // Wi-Fi sign-in: not a reason to ask the person for the password again.
         if (status == 401 || status == 403) {
-          return AuthFailure('Not authorised', cause: e);
+          return NetworkFailure('This address did not answer like your server',
+              cause: e);
         }
         if (status == 404) return NotFoundFailure('Not found', cause: e);
         return ServerFailure('Server error ($status)',

@@ -73,6 +73,12 @@ class DownloadButton extends ConsumerWidget {
                   ? 'Downloading $name, ${(state.progress * 100).round()} percent'
                   : '$waiting to download $name',
         ),
+      PinPhase.empty => (
+          Icons.arrow_downward_rounded,
+          c.accent,
+          null,
+          'Nothing to download yet. Songs you add to $name will download',
+        ),
       PinPhase.complete => (
           Icons.arrow_downward_rounded,
           c.onAccent,
@@ -154,10 +160,18 @@ class DownloadButton extends ConsumerWidget {
       } else {
         await actions.pin(type, targetId);
       }
+      // Counted before the pin and found empty: say so, rather than promise a download that has nothing to fetch (Q1).
+      final nothing = onPin == null &&
+          stateOverride == null &&
+          state.confirmedEmpty &&
+          state.total == 0;
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: Text(problem ?? 'Downloading $name for offline listening'),
+          content: Text(problem ??
+              (nothing
+                  ? 'Nothing to download yet. Songs you add to $name will download.'
+                  : 'Downloading $name for offline listening')),
         ));
       return;
     }
@@ -197,6 +211,7 @@ class _RemoveSheet extends StatelessWidget {
     final c = context.colors;
     final size = formatBytes(state.bytes);
     final title = switch (state.phase) {
+      PinPhase.empty => 'Nothing to download yet',
       PinPhase.complete => 'Downloaded',
       PinPhase.attention => 'Some songs could not be downloaded',
       _ => waiting == null
@@ -217,8 +232,10 @@ class _RemoveSheet extends StatelessWidget {
                 style: context.text.titleLarge),
             const SizedBox(height: Space.xs),
             Text(
-              '$title - ${plural(state.total, 'song')}'
-              '${state.bytes > 0 ? ', $size on this phone' : ''}',
+              state.phase == PinPhase.empty
+                  ? 'Songs you add will download by themselves.'
+                  : '$title - ${plural(state.total, 'song')}'
+                      '${state.bytes > 0 ? ', $size on this phone' : ''}',
               style: context.text.bodyMedium,
             ),
             const SizedBox(height: Space.lg),
@@ -231,7 +248,8 @@ class _RemoveSheet extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.delete_outline_rounded, color: c.danger),
               title: Text(
-                state.phase == PinPhase.complete
+                state.phase == PinPhase.complete ||
+                        state.phase == PinPhase.empty
                     ? 'Remove download'
                     : 'Stop and remove download',
                 style: TextStyle(color: c.danger),

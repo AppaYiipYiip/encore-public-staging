@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart' show serverReachableProvider;
 import '../../app/providers.dart';
 import '../../core/logger.dart';
 import '../../core/result.dart';
@@ -75,6 +76,8 @@ final peopleServiceProvider = FutureProvider<Uri?>((ref) async {
 final encorePeopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
   final session = await ref.watch(sessionProvider.future);
   if (session == null || !session.encoreMode) return null;
+  // The first ask of a session would otherwise go out before any address has proved itself, fail, and never be made again.
+  await session.whenAddressKnown();
   return EncorePeopleApi(
     api: session.encore,
     // An invitation goes to somebody who is probably not at home: the server's address on the internet when it has one.
@@ -101,6 +104,12 @@ final peopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
 class PeopleNotifier extends AsyncNotifier<PeopleMe?> {
   @override
   Future<PeopleMe?> build() async {
+    // An owner whose first ask found no server loses Invite and People for as long as the app runs; asked again when it answers.
+    ref.listen(serverReachableProvider, (_, now) {
+      if (now.value == true && state.value == null && !state.isLoading) {
+        ref.invalidateSelf();
+      }
+    });
     final api = await ref.watch(peopleApiProvider.future);
     if (api == null) return null;
     final result = await api.me();

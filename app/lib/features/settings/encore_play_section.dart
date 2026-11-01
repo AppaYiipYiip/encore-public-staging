@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart' show serverReachableProvider;
 import '../../app/providers.dart';
 import '../../data/encore/encore_models.dart';
 import '../../design/tokens.dart';
+import '../providers.dart' show hasDownloadsProvider;
 import 'settings_controller.dart';
 
 /// What an Encore server says about itself right now (is it allowed to fetch new songs, or resting). `null` when it does not answer
 /// (tests replace it).
 final encoreServerInfoProvider =
     FutureProvider.autoDispose<EncoreInfo?>((ref) async {
+  // Asked again whenever the server is lost or found, so "did not answer" does not outlive the outage (QA round 1, R1-2).
+  ref.watch(serverReachableProvider);
   final session = await ref.watch(sessionProvider.future);
   if (session == null || !session.encoreMode) return null;
+  await session.whenAddressKnown();
   return (await session.encore.info()).valueOrNull;
 });
 
@@ -25,6 +30,9 @@ class EncorePlaySection extends ConsumerWidget {
     final enabled =
         ref.watch(settingsProvider.select((s) => s.instantPlayEnabled));
     final info = ref.watch(encoreServerInfoProvider);
+    // With no internet the page's own header already says that downloaded songs play: said once.
+    final hasDownloads =
+        ref.watch(hasDownloadsProvider) && ref.watch(phoneOnlineProvider);
     final c = context.colors;
 
     Widget status() {
@@ -42,9 +50,9 @@ class EncorePlaySection extends ConsumerWidget {
               dimension: 24, child: CircularProgressIndicator(strokeWidth: 2)),
           title: Text('Asking your server...'),
         ),
-        error: (_, __) => _unreachable(c),
+        error: (_, __) => _unreachable(c, hasDownloads),
         data: (value) {
-          if (value == null) return _unreachable(c);
+          if (value == null) return _unreachable(c, hasDownloads);
           if (value.youtubeState == 'resting') {
             return ListTile(
               leading: Icon(Icons.hourglass_bottom_rounded, color: c.onBgMuted),
@@ -88,11 +96,13 @@ class EncorePlaySection extends ConsumerWidget {
     );
   }
 
-  Widget _unreachable(EncoreColors c) => ListTile(
+  /// Without the server only what was downloaded plays, so that is all the line may promise, and only when something was downloaded.
+  Widget _unreachable(EncoreColors c, bool hasDownloads) => ListTile(
         leading: Icon(Icons.cloud_off_outlined, color: c.onBgMuted),
         title: const Text('Your server did not answer'),
-        subtitle: const Text('Songs it already has still play. Try again when '
-            'you are connected to it.'),
+        subtitle:
+            Text('${hasDownloads ? 'Songs you downloaded still play. ' : ''}'
+                'Try again when you are connected to it.'),
       );
 }
 

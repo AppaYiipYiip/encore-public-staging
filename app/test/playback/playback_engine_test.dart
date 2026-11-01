@@ -104,6 +104,12 @@ class Harness {
   bool serverUp = true;
   int serverAsked = 0;
 
+  /// The phone has a network although [reachable] says the server was last found out of reach (the radio is on and data came back).
+  bool network = false;
+
+  /// While set, the server does not answer the engine's look at all (it hangs: a network without data).
+  Completer<void>? serverGate;
+
   static Future<Harness> start({
     int tracks = 5,
     MemoryPlaybackStateStore? store,
@@ -136,8 +142,12 @@ class Harness {
       moreComing: () => h.moreComing,
       loadTimeout: loadTimeout,
       canReachServer: () => h.reachable,
+      networkPresent: () => h.network,
       serverAnswers: () async {
         h.serverAsked++;
+        await h.serverGate?.future;
+        // Asking is how the phone learns the server is back.
+        if (h.network && h.serverUp) h.reachable = true;
         return h.serverUp;
       },
       serverRetryDelays: const [Duration(milliseconds: 15)],
@@ -1429,7 +1439,7 @@ void main() {
     });
 
     test(
-        'offline, a song that is not downloaded is not tried and nothing is skipped',
+        'offline, a tap on a song that is not downloaded says so and changes nothing (Q30, D-42)',
         () async {
       final h = await Harness.start();
       h.reachable = false;
@@ -1438,11 +1448,167 @@ void main() {
 
       expect(h.backend.setSourcesCount, 0,
           reason: 'it cannot play: do not try');
-      expect(h.currentId, 't1', reason: 'and do not hop to the next one');
+      expect(h.currentId, isNull,
+          reason: 'a song that cannot play does not take the queue over, and '
+              'nothing hops to the next one');
       expect(h.backend.state.playing, isFalse);
       expect(h.notices, hasLength(1));
-      expect(h.notices.single.message, contains('downloaded'));
+      expect(h.notices.single.message, 'Not downloaded. Connect to play it.');
       await h.dispose();
+    });
+
+    test(
+        'the server was found out of reach and is back: a tap on a song that is not downloaded asks it once and plays (the refusal does not outlive the outage)',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      h.network = true;
+      h.serverUp = true;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.serverAsked, 1);
+      expect(h.notices, isEmpty);
+      await h.dispose();
+    });
+
+    test(
+        'the server is still out of reach: the tap is refused, and taps in the same few seconds do not each ask it again',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      h.network = true;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      await h.engine.playTracks(h.tracks.sublist(1, 3));
+
+      expect(h.backend.setSourcesCount, 0);
+      expect(h.notices.first.message, 'Not downloaded. Connect to play it.');
+      expect(h.serverAsked, 1);
+      await h.dispose();
+    });
+
+    test(
+        'offline, Play on a list whose first song is not downloaded starts at the first one that is (field test 2026-10-31: one missing song and nothing played)',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t2', 't3']);
+      h.reachable = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3), skipUnavailable: true);
+
+      expect(h.currentId, 't2');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.notices, isEmpty);
+      await h.dispose();
+    });
+
+    test(
+        'offline, Shuffle on a partly downloaded list only ever starts on a downloaded song',
+        () async {
+      for (var round = 0; round < 6; round++) {
+        final h = await Harness.start();
+        h.resolver.local.addAll(['t2', 't3']);
+        h.reachable = false;
+
+        await h.engine.playTracks(h.tracks.sublist(0, 3),
+            shuffle: true, skipUnavailable: true);
+
+        expect(['t2', 't3'], contains(h.currentId));
+        await h.dispose();
+      }
+    });
+
+    test(
+        'offline, Play on a list with nothing downloaded says so and changes nothing',
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3), skipUnavailable: true);
+
+      expect(h.currentId, isNull);
+      expect(h.notices.map((n) => n.message),
+          ['Not downloaded. Connect to play it.']);
+      await h.dispose();
+    });
+
+    test(
+        'offline, A ends and the song behind it is not downloaded: the next downloaded one plays and is the one that is shown',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t1', 't3']);
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      expect(h.currentId, 't1');
+
+      h.backend.finishCurrent();
+      await pumpEventQueue();
+
+      expect(h.currentId, 't3', reason: 't2 is not on the phone');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.engine.snapshot.track?.id, 't3',
+          reason: 'what is shown is what plays');
+      await h.dispose();
+    });
+
+    test(
+        'offline, that tap leaves the downloaded song that is playing playing, and the queue as it was (Q30, D-42)',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.add('t1');
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 1));
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      final loads = h.backend.setSourcesCount;
+      h.notices.clear();
+
+      await h.engine
+          .playTracks(h.tracks.sublist(1, 3)); // t2 is not on the phone
+
+      expect(h.currentId, 't1', reason: 'what was playing is still current');
+      expect(h.backend.state.playing, isTrue,
+          reason: 'and the music did not stop for a song that cannot play');
+      expect(h.backend.setSourcesCount, loads, reason: 'nothing was loaded');
+      expect(h.notices.map((n) => n.message),
+          ['Not downloaded. Connect to play it.']);
+      await h.dispose();
+    });
+
+    test(
+        'and nothing starts by itself when the network returns, whether or not something was playing (Q30, D-42)',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.add('t1');
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 1));
+      await h.engine.playTracks(h.tracks.sublist(1, 3)); // refused
+      final loads = h.backend.setSourcesCount;
+
+      h.reachable = true;
+      await h.engine.networkChanged(online: true);
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.setSourcesCount, loads,
+          reason: 'the refused song was never asked for again');
+
+      final alone = await Harness.start();
+      alone.reachable = false;
+      await alone.engine.playTracks(alone.tracks.sublist(0, 3)); // refused
+      alone.reachable = true;
+      await alone.engine.networkChanged(online: true);
+      await alone.settle();
+      expect(alone.currentId, isNull);
+      expect(alone.backend.setSourcesCount, 0);
+      expect(alone.backend.state.playing, isFalse);
+      await h.dispose();
+      await alone.dispose();
     });
 
     test('offline, a downloaded song plays', () async {
@@ -1521,12 +1687,16 @@ void main() {
       await h.dispose();
     });
 
-    test('when the network returns, the song that was waiting plays by itself',
+    test(
+        'when the network returns, a song that lost it in the middle of playing carries on by itself',
         () async {
       final h = await Harness.start();
-      h.reachable = false;
       await h.engine.playTracks(h.tracks.sublist(0, 3));
-      expect(h.backend.setSourcesCount, 0);
+      h.reachable = false; // the network goes away while the song streams
+      h.backend.failCurrent();
+      await h.settle();
+      final loads = h.backend.setSourcesCount;
+      expect(h.backend.state.playing, isFalse);
 
       h.reachable = true;
       await h.engine.networkChanged(online: true);
@@ -1534,7 +1704,7 @@ void main() {
 
       expect(h.currentId, 't1');
       expect(h.backend.state.playing, isTrue);
-      expect(h.backend.setSourcesCount, 1);
+      expect(h.backend.setSourcesCount, loads + 1);
       await h.dispose();
     });
 
@@ -1542,8 +1712,11 @@ void main() {
         'the network returning does not restart what the person paused meanwhile',
         () async {
       final h = await Harness.start();
-      h.reachable = false;
       await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.reachable = false; // the network goes away while the song streams
+      h.backend.failCurrent();
+      await h.settle();
+      final loads = h.backend.setSourcesCount;
       await h.engine.pause(); // "stop the music": the person changed their mind
 
       h.reachable = true;
@@ -1551,7 +1724,7 @@ void main() {
       await h.settle();
 
       expect(h.backend.state.playing, isFalse);
-      expect(h.backend.setSourcesCount, 0);
+      expect(h.backend.setSourcesCount, loads);
       await h.dispose();
     });
 
@@ -1628,6 +1801,63 @@ void main() {
 
       expect(h.currentId, 't1');
       expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'the radio is on but there is no data: A ends, B (not downloaded) cannot load and the player hops to C - what is shown is never other than what plays (field test 2026-10-31)',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t1', 't3']);
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      expect(h.currentId, 't1');
+      h.serverUp =
+          false; // the phone has a network, the server cannot be reached
+
+      h.backend.finishCurrent(); // A ends, the player moves on to B
+      await h.settle();
+      h.backend
+          .failCurrentAndHop(); // B cannot load, the platform player moves on to C by itself
+      await h.settle();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await h.settle();
+
+      final shown = h.currentId;
+      final audible = h.backend.state.playing;
+      final source = h.backend.currentUid;
+      // Either nothing is audible, or the song that is audible is the song that is shown.
+      if (audible) {
+        final uri = h.backend.sources
+            .firstWhere((src) => src.uid == source)
+            .uri
+            .toString();
+        final audibleId = RegExp(r't\d+').firstMatch(uri)!.group(0);
+        expect(shown, audibleId,
+            reason: 'audio of $audibleId under the title of $shown');
+      }
+      await h.dispose();
+    });
+
+    test(
+        'a failure while the look at the server hangs: the platform player hops on and plays the next song, so the music is held at once - nothing audible under another title (owner, "all covers")',
+        () async {
+      final h = await Harness.start();
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      expect(h.currentId, 't1');
+      h.serverUp = false;
+      h.serverGate =
+          Completer<void>(); // the look at the server never comes back
+
+      h.backend.failCurrentAndHop(); // the platform player plays t2 by itself
+      await pumpEventQueue();
+
+      expect(h.currentId, 't1',
+          reason: 'the queue did not move: a failure is not the end of a song');
+      expect(h.backend.state.playing, isFalse,
+          reason:
+              'so nothing may be audible: it would be t2 under the title of t1');
+      h.serverGate!.complete();
+      await h.settle();
       await h.dispose();
     });
 

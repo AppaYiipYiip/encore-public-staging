@@ -78,7 +78,12 @@ final class ServerFailure extends AppFailure {
 
 /// The requested entity does not exist (locally or remotely).
 final class NotFoundFailure extends AppFailure {
-  const NotFoundFailure(super.message, {super.cause, super.stackTrace});
+  const NotFoundFailure(super.message,
+      {this.unknownRef, super.cause, super.stackTrace});
+
+  /// The song the server said it does not know (an Encore server names it in the error's details), when it was a song that was not found and
+  /// not a playlist, which is told apart by this: the same code answers both.
+  final String? unknownRef;
 
   @override
   bool get isRetryable => false;

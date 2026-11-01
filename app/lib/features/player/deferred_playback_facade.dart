@@ -111,12 +111,14 @@ class DeferredPlaybackFacade implements PlaybackFacade {
     String? sourceName,
     String? sourceId,
     bool shuffle = false,
+    bool skipUnavailable = false,
   }) async =>
       (await _ready).playTracks(tracks,
           startIndex: startIndex,
           sourceName: sourceName,
           sourceId: sourceId,
-          shuffle: shuffle);
+          shuffle: shuffle,
+          skipUnavailable: skipUnavailable);
 
   @override
   Future<void> togglePlayPause() async => (await _ready).togglePlayPause();

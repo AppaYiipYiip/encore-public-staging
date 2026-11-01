@@ -12,28 +12,36 @@ class SettingsPage extends StatelessWidget {
     required this.title,
     this.description,
     required this.children,
+    this.onRefresh,
   });
 
   final String title;
   final String? description;
   final List<Widget> children;
 
+  /// When set, pulling the page down runs it (Your server asks its addresses again).
+  final Future<void> Function()? onRefresh;
+
   @override
   Widget build(BuildContext context) {
+    final list = ListView(
+      physics: onRefresh == null ? null : const AlwaysScrollableScrollPhysics(),
+      children: [
+        if (description != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                Space.gutter, Space.sm, Space.gutter, Space.md),
+            child: Text(description!, style: context.text.bodyMedium),
+          ),
+        ...children,
+        const SizedBox(height: Space.xxl),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: ListView(
-        children: [
-          if (description != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  Space.gutter, Space.sm, Space.gutter, Space.md),
-              child: Text(description!, style: context.text.bodyMedium),
-            ),
-          ...children,
-          const SizedBox(height: Space.xxl),
-        ],
-      ),
+      body: onRefresh == null
+          ? list
+          : RefreshIndicator(onRefresh: onRefresh!, child: list),
     );
   }
 }

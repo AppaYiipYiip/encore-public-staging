@@ -86,6 +86,10 @@ class EncorePeopleApi implements PeopleApi {
   Future<Result<List<FriendActivity>>> friends() async =>
       const Result.ok(<FriendActivity>[]);
 
+  /// Friend activity is not on an Encore server yet: there is nothing to share it with, so the switch is not offered (F57, D-37).
+  @override
+  bool get sharesListening => false;
+
   @override
   Future<Result<void>> setSharing(bool on) async => const Result.ok(null);
 

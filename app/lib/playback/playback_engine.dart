@@ -11,6 +11,7 @@ import '../features/player/playback_facade.dart';
 import 'audio_backend.dart';
 import 'playback_state_store.dart';
 import 'queue_model.dart';
+import 'reach_look.dart';
 import 'replay_gain.dart';
 import 'source_resolver.dart';
 
@@ -78,6 +79,7 @@ class PlaybackEngine implements PlaybackFacade {
     PeriodicTimerFactory? periodicTimer,
     bool Function()? moreComing,
     bool Function()? canReachServer,
+    bool Function()? networkPresent,
     Future<bool> Function()? serverAnswers,
     this.serverRetryDelays = const [
       Duration(seconds: 1),
@@ -90,6 +92,7 @@ class PlaybackEngine implements PlaybackFacade {
         findByName,
   })  : _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
+        _networkPresent = networkPresent ?? (() => false),
         _serverAnswers = serverAnswers ?? (() async => true),
         _findByName = findByName,
         _backend = backend,
@@ -144,6 +147,7 @@ class PlaybackEngine implements PlaybackFacade {
 
   /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
   final bool Function() _canReach;
+  final bool Function() _networkPresent;
 
   /// Asks the server whether it answers *now* (one fresh look at its addresses). A phone with a network and a server that does not answer is
   /// not a phone with a bad song (docs/33 PB-F7, PB-F8, G-1).
@@ -394,6 +398,7 @@ class PlaybackEngine implements PlaybackFacade {
     String? sourceName,
     String? sourceId,
     bool shuffle = false,
+    bool skipUnavailable = false,
   }) {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
@@ -401,15 +406,44 @@ class PlaybackEngine implements PlaybackFacade {
     final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
-      _finishItem();
-      _sourceName = sourceName;
-      _sourceId = sourceId;
       final items = [for (final t in tracks) _queue.itemFor(t)];
       // "Shuffle" on a collection starts anywhere, like Spotify; tapping a
       // specific row (shuffle false) keeps that track as the start.
-      final start = shuffle && startIndex == 0
+      var start = shuffle && startIndex == 0
           ? _random.nextInt(items.length)
           : startIndex;
+      // Play and Shuffle on a list ask for the list, not for one song: without a connection they pass over what is not downloaded (field
+      // test 2026-10-31: one missing song and nothing played). A tapped row still asks for that song.
+      if (skipUnavailable && !await _canReachNow()) {
+        final order = [for (var i = 0; i < items.length; i++) i];
+        if (shuffle && startIndex == 0) {
+          order.shuffle(_random);
+        } else {
+          order.removeRange(0, startIndex.clamp(0, items.length));
+          order.addAll(
+              [for (var i = 0; i < startIndex.clamp(0, items.length); i++) i]);
+        }
+        for (final i in order) {
+          if (await _playable(items[i])) {
+            start = i;
+            break;
+          }
+        }
+      }
+      // Without a connection a song that is not downloaded cannot play: say so and change nothing. What is playing goes on, the queue
+      // stays as it was, and nothing starts by itself when the network returns - the person asked for a song that was not there, and
+      // minutes later a different one starting would be a surprise (Q30, D-42). Losing the network in the middle of a song is another
+      // case: that one waits ([_waitForConnection]) and carries on.
+      if (!await _canReachNow() && !await _playable(items[start])) {
+        PerfMonitor.instance.cancel('play.tap->playing');
+        PerfMonitor.instance.cancel('play.audible');
+        _notify(const PlaybackNotice('Not downloaded. Connect to play it.',
+            isError: false));
+        return;
+      }
+      _finishItem();
+      _sourceName = sourceName;
+      _sourceId = sourceId;
       _queue.replace(items,
           startIndex: start, shuffle: shuffle || _queue.shuffle);
       _consecutiveFailures = 0;
@@ -558,7 +592,7 @@ class PlaybackEngine implements PlaybackFacade {
           return;
         }
         final hadNext = _queue.hasNext;
-        if (hadNext && !_canReach()) {
+        if (hadNext && !await _canReachNow()) {
           // Without a connection only downloaded songs can play: Next goes to the next one of those, or does nothing at all.
           if (!await _stepToPlayable(_queue.skipNext)) {
             _notify(const PlaybackNotice(
@@ -835,8 +869,20 @@ class PlaybackEngine implements PlaybackFacade {
   }
 
   /// Whether [item] can play right now: a file on this phone always, anything else only with a connection.
-  Future<bool> _playable(QueueItem item) async {
+  /// Whether a song that is not downloaded can be asked for. [_canReach] is what was last found out; a server that was out of reach may be
+  /// back (data returned on the same network is not a network change), so when the phone has a network the server is asked once before a
+  /// song is refused ([ReachLook]: callers share the look, and a look that found nobody is not repeated for a few seconds).
+  Future<bool> _canReachNow() async {
     if (_canReach()) return true;
+    if (!_networkPresent()) return false;
+    return _reach();
+  }
+
+  late final ReachLook _reach =
+      ReachLook(look: () => _serverAnswers(), clock: _clock);
+
+  Future<bool> _playable(QueueItem item) async {
+    if (await _canReachNow()) return true;
     try {
       return (await _resolver.resolve(item)).isLocal;
     } on Object catch (error) {
@@ -1035,7 +1081,7 @@ class PlaybackEngine implements PlaybackFacade {
     _sourceKind = results.first.isLocal ? 'file' : 'stream';
 
     // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
-    if (!results.first.isLocal && !_canReach()) {
+    if (!results.first.isLocal && !await _canReachNow()) {
       await _backend.pause();
       _waitForConnection('Not downloaded. Connect to play it.',
           isError: false, position: position);
@@ -1185,6 +1231,8 @@ class PlaybackEngine implements PlaybackFacade {
   /// The backend moved to another source of the window.
   void _onBackendIndex(int? index) {
     if (index == null || index == _lastIndex) return;
+    // The platform player hopped on by itself while a failure is being judged: hold it now, not when the judging is done.
+    if (_judgingFailure && _loaded) unawaited(_backend.pause());
     // Nothing of ours is loaded (a restored queue waiting for play, or the
     // platform player starting up): an index event is the player's own, not
     // a gapless advance. Acting on it skipped a song after every restart (J-11).
@@ -1272,42 +1320,62 @@ class PlaybackEngine implements PlaybackFacade {
       if (_handledErrorAttempt == attempt) return;
       _handledErrorAttempt = attempt;
       Log.warn('playback', 'backend error for ${item.id}: ${error.message}');
-      if (!await _playable(item)) {
-        // The network is gone, the song is not broken: wait for it, never hop on to the next song.
+      // The platform player may already have hopped on to the next source by itself and be playing it, or hop in a moment, while the
+      // network is being looked at (which can take seconds): hold it, so what is heard is never another song than the one shown (owner,
+      // 2026-10-31: the next song plays under the title and cover of the previous one, "all covers"). A retry or a skip starts it again.
+      final index = _backend.currentIndex;
+      if (index != null && last != null && index != last) {
         await _backend.pause();
-        _waitForConnection('Waiting for a connection.',
-            isError: false, position: _lastPosition);
-        return;
       }
-      // The phone has a network. Before judging the song, look once at whether its server answers at all (the stream may have died
-      // because the server restarted, or because the line changed): a server that does not answer is waited for, not hopped over.
-      if (!await _serverAnswers() && !await _isLocal(item)) {
-        await _backend.pause();
-        _waitForServer(position: _lastPosition);
-        return;
+      _judgingFailure = true;
+      try {
+        await _judgeFailure(item);
+      } finally {
+        _judgingFailure = false;
       }
-      if (_retried.add(item.uid)) {
-        // One quiet retry: the endpoint may have just switched networks, or
-        // the platform player hit a transient start-up failure.
-        await _loadCurrent(autoplay: true, position: _lastPosition);
-        return;
-      }
-      _consecutiveFailures++;
-      _notify(PlaybackNotice("Couldn't play ${item.title}", isError: true));
-      if (_consecutiveFailures >= maxConsecutiveFailures ||
-          !_queue.skipNext()) {
-        await _backend.pause();
-        if (_consecutiveFailures >= maxConsecutiveFailures) {
-          _notify(const PlaybackNotice(
-              'Playback stopped: several tracks in a row failed. '
-              'Check your connection.',
-              isError: true));
-        }
-        _emitAll();
-        return;
-      }
-      await _loadCurrent(autoplay: true);
     });
+  }
+
+  /// Whether the engine is deciding what a failure means (it may look at the network for seconds): a hop of the platform player meanwhile
+  /// is held at once ([_onBackendIndex]).
+  bool _judgingFailure = false;
+
+  Future<void> _judgeFailure(QueueItem item) async {
+    if (!await _playable(item)) {
+      // The network is gone, the song is not broken: wait for it, never hop on to the next song.
+      await _backend.pause();
+      _waitForConnection('Waiting for a connection.',
+          isError: false, position: _lastPosition);
+      return;
+    }
+    // The phone has a network. Before judging the song, look once at whether its server answers at all (the stream may have died
+    // because the server restarted, or because the line changed): a server that does not answer is waited for, not hopped over.
+    if (!await _serverAnswers() && !await _isLocal(item)) {
+      await _backend.pause();
+      _waitForServer(position: _lastPosition);
+      return;
+    }
+    if (_retried.add(item.uid)) {
+      // One quiet retry: the endpoint may have just switched networks, or
+      // the platform player hit a transient start-up failure.
+      await _loadCurrent(autoplay: true, position: _lastPosition);
+      return;
+    }
+    _consecutiveFailures++;
+    _notify(PlaybackNotice("Couldn't play ${item.title}", isError: true));
+    if (_consecutiveFailures >= maxConsecutiveFailures || !_queue.skipNext()) {
+      await _backend.pause();
+      if (_consecutiveFailures >= maxConsecutiveFailures) {
+        _notify(const PlaybackNotice(
+            'Playback stopped: several tracks in a row failed. '
+            'Check your connection.',
+            isError: true));
+      }
+      _emitAll();
+      return;
+    }
+
+    await _loadCurrent(autoplay: true);
   }
 
   void _onPosition(Duration position) {

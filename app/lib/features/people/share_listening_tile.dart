@@ -14,6 +14,10 @@ class ShareListeningTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(peopleProvider).value;
     if (me == null) return const SizedBox.shrink();
+    // A server that cannot show it to friends (an Encore server today) does not get a switch that would do nothing (AUDIT F57, D-37).
+    if (!(ref.watch(peopleApiProvider).value?.sharesListening ?? false)) {
+      return const SizedBox.shrink();
+    }
     final private =
         ref.watch(settingsProvider.select((s) => s.privateListening));
     return SwitchListTile(

@@ -79,6 +79,18 @@ void main() {
     await closeApp(tester, opened.db);
   });
 
+  testWidgets(
+      'F57: is not offered where the server cannot show it to friends (an Encore server): a switch that does nothing would lie',
+      (tester) async {
+    final opened =
+        await open(tester, api: FakePeopleApi(sharesListening: false));
+
+    expect(find.text(title), findsNothing);
+    expect(find.text('Private listening'), findsOneWidget,
+        reason: 'the rest of the page is as before');
+    await closeApp(tester, opened.db);
+  });
+
   testWidgets('a switch the server did not take goes back, with the reason',
       (tester) async {
     final api = FakePeopleApi()

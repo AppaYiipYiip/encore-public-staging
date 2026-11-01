@@ -25,7 +25,9 @@ class MiniPlayer extends ConsumerWidget {
     if (track == null) return const SizedBox.shrink();
 
     final facade = ref.watch(playbackFacadeProvider);
-    final c = context.colors;
+    // The bar is always a dark tint of the cover: its words are the dark theme's, whatever theme the app is in (the light theme gave dark
+    // grey on dark olive, QA round 1, R1-6).
+    final onBar = EncoreColors.dark();
     final swatch = ref
         .watch(artworkSwatchProvider(
             (albumId: track.albumId, coverArtId: track.coverArt)))
@@ -94,7 +96,8 @@ class MiniPlayer extends ConsumerWidget {
                                     track.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: context.text.titleSmall,
+                                    style: context.text.titleSmall
+                                        ?.copyWith(color: onBar.onBg),
                                   ),
                                   if (track.artist != null)
                                     Text(
@@ -102,7 +105,7 @@ class MiniPlayer extends ConsumerWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: context.text.bodySmall
-                                          ?.copyWith(color: c.onBgMuted),
+                                          ?.copyWith(color: onBar.onBgMuted),
                                     ),
                                 ],
                               ),
@@ -117,11 +120,15 @@ class MiniPlayer extends ConsumerWidget {
                                 ),
                               )
                             else
-                              PlayButton(
-                                isPlaying: snapshot.isPlaying,
-                                size: 48,
-                                filled: false,
-                                onPressed: facade.togglePlayPause,
+                              Theme(
+                                data: Theme.of(context)
+                                    .copyWith(extensions: [onBar]),
+                                child: PlayButton(
+                                  isPlaying: snapshot.isPlaying,
+                                  size: 48,
+                                  filled: false,
+                                  onPressed: facade.togglePlayPause,
+                                ),
                               ),
                           ],
                         ),
@@ -155,7 +162,7 @@ class _MiniProgress extends ConsumerWidget {
       value: fraction,
       minHeight: 2,
       backgroundColor: Colors.white.withValues(alpha: 0.15),
-      valueColor: AlwaysStoppedAnimation(context.colors.onBg),
+      valueColor: AlwaysStoppedAnimation(EncoreColors.dark().onBg),
     );
   }
 }

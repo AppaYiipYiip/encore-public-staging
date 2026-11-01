@@ -248,6 +248,26 @@ void main() {
       expect(back.download, isFalse);
       await closeApp(tester, db);
     });
+
+    testWidgets(
+        'Settings > Downloads & storage: Remove all downloads takes every song of a release off, not only its first (code review)',
+        (tester) async {
+      final took = <String>[];
+      final db = await open(tester, took);
+      final element = tester.element(find.byType(Scaffold).first);
+      unawaited(GoRouter.of(element).push<void>('/settings/downloads'));
+      await settle(tester);
+
+      await tester.tap(find.text('Remove all downloads'));
+      await settle(tester);
+      await tester.tap(find.text('Remove'));
+      await settle(tester);
+
+      expect(took, unorderedEquals(['sr_1', 'sr_2']));
+      final back = (await ReleaseStore(db, 1).phone())['cat:1']!;
+      expect(back.download, isFalse);
+      await closeApp(tester, db);
+    });
   });
 }
 

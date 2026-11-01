@@ -96,7 +96,10 @@ class _ActionRow extends ConsumerWidget {
           onPressed: tracks.isEmpty
               ? null
               : () => facade.playTracks(tracks,
-                  sourceName: sourceName, sourceId: sourceId, shuffle: true),
+                  sourceName: sourceName,
+                  sourceId: sourceId,
+                  shuffle: true,
+                  skipUnavailable: true),
         ),
         const SizedBox(width: Space.sm),
         PlayButton(
@@ -107,7 +110,9 @@ class _ActionRow extends ConsumerWidget {
               : () => isCurrent
                   ? facade.togglePlayPause()
                   : facade.playTracks(tracks,
-                      sourceName: sourceName, sourceId: sourceId),
+                      sourceName: sourceName,
+                      sourceId: sourceId,
+                      skipUnavailable: true),
         ),
       ],
     );

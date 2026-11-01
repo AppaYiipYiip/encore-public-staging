@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/connection.dart';
-import '../../app/providers.dart';
 import '../../design/tokens.dart';
+import '../providers.dart' show hasDownloadsProvider;
 
 /// A slim strip above the player that says what is wrong with the connection,
 /// when it has been wrong for a few seconds, and nothing otherwise: no internet
@@ -15,7 +15,7 @@ class ConnectionBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final problem = ref.watch(connectionProblemProvider);
+    final problem = ref.watch(connectionStripProvider);
     return AnimatedSize(
       duration: Motion.standard,
       curve: Motion.curve,
@@ -35,15 +35,15 @@ class _Strip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    final hasDownloads = ref.watch(hasDownloadsProvider);
+    // No internet and a server that does not answer are one thing to the person (4G on, no data): one calm sentence. The details are on
+    // Settings > Your server.
+    final offline = hasDownloads
+        ? 'You\'re offline. Downloaded music still plays.'
+        : 'You\'re offline. Nothing can play until you reconnect.';
     final (icon, text) = switch (problem) {
-      ConnectionProblem.offline => (
-          Icons.cloud_off_rounded,
-          'You\'re offline. Downloaded music still plays.'
-        ),
-      ConnectionProblem.serverUnreachable => (
-          Icons.dns_outlined,
-          'Can\'t reach your server.'
-        ),
+      ConnectionProblem.offline => (Icons.cloud_off_rounded, offline),
+      ConnectionProblem.serverUnreachable => (Icons.cloud_off_rounded, offline),
       ConnectionProblem.jamReconnecting => (
           Icons.groups_2_rounded,
           'Reconnecting to the Jam…'
@@ -71,11 +71,14 @@ class _Strip extends ConsumerWidget {
               Expanded(
                 child: Text(text, style: context.text.bodySmall),
               ),
-              if (problem == ConnectionProblem.serverUnreachable)
-                TextButton(
+              if (problem != ConnectionProblem.jamReconnecting)
+                IconButton(
+                  tooltip: 'Dismiss',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  color: c.onBgMuted,
                   onPressed: () =>
-                      ref.read(sessionProvider).value?.endpoints.resolve(),
-                  child: const Text('Try again'),
+                      ref.read(connectionStripProvider.notifier).dismiss(),
                 ),
             ],
           ),

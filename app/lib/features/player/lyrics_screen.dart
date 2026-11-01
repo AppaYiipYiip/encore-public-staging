@@ -19,6 +19,11 @@ import '../providers.dart';
 import '../settings/settings_controller.dart';
 import 'scrubber.dart';
 
+/// How long the page waits for lyrics before it says there are none: a lookup that hangs (no data on a phone that has a network) must not
+/// turn for ever (owner, 2026-10-31).
+final lyricsDeadlineProvider =
+    Provider<Duration>((ref) => const Duration(seconds: 12));
+
 /// Lyrics for the track being played (cache -> server -> LRCLIB).
 final currentLyricsProvider = FutureProvider.autoDispose
     .family<TrackLyrics?, String>((ref, trackId) async {
@@ -33,13 +38,15 @@ final currentLyricsProvider = FutureProvider.autoDispose
       !track.fullSong &&
       ref.read(instantStatusProvider(trackId)) == null;
   if (isClip) return null;
-  return repo.load(
-    trackId: trackId,
-    title: track.title,
-    artist: track.artist,
-    album: track.album,
-    durationSec: track.duration?.inSeconds,
-  );
+  return repo
+      .load(
+        trackId: trackId,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        durationSec: track.duration?.inSeconds,
+      )
+      .timeout(ref.read(lyricsDeadlineProvider), onTimeout: () => null);
 });
 
 /// Full-screen, immersive lyrics (R-02, docs/06-ux-spec.md 4.7).

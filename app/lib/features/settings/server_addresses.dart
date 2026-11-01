@@ -16,6 +16,17 @@ import 'settings_page.dart';
 /// How a saved address answered the last time it was tried.
 enum _Answer { unknown, testing, answered, silent }
 
+/// Counts the person's requests to ask the addresses again (a pull on the Your server page).
+class AddressRecheck extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void ask() => state++;
+}
+
+final addressRecheckProvider =
+    NotifierProvider<AddressRecheck, int>(AddressRecheck.new);
+
 class _Check {
   const _Check(this.answer, [this.took]);
 
@@ -38,6 +49,9 @@ class _ServerAddressesSectionState
     extends ConsumerState<ServerAddressesSection> {
   final Map<String, _Check> _checks = {};
 
+  /// The page asks its addresses once by itself when it opens (and once the phone has a network, if it had none).
+  bool _autoChecked = false;
+
   static List<ServerEndpoint> _decode(ServerRow server) => [
         for (final e in jsonDecode(server.endpointsJson) as List)
           ServerEndpoint.fromJson((e as Map).cast<String, dynamic>()),
@@ -48,14 +62,19 @@ class _ServerAddressesSectionState
     return text.endsWith('/') ? text.substring(0, text.length - 1) : text;
   }
 
-  Future<void> _test(ServerRow server, List<ServerEndpoint> endpoints) async {
+  Future<void> _test(ServerRow server, List<ServerEndpoint> endpoints,
+      {bool quiet = false}) async {
+    // With no network at all every address would "not answer": that says nothing about the addresses.
+    if (!ref.read(phoneOnlineProvider)) return;
     final password =
         await ref.read(credentialStoreProvider).readPassword(server.id);
     if (!mounted) return;
     if (password == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Sign in again to check the addresses.'),
-      ));
+      if (!quiet) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Sign in again to check the addresses.'),
+        ));
+      }
       return;
     }
     final service = ref.read(serverSetupServiceProvider);
@@ -140,12 +159,41 @@ class _ServerAddressesSectionState
     if (server == null) return const SizedBox.shrink();
     final session = ref.watch(sessionProvider).value;
     final endpoints = _decode(server);
-    final inUse = session != null && session.endpoints.isReachable
+    final online = ref.watch(phoneOnlineProvider);
+    final inUse = online && session != null && session.endpoints.isReachable
         ? session.endpoints.current.url
         : null;
     final c = context.colors;
 
+    ref.listen<int>(addressRecheckProvider, (_, __) {
+      final current = ref.read(activeServerProvider).value;
+      if (current != null && mounted) {
+        unawaited(_test(current, _decode(current)));
+      }
+    });
+    if (online && !_autoChecked) {
+      _autoChecked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_test(server, endpoints, quiet: true));
+      });
+    }
+
+    Widget dotted(Color color, String text) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: Space.sm),
+            Text(text, style: context.text.labelLarge?.copyWith(color: color)),
+          ],
+        );
+
     Widget status(ServerEndpoint e) {
+      // An answer from before the phone lost its network says nothing now.
+      if (!online) return const SizedBox.shrink();
       final check = _checks[e.url.toString()];
       switch (check?.answer) {
         case _Answer.testing:
@@ -154,11 +202,9 @@ class _ServerAddressesSectionState
             child: CircularProgressIndicator(strokeWidth: 2),
           );
         case _Answer.answered:
-          return Text('${check!.took!.inMilliseconds} ms',
-              style: context.text.labelLarge?.copyWith(color: c.accent));
+          return dotted(c.accent, '${check!.took!.inMilliseconds} ms');
         case _Answer.silent:
-          return Text('No answer',
-              style: context.text.labelLarge?.copyWith(color: c.onBgMuted));
+          return dotted(c.onBgMuted, 'No answer');
         case _Answer.unknown:
         case null:
           return inUse == e.url
@@ -199,13 +245,6 @@ class _ServerAddressesSectionState
           subtitle: const Text('For example the name Tailscale gives your '
               'server, to reach it away from home.'),
           onTap: () => _add(server, endpoints),
-        ),
-        ListTile(
-          leading: const Icon(Icons.network_check_rounded),
-          title: const Text('Check addresses'),
-          subtitle: const Text('Which of them answers from here, and how '
-              'fast.'),
-          onTap: () => _test(server, endpoints),
         ),
       ],
     );

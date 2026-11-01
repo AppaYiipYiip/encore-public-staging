@@ -666,6 +666,13 @@ class ServerSession {
     return covers.urlFor(id, size);
   }
 
+  /// Resolves once an address has proved itself (or none did). A request made before that goes to a dead address on purpose and fails, and
+  /// the first moments of a session are when the one-shot asks are made (who am I, what does this server do): they wait here, so they are
+  /// not lost for good by a race (QA round 1, R1-1: an owner without Invite and People until the app was restarted, which then did the same).
+  Future<void> whenAddressKnown() async {
+    if (!endpoints.isVerified) await endpoints.resolve();
+  }
+
   Future<void> dispose() async {
     _disposed = true;
     unawaited(covers.dispose());

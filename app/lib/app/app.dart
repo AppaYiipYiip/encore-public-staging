@@ -29,6 +29,7 @@ import 'background_sync.dart';
 import 'branding.dart';
 import 'cover_wiring.dart';
 import 'notifications.dart';
+import 'orientation_policy.dart';
 import 'playback_providers.dart';
 import 'power_wiring.dart';
 import 'providers.dart';
@@ -195,7 +196,8 @@ class EncoreApp extends ConsumerWidget {
           final dark = theme.brightness == Brightness.dark;
           final bg = theme.extension<EncoreColors>()?.bg ??
               theme.scaffoldBackgroundColor;
-          return AnnotatedRegion<SystemUiOverlayStyle>(
+          return OrientationPolicy(
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
             value: SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
               statusBarIconBrightness:
@@ -215,7 +217,7 @@ class EncoreApp extends ConsumerWidget {
                     ],
                   )
                 : (child ?? const SizedBox.shrink()),
-          );
+          ));
         },
       ),
     );

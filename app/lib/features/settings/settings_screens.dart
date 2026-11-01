@@ -156,7 +156,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               name: server.name,
               username: server.username,
               endpointLabel: session?.endpoints.current.label,
-              reachable: session?.endpoints.isReachable ?? false,
+              reachable: ref.watch(phoneOnlineProvider) &&
+                  (session?.endpoints.isReachable ?? false),
               lastSync: sync.lastSuccessAt,
               syncing: sync.isSyncing,
             ),
@@ -401,7 +402,7 @@ class SyncSettingsScreen extends ConsumerWidget {
         const FailedEditsSection(),
         const ShrinkNoticeSection(),
         ListTile(
-          title: const Text('Songs on this device'),
+          title: const Text('Songs in your library'),
           trailing: Text('$tracks'),
         ),
         ListTile(
@@ -609,6 +610,14 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                   );
                   if (sure != true) return;
                   for (final e in entries) {
+                    // A release is ONE entry (D-35): all its songs come off, through the record the phone wrote down, as with its own
+                    // button.
+                    if (e.releaseId != null) {
+                      await ref
+                          .read(releaseSavesProvider.notifier)
+                          .removeDownload(e.releaseId!);
+                      continue;
+                    }
                     final type =
                         PinTargetType.values.asNameMap()[e.pin.targetType];
                     if (type != null) {

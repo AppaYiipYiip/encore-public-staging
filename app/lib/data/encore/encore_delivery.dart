@@ -21,10 +21,18 @@ Future<Result<void>> deliverToEncore(
           (ref: (e as Map)['ref'] as String, entryId: e['id'] as String),
       ];
 
-  /// What a playlist the server no longer has means for an edit of it: there is nothing left to do (another device deleted it, and the next
-  /// pull removes it here too).
-  Result<void> gone(Result<void> result) =>
-      result.failureOrNull is NotFoundFailure ? const Result.ok(null) : result;
+  /// What a playlist the server no longer has means for an edit of it: there is nothing left to do (only its owner can delete it, so the same
+  /// person did, on another device: deleted wins, and the next pull removes it here too).
+  ///
+  /// **Except a song the server does not know** (B3): the same code answers that, but there the playlist is still there and the song that was
+  /// added to it would vanish without a word. The server names the song in the error's details; such a failure is kept, parked as a failed
+  /// edit the person can see.
+  Result<void> gone(Result<void> result) {
+    final failure = result.failureOrNull;
+    return failure is NotFoundFailure && failure.unknownRef == null
+        ? const Result.ok(null)
+        : result;
+  }
 
   Future<Result<void>> inOrder(
       Iterable<Future<Result<void>> Function()> steps) async {

@@ -66,8 +66,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await settle(tester);
 
-    expect(find.text('Can\'t reach your server.'), findsOneWidget);
-    final strip = tester.getTopLeft(find.text('Can\'t reach your server.'));
+    const stripText = 'You\'re offline. Nothing can play until you reconnect.';
+    expect(find.text(stripText), findsOneWidget);
+    final strip = tester.getTopLeft(find.text(stripText));
     final title = tester.getTopLeft(find.text('Opening The'));
     expect(strip.dy, lessThan(title.dy), reason: 'at the top, above the song');
     final scrubber = tester.widget<Scrubber>(find.byType(Scrubber));
@@ -90,7 +91,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await settle(tester);
 
-    expect(find.text('Can\'t reach your server.'), findsOneWidget);
+    expect(find.text('You\'re offline. Nothing can play until you reconnect.'),
+        findsOneWidget);
     expect(tester.widget<Scrubber>(find.byType(Scrubber)).waiting, isFalse);
     await closeApp(tester, app.db);
   });

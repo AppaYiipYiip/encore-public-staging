@@ -241,6 +241,11 @@ abstract interface class PeopleApi implements ActivitySink {
   Future<Result<PeopleMe>> me();
   Future<Result<List<FriendActivity>>> friends();
   Future<Result<void>> setSharing(bool on);
+
+  /// Whether this server can show what a person listens to to their friends. Where it cannot (an Encore server today: friend activity is a
+  /// later phase), "Share what I'm listening to" is not offered: a switch that does nothing, and goes back at the next start, would lie
+  /// (AUDIT F57, D-37).
+  bool get sharesListening;
   Future<Result<CreatedInvite>> createInvite({PersonRole role});
   Future<Result<List<InviteRow>>> invites();
   Future<Result<void>> revokeInvite(String id);
@@ -262,6 +267,9 @@ DateTime? _time(Object? seconds) => seconds is num
 /// The service is optional, so callers must not treat it as the end of the
 /// music session.
 class PeopleClient implements PeopleApi {
+  @override
+  bool get sharesListening => true;
+
   PeopleClient({
     required Uri baseUrl,
     required Map<String, String> Function() auth,

@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:encore/app/providers.dart'
+    show NetworkKind, networkKindProvider;
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_models.dart';
-import 'package:encore/features/providers.dart' show onEncoreServerProvider;
+import 'package:encore/features/providers.dart'
+    show downloadedIdsProvider, onEncoreServerProvider;
 import 'package:encore/features/settings/encore_play_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,6 +85,52 @@ void main() {
 
     expect(text('Your server did not answer'), findsOneWidget);
     await closeApp(tester, db);
+  });
+
+  testWidgets(
+      'a server that does not answer promises only what is true: downloaded songs play, "songs it already has" do not (QA round 1, Q31 again)',
+      (tester) async {
+    final none = await openServerPage(tester, encore: true, answer: null);
+    expect(text('Songs it already has'), findsNothing,
+        reason: 'without the server only what was downloaded plays');
+    expect(text('Songs you downloaded still play'), findsNothing,
+        reason: 'and with nothing downloaded that is not true either');
+    expect(text('Try again when you are connected'), findsOneWidget);
+    await closeApp(tester, none);
+  });
+
+  testWidgets('with songs downloaded the same line says that they still play',
+      (tester) async {
+    final app = await pumpApp(tester, size: const Size(390, 6000), overrides: [
+      onEncoreServerProvider.overrideWith((ref) async => true),
+      encoreServerInfoProvider.overrideWith((ref) async => null),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    final element = tester.element(find.byType(Scaffold).first);
+    unawaited(GoRouter.of(element).push<void>('/settings/server'));
+    await settle(tester);
+
+    expect(text('Songs you downloaded still play'), findsOneWidget);
+    expect(text('Songs it already has'), findsNothing);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'with no internet the sentence about downloaded songs is said once on the page, not twice (the header says it)',
+      (tester) async {
+    final app = await pumpApp(tester, size: const Size(390, 6000), overrides: [
+      onEncoreServerProvider.overrideWith((ref) async => true),
+      encoreServerInfoProvider.overrideWith((ref) async => null),
+      networkKindProvider.overrideWith((ref) => Stream.value(NetworkKind.none)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    final element = tester.element(find.byType(Scaffold).first);
+    unawaited(GoRouter.of(element).push<void>('/settings/server'));
+    await settle(tester);
+
+    expect(text('Songs you downloaded still play'), findsOneWidget);
+    expect(text('Try again when you are connected'), findsOneWidget);
+    await closeApp(tester, app.db);
   });
 
   testWidgets('any other server still shows what it always showed',

@@ -6,7 +6,11 @@ import 'package:encore/data/people/people_client.dart';
 class FakePeopleApi implements PeopleApi {
   FakePeopleApi({
     this.me_ = const PeopleMe(user: 'sara', isAdmin: false, sharing: false),
+    this.sharesListening = true,
   });
+
+  @override
+  final bool sharesListening;
 
   PeopleMe me_;
   Result<void> sharingAnswer = const Result<void>.ok(null);
@@ -36,8 +40,12 @@ class FakePeopleApi implements PeopleApi {
   final roleChanges = <(String, PersonRole)>[];
   final removed = <String>[];
 
+  /// What the next asks "who am I" answer, in order; once used up, [me_].
+  final meAnswers = <Result<PeopleMe>>[];
+
   @override
-  Future<Result<PeopleMe>> me() async => Result.ok(me_);
+  Future<Result<PeopleMe>> me() async =>
+      meAnswers.isNotEmpty ? meAnswers.removeAt(0) : Result.ok(me_);
 
   @override
   Future<Result<List<FriendActivity>>> friends() async {

@@ -35,6 +35,24 @@ void main() {
       expect(l.lines.every((e) => e.startMs == null), isTrue);
     });
 
+    test(
+        'a catalogue entry that is only the details of the song is no lyrics (QA round 1, R1-3: "Any Colour You Like")',
+        () {
+      final l =
+          parseLrc('[ti:Any Colour You Like (1973)]\r\n[ar:Pink Floyd]\r\n'
+              '[al:The Dark Side Of The Moon (Japan 1st 1983)]\r\n[by:]\r\n'
+              '[offset:0]\r\n\r\nArtist: Pink Floyd\r\n'
+              'Album: The Dark Side of the Moon\r\nTitle: Any Colour You Like');
+
+      expect(l.isEmpty, isTrue);
+    });
+
+    test('words that happen to contain a colon are lyrics', () {
+      final l = parseLrc('Title: of nobility\nI said: no\nand then: nothing');
+
+      expect(l.isEmpty, isFalse);
+    });
+
     test('empty input -> empty lyrics', () {
       expect(parseLrc('   \n ').isEmpty, isTrue);
     });

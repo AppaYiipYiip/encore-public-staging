@@ -641,6 +641,23 @@ class FakeEncoreServer {
     final body = (jsonDecode(r.body) as Map).cast<String, Object?>();
     if (r.method == 'POST') {
       final songs = (body['songs'] as List).cast<Map<String, Object?>>();
+      // Like the real server: after the playlist, a song it does not know is refused, and the answer names it.
+      for (final s in songs) {
+        if (!refs.containsKey(s['ref'])) {
+          return FakeResponse.json(
+            {
+              'error': {
+                'code': 'not_found',
+                'message': 'A song in that list is not known to this server.',
+                'retryable': false,
+                'retryAfterMs': null,
+                'details': {'ref': s['ref']},
+              },
+            },
+            status: 404,
+          );
+        }
+      }
       final live = list.where((e) => e['deleted'] == false).toList();
       var low = live.isEmpty ? 0.0 : live.last['position']! as double;
       for (final s in songs) {

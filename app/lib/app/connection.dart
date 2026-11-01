@@ -128,3 +128,83 @@ class ConnectionProblemNotifier extends Notifier<ConnectionProblem> {
 final connectionProblemProvider =
     NotifierProvider<ConnectionProblemNotifier, ConnectionProblem>(
         ConnectionProblemNotifier.new);
+
+/// How long an outage stays on the strip: it is said once and goes by itself (owner, 2026-10-31: "all day telling me it cannot connect,
+/// sure we get it"). The details stay on Settings > Your server.
+final connectionShownForProvider =
+    Provider<Duration>((ref) => const Duration(seconds: 5));
+
+/// How long everything must have worked before a later problem counts as a new outage. The radio coming back on while the old answer
+/// about the server is still "fine" is not recovery: it is the same outage.
+final connectionRecoveredProvider =
+    Provider<Duration>((ref) => const Duration(seconds: 10));
+
+/// What the strip shows. [connectionProblemProvider] is what is wrong (the player reads it to know its server is away); the strip says an
+/// outage once: no internet and a server that does not answer are one outage to the person (the 4G radio is on and there is no data), shown for
+/// a few seconds or until the cross, and not again until everything has worked for a while. A Jam that is reconnecting stays while it lasts.
+class ConnectionStripNotifier extends Notifier<ConnectionProblem> {
+  Timer? _hideTimer;
+  Timer? _recoveredTimer;
+  bool _said = false;
+
+  static bool _isOutage(ConnectionProblem p) =>
+      p == ConnectionProblem.offline ||
+      p == ConnectionProblem.serverUnreachable;
+
+  @override
+  ConnectionProblem build() {
+    ref.onDispose(() {
+      _hideTimer?.cancel();
+      _recoveredTimer?.cancel();
+    });
+    ref.listen(connectionProblemProvider, (_, now) => _follow(now));
+    return _follow(ref.read(connectionProblemProvider), initial: true);
+  }
+
+  ConnectionProblem _follow(ConnectionProblem problem, {bool initial = false}) {
+    ConnectionProblem shown;
+    if (problem == ConnectionProblem.none) {
+      _hideTimer?.cancel();
+      _hideTimer = null;
+      if (_said) {
+        _recoveredTimer ??= Timer(ref.read(connectionRecoveredProvider), () {
+          _recoveredTimer = null;
+          _said = false;
+        });
+      }
+      shown = ConnectionProblem.none;
+    } else if (!_isOutage(problem)) {
+      _hideTimer?.cancel();
+      _hideTimer = null;
+      shown = problem;
+    } else {
+      _recoveredTimer?.cancel();
+      _recoveredTimer = null;
+      if (_said) {
+        shown = ConnectionProblem.none;
+      } else {
+        shown = problem;
+        _hideTimer ??= Timer(ref.read(connectionShownForProvider), () {
+          _hideTimer = null;
+          _said = true;
+          if (_isOutage(state)) state = ConnectionProblem.none;
+        });
+      }
+    }
+    if (!initial && state != shown) state = shown;
+    return shown;
+  }
+
+  /// The cross on the strip: this outage has been said.
+  void dismiss() {
+    if (!_isOutage(state)) return;
+    _hideTimer?.cancel();
+    _hideTimer = null;
+    _said = true;
+    state = ConnectionProblem.none;
+  }
+}
+
+final connectionStripProvider =
+    NotifierProvider<ConnectionStripNotifier, ConnectionProblem>(
+        ConnectionStripNotifier.new);
