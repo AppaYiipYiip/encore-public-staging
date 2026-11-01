@@ -149,7 +149,7 @@ void main() {
 
   group('on the screens', () {
     Future<AppDatabase> open(WidgetTester tester, List<String> pinnedActions,
-        {List<Override> more = const []}) async {
+        {List<Override> more = const [], PhoneRelease? second}) async {
       final app = await pumpApp(tester, overrides: [
         downloadActionsProvider.overrideWithValue(_Actions(pinnedActions)),
         ...more,
@@ -157,8 +157,12 @@ void main() {
       final repo = DownloadsRepository(app.db, app.serverId,
           clock: FakeClock(DateTime.utc(2026, 10, 30, 22)));
       await ReleaseStore(app.db, app.serverId).put('cat:1', release);
-      await repo.pin(PinTargetType.track, 'sr_1');
-      await repo.pin(PinTargetType.track, 'sr_2');
+      if (second != null) {
+        await ReleaseStore(app.db, app.serverId).put('cat:2', second);
+      }
+      for (final id in {...release.refIds, ...?second?.refIds}) {
+        await repo.pin(PinTargetType.track, id);
+      }
       await settle(tester);
       return app.db;
     }
@@ -266,6 +270,55 @@ void main() {
       expect(took, unorderedEquals(['sr_1', 'sr_2']));
       final back = (await ReleaseStore(db, 1).phone())['cat:1']!;
       expect(back.download, isFalse);
+      await closeApp(tester, db);
+    });
+
+    // A second album that holds one of the first one's songs: 'sr_2' is on the phone once, for both.
+    const amnesiac = PhoneRelease(
+      refIds: ['sr_2', 'sr_3'],
+      title: 'Amnesiac',
+      artist: 'Radiohead',
+      download: true,
+    );
+
+    testWidgets(
+        'PB-39: Settings > Downloads & storage: removing one release keeps the song the other downloaded release also has',
+        (tester) async {
+      final took = <String>[];
+      final db = await open(tester, took, second: amnesiac);
+      final element = tester.element(find.byType(Scaffold).first);
+      unawaited(GoRouter.of(element).push<void>('/settings/downloads'));
+      await settle(tester);
+
+      await tester.tap(find.descendant(
+          of: find.widgetWithText(ListTile, 'Weird Fishes Release'),
+          matching: find.byTooltip('Remove download')));
+      await settle(tester);
+
+      expect(took, ['sr_1'], reason: 'sr_2 is still wanted by Amnesiac');
+      final records = await ReleaseStore(db, 1).phone();
+      expect(records['cat:1']!.download, isFalse);
+      expect(records['cat:2']!.download, isTrue);
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'PB-39: Settings > Downloads & storage: Remove all downloads still takes a shared song off, once',
+        (tester) async {
+      final took = <String>[];
+      final db = await open(tester, took, second: amnesiac);
+      final element = tester.element(find.byType(Scaffold).first);
+      unawaited(GoRouter.of(element).push<void>('/settings/downloads'));
+      await settle(tester);
+
+      await tester.tap(find.text('Remove all downloads'));
+      await settle(tester);
+      await tester.tap(find.text('Remove'));
+      await settle(tester);
+
+      expect(took, unorderedEquals(['sr_1', 'sr_2', 'sr_3']),
+          reason:
+              'the shared song leaves with the last release that wanted it');
       await closeApp(tester, db);
     });
   });

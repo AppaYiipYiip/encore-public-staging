@@ -41,8 +41,9 @@ class DownloadButton extends ConsumerWidget {
   /// Replaces the plain pin; answers a sentence for the person when it could not be done (shown instead of "Downloading").
   final Future<String?> Function()? onPin;
 
-  /// Replaces the plain unpin.
-  final Future<void> Function()? onRemove;
+  /// Replaces the plain unpin; answers a sentence to say instead of the usual "Removed ..." when something of it stayed (a song another
+  /// downloaded release has too), or `null`.
+  final Future<String?> Function()? onRemove;
 
   /// What the button says while the songs are not on the phone yet because the server is still getting them.
   final String? preparingLabel;
@@ -182,15 +183,16 @@ class DownloadButton extends ConsumerWidget {
           name: name, state: state, waiting: ref.read(downloadsWaitProvider)),
     );
     if (remove == true) {
+      String? note;
       if (onRemove != null) {
-        await onRemove!();
+        note = await onRemove!();
       } else {
         await actions.unpin(type, targetId);
       }
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-            SnackBar(content: Text('Removed $name from this phone')));
+            SnackBar(content: Text(note ?? 'Removed $name from this phone')));
     } else if (remove == false) {
       await actions.retry();
     }

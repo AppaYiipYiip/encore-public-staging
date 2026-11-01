@@ -185,8 +185,11 @@ class _CatalogueDownloadButton extends ConsumerWidget {
       onPin: () => ref.read(releaseSavesProvider.notifier).save(
           releaseId, tracks,
           download: true, title: album.title, artist: album.artistName),
-      onRemove: () =>
-          ref.read(releaseSavesProvider.notifier).removeDownload(releaseId),
+      onRemove: () async => releaseRemovedNote(
+          album.title,
+          await ref
+              .read(releaseSavesProvider.notifier)
+              .removeDownload(releaseId)),
     );
   }
 

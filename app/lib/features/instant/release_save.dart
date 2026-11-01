@@ -152,6 +152,15 @@ class ReleaseState {
   final String? message;
 }
 
+/// What to tell the person after a release's download was taken off the phone, when [kept] of its songs stayed because another downloaded
+/// release has them too; `null` when nothing stayed (the usual "Removed ..." line is enough).
+String? releaseRemovedNote(String name, int kept) {
+  if (kept <= 0) return null;
+  final stays = kept == 1 ? 'One song stays' : '$kept songs stay';
+  final them = kept == 1 ? 'it' : 'them';
+  return 'Removed $name from this phone. $stays: another downloaded release has $them.';
+}
+
 /// Saves and downloads catalogue releases on an Encore server, by release id (`cat:<catalogue album id>`).
 class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
   @override
@@ -222,12 +231,27 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
 
   /// Takes the downloaded copies of a release off the phone (the songs stay on the server and in the library). The songs come from what the
   /// phone wrote down, so this also works after a restart, when the page's own memory is empty (D-35).
-  Future<void> removeDownload(String releaseId) async {
+  ///
+  /// A song that **another downloaded release** has too stays: there is one pin per song, whoever asked for it, so unpinning it here would
+  /// delete a file the person expects in the other release. Answers how many songs stayed, for the sentence [releaseRemovedNote].
+  Future<int> removeDownload(String releaseId) async {
     final actions = ref.read(downloadActionsProvider);
     final store = await _store();
-    final remembered = (await store?.phone())?[releaseId];
-    final refIds = {...?state[releaseId]?.refIds, ...?remembered?.refIds};
+    final records = await store?.phone() ?? const <String, PhoneRelease>{};
+    final refIds = {
+      ...?state[releaseId]?.refIds,
+      ...?records[releaseId]?.refIds
+    };
+    final wantedElsewhere = <String>{
+      for (final e in records.entries)
+        if (e.key != releaseId && e.value.download) ...e.value.refIds,
+    };
+    var kept = 0;
     for (final refId in refIds) {
+      if (wantedElsewhere.contains(refId)) {
+        kept++;
+        continue;
+      }
       await actions.unpin(PinTargetType.track, refId);
     }
     await store?.clearDownload(releaseId);
@@ -238,6 +262,7 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
         releaseId: ReleaseState(now.phase, refIds: now.refIds),
       };
     }
+    return kept;
   }
 
   /// Takes ONE downloaded song off the phone (the song menu's "Remove download"). The phone's record of the release is written first: a kill

@@ -152,6 +152,93 @@ void main() {
     });
   });
 
+  group('removing one downloaded release when another has some of its songs',
+      () {
+    // One pin serves every release that has the song, so taking a release off must not take away what another downloaded release still
+    // wants: the person expects those files (QA review, advisor order 2026-11-01).
+    const second = PhoneRelease(
+      refIds: ['sr_3', 'sr_4'],
+      title: 'Amnesiac',
+      artist: 'Radiohead',
+      download: true,
+    );
+
+    DownloadsRepository repo() => DownloadsRepository(db, serverId,
+        clock: FakeClock(DateTime.utc(2026, 10, 30, 21)));
+
+    /// `cat:1` (sr_1, sr_2, sr_3) and `cat:2` (sr_3, sr_4) are both downloaded: four pins, the shared song pinned once.
+    Future<void> twoDownloadedReleases([PhoneRelease other = second]) async {
+      final store = ReleaseStore(db, serverId);
+      await store.put('cat:1', release);
+      await store.put('cat:2', other);
+      for (final id in {...release.refIds, ...second.refIds}) {
+        await repo().pin(PinTargetType.track, id);
+      }
+    }
+
+    Future<Set<String>> pinnedNow() async =>
+        {for (final p in await db.select(db.pins).get()) p.targetId};
+
+    test(
+        'PB-39: the song the other downloaded release still wants stays pinned',
+        () async {
+      await twoDownloadedReleases();
+
+      final kept = await restart()
+          .read(releaseSavesProvider.notifier)
+          .removeDownload('cat:1');
+
+      expect(await pinnedNow(), {'sr_3', 'sr_4'});
+      expect(unpinned, unorderedEquals(['sr_1', 'sr_2']),
+          reason: 'sr_3 was never asked to leave');
+      expect(kept, 1, reason: 'one song stays, and the person is told');
+      final records = await ReleaseStore(db, serverId).phone();
+      expect(records['cat:1']!.download, isFalse);
+      expect(records['cat:2']!.download, isTrue,
+          reason: 'the other release is untouched');
+    });
+
+    for (final order in const [
+      ['cat:1', 'cat:2'],
+      ['cat:2', 'cat:1']
+    ]) {
+      test(
+          'PB-39: the last release that wants a shared song takes it off, whichever goes first (${order.join(' then ')})',
+          () async {
+        await twoDownloadedReleases();
+        final c = restart();
+
+        for (final id in order) {
+          await c.read(releaseSavesProvider.notifier).removeDownload(id);
+        }
+
+        expect(await pinnedNow(), isEmpty);
+      });
+    }
+
+    test(
+        'PB-39: a release that was only saved, not downloaded, does not keep a song on the phone',
+        () async {
+      await twoDownloadedReleases(
+          const PhoneRelease(refIds: ['sr_3', 'sr_4'], download: false));
+
+      await restart()
+          .read(releaseSavesProvider.notifier)
+          .removeDownload('cat:1');
+
+      expect(await pinnedNow(), {'sr_4'},
+          reason: 'sr_4 is only pinned here by the test: sr_3 left with cat:1');
+    });
+
+    test('PB-39: what to tell the person when songs stay', () {
+      expect(releaseRemovedNote('In Rainbows', 0), isNull);
+      expect(releaseRemovedNote('In Rainbows', 1),
+          'Removed In Rainbows from this phone. One song stays: another downloaded release has it.');
+      expect(releaseRemovedNote('In Rainbows', 3),
+          'Removed In Rainbows from this phone. 3 songs stay: another downloaded release has them.');
+    });
+  });
+
   group('a download that was killed half way', () {
     test(
         'the way the app starts it: only the resume provider is listened to, nothing is faked, and the missing pins are in the table',

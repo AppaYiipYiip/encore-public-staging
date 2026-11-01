@@ -246,7 +246,8 @@ void main() {
     expect((await row('t1')).state, DownloadState.downloading);
   });
 
-  test('unpinning with immediate removal deletes files and rows', () async {
+  test('PB-40: unpinning with immediate removal deletes files and rows',
+      () async {
     await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
     await manager.reconcile();
     transport.complete('t1');
@@ -262,7 +263,7 @@ void main() {
   });
 
   test(
-      'a pin the person removed (a playlist deleted) takes its songs off the phone at once, not a day later (field test 2026-10-31: "x songs downloaded" after deleting a playlist)',
+      'PB-40: a pin the person removed (a playlist deleted) takes its songs off the phone at once, not a day later (field test 2026-10-31: "x songs downloaded" after deleting a playlist)',
       () async {
     await db.into(db.playlists).insert(
         PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
@@ -285,7 +286,7 @@ void main() {
   });
 
   test(
-      'a pin written again with nothing removed (a resume, a refreshed quality) does not end the grace period of songs that left a list',
+      'PB-40: a pin written again with nothing removed (a resume, a refreshed quality) does not end the grace period of songs that left a list',
       () async {
     await db.into(db.playlists).insert(
         PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
@@ -308,7 +309,8 @@ void main() {
     expect(transport.deleted, isEmpty);
   });
 
-  test('a song still wanted by another pin stays when one pin is removed',
+  test(
+      'PB-40: a song still wanted by another pin stays when one pin is removed',
       () async {
     await db.into(db.playlists).insert(
         PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
@@ -328,7 +330,7 @@ void main() {
     expect(transport.deleted, isEmpty);
   });
 
-  test('server-side drop keeps the file for the grace period', () async {
+  test('PB-40: server-side drop keeps the file for the grace period', () async {
     await db.into(db.playlists).insert(
         PlaylistsCompanion.insert(serverId: serverId, id: 'pl1', name: 'Mix'));
     await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
