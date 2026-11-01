@@ -65,7 +65,7 @@ documents are history; read one only when a task links it.
 | 33 | [Playback: sources, states, failures](33-playback-sources-states-and-failures.md) | Every way a song plays, the server's stream answers, the player's states, the failure matrix (internet cut mid-song and the rest), what is saved |
 | 34 | [Conflicts and offline edits](34-conflicts-and-offline-edits.md) | The life of a queued edit, every pair of operations from two devices, other disagreements, the gaps |
 | — | [tasks/](tasks/) | The work, phase by phase, with context and acceptance criteria |
-| — | [evidence/](evidence/) | Screenshots from the app walk, the measurement scripts, and the clean-machine proofs (`c01` the installer, `c02` backup and restore, `c03` an interrupted install, `c04` the server updating its own yt-dlp; the app walks `b01` live channel, `b02` journey 4 on two phones) |
+| — | [evidence/](evidence/) | Screenshots from the app walk, the measurement scripts, and the clean-machine proofs (`c01` the installer, `c02` backup and restore, `c03` an interrupted install, `c04` the server updating its own yt-dlp; the app walks `b01` live channel, `b02` journey 4 on two phones, `b03` an impostor at the saved address, `b04` the server away during playback, `b05` signing out, `b06` no phone notifications, `b07` signed addresses, `b08` to `b10` re-walks of `main` and the first download of a release; and dated walks and UX batches of 2026-10-22 and 2026-10-30) |
 | — | [guides/](guides/) | The install test guide (`install-test.md`: one command on a fresh computer, backups, looking after it) and a draft guide for a friend using somebody's server (`friend.md`) |
 
 ## Ground rules that do not change

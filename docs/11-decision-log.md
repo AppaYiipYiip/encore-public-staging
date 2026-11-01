@@ -10,7 +10,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   "drop anything related to [the old project]".
 * **Options.** Clean in place; rewrite history with `git filter-repo`; **new repository from a cleaned tree**.
 * **Decision.** New repository `encore`, one initial commit, layout of `05` §2; old repo archived as `old-repo`, deleted on the
-  owner's go after password rotation.
+  owner's go (no password rotation was needed: D-7).
 * **Why.** Only a new history guarantees no secrets/binaries/upstream history; rewriting is error-prone; cleaning in place keeps all three.
 * **Consequences.** Line history of 5 days lives only in the archive/bundle. Must check no upstream-derived file remains (icon, Android
   files, vendored plugin) before dropping the credit.
@@ -419,7 +419,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   (c) **A warm child process per version** that speaks to the server over a pipe (what `04` §4 calls the warm worker): switching is starting a new child and draining the old one, with no restart of
   the server. The cleanest, but it replaces the extraction calls in `lean.py` and `stream.py` and their error handling: a task of its own, and a bigger change than the problem needs today.
   (d) **Keep `encore update` as the only route** (today). Zero code, and the friend's songs depend on the owner noticing.
-* **Decision (proposed).** (b) now; (c) when the extraction moves out of process for its own reasons; never (a).
+* **Decision.** (b) now; (c) when the extraction moves out of process for its own reasons; never (a).
   1. **One way to run yt-dlp.** Every use follows the pointer. The playlist fallback stops calling the `yt-dlp` command and runs `[sys.executable, "-m", "yt_dlp", …]` with the pointer's wheel in
      `PYTHONPATH`; its availability check becomes `find_spec`. A test fails if an argv beginning with `"yt-dlp"` comes back.
   2. **Where from.** PyPI's JSON for `yt-dlp` (the server calling an outside service is the rule, ADR-R38), once a day at a random time; the wheel's URL and `sha256` come from that answer and the
@@ -460,7 +460,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   that first brings it to VM 107 is announced, it says so.
 * **Revisit when.** The extraction moves out of process (then (c)); or YouTube starts treating a fixed canary video as a signal; or a Host reports a restart at a bad moment.
 
-### ADR-R40 — How a person finds and reaches their server without knowing what an address is (owner, 2026-10-23) — DECIDED (the advisor model decided after the research below; nothing is built yet)
+### ADR-R40 — How a person finds and reaches their server without knowing what an address is (owner, 2026-10-23) — DECIDED (the advisor model decided after the research below; part of it is built: see "Built so far" at the end of this entry)
 * **Context.** The owner, 2026-10-23: *"a non-technical user won't know what an IP address is. In Plex and other media apps the server is detected automatically on the same Wi-Fi. How would it work with several Wi-Fi networks, several music servers?"* and then *"how do Plex and Jellyfin work, can we learn and copy it, should we do it even better?"*
   * **Where we stand (checked in the code and on the emulators, 2026-10-23).**
     * The first screen asks for an address ("For example 192.168.1.10:4533", `evidence/b02`); `15` section 3 (A1) says the opposite (invitation or QR first, manual address under "Other ways to connect") and was never built.

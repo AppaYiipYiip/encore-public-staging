@@ -28,7 +28,7 @@ A result reads: *"tap → audible, never-played songs, p50 2.4 s / p95 3.8 s / m
 ## 3. Measuring correctly
 
 * **"Audible" means audio is coming out.** Use the app's own span `perf play.audible`, logged when the player's position first passes
-  200 ms after a tap (to add in P1-06). Cross-check with `adb shell dumpsys audio | grep "state:started"`. Never use media-session
+  200 ms after a tap (built in the engine, P1-06). Cross-check with `adb shell dumpsys audio | grep "state:started"`. Never use media-session
   state alone.
 * **Never-played songs mean never played *on that server*.** Keep a list of used songs per server and pick new ones each run
   (§8 has a pool). Popular songs can be faster (YouTube's CDN); include obscure ones.
@@ -89,7 +89,7 @@ What the player is **supposed to do** in each condition below (and what it does 
 | A list deleted while downloaded (also an imported one) | delete the playlist | Library > Downloaded and "N songs on this phone" fall within seconds; the files are gone from Settings > Downloads & storage |
 | A long outage | server stopped for 10 minutes | the strip appears once and goes by itself; not again until everything has worked for 10 s; the person is never asked for a password |
 | A Wi-Fi sign-in page (captive portal) | a public Wi-Fi before its page is accepted (a real network; not simulated) | the app opens on Home with the saved server, never on the page that asks for a server; the page's answer is never read as the server's (a 200 page is no answer, a bare 401/403 is not "sign in again") |
-| YouTube refusing | server fault flag `ENCORE_FAULT=youtube_refuse` (to add in P1-02) | taps fail in ≤ 10 s with one plain sentence; imports pause; admin Health explains |
+| YouTube refusing | server fault flag `ENCORE_FAULT=youtube_refuse` (built: `sources/youtube/stream.py`) | taps fail in ≤ 10 s with one plain sentence; imports pause; admin Health explains |
 | Hard kill while playing | `adb shell am force-stop app.encore.player` | reopen: same song, paused at the same second (± 2 s) |
 | System kill in background | HOME, then `adb shell am kill app.encore.player` | same as above |
 | Reboot | `adb reboot` | same as above; downloads intact |

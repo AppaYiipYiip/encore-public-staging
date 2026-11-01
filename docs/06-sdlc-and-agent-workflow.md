@@ -24,7 +24,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 3. Commit message: `area: change in a person's words` (areas: `player`, `search`, `library`, `import`, `offline`, `sync`, `server`,
    `gateway`, `youtube`, `keeper`, `people`, `admin`, `install`, `ci`, `docs`). Body: why, and `Refs #issue`.
 4. Squash-merge; the PR title becomes the commit on `main`.
-5. Versions: `0.MINOR.PATCH` until 1.0. App `versionCode` = CI build number. Server image tags = the same version.
+5. Versions: `0.MINOR.PATCH` until 1.0. App `versionCode` = the build number given to `flutter build` with `--build-number` (`pubspec.yaml`'s `+N` when it is left out; D-25, `guides/dev-gotchas.md`); a CI build number once `release.yml` exists. Server image tags = the same version.
 6. Tags and Releases only from CI, never from a laptop (`release.yml` is planned, section 7).
 7. Never commit secrets or binaries; the pre-commit hook (`tools/hooks/pre-commit`) refuses logins, keys, cookies, environment files and binaries by file name, and CI runs gitleaks (Hygiene `secrets`); `.gitignore` covers `*.apk`, `*.aab`, `*.env`,
    `*login*.txt`, `*cookies*.txt`, `build/`.
