@@ -113,7 +113,7 @@ A device row is made at every sign-in that has no usable token (`issue_device`):
 ## 8. Debts this document makes visible
 
 * **D-1:** AC-6 and DV-3 are built on the server and **have no screen**: a person who forgot their password cannot use the owner's link in the app, and nobody can see or sign out their own other phones. P2-18 follow-up / P3-10.
-* **D-2:** JN-2, JN-3, JN-9, DV-2 have no test.
+* **D-2:** closed 2026-11-01: JN-2, JN-3 and JN-9 have tests (`app/test/features/connect_form_test.dart`, `first_run_test.dart`), and DV-2 has six (its row names them).
 * **D-3:** the first screen still leads with the typed form (`31` CN-20); JN-6 to JN-8 are the answer.
 * **D-4:** the phone keeps the person's password (`31` D-1).
 * **D-5 (done 2026-10-24, `evidence/b05`):** ~~signing out on the phone does not revoke its device on the server~~ it does now; the same work closed a hole on the server (`/auth/logout` ended whatever device id came in the header, not only the caller's own). The text below is the finding as it was written: **signing out on the phone does not revoke its device on the server** (no call to `POST /auth/logout`, and the saved device token `encore.device.<n>` is not deleted): the device stays in the person's list and its token stays valid. Fix: sign-out revokes first (best effort, offline is fine), then deletes the token with the rest.
