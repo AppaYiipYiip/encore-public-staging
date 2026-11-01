@@ -281,21 +281,6 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
 final releaseSavesProvider =
     NotifierProvider<ReleaseSaves, Map<String, ReleaseState>>(ReleaseSaves.new);
 
-/// The releases the sync says are saved (`cat:<id>`): what keeps "In your library" true after a restart, a reinstall and on a second phone.
-final savedReleasesProvider = StreamProvider.autoDispose<Set<String>>((ref) {
-  final server = ref.watch(activeServerProvider).value;
-  if (server == null) return Stream.value(const <String>{});
-  return ReleaseStore(ref.watch(databaseProvider), server.id).watchSaved();
-});
-
-/// What this phone saved and downloaded here, as it wrote it down (songs, title, artist, whether to keep them on the phone).
-final phoneReleasesProvider =
-    StreamProvider.autoDispose<Map<String, PhoneRelease>>((ref) {
-  final server = ref.watch(activeServerProvider).value;
-  if (server == null) return Stream.value(const <String, PhoneRelease>{});
-  return ReleaseStore(ref.watch(databaseProvider), server.id).watchPhone();
-});
-
 /// Where a release stands, wherever a person looks (D-35). A save on its way, or just finished or failed in this run, is in memory and wins.
 /// Otherwise what the phone wrote down proves the server confirmed the save (even before the next sync), and a release the sync names is
 /// saved too: on a second phone it is simply in the library, with no downloads (those belong to each phone).

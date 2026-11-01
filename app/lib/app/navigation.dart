@@ -64,6 +64,13 @@ abstract final class Nav {
       c.push('/${_branch(c)}/catalogue/album/${Uri.encodeComponent(album.id)}',
           extra: album);
 
+  /// A downloaded release by its id (`cat:<catalogue album id>`), with nothing preloaded: the page fetches it.
+  static void catalogueAlbumById(BuildContext c, String releaseId) {
+    final id =
+        releaseId.startsWith('cat:') ? releaseId.substring(4) : releaseId;
+    c.push('/${_branch(c)}/catalogue/album/${Uri.encodeComponent(id)}');
+  }
+
   static void catalogueArtist(BuildContext c, String id,
           {CatalogueArtist? preloaded}) =>
       c.push('/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}',

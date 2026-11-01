@@ -18,6 +18,7 @@ import '../common/format.dart';
 import '../common/playlist_actions.dart';
 import '../common/widgets.dart';
 import '../downloads/download_providers.dart';
+import '../instant/release_save.dart' show releasePinStateProvider;
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 
@@ -312,21 +313,27 @@ class _LibraryEntry {
 
   /// Something the person chose to download: a playlist, an album, an artist, Liked Songs, a song.
   _LibraryEntry.pinned(PinEntry p)
-      : kind = switch (p.pin.targetType) {
-          'liked' => _Kind.liked,
-          'playlist' => _Kind.playlist,
-          'artist' => _Kind.artist,
-          'album' => _Kind.album,
-          _ => _Kind.song,
-        },
-        id = p.pin.targetType == 'liked' ? 'liked' : p.pin.targetId,
+      // A downloaded release is an album although the pin it carries is a song's (D-35).
+      : kind = p.releaseId != null
+            ? _Kind.album
+            : switch (p.pin.targetType) {
+                'liked' => _Kind.liked,
+                'playlist' => _Kind.playlist,
+                'artist' => _Kind.artist,
+                'album' => _Kind.album,
+                _ => _Kind.song,
+              },
+        id = p.releaseId ??
+            (p.pin.targetType == 'liked' ? 'liked' : p.pin.targetId),
         title = p.title,
         subtitle = p.artist == null ? p.kind : '${p.kind} • ${p.artist}',
         coverArt = p.coverArt,
         count = 0,
         artistName = p.artist,
         playlist = p.playlist,
-        pin = p.pin;
+        pin = p.pin,
+        releaseId = p.releaseId,
+        releaseRefIds = p.releaseRefIds;
 
   _LibraryEntry.playlist(PlaylistRow p, String? me)
       : kind = _Kind.playlist,
@@ -370,7 +377,13 @@ class _LibraryEntry {
   /// Album entries: artist, so a missing cover can come from the catalogue.
   String? artistName;
 
-  void open(BuildContext context) {
+  /// Set for a catalogue release the person downloaded (D-35): one entry for all its songs, and how far it is is added up over them.
+  String? releaseId;
+  List<String> releaseRefIds = const [];
+
+  /// [offline]: the release's own page asks the public catalogue for its songs and has no copy of them, so a downloaded release opens the
+  /// list of the songs that are on the phone when there is no connection (D-36).
+  void open(BuildContext context, {bool offline = false}) {
     switch (kind) {
       case _Kind.liked:
         Nav.liked(context);
@@ -381,7 +394,13 @@ class _LibraryEntry {
       case _Kind.artist:
         Nav.artist(context, id);
       case _Kind.album:
-        Nav.album(context, id);
+        if (releaseId == null) {
+          Nav.album(context, id);
+        } else if (offline) {
+          Nav.downloaded(context);
+        } else {
+          Nav.catalogueAlbumById(context, releaseId!);
+        }
     }
   }
 }
@@ -464,11 +483,15 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
     return (subtitle: entry.subtitle, complete: false, usable: true);
   }
   final type = PinTargetType.values.byName(pin.targetType);
-  final state = ref
-          .watch(pinStateProvider(
-              (type, type == PinTargetType.liked ? kLikedPinId : pin.targetId)))
-          .value ??
-      PinState.none;
+  final state = entry.releaseId != null
+      ? ref.watch(releasePinStateProvider(entry.releaseRefIds.join(',')))
+      : ref
+              .watch(pinStateProvider((
+                type,
+                type == PinTargetType.liked ? kLikedPinId : pin.targetId
+              )))
+              .value ??
+          PinState.none;
   final offline =
       ref.watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
   final s = _stateOf(state,
@@ -488,6 +511,8 @@ class _ListEntry extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final line = _lineFor(ref, entry);
+    final offline = ref
+        .watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
     return Semantics(
       button: true,
       label: '${entry.title}, ${line.subtitle}',
@@ -495,7 +520,7 @@ class _ListEntry extends ConsumerWidget {
       child: Opacity(
         opacity: line.usable ? 1 : 0.45,
         child: InkWell(
-          onTap: () => entry.open(context),
+          onTap: () => entry.open(context, offline: offline),
           child: Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: Space.gutter, vertical: Space.xs + 2),
@@ -550,6 +575,8 @@ class _GridEntry extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final line = _lineFor(ref, entry);
+    final offline = ref
+        .watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
     return Semantics(
       button: true,
       label: '${entry.title}, ${line.subtitle}',
@@ -557,7 +584,7 @@ class _GridEntry extends ConsumerWidget {
       child: Opacity(
         opacity: line.usable ? 1 : 0.45,
         child: InkWell(
-          onTap: () => entry.open(context),
+          onTap: () => entry.open(context, offline: offline),
           borderRadius: BorderRadius.circular(Radii.card),
           child: Column(
             crossAxisAlignment: entry.kind == _Kind.artist

@@ -16,6 +16,7 @@ import '../common/format.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart' show instantAvailableProvider;
+import '../instant/release_save.dart' show releaseSavesProvider;
 import 'diagnostics_screen.dart';
 import 'failed_edits.dart';
 import 'settings_controller.dart';
@@ -564,6 +565,13 @@ class DownloadsSettingsScreen extends ConsumerWidget {
               tooltip: 'Remove download',
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () async {
+                // A release is ONE entry (D-35): removing it takes all its songs off, through the record the phone wrote down.
+                if (e.releaseId != null) {
+                  await ref
+                      .read(releaseSavesProvider.notifier)
+                      .removeDownload(e.releaseId!);
+                  return;
+                }
                 final type = PinTargetType.values.asNameMap()[e.pin.targetType];
                 if (type == null) return;
                 await actions.unpin(type, e.pin.targetId);

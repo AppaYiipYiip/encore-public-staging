@@ -12,6 +12,7 @@ import '../../data/downloads/download_manager.dart';
 import '../../data/downloads/download_transport.dart';
 import '../../data/encore/signed_addresses.dart' show withQuality;
 import '../../data/repos/downloads_repository.dart';
+import '../../data/repos/release_store.dart';
 import '../../domain/audio_quality.dart';
 import '../../domain/storage_guard.dart';
 import '../providers.dart';
@@ -56,6 +57,21 @@ final downloadedTracksProvider =
       .throttleLatest(const Duration(milliseconds: 500));
 });
 
+/// The releases the sync says are saved (`cat:<id>`): what keeps "In your library" true after a restart, a reinstall and on a second phone.
+final savedReleasesProvider = StreamProvider.autoDispose<Set<String>>((ref) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null) return Stream.value(const <String>{});
+  return ReleaseStore(ref.watch(databaseProvider), server.id).watchSaved();
+});
+
+/// What this phone saved and downloaded here, as it wrote it down (songs, title, artist, whether to keep them on the phone).
+final phoneReleasesProvider =
+    StreamProvider.autoDispose<Map<String, PhoneRelease>>((ref) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null) return Stream.value(const <String, PhoneRelease>{});
+  return ReleaseStore(ref.watch(databaseProvider), server.id).watchPhone();
+});
+
 /// A pin with a human title (for the storage screen).
 class PinEntry {
   const PinEntry({
@@ -65,11 +81,18 @@ class PinEntry {
     this.coverArt,
     this.artist,
     this.playlist,
+    this.releaseId,
+    this.releaseRefIds = const [],
   });
 
   final PinRow pin;
   final String title;
   final String kind;
+
+  /// Set when this entry is a catalogue release the person downloaded (D-35): ONE entry for all its songs. [pin] is the first of their pins,
+  /// [releaseRefIds] the songs the phone wrote down, [releaseId] is `cat:<catalogue album id>`.
+  final String? releaseId;
+  final List<String> releaseRefIds;
 
   /// The cover to draw (an album's, a playlist's own, an artist's picture), when there is one.
   final String? coverArt;
@@ -89,8 +112,32 @@ final pinEntriesProvider =
     FutureProvider.autoDispose<List<PinEntry>>((ref) async {
   final pins = await ref.watch(pinsProvider.future);
   final db = ref.watch(databaseProvider);
+  // A release the person downloaded is ONE entry, not N loose songs (D-35): the songs the phone wrote down for it are taken out of the loose
+  // track pins and shown once, with the release's own title and artist (so it also reads offline).
+  final phone = await ref.watch(phoneReleasesProvider.future);
+  final released = <String, ({String id, PhoneRelease release})>{
+    for (final e in phone.entries)
+      if (e.value.download)
+        for (final refId in e.value.refIds)
+          refId: (id: e.key, release: e.value),
+  };
+  final grouped = <String>{};
   final entries = <PinEntry>[];
   for (final pin in pins) {
+    final of = pin.targetType == 'track' ? released[pin.targetId] : null;
+    if (of != null) {
+      if (grouped.add(of.id)) {
+        entries.add(PinEntry(
+          pin: pin,
+          title: of.release.title ?? 'Album',
+          kind: 'Album',
+          artist: of.release.artist,
+          releaseId: of.id,
+          releaseRefIds: of.release.refIds,
+        ));
+      }
+      continue;
+    }
     switch (pin.targetType) {
       case 'playlist':
         final row = await (db.select(db.playlists)
