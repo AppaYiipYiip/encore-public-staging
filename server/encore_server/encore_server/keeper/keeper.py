@@ -235,7 +235,9 @@ class Keeper:
             )
             touched = library.touch_ref_holders(conn, ref["id"]) if navidrome_id else {}
         if navidrome_id is None:
-            raise Retry("the music server has not found the file yet", after_s=30)
+            # No pause of its own: a music server that never finds the file (the music folder is not one of its libraries, it cannot read it)
+            # is not a wait that ends by itself. The scheduler's pauses apply, and after the last it is recorded as failed with this reason (B7).
+            raise Retry("The music server has not found the saved file yet. Check that its library includes the music folder.")
         if touched and self._on_changed is not None:
             self._on_changed(touched)
 

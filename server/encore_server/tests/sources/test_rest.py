@@ -256,3 +256,104 @@ def test_a_guarded_extractor_counts_the_look_ups_that_reach_youtube_not_the_ones
     assert guarded.lookups.today == inner.calls == 4, (
         "two that worked, the refusal and one probe; the three others during the rest were never sent"
     )
+
+
+# ---------------------------------------------------------------------------------------------------- B8: the searches obey the rest too
+
+
+class CountingResolver:
+    """Stands for the search at YouTube Music: remembers how many times it was asked."""
+
+    def __init__(self) -> None:
+        self.asked = 0
+
+    def resolve_ranked(self, want: Any) -> list[Any]:
+        self.asked += 1
+        return []
+
+
+def _wanted() -> Any:
+    from encore_server.sources.youtube.source import Wanted
+
+    return Wanted(ref_id="sr_1", artist="A", title="T", album=None, duration_s=200, video_id=None)
+
+
+def test_peeking_at_whether_a_probe_may_go_does_not_use_it_up() -> None:
+    clock = Clock()
+    rest = Rest(clock=clock, probe_every_s=30)
+    rest.blocked()
+
+    assert rest.probe_open() is True and rest.probe_open() is True, "looking does not spend it"
+    assert rest.allow_probe() is True, "the tap that goes spends it"
+    assert rest.probe_open() is False
+    clock.now += 31
+    assert rest.probe_open() is True
+
+
+def test_while_youtube_rests_a_tap_makes_no_search_at_all(tmp_path: Path) -> None:
+    """B8 (QA-BACKEND): the search ran BEFORE the guarded extractor, so every tap during a rest still made 2 to 3 YouTube Music searches,
+    uncounted: a burst from the owner's home address that the rest exists to prevent."""
+    from encore_server.sources.youtube.source import YoutubeSource
+
+    clock = Clock()
+    rest = Rest(clock=clock, probe_every_s=30)
+    resolver = CountingResolver()
+    youtube = YoutubeSource(tmp_path, resolver=resolver, extractor=Inner(), rest=rest)
+    rest.blocked()
+    assert rest.allow_probe() is True  # the first tap after the refusal has gone: its probe is spent
+
+    for _ in range(5):
+        with pytest.raises(Exception) as caught:  # noqa: PT011 - a StreamError with the code `blocked`
+            youtube.open(_wanted(), None)
+        assert getattr(caught.value, "code", None) == "blocked"
+
+    assert resolver.asked == 0, "nothing was searched while YouTube rests"
+
+
+def test_a_search_that_does_go_leaves_the_probe_to_the_extraction(tmp_path: Path) -> None:
+    from encore_server.sources.youtube.source import YoutubeSource
+
+    clock = Clock()
+    rest = Rest(clock=clock, probe_every_s=30)
+    resolver = CountingResolver()
+    youtube = YoutubeSource(tmp_path, resolver=resolver, extractor=Inner(), rest=rest)
+    rest.blocked()  # the window is open: the next tap may look
+
+    with pytest.raises(Exception):  # noqa: B017, PT011 - nothing is found: not_found
+        youtube.open(_wanted(), None)
+
+    assert resolver.asked == 1
+    assert rest.probe_open() is True, "the search did not spend the probe: the extraction still can"
+
+
+def test_the_real_searcher_is_counted_per_search() -> None:
+    from encore_server.sources.youtube.rest import CountedSearcher
+
+    class Inner2:
+        def songs(self, query: str, limit: int) -> list[dict[str, Any]]:
+            return []
+
+        def videos(self, query: str, limit: int) -> list[dict[str, Any]]:
+            return []
+
+    lookups = Lookups(clock=Clock())
+    searcher = CountedSearcher(Inner2(), lookups)
+
+    searcher.songs("a b", 8)
+    searcher.songs("b a", 8)
+    searcher.videos("b a", 8)
+
+    assert lookups.today == 3, "a tap that is not clear-cut makes three: they are three requests"
+
+
+def test_the_default_source_counts_its_own_searches_in_the_same_count_as_its_extractions(tmp_path: Path) -> None:
+    """B8: without this, taking the counting wrapper out of `YoutubeSource` would break no test, and the number `encore logs` shows would go
+    back to leaving the searches out."""
+    from encore_server.sources.youtube.rest import CountedSearcher
+    from encore_server.sources.youtube.source import YoutubeSource
+
+    youtube = YoutubeSource(tmp_path)
+    searcher = youtube._resolver._searcher  # type: ignore[attr-defined]  # noqa: SLF001 - the wiring is the point
+
+    assert isinstance(searcher, CountedSearcher)
+    assert searcher._lookups is youtube.lookups  # noqa: SLF001

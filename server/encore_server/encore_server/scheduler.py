@@ -42,7 +42,9 @@ BACKOFF_S = (30.0, 120.0, 600.0, 3600.0)
 
 
 class Retry(Exception):
-    """Not now (YouTube pushed back, the disk is full for the moment): try again after [after_s]. This never counts towards giving up."""
+    """Not now (YouTube pushed back, the disk is full for the moment): try again after [after_s]. This never counts towards giving up: the
+    try that asked for it is given back, so a long wait does not use up the tries a later failure gets (B7). With no [after_s] it is a failure
+    that may pass: the scheduler's own pauses, and after the last one it is recorded as failed with the reason."""
 
     def __init__(self, reason: str, after_s: float | None = None) -> None:
         super().__init__(reason)
@@ -312,9 +314,12 @@ class Scheduler:
                 )
             else:
                 pause = after_s if after_s is not None else self._backoff[min(item.attempts - 1, len(self._backoff) - 1)]
+                # A wait with a pause of its own is not a try that failed: it is given back.
+                refund = 1 if after_s is not None else 0
                 conn.execute(
-                    "UPDATE work_item SET state = 'queued', error = ?, next_try_at = ?, updated_at = ? WHERE id = ?",
-                    (error, now + int(pause * 1000), now, item.id),
+                    "UPDATE work_item SET state = 'queued', error = ?, next_try_at = ?, updated_at = ?,"
+                    " attempts = MAX(attempts - ?, 0) WHERE id = ?",
+                    (error, now + int(pause * 1000), now, refund, item.id),
                 )
 
     # ------------------------------------------------------------------ the worker threads

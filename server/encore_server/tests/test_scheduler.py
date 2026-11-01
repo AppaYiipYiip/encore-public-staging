@@ -161,6 +161,37 @@ def test_after_the_last_pause_it_is_recorded_as_failed_with_the_reason(db: Datab
     assert len(rig.log) == 3  # the first try and one after each of the two pauses
 
 
+def test_a_retry_that_names_no_pause_is_bounded_like_any_failure_that_may_pass(db: Database, rig: Rig) -> None:
+    """B7: "not yet" with no pause given is a failure that may pass, not a wait: after the last pause it is recorded as failed."""
+    (ref,) = make_refs(db, 1)
+    rig.behaviour[ref] = Retry("the music server has not found the file yet")
+    rig.scheduler.submit("keep", ref, make_person(db, "marwa"))
+
+    for _ in range(6):
+        rig.scheduler.drain()
+        rig.clock.advance(1000)
+
+    state = rig.scheduler.state_of("keep", ref)
+    assert state is not None and state["state"] == "failed" and "not found the file" in str(state["error"])
+    assert len(rig.log) == 3
+
+
+def test_waiting_for_something_does_not_use_up_the_tries_a_later_failure_gets(db: Database, rig: Rig) -> None:
+    """B7: a day of waiting for YouTube to rest must not mean the first hiccup after it is the last: only failures count."""
+    (ref,) = make_refs(db, 1)
+    rig.behaviour[ref] = Retry("busy", after_s=60)
+    rig.scheduler.submit("keep", ref, make_person(db, "marwa"))
+    for _ in range(6):
+        rig.scheduler.drain()
+        rig.clock.advance(61)
+
+    rig.behaviour[ref] = RuntimeError("one hiccup")
+    rig.scheduler.drain()
+
+    state = rig.scheduler.state_of("keep", ref)
+    assert state is not None and state["state"] == "queued", "the first real failure is tried again, not recorded as failed"
+
+
 def test_giving_up_is_immediate_and_a_busy_source_is_never_given_up_on(db: Database, rig: Rig) -> None:
     gone, busy = make_refs(db, 2)
     rig.behaviour[gone] = GiveUp("removed")

@@ -74,6 +74,12 @@ class Rest:
                 return True
             return False
 
+    def probe_open(self) -> bool:
+        """Whether a probe may go now, WITHOUT using it up: the search that comes before an extraction looks here, so a tap during a rest that
+        may not probe makes no search at all, and a tap that may leaves the probe to the extraction that follows (B8)."""
+        with self._lock:
+            return self._until <= self._clock() or self._clock() - self._last_probe >= self._probe_every
+
     def snapshot(self) -> dict[str, Any]:
         left = self.remaining()
         return {"state": "resting" if left > 0 else "ok", "resumesInSec": int(left) if left > 0 else 0}
@@ -115,6 +121,25 @@ class Lookups:
             if self._count % self._every == 0:
                 log.info("youtube look-ups today: %d", self._count)
             return self._count
+
+
+class CountedSearcher:
+    """A searcher (see lean.Searcher) that tells [Lookups] about every request it makes: a search at YouTube Music is a look-up like an
+    extraction, and a tap that is not clear-cut makes up to three of them (B8: they were not in the count)."""
+
+    def __init__(self, inner: Any, lookups: Lookups) -> None:
+        self._inner = inner
+        self._lookups = lookups
+
+    def songs(self, query: str, limit: int) -> list[dict[str, Any]]:
+        self._lookups.note()
+        found: list[dict[str, Any]] = self._inner.songs(query, limit)
+        return found
+
+    def videos(self, query: str, limit: int) -> list[dict[str, Any]]:
+        self._lookups.note()
+        found: list[dict[str, Any]] = self._inner.videos(query, limit)
+        return found
 
 
 class Guarded:

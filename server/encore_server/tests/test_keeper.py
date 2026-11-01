@@ -252,6 +252,20 @@ def test_when_the_music_server_has_not_seen_the_file_yet_it_is_attached_without_
     assert len(rig.source.asked) == 1, "the file was not downloaded a second time"
 
 
+def test_a_file_the_music_server_never_finds_is_not_retried_every_thirty_seconds_for_ever(rig: Rig) -> None:
+    """B7 (QA-BACKEND): the link step asked for a retry after a fixed 30 s, which the scheduler never counts towards giving up, so a music
+    server that does not have the music folder as a library (or cannot read the file) kept the keep queued for ever and it never said failed.
+    A retry with no pause given is the scheduler's own bounded one: 30 s, 2 minutes, 10 minutes, an hour, then failed with the reason."""
+    ref = rig.make_ref()
+    rig.navidrome.finds_after_scan = False
+
+    with pytest.raises(Retry) as caught:
+        rig.keep(ref)
+
+    assert caught.value.after_s is None, "no pause of its own: the scheduler's backoff and its last try decide"
+    assert "music server" in caught.value.reason and "library" in caught.value.reason, "the reason names what to check"
+
+
 def test_everyone_who_has_the_song_is_told_the_file_is_there(rig: Rig, db: Database) -> None:
     ref = rig.make_ref()
     with db.tx() as conn:

@@ -12,9 +12,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .errors import DownloadError
 from .lean import InProcessExtractor, LeanResolver, YtmusicApiSearcher
 from .pace import Pacer
-from .rest import Guarded, Lookups, Rest
+from .rest import CountedSearcher, Guarded, Lookups, Rest
 from .scoring import Want
 from .stream import StreamProxy, Upstream
 
@@ -50,9 +51,11 @@ class YoutubeSource:
         self._pace = pace
         self._remember = remember_video
         self.rest = rest if rest is not None else Rest()
-        self._resolver = resolver or LeanResolver(YtmusicApiSearcher(), max_duration_s=6 * 3600)
+        # One count of look-ups at YouTube: the searches and the extractions (B8).
+        lookups = Lookups()
+        self._resolver = resolver or LeanResolver(CountedSearcher(YtmusicApiSearcher(), lookups), max_duration_s=6 * 3600)
         self._extractor = Guarded(
-            extractor or InProcessExtractor(cache_dir=work_dir / "ytdlp-cache", fast_clients=fast_clients), self.rest
+            extractor or InProcessExtractor(cache_dir=work_dir / "ytdlp-cache", fast_clients=fast_clients), self.rest, lookups
         )
         work_dir.mkdir(parents=True, exist_ok=True)
         self._proxy = proxy or StreamProxy(
@@ -62,6 +65,9 @@ class YoutubeSource:
     def _candidates(self, wanted: Wanted) -> list[tuple[str, str, int | None]]:
         if wanted.video_id:
             return [(wanted.video_id, wanted.title, wanted.duration_s)]
+        # The search comes before the extraction, so the rest is obeyed here too: a tap that may not probe makes no search at all (B8).
+        if not self.rest.probe_open():
+            raise DownloadError("blocked", "YouTube is being given a rest")
         ranked = self._resolver.resolve_ranked(Want(wanted.artist, wanted.title, wanted.album, wanted.duration_s))
         found = [(s.candidate.video_id, s.candidate.title, s.candidate.duration_s) for s in ranked[:3]]
         if found and self._remember is not None:
