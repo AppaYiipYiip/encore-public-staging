@@ -439,3 +439,80 @@ def test_a_bell_that_cannot_ring_does_not_fail_the_join(rig: Rig, monkeypatch: p
 
     assert joined.status_code == 201, "the friend is in; only the owner's news was lost"
     assert rig.person_of("sara")["username"] == "sara"
+
+
+# ------------------------------------------------------------------------------------------------ B15: a join whose answer was lost
+
+
+def _devices_of(rig: Rig, user: str) -> int:
+    with rig.client.app.state.services.db.read() as conn:  # type: ignore[attr-defined]
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM device d JOIN person p ON p.id = d.person WHERE p.navidrome_user = ?", (user,)
+        ).fetchone()
+    return int(row["n"])
+
+
+def test_a_join_whose_answer_was_lost_signs_in_when_asked_again_with_the_same_name_and_password(rig: Rig) -> None:
+    """B15: the answer to a join can be lost (a phone on a train): the account was made and the invitation used, so the retry said "not valid
+    any more" to a person who had just joined, and the account existed with nobody holding a device for it."""
+    code = rig.invite()["code"]
+    first = rig.join(code, displayName="Sara K")
+    assert first.status_code == 201  # ... and this answer never reached the phone
+
+    again = rig.join(code, displayName="Sara K")
+
+    assert again.status_code == 201, again.text
+    body = again.json()
+    assert body["deviceToken"] != first.json()["deviceToken"], "a device of its own: the first token never arrived"
+    assert body["person"]["name"] == "Sara K" and body["person"]["id"] == first.json()["person"]["id"]
+    assert rig.client.get(f"{V1}/me", headers=rig.bearer(body["deviceToken"])).status_code == 200
+    assert rig.admin.created == ["sara"], "no second account on the music server"
+    assert len([p for p in rig.client.get(f"{V1}/people", params=creds("marwa")).json()["items"] if p["username"] == "sara"]) == 1
+
+
+def test_asking_again_still_needs_the_password_and_the_same_name(rig: Rig) -> None:
+    code = rig.invite()["code"]
+    assert rig.join(code).status_code == 201
+    devices = _devices_of(rig, "sara")
+
+    wrong_password = rig.join(code, password="not what she chose")
+    other_name = rig.join(code, username="sara2")
+
+    assert wrong_password.status_code == 404 and other_name.status_code == 404, (
+        "the same answer as any dead code: nothing is confirmed"
+    )
+    assert wrong_password.json() == other_name.json()
+    assert _devices_of(rig, "sara") == devices, "nobody got a device"
+    assert "sara2" not in rig.verifier.passwords, "and no second account"
+
+
+def test_asking_again_late_is_a_dead_code_like_any_used_one(rig: Rig) -> None:
+    from encore_server.ids import now_ms
+
+    code = rig.invite()["code"]
+    assert rig.join(code).status_code == 201
+    with rig.client.app.state.services.db.tx() as conn:  # type: ignore[attr-defined]
+        conn.execute("UPDATE invite SET used_at = ?", (now_ms() - 11 * 60 * 1000,))
+
+    assert rig.join(code).status_code == 404, "ten minutes is for a lost answer; later she signs in with her name and password"
+
+
+def test_a_revoked_or_unused_invitation_is_not_a_way_in_by_asking_again(rig: Rig) -> None:
+    unused = rig.invite()["code"]
+    revoked = rig.invite()
+    rig.client.delete(f"{V1}/invites/{revoked['id']}", params=creds("marwa"))
+
+    assert rig.join(revoked["code"]).status_code == 404
+    assert rig.verifier.passwords.get("sara") is None
+    assert rig.client.get(f"{V1}/invites/check", params={"code": unused}).status_code == 200
+
+
+def test_wrong_passwords_on_the_second_ask_are_counted_like_any_wrong_password(rig: Rig) -> None:
+    """A used code is not a free way to guess a password: the same slowing as the sign-in applies."""
+    code = rig.invite()["code"]
+    assert rig.join(code).status_code == 201
+
+    answers = [rig.join(code, password=f"a long wrong password {n}").status_code for n in range(8)]
+
+    assert answers[:5] == [404] * 5
+    assert 429 in answers[5:], "after five wrong ones for one name from one address it is slowed, as a sign-in is"

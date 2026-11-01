@@ -20,12 +20,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool
 
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refs
+from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
 from .auth import (
     COVER_PASS_SCOPE,
@@ -273,6 +274,12 @@ def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONRe
     """Signs in with the music server's login, once: the password is turned into a Subsonic token, checked, and dropped. The app keeps
     the device token it gets back instead. Wrong passwords are slowed (five a minute for one name from one address, thirty for one address)
     and never lock anybody: a lock is only the owner's own act (AUDIT B2)."""
+    return _sign_in(request, body)
+
+
+def _sign_in(request: Request, body: dict[str, Any], *, status: int = 200) -> JSONResponse:
+    """The sign-in itself, also what a join asked again after a lost answer comes to (B15): the music server's login is checked, wrong ones are
+    slowed per name and address, and a device comes back."""
     svc = services(request)
     user = body.get("username")
     password = body.get("password")
@@ -304,7 +311,8 @@ def login(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONRe
                 "deviceToken": device_token,
                 "device": {"id": device_id, "name": str(name)},
                 "person": {"id": person["id"], "name": person["display_name"], "role": person["role"]},
-            }
+            },
+            status,
         )
 
 
@@ -430,9 +438,21 @@ def join(request: Request, body: dict[str, Any] = Depends(json_body)) -> JSONRes
     limiter_of(request).refuse(f"join-address:{client_address(request)}", 10, 60)
     name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
     version = body.get("appVersion") if isinstance(body.get("appVersion"), str) else None
-    made = accounts_of(request).join(
-        str(body.get("code", "")), body.get("username"), body.get("password"), body.get("displayName"), str(name), version
-    )
+    code = str(body.get("code", ""))
+    accounts = accounts_of(request)
+    try:
+        made = accounts.join(code, body.get("username"), body.get("password"), body.get("displayName"), str(name), version)
+    except ApiError as error:
+        # The answer to a join can be lost on the way (B15): the account was made and the invitation used. The same name asking again within a
+        # few minutes is a sign-in, which still needs the password; anything else, and a wrong password, is the same answer as any dead code.
+        if error.code != "not_found" or accounts.rejoin_person(code, body.get("username")) is None:
+            raise
+        try:
+            return _sign_in(request, body, status=201)
+        except ApiError as refused:
+            if refused.code == "rate_limited":
+                raise
+            raise error from None
     return _ok(made, 201)
 
 
@@ -637,6 +657,32 @@ def cover_url(cover_id: str, request: Request, size: int | None = None, p: Princ
     sig = sign_stream(secret, p.person_id, f"cover:{cover_id}", expires)
     tail = f"&size={size}" if size else ""
     return _ok({"url": f"/encore/cover/{cover_id}?p={p.person_id}&e={expires}&sig={sig}{tail}", "expiresAt": expires * 1000})
+
+
+def join_page(code: str, request: Request, key: str | None = Query(None, alias="id")) -> Response:
+    """`GET /encore/join/{code}`: what a person sees who taps an invitation link on a phone that opens it in the browser (docs/design W-05, D-39).
+    Public, so it is built to leak nothing: a live invitation gets one page, and every other code (used, expired, revoked, unknown, malformed) gets one
+    identical page with one status. It shares the invitation check's rate limit."""
+    limiter_of(request).refuse(f"join-address:{client_address(request)}", 20, 60)
+    svc = services(request)
+    dead = HTMLResponse(join_pages.DEAD_PAGE, status_code=404, headers=join_pages.HEADERS)
+    if svc.accounts is None or not join_pages.CODE_SHAPE.match(code):
+        return dead
+    try:
+        invite = svc.accounts.check_invite(code)
+    except ApiError:
+        return dead
+    origin = join_pages.public_origin(request.headers.get("host"), request.headers.get("x-forwarded-proto"), request.url.scheme)
+    page = join_pages.valid_page(
+        server_name=svc.settings.server_name,
+        invited_by=invite.get("invitedBy"),
+        code=code,
+        origin=origin,
+        key=key,
+        expires_at_ms=invite.get("expiresAt"),
+        app_url=svc.settings.app_url,
+    )
+    return HTMLResponse(page, headers=join_pages.HEADERS)
 
 
 def cover(cover_id: str, request: Request) -> Response:
@@ -1298,6 +1344,8 @@ def create_app(
     app.include_router(router)
     app.add_api_route("/encore/stream/{ref_id}", stream, methods=["GET", "HEAD"])
     app.add_api_route("/encore/cover/{cover_id}", cover, methods=["GET", "HEAD"])
+    # Before the music server's catch-all below: an invitation link must never reach it (D-39).
+    app.add_api_route("/encore/join/{code}", join_page, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_websocket_route("/encore/live", live)
     gateway.mount(app, settings.navidrome_url, client=gateway_client, public=is_public_request)
 

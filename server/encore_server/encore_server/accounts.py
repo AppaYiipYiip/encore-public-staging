@@ -29,6 +29,9 @@ from .notifications import Notifications
 log = logging.getLogger("encore_server.accounts")
 
 INVITE_TTL_S = 7 * 24 * 3600
+
+#: How long after an invitation was used the same name and password may ask again for the answer to the join, which may have been lost on the way (B15).
+REJOIN_WINDOW_S = 600
 RESET_TTL_S = 3600
 
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"  # no 0/O, 1/I/L: a code is read out and typed
@@ -256,6 +259,25 @@ class Accounts:
             row = self._open_invite(conn, code)
             inviter = conn.execute("SELECT display_name FROM person WHERE id = ?", (row["created_by"],)).fetchone()
         return {"invitedBy": inviter["display_name"] if inviter else None, "expiresAt": row["expires_at"]}
+
+    def rejoin_person(self, code: str, username: object) -> sqlite3.Row | None:
+        """The person who used this invitation, when it was used a moment ago (see [REJOIN_WINDOW_S]) and by this very name: a join whose answer was
+        lost on the way (B15). `None` for anything else: a code nobody used, a revoked one, a late one, another name. The caller still makes
+        the person prove the password."""
+        if not isinstance(username, str) or not username.strip():
+            return None
+        with self._db.read() as conn:
+            row = conn.execute(
+                "SELECT i.used_at AS used_at, i.revoked_at AS revoked_at, p.* FROM invite i JOIN person p ON p.id = i.used_by WHERE i.code_hash = ?",
+                (hash_code(code),),
+            ).fetchone()
+        if row is None or row["revoked_at"] or not row["used_at"]:
+            return None
+        if self._now_ms() - row["used_at"] > REJOIN_WINDOW_S * 1000:
+            return None
+        if str(row["navidrome_user"]).lower() != username.strip().lower():
+            return None
+        return row  # type: ignore[no-any-return]
 
     def join(
         self, code: str, username: object, password: object, display_name: object, device_name: str, app_version: str | None
