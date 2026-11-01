@@ -19,7 +19,7 @@ jittered pause (1, 2, 4 ... 30 s). The connection is closed when the app goes to
 | Like a song (Liked Songs 4 -> 5 on B) | 2.4 s | unliked afterwards |
 | New playlist "Sync test five" | 2.6 s | **after the server container was restarted**: both phones had reconnected within 45 s without any tap |
 
-Before the live channel (docs/23, B40): checks every 3 s, worst case 7.4 s against the 5 s budget (R-16). The server log shows two
+Before the live channel (the old project's docs/23, B40: not in this repository): checks every 3 s, worst case 7.4 s against the 5 s budget (R-16). The server log shows two
 `WebSocket /encore/live [accepted]` lines after the restart (one per phone), and the person has two devices on the server (one per phone, not
 one per app start).
 

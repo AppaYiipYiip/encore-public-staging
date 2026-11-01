@@ -66,7 +66,7 @@ and activity).
 ## P4-07 — Encore Connect: your devices, handover and remote volume — Size L
 * **Why.** Owner: "increase the sound of the music playing on the tablet from my phone, as long as it's the same account … play/pause".
   US-70, US-71; design `../13` §2; risks H1, H5, H6, H10, H15.
-* **Context.** The player's "Devices" button opens Android's output switcher (`AudioOutput.showSwitcher()` in
+* **Context.** The player's "Devices" button opened Android's output switcher; D-28 took it out on 2026-10-30, so this task adds Encore's own sheet to an empty place (the old call was `AudioOutput.showSwitcher()` in
   `now_playing_screen.dart`). `audio_service` 0.18.19 supports remote playback info (`androidPlaybackInfo` with
   `RemoteAndroidPlaybackInfo`, callbacks `androidSetRemoteVolume`, `androidAdjustRemoteVolume`). P2-08/P2-09 give playback state
   and the active-device lease.

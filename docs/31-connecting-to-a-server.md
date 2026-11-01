@@ -83,6 +83,8 @@ server profile row in its database (name, addresses, capabilities).
 
 ## 7. Debts and findings this document makes visible
 
+The ids D-1, D-2 ... below are this document's own debts, not the owner's decisions D-n of `10`: cite them with the document, as `31` D-1.
+
 * **S2 (`AUDIT`): fixed in P2-19 slice A** (PR #11): credentials no longer go to any candidate before it has proved itself (CN-6, CN-9 to CN-11c, the rule under CN-11c).
 * **D-1:** the phone still keeps the person's **password** and signs ordinary Encore calls with a salted-md5 token **in the URL** (`30` §B, C9: tokens belong in a header). Only the live channel uses the device token. Task: P3-03 / P2-18 follow-up; until then the address check matters even more.
 * **D-2:** closed 2026-11-01: CN-21, CN-22 and the sign-out (CN-28) have tests (their rows name them).

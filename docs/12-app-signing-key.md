@@ -55,4 +55,4 @@ from a website: since 30 September 2026 in Indonesia, Singapore and Thailand, an
 registers the app's package name (`app.encore.player`) **with this same release key**. Two kinds of account:
 * **Limited distribution** — free, no ID, up to **20 devices**: enough for the owner, friends and testers during the beta.
 * **Full distribution** — **$25 once and a government ID**: needed before the public release.
-Without it, people could only install Encore through Android's "advanced" install flow or a cable. Decision D-17 (who verifies), task P5-07.
+Without it, people could only install Encore through Android's "advanced" install flow or a cable. Decision D-17 (the owner, 2026-10-21): distribute on GitHub only, pay nothing, not now; task P5-07 is parked until Google's rule blocks installs.

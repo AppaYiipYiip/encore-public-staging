@@ -133,8 +133,8 @@ Verdicts: **Keep**, **Change**, **Drop**, **Later** (park, do not build now), **
 
 ## Q11. "An admin website that controls Docker."
 
-* **Verdict: Change.** Keep a small admin site inside the Encore server (setup wizard, people, storage, remote access, health,
-  updates). Drop Docker control: updates are one command (`encore update`) shown on the page.
+* **Verdict: Change.** Keep a small admin site inside the Encore server (setup wizard and the eight pages of `15` section 4: Home, People,
+  Library, Away from home, Backups, Updates, Settings, Logs). Drop Docker control: updates are one command (`encore update`) shown on the page.
 
 ## Q12. "Flutter for the app."
 

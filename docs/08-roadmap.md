@@ -73,7 +73,7 @@ moving any like, playlist entry or resume position.
 
 Tasks: P5-01 release signing key and CI signing · P5-02 in-app update check · P5-03 full device matrix + 5-day field test (owner +
 one friend) · P5-04 cold start ≤ 0.7 s mid-range · P5-05 website, name, legal texts (**when the owner wants**; not now) ·
-P5-06 go public (repo, images, first release) · P5-07 Android developer verification and the install guide · P5-08 what's new and in-app help.
+P5-06 go public (repo, images, first release) · P5-07 Android developer verification and the install guide (parked, D-17) · P5-08 what's new and in-app help.
 **Exit:** every promise N1–N11 (`03` §4) measured on SLOW and TYPICAL and on two real phones; the owner does not open Spotify for
 5 days.
 

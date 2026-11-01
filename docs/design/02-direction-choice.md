@@ -16,7 +16,7 @@ Inputs: the three files in `directions/` (open one in a browser; every view has 
 | **How personal it feels** | **Highest**: the music is the interface (`../16` §2.1, §2.2) | Lowest: its own agent calls it "the least alive of the three" | High, but about the *server*, not the music |
 | **First run of a person who has never heard of a server** | Good (found one, found two, QR, typed address under "Other ways to connect") | Good | **Best**: the server is a place with a name and a colour, written for that person |
 
-## Decision (ADR-R43, copied into `../11` when the testing decisions have merged)
+## Decision (ADR-R43; it is in `../11` as ADR-R43)
 
 **Direction A is the base for the whole app.** It is the only one that matches `../16` ("the music is the art", warm, alive, not "server admin") and the owner's requests ("Spotify-class", "make it more alive"). The other two each break one of those on their own terms: B is quiet by design, C puts the server's status ("Riley's Music · Working · 4,213 songs") on the listener's Home, which is the admin feel `../16` rules out.
 

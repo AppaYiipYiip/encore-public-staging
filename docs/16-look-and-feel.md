@@ -19,9 +19,9 @@ tokens in `app/lib/design/tokens.dart` (accent `#19E68C`, dark background `#0E0E
 ## 2. Five sources of life, in order of importance
 
 1. **Covers everywhere, never letters.** Every row, card and player shows real artwork (P1-10). The golden-ratio cover mosaic that
-   already exists (`mosaic_layout.dart`, R-09) makes playlists, the setup's last page and the app's welcome screen out of the person's
+   already exists (`mosaic_layout.dart`) makes playlists, the setup's last page and the app's welcome screen out of the person's
    own music. Letter tiles are a bug, not a style.
-2. **Colour from the music.** The full player, album and playlist headers already take their colour from the artwork (ADR-011); extend
+2. **Colour from the music.** The full player, album and playlist headers already take their colour from the artwork; extend
    it to the mini-player (a thin tinted bar), the lock-screen-style lyrics page, the Jam screen (the current song's colour for
    everyone in the Jam) and the setup wizard's last page (the library's dominant colours).
 3. **Gentle motion with meaning.**
@@ -40,7 +40,7 @@ tokens in `app/lib/design/tokens.dart` (accent `#19E68C`, dark background `#0E0E
      never images taken from the web or generated without checking rights.
    * At most ~12 illustrations, all in one folder (`app/assets/illustrations/` and the same files for the admin web app).
 5. **Words.** Short, warm, specific: "Riley's Music is ready", "Nina added 3 songs to the Jam", "Saved. It's on your server now."
-   One sentence of help under anything new (R-19).
+   One sentence of help under anything new.
 
 ## 3. The places where it matters most
 

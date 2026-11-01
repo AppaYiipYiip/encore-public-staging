@@ -50,7 +50,7 @@ person's setting (`21` §5).
   full ones without the list jumping under the finger (new items appear below, the Top result only changes if nothing was tapped yet).
 * **Ranking:** a Top result (exact normalised artist + title, else best match of the query's intent: an artist, an album), then Songs
   (match quality, then owned/kept first, then popularity), Artists, Albums, Playlists, like Spotify.
-* **Typing:** debounce 250 ms, minimum 2 characters, cache per normalised query (24 h), prepare the Top result (P1-04).
+* **Typing:** the search screen waits 90 ms after the last key before it asks (`search_screen.dart`; this page said 250 ms), minimum 2 characters, cache per normalised query (24 h), prepare the Top result (P1-04). **OPEN (needs owner/advisor):** `03` N7 wants catalogue results at most 300 ms after the last key, but the server's fast phase is allowed about 400 ms (P2-12 acceptance: p50 at most 400 ms) and nothing measures the total, so N7 cannot hold as written: relax N7 (to about 500 ms) or cut the phase's target.
 * **Transliteration:** the query is also matched against artist aliases (MusicBrainz) so "fairouz", "fairuz" and "فيروز" find
   the same artist; Arabic queries are normalised with §2.
 
@@ -59,7 +59,7 @@ person's setting (`21` §5).
 Wrong versions will happen (a live take, a clean edit, a fan upload). Today there is no way to fix one (H23).
 * Any person: song menu → **"Wrong song?"** → up to 5 alternatives (title, channel/album, length, a 15-second preview) → pick one, or
   "None of these". The choice applies **server-wide at once** (it is a household server), is recorded with who made it, and the Host
-  can undo it in Admin → Music → Recent fixes.
+  can undo it in the admin (`15` section 4; the list of "Wrong song?" fixes has no page drawn yet).
 * If the song was kept, the keeper fetches the chosen version as a new `song_file`; likes and playlist places stay (ADR-R4).
 * "None of these" marks the ref `unavailable` for that version and offers a manual search.
 * The Host can also edit a ref's title/artist/album/cover (Admin → Music) for library-wide fixes (e.g. an album split wrongly).
@@ -68,7 +68,7 @@ Wrong versions will happen (a live take, a clean edit, a fan upload). Today ther
 
 * Refs with the same ISRC, video id or MBID are merged automatically (likes, entries and history move to the surviving ref in one
   transaction; the merge is logged).
-* Files: one ref with several files keeps the best one as preferred; the others are listed in Admin → Music → Duplicates with their
+* Files: one ref with several files keeps the best one as preferred; the others are listed in Admin → Library → duplicates (`15` section 4) with their
   size and a "Remove extra copies" button (owner decision D-2: one copy per song); nothing is deleted without the Host's click.
 
 ## 7. Tests (P2-01, P1-07)

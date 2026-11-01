@@ -39,7 +39,7 @@ Every number is checked on the **reference setups** in `07` §2 (a slow one and 
 | N4 | Import a playlist → the whole list is on screen and every song plays on tap | ≤ 5 s for 200 songs | ≤ 15 s |
 | N5 | Pause at m:ss on one device → resume at the same second on another (including songs from YouTube) | resume within 1 s of the paused position | ≤ 2 s off |
 | N6 | Start playing on device B while A plays → A stops | ≤ 2 s | ≤ 5 s |
-| N7 | Search updates as you type | ≤ 300 ms after the last key (catalogue), ≤ 50 ms (on-phone library) | ≤ 1 s |
+| N7 | Search updates as you type (see the OPEN line in `19` §4) | ≤ 300 ms after the last key (catalogue), ≤ 50 ms (on-phone library) | ≤ 1 s |
 | N8 | Cold start to usable Home, offline | ≤ 0.7 s mid-range phone | ≤ 1.5 s low-end |
 | N9 | A change on one device shows on the others | ≤ 2 s (live channel) | ≤ 30 s |
 | N10 | Fresh Linux machine → first song on a phone | ≤ 15 min, one command + a web wizard | ≤ 30 min |
@@ -55,7 +55,7 @@ and any address, and what you play goes first. The admin page shows how far alon
 **Server:** one install command, setup wizard in the browser, Navidrome + Encore server (+ optional Tailscale Funnel for away
 from home), people and invitations (link + QR), password reset by the Host, the YouTube source (on by default, can be switched
 off), keeping saved songs, imports (YouTube Music links, Spotify links ≤ 100, Spotify/YouTube data-export files), playback state
-and single-device playback, live updates to phones, admin pages: People, Storage, Remote access, Health, Updates.
+and single-device playback, live updates to phones, admin pages: the eight drawn in `15` section 4 (Home, People, Library, Away from home, Backups, Updates, Settings, Logs).
 
 **App (Android):** sign-in by invite link/QR (manual address only behind "Other ways to connect"), Home, Search (with Top result,
 songs/artists/albums/playlists, owned or not looks the same), Your Library (playlists, liked songs, albums, artists, downloads),

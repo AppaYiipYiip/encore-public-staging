@@ -222,7 +222,7 @@ Every walk (a journey, a charter, a device check, a fault test) is written in on
 | **Got** | What really happened: the text on the screen as shown, a number and how it was measured, a log line. Never "worked" or "fine" |
 | **Verdict** | **Pass**: got matches expected. **Fail**: it does not (a *better* result than expected is still Fail until the row is changed, on purpose, with the reason). **Not run**: it could not be run (say why). **Blocked**: something else has to be fixed first (say what) |
 | **Evidence** | The file in `docs/evidence/`: screenshot, log, timing output. A Pass without one is a "Not run" |
-| **If Fail** | Severity (S1 to S4, §11), the issue number, the row or task that will fix it |
+| **If Fail** | Severity (S1 to S3, §11), the issue number, the row or task that will fix it |
 
 Rules that go with it:
 

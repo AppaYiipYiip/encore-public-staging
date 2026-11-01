@@ -9,7 +9,7 @@ caused, the emulator setup lives in memory notes, and the only test servers are 
 * Every app request carries `X-Request-Id` (ULID) and `X-Device-Id`; the server logs them in **structured JSON lines**
   (`time, level, module, request_id, device, person_id, event, ms, error_code`), never titles, passwords, tokens or signed URLs (`21` §2).
 * The app keeps a **ring buffer** of its last 2,000 log lines (same request ids, perf spans like `play.audible`, errors) on the phone.
-* **Debug bundle:** Settings → About → "Report a problem" (opt-in per report) sends the phone's ring buffer + device facts (model,
+* **Debug bundle (on hold, ADR-R35: not built):** Settings → About → "Report a problem" (opt-in per report) would send the phone's ring buffer + device facts (model,
   Android version, navigation mode, font scale, app version, network type) to the Host's server, which attaches its own log lines for
   the same request ids and time window. Admin → Problems → "Download for a bug report" gives one zip to attach to a GitHub issue.
   (Extends P4-13; build the request ids and the ring buffer already in P1-06.)
@@ -17,6 +17,8 @@ caused, the emulator setup lives in memory notes, and the only test servers are 
   prints p50/p95 of the last day per stage.
 
 ## 2. Test environments, one command each (in `tools/env/`)
+
+**Status 2026-11-01:** none of the commands in this table exists yet (`tools/env/` and `tools/emulators/` are planned). What exists: `tools/check.ps1` (`-Quick`, `-Server`, `-Live`), `tools/env.ps1`, `server/encore_server/compose.dev.yaml` (the server and a music server in Docker for development), `tools/vmprobe/`, `tools/journeys/`, `tools/record_deezer_fixtures.py` and `tools/record_ytm_fixtures.py`.
 
 | Environment | Command | What it is |
 |-------------|---------|------------|
@@ -31,7 +33,7 @@ databases (owner's rule: real data). Login files go to `../local/logins/` (never
 
 ## 3. Recorded answers from outside services
 
-YouTube Music, Deezer, MusicBrainz and LRCLIB answers used by tests are **recorded** (fixtures) by `tools/fixtures/refresh` (≤ 50
+YouTube Music, Deezer, MusicBrainz and LRCLIB answers used by tests are **recorded** (fixtures) by `tools/record_deezer_fixtures.py` and `tools/record_ytm_fixtures.py` (a single `tools/fixtures/refresh` is planned) (≤ 50
 calls, spaced, run monthly or when a test needs new ones) and replayed in CI; one nightly **live canary** (≤ 3 look-ups) tells whether
 the recordings still match reality (`07` §6).
 
@@ -43,6 +45,6 @@ new one tried by the owner first (per-person beta flag).
 
 ## 5. What an agent needs on day one (put in `AGENTS.md`)
 
-* `tools/check --quick` / `--full`; `tools/env/stack up`; `tools/emulators/create`; `tools/journeys/ui.py` (drive the emulator by
+* `tools/check.ps1 -Quick` (and `-Server`, `-Live`); `tools/env.ps1`; `server/encore_server/compose.dev.yaml`; `tools/journeys/ui.py` (drive the emulator by
   labels; its `typefile` command types a password, never printed), `play_timing.py` (measure tap → audible); where the debug bundles are.
 * The rule: a bug report or a fix without request ids, setup and numbers is incomplete.

@@ -1,6 +1,6 @@
 # Design 00 — Every screen, today and later, with the states each one must show
 
-Owner, 2026-10-24: *"we haven't started with a design in Figma or so; can you make a design for all pages and future pages?"* This is the list that design works from. It is built from the router (`app/lib/app/router.dart`), the feature folders, the stories (`../03a`), the first-run paper (`../15`), `../16`, the Jam/people/import tasks (`../tasks/P4`) and the state tables (`../31` to `../34`). **A screen that is not here is not designed; a state that is not named here is not drawn.** Add the row first.
+Owner, 2026-10-24: *"we haven't started with a design in Figma or so; can you make a design for all pages and future pages?"* This is the list that design works from. It is built from the router (`app/lib/app/router.dart`), the feature folders, the stories (`../03a`), the first-run paper (`../15`), `../16`, the Jam/people/import tasks (`../tasks/P4`) and the state tables (`../31` to `../34`). **A screen that is not here is not designed; a state that is not named here is not drawn.** Add the row first. (Since D-43, 2026-10-31: where the app already has a screen, the built screen is the reference and the old drawings are history; a page is drawn only when it is new and about to be built. This list is the inventory of what exists or is planned.)
 
 ## How to read it
 
