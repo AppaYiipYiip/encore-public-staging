@@ -10,8 +10,8 @@ love on your own disk, and lets your family and friends listen too. No subscript
 * Plays your own music files from your own server (powered by [Navidrome](https://www.navidrome.org)).
 * Plays songs you don't have yet, in about two seconds, and keeps the ones you save.
 * Brings your playlists over from Spotify or YouTube Music in seconds.
-* Resume a song at the same second on another device; control one device from another.
-* Listen together with friends (Jam), including friends who run their own Encore server.
+* Resume a song at the same second on another device, and control one device from another (planned: the server already keeps the playback state, the app does not offer it yet).
+* Listen together with friends (Jam), also with friends who run their own Encore server (planned: the old Jam is not on the new server yet).
 * Works away from home without opening router ports (Tailscale Funnel).
 
 ## How it is organised
