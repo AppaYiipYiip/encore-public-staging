@@ -92,7 +92,7 @@ kept current and this table only says where the phases stand.
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
 | Repository | On GitHub (private). `main` has the CI workflows (app, server, server legacy, server image, hygiene, screen pictures; the Actions-minute cuts of D-44 are merged); the merged pull requests are listed on GitHub; **`main` is not protected yet** |
-| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice. D-18 to D-44 are in `10` with their states (D-21 and D-22 have no row there; D-45 to D-47 are written in `tasks/QA-ROUND1-2026-10-31.md`) |
+| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice. D-18 to D-48 are in `10` with their states |
 | P0 Reset | Done except P0-09 (environments as code), P0-10 (licence inventory and check), branch protection and the project board |
 | P1 Instant play | Core done (lean resolver, a player that cannot stick, offline, queue restore, covers); open items are listed in AUDIT (P1-03 legacy side, P1-04, P1-06, P1-07, P1-10, P1-12, P1-13) |
 | P2 Songs as references | Server core and the app's data layer done and walked; open items in AUDIT |

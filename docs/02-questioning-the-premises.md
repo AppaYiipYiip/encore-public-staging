@@ -180,7 +180,7 @@ Verdicts: **Keep**, **Change**, **Drop**, **Later** (park, do not build now), **
 
 * **Verdict: Change to 26 (Android 8.0).** Android 7 is a negligible share in 2026, and each old version widens the test matrix.
   Revisit if the website's download statistics show demand.
-* **Not applied (checked 2026-11-01):** `app/android/app/build.gradle.kts` sets `minSdk = flutter.minSdkVersion`, which is 24 with Flutter 3.47.7, and no task changes it. **OPEN (needs owner/advisor):** a one-line change to `minSdk = 26` (with a look at the owner's devices) or this verdict revised to 24.
+* **Not applied (checked 2026-11-01):** `app/android/app/build.gradle.kts` sets `minSdk = flutter.minSdkVersion`, which is 24 with Flutter 3.47.7, and no task changes it. **RC2 (advisor, 2026-11-01, reversible, D-48 d): no change before the QA rounds**; then either `minSdk = 26` (one line, with a look at the owner's devices) or this verdict revised to 24.
 
 ## Q19. "The owner's homelab is the reference server."
 

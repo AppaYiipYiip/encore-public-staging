@@ -9,7 +9,7 @@ risk (H1–H10 are in `13` §6).
 
 | ID | What | Why it matters | Do | Owner |
 |----|------|----------------|----|-------|
-| U1 | **Tablet and large-screen layout** | The owner uses a tablet; Android 16 (target SDK 36) ignores orientation and resizability locks on large screens, so a stretched phone UI *will* appear | Adaptive layout ≥ 600 dp: navigation rail, two panes (library + content), player side panel; test landscape and split-screen | P4-11 |
+| U1 | **Tablet and large-screen layout** | The owner uses a tablet; Android 16 (target SDK 36) ignores orientation and resizability locks on large screens, so a stretched phone UI *will* appear | Adaptive layout ≥ 600 dp: navigation rail, two panes (library + content), player side panel; test landscape and split-screen. **Parked (D-18, D-48 a): the phone layout scales until a tablet layout is asked for** | P4-11 (parked) |
 | U2 | **Search that understands people** | Users type "fairouz", "فيروز", "Fairuz"; typos; transliteration matters for Arabic and French users | Unicode normalisation (NFKC, diacritics/hamza folding), transliteration aliases from the catalogue (Deezer/MusicBrainz aliases), typo tolerance in the phone's full-text search, search history | P1-07 (normalisation), P4-12 (aliases, history) |
 | U3 | **Follow artists** | Feeds "New from artists you love", recommendations and release notices; Spotify users expect a Follow button | Follow on artist pages; per person; used by `recs` | P4-01 |
 | U4 | **Artist pages like Spotify** | Popular songs, full discography (owned and not, one list), "Fans also like", about | Catalogue data + library; same row look for owned and not | P2-03 / P4-01 |

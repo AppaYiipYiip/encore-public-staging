@@ -168,7 +168,7 @@ Nothing to fill. Shows the computer's name and that it is ready.
 * The check is automatic and explains failures (today `encore funnel on` says "It needs HTTPS and Funnel enabled for your tailnet"). The 180-day key expiry is turned off
   in step 2's instructions; the admin warns 14 days before if not.
 * Since ADR-R25 there is no key and no second Tailscale node: the sign-in is the one of the computer's own Tailscale (`encore funnel on` shows the link and installs Tailscale
-  if it is absent). **OPEN (needs owner/advisor):** whether this page runs that step itself or shows the Host the command `encore funnel on` to run on the computer.
+  if it is absent). **OPEN (needs owner/advisor; advisor, 2026-11-01: stays open, tied to the owner's public-address question, D-48 f):** whether this page runs that step itself or shows the Host the command `encore funnel on` to run on the computer. **Also OPEN, same reason:** the wizard pages do not yet carry D-19 (the "Where songs come from" step with the off-by-default Soulseek choice and its plain-words legal note) or D-20 ("No YouTube account needed. Songs you don't have are fetched gently in the background."), and the rows that still say "quality tier only in the admin" (`10` D-12, README) are older than D-19.
 
 ### Page 7 — Friends on other Encore servers   *Step 6 of 8* (optional, **Yes preselected**)
 ```

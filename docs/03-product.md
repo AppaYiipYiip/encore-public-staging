@@ -67,9 +67,9 @@ notification, in-app update check.
 months"):** recommendations with a **profile per person** (Home mixes, "because you play…", radio/smart shuffle, new releases from
 artists you love); **Jam** (listen together), **with people on the same server or on other servers**; **friend activity** (opt-in per
 person); **friends on other Encore servers**; **your devices** (control the tablet from the phone: play/pause, seek, queue, **volume**;
-hand playback over at the same second); **one account per person, servers that talk to each other**; **tablet layout**; the **quality tier** (better copies via
+hand playback over at the same second); **one account per person, servers that talk to each other**; the **quality tier** (better copies via
 Lidarr + Soulseek, switched on by the Host); **Year in Music**; the Spotify-class extras of `14` section 1. They are built in phase P4
-on the new design, after the core works. Design: `13`.
+on the new design, after the core works. Design: `13`. **Parked, not in the first version (D-18, applied everywhere by D-48 a): tablet-specific layouts**; the phone layout scales (`tasks/P6-later.md`).
 
 **Not decided now (owner: "let's not worry about website, name and things like that"):** the final product name, the website and
 its address. "Encore" stays the working name.

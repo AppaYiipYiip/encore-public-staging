@@ -4,6 +4,8 @@ Read first, in this order: `docs/README.md`, your task in `docs/tasks/`, the sto
 architecture section it cites (`docs/04-architecture.md`), then `docs/06-sdlc-and-agent-workflow.md` and `docs/07-testing-and-device-matrix.md`
 (sections 1 to 3), and **`docs/30-engineering-guide.md`** (what to do, what not to do, and which rules a machine checks). The plan is in `docs/`; do not rely on anything older.
 If you start with no memory of earlier work: `docs/README.md` has the current state and what is next; `docs/tasks/AUDIT.md` is the list of what is still open.
+What counts as "passed" and when to merge: `docs/tasks/RELEASE-CANDIDATE.md` section 1 (a row passes only when walked on the release-candidate pair;
+merge only when every check has finished, polled by run id, and `main`'s own run is green before the next step).
 
 ## Do
 

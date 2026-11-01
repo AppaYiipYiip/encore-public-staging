@@ -162,7 +162,7 @@ queue, in sync. Each phone only talks to its own server.
 **US-74 One account is enough.** As a Listener, I never need a second account: everything I do with people on other servers goes
 through my own server (owner, 2026-10-21: two accounts on one phone is "stupid and lazy").
 
-**US-75 Tablet.** As a Listener on a tablet, I want a layout made for a big screen, in portrait and landscape.
+**US-75 Tablet (parked: D-18, D-48 a).** As a Listener on a tablet, I want a layout made for a big screen, in portrait and landscape. Not built until it is asked for; the phone layout scales meanwhile (`tasks/P6-later.md`).
 
 **US-76 Even loudness.** As a Listener, I want songs to play at a similar loudness whatever their source, and the phone's volume
 buttons to be the only volume I ever need.

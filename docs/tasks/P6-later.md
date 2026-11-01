@@ -15,6 +15,6 @@ Jam, friend activity, recommendations, the quality tier and Year in Music are **
 | **"Encore OS" image** | Evidence that Hosts struggle to install Linux | Flash-and-boot like Home Assistant OS; large maintenance cost |
 | **Audiobooks / podcasts** | Owner decision | — |
 | **Web player on a PC** (advisor, 2026-10-30, D-18) | The phone app and the PC installer and admin are proven in use; the server's API stable (P2/P3) | The pages a browser meets at a server's address (front page, invitation) are in scope now; a player in the browser is not |
-| **Tablet-specific layouts** (D-18) | The phone app proven in daily use | The phone layout scales; no separate drawings until asked |
+| **Tablet-specific layouts** (D-18; was P4-11) | The phone app proven in daily use | The phone layout scales; no separate drawings until asked (applied everywhere by D-48 a, 2026-11-01) |
 | **An admin on a phone or a TV** (D-18) | Never assumed: the admin is PC-only | The installer and the admin are used from a computer |
 | **A code typed on a TV** (D-18) | The TV client above | Parked with the TV client; the six-digit TV code stays drawn but is not built |

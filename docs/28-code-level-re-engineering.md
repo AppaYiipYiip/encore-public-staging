@@ -72,7 +72,7 @@ message from one strings file; logs become structured with request ids (`24` §1
 
 ### 2.7 Platform settings
 
-`minSdk` 24 → 26 (**not applied yet**: the build still uses Flutter's default, 24; see `02` Q18); target SDK 36 keeps edge-to-edge (insets everywhere, P1-12); declare the media-playback foreground-service type;
+`minSdk` 24 → 26 (**not applied yet, RC2**: the build still uses Flutter's default, 24; see `02` Q18); target SDK 36 keeps edge-to-edge (insets everywhere, P1-12); declare the media-playback foreground-service type;
 notification channels as in `23` §4; keep `androidStopForegroundOnPause` but add the "available" window and "Always ready" (H42).
 
 ## 3. The server

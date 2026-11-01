@@ -105,7 +105,8 @@ and activity).
   (resolved on the receiver's server); collaborative playlists with members on the same or other servers.
 * **Acceptance.** J-18 passes; a guest whose own server is offline still hears every song (via grants); the host's upload use is shown.
 
-## P4-11 — Tablets and large screens — Size M
+## P4-11 — Tablets and large screens — Size M (PARKED: D-18, D-48 a; see `P6-later.md`)
+* **Status.** Parked by the owner's D-18 and applied everywhere by the advisor on 2026-11-01: not planned for the first version; the phone layout scales. The text below is what to do if it is asked for.
 * **Why.** U1: the owner uses a tablet; Android 16 ignores orientation/resizability locks on screens ≥ 600 dp for apps targeting SDK 36.
 * **Do.** Adaptive layout: navigation rail, list + detail panes, player as a side panel in landscape; keyboard and mouse basics.
 * **Acceptance.** Profile E and a landscape tablet emulator: every screen usable in both orientations and split-screen; screenshots in the PR.

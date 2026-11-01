@@ -12,7 +12,7 @@ comes before the public release (P5); the core (P1–P3) comes first so those fe
 | **P1 Instant play, stop the worst bugs** | A song you don't own plays in ~2–3 s; the player never gets stuck; offline and covers work | The core promise is broken today (38 s); the fixes are reusable in the new design |
 | **P2 Songs as references (the new library)** | Like/playlist/import/resume any song, owned or not; imports in seconds; one device at a time | Removes the root cause of the spaghetti (C3); delivers resume-anywhere and single-device playback |
 | **P3 One server, one-command install** | One Encore server program, one port, device logins, published images, installer + browser wizard | Makes Encore installable by strangers and maintainable by agents |
-| **P4 Full feature set** | Recommendations per person, Jam (also across servers), friends on other servers, your devices with remote volume, one account per person with servers talking to each other, tablet layout, quality tier, Year in Music, Spotify-class extras | Owner: everything in the first version |
+| **P4 Full feature set** | Recommendations per person, Jam (also across servers), friends on other servers, your devices with remote volume, one account per person with servers talking to each other, quality tier, Year in Music, Spotify-class extras | Owner: everything in the first version |
 | **P5 Public release** | Signed APK with updates, full device matrix, field test, going public (website and name when the owner wants) | The first public version |
 | **P6 Later** | iOS, web/desktop client, devices remote control, localisation, "Encore OS" image | After the first public version |
 
@@ -61,10 +61,10 @@ Health page explains every state in plain words.
 Tasks: P4-01 listening profile and recommendations per person · P4-02 Jam on the live channel · P4-03 friend activity ·
 P4-04 quality tier on song refs · P4-05 Year in Music from the server's play history · P4-06 the whole app walked again ·
 P4-07 Encore Connect (devices, handover, remote volume) · P4-08 home-server relay (the app only talks to its own server) ·
-P4-09 connecting with people on other servers (federation core) · P4-10 Jam across servers, sharing, collaborative playlists · P4-11 tablets and large screens ·
+P4-09 connecting with people on other servers (federation core) · P4-10 Jam across servers, sharing, collaborative playlists · P4-11 tablets and large screens (parked, D-18) ·
 P4-12 Spotify-class extras · P4-13 problem reports and battery-saver guidance · P4-14 "Wrong song?" and metadata fixes · P4-15 Browse, history and playlist details · P4-16 profiles on a shared device · P4-17 compare tastes (US-65, opt-in).
 Design: `13`, `14`, `16`, `19`, `20`.
-**OPEN (needs owner/advisor):** D-18 (`10`) parks tablet-specific layouts, yet P4-11 above, `03` (the v1 features), `03a` US-75 and `14` U1 still plan a tablet layout, and `14` U1 notes that Android 16 shows a stretched phone layout on large screens anyway. Decide: keep P4-11 (and read D-18 as "no separate drawings first"), or move it to P6 (`tasks/P6-later.md`) and say what a tablet shows meanwhile.
+**Decided (advisor, 2026-11-01, reversible, D-48 a): D-18 holds everywhere.** Tablet-specific layouts are parked: P4-11 stays in `tasks/P4-full-feature-set.md` marked parked and is listed in `tasks/P6-later.md`; `03`, `03a` US-75, `14` U1 and ADR-R42 point 5 say so. The phone layout scales on a large screen (Android 16 shows it stretched anyway, `14` U1) until a tablet layout is asked for.
 **Exit:** US-60 … US-64 and US-70 … US-76 pass as journeys (incl. J-15 … J-20 of `14` section 3) on profiles A and B with two people on two emulators; recommendations judged by the owner
 on his own account after a week of listening ("does Home know me?"); the quality tier upgrades a kept song on the dev VM without
 moving any like, playlist entry or resume position.
@@ -90,5 +90,5 @@ flashable "Encore OS" image (if Hosts struggle to install Linux).
 | P1 | 3 (server resolver P1-01..05; player/offline P1-08..11; UI/search/a11y P1-07, P1-12) | 4–6 days |
 | P2 | 2 (server P2-01, P2-04, P2-08/09; app P2-02, P2-03, P2-10) | 8–12 days |
 | P3 | 2 (server consolidation; install/wizard) | 6–8 days |
-| P4 | 4 (recommendations + extras; devices + accounts; federation + Jam + friends; quality tier + Year in Music + tablet) | 25–35 days |
+| P4 | 4 (recommendations + extras; devices + accounts; federation + Jam + friends; quality tier + Year in Music; tablet parked) | 25–35 days |
 | P5 | 2 | 4–6 days + 5-day field test |
