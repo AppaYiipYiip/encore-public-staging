@@ -41,7 +41,7 @@ installer and a browser wizard that a person who never used Docker can follow. R
 ## P3-05 — Install script, `encore.local`, `encore` CLI — Size M
 * **Why.** ADR-R7; owner has never used Docker and does not expect users to.
 * **Do.** `server/deploy/install.sh` (served at a stable URL): checks 64-bit Linux (Debian/Ubuntu first), CPU arch, RAM ≥ 2 GB, disk
-  ≥ 20 GB; asks before installing Docker from Docker's own repository; creates `/opt/encore` (compose + generated `.env` with
+  ≥ 20 GB (**built as 6 GB**: `install.sh` refuses below 6 GB free, and `guides/install-test.md` says so); asks before installing Docker from Docker's own repository; creates `/opt/encore` (compose + generated `.env` with
   secrets); asks for the music folder (default `/srv/music`, created if missing; existing folders are mounted read-only for scanning
   and `/music/Encore` read-write for kept songs); pulls images, starts, waits for health; enables mDNS (`avahi`) so the server answers
   at `encore.local`; prints the address and a terminal QR code. `encore` CLI: `status`, `update`, `logs`, `backup`, `restore`,
