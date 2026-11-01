@@ -42,6 +42,7 @@ class TestPeople:
 
 class TestLikes:
     def test_liking_twice_is_one_like_and_one_change(self, db: Database) -> None:
+        """CF-10: liking a song twice is one like and one change."""
         me, ref = person(db), make_ref(db, 1)
         with db.tx() as conn:
             assert library.set_item(conn, me, "like", ref) is True
@@ -49,6 +50,7 @@ class TestLikes:
             assert conn.execute("SELECT COUNT(*) FROM change_log WHERE kind = 'like'").fetchone()[0] == 1
 
     def test_unliking_what_was_never_liked_is_not_a_change(self, db: Database) -> None:
+        """CF-12: unliking what was never liked is not a change."""
         me, ref = person(db), make_ref(db, 1)
         with db.tx() as conn:
             assert library.clear_item(conn, me, "like", ref) is False
@@ -71,6 +73,7 @@ class TestLikes:
 
 class TestPlaylists:
     def test_a_create_that_is_retried_is_one_playlist(self, db: Database) -> None:
+        """CF-23: a create that is retried after a network cut is one playlist."""
         me, pl = person(db), new_id("pl")
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "Road trip")
@@ -85,6 +88,7 @@ class TestPlaylists:
         assert caught.value.code == "validation"
 
     def test_somebody_elses_playlist_id_is_a_conflict(self, db: Database) -> None:
+        """CF-23: a playlist id that belongs to somebody else is a conflict."""
         me, nina, pl = person(db), person(db, "nina"), new_id("pl")
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "Mine")
@@ -123,6 +127,7 @@ class TestPlaylists:
         assert entry_refs(db, me, pl) == [ref, ref]
 
     def test_an_unknown_song_refuses_the_whole_call(self, db: Database) -> None:
+        """CF-26: a song the server does not know refuses the whole call and adds nothing (the server's half)."""
         me, pl, ref = person(db), new_id("pl"), make_ref(db, 1)
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "L")
@@ -141,6 +146,7 @@ class TestPlaylists:
         assert entry_refs(db, me, pl) == [r[0], r[3], r[1], r[2]]
 
     def test_an_anchor_that_was_removed_elsewhere_falls_back_to_the_end(self, db: Database) -> None:
+        """CF-14: adding after an entry that was removed elsewhere falls back to the end."""
         me, pl = person(db), new_id("pl")
         r = [make_ref(db, n) for n in range(3)]
         with db.tx() as conn:
@@ -151,6 +157,7 @@ class TestPlaylists:
         assert entry_refs(db, me, pl) == [r[0], r[2]]
 
     def test_many_inserts_in_the_same_gap_renumber_instead_of_losing_order(self, db: Database) -> None:
+        """CF-15: many inserts in the same gap renumber the playlist and keep the order."""
         me, pl = person(db), new_id("pl")
         r = [make_ref(db, n) for n in range(2)]
         with db.tx() as conn:
@@ -166,6 +173,7 @@ class TestPlaylists:
         assert expected == [r[0]]
 
     def test_removed_entries_stay_removed_and_removing_twice_is_fine(self, db: Database) -> None:
+        """CF-16: a removed entry stays removed, and removing it twice is fine."""
         me, pl = person(db), new_id("pl")
         r = [make_ref(db, n) for n in range(3)]
         with db.tx() as conn:
@@ -176,6 +184,7 @@ class TestPlaylists:
         assert entry_refs(db, me, pl) == [r[0], r[2]]
 
     def test_a_reorder_puts_the_listed_entries_in_the_places_they_occupy(self, db: Database) -> None:
+        """CF-18: a reorder moves only the entries it lists, in the places they occupy."""
         me, pl = person(db), new_id("pl")
         r = [make_ref(db, n) for n in range(4)]
         with db.tx() as conn:
@@ -184,7 +193,28 @@ class TestPlaylists:
             library.reorder(conn, me, pl, [d, c])  # b and a are not listed: they stay put
         assert entry_refs(db, me, pl) == [r[0], r[1], r[3], r[2]]
 
+    def test_two_reorders_that_overlap_apply_in_the_order_they_arrive(self, db: Database) -> None:
+        """CF-19: two devices reorder overlapping lists of entries; each applies to the entries it lists and the later arrival decides the
+        order of the ones both list."""
+        me = person(db)
+        r = [make_ref(db, n) for n in range(4)]
+
+        def after(first: list[int], second: list[int]) -> list[str]:
+            """The playlist after reorders that list these entries (numbers into [r]), the first arriving before the second."""
+            pl = new_id("pl")
+            with db.tx() as conn:
+                library.create_playlist(conn, me, pl, "L")
+                entries = library.add_entries(conn, me, pl, [{"ref": x} for x in r])
+                library.reorder(conn, me, pl, [entries[n] for n in first])
+                library.reorder(conn, me, pl, [entries[n] for n in second])
+            return entry_refs(db, me, pl)
+
+        # The phone lists a, b, c as c, b, a; the tablet lists b, c, d as b, c, d. Both list b and c, and disagree about which comes first.
+        assert after([2, 1, 0], [1, 2, 3]) == [r[1], r[2], r[0], r[3]], "the tablet arrived last: b before c"
+        assert after([1, 2, 3], [2, 1, 0]) == [r[2], r[1], r[0], r[3]], "the phone arrived last: c before b"
+
     def test_a_reorder_that_lists_a_removed_entry_leaves_it_out(self, db: Database) -> None:
+        """CF-17: a reorder that lists a removed entry leaves it out."""
         me, pl = person(db), new_id("pl")
         r = [make_ref(db, n) for n in range(3)]
         with db.tx() as conn:
@@ -195,6 +225,7 @@ class TestPlaylists:
         assert entry_refs(db, me, pl) == [r[2], r[0]]
 
     def test_deleting_a_playlist_is_gone_for_the_list_and_not_found_for_edits(self, db: Database) -> None:
+        """CF-21, CF-22: deleting a playlist wins, deleting it twice is fine, later edits answer not found."""
         me, pl = person(db), new_id("pl")
         ref = make_ref(db, 1)
         with db.tx() as conn:
@@ -208,6 +239,7 @@ class TestPlaylists:
         assert caught.value.code == "not_found"
 
     def test_nobody_edits_somebody_elses_playlist(self, db: Database) -> None:
+        """CF-39: nobody edits somebody else's playlist."""
         me, nina, pl = person(db), person(db, "nina"), new_id("pl")
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "Mine")
@@ -221,7 +253,7 @@ class TestPlaylists:
             assert caught.value.code == "not_found"
 
     def test_two_devices_adds_both_survive(self, db: Database) -> None:
-        """Offline edits merge: each device added a song while the other did too (journey J-15)."""
+        """CF-13: Offline edits merge: each device added a song while the other did too (journey J-15)."""
         me, pl = person(db), new_id("pl")
         a, b = make_ref(db, 1), make_ref(db, 2)
         with db.tx() as conn:
@@ -233,6 +265,7 @@ class TestPlaylists:
         assert set(entry_refs(db, me, pl)) == {a, b}
 
     def test_a_rename_is_last_writer_wins(self, db: Database) -> None:
+        """CF-20: a rename is last writer wins, by arrival."""
         me, pl = person(db), new_id("pl")
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "Old")
@@ -248,6 +281,7 @@ def make_ref_in(conn, n: int) -> str:  # type: ignore[no-untyped-def]
 
 class TestPlays:
     def test_a_report_that_is_sent_twice_is_one_play(self, db: Database) -> None:
+        """CF-25: a play report that is sent twice is one play."""
         me, ref = person(db), make_ref(db, 1)
         with db.tx() as conn:
             assert (
@@ -290,6 +324,7 @@ class TestChangeFeed:
         assert [like["ref"] for like in second["likes"]] == [r2]
 
     def test_a_like_and_its_removal_arrive_as_the_state_it_is_in_now(self, db: Database) -> None:
+        """CF-11: a like and its removal arrive as the state it is in now (the later arrival wins)."""
         me, ref = person(db), make_ref(db, 1)
         with db.tx() as conn:
             library.set_item(conn, me, "like", ref)
@@ -318,6 +353,7 @@ class TestChangeFeed:
         assert [e["ref"] for e in feed["entries"]] == [ref]
 
     def test_a_deleted_playlist_and_a_removed_entry_are_tombstones(self, db: Database) -> None:
+        """CF-34: a deleted playlist and a removed entry come back as deleted (the server's half)."""
         me, pl, ref = person(db), new_id("pl"), make_ref(db, 1)
         with db.tx() as conn:
             library.create_playlist(conn, me, pl, "L")
@@ -359,6 +395,7 @@ class TestLikeTime:
 
     @pytest.mark.parametrize("at", [None, "yesterday", -5, 0, True, 10**15])
     def test_anything_else_is_now(self, db: Database, at: object) -> None:
+        """CF-40: a missing, absurd or far-future time from a phone is replaced by the server's now."""
         me, ref = person(db), make_ref(db, 1)
         with db.tx() as conn:
             library.set_item(conn, me, "like", ref, at=at)

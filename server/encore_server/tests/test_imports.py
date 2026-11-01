@@ -396,3 +396,23 @@ def test_a_bell_that_cannot_ring_does_not_fail_the_matching(rig: Rig, monkeypatc
     rig.svc.scheduler.drain("background")
 
     assert rig.get("marwa", f"/imports/{made['import']['id']}")["import"]["state"] == "done"
+
+
+def test_an_entry_removed_while_the_songs_are_still_being_saved_is_not_put_back(rig: Rig) -> None:
+    """CF-36: a person edits an imported playlist while the server is still saving its songs: their removes stay removes."""
+    made = rig.imported()
+    playlist, gone = made["playlistId"], made["playlist"]["entries"][2]
+    removal = rig.client.request(
+        "DELETE", f"{V1}/playlists/{playlist}/entries", params=creds("marwa"), json={"entryIds": [gone["id"]]}
+    )
+    assert removal.status_code == 200 and removal.json()["removed"] == [gone["id"]]
+
+    rig.drain()  # the background now matches and saves the songs, the removed one included, and finishes the import
+
+    assert rig.get("marwa", f"/imports/{made['import']['id']}")["import"]["state"] == "done"
+    entries = rig.get("marwa", f"/playlists/{playlist}")["entries"]
+    assert gone["id"] not in [e["id"] for e in entries] and len(entries) == 4, "the song the person removed was not put back"
+    changes = rig.get("marwa", "/library/changes?since=0")
+    assert any(e["id"] == gone["id"] and e["deleted"] for e in changes["entries"]), (
+        "and the removal is still sent to every device"
+    )

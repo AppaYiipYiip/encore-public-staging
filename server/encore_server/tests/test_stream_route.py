@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from encore_server import refs
 from encore_server.api import create_app
 from encore_server.auth import sign_stream
 from encore_server.config import Settings
@@ -249,3 +250,60 @@ def test_a_server_without_youtube_says_so(client: TestClient) -> None:
     response = client.get(address(client, ref))
     assert response.status_code == 502 and response.json()["error"]["code"] == "source_unreachable"
     assert response.json()["error"]["message"] == "This server cannot fetch songs from YouTube."
+
+
+class GoneFromTheMusicServer:
+    """A music server that is set up and answers but no longer has the kept file: to `open_stream` that is the same as a missing song."""
+
+    configured = True
+
+    def __init__(self) -> None:
+        self.asked: list[str] = []
+
+    def open_stream(self, song_id: str, range_header: str | None, **_: object) -> None:
+        self.asked.append(song_id)
+
+
+def keep_a_file(client: TestClient, ref: str) -> None:
+    with client.app.state.services.db.tx() as conn:  # type: ignore[attr-defined]
+        refs.attach_file(conn, ref, navidrome_song_id="nd-1", path="a.opus", codec="opus", bitrate_kbps=130, source="youtube")
+
+
+def test_a_kept_song_whose_file_is_gone_streams_from_youtube_again(rig) -> None:  # type: ignore[no-untyped-def]
+    """CF-31, PB-3: the file is gone from the music server but a person uses the song: the row stays and it streams from YouTube again."""
+    client, source = rig
+    ref = str(resolve(client, "marwa", song())[0]["id"])
+    keep_a_file(client, ref)
+    music = GoneFromTheMusicServer()
+    client.app.state.services.music = music  # type: ignore[attr-defined]
+
+    response = client.get(address(client, ref))
+
+    assert music.asked == ["nd-1"], "the kept file was tried first"
+    assert response.status_code == 200 and response.content == DATA, "and YouTube served the song when the file was gone"
+    assert source.asked, "YouTube was asked for the song"
+    with client.app.state.services.db.read() as conn:  # type: ignore[attr-defined]
+        assert refs.get_ref(conn, ref)["id"] == ref, "the song is still in the library"
+
+
+def test_a_kept_song_whose_file_is_gone_and_that_youtube_does_not_have_says_it_cannot_play(
+    tmp_path: Path, verifier: FakeVerifier
+) -> None:
+    """CF-31, PB-8: the file is gone from the music server and nothing matches on YouTube either: a sentence, and the song stays."""
+    source = Source(tmp_path / "work", found=[])
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
+    )
+    with TestClient(create_app(settings, verifier=verifier, youtube=source)) as client:  # type: ignore[arg-type]
+        ref = str(resolve(client, "marwa", song())[0]["id"])
+        keep_a_file(client, ref)
+        client.app.state.services.music = GoneFromTheMusicServer()  # type: ignore[attr-defined]
+
+        response = client.get(address(client, ref))
+
+        with client.app.state.services.db.read() as conn:  # type: ignore[attr-defined]
+            assert refs.get_ref(conn, ref)["id"] == ref, "the song is still in the library"
+
+    assert response.status_code == 404
+    error = response.json()["error"]
+    assert error["code"] == "song_unavailable" and error["message"] and error["details"]["reason"] == "not_found"
