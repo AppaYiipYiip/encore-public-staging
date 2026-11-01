@@ -87,7 +87,7 @@ class CoverFinder:
     def __init__(
         self,
         db: Database,
-        lookup: Lookup = deezer_lookup,
+        lookup: Lookup | None = None,
         *,
         per_pass: int = 300,
         pause_s: float = 0.25,
@@ -101,7 +101,8 @@ class CoverFinder:
         self._after = after
         self._wrote_art = False
         self._db = db
-        self._lookup = lookup
+        # Looked up when the finder is made, not when this module is loaded, so a test can put its own in (B27).
+        self._lookup: Lookup = lookup if lookup is not None else deezer_lookup
         self._per_pass = per_pass
         self._pause = pause_s
         self._sleep = sleep

@@ -1,12 +1,17 @@
 name: Server image
 
 # Builds the Encore server image and publishes it to GitHub's container registry (private while the repository is private):
-# `ghcr.io/appayiipyiip/encore-server:main` for the newest main, `:<branch>` for a task branch (`/` becomes `-`) and `:sha-<commit>` for every build. The installer
+# `ghcr.io/appayiipyiip/encore-server:main` for the newest main, `:<tag>` for a release tag and `:sha-<commit>` for every build. The installer
 # (server/encore_server/deploy/install.sh) pulls it. 64-bit Intel/AMD only for now; arm64 comes later.
+#
+# Only `main` and release tags publish, and only after the server's own tests pass (QA-BACKEND B25): a task branch used to build and publish an image on
+# every push, without waiting for any test, which multiplied the cost of every server change (GitHub Actions minutes are limited) and could put an
+# untested image under a name an installer pulls. An installer under development is tried from a pull request's own run, not from a published image.
 on:
   push:
-    # A task branch also publishes (as `:task-<name>`), so an installer under development can be tried on a clean machine before it is merged.
-    branches: [main, 'task/**']
+    branches: [main]
+    tags: ['v*']
+    # (the paths filter does not apply to a tag)
     paths: ['server/encore_server/**', '.github/workflows/server-image.yml']
   # Weekly, Monday 04:17 UTC: rebuild from scratch so the newest yt-dlp (and base image and ffmpeg fixes) are inside, even when no server code changed.
   # Without `no-cache` the cached `pip install` layer would be reused and ship the old yt-dlp again. A running server only gets the new image when
@@ -24,8 +29,38 @@ permissions:
   contents: read
   packages: write
 
+# A newer push to the same ref makes an older, unfinished build pointless.
+concurrency:
+  group: server-image-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  tests:
+    # The same lint, types and tests as the Server workflow's `encore-server` job. Skipped for the weekly rebuild, which exists to refresh yt-dlp
+    # and the base image, not to test the code again.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        working-directory: server/encore_server
+        run: pip install -e '.[youtube,dev]'
+      - name: Lint, types, tests
+        working-directory: server/encore_server
+        run: |
+          ruff check .
+          ruff format --check .
+          mypy encore_server
+          pytest
+
   image:
+    needs: tests
+    # Runs when the tests passed, or were skipped (the weekly rebuild and a manual run); never when they failed or were cancelled.
+    if: ${{ !cancelled() && (needs.tests.result == 'success' || needs.tests.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -45,7 +80,7 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/encore-server
           tags: |
             type=raw,value=main,enable={{is_default_branch}}
-            type=ref,event=branch
+            type=ref,event=tag
             type=sha,prefix=sha-
           labels: |
             org.opencontainers.image.title=Encore server

@@ -1,0 +1,44 @@
+name: Server legacy
+
+# The five older Python services and the Jam hub. They changed rarely, and testing them on every server pull request cost about a twelfth of
+# October's Actions minutes (a job is billed for a whole minute at least, five of them per run): now only when something under server/legacy changes (D-44).
+on:
+  push:
+    branches: [main]
+    paths: ['server/legacy/**', '.github/workflows/server-legacy.yml']
+  pull_request:
+    paths: ['server/legacy/**', '.github/workflows/server-legacy.yml']
+
+concurrency:
+  group: server-legacy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-suites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [encore-fetch, encore-people, encore-admin, encore-quality, encore-recs]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests (${{ matrix.service }})
+        working-directory: server/legacy/${{ matrix.service }}
+        run: python -m unittest discover -s tests
+
+  hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - name: Analyze and test the Jam hub
+        working-directory: server/legacy/hub
+        run: |
+          dart pub get
+          dart analyze --fatal-infos
+          dart test

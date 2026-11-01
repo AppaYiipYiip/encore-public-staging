@@ -1,7 +1,8 @@
 """Who may do what to whose device, as a model checked against the real API on random sequences of events (docs/11 ADR-R41 T3, docs/32 rows DV-2, DV-3, DV-4, AC-22, AC-23).
 
-The model is a few lines of plain Python: a device works while it has not been ended and its person is not locked, and ending a device (signing
-out, revoking it) only ever ends one of the **caller's own**. Hypothesis draws long random sequences of sign-ins, sign-outs (with the device token
+The model is a few lines of plain Python: a device works while it has not been ended and its person is not locked, ending a device (signing
+out, revoking it) only ever ends one of the **caller's own**, and **locking a person ends every device they have for good** (unlocking does not
+bring them back: they sign in again). Hypothesis draws long random sequences of sign-ins, sign-outs (with the device token
 and with the music server's login plus the device header, the way the app does), revocations, locks and unlocks, and after every step compares the
 model with what the server says for every device and every person. The logout that ended somebody else's device (found on 2026-10-24, D-5) is
 exactly the kind of thing a sequence like "nina signs in; marwa signs out naming nina's device" finds without anybody thinking of it.
@@ -123,6 +124,9 @@ class Accounts(RuleBasedStateMachine):
         response = self.client.patch(f"{V1}/people/{self._ids()[person]}", params=creds("marwa"), json={"locked": True})
         assert response.status_code == 200, response.text
         self.locked.add(person)
+        for device in self.devices:
+            if device.person == person:
+                device.active = False  # a lock signs every device of theirs out, and an unlock does not sign them in again (B28)
 
     @rule(person=st.sampled_from(MEMBERS))
     def the_owner_unlocks_somebody(self, person: str) -> None:
@@ -161,3 +165,24 @@ Accounts.TestCase.settings = settings(
     max_examples=8, stateful_step_count=14, deadline=None, suppress_health_check=list(HealthCheck), database=None
 )
 TestAccounts = Accounts.TestCase
+
+
+def test_the_model_knows_that_a_lock_ends_the_persons_devices_for_good() -> None:
+    """B28: locking a person signs every device of theirs out (`UPDATE device SET revoked_at`), and unlocking does not bring them back: they
+    sign in again. The model said a device works whenever its person is not locked, so the sequence sign in, lock, unlock (which random
+    sequences found in about four runs of ten) made it expect a 200 where the server rightly answers 401."""
+    machine = Accounts()
+    try:
+        for person in PEOPLE:
+            machine.sign_in(person)
+        machine.the_owner_locks_somebody("nina")
+        machine.the_owner_unlocks_somebody("nina")
+
+        machine.a_device_works_exactly_when_the_model_says()
+        machine.a_person_signs_in_with_the_music_servers_login_unless_locked()
+        machine.the_list_of_devices_is_the_active_ones_and_only_the_persons_own()
+
+        machine.sign_in("nina")  # signing in again after the unlock makes a device that works
+        machine.a_device_works_exactly_when_the_model_says()
+    finally:
+        machine.teardown()

@@ -64,3 +64,32 @@ def resolve(client: TestClient, user: str, *songs: dict[str, object]) -> list[di
     response = client.post("/encore/api/v1/refs/resolve", params=creds(user), json={"songs": list(songs)})
     assert response.status_code == 200, response.text
     return response.json()["items"]  # type: ignore[no-any-return]
+
+
+@pytest.fixture(autouse=True)
+def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """B27: seventeen tests asked the real api.deezer.com (a song kept through the app asks it for a picture, the cover finder asks it for
+    every song without one), so a test run depended on somebody else's server and the internet, was slow offline, and sent real artist and
+    title names out of a test. Any request to it is stopped and, because the code that asks swallows errors on purpose, written down and
+    checked when the test ends, so the test that made it is the one that fails. A test about the catalogue gives its own client."""
+    import httpx
+
+    real = httpx.HTTPTransport.handle_request
+    asked: list[str] = []
+
+    def guarded(self: httpx.HTTPTransport, request: httpx.Request) -> httpx.Response:
+        if request.url.host.endswith("deezer.com"):
+            asked.append(str(request.url))
+            raise httpx.ConnectError("a test may not ask the real catalogue", request=request)
+        return real(self, request)
+
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", guarded)
+
+    # What the app asks the catalogue with by default is nobody: no picture is found. (The guard above is the net under this.)
+    def nobody(artist: str, title: str, album: str | None, *, client: object = None) -> None:
+        return None
+
+    monkeypatch.setattr("encore_server.cover_finder.deezer_lookup", nobody)
+    monkeypatch.setattr("encore_server.api.deezer_lookup", nobody)
+    yield
+    assert not asked, f"this test asked the real catalogue {len(asked)} time(s): {asked[:2]}"

@@ -6,6 +6,7 @@ on:
     paths: ['app/**', 'packages/**', '.github/workflows/app.yml']
   pull_request:
     paths: ['app/**', 'packages/**', '.github/workflows/app.yml']
+  workflow_dispatch:
 
 concurrency:
   group: app-${{ github.ref }}
@@ -55,6 +56,9 @@ jobs:
           dart test
 
   android-debug-build:
+    # About 8 minutes a run, a fifth of October's Actions minutes, on every push to every pull request. It proves the app still builds as an APK, which
+    # only a change to the Android side or to a dependency can break and which `main` and a manual run still check (D-44).
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: verify
     timeout-minutes: 45

@@ -54,7 +54,10 @@ class EntrypointTest(unittest.TestCase):
         self.assertGreaterEqual(len(pips), 3, calls)  # at start, and again every second the service is up
 
     def test_stops_looking_when_the_service_has_stopped(self) -> None:
-        self.run_entrypoint(lives_seconds=2, every="1")
+        # The service lives 3 s and the loop looks every 2 s: its first look is at about 2 s, its second would be at about 4 s, a whole
+        # second after the service ended. (With 2 s and 1 s the second look fell exactly when the service ended; whenever the loop won
+        # that race by a few milliseconds its last "pip show" was written after the count below was read, and the test failed at random.)
+        self.run_entrypoint(lives_seconds=3, every="2")
         settled = self.log.read_text(encoding="utf-8").count("pip ")
         time.sleep(2.5)
         self.assertEqual(self.log.read_text(encoding="utf-8").count("pip "), settled,
