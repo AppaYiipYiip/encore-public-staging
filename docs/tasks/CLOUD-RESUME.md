@@ -2,6 +2,8 @@
 
 For a session that starts with **only this repository** (Claude Code on the web, or a new PC): it has none of the earlier session's memory. Read `AGENTS.md`, `docs/README.md`, then this file, then the last log entry (22) of `RELEASE-CANDIDATE.md`. The owner is not a tester and is not asked to test; he is asked only what only he can decide (section 6).
 
+**Status 2026-11-01, evening:** everything in the table of section 2 is merged, except the parked `rc2/*` branches, `integration/qa-round-1` and the `docs/coherence-pass-1` draft (its claims were re-checked and used for `docs/22`). Sections 2 and 3 are the history of that push; **Progress below is the current state**. What only a local machine can do is the second paragraph of section 4 and the owner's two questions (section 6).
+
 ## Work order
 
 Given by the owner on 2026-11-01 after the section 0 report, copied word for word. It replaces the "stop and wait" of section 0 and the merge order of section 3 (the phone batch is now merged last). Progress, below it, is the channel to the next local session and to the owner.
@@ -47,6 +49,7 @@ Every PR below was squash-merged with `gh api PUT pulls/N/merge` and `sha=<head>
 | 5 | #88 | `b90435b` | `2a1995f` on the session branch (W05 rebased with `git rebase --onto origin/main 2e2b823`) | W-05 join page (D-39), B15 | Hygiene green; its Server runs were cancelled by the next push, whose run covers it |
 | 6 | #87 | `9ba6dd4` | `749d423` on `backup/task/S2-silent-failures` | S2: B8 (no search while YouTube rests, every search counted), B7 (a never-found file ends as a failed keep) | Server, Hygiene and Server image green |
 | 7 | #89 | `4b9d957` | `f728c61` on the session branch (S3 rebased with `--onto origin/main 309ebbd`) | S3: B4, B5, B13, B6 (revocation) | Server, Hygiene and Server image green |
+| 8 | #91 | `451d4dc` | `9db25db` on the session branch (`30a6b0c` plus the goldens commit of the local side) | the phone batch: 21 commits, 84 files (see below) | Hygiene green; App: `verify` and the Android build green (run 41321073812) |
 
 What else happened, for the next session:
 
@@ -54,7 +57,7 @@ What else happened, for the next session:
 * On main before S0, `pytest` could fail in `test_account_model.py` when Hypothesis found a lock followed by an unlock (the model said the device works again, the server correctly kept it dead). That is B28, fixed by S0.
 * The B25 change works: pushing to main ran `tests` and then `image` and published the image to the private registry; a task branch no longer builds one.
 * #63 was merged as soon as S0's `verify` job on main was green. Its push cancelled S0's Android build through the workflow's own `cancel-in-progress`; #63's run builds the APK on the combined tree.
-* `tools/check_rows.py` reports 60 Built rows with no test on main at `4b9d957` (S1's docs edit made CN-25 cite its test); `.github/workflows/docs.yml` still says `--max-missing 61`. The ratchet is lowered in the Phase 3 PR, together with the tests.
+* `tools/check_rows.py` reported 60 Built rows with no test on main at `4b9d957`; Phase 3 brought that to 0 (see the entry below).
 * GitHub Actions used since 2026-11-01: about 187 minutes over 41 runs at 13:46 UTC (job durations rounded up to whole minutes; runs still going are not counted).
 * Decisions taken without asking: every rebased branch went through the session branch and no other branch was created; the session branch is reset to `origin/main` and force-pushed with a lease after each merge (it holds no work that is not on main).
 
@@ -63,23 +66,59 @@ OWNER QUESTIONS (recorded here only, not asked):
 1. Turn the public address (Funnel) on? S1 (B1, B2, B9, B11, B12, B19) and S3 (B4, B5, B13, B6) are merged, but two things stay open: whether the Funnel really sets `X-Forwarded-For` as B11 assumes (only checkable on the owner's Funnel), and narrowing `/rest`; the app also still sends the old login, not the Bearer token. Turning it on exposes the owner's server to the internet. `docs/guides/install-test.md` step 5 tells a person to run `encore funnel on` without this warning.
 2. Scrub the history and publish the repository? It is not needed (the Actions minutes reset); it cannot be undone; the history holds the owner's tailnet name, first name, real artist names in the design drawings and machine names.
 
-### Phase 1 end and Phase 2 so far (2026-11-01, 14:10 UTC)
+### Phase 1 end, and Phases 2 to 4 (2026-11-01, evening)
 
-**Blocked: the phone batch, PR #91 (head `30a6b0c` on the session branch `claude/zealous-maxwell-7s5nio`).** It is the 20 commits of `task/RC1-app-batch` rebased onto main after #63 and the server merges (`git rebase --onto origin/main 2c924ec`, no conflicts, 82 files). CI on that head: Hygiene green; App `verify` red **only** on the two expected Linux goldens. Format and analyze passed and **2,135 tests passed, 2 failed**: `library list` (`goldens/linux/library_list.png`, 0.07 %, 2,100 px) and `now playing, waiting for the server` (`goldens/linux/now_playing_waiting.png`, 34.63 %, 1,025,972 px). `goldens.yml` was dispatched on the same head (run 41313093095, green) and uploaded the artifact `goldens-linux` (id 13085687754, 3.8 MB, kept until 2027-01-30), but **this session cannot fetch it**: the proxy denies `productionresultssa18.blob.core.windows.net` (403 on CONNECT, also for the link the GitHub MCP tool returns).
+**Phase 1 is complete: the phone batch, PR #91, is merged** (squash `451d4dc`, head `9db25db` on the session branch `claude/zealous-maxwell-7s5nio`; 21 commits: the 20 of `task/RC1-app-batch` rebased with `git rebase --onto origin/main 2c924ec`, plus the goldens commit). On its first head (`30a6b0c`) App `verify` was red only on the two expected Linux goldens, `library_list` and `now_playing_waiting` (2,135 tests passed, 2 failed). This session could not fetch the artifact (the proxy denies `productionresultssa18.blob.core.windows.net`), so the local side downloaded the artifact `goldens-linux` of Goldens run 41313093095 (drawn on `30a6b0c`), found the 12 other pictures byte-identical, looked at the two that changed, and committed them as `9db25db` on the origin branch `goldens/redraw-pr91` (left as it is). The session branch was fast-forwarded to it; App `verify` and Hygiene were green on that exact head before the squash. main's own run on `451d4dc`: App `verify` and `android-debug-build` both green (run 41321073812), Hygiene green (run 41321073840).
 
-To finish (any machine that can reach GitHub's artifact host): download the artifact; look at the two pictures; copy only `library_list.png` and `now_playing_waiting.png` into `app/test/features/goldens/linux/` on the PR's branch; push; wait for App to go green on the new head; squash-merge #91 with the sha guard. Then flip the two rows that say "marked built when it lands": CN-4b (`docs/31`) and PB-F7b (`docs/33`), and do the audit items that describe the phone batch's behaviour (the offline strip D-45, the refused offline tap D-42, D-46: audit slice 2 items 1, 2 and 4).
+**The owner's answer to the OPEN question of the earlier entry:** the workflow's pictures are the only source. **Never draw the Linux goldens with `flutter test --update-goldens` on any other machine**, even one that renders the same (this one did, to the pixel: 2,100 and 1,025,972 pixels).
 
-OPEN (needs owner): Flutter 3.47.7 is installed in this session (tarball checked against Google's sha256). Running the three golden test files on the PR branch here fails the same two goldens with the same pixel counts as CI (2,100 and 1,025,972), and the 24 other tests in those files, which compare the other Linux pictures, pass at zero tolerance. So `flutter test --update-goldens` here would very likely draw what the workflow draws. Nothing was drawn or committed: the code comment in `app/test/flutter_test_config.dart` says the Linux pictures are "drawn by the Goldens (Linux) workflow, never by hand", and the order says this step waits. If the owner allows a local Linux redraw, CI on the new head is the check.
+**Goldens, alone (PR #110, merge `8f95e86`).** `goldens.yml` now commits the changed `app/test/features/goldens/linux/*.png` (and nothing else, never on `main`) back to the branch it ran on, as `github-actions[bot]`, and still uploads the artifact. The procedure is the numbered list "Goldens, alone" in the Work order above. The loop was run once end to end on a throwaway branch: Goldens run 41319484509 committed only `library_list.png` (`c46d0c9`); App was then started by hand with `workflow_dispatch` (a push by the workflow's token starts no checks); the first App run stopped at `Format` on one line of my throwaway test edit (run 41319936423); after a format fix, App run 41320286021 on `23f2825` was green in `verify` (the bot's picture compared at zero tolerance) and in `android-debug-build` (the debug APK builds, as a `workflow_dispatch` run does). The throwaway branch `ci/goldens-loop-test` (head `23f2825`) is **never to be merged**; it stays on origin as the record (nothing is deleted).
 
-**Phase 2, docs coherence** (`docs/tasks/DOCS-AUDIT-2026-11-01.md`), merged so far, each from its own `docs/` branch (the session branch holds #91; these are new non-`task/**` branches and none was deleted): #92 backups, updates, canary, pacing (docs 22, 04, 10, 26, P1-03; from the unfinished docs/22 draft, every claim re-checked against `deploy/encore`, `backup.py`, `canary.py`, `pace.py`; merge `91a43f9`); #93 revocation rows (docs 32, 31, 17; `9df7fee`); #94 entry points (AGENTS, README, docs/README; `5abfd2d`); #95 audio numbers and the installer's disk minimum (docs 23, P3-05; `d0600a4`); #96 away from home is the computer's own Tailscale (docs 04, 15, 03a, 25; `60c30dc`).
+**Merged since the table above** (each from its own branch, none deleted, none under `task/**`; head sha, then merge sha on `main`):
 
-OPEN (needs owner/advisor), also written in the doc: `docs/15` page 6 (Away from home): whether the wizard page runs the Tailscale sign-in step itself or shows the Host `encore funnel on`.
+| PR | Branch | Head | Merge | What |
+|----|--------|------|-------|------|
+| #92 | `docs/ops-backups-and-pacing` | `acb4fc9` | `91a43f9` | docs 22, 04, 10, 26, P1-03: backups, updates, canary, pacing (from the unfinished docs/22 draft, every claim re-checked against `deploy/encore`, `backup.py`, `canary.py`, `pace.py`) |
+| #93 | `docs/revocation-rows` | `bf86815` | `9df7fee` | docs 32, 31, 17: revocation rows say what S1 and S3 built |
+| #94 | `docs/entry-points` | `3414190` | `5abfd2d` | AGENTS, README, docs/README |
+| #95 | `docs/numbers-audio-and-install` | `0234a0c` | `d0600a4` | docs 23, P3-05: audio numbers, the installer's disk minimum |
+| #96 | `docs/tailscale-is-not-a-container` | `f3e3ed6` | `60c30dc` | docs 04, 15, 03a, 25: away from home is the computer's own Tailscale |
+| #97 | `docs/progress-phase1-end` | `4c7ad1a` | `8d8c333` | this Progress, phase 1 end |
+| #98 | `docs/api-contract-fixes` | `d61592b` | `6597799` | docs 17, 31 (CN-27): the API contract matches the server |
+| #99 | `docs/security-limits-and-routes` | `a2630f1` | `ff36180` | docs 21: the security page matches S1 (the login limits, the routes) |
+| #100 | `docs/qa-backend-merged-status` | `9eb383f` | `0381f55` | the backend review says which fixes are merged |
+| #101 | `tests/server-state-rows` | `89d7516` | `1aa385d` | server: 24 state rows proved by tests that name them (ratchet 61 to 37) |
+| #102 | `tests/server-state-rows-2` | `305ed85` | `4a4adb5` | server: docs/34 rows proved (ratchet 37 to 16) |
+| #103 | `docs/readme-planned-features` | `3dda4cf` | `85e1747` | README says which features are planned |
+| #104 | `docs/open-questions-of-the-coherence-pass` | `8ff24c5` | `23c326c` | the OPEN lines (08, 10, 23, 06) and the audit status |
+| #105 | `app/downloaded-releases-share-songs` | `8143d29` | `82f75a8` | app: a song two downloaded releases share is listed in both (Phase 4, test first) |
+| #106 | `docs/ci-matches-the-workflows` | `ab6bce0` | `c8a6556` | docs 06, 05: the CI section lists the workflows that exist |
+| #107 | `docs/state-rows-after-the-phone-batch` | `5386faa` | `a7d9877` | docs 31 to 34: the one calm strip (D-45), the refused offline tap (D-42), D-46; CN-4b and PB-F7b Built; tests named for 11 more rows; the ratchet goes 15 to 4 |
+| #108 | `docs/design-notes-the-calm-strip` | `1d2bf30` | `b00700d` | docs 04, 08, design/00, 02, 03 |
+| #110 | `ci/goldens-commit-back` | `ab63720` | `8f95e86` | ci: goldens, alone (above) |
+| #111 | `docs/data-model-matches-the-schema` | `d35aa47` | `da5db9b` | docs 04, 18: the data model against the migrations |
+| #112 | `docs/layout-is-the-real-one` | `bf0310f` | `8fe6bbf` | docs 05, 06, 11, 15, design/00 and a comment of `tools/check.ps1`: the repository layout is the real one; an OPEN line in 06 §6 |
+| #113 | `docs/gaps-the-code-closed` | `3681fb4` | `f4d1408` | docs 32, 34: D-2 and CF-11 say what is now true |
+| #114 | `docs/minsdk-decided-not-applied` | `9c059f4` | `15658cd` | docs 02, 28: minSdk 26 is decided and not applied (the build uses Flutter's default, 24): an OPEN line |
+| #115 | `docs/small-facts-in-11-07-06` | `4ae255b` | `d5eb810` | docs 11, 07, 06, README: the password rotation, three status headers, versionCode, the evidence list |
+| #116 | `docs/roadmap-task-lists` | `c8b4787` | `422ef65` | docs 08: the task lists name P2-18 to P2-20, P3-12, P4-16 and P4-17 |
+| #117 | `docs/notification-wording` | `cb19117` | `17c6244` | docs 20, 03a: new releases are a bell entry, no phone notification by default (ADR-R44) |
+| #109 | `tests/typed-form-rows` | `538cbc2` | `d13675e` | app: tests for the typed sign-in form (CN-30, CN-31, JN-2, JN-9), each shown to fail when the matching line of `connect_screen.dart` is changed; the ratchet goes 4 to 0; main's Hygiene run for it is green, its App run (`d13675e`) was still going when this was written |
+| #118 | `docs/rc-says-what-is-merged` | `1cc1986` | `456a38a` | RELEASE-CANDIDATE: a status line above the table of blockers says what is on `main` |
 
-**Ratchet:** do not lower `--max-missing` in `docs.yml` before #91 merges. `tools/check_rows.py` counts 60 untested Built rows on main but 61 on the phone-batch checkout; lower it in the first Phase 3 PR after #91.
+**Where the counts stand.** `python -I tools/check_rows.py` finds a test for **every** Built row (149 rows on `main`); the ratchet in `docs.yml` is **0**, so a row marked Built must bring its test. Phase 3 is done. Phase 4: the `released` map is #105; the track menu's "Removed" for a song another pin still wants is already fixed by the phone batch (commit `cd18643`: "stays on this phone: it is part of a downloaded playlist or album", test in `song_menu_download_test.dart`), nothing left to do.
 
-**Actions:** about 267 minutes since 2026-11-01 (56 runs at 14:08 UTC; per job rounded up to whole minutes).
+**Noticed, not fixed** (none is a regression of this work):
+1. `removeDownload` in `app/lib/features/instant/release_save.dart` unpins every song of a release, including songs another downloaded release still wants (the cousin of the `released` bug of #105).
+2. In the `library_list` golden the playlist rows show a "..." menu and the artist rows do not, although commit `d98d943` says every row has one. Whether that is intended is a product question.
+3. A wrong key (CN-11, CN-34) now reads "You're offline" in the strip, because D-45 gave every outage one sentence; O-6 had decided a line of its own on 2026-10-23. OPEN, written in `31`.
+4. Hygiene does not run for the Goldens workflow's own commit (a push by `GITHUB_TOKEN` starts nothing): the procedure says to run `tools/check_rows.py` by hand before merging.
 
-**Next:** more Phase 2 docs PRs that do not depend on #91, then Phase 3 (tests for state rows, server first) and Phase 4.
+**OPEN (needs owner/advisor), each also written in the document concerned:** `docs/15` page 6 (the wizard page: runs the Tailscale sign-in itself, or shows the Host `encore funnel on`); `docs/08` (tablets: D-18 parks them, `03`, `03a` US-75, P4-11 and ADR-R42 keep them); `docs/10` (rows for D-21, D-22 and D-45 to D-47 are missing); `docs/23` (notification switches: ADR-R44 says at most two, the app has three); `docs/06` (the merge and pass rules of `RELEASE-CANDIDATE` section 1 are not in AGENTS; and the documentation rules name folders and a file length that the practice does not keep, section 6); `docs/02` Q18 (minSdk 26 is decided, the build still uses 24); `docs/31` CN-34 and O-6 (does a wrong key get a line of its own?). The two owner questions above (the public address, the history) are still only here.
+
+**Not done in Phase 2** (`DOCS-AUDIT-2026-11-01.md` lists them; none needs a decision unless an OPEN line says so): slice 1 items 12, 23, 25, 26 and 28, and the decisions inside 21 (P2-21, where J-21 and US-65 belong in an exit list); slice 2 item 10; a row for F59 (a removed pin leaves at once) and the profile switch CF-38; the cells of `RELEASE-CANDIDATE.md` (a status line stands above them, #118) and of `AUDIT.md` (slice 2 items 5 and 6). Not touched on purpose: `rc2/*`, `integration/*`, anything of RC2.
+
+**This session's environment, for the next one:** Flutter 3.47.7 was installed in the cloud session's scratch space (the tarball checked against Google's sha256; gone with the session). `dart format` needs `flutter pub get` first or it formats in a newer style (see `docs/guides/dev-gotchas.md`). A step name in a workflow containing `: ` breaks the YAML: load a changed workflow with a YAML parser before pushing it. **Actions:** about 450 minutes since 2026-11-01 (an estimate from job durations rounded up to whole minutes; two counts at 15:58 UTC gave 444 and 406, 101 runs; the runs still going are not counted, about 25 more), against the order's cap of about 1,200 for the week.
 
 ## 0. First thing to do: report what this session can do, then stop
 
@@ -97,7 +136,7 @@ If it can only push its own session branch, the merge sequence in section 3 cann
 * **Never print or commit a password, token or key.** There are none in the repository; do not look for them.
 * **At most two agents at a time** (a usage limit was hit with four).
 * **Do not work in the cloud and on a local machine on the same branches at the same time.** Whoever starts next begins with `git fetch`.
-* **A state is a row.** Touch a state in `docs/31` to `34`, update its row (`tools/check_rows.py`, ratchet 61). A row whose test is only on an unpushed branch must not say "Built".
+* **A state is a row.** Touch a state in `docs/31` to `34`, update its row (`tools/check_rows.py`; the ratchet in `docs.yml` is 0: a Built row brings its test). A row whose test is only on an unpushed branch must not say "Built".
 * **Merge only when every check on the PR head has finished green**, with `gh pr merge N --squash --match-head-commit <full sha>`; never `--admin`; poll `gh run list --branch <b>` (not `statusCheckRollup`). Squash-merge each PR under an area title (`app: ...`, `server: ...`, `docs: ...`).
 * Everything below is **built and tested, not walked** on a phone.
 
@@ -137,7 +176,7 @@ A failing check is fixed on the PR's branch, never merged red. A red `main` run 
 
 ## 4. What can be done where
 
-**In the cloud (if section 0 allows):** the push and merge sequence above (CI runs on GitHub); the **docs coherence pass** (two audits, `DOCS-AUDIT-2026-11-01.md`, about 70 contradictions: do it in small PRs, run `python -I tools/check_rows.py --max-missing 61`); server-side tests and fixes; writing tests for the 61 "Built" state-table rows that have none; the RC2 leftovers from the code review (the `released` map keeps one release per song; the track menu says "Removed" for a song still wanted; the strip says "offline" when only the server is down); parked RC2 code if the owner asks.
+**In the cloud (if section 0 allows):** the push and merge sequence above (CI runs on GitHub); the **docs coherence pass** (two audits, `DOCS-AUDIT-2026-11-01.md`, about 70 contradictions: do it in small PRs, run `python -I tools/check_rows.py --max-missing 0`); server-side tests and fixes; tests for the "Built" state-table rows (done: every one has a test); the RC2 leftovers from the code review (done: the `released` map is #105, the track menu and the strip are in the phone batch); parked RC2 code if the owner asks.
 
 **Local only (emulators, the dev servers, a hypervisor over ssh):** QA rounds 2 and 3 and the critic (two Android emulators); building any APK that will be installed on a phone (the signing key is on the owner's PC, a different key cannot update an installed app); deploying the integration build to the dev VM; the clean-VM install test (needs the published image and a Proxmox VM); anything on the owner's own server VM or phone.
 
