@@ -30,6 +30,15 @@ the tool and fix the line. Rules about *what* to do are in `docs/30-engineering-
   branch. A workflow runs from a branch only if its file is on that branch; `gh workflow run` needs the workflow on `main`. Do not push tags.
 * The architecture test forbids a silent `on Object {}` and ratchets catch-alls: log inside every `catch`.
 
+## The Linux screen pictures (goldens)
+
+* The App check compares each screen with a picture drawn on the same operating system (`app/test/flutter_test_config.dart`): `goldens/windows/` for the PC, `goldens/linux/` for CI. **The Linux pictures come only from the "Goldens (Linux)" workflow.** Never draw them with `flutter test --update-goldens` on another machine, even one that renders the same (the owner's rule, 2026-11-01).
+* After a screen changed on purpose, App fails on the pictures that changed. Start the workflow on that branch, never on `main`: `gh api -X POST repos/<owner>/<repo>/actions/workflows/goldens.yml/dispatches -f ref=<branch>`. It draws the three golden test files, **commits only the changed `app/test/features/goldens/linux/*.png` back to that branch** with a message that names the run, and also uploads them as the artifact `goldens-linux`. Read the committed pictures before merging: a golden is only as good as the person who looked.
+* **A push made with a workflow's own `GITHUB_TOKEN` starts no workflow runs**, so the pull request shows no checks for that commit. Fetch the branch and start App on it by hand: `gh api -X POST repos/<owner>/<repo>/actions/workflows/app.yml/dispatches -f ref=<branch>`, then wait for `verify` on the new head commit (the run is a `workflow_dispatch` run, so it also builds the debug APK). Hygiene does not run for that commit. Do not push an empty commit and do not close and reopen the pull request to start the checks.
+* In the cloud sessions the artifact host (`productionresultssa*.blob.core.windows.net`) is blocked; that is why the workflow commits the pictures itself.
+* If the branch moved after the run started, the push is refused: fetch, rebase, run the workflow again. A run on `main` draws and uploads but commits nothing.
+* Format a test you changed before it is pushed, from inside `app/` and after `flutter pub get`: `dart format` reads the project's language version from `.dart_tool/package_config.json`; without that file it uses the newest style and rewrites lines you did not touch. The App job's first check (`dart format --set-exit-if-changed lib test`) stops the run on one line that is too long, so the tests, and the pictures, are never reached (met while testing this loop, 2026-11-01).
+
 ## Driving the emulator (`tools/journeys/ui.py`)
 
 * **Never tap blind.** Run `ui.py dump` first and tap by position from it. The sign-in fields have empty labels. Move focus with TAB, hide the keyboard with BACK; the form shifts when the

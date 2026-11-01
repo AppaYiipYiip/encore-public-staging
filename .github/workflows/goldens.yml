@@ -1,9 +1,23 @@
 name: Goldens (Linux)
 
 # Draws the Linux set of the screen pictures that the App job compares against (app/test/flutter_test_config.dart keeps one set per
-# operating system: a screen drawn on Windows differs by a few pixels on Linux). Run it by hand from the Actions tab (or
-# `gh workflow run goldens.yml --ref <branch>`) after a screen changed on purpose, download the artifact, commit the files in
-# app/test/features/goldens/linux, and look at the pictures before committing them: a golden is only as good as the person who looked.
+# operating system: a screen drawn on Windows differs by a few pixels on Linux). It is the ONLY source of the Linux pictures: never draw
+# them with `flutter test --update-goldens` on another machine, even one that renders the same (the owner's rule, 2026-11-01).
+#
+# How to use it, alone, after a screen changed on purpose (the App job fails on the pictures that changed):
+#   1. Start it on that branch, never on main:
+#        gh api -X POST repos/<owner>/<repo>/actions/workflows/goldens.yml/dispatches -f ref=<branch>
+#      (or `gh workflow run goldens.yml --ref <branch>`, or the Actions tab). The file must exist on main; the run uses the branch's copy.
+#   2. When it has finished, the last step of this job has committed the pictures that CHANGED back to that same branch: only
+#      app/test/features/goldens/linux/*.png, nothing else, with a message that names this run. They are also uploaded as the artifact
+#      `goldens-linux`. Nothing is committed when no picture changed, and nothing is ever committed on main.
+#   3. LOOK at the pictures before the pull request is merged (read the committed files): a golden is only as good as the person who looked.
+#   4. A push made with this workflow's own GITHUB_TOKEN starts NO workflow runs (GitHub's rule against loops), so the pull request shows
+#      no checks for the new commit. Fetch the branch, then start the App workflow on it by hand (it has `workflow_dispatch`):
+#        gh api -X POST repos/<owner>/<repo>/actions/workflows/app.yml/dispatches -f ref=<branch>
+#      and wait for its `verify` job on the new head commit before merging. Do not push an empty commit and do not close and reopen the
+#      pull request to start it. (Hygiene does not run for that commit; a commit of pictures only cannot change its result.)
+#   If the branch moved after the run started, the push is refused: fetch, rebase your work, and run this workflow again.
 on:
   workflow_dispatch:
 
@@ -11,6 +25,9 @@ jobs:
   draw:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # `contents: write` only so that the last step can commit the pictures back to the branch this run was started on. Nothing else is written.
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: app
@@ -37,3 +54,31 @@ jobs:
           name: goldens-linux
           path: app/test/features/goldens/linux/*.png
           if-no-files-found: error
+
+      - name: Commit the changed pictures back to this branch (never main, never another file)
+        if: github.ref_type == 'branch' && github.ref_name != 'main'
+        working-directory: ${{ github.workspace }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          DRAWN_ON: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -eu
+          git add -- 'app/test/features/goldens/linux/*.png'
+          if git diff --cached --quiet; then
+            echo "No picture changed: nothing to commit."
+            exit 0
+          fi
+          others=$(git diff --cached --name-only | grep -vE '^app/test/features/goldens/linux/[^/]+\.png$' || true)
+          if [ -n "$others" ]; then
+            echo "Refusing to commit files that are not pictures:"
+            echo "$others"
+            exit 1
+          fi
+          files=$(git diff --cached --name-only | sed 's#^app/test/features/goldens/linux/##' | tr '\n' ' ')
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -q \
+            -m "app: the Linux screen pictures redrawn by the Goldens (Linux) workflow" \
+            -m "Drawn on ${DRAWN_ON} by ${RUN_URL}. Changed: ${files}" \
+            -m "A push made with the workflow's token starts no checks: start the App workflow on this branch by hand (workflow_dispatch) and wait for it."
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          echo "Committed ${files}to ${BRANCH}. Now start the App workflow on it by hand and wait for it."

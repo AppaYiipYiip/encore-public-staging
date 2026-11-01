@@ -20,6 +20,16 @@ HARD RULES: never make the repository public, never admin-merge, never force-pus
 
 WHEN BLOCKED: write it in Progress and go on to the next independent item; stop completely only for a red main you cannot fix at once, a security question, or credits about to run out. The two owner questions (turning the public address on after S1, and scrubbing the history before publishing) go only into Progress, never ask them. Post two lines in this chat at the end of each phase.
 
+### Goldens, alone (added 2026-11-01 at the owner's request; the one workflow edit the HARD RULES allow)
+
+When App is red only on screen pictures after a screen changed on purpose, a cloud session does the pictures itself. The artifact host is blocked from the cloud, and the owner's answer is that the workflow's pictures are the only source: **never `flutter test --update-goldens` anywhere else**.
+
+1. Start the workflow on the pull request's branch (never `main`): `gh api -X POST repos/AppaYiipYiip/encore/actions/workflows/goldens.yml/dispatches -f ref=<branch>`; wait for the run to finish (about 10 minutes).
+2. It commits only the changed `app/test/features/goldens/linux/*.png` to that branch, with a message that names the run, and uploads them as the artifact `goldens-linux`. `git fetch origin <branch>` and look at the pictures (the Read tool shows PNGs): they must show what the screen should look like.
+3. A push made with the workflow's own token starts no checks. Start App on the new head by hand: `gh api -X POST repos/AppaYiipYiip/encore/actions/workflows/app.yml/dispatches -f ref=<branch>`, and wait for its `verify` job (a `workflow_dispatch` run, so it also builds the debug APK). Do not push an empty commit and do not close and reopen the pull request.
+4. Merge when every check run on that exact head is green, with the sha guard, and read `main`'s own run. Hygiene does not run for the workflow's commit: run `python -I tools/check_rows.py --max-missing <the number in docs.yml>` yourself.
+5. If the branch moved after the run started, the push is refused: fetch, rebase, run the workflow again. Details and the reasons: `docs/guides/dev-gotchas.md` and the comments in `.github/workflows/goldens.yml`.
+
 ## Progress
 
 <!-- One entry per merge and per phase, newest last: PR number, merge sha, the head sha of any branch pushed, and what is blocked and why. -->
