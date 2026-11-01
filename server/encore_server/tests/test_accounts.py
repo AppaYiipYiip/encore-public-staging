@@ -88,6 +88,7 @@ def rig(tmp_path: Path, verifier: FakeVerifier) -> Iterator[Rig]:
 
 
 def test_the_owner_makes_an_invitation_and_the_code_is_shown_once(rig: Rig) -> None:
+    """IV-1: an open invitation shows its code once (afterwards only a hash is kept), lasts 7 days and is listed as open."""
     invite = rig.invite(note="for Sara")
 
     assert len(invite["code"]) == 14 and invite["code"].count("-") == 2
@@ -104,6 +105,7 @@ def test_a_member_cannot_make_invitations_or_see_people(rig: Rig) -> None:
 
 
 def test_the_join_screen_can_say_who_invited_before_a_name_is_chosen(rig: Rig) -> None:
+    """IV-2: a checked invitation says who invited, before a name is chosen; a code nobody made is not found."""
     code = rig.invite()["code"]
 
     checked = rig.client.get(f"{V1}/invites/check", params={"code": code})
@@ -113,6 +115,7 @@ def test_the_join_screen_can_say_who_invited_before_a_name_is_chosen(rig: Rig) -
 
 
 def test_joining_makes_the_account_the_person_and_a_device_and_uses_the_invitation_up(rig: Rig) -> None:
+    """AC-2, AC-20, IV-3: joining makes the account, the person and a device; the person is active; the invitation is used up."""
     code = rig.invite()["code"]
 
     joined = rig.join(code, displayName="Sara K")
@@ -129,6 +132,7 @@ def test_joining_makes_the_account_the_person_and_a_device_and_uses_the_invitati
 
 
 def test_the_code_is_the_same_typed_in_any_case_with_or_without_dashes(rig: Rig) -> None:
+    """IV-6: a code typed in any case, with dashes or spaces or without, is the same code."""
     code = rig.invite()["code"]
 
     assert hash_code(code) == hash_code(code.lower()) == hash_code(code.replace("-", " "))
@@ -136,6 +140,7 @@ def test_the_code_is_the_same_typed_in_any_case_with_or_without_dashes(rig: Rig)
 
 
 def test_an_invitation_may_make_another_owner(rig: Rig) -> None:
+    """AC-3: an owner-making invitation makes the new person an owner."""
     code = rig.invite(role="owner")["code"]
 
     assert rig.join(code, username="alex").json()["person"]["role"] == "owner"
@@ -171,6 +176,7 @@ def test_a_name_that_is_taken_is_refused_and_the_invitation_is_not_used_up(rig: 
 
 
 def test_an_expired_or_revoked_invitation_does_not_work(rig: Rig) -> None:
+    """IV-4: an expired or a revoked invitation does not work, and the owner's list says which it is."""
     expired = rig.invite()
     revoked = rig.invite()
     from encore_server.ids import now_ms
@@ -186,6 +192,7 @@ def test_an_expired_or_revoked_invitation_does_not_work(rig: Rig) -> None:
 
 
 def test_a_failure_after_the_music_server_made_the_account_leaves_nobody_half_made(rig: Rig) -> None:
+    """IV-5: an invitation lost to another phone mid-join ends as not valid, and the account just made is deleted again."""
     code = rig.invite()["code"]
     accounts: Accounts = rig.client.app.state.services.accounts  # type: ignore[attr-defined]
     original = rig.admin.create_user
@@ -214,6 +221,7 @@ def test_joining_is_rate_limited_per_address(rig: Rig) -> None:
 
 
 def test_the_owner_sees_names_roles_and_counts_and_nothing_else(rig: Rig) -> None:
+    """DV-1: the owner's list shows names, roles, device counts and last seen, and never what anybody plays."""
     people = rig.client.get(f"{V1}/people", params=creds("marwa")).json()["items"]
 
     assert [(p["username"], p["role"], p["locked"]) for p in people] == [("marwa", "owner", False), ("nina", "member", False)]
@@ -229,6 +237,38 @@ def test_the_owner_sees_names_roles_and_counts_and_nothing_else(rig: Rig) -> Non
         "invitedBy",
         "createdAt",
     }
+
+
+def test_a_request_marks_the_device_as_seen_at_most_once_a_minute(rig: Rig) -> None:
+    """DV-1: each request from a device marks it as seen, but not more than once a minute; the owner's list shows the latest."""
+    from encore_server.ids import now_ms
+
+    login = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina", "deviceName": "Pixel"})
+    headers = rig.bearer(login.json()["deviceToken"])
+    device = rig.client.get(f"{V1}/me/devices", headers=headers).json()["items"][0]["id"]
+
+    def set_last_seen(value: int) -> None:
+        with rig.client.app.state.services.db.tx() as conn:  # type: ignore[attr-defined]
+            conn.execute("UPDATE device SET last_seen = ? WHERE id = ?", (value, device))
+
+    def last_seen() -> int:
+        return rig.client.get(f"{V1}/me/devices", headers=headers).json()["items"][0]["lastSeen"]  # type: ignore[no-any-return]
+
+    ten_minutes_ago = now_ms() - 10 * 60_000
+    set_last_seen(ten_minutes_ago)
+    assert rig.client.get(f"{V1}/me", headers=headers).status_code == 200
+    marked = last_seen()
+    assert marked > ten_minutes_ago + 9 * 60_000, "a request after a long silence marks the device as seen now"
+
+    half_a_minute_ago = now_ms() - 30_000
+    set_last_seen(half_a_minute_ago)
+    assert rig.client.get(f"{V1}/me", headers=headers).status_code == 200
+    assert last_seen() == half_a_minute_ago, "a request less than a minute after the last mark writes nothing"
+
+    set_last_seen(now_ms() - 61_000)
+    assert rig.client.get(f"{V1}/me", headers=headers).status_code == 200
+    assert last_seen() > now_ms() - 30_000, "a request more than a minute after the last mark marks the device again"
+    assert rig.person_of("nina")["lastSeen"] == last_seen(), "the owner's list shows when the person was last here"
 
 
 def test_locking_a_person_signs_their_devices_out_and_unlocking_lets_them_back(rig: Rig) -> None:
@@ -247,6 +287,7 @@ def test_locking_a_person_signs_their_devices_out_and_unlocking_lets_them_back(r
 
 
 def test_the_last_owner_cannot_be_demoted_locked_or_removed_and_nobody_locks_themselves(rig: Rig) -> None:
+    """AC-27: the last owner cannot be demoted, locked or removed, and nobody locks themselves out."""
     marwa = rig.person_of("marwa")["id"]
 
     assert rig.client.patch(f"{V1}/people/{marwa}", params=creds("marwa"), json={"role": "member"}).status_code == 409
@@ -262,6 +303,7 @@ def test_the_last_owner_cannot_be_demoted_locked_or_removed_and_nobody_locks_the
 
 
 def test_removing_a_person_removes_their_account_and_everything_they_had(rig: Rig) -> None:
+    """AC-26: removing a person deletes their account, library, history and devices."""
     nina = rig.person_of("nina")["id"]
     rig.client.post(f"{V1}/playlists", params=creds("nina"), json={"id": "pl_" + "1" * 26, "name": "Mine"})
 
@@ -277,6 +319,7 @@ def test_removing_a_person_removes_their_account_and_everything_they_had(rig: Ri
 
 
 def test_a_forgotten_password_is_reset_with_a_link_the_owner_sends(rig: Rig) -> None:
+    """AC-6, AC-24: an owner's reset link sets a new password, signs the old devices out, gives one new device, and works once."""
     old_token = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).json()["deviceToken"]
     nina = rig.person_of("nina")["id"]
     reset = rig.client.post(f"{V1}/people/{nina}/reset", params=creds("marwa"))
@@ -293,6 +336,7 @@ def test_a_forgotten_password_is_reset_with_a_link_the_owner_sends(rig: Rig) -> 
 
 
 def test_a_reset_link_expires_and_a_new_one_cancels_the_old(rig: Rig) -> None:
+    """AC-24: a reset link expires, and a newer link cancels the older one."""
     nina = rig.person_of("nina")["id"]
     first = rig.client.post(f"{V1}/people/{nina}/reset", params=creds("marwa")).json()["reset"]["code"]
     second = rig.client.post(f"{V1}/people/{nina}/reset", params=creds("marwa")).json()["reset"]["code"]
@@ -306,6 +350,7 @@ def test_a_reset_link_expires_and_a_new_one_cancels_the_old(rig: Rig) -> None:
 
 
 def test_changing_your_own_password_needs_the_old_one_and_signs_the_other_devices_out(rig: Rig) -> None:
+    """AC-25: changing your own password needs the old one and signs the other devices out."""
     here = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).json()["deviceToken"]
     elsewhere = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).json()["deviceToken"]
 
@@ -334,6 +379,7 @@ def test_a_person_can_change_their_name_and_the_explicit_setting(rig: Rig) -> No
 
 
 def test_five_tries_a_minute_for_one_name_and_then_a_wait_that_says_how_long(rig: Rig) -> None:
+    """CN-26: five wrong tries a minute for one name, then a wait that says how long."""
     attempts = [rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "wrong"}) for _ in range(7)]
 
     assert [a.status_code for a in attempts] == [401] * 5 + [429] * 2
@@ -341,7 +387,7 @@ def test_five_tries_a_minute_for_one_name_and_then_a_wait_that_says_how_long(rig
 
 
 def test_wrong_passwords_never_lock_an_account_or_sign_out_its_phones(rig: Rig) -> None:
-    """AUDIT B2: twenty wrong guesses used to lock the account and sign out every device, which let a stranger lock the only owner out of his own
+    """AC-21: AUDIT B2: twenty wrong guesses used to lock the account and sign out every device, which let a stranger lock the only owner out of his own
     server. Wrong passwords are slowed (see test_public_edge), never punished; a lock is only an owner's own act."""
     accounts: Accounts = rig.client.app.state.services.accounts  # type: ignore[attr-defined]
     token = rig.client.post(f"{V1}/auth/login", json={"username": "nina", "password": "pw-nina"}).json()["deviceToken"]
@@ -355,6 +401,7 @@ def test_wrong_passwords_never_lock_an_account_or_sign_out_its_phones(rig: Rig) 
 
 
 def test_a_name_nobody_has_is_not_counted_or_locked(rig: Rig) -> None:
+    """AC-21: a name nobody has is neither counted nor locked."""
     accounts: Accounts = rig.client.app.state.services.accounts  # type: ignore[attr-defined]
 
     for _ in range(25):
@@ -364,6 +411,7 @@ def test_a_name_nobody_has_is_not_counted_or_locked(rig: Rig) -> None:
 
 
 def test_a_server_that_cannot_make_accounts_says_so_instead_of_failing(tmp_path: Path, verifier: FakeVerifier) -> None:
+    """IV-7: a server whose music server cannot make accounts says so in a sentence instead of failing."""
     settings = Settings(
         data_dir=tmp_path / "data", music_dir=tmp_path / "m", navidrome_url="http://navidrome.invalid", youtube=False
     )

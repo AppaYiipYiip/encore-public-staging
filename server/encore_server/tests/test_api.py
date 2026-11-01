@@ -41,6 +41,7 @@ class TestInfoAndErrors:
 
 class TestSigningIn:
     def test_the_music_servers_login_works_as_it_does_today(self, client: TestClient) -> None:
+        """AC-4: a login that already exists in the music server works as it does today, with its role."""
         assert client.get(f"{V1}/me", params=creds("marwa")).json()["role"] == "owner"
         assert client.get(f"{V1}/me", params=creds("nina")).json()["role"] == "member"
 
@@ -49,6 +50,7 @@ class TestSigningIn:
         assert response.status_code == 401 and response.json()["error"]["code"] == "unauthorized"
 
     def test_signing_in_gives_a_device_token_and_never_stores_the_password(self, client: TestClient, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        """AC-20: signing in makes the person active with a device token of their own; the password is never stored."""
         response = client.post(f"{V1}/auth/login", json={"username": "marwa", "password": "pw-marwa", "deviceName": "Pixel 8"})
         body = response.json()
         assert response.status_code == 200 and body["deviceToken"].startswith("ed_")

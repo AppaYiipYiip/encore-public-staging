@@ -174,6 +174,8 @@ def test_a_song_whose_video_is_known_is_not_searched_for(rig) -> None:  # type: 
 def test_what_goes_wrong_is_one_error_with_words(
     tmp_path: Path, verifier: FakeVerifier, code: str, status: int, error: str, reason: str | None
 ) -> None:
+    """PB-13, PB-14: a removed song and an age check each answer 404 song_unavailable with their own reason."""
+
     def extract(video_id: str, path: Path) -> None:
         raise DownloadError(code)
 
@@ -192,6 +194,7 @@ def test_what_goes_wrong_is_one_error_with_words(
 
 
 def test_a_song_nothing_matches_is_song_unavailable(tmp_path: Path, verifier: FakeVerifier) -> None:
+    """PB-12: a song YouTube does not have answers 404 song_unavailable, reason not_found."""
     source = Source(tmp_path / "work", found=[])
     settings = Settings(
         data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
@@ -220,7 +223,29 @@ def test_a_slow_start_is_a_504_with_a_sentence(tmp_path: Path, verifier: FakeVer
     assert body["code"] == "upstream_timeout" and body["retryable"] is True
 
 
+def test_any_other_failure_is_one_plain_sentence(tmp_path: Path, verifier: FakeVerifier) -> None:
+    """PB-17: a failure nobody planned for answers 502 source_unreachable with one plain sentence, never the raw error."""
+
+    def extract(video_id: str, path: Path) -> None:
+        raise DownloadError("a_failure_nobody_planned_for")
+
+    source = Source(tmp_path / "work", extract=extract)
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
+    )
+    with TestClient(create_app(settings, verifier=verifier, youtube=source)) as client:  # type: ignore[arg-type]
+        ref = str(resolve(client, "marwa", song())[0]["id"])
+        response = client.get(address(client, ref))
+
+    assert response.status_code == 502
+    body = response.json()["error"]
+    assert body["code"] == "source_unreachable" and body["message"] == "The song could not be fetched. Try again."
+    assert "nobody_planned_for" not in response.text, "the raw failure never reaches the phone"
+
+
 def test_a_server_without_youtube_says_so(client: TestClient) -> None:
+    """PB-18: a server with no YouTube (switched off, or its libraries missing) says so in one sentence."""
     ref = str(resolve(client, "marwa", song())[0]["id"])
     response = client.get(address(client, ref))
     assert response.status_code == 502 and response.json()["error"]["code"] == "source_unreachable"
+    assert response.json()["error"]["message"] == "This server cannot fetch songs from YouTube."

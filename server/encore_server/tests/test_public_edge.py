@@ -151,6 +151,7 @@ def test_the_wait_ends(rig: Rig) -> None:
 
 
 def test_one_address_trying_many_names_is_cut_off_too(rig: Rig) -> None:
+    """CN-26: thirty wrong answers an address a minute, whatever the names, then a wait."""
     answers = [rig.wrong(f"person{i}", i, address=STRANGER).status_code for i in range(40)]
 
     assert answers.count(401) == 30 and answers.count(429) == 10, "thirty wrong answers an address a minute, whatever the names"
