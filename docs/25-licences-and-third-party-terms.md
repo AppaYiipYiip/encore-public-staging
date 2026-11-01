@@ -18,9 +18,9 @@ P5-06 and this table corrected.
 | FFmpeg | LGPL-2.1+ or GPL depending on the build (*verify the build used*) | inside the server image (remux, loudness, transcoding) | notice + source offer for the exact build |
 | mutagen (tags) | GPL-2.0-or-later | server | compatible with GPL-3.0 |
 | FastAPI / Starlette / uvicorn | MIT / BSD-3 / BSD-3 | server | notice |
-| `cryptography` (Python) | Apache-2.0 OR BSD-3-Clause | server (**planned**, ADR-R40: the server's Ed25519 key); wheels for manylinux x86-64 and aarch64 | notice; compatible with GPL-3.0 |
-| `cryptography` (Dart) | Apache-2.0 | app (**planned**, ADR-R40: verifying the server's signature; also runs on web) | notice |
-| Tailscale client | BSD-3-Clause | optional sidecar container | notice |
+| `cryptography` (Python) | Apache-2.0 OR BSD-3-Clause | server (in use, ADR-R40: the server's Ed25519 key; `pyproject.toml`); wheels for manylinux x86-64 and aarch64 | notice; compatible with GPL-3.0 |
+| `cryptography` (Dart) | Apache-2.0 | app (in use, ADR-R40: verifying the server's signature, `server_identity.dart`; also runs on web) | notice |
+| Tailscale client | BSD-3-Clause | optional; installed on the Host's computer by `encore funnel on` when it is absent (ADR-R25), not a container | notice |
 | Lidarr | GPL-3.0 | optional container (quality tier), unmodified | link source |
 | slskd | AGPL-3.0 (*verify*) | optional container, unmodified | link source; unmodified use triggers no extra duty |
 | Soularr | *verify* | optional container | as its licence requires |

@@ -161,12 +161,14 @@ Nothing to fill. Shows the computer's name and that it is ready.
   Encore uses a free Tailscale account to give your server a safe web address. No router settings.
      1. Create a free Tailscale account          [ Open Tailscale ]   ✓ done
      2. Turn on two settings (2 clicks)          [ Show me how ]      (screenshots in a side panel)
-     3. Paste the key Tailscale gives you        [ ______________ ]
+     3. Sign in to Tailscale on this computer    (a link opens; there is no key to paste)
                                                  [ Check ]  → ✓ Your address: https://our-music.tail1234.ts.net
                                              [ Do this later ]  [ Continue ]
 ```
-* The check is automatic and explains failures ("The key was already used — make a new one"). The 180-day key expiry is turned off
+* The check is automatic and explains failures (today `encore funnel on` says "It needs HTTPS and Funnel enabled for your tailnet"). The 180-day key expiry is turned off
   in step 2's instructions; the admin warns 14 days before if not.
+* Since ADR-R25 there is no key and no second Tailscale node: the sign-in is the one of the computer's own Tailscale (`encore funnel on` shows the link and installs Tailscale
+  if it is absent). **OPEN (needs owner/advisor):** whether this page runs that step itself or shows the Host the command `encore funnel on` to run on the computer.
 
 ### Page 7 — Friends on other Encore servers   *Step 6 of 8* (optional, **Yes preselected**)
 ```

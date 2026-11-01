@@ -23,13 +23,13 @@ What runs where, how the parts talk, and why each choice beats the alternatives.
                                                                    │   └─ encore.db (SQLite)                                     │
                                                                    │  navidrome  (container, not published)                     │
                                                                    │   files → scan → Subsonic API, streaming, transcoding      │
-                                                                   │  tailscale  (optional container: public HTTPS → gateway)   │
+                                                                   │  tailscale  (no container: public HTTPS → gateway)         │
                                                                    │  /music (the Host's folder; kept songs in /music/Encore/)  │
                                                                    └──────────────────────────────────────────────────────────┘
                                          YouTube / YouTube Music, Deezer API, LRCLIB (lyrics), MusicBrainz (tags)
 ```
 
-Two containers by default (+ Tailscale for away from home; + Lidarr, slskd, Soularr when the Host switches the quality tier on).
+Two containers by default (+ the computer's own Tailscale for away from home, which is not a container; + Lidarr, slskd, Soularr when the Host switches the quality tier on).
 One published port. One database file plus Navidrome's own.
 
 ## 2. Server: one program with modules (ADR-R3)
@@ -207,9 +207,11 @@ only route. A new client should need no server change beyond ordinary additions 
 
 ## 9. Remote access (unchanged choice, new shape)
 
-Tailscale Funnel sidecar publishes **only the gateway** (`serve.json` → `encore-server:4533`). The wizard guides the two console
-clicks and the key; health checks key expiry. Caddy with a domain stays an Advanced option. The websocket and audio streaming go
-through the same address (verify websockets through Funnel: experiment X-7).
+Tailscale Funnel publishes the Encore server's port. `encore funnel on` uses the computer's own Tailscale (installing it if it is absent):
+**no sidecar container and no auth key** (`11` ADR-R25). The Encore server decides what a request from the public internet may reach: of the
+music server it passes on only the Subsonic API under `/rest/` (S1, B12; `gateway.py`). The wizard (planned) guides the two console clicks and
+the sign-in; health checks the expiry of the computer's Tailscale sign-in. Caddy with a domain stays an Advanced option. The websocket and audio
+streaming go through the same address (verify websockets through Funnel: experiment X-7).
 
 ## 10. Many people at once: the rules that prevent spaghetti (ADR-R8)
 

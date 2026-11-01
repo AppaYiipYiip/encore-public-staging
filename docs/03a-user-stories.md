@@ -15,9 +15,9 @@ setup in my browser, so that I don't need to understand Docker. Every page is dr
 * Works on Ubuntu/Debian on x86-64 and ARM64; the guide says which systems were actually tested.
 
 **US-02 Host sets up away-from-home.** As a Host, I want my family to listen outside the house without opening router ports.
-* The wizard walks through Tailscale Funnel with screenshots and one pasted key; it checks the result itself and shows the public
+* The wizard walks through Tailscale Funnel with screenshots and one sign-in (there is no key to paste, `11` ADR-R25); it checks the result itself and shows the public
   address.
-* It warns 14 days before the Tailscale key would expire and says how to stop it from expiring.
+* It warns 14 days before the computer's Tailscale sign-in would expire and says how to stop it from expiring.
 
 **US-03 Host invites someone.** As a Host, I want to invite a person with a link or a QR code, so that they never type an address.
 * "Invite" on the admin page and in the app makes a link + QR, valid 7 days, usable once.
