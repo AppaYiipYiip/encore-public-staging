@@ -55,3 +55,5 @@ Encore has no Google push (no central service, by design), so delivery depends o
 Channels (each switchable in Settings → Notifications): Playback (required by Android), Downloads, Imports, Friends & Jams, New
 releases (one daily digest, never one per song), Server (owners only: "needs you" items, `22` §5). Permission is asked the first time a
 channel would notify (P1-12).
+
+**OPEN (needs owner/advisor):** ADR-R44 (`11`) allows at most two opt-in notification categories, both off by default; this section still lists six channels; the app (`notifications_screen.dart`) has three switches (New on your server, New releases you do not have, Imports and requests) and `tasks/AUDIT.md` F29 plans a fourth. Decide how many opt-in categories there are, then bring this section and the screen to that number.

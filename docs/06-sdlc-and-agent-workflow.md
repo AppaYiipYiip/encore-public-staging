@@ -49,6 +49,8 @@ and the evidence. It must:
    unhandled offline/slow states, secrets in logs, a test that would pass even if the feature were broken.
 4. Approve, or request changes with exact repro steps.
 
+**OPEN (needs owner/advisor):** `tasks/RELEASE-CANDIDATE.md` section 1 holds rules that are not written here, in `AGENTS.md` or in `30`: a row passes only when it was walked on the release-candidate pair; merge only when every check has finished, polled by run id, and confirm `main`'s own run before the next step; freeze `main` once the owner is told a build is ready; advisor checkpoints before a pull request's design, before a merge, before scoring a walk and before telling the owner anything is ready. This section says a reviewing agent is never the author, while that practice is the advisor's go. Decide whether those rules become rules for every change (and are copied into `AGENTS.md`) or stay the release candidate's own.
+
 ## 5. Rules for implementing agents (copy into `AGENTS.md`)
 
 * Read, in order: `docs/README.md`, the task section, the stories it cites, `04` for the area, `07` §1–3. Do not read old docs

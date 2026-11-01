@@ -2,6 +2,13 @@
 
 What the audit found between the markdown files and the code. **Verified by the agents against a tree that was main plus the phone batch**; a few findings were fixed afterwards (state rows, #80 and #81). The fix pass was cut short by the usage limit: work through the items in small documentation pull requests, verify each against the code first, and when a fix needs a product decision leave it as `OPEN (needs owner/advisor)`. The list of places that name the owner's machines or first name (input for a later scrub) is deliberately not here; find it with a search when the owner decides to scrub.
 
+## Status 2026-11-01 (the coherence pass of `CLOUD-RESUME.md`, phase 2)
+
+* **Done, merged:** slice 1 items 1 (#92), 2 (#98), 3 (#92), 5 (#99), 6 (#92), 7 (#98), 8 (#98), 10 (#98), 11 (#96; `05` line 56 not touched), 17 (#94) and the first part of 15 (#94: the ADR range, the decisions pointer); slice 2 items 3 (#93), 5 and 6 for the backend review only (#100), 7 for the numbers that were checked (#92, #95), 9 for the README features (#103), CN-27 (#98) and the server path (#94).
+* **Waits for the phone batch (PR #91 merged):** slice 1 item 14; slice 2 items 1, 2 and 4. They describe behaviour that is in the batch, so they cannot say Built before it lands.
+* **OPEN (needs owner/advisor), written in the document concerned:** slice 1 items 11 (the wizard page, `15`), 13 (tablets, `08`), 15 (rows for D-21, D-22 and D-45 to D-47, `10`) and 16 (merge and pass rules, `06`); slice 2 item 8 (notification switches, `23`).
+* **Not done:** the other items of slice 1 (4, 9, 12, 18 to 29) and of slice 2 (10, and the status cells of `RELEASE-CANDIDATE.md` and `AUDIT.md` in items 5 and 6). None needs a decision; they are for a later pass.
+
 ---
 
 ## Slice 1: docs 01 to 22, README, AGENTS

@@ -64,6 +64,7 @@ P4-07 Encore Connect (devices, handover, remote volume) · P4-08 home-server rel
 P4-09 connecting with people on other servers (federation core) · P4-10 Jam across servers, sharing, collaborative playlists · P4-11 tablets and large screens ·
 P4-12 Spotify-class extras · P4-13 problem reports and battery-saver guidance · P4-14 "Wrong song?" and metadata fixes · P4-15 Browse, history and playlist details.
 Design: `13`, `14`, `16`, `19`, `20`.
+**OPEN (needs owner/advisor):** D-18 (`10`) parks tablet-specific layouts, yet P4-11 above, `03` (the v1 features), `03a` US-75 and `14` U1 still plan a tablet layout, and `14` U1 notes that Android 16 shows a stretched phone layout on large screens anyway. Decide: keep P4-11 (and read D-18 as "no separate drawings first"), or move it to P6 (`tasks/P6-later.md`) and say what a tablet shows meanwhile.
 **Exit:** US-60 … US-64 and US-70 … US-76 pass as journeys (incl. J-15 … J-20 of `14` section 3) on profiles A and B with two people on two emulators; recommendations judged by the owner
 on his own account after a week of listening ("does Home know me?"); the quality tier upgrades a kept song on the dev VM without
 moving any like, playlist entry or resume position.
