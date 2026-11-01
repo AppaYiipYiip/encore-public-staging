@@ -94,6 +94,32 @@ void main() {
       expect(all.single.releaseId, 'cat:1');
     });
 
+    test(
+        'a song that two downloaded releases share belongs to both: neither loses its entry',
+        () async {
+      // A single and the album that holds the same song: the person downloaded both. The single is the older one, so the album is the one
+      // that was written down last; the song must not be taken by the album alone, or the single would not be listed at all.
+      const single = PhoneRelease(
+        refIds: ['sr_1'],
+        title: 'Weird Fishes (single)',
+        artist: 'Radiohead',
+        download: true,
+      );
+      await ReleaseStore(db, serverId).put('cat:1', single);
+      await ReleaseStore(db, serverId).put('cat:2', release);
+      await repo.pin(PinTargetType.track, 'sr_1');
+      await repo.pin(PinTargetType.track, 'sr_2');
+
+      final all = await entries();
+
+      expect(all.map((e) => e.releaseId), unorderedEquals(['cat:1', 'cat:2']),
+          reason: 'one entry for each downloaded release, once');
+      expect(all.firstWhere((e) => e.releaseId == 'cat:1').releaseRefIds,
+          ['sr_1']);
+      expect(all.firstWhere((e) => e.releaseId == 'cat:2').releaseRefIds,
+          ['sr_1', 'sr_2']);
+    });
+
     test('a song downloaded on its own stays a song', () async {
       await ReleaseStore(db, serverId).put('cat:1', release);
       await repo.pin(PinTargetType.track, 'sr_1');
