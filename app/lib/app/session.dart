@@ -173,13 +173,21 @@ class ServerSession {
           return probe;
         });
 
+    // The addresses whose last answer was the key of another server (docs/31 CN-11, O-6): the strip names one when none proves itself.
+    final answeredWrong = <Uri>{};
     endpoints = EndpointResolver(
       candidates: candidates,
       requireVerified: verifyAddresses,
+      anotherServers: () => answeredWrong,
       probe: (base) async {
         if (verifyAddresses) {
           // Nothing secret is sent: a public question with a fresh challenge. Only an address that proves it is the server is ever used.
           final proof = await identity.check(base, expectedId: pinned);
+          if (proof.verdict == EndpointVerdict.wrongKey) {
+            answeredWrong.add(base);
+          } else {
+            answeredWrong.remove(base);
+          }
           final learned = proof.serverId;
           if (proof.verdict == EndpointVerdict.verified &&
               learned != null &&

@@ -20,6 +20,7 @@ class _Jam extends JamController {
 void main() {
   late StreamController<NetworkKind> network;
   late StreamController<bool> reachable;
+  late StreamController<Uri?> another;
   late ProviderContainer container;
 
   ProviderContainer open({
@@ -29,6 +30,7 @@ void main() {
   }) {
     network = StreamController<NetworkKind>.broadcast();
     reachable = StreamController<bool>.broadcast();
+    another = StreamController<Uri?>.broadcast();
     final overrides = <Override>[
       connectionGraceProvider.overrideWithValue(grace),
       connectionShownForProvider.overrideWithValue(shownFor),
@@ -41,6 +43,10 @@ void main() {
         yield true;
         yield* reachable.stream;
       }),
+      anotherServerAtProvider.overrideWith((ref) async* {
+        yield null;
+        yield* another.stream;
+      }),
       jamControllerProvider.overrideWith(_Jam.new),
     ];
     container = ProviderContainer(overrides: overrides);
@@ -48,6 +54,7 @@ void main() {
       container.dispose();
       await network.close();
       await reachable.close();
+      await another.close();
     });
     container.listen(connectionProblemProvider, (_, __) {});
     container.listen(connectionStripProvider, (_, __) {});
@@ -113,6 +120,76 @@ void main() {
     await wait(80);
 
     expect(problem(), ConnectionProblem.serverUnreachable);
+  });
+
+  group('CN-11, O-6: an address that answers as another server', () {
+    final impostor = Uri.parse('http://192.168.1.10:4533');
+
+    test(
+        'has a problem of its own, not the sentence of a server that does not answer',
+        () async {
+      open();
+      await wait(20);
+
+      another.add(impostor);
+      reachable.add(false);
+      await wait(80);
+
+      expect(problem(), ConnectionProblem.anotherServer);
+    });
+
+    test('a server that does not answer, and nobody else, stays that',
+        () async {
+      open();
+      await wait(20);
+
+      reachable.add(false);
+      await wait(80);
+
+      expect(problem(), ConnectionProblem.serverUnreachable);
+    });
+
+    test('no internet comes before it: that is the reason', () async {
+      open();
+      await wait(20);
+      another.add(impostor);
+      reachable.add(false);
+      await wait(80);
+
+      network.add(NetworkKind.none);
+      await wait(20);
+
+      expect(problem(), ConnectionProblem.offline);
+    });
+
+    test('it goes at once when the server is found again', () async {
+      open();
+      await wait(20);
+      another.add(impostor);
+      reachable.add(false);
+      await wait(80);
+      expect(problem(), ConnectionProblem.anotherServer);
+
+      another.add(null);
+      reachable.add(true);
+      await wait(20);
+
+      expect(problem(), ConnectionProblem.none);
+    });
+
+    test('it is said once like any outage, and the cross puts it away',
+        () async {
+      open();
+      await wait(20);
+      another.add(impostor);
+      reachable.add(false);
+      await wait(80);
+      expect(strip(), ConnectionProblem.anotherServer);
+
+      container.read(connectionStripProvider.notifier).dismiss();
+
+      expect(strip(), ConnectionProblem.none);
+    });
   });
 
   group(

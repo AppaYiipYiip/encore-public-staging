@@ -90,12 +90,13 @@ void main() {
       {String? pinned,
       SigningIdentity? signer,
       String? claimId,
-      bool encore = false}) async {
+      bool encore = false,
+      String host = 'home.test'}) async {
     db = AppDatabase(NativeDatabase.memory());
     final id = await db.into(db.servers).insert(ServersCompanion.insert(
           name: 'Home',
           username: 'tester',
-          endpointsJson: '[{"label":"Home","url":"http://home.test:4540"}]',
+          endpointsJson: '[{"label":"Home","url":"http://$host:4540"}]',
           capabilitiesJson: Value(jsonEncode({
             if (pinned != null) 'serverId': pinned,
             if (encore) 'encore': true,
@@ -178,6 +179,42 @@ void main() {
       expect(carriesACredential(request), isFalse);
       expect('${request.data}', isNot(contains('hunter2')));
     }
+  });
+
+  test(
+      'CN-11: the address that answered as another server is named, so the person can be told',
+      () async {
+    await start(
+        pinned: await real.id(), signer: other, claimId: await real.id());
+
+    await session.endpoints.resolve();
+
+    expect(session.endpoints.anotherServerAt?.host, 'home.test');
+  });
+
+  test(
+      'CN-11: an address that does not answer at all is not named as another server',
+      () async {
+    await start(pinned: await real.id(), signer: real, host: 'gone.invalid');
+
+    await session.endpoints.resolve();
+
+    expect(session.endpoints.isKnownUnreachable, isTrue);
+    expect(session.endpoints.anotherServerAt, isNull);
+  });
+
+  test(
+      'CN-11: the server that proves its key is never named, and what was named before is forgotten',
+      () async {
+    await start(pinned: await real.id(), signer: other);
+    await session.endpoints.resolve();
+    expect(session.endpoints.anotherServerAt, isNotNull);
+
+    door.signer = real; // the same address now answers as the server
+    await session.endpoints.resolve();
+
+    expect(session.endpoints.anotherServerAt, isNull);
+    expect(session.endpoints.isReachable, isTrue);
   });
 
   test(

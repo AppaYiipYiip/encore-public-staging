@@ -94,7 +94,7 @@ Every screen is drawn at **C**, **X** and **T** before one is built (M is the C 
 
 | ID | Screen | Today | States | Classes | |
 |----|--------|-------|--------|---------|---|
-| S-90 | **Connection strip**: one calm sentence for every outage (`../31` CN-1, D-45): "You're offline. Downloaded music still plays." or, with nothing downloaded, "You're offline. Nothing can play until you reconnect."; a Jam that is listening again: "Reconnecting to the Jam…" | `connection_banner.dart` | O, U and W all say the same sentence; Jam reconnecting; a cross to dismiss it, no Try again; said once per outage, gone by itself after 5 s | C, X, T | |
+| S-90 | **Connection strip**: one calm sentence for every outage (`../31` CN-1, D-45): "You're offline. Downloaded music still plays." or, with nothing downloaded, "You're offline. Nothing can play until you reconnect."; an address that answers as another server: "Another server answers at <host>." (O-6); a Jam that is listening again: "Reconnecting to the Jam…" | `connection_banner.dart` | O and U say the same sentence; W (another server answers) says "Another server answers at <host>." (`../31` O-6); Jam reconnecting; a cross to dismiss it, no Try again; said once per outage, gone by itself after 5 s | C, X, T | |
 | S-91 | **Failed edits** (`34`) | `failed_edits.dart` | E, one, several, retry | C | |
 | S-92 | **A permission is needed** (notifications, camera for a QR, storage) | platform, with our sentence before | asked, refused once, refused for ever (how to allow it) | C | |
 | S-93 | **Update needed** (the server needs a newer app, or the app a newer server) | `shrink_notice.dart` partly | the app is too old, the server is too old | C, X, T | |

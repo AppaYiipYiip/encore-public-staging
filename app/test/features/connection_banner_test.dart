@@ -69,6 +69,32 @@ void main() {
     await closeApp(tester, app.db);
   });
 
+  testWidgets(
+      'CN-11, O-6: an address that answers as another server is named, not hidden behind "You\'re offline"',
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      connectionGraceProvider.overrideWithValue(Duration.zero),
+      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      anotherServerAtProvider.overrideWith(
+          (ref) => Stream.value(Uri.parse('http://192.168.1.10:4533'))),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+
+    expect(
+        find.text('Another server answers at 192.168.1.10.'), findsOneWidget);
+    expect(find.textContaining("You're offline"), findsNothing,
+        reason: 'the phone is online: something answers, it is not the server');
+
+    await tester.tap(find.byTooltip('Dismiss'));
+    await settle(tester);
+
+    expect(find.textContaining('Another server answers'), findsNothing,
+        reason: 'said once, and put away with the cross');
+    await closeApp(tester, app.db);
+  });
+
   testWidgets('when everything works there is no strip at all', (tester) async {
     final app = await pumpApp(tester);
     await settle(tester);

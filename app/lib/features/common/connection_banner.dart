@@ -41,9 +41,17 @@ class _Strip extends ConsumerWidget {
     final offline = hasDownloads
         ? 'You\'re offline. Downloaded music still plays.'
         : 'You\'re offline. Nothing can play until you reconnect.';
+    final another = ref.watch(anotherServerAtProvider).value;
     final (icon, text) = switch (problem) {
       ConnectionProblem.offline => (Icons.cloud_off_rounded, offline),
       ConnectionProblem.serverUnreachable => (Icons.cloud_off_rounded, offline),
+      // A wrong key is not an outage and is not said as one (docs/31 O-6): the phone is online, and something that is not the server answers.
+      ConnectionProblem.anotherServer => (
+          Icons.gpp_maybe_rounded,
+          another == null
+              ? 'Another server answers at this address.'
+              : 'Another server answers at ${another.host}.'
+        ),
       ConnectionProblem.jamReconnecting => (
           Icons.groups_2_rounded,
           'Reconnecting to the Jam…'

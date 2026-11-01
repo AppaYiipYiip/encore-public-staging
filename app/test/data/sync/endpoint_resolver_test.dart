@@ -326,4 +326,86 @@ void main() {
       expect(r.currentUrl, home.url);
     });
   });
+
+  group('CN-11: an address that answers, but as another server (docs/31 O-6)',
+      () {
+    /// The probe says no to everything, and remembers which addresses said something wrong rather than nothing.
+    EndpointResolver watching(List<ServerEndpoint> candidates,
+        {Set<Uri> answeredWrong = const {},
+        Future<bool> Function(Uri)? probe}) {
+      return EndpointResolver(
+        candidates: candidates,
+        probe: probe ?? (_) async => false,
+        requireVerified: true,
+        anotherServers: () => answeredWrong,
+        delay: (_) async {},
+      );
+    }
+
+    test(
+        'a race that finds nobody names the address that answered with another key, and tells',
+        () async {
+      final r = watching([home, tail], answeredWrong: {tail.url});
+      final told = <Uri?>[];
+      r.anotherServer.listen(told.add);
+      expect(r.anotherServerAt, isNull, reason: 'nobody has looked yet');
+
+      await r.resolve();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(r.anotherServerAt, tail.url);
+      expect(told, [tail.url]);
+      expect(r.isReachable, isFalse);
+    });
+
+    test('nothing is named when the addresses simply did not answer', () async {
+      final r = watching([home, tail]);
+
+      await r.resolve();
+
+      expect(r.anotherServerAt, isNull);
+      expect(r.isKnownUnreachable, isTrue);
+    });
+
+    test(
+        'a race that finds the server names nobody, even if another address answered wrongly',
+        () async {
+      final r = watching([home, tail],
+          answeredWrong: {home.url}, probe: (base) async => base == tail.url);
+
+      await r.resolve();
+
+      expect(r.anotherServerAt, isNull,
+          reason: 'the server is reachable: there is nothing to warn about');
+      expect(r.isReachable, isTrue);
+    });
+
+    test('it is told once, not at every look', () async {
+      final r = watching([home], answeredWrong: {home.url});
+      final told = <Uri?>[];
+      r.anotherServer.listen(told.add);
+
+      await r.resolve();
+      await r.resolve();
+      await r.resolve();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(told, [home.url]);
+    });
+
+    test(
+        'a change of network forgets it: what answered at the old place says nothing about the new one',
+        () async {
+      final r = watching([home], answeredWrong: {home.url});
+      final told = <Uri?>[];
+      r.anotherServer.listen(told.add);
+      await r.resolve();
+
+      r.invalidate();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(r.anotherServerAt, isNull);
+      expect(told, [home.url, null]);
+    });
+  });
 }

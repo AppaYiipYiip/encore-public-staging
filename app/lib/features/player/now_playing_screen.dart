@@ -65,8 +65,7 @@ class NowPlayingScreen extends ConsumerWidget {
     final libraryRow = ref.watch(playingLibraryRowProvider(track)).value;
     final fromService = ref.watch(isServiceSongProvider(track));
     final waiting = fromService && libraryRow == null;
-    final serverAway = ref.watch(connectionProblemProvider) ==
-        ConnectionProblem.serverUnreachable;
+    final serverAway = ref.watch(connectionProblemProvider).serverIsAway;
     final sample = track.imageUrl != null && !track.fullSong && !fromService;
 
     return GestureDetector(

@@ -55,10 +55,12 @@ class EndpointResolver {
     this.stagger = const Duration(milliseconds: 350),
     this.probeTimeout = const Duration(seconds: 4),
     this.failuresBeforeReresolve = 2,
+    Iterable<Uri> Function()? anotherServers,
     Future<void> Function(Duration)? delay,
   })  : assert(candidates.isNotEmpty, 'at least one endpoint is required'),
         _candidates = List.of(candidates),
         _probe = probe,
+        _anotherServers = anotherServers,
         _delay = delay ?? Future<void>.delayed,
         _current = candidates.first,
         _verified = !requireVerified;
@@ -72,6 +74,10 @@ class EndpointResolver {
 
   final List<ServerEndpoint> _candidates;
   final Future<bool> Function(Uri base) _probe;
+
+  /// The addresses that answered with the key of another server, as far as the probe knows (docs/31 CN-11): read at the end of a race that
+  /// found nobody.
+  final Iterable<Uri> Function()? _anotherServers;
   final Future<void> Function(Duration) _delay;
   final Duration stagger;
   final Duration probeTimeout;
@@ -85,8 +91,11 @@ class EndpointResolver {
   int _consecutiveFailures = 0;
   bool _reachable = false;
   bool _knownDown = false;
+  Uri? _anotherServerAt;
   final StreamController<bool> _reachability =
       StreamController<bool>.broadcast();
+  final StreamController<Uri?> _anotherServer =
+      StreamController<Uri?>.broadcast();
 
   void _setReachable(bool value) {
     if (value) _knownDown = false;
@@ -112,6 +121,7 @@ class EndpointResolver {
     if (requireVerified) _verified = false;
     // What was learned about the old network says nothing about this one.
     _knownDown = false;
+    _setAnotherServer(null);
   }
 
   /// Adds addresses the server itself told this phone about (`GET /encore/api/v1/server`); known ones are left alone. They are only ever
@@ -125,6 +135,20 @@ class EndpointResolver {
 
   /// `true` once a probe has succeeded and until a full resolution fails.
   bool get isReachable => _reachable;
+
+  /// An address that **answered, but with the key of another server** (docs/31 CN-11), when the last race found no address that proves
+  /// itself; `null` when the server was found, when the addresses simply did not answer, before the first look and after the network changed.
+  /// The phone sends nothing to such an address, and says so (O-6).
+  Uri? get anotherServerAt => _anotherServerAt;
+
+  /// Emits whenever [anotherServerAt] changes.
+  Stream<Uri?> get anotherServer => _anotherServer.stream;
+
+  void _setAnotherServer(Uri? value) {
+    if (value == _anotherServerAt) return;
+    _anotherServerAt = value;
+    if (!_anotherServer.isClosed) _anotherServer.add(value);
+  }
 
   /// A look at every address found none that answers (the radio is on and there is no data, a captive Wi-Fi, the server is off), and
   /// nothing has worked since. Unlike `!isReachable` it is `false` before the first look and after the network changed: not knowing is not
@@ -181,6 +205,7 @@ class EndpointResolver {
     final winner = await completer.future;
     if (winner != null) {
       _verified = true;
+      _setAnotherServer(null);
       _setReachable(true);
       _consecutiveFailures = 0;
       if (winner != _current) {
@@ -192,6 +217,9 @@ class EndpointResolver {
       // Nothing proved itself: the last winner may now be somebody else's address (another network), so it is not used any more.
       if (requireVerified) _verified = false;
       _knownDown = true;
+      final wrong = _anotherServers?.call().toSet() ?? const <Uri>{};
+      _setAnotherServer(
+          raced.map((e) => e.url).where(wrong.contains).firstOrNull);
       _setReachable(false);
       Log.info('endpoint', 'no endpoint reachable');
     }
@@ -217,5 +245,6 @@ class EndpointResolver {
   Future<void> dispose() async {
     await _changes.close();
     await _reachability.close();
+    await _anotherServer.close();
   }
 }

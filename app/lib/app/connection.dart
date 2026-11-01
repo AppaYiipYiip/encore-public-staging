@@ -19,6 +19,17 @@ enum ConnectionProblem {
 
   /// A Jam lost its connection and is listening again.
   jamReconnecting,
+
+  /// An address answers, but with the key of **another server** (docs/31 CN-11, O-6): nothing is sent to it. Not "offline": the phone is
+  /// online and something is there, only it is not the person's server. D-45's one sentence is for an outage; this is a different thing.
+  anotherServer,
+}
+
+extension ConnectionProblemMeaning on ConnectionProblem {
+  /// The person's music server is away as far as the player is concerned: it does not answer, or somebody else does.
+  bool get serverIsAway =>
+      this == ConnectionProblem.serverUnreachable ||
+      this == ConnectionProblem.anotherServer;
 }
 
 /// How long a problem must last before it is shown: a blink of the network is
@@ -38,6 +49,17 @@ final serverReachableProvider = StreamProvider<bool>((ref) async* {
       () => session.endpoints.isReachable, session.endpoints.reachability);
 });
 
+/// The address that answered with another server's key while none proved itself (docs/31 CN-11), or `null`.
+final anotherServerAtProvider = StreamProvider<Uri?>((ref) async* {
+  final session = await ref.watch(sessionProvider.future);
+  if (session == null) {
+    yield null;
+    return;
+  }
+  yield* currentThenChanges<Uri?>(
+      () => session.endpoints.anotherServerAt, session.endpoints.anotherServer);
+});
+
 /// The current value, then every change, **without a gap between the two**.
 ///
 /// The first version yielded the current value and only then subscribed to the
@@ -47,10 +69,15 @@ final serverReachableProvider = StreamProvider<bool>((ref) async* {
 /// start from a share, when the answer arrives within milliseconds). Here the
 /// subscription comes first, so nothing announced after it is missed, and the
 /// current value is read after it, so nothing before it is either.
-Stream<bool> reachabilityStream(bool Function() current, Stream<bool> changes) {
-  late final StreamController<bool> out;
-  StreamSubscription<bool>? sub;
-  out = StreamController<bool>(
+Stream<bool> reachabilityStream(
+        bool Function() current, Stream<bool> changes) =>
+    currentThenChanges<bool>(current, changes);
+
+/// [reachabilityStream] for any value.
+Stream<T> currentThenChanges<T>(T Function() current, Stream<T> changes) {
+  late final StreamController<T> out;
+  StreamSubscription<T>? sub;
+  out = StreamController<T>(
     onListen: () {
       sub = changes.listen(out.add, onError: out.addError);
       out.add(current());
@@ -73,6 +100,7 @@ class ConnectionProblemNotifier extends Notifier<ConnectionProblem> {
     ref.onDispose(() => _timer?.cancel());
     ref.listen(networkKindProvider, (_, __) => _evaluate());
     ref.listen(serverReachableProvider, (_, __) => _evaluate());
+    ref.listen(anotherServerAtProvider, (_, __) => _evaluate());
     ref.listen(jamControllerProvider.select((j) => j.reconnecting && j.inJam),
         (_, __) => _evaluate());
     final first = _raw();
@@ -87,7 +115,9 @@ class ConnectionProblemNotifier extends Notifier<ConnectionProblem> {
       return ConnectionProblem.offline;
     }
     if (ref.read(serverReachableProvider).value == false) {
-      return ConnectionProblem.serverUnreachable;
+      return ref.read(anotherServerAtProvider).value != null
+          ? ConnectionProblem.anotherServer
+          : ConnectionProblem.serverUnreachable;
     }
     final jam = ref.read(jamControllerProvider);
     if (jam.inJam && jam.reconnecting) return ConnectionProblem.jamReconnecting;
@@ -149,7 +179,8 @@ class ConnectionStripNotifier extends Notifier<ConnectionProblem> {
 
   static bool _isOutage(ConnectionProblem p) =>
       p == ConnectionProblem.offline ||
-      p == ConnectionProblem.serverUnreachable;
+      p == ConnectionProblem.serverUnreachable ||
+      p == ConnectionProblem.anotherServer;
 
   @override
   ConnectionProblem build() {

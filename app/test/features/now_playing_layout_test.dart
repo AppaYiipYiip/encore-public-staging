@@ -81,6 +81,28 @@ void main() {
   });
 
   testWidgets(
+      'CN-11: a song that waits while another server answers at the address: the line says so, and the scrubber is dashed',
+      (tester) async {
+    final app = await pumpApp(tester,
+        playing: samplePlaying(isPlaying: false),
+        overrides: [
+          connectionGraceProvider.overrideWithValue(Duration.zero),
+          serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+          anotherServerAtProvider.overrideWith(
+              (ref) => Stream.value(Uri.parse('http://192.168.1.10:4533'))),
+        ]);
+    await openPlayer(tester);
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+
+    expect(
+        find.text('Another server answers at 192.168.1.10.'), findsOneWidget);
+    expect(tester.widget<Scrubber>(find.byType(Scrubber)).waiting, isTrue,
+        reason: 'the server is away for the player, whatever the strip says');
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
       'a song that plays while the server is away (a downloaded file) '
       'keeps the ordinary scrubber', (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying(), overrides: [
