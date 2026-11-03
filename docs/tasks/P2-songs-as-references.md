@@ -270,8 +270,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Do.** (1) Server: publish keep progress per pinned target on the live channel: counts of queued, fetching, ready and failed, and the YouTube
   rest state (`resumesInSec`), so "the server is pausing for YouTube until 21:40" reads as that and not as "stuck". (2) App: show both stages and
   the real reason for any wait on the places a person looks (the Library rows, the playlist or album header, Settings > Downloads & storage);
-  **drawn first**. (3) Notifications: ask for the permission once, in context, at the first Download, and only to show progress. This is the
-  owner's decision (asked 2026-11-03, pending): it switches on no news alert, and ADR-R44 is amended if he agrees. (4) A song that failed says
+  **drawn first**. (3) Notifications: ask for the permission once, in context, at the first Download, and only to show progress. Decided by the owner on 2026-11-03 (D-52: yes, once, at the first Download): it switches on no news alert, and ADR-R44 is amended by that one exception. (4) A song that failed says
   which one and why, with Retry.
 * **Don't.** Poll one request per song. Change the default of the news alerts.
 * **Acceptance.** Importing and downloading a 200-song playlist on a fresh install: at every moment a person can say how many songs the server

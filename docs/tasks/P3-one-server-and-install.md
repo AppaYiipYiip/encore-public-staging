@@ -60,6 +60,8 @@ installer and a browser wizard that a person who never used Docker can follow. R
   phone on the same Wi-Fi in ≤ 10 minutes (download speed noted).
 
 ## P3-06 — Setup wizard and admin pages — Size L
+
+* **Order (D-53, owner 2026-11-03):** after Jam (P4-02). The first friends use the terminal installer and the app.
 * **Paper first:** build exactly the pages of `../15` §2 and §4; first add drawings of each page in the design tokens with the
   illustrations of `../16` to the PR and get the owner's OK on the drawings before code. The setup code of `../15` §1 is required.
 * **Why.** US-01, US-02, US-03, US-40, US-42, US-51.

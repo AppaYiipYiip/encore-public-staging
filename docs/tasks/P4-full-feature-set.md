@@ -24,6 +24,7 @@ and activity).
   two people with different tastes on two emulators get different rows; the owner rates his own Home after a week.
 
 ## P4-02 — Jam on the live channel — Size L
+* **Order (D-53, owner 2026-11-03):** this goes first in P4 and **ahead of P3-06** (the browser wizard and admin pages). It needs P2-08 and P2-09 (the device model, server half built, app not wired) and the friend milestone P3-12 before it.
 * **Why.** US-61; finding C8 (today the Jam wraps every play).
 * **Context.** `packages/encore_session` (Jam engine, 145 tests) and the Dart hub worked end to end on two emulators (old journeys
   E-60, E-63) and had real bugs only two real phones found (B48, B49). Field-test expectation: the Jam *is* the normal player.

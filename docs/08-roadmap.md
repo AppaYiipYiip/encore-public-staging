@@ -55,6 +55,7 @@ P3-08 updates with rollback, yt-dlp freshness, backups, moving computers · P3-0
 P3-10 devices, settings and the Host's safety nets · P3-11 the Tinkerer's door · P3-12 the first outside user. Design: `15`, `21`, `22`, `26`.
 **Exit:** J-14 passes on a fresh Ubuntu 26.04 VM (x86) and on an ARM64 machine or VM, in ≤ 15 min; one published port; the admin
 Health page explains every state in plain words.
+**Order (D-53, owner 2026-11-03): P3-06, the browser setup wizard and admin pages (PC-only), comes after Jam (P4-02).** The first friends use the terminal installer and the app.
 
 ## P4 — Full feature set
 
@@ -64,6 +65,7 @@ P4-07 Encore Connect (devices, handover, remote volume) · P4-08 home-server rel
 P4-09 connecting with people on other servers (federation core) · P4-10 Jam across servers, sharing, collaborative playlists · P4-11 tablets and large screens (parked, D-18) ·
 P4-12 Spotify-class extras · P4-13 problem reports and battery-saver guidance · P4-14 "Wrong song?" and metadata fixes · P4-15 Browse, history and playlist details · P4-16 profiles on a shared device · P4-17 compare tastes (US-65, opt-in).
 Design: `13`, `14`, `16`, `19`, `20`.
+**Order (D-53, owner 2026-11-03): Jam (P4-02) goes first within this phase and ahead of P3-06.** It needs the device model (P2-08, P2-09) and the friend milestone (P3-12) before it.
 **Decided (advisor, 2026-11-01, reversible, D-48 a): D-18 holds everywhere.** Tablet-specific layouts are parked: P4-11 stays in `tasks/P4-full-feature-set.md` marked parked and is listed in `tasks/P6-later.md`; `03`, `03a` US-75, `14` U1 and ADR-R42 point 5 say so. The phone layout scales on a large screen (Android 16 shows it stretched anyway, `14` U1) until a tablet layout is asked for.
 **Exit:** US-60 … US-64 and US-70 … US-76 pass as journeys (incl. J-15 … J-20 of `14` section 3) on profiles A and B with two people on two emulators; recommendations judged by the owner
 on his own account after a week of listening ("does Home know me?"); the quality tier upgrades a kept song on the dev VM without

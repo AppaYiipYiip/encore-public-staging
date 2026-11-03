@@ -99,7 +99,7 @@ The owner installed the server from the guide (the installer's own count: **14 m
 
 | Id | Finding | Triage (D-29) | Where it goes |
 |----|---------|---------------|---------------|
-| R2-F2 | A download shows no progress a person can follow and no notification: the notification permission is never asked, and the server's 46-minute fetch stage is invisible (found by the owner) | **RC1** | P2-22; whether the app may ask once at the first Download is the owner's decision (ADR-R44 amended if he agrees) |
+| R2-F2 | A download shows no progress a person can follow and no notification: the notification permission is never asked, and the server's 46-minute fetch stage is invisible (found by the owner) | **RC1** | P2-22; the owner decided yes on 2026-11-03 (D-52): the app asks once at the first Download, ADR-R44 amended |
 | R2-F3 | Home shows "[Unknown Album]" cards for songs with no album | **RC1 for the display layer** (PR #136); the cause is later | The cause: the Spotify import reader carries title, artists and length only and builds no album, and nothing fills it in (the YouTube Music reader does read albums); fix = P2-12 (fill from a strong song match, tag the file, backfill, rescan), held until `b11` (D-51) |
 | R2-F4 | A new member sees the shared "New on the server" shelf at once | later | said in `docs/guides/friend.md` |
 | R2-F1 | After a wrong server address the error text stays under the corrected field | later | recheck with a real keyboard |
