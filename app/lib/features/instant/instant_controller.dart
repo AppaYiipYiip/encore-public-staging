@@ -182,6 +182,16 @@ final instantAvailableProvider = Provider<bool>(
   (ref) => ref.watch(instantBackendProvider).value != null,
 );
 
+/// Whether the old request portal (Settings > "Get new music", the Request chips, the download-service sheets) may be offered: only on a plain
+/// music server that has no instant-play service. **Never on an Encore server**, whatever "Play songs your server does not have" says: that switch
+/// decides how a tap plays, not which kind of server this is (AUDIT A-7, UX-REVIEW M3). Until it is known which kind of server this is, the
+/// portal is not offered.
+final requestPortalOfferedProvider = Provider<bool>((ref) {
+  final encore = ref.watch(onEncoreServerProvider);
+  if (!encore.hasValue || (encore.value ?? false)) return false;
+  return !ref.watch(instantAvailableProvider);
+});
+
 final instantPlayServiceProvider =
     FutureProvider<InstantPlayService?>((ref) async {
   final backend = await ref.watch(instantBackendProvider.future);

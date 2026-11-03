@@ -15,7 +15,7 @@ import '../../domain/audio_quality.dart';
 import '../common/format.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/storage_widgets.dart';
-import '../instant/instant_controller.dart' show instantAvailableProvider;
+import '../instant/instant_controller.dart' show requestPortalOfferedProvider;
 import '../instant/release_save.dart' show releaseSavesProvider;
 import 'diagnostics_screen.dart';
 import 'failed_edits.dart';
@@ -46,11 +46,11 @@ class _Group {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _filter = '';
 
-  List<_Group> _groups(bool instant) => [
+  List<_Group> _groups(bool portalOffered) => [
         ..._head,
         // Where a song can be played at once, "get new music" is the search;
-        // the download service is only for a server that has one.
-        if (instant)
+        // the download service is only for a plain server that has one (never an Encore server: AUDIT A-7).
+        if (!portalOffered)
           const _Group(
               Icons.notifications_none_rounded,
               'Notifications',
@@ -119,7 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final session = ref.watch(sessionProvider).value;
     final sync = ref.watch(syncStatusProvider).value ?? const SyncStatus();
     final f = _filter.trim().toLowerCase();
-    final all = _groups(ref.watch(instantAvailableProvider));
+    final all = _groups(ref.watch(requestPortalOfferedProvider));
     final groups = f.isEmpty
         ? all
         : all

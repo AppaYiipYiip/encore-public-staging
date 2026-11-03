@@ -1,5 +1,6 @@
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/instant/instant_controller.dart';
+import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/settings/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,10 +16,11 @@ void main() {
   setUpAll(loadAppFonts);
 
   Future<AppDatabase> openSettings(WidgetTester tester,
-      {bool instant = false}) async {
-    final app = await pumpApp(tester,
-        size: const Size(390, 1800),
-        overrides: [instantAvailableProvider.overrideWithValue(instant)]);
+      {bool instant = false, bool encore = false}) async {
+    final app = await pumpApp(tester, size: const Size(390, 1800), overrides: [
+      instantAvailableProvider.overrideWithValue(instant),
+      if (encore) onEncoreServerProvider.overrideWith((ref) async => true),
+    ]);
     final element = tester.element(find.byType(Scaffold).first);
     GoRouter.of(element).go('/settings');
     await settle(tester);
@@ -42,6 +44,18 @@ void main() {
       'where songs can be played at once there is no "download service": '
       'there is Notifications', (tester) async {
     final db = await openSettings(tester, instant: true);
+
+    expect(find.text('Get new music'), findsNothing);
+    expect(find.text('Notifications'), findsOneWidget);
+    await closeApp(tester, db);
+  });
+
+  testWidgets(
+      'on an Encore server the download service entry never comes back, '
+      'whatever the "Play songs your server does not have" switch says '
+      '(AUDIT A-7, M3)', (tester) async {
+    // The switch is off: no instant backend. It decides how a tap plays, not which kind of server this is.
+    final db = await openSettings(tester, instant: false, encore: true);
 
     expect(find.text('Get new music'), findsNothing);
     expect(find.text('Notifications'), findsOneWidget);

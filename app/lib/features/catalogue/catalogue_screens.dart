@@ -313,6 +313,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     final isPlaying = isCurrent && (snapshot?.isPlaying ?? false);
     final list = tracks.value ?? const <CatalogueTrack>[];
     final instant = ref.watch(instantAvailableProvider);
+    final portal = ref.watch(requestPortalOfferedProvider);
     final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final saves =
         encore ? ref.watch(releaseStateProvider('cat:$albumId')) : null;
@@ -365,7 +366,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                 releaseId: 'cat:$albumId',
                 encore: encore),
             CatalogueMoreMenu(artist: album.artistName, album: album.title),
-          ] else
+          ] else if (portal)
             RequestChip(artist: album.artistName, album: album.title),
           const Spacer(),
           PlayButton(
@@ -496,6 +497,7 @@ class CatalogueArtistScreen extends ConsumerWidget {
     final isPlaying = isCurrent && (snapshot?.isPlaying ?? false);
     final topList = top.value ?? const <CatalogueTrack>[];
     final instant = ref.watch(instantAvailableProvider);
+    final portal = ref.watch(requestPortalOfferedProvider);
     final encore = ref.watch(onEncoreServerProvider).value ?? false;
     final firstPlayable =
         topList.indexWhere((t) => instant || t.previewUrl != null);
@@ -516,7 +518,7 @@ class CatalogueArtistScreen extends ConsumerWidget {
         children: [
           if (instant)
             CatalogueMoreMenu(artist: artist.name)
-          else
+          else if (portal)
             RequestChip(artist: artist.name),
           const Spacer(),
           PlayButton(

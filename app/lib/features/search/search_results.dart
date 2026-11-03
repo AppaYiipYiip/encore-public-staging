@@ -324,6 +324,7 @@ class _CatalogueSongRow extends ConsumerWidget {
     final facade = ref.watch(playbackFacadeProvider);
     final playing = ref.watch(playbackSnapshotProvider).value;
     final instant = ref.watch(instantAvailableProvider);
+    final portal = ref.watch(requestPortalOfferedProvider);
     final status = ref.watch(instantStatusProvider(track.id));
     final isThis = playing?.track?.id == track.id ||
         (status?.track != null && playing?.track?.id == status!.track!.id);
@@ -395,7 +396,7 @@ class _CatalogueSongRow extends ConsumerWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
-            else if (!instant)
+            else if (portal)
               RequestChip(artist: track.artistName, album: track.albumTitle),
           ],
         ),
@@ -492,7 +493,7 @@ class _ArtistRow extends ConsumerWidget {
                   size: 18, color: context.colors.accent),
               label: const Text('In your library'),
             )
-          : (catalogue != null && !ref.watch(instantAvailableProvider)
+          : (catalogue != null && ref.watch(requestPortalOfferedProvider)
               ? RequestChip(artist: catalogue.name)
               : const SizedBox.shrink()),
     );
@@ -528,7 +529,7 @@ class _AlbumRow extends ConsumerWidget {
       subtitle: parts.join(' - '),
       onTap: () => _open(context, ref, hit, onOpen),
       // With the instant-play service a row is just a row; asking for the original files is on the release page (ADR-067).
-      trailing: catalogue != null && !ref.watch(instantAvailableProvider)
+      trailing: catalogue != null && ref.watch(requestPortalOfferedProvider)
           ? RequestChip(artist: catalogue.artistName, album: catalogue.title)
           : const SizedBox.shrink(),
     );

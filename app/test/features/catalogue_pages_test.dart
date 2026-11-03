@@ -1,8 +1,11 @@
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
+import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/requests/portal_client.dart';
 import 'package:encore/features/catalogue/catalogue_providers.dart';
 import 'package:encore/features/catalogue/catalogue_widgets.dart';
+import 'package:encore/features/instant/instant_controller.dart';
+import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -162,6 +165,91 @@ void main() {
       await settle(tester);
       expect(app.facade.calls.where((c) => c.startsWith('previews')), isEmpty);
       await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'on an Encore server no Request chip is offered, whatever the play '
+        'switch says (AUDIT A-7, M3)', (tester) async {
+      final app = await pumpApp(tester, overrides: [
+        catalogueClientProvider.overrideWithValue(_catalogue()),
+        requestBackendProvider.overrideWith((ref) async => _Portal()),
+        onEncoreServerProvider.overrideWith((ref) async => true),
+        instantAvailableProvider.overrideWithValue(false),
+      ]);
+
+      await search(tester, 'Taylor Swift');
+      expect(find.text('Request'), findsNothing, reason: 'the search results');
+      await tester.tap(find.text('Folklore'));
+      await settle(tester);
+
+      expect(find.text('Request'), findsNothing, reason: 'the album page');
+      await closeApp(tester, app.db);
+    });
+
+    // Artists and a song the library does not have: their rows and an artist's page are where the Request chips would be. The first artist
+    // is the Top result, the second one gets a row of its own.
+    Future<AppDatabase> openUnownedArtists(WidgetTester tester,
+        {required bool encore}) async {
+      const phoebe = CatalogueArtist(
+          id: '7', name: 'Phoebe Bridgers', fans: 500000, albumCount: 4);
+      const julien = CatalogueArtist(
+          id: '8', name: 'Phoebe Snow', fans: 300000, albumCount: 3);
+      final song = CatalogueTrack(
+        id: 't7',
+        title: 'Motion Sickness',
+        artistName: 'Phoebe Bridgers',
+        artistId: '7',
+        albumTitle: 'Stranger in the Alps',
+        albumId: '70',
+        duration: const Duration(minutes: 3, seconds: 49),
+        previewUrl: 'https://cdn/p7.mp3',
+      );
+      final c = FakeCatalogue(
+          CatalogueResults(artists: const [phoebe, julien], tracks: [song]))
+        ..artistsById['7'] = phoebe
+        ..artistsById['8'] = julien
+        ..topTracksByArtist['7'] = [song]
+        ..topTracksByArtist['8'] = [song];
+      final app = await pumpApp(tester, overrides: [
+        catalogueClientProvider.overrideWithValue(c),
+        requestBackendProvider.overrideWith((ref) async => _Portal()),
+        if (encore) onEncoreServerProvider.overrideWith((ref) async => true),
+        instantAvailableProvider.overrideWithValue(false),
+      ]);
+      await search(tester, 'Phoebe');
+      return app.db;
+    }
+
+    testWidgets(
+        'a plain server without the instant service still offers Request on '
+        'artists and songs (the control of the next test)', (tester) async {
+      final db = await openUnownedArtists(tester, encore: false);
+
+      expect(find.textContaining('releases'), findsOneWidget,
+          reason: 'the artist that is not the Top result has a row of its own');
+      expect(find.text('Request'), findsAtLeastNWidgets(2),
+          reason: 'on the song and on that artist');
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'on an Encore server artists and songs you do not have carry no '
+        'Request chip, in the results or on an artist page (AUDIT A-7, M3)',
+        (tester) async {
+      final db = await openUnownedArtists(tester, encore: true);
+
+      expect(find.textContaining('releases'), findsOneWidget,
+          reason: 'the artist row is there');
+      expect(find.text('Motion Sickness'), findsWidgets,
+          reason: 'and so is the song row');
+      expect(find.text('Request'), findsNothing, reason: 'the search results');
+      await tester.tap(find.textContaining('releases'));
+      await settle(tester);
+
+      expect(find.text('Popular'), findsWidgets,
+          reason: 'the artist page opened');
+      expect(find.text('Request'), findsNothing, reason: 'the artist page');
+      await closeApp(tester, db);
     });
 
     testWidgets('Request on the page sends artist and album', (tester) async {
