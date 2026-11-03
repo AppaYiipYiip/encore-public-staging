@@ -64,8 +64,7 @@ encore funnel on
 It installs Tailscale if the computer has none, shows a link to sign in, and then gives you an `https://…ts.net` address that works from
 anywhere. On an Encore server the signed-in phone learns that address from the server by itself when the app next starts, and invitation links
 use it (close and open Encore again; if you run a plain music server, add the address under *Your server > Add an address*). Your Tailscale account must have
-HTTPS and Funnel switched on (https://login.tailscale.com/admin/dns): if not, the command says so. **This step is written but has not been
-proven end to end yet**; tell me exactly what it printed.
+HTTPS and Funnel switched on (https://login.tailscale.com/admin/dns): if not, the command says so. **This step ran for real once, on 2026-11-03** (`docs/evidence/c05`): the command installed Tailscale, printed a sign-in link, and the public address answered; a phone on mobile data has not been tried. Tell me exactly what it printed.
 
 ## Looking after it
 

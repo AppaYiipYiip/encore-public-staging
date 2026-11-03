@@ -12,7 +12,7 @@ love on your own disk, and lets your family and friends listen too. No subscript
 * Brings your playlists over from Spotify or YouTube Music in seconds.
 * Resume a song at the same second on another device, and control one device from another (planned: the server already keeps the playback state, the app does not offer it yet).
 * Listen together with friends (Jam), also with friends who run their own Encore server (planned: the old Jam is not on the new server yet).
-* Works away from home without opening router ports (Tailscale Funnel).
+* Works away from home without opening router ports (Tailscale Funnel: proved once on the owner's own server on 2026-11-03, see `docs/evidence/c05`; not yet from a phone on mobile data).
 
 ## How it is organised
 
