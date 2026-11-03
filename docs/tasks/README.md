@@ -32,6 +32,6 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 ## Before any task
 
 * Work in the repository `encore/`.
-* The test servers: dev VM `encore-dev` (yours to change), CT 104 (read-only except test accounts). The owner's homelab: hands off.
+* The test server: VM 108 `encore-install-test` (yours to change). The old dev VM 106, VM 107 and CT 104 were destroyed on 2026-11-03. The owner's homelab: hands off.
 * Test accounts' login files: `..\local\logins\`. Type passwords only with
   `python -I tools/journeys/ui.py typefile PATH` (types only the `password:` line of a login file), never print them, never screenshot a visible password field.

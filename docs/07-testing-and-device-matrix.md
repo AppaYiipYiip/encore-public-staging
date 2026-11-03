@@ -20,7 +20,7 @@ guidance to do better testing, better examples."* This page is that guidance. It
 | Name | Server | Line (server side) | Phone |
 |------|--------|--------------------|-------|
 | **SLOW** | 2 vCPU, 2 GB VM (stand-in for a Raspberry Pi 4) | 10 Mbit/s down, 1 Mbit/s up, 40 ms (shaped with `tc … netem` on the VM) | Emulator 2 CPU, 2 GB, 720×1600, `-netspeed lte -netdelay umts` |
-| **TYPICAL** | 4 vCPU, 4 GB (the dev VM `encore-dev`) | the real home line (~18 Mbit/s down, ~7 up, shared with a family) | Emulator 4 CPU, 4 GB, 1080×2400 |
+| **TYPICAL** | 4 vCPU, 4 GB (measured on the former dev VM `encore-dev`, destroyed 2026-11-03; the test VM 108 has 3 GB, so its memory numbers run a little worse than TYPICAL) | the real home line (~18 Mbit/s down, ~7 up, shared with a family) | Emulator 4 CPU, 4 GB, 1080×2400 |
 | **REAL** | the dev VM | real line | the owner's phone + one friend's phone over the public address |
 
 A result reads: *"tap → audible, never-played songs, p50 2.4 s / p95 3.8 s / max 6.1 s, n=12 distinct songs, TYPICAL, build 0.2.0+47"*.
@@ -176,7 +176,7 @@ phone; play a song. Expect: ≤ 15 minutes; no Docker word on any screen; the gu
 | Same title, different artists | "Animals" (Pink Floyd) vs Animals as Leaders | matcher strictness |
 | Age-restricted | Overnight Celebrity (Remix) – Twista ft. … (`4uEUiodPr7E`) | honest failure |
 | Real playlists | YTM "'00s Hip Hop" (189); Spotify `3dEfExamplePlaylistC03` (100+ cap), `3dEfExamplePlaylistA01` (69) | import paths, 100 cap |
-| Accounts | `tester`, `nina`, `mia`, `friend` on CT 104 (login files in `..\local\logins\`); new test accounts on the dev VM made through invitations | real multi-user |
+| Accounts | new test accounts on the test VM, made through invitations (CT 104 and its accounts `tester`, `nina`, `mia`, `friend` were destroyed on 2026-11-03; the login files for them in `..\local\logins\` no longer work) | real multi-user |
 
 Fakes are fine inside unit tests for one rule; a journey passes only with real data made through the app (owner's rule).
 

@@ -98,8 +98,8 @@ and the evidence. It must:
 | Environment | What it is | May agents change it? |
 |-------------|-----------|------------------------|
 | CI runners | fresh each run | yes |
-| **dev VM** `encore-dev` (192.168.50.133, `ssh encore-dev`) | Encore's own test server on the owner's Proxmox | yes, freely; reinstall from scratch with the installer often |
-| **CT 104** `encore` (192.168.50.132) | the old Encore server the owner's phones used | read-only for comparisons; test accounts may play/import; no stack changes without the owner's go |
+| **test VM** `encore-install-test` (VM 108 on the owner's Proxmox; log in as `encore` at its LAN address, which the owner's host list shows) | Encore's own test server: the clean-install test by the guide and the QA rounds run here | yes, freely; reinstall from scratch with the installer often |
+| *(gone)* | **VM 106 (the old dev VM `encore-dev`), VM 107 and CT 104 were destroyed on 2026-11-03 with their backups**, at the owner's word, after their contents were read and recorded (the owner uses none of the old data). Older documents and evidence files that name them describe what was true when they were written | n/a |
 | Owner's homelab (CT 100–103, host timers, music library, dashboard `:8687`) | separate project | **no** (except what the owner explicitly asks) |
 | Emulators `encore_a07`, `encore_friend`, `encore_api36` | test phones | yes, any time (owner's standing permission) |
 
