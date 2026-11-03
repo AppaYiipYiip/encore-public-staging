@@ -385,7 +385,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   | Catalogue search, artist and album pages (Deezer) | `app/lib/data/catalogue/deezer_client.dart` | P2-12 (the catalogue module on the server) |
   | 30-second previews: the phone plays Deezer's file | `PreviewTrack.uri` in `features/catalogue/catalogue_widgets.dart` | P2-12 (a signed preview address from the server) |
   | New-release alerts in the background (Deezer) | `app/background_sync.dart` → `AlertsService` | P2-12, then the alert check on the server (`23` §4, notifications without push: P2-15) |
-  | Lyrics (LRCLIB) | `app/lib/data/api/lrclib_client.dart` | P2-14 (lyrics on the server) |
+  | Lyrics (LRCLIB) | `app/lib/data/api/lrclib_client.dart` | P2-14 (lyrics on the server): the **server half is built** (`lyrics.py`, `GET refs/{id}/lyrics`) on the branch `task/P2-14-lyrics-on-the-server`, merged after the release-candidate walk (`b11`); the app half follows it |
   | Cover pictures by an outside address (Deezer covers, an import's source picture) | `CachedNetworkImage` in `features/common/cover_art.dart` | Covers served by the server (the cover finder already stores `cover.jpg`); **whether Flutter web can load outside pictures is unchecked: check when the web client starts** |
 
 * **Consequences.** P6 "Web/desktop client" now lists these as prerequisites. The audio path needs no change for a browser (the server streams with Range support and signed

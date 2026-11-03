@@ -21,6 +21,7 @@ the owner's existing data or keep the old model alongside the new one forever.
 | `file_log` | seq, ref, at | which songs' files changed, in order: the feed of `GET /library/files?since=` |
 | `invite` / `reset_code` | id, code_hash, role, created_by, note, created_at, expires_at, used_by, used_at, revoked_at / id, person, code_hash, created_at, expires_at, used_at | `21`; only the hash of a code is kept, the code is shown once |
 | `notification` | id, person, kind (`release`, `jam`, `invite_used`, `import_done`), title, body, route, dedupe, created_at, read_at | the bell (ADR-R44): news kept per person and said in words, the same news told twice is made once |
+| `lyrics` | ref (the song reference), kind (`synced`, `plain`, `instrumental`, `none`), body (synced: json `[{ms, text}]`; plain: json string), source (`lrclib`), fetched_at, retry_at, misses | lyrics on the server (P2-14, migration `0009`): what the lyrics service said about a song, per song reference; a miss is asked about again after 1 h, 6 h, 24 h, 7 d; a plain answer is looked at again after 14 days for a synced one |
 | `idempotency_key`, `setting` | person, key, response, status, at / key, value | a write that is not naturally idempotent remembers its answer for 7 days (the `Idempotency-Key` header); settings |
 | `profile` | person, vectors (json), updated_at | **planned, no migration yet**: recommendations (`20`) |
 | `friend` / `remote_server` | person, remote_handle, server, state / server, public_key, first_seen, allowed | **planned, no migration yet**: federation (`13` §4) |
