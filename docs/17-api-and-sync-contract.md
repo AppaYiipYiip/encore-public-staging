@@ -27,23 +27,28 @@ by the server and checked by a server test (`11` ADR-R41 T5). Today there is no 
 `source_unreachable`, `storage_full`, `server_busy`, `upstream_timeout`, `federation_disabled`, `peer_unreachable`, `internal`.
 Each has one plain message, owned by the server (`server/encore_server/encore_server/errors.py`; English only today), so all clients say the same thing.
 
-## 3. Endpoint inventory (v1)
+## 3. Endpoint inventory (v1): what is built and what is planned
 
-| Module | Endpoints |
-|--------|-----------|
-| info/accounts | `GET info` · `POST auth/login` · `POST auth/pair` (Host's QR pairing) · `POST auth/logout` · `GET me` · `PATCH me` · `GET me/devices` · `DELETE me/devices/{dv}` |
-| catalogue | `GET search?q=&types=` · `POST refs/resolve` · `GET refs/{sr}` · `GET albums/{id}` · `GET artists/{id}` · `POST refs/{sr}/report` (wrong song, `19` §5) |
-| library | `GET library/changes` · `PUT/DELETE likes/{sr}` · `PUT/DELETE saved-albums/{id}` (a release the server does not hold yet names its songs, see "Saving a release" below) · `PUT/DELETE follows/{artistId}` · playlists CRUD · `POST playlists/{pl}/entries` · `DELETE …/entries` · `PUT …/order` · `POST plays` |
-| playback | `GET playback` · `PUT playback` (with `rev`) · `POST playback/claim` · `POST playback/transfer` |
-| devices | `GET devices` · `POST devices/{dv}/command` · `PUT devices/{dv}` (name, shared, always-ready) |
-| imports | `POST imports` · `GET imports/{im}` · `POST imports/{im}/stop` · `GET imports` |
-| downloads | `POST downloads/prepare` (server-side transcode/keep before the phone downloads) · `GET downloads/manifest?since=` |
-| recs | `GET recs/home` · `GET recs/radio?seed=` · `POST recs/feedback` |
-| social | `GET friends` · `POST friends/code` · `POST friends/accept` · `DELETE friends/{id}` · `GET activity` · `PUT me/sharing` |
-| jam | `POST jams` · `POST jams/join` (code) · `POST jams/{jm}/commands` · `DELETE jams/{jm}/me` |
-| people (owner) | `GET people` · invitations · password reset · lock/remove · storage per person (counts) |
-| problems | `POST problems` (opt-in reports) |
-| federation (server-to-server, signed) | `/encore/federation/v1/…`: `well-known`, friend requests, Jam join/relay, Jam stream grants, shares (`13` §4–5) |
+**Built** = a route on `main` (`server/encore_server/encore_server/api.py`, 54 routes under `/encore/api/v1`, plus the four outside it listed in the last row); a script compares this table with the registered routes (2026-11-03: every route is listed here and every built route named here exists). **Planned** = in the plan, no route yet, with the task that builds it. "v1" is the first *public* version (`03` §5), so a planned row is a target, not a promise for the next build.
+
+| Module | Built on `main` | Planned (no route yet) |
+|--------|-----------------|------------------------|
+| info / accounts | `GET info` (also `?challenge=` for the key proof) · `GET server` (the server's own addresses) · `POST auth/login` · `POST auth/logout` · `POST auth/join` · `POST auth/reset` · `GET me` · `PATCH me` · `POST me/password` · `GET me/devices` · `DELETE me/devices/{dv}` | `POST auth/pair` (the Host's QR pairing, P2-19 slice B) |
+| catalogue / songs | `POST refs/resolve` · `GET refs/{sr}` · `GET refs/{sr}/stream-url` · `POST refs/{sr}/keep` · `GET refs/{sr}/keep` · `GET covers/pass` · `GET covers/{id}/url` | `GET search?q=&types=` · `GET albums/{id}` · `GET artists/{id}` (P2-12) · `GET refs/{sr}/lyrics` (P2-14: built on a branch, held until the release-candidate walk) · `POST refs/{sr}/report` (wrong song, `19` §5, P4-14) |
+| library | `GET library/changes` · `GET library/files` · `PUT/DELETE likes/{sr}` · `PUT/DELETE saved-albums/{id}` (a release the server does not hold yet names its songs, see "Saving a release" below) · `PUT/DELETE follows/{artistId}` · `GET playlists` · `POST playlists` · `GET/PATCH/DELETE playlists/{pl}` · `POST/DELETE playlists/{pl}/entries` · `PUT playlists/{pl}/order` · `POST plays` | — |
+| playback | `GET playback` · `PUT playback` (with `rev`) · `POST playback/claim` (the server half; **the app does not call them yet**, P2-08, P2-09) | `POST playback/transfer` |
+| devices (Connect) | the list and revoking of a person's own devices are `me/devices` above | `GET devices` · `POST devices/{dv}/command` · `PUT devices/{dv}` (name, shared, always-ready) (P4-07) |
+| imports | `POST imports` · `GET imports` · `GET imports/{im}` · `GET imports/{im}/entries` · `POST imports/{im}/stop` | — |
+| downloads | `POST refs/{sr}/keep` (a download asks for a song to be kept first in line) | `POST downloads/prepare` (server-side transcode before the phone downloads) · `GET downloads/manifest?since=` (P2-13) |
+| recs | — | `GET recs/home` · `GET recs/radio?seed=` · `POST recs/feedback` (P4-01) |
+| social | — | `GET friends` · `POST friends/code` · `POST friends/accept` · `DELETE friends/{id}` · `GET activity` · `PUT me/sharing` (P4-03) |
+| jam | — | `POST jams` · `POST jams/join` (code) · `POST jams/{jm}/commands` · `DELETE jams/{jm}/me` (P4-02) |
+| people (owner) | `GET people` · `PATCH people/{id}` (lock, role) · `DELETE people/{id}` · `POST people/{id}/reset` · `POST invites` · `GET invites` · `DELETE invites/{id}` · `GET invites/check` | storage per person (counts) |
+| notifications (the bell) | `GET notifications` · `POST notifications/read` (and the live event `notification.new`) | — |
+| migration | `POST migrate/navidrome` (a phone's likes and playlists from the old music-server mode) | — |
+| problems | — | `POST problems` (opt-in reports; shelved by the owner, ADR-R35) |
+| federation (server-to-server, signed) | — | `/encore/federation/v1/…`: `well-known`, friend requests, Jam join/relay, Jam stream grants, shares (`13` §4–5, P4-09) |
+| outside `/api/v1` | `GET /encore/join/{code}` (the page an invitation link opens) · `GET /encore/stream/{sr}` and `GET /encore/cover/{id}` (signed addresses) · websocket `/encore/live` | — |
 
 ## 4. The live channel (`/encore/live`, websocket)
 
