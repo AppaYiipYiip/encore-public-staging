@@ -168,7 +168,7 @@ where YouTube is slow or blocked. The source module must protect the Host's addr
 
 1. **Website step 1 — "Install Ubuntu Server 26.04 LTS on the spare PC"** (link, 5-minute video). Any Debian-based 64-bit Linux works.
 2. **Step 2 — paste one command:** `curl -fsSL https://get.encore.<domain> | sudo sh`
-   * checks the system (64-bit, x86-64/ARM64, ≥ 2 GB RAM, ≥ 20 GB free), installs Docker from Docker's repository if missing
+   * *(Target. Built today: the installer asks four questions in the terminal; there is no `encore.local`, no QR code and no browser wizard yet, the disk floor is 6 GB, and the command is the one in `guides/install-test.md`.)* checks the system (64-bit, x86-64/ARM64, ≥ 2 GB RAM, ≥ 6 GB free), installs Docker from Docker's repository if missing
      (says so first), creates `/opt/encore` with `compose.yaml` and a generated `.env`, pulls published images, starts them, and
      enables `encore.local` on the network (mDNS) so nobody types an IP address;
    * ends with: "Open **http://encore.local** on your phone or computer" + a QR code in the terminal.

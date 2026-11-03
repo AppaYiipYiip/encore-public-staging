@@ -6,7 +6,7 @@
 idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severity, story (US-xx), acceptance criteria, task file
           ─► implementing agent: branch task/<id>-<slug>, draft PR on first push, small commits, tests with the change
           ─► CI green ─► reviewing agent (never the author) checks the acceptance criteria on a device/VM, comments
-          ─► fixes ─► squash-merge to main ─► nightly beta build ─► release when the milestone's exit criteria pass
+          ─► fixes ─► squash-merge to main ─► nightly beta build (planned, not built: section 7) ─► release when the milestone's exit criteria pass
 ```
 
 * **No feature work without a story** in `03a` (or a new story the planning agent added). This is the brake that was missing (A1).

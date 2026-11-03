@@ -10,7 +10,7 @@ by the server and checked by a server test (`11` ADR-R41 T5). Today there is no 
 | Topic | Rule |
 |-------|------|
 | Base | One origin per server; all Encore routes under `/encore/api/v1/…`; the live channel at `/encore/live`; audio at `/encore/stream/…` |
-| Auth | `Authorization: Bearer <device token>` (P3-03). Never in the URL, except audio URLs, which use a signed `?sig=` (6 hours for a song address, 7 days for a cover address: `auth.py` `STREAM_URL_TTL_S`, `COVER_PASS_TTL_S`) because players cannot set headers everywhere |
+| Auth | `Authorization: Bearer <device token>` (P3-03). **Target, not what the app does yet:** the app still signs its ordinary Encore calls with the music-server login as `u`, `t`, `s` in the URL query (`31` D-1, `app/lib/data/encore/encore_api.dart`); only the live channel uses the device token, and the server accepts both (P2-20 slice 3 and the Bearer-token move are RC2). Never in the URL, except audio URLs, which use a signed `?sig=` (6 hours for a song address, 7 days for a cover address: `auth.py` `STREAM_URL_TTL_S`, `COVER_PASS_TTL_S`) because players cannot set headers everywhere |
 | Ids | Server-made ids are opaque strings with a type prefix: `sr_` song ref, `pl_` playlist, `pe_` playlist entry, `dv_` device, `im_` import, `jm_` Jam. Clients create ids for things they create (`pl_`/`pe_` as ULIDs) so an offline create can be retried without duplicates |
 | Time | All timestamps are UTC milliseconds from the server clock (`at`); the server returns `serverTime` in every response so clients can measure their clock offset |
 | Writes | Every write is **idempotent**: `Idempotency-Key` header (a ULID per user action); the server remembers keys for 7 days |

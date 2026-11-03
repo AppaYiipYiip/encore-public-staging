@@ -27,7 +27,7 @@ seen (search/import/recs) → ref → played (stream) → saved (like/playlist/i
    → [fixed: "Wrong song?"] → [upgraded: quality tier] → [merged: duplicate] → nobody saves it any more → removable
    → [file lost: disk failure] → re-fetched (self-healing) / [removed from YouTube] → kept copy is safe; unkept → "unavailable"
 ```
-**New: self-describing, self-healing library (P2-16).** Every kept file carries its identity in its tags: `ENCORE_REF`, the YouTube
+**New: self-describing, self-healing library (P2-16; designed, not built).** Every kept file carries its identity in its tags: `ENCORE_REF`, the YouTube
 video id, ISRC/MBID when known, plus cover and loudness. Consequences: (a) if the database is lost, a scan of the files rebuilds every
 ref and its file exactly; (b) if a disk dies and the database is restored from backup, the keeper sees missing files and **re-fetches
 every YouTube-sourced song by its video id**, paced (the Host's own rips can't be re-fetched; the admin lists them); (c) moving the music
@@ -36,7 +36,7 @@ to a new disk needs no matching.
 ## 3. The life of a playlist you imported
 
 Imports are snapshots today: Spotify's "Today's Top Hits" or a friend's evolving playlist goes stale the day after.
-**New: "Follow the original" (P2-17).** Each imported playlist has a switch (default **on** for public playlists): the server re-reads
+**New: "Follow the original" (P2-17; designed, not built).** Each imported playlist has a switch (default **on** for public playlists): the server re-reads
 the source daily (one small request), adds new songs, removes songs removed at the source unless the person added or reordered them
 here (then it asks), and says what changed in a quiet line ("3 new songs from the original"). This is what makes free editorial
 playlists possible without a Spotify subscription.
