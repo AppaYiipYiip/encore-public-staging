@@ -28,6 +28,7 @@ merge only when every check has finished, polled by run id, and `main`'s own run
   outside, so a web or desktop client can exist later (`docs/11` ADR-R38).
 * Ask the strongest model you have before committing to an architecture or any hard-to-undo choice, and again before calling a multi-step task done (`docs/30` §3).
 * Do not start other tasks; file new problems as issues.
+* **Never take, or offer the owner as an equal option, the easy choice that costs upgradeability, improvement or compatibility later.** Engineer the proper answer first: root cause with proof, the fix at the source; a stop-gap only with a removal trigger, a task and a reminder (the owner's standing rule, `docs/30` at the top; he repeats it every session).
 * Do not touch the owner's homelab or anything outside this repository's own test machines (`docs/06` section 8).
 
 ## Where things are

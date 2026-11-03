@@ -72,6 +72,7 @@ documents are history; read one only when a task links it.
 
 ## Ground rules that do not change
 
+* **No easy choices that cost the future** (the owner's standing rule, repeated every session). Do not consider, choose or suggest the easy option that fixes the problem now but costs **upgradeability, improvement or compatibility** later. Spend the time to engineer the proper answer first: the root cause with proof, the fix at the source, a defensive layer only as a *second* layer that stays correct afterwards. When a stop-gap is truly unavoidable, say so, say what it costs later, and give it a removal trigger, a task for the proper fix and a visible reminder. Never offer "leave it as it is" as an equal option next to the proper one. Full text and the review checks: `30`.
 * **Encore is a public product** (website with the guide, server download and APK). Nothing about the owner's homelab (addresses,
   container numbers, scripts, his request portal, his dashboard at `:8687`) belongs in Encore's code, docs or defaults.
 * **No trace of the old project** (owner, 2026-10-21), done through a fresh repository (P0-04), after checking nothing copied remains.
@@ -85,7 +86,7 @@ documents are history; read one only when a task links it.
 * **Never print, commit or screenshot a password.** Login files live outside the repository.
 * **Say what was measured and on what setup.** "Tests pass" is not "it works".
 
-## State (2026-10-31)
+## State (2026-11-03)
 
 The list of what is still open, task by task, with the owner's findings and the proof for each, is **[tasks/AUDIT.md](tasks/AUDIT.md)**; it is
 kept current and this table only says where the phases stand.
@@ -93,14 +94,14 @@ kept current and this table only says where the phases stand.
 | Item | State |
 |------|-------|
 | Review, measurements, app walk | Done (`01`, `09`, `evidence/`) |
-| Repository | On GitHub (private). `main` has the CI workflows (app, server, server legacy, server image, hygiene, screen pictures; the Actions-minute cuts of D-44 are merged); the merged pull requests are listed on GitHub; **`main` is not protected yet** |
-| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice. D-18 to D-48 are in `10` with their states |
+| Repository | On GitHub (private, D-49): the repository and the server image need a GitHub sign-in until the public release (P5). `main` has the CI workflows (app, server, server legacy, server image, hygiene, screen pictures; the Actions-minute cuts of D-44 are merged); the merged pull requests are listed on GitHub; **`main` is not protected yet** |
+| Owner decisions | **Decided:** D-2, D-3, D-4, D-5/D-9, D-7, D-10, D-11, D-17 (`10`) and, in November, **D-49** (the repository stays private), **D-50** (Funnel on: done), **D-51** (Deezer and LRCLIB move to the server), **D-52** (the app asks once for notification permission, at the first Download), **D-53** (Jam first, ahead of the browser wizard and admin pages). **Defaults in use, no objection:** D-1 GPL-3.0, D-6 YouTube on, D-12 quality tier off, D-13 to D-16. D-8 (agents push) works in practice. D-18 to D-53 are in `10` with their states |
 | P0 Reset | Done except P0-09 (environments as code), P0-10 (licence inventory and check), branch protection and the project board |
 | P1 Instant play | Core done (lean resolver, a player that cannot stick, offline, queue restore, covers); open items are listed in AUDIT (P1-03 legacy side, P1-04, P1-06, P1-07, P1-10, P1-12, P1-13) |
-| P2 Songs as references | Server core and the app's data layer done and walked; open items in AUDIT |
-| P3 One server, one-command install | Installer slice, nightly backup and restore, and a resumable install are proved on clean machines (`evidence/c01` to `c03`); wizard, admin pages, update rollback, arm64 and the rest are open |
+| P2 Songs as references | Server core and the app's data layer done and walked; open items in AUDIT. Lyrics on the server (P2-14) is built on a branch and held (draft PR #131) until the walk record `b11`; the catalogue on the server (P2-12) is not started; **P2-22** (a download shows where it is) is written and RC1 |
+| P3 One server, one-command install | Installer slice, nightly backup and restore, and a resumable install are proved on clean machines (`evidence/c01` to `c03`); **an install by the guide on a bare VM took 9 min 51 s, with a backup and a restore proved** (`evidence/c06`); `encore funnel on` ran for real once (`evidence/c05`). The wizard and admin pages (P3-06) now come after Jam (D-53); **P3-13** (a storage budget the Host sets) is written; update rollback, arm64 and the rest are open |
 | P4 Full feature set, P5 Public release | Not started (the artist page and a first slice of profiles on a shared device exist) |
-| **Current milestone** | The first outside user (P3-12, ADR-R34). Five checks, in order: the owner installed and uses the server; the away-from-home address works on mobile data (the address answers over the internet since 2026-11-03, `evidence/c05`; a phone on mobile data not yet); the data can come back (**done**); the friend's guide is final (draft); five days of the owner's own use |
-| Next, in order | **Release candidate 1** (`tasks/RELEASE-CANDIDATE.md`): the fixes of the two review walks are being merged in order (live status: `tasks/CLOUD-RESUME.md`, Progress), then three QA rounds with a testing agent, a clean-VM install test and a critic whose wishes the owner filters (section 5a); then the friend milestone below. The owner's one-page status is outside the repository |
+| **Current milestone** | The first outside user (P3-12, ADR-R34). Five checks, in order: the owner installed and uses the server (he will install his own by the guide, by hand); the away-from-home address works on mobile data (the address answered over the internet on 2026-11-03, `evidence/c05`, on a server that was destroyed that night; a phone on mobile data not yet); the data can come back (**done**, `evidence/c02`, `c06`); the friend's guide is final (draft); five days of the owner's own use |
+| Next, in order | **Release candidate 1** (`tasks/RELEASE-CANDIDATE.md`): the pair (app build 125 and the server image from the same server code) is **built, not walked**; QA round 2 has started (J10 passed, findings triaged in AUDIT); then round 3, the walk record `b11`, the advisor, the critic (section 5a); then the friend milestone (P3-12); then **Jam (P4-02, D-53)**. The owner's one-page status is outside the repository |
 | Before going public (P5-06) | The plan documents still name the owner's own machines and containers in several places (`06`, `09`, `11` and others); scrub them first |
 | The old documents | History, kept only in the old repository's archive |

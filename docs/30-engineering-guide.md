@@ -3,6 +3,8 @@
 For everyone who writes or reviews code here, person or agent, **especially someone who starts with no memory of the earlier sessions**
 (a new account, a new agent, a new contributor). The owner reads the quality of the code as the product's first impression and wants it kept.
 
+> **The owner's standing rule** (he has had to repeat it in every session; it applies by default and is never news). Do not consider, choose or suggest the easy option that fixes the problem now but costs **upgradeability, improvement or compatibility** later. Spend the time to engineer the proper answer first: the root cause with proof, the fix at the source, a defensive layer only as a *second* layer that stays correct afterwards. When a stop-gap is truly unavoidable, say so, say what it costs later, and give it a removal trigger, a task for the proper fix and a visible reminder. Never offer "leave it as it is" as an equal option next to the proper one.
+
 Most *Don'ts* below are something that **actually happened here** (the finding ID, such as A2 or C3, is in brackets and is explained in `01` with the evidence); the rest are guards
 for things that would hurt if they happened (secrets in logs, an unsafe migration). Every *Do* is what the repository does now, or the next step where it says so. The last column
 says what catches a violation:
@@ -129,6 +131,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 | Let documents sprawl (A1: 60 documents, nine plans) | `docs/` describes **the present**: one topic per file, about 300 lines at most, tables over prose; a document that disagrees with the code is a bug fixed in the same PR; decisions are ADRs with the options compared | Convention |
 | Write a vague commit | `area: what changed for a person` | Convention |
 | Hide what you did not test | The PR says what was not tested and why (the template has the heading) | Convention |
+| Take the easy option that fixes it now and costs upgradeability, improvement or compatibility later: a placeholder file, a line commented out in a script, a symptom hidden in the screen, a hard-coded value, "leave it as it is" offered as an equal option (3 Nov 2026) | Find the root cause with proof, fix it at the source; a defensive layer is a second layer that stays correct afterwards; an unavoidable stop-gap says what it costs later and has a removal trigger, a task and a visible reminder; prefer a mechanism (a budget, a setting, a script that reverses only its own marked lines) to an edit in place | Convention |
 
 ### J. Installing and running it for other people
 
@@ -153,6 +156,8 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 * A timeout of "none", or a state the screen has no words for.
 * A fix that makes the happy path pass and leaves the failure path untested ("worked on my emulator").
 * A decision of the kind "from now on we do X" that is written only in a chat or a commit message.
+* A stop-gap (a placeholder, a commented-out line, a hard-coded value, a hidden symptom) with no removal trigger and no task for the proper fix.
+* Two options offered where one is there only because it is easier and costs the future (upgradeability, improvement, compatibility).
 
 ## 3. Asking a stronger model, and when
 
