@@ -5,6 +5,8 @@ love on your own disk, and lets your family and friends listen too. No subscript
 
 > Status: early development (version 0.x). The server and app work for a small group of testers; the public release is not out yet.
 
+**Want to change something?** Read [`docs/guides/getting-started-for-developers.md`](docs/guides/getting-started-for-developers.md) first: a map of the repository, your first hour, and how a change goes.
+
 ## What it does
 
 * Plays your own music files from your own server (powered by [Navidrome](https://www.navidrome.org)).

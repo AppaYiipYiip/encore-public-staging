@@ -27,6 +27,8 @@ documents are history; read one only when a task links it.
 
 ## Reading order
 
+**New to the code?** Start with [`guides/getting-started-for-developers.md`](guides/getting-started-for-developers.md): the repository map, your first hour, how a change goes, and how to read the ids that repeat across these files.
+
 | # | File | What it is |
 |---|------|-----------|
 | 01 | [What is wrong, and why](01-what-is-wrong.md) | Every finding with evidence, root cause and the task that fixes it |
