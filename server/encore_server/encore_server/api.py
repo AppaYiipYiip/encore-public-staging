@@ -57,6 +57,7 @@ from .imports.service import ImportService
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import END, Hub
+from .lyrics import LyricsService
 from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
@@ -98,6 +99,8 @@ class Services:
     identity: ServerIdentity | None = None
     #: The music server as this server's own account: kept songs and covers are passed on through it, so a phone needs no login of the music server.
     music: NavidromeClient | None = None
+    #: Lyrics for a song reference, asked of LRCLIB once for everybody (docs/tasks P2-14)
+    lyrics: LyricsService | None = None
 
 
 def services(request: Request) -> Services:
@@ -664,6 +667,18 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
     expires = int(time.time()) + STREAM_URL_TTL_S
     sig = sign_stream(secret, p.person_id, ref_id, expires)
     return _ok({"url": f"/encore/stream/{ref_id}?p={p.person_id}&e={expires}&sig={sig}", "expiresAt": expires * 1000})
+
+
+@router.get("/refs/{ref_id}/lyrics")
+def lyrics(ref_id: str, request: Request, refresh: bool = Query(False), p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The words of a song, for every client the same: `kind` is `synced` (`lines` of `{ms, text}`), `plain` (`text`), `instrumental` or `none`
+    (then `retryAfterMs` says when the server will look again). `refresh=true` is "try again": passed on to the lyrics service at most once a
+    minute per song. The service being away is a 502 `source_unreachable` and is not remembered as "no lyrics" (docs/tasks P2-14)."""
+    svc = services(request)
+    with svc.db.read() as conn:
+        ref = refs.get_ref(conn, ref_id)
+    assert svc.lyrics is not None
+    return _ok(svc.lyrics.get(ref, refresh=refresh))
 
 
 _COVER_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
@@ -1310,6 +1325,7 @@ def create_app(
     gateway_client: httpx.AsyncClient | None = None,
     navidrome_admin: NavidromeAdmin | None = None,
     tools_active: Active | None = None,
+    lyrics_client: httpx.Client | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -1323,6 +1339,7 @@ def create_app(
     with database.tx() as conn:
         identity = load_or_create(conn)
     notifications = Notifications(database, hub)
+    lyrics_service = LyricsService(database, lyrics_client)
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
     the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
 
@@ -1376,6 +1393,7 @@ def create_app(
                 linker.stop()
             if scheduler is not None:
                 scheduler.stop()
+            lyrics_service.close()
 
     app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.services = Services(
@@ -1390,6 +1408,7 @@ def create_app(
         imports=imports,
         accounts=accounts,
         notifications=notifications,
+        lyrics=lyrics_service,
         limiter=Limiter(),
         tools=tools,
         identity=identity,

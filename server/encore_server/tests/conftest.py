@@ -78,7 +78,7 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
     asked: list[str] = []
 
     def guarded(self: httpx.HTTPTransport, request: httpx.Request) -> httpx.Response:
-        if request.url.host.endswith("deezer.com"):
+        if request.url.host.endswith(("deezer.com", "lrclib.net")):
             asked.append(str(request.url))
             raise httpx.ConnectError("a test may not ask the real catalogue", request=request)
         return real(self, request)
