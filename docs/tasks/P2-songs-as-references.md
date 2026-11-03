@@ -256,3 +256,25 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Why.** AUDIT F31 and F32: no way to change a playlist's picture or description, and no way to select several songs and add them to a playlist.
 * **Do.** (1) A playlist's description and picture, set and shown. (2) Multi-select on song rows: pick several, then add to a playlist, add to the queue, download or remove. Draw both before building (D-43: a page is drawn when it is new and about to be built).
 * **Acceptance.** Written when it is drawn.
+
+## P2-22 — A download shows where it is: the server stage, the phone stage, and why it waits (server + app) — Size M
+
+* **Why.** Round 2, found by the owner on 2026-11-03 (`AUDIT` R2-F2): he pressed Download on two playlists (217 and 4 songs) and could not tell
+  what was happening: no notification, only "N of M" on the phone and "Waiting for a connection". D-29 puts "download a song, album or playlist"
+  in RC1 and forbids silent failures. Measured the same evening on the test server: the *server* needed about **46 minutes** to fetch a 217-song
+  playlist from YouTube (paced, about 5 songs a minute, 223 look-ups, no refusal) before the phone could download any of it, and the app showed none
+  of that stage.
+* **What was wrong (two causes).** (a) The downloader's progress notification exists (`background_downloader_transport.dart`: "Downloading
+  music", "Downloads finished") but Android 13 and newer drops it: ADR-R44 never asks for the notification permission (`POST_NOTIFICATIONS` is
+  not granted). (b) The server stage is invisible: the app's only reasons for waiting are about the phone's network (`downloadsWaitProvider`).
+* **Do.** (1) Server: publish keep progress per pinned target on the live channel: counts of queued, fetching, ready and failed, and the YouTube
+  rest state (`resumesInSec`), so "the server is pausing for YouTube until 21:40" reads as that and not as "stuck". (2) App: show both stages and
+  the real reason for any wait on the places a person looks (the Library rows, the playlist or album header, Settings > Downloads & storage);
+  **drawn first**. (3) Notifications: ask for the permission once, in context, at the first Download, and only to show progress. This is the
+  owner's decision (asked 2026-11-03, pending): it switches on no news alert, and ADR-R44 is amended if he agrees. (4) A song that failed says
+  which one and why, with Retry.
+* **Don't.** Poll one request per song. Change the default of the news alerts.
+* **Acceptance.** Importing and downloading a 200-song playlist on a fresh install: at every moment a person can say how many songs the server
+  has ready, how many are on the phone and why anything waits; the notification appears after the one permission prompt; in airplane mode the
+  app says "Waiting for a connection" and claims nothing else. Measured, with the setup written in the PR.
+* **Depends on.** The live channel (built), P2-13 (the downloads manifest). **Size.** M. **Triage (D-29):** RC1.

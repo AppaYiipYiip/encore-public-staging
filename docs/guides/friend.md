@@ -32,6 +32,7 @@ If the link opens a web page and not the app, copy it, open Encore, and paste it
   it is down for long.
 * **Privacy.** The owner can see that you have an account and when you last signed in; Encore does not show him what you play, and he
   agreed not to go looking (his music server has administrator tools that could).
+* **The shared shelf.** On the home screen, **New on the server** lists songs that anyone on the server has had kept. It does not say who. You can switch it off in Settings.
 
 ## When something is wrong, or you do not like something
 

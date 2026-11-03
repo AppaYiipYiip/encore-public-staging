@@ -126,3 +126,17 @@ installer and a browser wizard that a person who never used Docker can follow. R
   restored on a second machine and his playlists are all there; his first problem report reaches the owner with the report attached (the in-app report is on hold, ADR-R35: until it exists, he pastes Diagnostics > Copy report).
 * **Depends on.** P3-05 (done as a slice), the owner's Tailscale sign-in. **Size.** M.
 
+## P3-13 — Storage: a budget the Host sets, visible in the app, and a plain "the server is full" (server + app + installer) — Size M
+
+* **Why.** The owner (2026-11-03): "reserve 100 GB for Encore's music so we do not run out of space"; friends will fill it. For a stranger the
+  server has **one shared disk**. Today Encore has only a floor (`ENCORE_MIN_FREE_GB`, default 10: the keeper stops and retries every 30
+  minutes) and the Host learns of a full disk from a failed song. A hand-made placeholder file on one machine is not an answer a stranger can use.
+* **Do.** (1) Server: `ENCORE_MAX_KEPT_GB`, a cap on what Encore keeps (unset = only the floor), enforced by the keeper next to the floor;
+  storage state in the owner's view of `/server`: kept, budget, free, and counts per person. (2) App, owner: a Storage row on Your server (kept,
+  budget, free) and an in-app news item at 80 % and 95 %. (3) App, everybody: when the keeper refuses for space, the song says "The server is
+  full; ask the owner" instead of failing silently. (4) Installer: say how much room the music folder has and warn under 20 GB; the guide gets a
+  "Give Encore its own disk" section (format, mount at `/srv/music`). (5) The guide says plainly that music is not in the backup.
+* **Don't.** Delete anything to make room. Reserve space with placeholder files.
+* **Acceptance.** With a 2 GB budget on a test server the third GB of songs is refused with the plain message, the owner sees the 80 % and 95 %
+  items and the Storage row, nothing already kept is touched, and raising the budget lets the retry continue.
+* **Depends on.** The keeper (built). **Size.** M. **Triage:** later (RC2); the guide's dedicated-disk section covers it meanwhile.

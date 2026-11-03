@@ -95,6 +95,18 @@ The owner installed the server from the guide (the installer's own count: **14 m
 
 **What passed (so it is not lost): the install itself.** From the guide, by the owner, on a clean VM: **14 min 25 s** with the answers in it, on the shared line (target 15 min, hard limit 30). Friend-milestone check 1 ("the owner installed from the guide and uses it"): the installing half passed, the using half begins now with this list open; check 2 (the away-from-home address) is not started.
 
+## Round 2 (3 Nov 2026, build 125 on emulators against a server installed by the guide): findings and triage
+
+| Id | Finding | Triage (D-29) | Where it goes |
+|----|---------|---------------|---------------|
+| R2-F2 | A download shows no progress a person can follow and no notification: the notification permission is never asked, and the server's 46-minute fetch stage is invisible (found by the owner) | **RC1** | P2-22; whether the app may ask once at the first Download is the owner's decision (ADR-R44 amended if he agrees) |
+| R2-F3 | Home shows "[Unknown Album]" cards for songs with no album | **RC1 for the display layer** (PR #136); the cause is later | The cause: the Spotify import reader carries title, artists and length only and builds no album, and nothing fills it in (the YouTube Music reader does read albums); fix = P2-12 (fill from a strong song match, tag the file, backfill, rescan), held until `b11` (D-51) |
+| R2-F4 | A new member sees the shared "New on the server" shelf at once | later | said in `docs/guides/friend.md` |
+| R2-F1 | After a wrong server address the error text stays under the corrected field | later | recheck with a real keyboard |
+| J10 | A friend joins by invitation (second emulator) | **passed** on build 125 against the test server: Join to home in 5.3 s; the owner gets the "friend1 joined" item; the invitation page names the server and the inviter | a record in `evidence/` with `b11` |
+| J13 | A cold start, then a tap: the full song | **partly**: a song played past 30 s with the app already running (mini-player 17 % to 35 % in 45 s of a 264 s song); the cold-start check is still open | `b11` |
+| Pacing | A 217-song YouTube import and download | **evidence**: the server fetched all of it in about 46 minutes, 223 look-ups, no refusal, state "ok", 1.2 GB for 219 songs | with `b11` |
+
 ## P0 — reset
 
 * **GitHub is set up (2026-10-22):** the old repository was renamed, the new private `encore` exists, `main` and four pull requests (#1 to #4) are merged, and the
