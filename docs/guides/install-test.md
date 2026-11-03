@@ -31,16 +31,16 @@ gh api -H "Accept: application/vnd.github.raw" "repos/AppaYiipYiip/encore/conten
 sudo bash install.sh
 ```
 
-(It uses the GitHub login from step 1: the person who typed `sudo`.)
+(It uses the GitHub login from step 1: the person who typed `sudo`. **The installer keeps that sign-in for the image** (root's Docker login for `ghcr.io`), because `encore update` needs it while the image is private. To remove it: `sudo docker logout ghcr.io` and `gh auth logout`; after that `encore update` cannot download until you sign in again.)
 
 It asks, in this order:
 
 | Question | What to answer |
 |----------|----------------|
-| Install Docker? (only if it is missing) | Yes. Docker is what runs Encore. |
 | What should this server be called? | Anything; people you invite see it. |
 | Your username / a password (twice) | Your own Encore login. 8 or more characters. |
 | Where is your music? | A folder with your music (it is only read), or press Enter for `/srv/music` and add music later. |
+| Install Docker? (only if it is missing; **asked last**, after the music folder) | Yes. Docker is what runs Encore. It takes a minute or two, so stay until it is done. |
 
 Then it downloads Encore, starts it and prints the address and your username to type into the app, the commands for looking after the server (there is no admin page in the browser yet), and what `encore funnel on` is for (optional; it needs a free Tailscale account). It prints no QR code: the one it used to print opened the music server's own page in a phone's browser and the app cannot scan it; a code that carries an Encore setup link comes with the pairing link (AUDIT F16).
 
@@ -73,7 +73,7 @@ encore status                  is it running, at which address
 encore logs                    what the server says (Ctrl-C to stop)
 encore update                  the newest version (a backup is made first)
 encore backup                  a copy of your accounts, playlists and likes, now (also made every night)
-encore restore FILE            put such a copy back (what is there now is set aside, not deleted)
+encore restore FILE            put such a copy back (what is there now is set aside, not deleted); you type  restore  to confirm, or add --yes in a script
 encore uninstall               remove Encore; your music and Encore's data stay
 encore uninstall --everything  remove Encore's data too (never your music)
 ```
@@ -95,7 +95,7 @@ for songs), add the line `ENCORE_AUTO_TOOLS=0` to `/opt/encore/.env` and run `en
 ## If something goes wrong
 
 If the window is closed or the connection drops, the install carries on by itself; if the power goes or you press Ctrl-C, run the same two lines again:
-the installer notices that your account was not made yet and asks only for your username and password. Every message says what to do. The full record of an install is `/var/log/encore-install.log` (it never contains a password). Send me that
+the installer notices that your account was not made yet and asks only for your username and password. Every message says what to do. The full record of an install is `/var/log/encore-install.log` (only the administrator can read it, so  `sudo cat /var/log/encore-install.log`; it never contains a password). Send me that
 file and what you saw. To start over completely: `encore uninstall --everything`, then step 2 again.
 
 ## What is not in this test
