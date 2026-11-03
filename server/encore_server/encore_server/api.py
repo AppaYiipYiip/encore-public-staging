@@ -23,7 +23,7 @@ import httpx
 from fastapi import APIRouter, Depends, FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
-from starlette.concurrency import iterate_in_threadpool
+from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refs
 from . import join_page as join_pages
@@ -130,17 +130,7 @@ def get_principal(request: Request) -> Principal:
     if creds is None:
         raise ApiError("unauthorized")
     user, subsonic, salt = creds
-    known = getattr(svc.verifier, "known_good", None)
-    if known is None or not known(user, subsonic, salt):
-        # Not a login the music server has already vouched for: a guesser is slowed before the music server is asked, a locked account says so
-        # whatever the password (so its answer never confirms a right one), and a wrong answer is counted (AUDIT B1, B2).
-        address = client_address(request)
-        guard = LoginGuard(limiter_of(request))
-        guard.refuse(user, address)
-        _refuse_locked(svc, user)
-        if not svc.verifier.verify(user, subsonic, salt):
-            guard.failed(user, address)
-            raise ApiError("unauthorized", "The music server did not accept that login.")
+    check_music_login(request, user, subsonic, salt)
     with svc.db.tx() as conn:
         existing = conn.execute("SELECT * FROM person WHERE navidrome_user = ?", (user,)).fetchone()
         admin = existing is None and svc.verifier.is_admin(user, subsonic, salt)
@@ -149,6 +139,46 @@ def get_principal(request: Request) -> Principal:
             raise ApiError("forbidden", "This account is locked.")
         device = request.headers.get("x-encore-device")
         return Principal(person["id"], user, person["role"], device if device and is_id(device, "dv") else None)
+
+
+def check_music_login(request: Request, user: str, subsonic: str, salt: str) -> None:
+    """The one place a music-server login (`u`, `t`, `s`) is checked, for the Encore API and for the Subsonic API that is open to the internet
+    (AUDIT B12b: it used to be a second copy of nothing, i.e. no check at all). Raises an `ApiError` to refuse.
+
+    Not a login the music server has already vouched for: a guesser is slowed before the music server is asked, a locked account says so
+    whatever the password (so its answer never confirms a right one), and a wrong answer is counted (AUDIT B1, B2). A wrong answer is logged
+    with the address it was counted against, never with the token; that is at most thirty lines an address a minute, because a refused guess is
+    not counted again."""
+    svc = services(request)
+    known = getattr(svc.verifier, "known_good", None)
+    if known is not None and known(user, subsonic, salt):
+        return
+    address = client_address(request)
+    guard = LoginGuard(limiter_of(request))
+    guard.refuse(user, address)
+    _refuse_locked(svc, user)
+    if not svc.verifier.verify(user, subsonic, salt):
+        guard.failed(user, address)
+        log.info("a wrong music-server login was refused: name %r, counted against address %s", user, address)
+        raise ApiError("unauthorized", "The music server did not accept that login.")
+
+
+async def authorize_public_subsonic(request: Request) -> None:
+    """A call to the Subsonic API that comes from the internet is signed in like any other call to this server (AUDIT B12b). Only the token login
+    (`u`, `t`, `s`) is understood: a plain password (`p=`, `p=enc:`) or an API key is refused, because a password a stranger can try without limit
+    is exactly what this guard exists to stop (docs/21: Subsonic apps that send only `p=` cannot sign in through the public address)."""
+    creds = subsonic_credentials(dict(request.query_params.items()), dict(request.headers.items()))
+    if creds is None:
+        raise ApiError(
+            "unauthorized", "Sign in with a token login (u, t and s). A plain password is not accepted from the internet."
+        )
+    await run_in_threadpool(_check_public_subsonic, request, *creds)  # asking the music server is a blocking call
+
+
+def _check_public_subsonic(request: Request, user: str, subsonic: str, salt: str) -> None:
+    # A remembered yes must never open a locked account: the Encore API looks the person up after the check, this door has no such later step.
+    _refuse_locked(services(request), user)
+    check_music_login(request, user, subsonic, salt)
 
 
 def _refuse_locked(svc: Services, user: str) -> None:
@@ -1373,7 +1403,9 @@ def create_app(
     # Before the music server's catch-all below: an invitation link must never reach it (D-39).
     app.add_api_route("/encore/join/{code}", join_page, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_websocket_route("/encore/live", live)
-    gateway.mount(app, settings.navidrome_url, client=gateway_client, public=is_public_request)
+    gateway.mount(
+        app, settings.navidrome_url, client=gateway_client, public=is_public_request, authorize_public=authorize_public_subsonic
+    )
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, error: ApiError) -> JSONResponse:

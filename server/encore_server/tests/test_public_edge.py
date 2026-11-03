@@ -7,6 +7,7 @@ connection comes from a proxy (a private address) and `X-Forwarded-For` says who
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -357,4 +358,104 @@ def test_a_request_that_arrives_by_the_away_address_is_public_whatever_it_says_a
     answer = rig.client.get("/app/", headers={"Host": "our-music.tail1234.ts.net"})
 
     assert answer.status_code == 404 and not rig.music.asked
-    assert rig.client.get("/rest/ping", headers={"Host": "our-music.tail1234.ts.net"}).status_code == 200
+    with_login = rig.client.get("/rest/ping", params=creds("marwa"), headers={"Host": "our-music.tail1234.ts.net"})
+    assert with_login.status_code == 200, "a signed-in call still reaches the Subsonic API"
+    without_login = rig.client.get("/rest/ping", headers={"Host": "our-music.tail1234.ts.net"})
+    assert without_login.status_code == 401, "and one with no login at all no longer does (B12b)"
+
+
+# ------------------------------------------------------------------------------------------------ B12b: the Subsonic door is guarded too
+#
+# Found 2026-11-03 by running it: 40 wrong sign-ins at /rest/ping were answered in 0.6 s, none slowed, by the gateway or by the music server
+# (Navidrome 0.64.2 with its default settings). Through Funnel that is B1 again on the one door left open, so a request that comes from the
+# internet is checked here exactly like a call to the Encore API: the same guard, the same lock rule, the same remembered yes.
+
+
+def subsonic(rig: Rig, params: dict[str, str], *, address: str = STRANGER) -> httpx.Response:
+    return rig.client.get("/rest/ping", params=params, headers={"X-Forwarded-For": address})
+
+
+def wrong_login(i: int, user: str = "marwa") -> dict[str, str]:
+    return {"u": user, "t": f"{i:032x}", "s": f"salt{i:04d}"}
+
+
+def test_wrong_sign_ins_at_the_subsonic_door_are_slowed_and_never_reach_the_music_server(rig: Rig) -> None:
+    before = rig.verifier.checks
+
+    answers = [subsonic(rig, wrong_login(i)).status_code for i in range(40)]
+
+    assert answers[:5] == [401] * 5
+    assert set(answers[5:]) == {429}, "no more guesses are taken from that address"
+    assert rig.verifier.checks - before == 5
+    assert rig.music.asked == [], "a wrong sign-in is not passed on to the music server"
+
+
+def test_a_correct_sign_in_at_the_subsonic_door_is_not_held_up_by_a_strangers_guesses(rig: Rig) -> None:
+    for i in range(100):
+        subsonic(rig, wrong_login(i))
+
+    answer = subsonic(rig, creds("marwa"), address=OWNER_AWAY)
+
+    assert answer.status_code == 200 and answer.text == "NAVIDROME"
+
+
+def test_a_sign_in_already_vouched_for_is_not_asked_about_again_at_the_subsonic_door(rig: Rig) -> None:
+    for i in range(60):
+        subsonic(rig, wrong_login(i, "mia"))  # the stranger has used up the guesses for mia
+
+    assert subsonic(rig, creds("marwa"), address=STRANGER).status_code == 200, "a vouched, correct login is not a guess"
+    assert subsonic(rig, creds("mia"), address=STRANGER).status_code == 429, "mia is not vouched for yet, and that address waits"
+
+    before = rig.verifier.checks
+    answers = [subsonic(rig, creds("mia"), address=OWNER_AWAY).status_code for _ in range(6)]
+
+    assert answers == [200] * 6
+    assert rig.verifier.checks - before == 1, "one question to the music server, then the remembered yes"
+
+
+def test_a_locked_account_is_refused_at_the_subsonic_door_before_its_password_is_looked_at(rig: Rig) -> None:
+    nina = next(p for p in rig.client.get(f"{V1}/people", params=creds("marwa")).json()["items"] if p["username"] == "nina")["id"]
+    assert rig.client.patch(f"{V1}/people/{nina}", params=creds("marwa"), json={"locked": True}).status_code == 200
+    before = rig.verifier.checks
+
+    right = subsonic(rig, creds("nina"), address=OWNER_AWAY)
+    wrong = subsonic(rig, wrong_login(1, "nina"), address=OWNER_AWAY)
+
+    assert right.status_code == wrong.status_code == 403
+    assert right.json() == wrong.json(), "a right password and a wrong one get the same answer"
+    assert rig.verifier.checks == before and not rig.music.asked
+
+
+@pytest.mark.parametrize(
+    "params",
+    [{}, {"u": "marwa", "p": "pw-marwa"}, {"u": "marwa", "p": "enc:70772d6d61727761"}, {"apiKey": "not-ours"}],
+    ids=["nothing", "plain password", "hex password", "api key"],
+)
+def test_the_subsonic_door_wants_a_token_login_when_it_is_the_internet_asking(rig: Rig, params: dict[str, str]) -> None:
+    answer = subsonic(rig, params)
+
+    assert answer.status_code == 401 and answer.json()["error"]["code"] == "unauthorized"
+    assert rig.music.asked == []
+
+
+def test_the_subsonic_door_is_exactly_as_before_on_the_home_network(rig: Rig) -> None:
+    home = "192.168.1.30"
+
+    assert subsonic(rig, {}, address=home).text == "NAVIDROME", "no login at all: the music server decides, as it always did"
+    assert subsonic(rig, wrong_login(1), address=home).text == "NAVIDROME", (
+        "a wrong login at home is the music server's to refuse"
+    )
+    assert len(rig.music.asked) == 2
+
+
+def test_a_refusal_at_the_subsonic_door_logs_the_address_that_was_counted_and_never_the_login(
+    rig: Rig, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="encore_server.api")
+
+    for i in range(8):
+        subsonic(rig, wrong_login(i))
+
+    text = " | ".join(record.getMessage() for record in caplog.records)
+    assert STRANGER in text, "the Host can see which address was counted (it settles how the proxy forwards)"
+    assert not any(f"{i:032x}" in text for i in range(8)), "the token of a login is never written to the log"

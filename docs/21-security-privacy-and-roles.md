@@ -36,7 +36,7 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 | Setup wizard | ✓ with the setup code (`15` §1) | ✗ |
 | Admin site | ✓ | ✗ (reach it remotely only through the Host's own Tailscale, Advanced) |
 | Navidrome's own web UI (through the gateway) | ✓ | ✗ (since S1, B12 `gateway.py`) |
-| Navidrome's Subsonic API under `/rest/` (through the gateway) | ✓ | ✓ for members' Subsonic apps, rate-limited |
+| Navidrome's Subsonic API under `/rest/` (through the gateway) | ✓ | ✓ for members' Subsonic apps **with a token login** (`u`, `t`, `s`); wrong sign-ins are slowed like every other door and a locked account is refused first (B12b, `api.py` `authorize_public_subsonic`). **Known limit:** an app that can only send a plain password (`p=`, `p=enc:`) or an API key cannot sign in through the public address; at home nothing changed. *(Until B12b this row said "rate-limited" and it was not: 40 wrong sign-ins in 0.6 s were all answered, measured 2026-11-03 on the dev server.)* |
 
 ## 4. Credentials
 
