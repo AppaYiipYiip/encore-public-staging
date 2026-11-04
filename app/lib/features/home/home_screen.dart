@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import '../../domain/household.dart';
 import '../auth/login_problem.dart';
 import '../common/cover_art.dart';
@@ -37,11 +38,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final recent =
-        ref.watch(serverAlbumListProvider('server.recent')).value ?? const [];
-    final frequent =
-        ref.watch(serverAlbumListProvider('server.frequent')).value ?? const [];
-    final pool = ref.watch(newAlbumPoolProvider).value ?? const [];
+    // The music server's catch-all "[Unknown Album]" is a bucket of songs, not a release: no shelf of releases shows it.
+    final recent = withoutCatchAllAlbums<AlbumRow>(
+        ref.watch(serverAlbumListProvider('server.recent')).value ?? const [],
+        (a) => a.name);
+    final frequent = withoutCatchAllAlbums<AlbumRow>(
+        ref.watch(serverAlbumListProvider('server.frequent')).value ?? const [],
+        (a) => a.name);
+    final pool = withoutCatchAllAlbums<AlbumRow>(
+        ref.watch(newAlbumPoolProvider).value ?? const [], (a) => a.name);
     final myMusic = ref.watch(myMusicProvider).value ?? MyMusic.empty;
     final groups = ref.watch(playlistGroupsProvider);
     final showNew =
@@ -380,10 +385,10 @@ class _QuickTile extends ConsumerWidget {
           () => Nav.liked(context),
         ),
       _AlbumItem(:final album) => (
-          album.name,
+          albumDisplayName(album.name),
           CoverArt(
             coverArtId: album.coverArt,
-            fallbackLabel: album.name,
+            fallbackLabel: albumDisplayName(album.name),
             fallbackArtist: album.artist,
             radius: 0,
           ),
@@ -449,7 +454,7 @@ class _AlbumCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MediaCard(
-        title: album.name,
+        title: albumDisplayName(album.name),
         subtitle: albumSubtitle(album),
         coverArtId: album.coverArt,
         artistName: album.artist,

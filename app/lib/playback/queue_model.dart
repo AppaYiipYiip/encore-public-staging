@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../data/db/app_database.dart';
+import '../domain/album_names.dart';
 
 /// One entry of the play queue. [uid] distinguishes two occurrences of the
 /// same track (a queue may contain a song twice).
@@ -63,7 +64,7 @@ class QueueItem {
         id: t.id,
         title: t.title,
         artist: t.artist,
-        album: t.album,
+        album: realAlbumName(t.album),
         albumId: t.albumId,
         artistId: t.artistId,
         coverArt: t.coverArt,

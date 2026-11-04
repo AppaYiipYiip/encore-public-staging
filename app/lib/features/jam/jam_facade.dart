@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:encore_session/encore_session.dart';
 
 import '../../data/db/app_database.dart';
+import '../../domain/album_names.dart';
 import '../../playback/queue_model.dart';
 import '../player/playback_facade.dart';
 
@@ -245,7 +246,7 @@ class JamPlaybackFacade implements PlaybackFacade {
         at: at,
         title: t.title,
         artist: t.artist,
-        album: t.album,
+        album: realAlbumName(t.album),
         durationSec: t.durationSec,
       );
 

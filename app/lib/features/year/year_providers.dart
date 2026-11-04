@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/result.dart';
 import '../../data/db/app_database.dart';
+import '../../domain/album_names.dart';
 import '../../domain/year_in_music.dart';
 
 /// The facts of a library song that the year is counted with.
@@ -12,7 +13,7 @@ SongFacts songFactsOf(TrackRow t) => SongFacts(
       id: t.id,
       title: t.title,
       artist: t.artist,
-      album: t.album,
+      album: realAlbumName(t.album),
       genre: t.genre,
       year: t.year,
       durationSec: t.durationSec,

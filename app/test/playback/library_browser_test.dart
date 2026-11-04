@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/playback/library_browser.dart';
@@ -47,6 +48,33 @@ void main() {
   test('an artist lists albums, not songs', () async {
     final nodes = await browser.children(BrowseIds.artist('ar1'));
     expect(nodes.map((n) => n.id), everyElement(startsWith('album:')));
+  });
+
+  test('the music server\'s catch-all album is named in plain words', () async {
+    final serverId =
+        await (db.select(db.servers)).getSingle().then((s) => s.id);
+    await db.into(db.albums).insert(AlbumsCompanion.insert(
+          serverId: serverId,
+          id: 'al-bucket',
+          name: '[Unknown Album]',
+          artistId: const Value('ar1'),
+          artist: const Value('Alcest'),
+        ));
+    await db.into(db.tracks).insert(TracksCompanion.insert(
+          serverId: serverId,
+          id: 'al-bucket-t1',
+          title: 'Loose song',
+          albumId: const Value('al-bucket'),
+          album: const Value('[Unknown Album]'),
+          artist: const Value('Alcest'),
+        ));
+    final nodes = await browser.children(BrowseIds.artist('ar1'));
+    final bucket = nodes.firstWhere((n) => n.id == 'album:al-bucket');
+    expect(bucket.title, 'Songs without an album');
+    expect(nodes.where((n) => n.title == '[Unknown Album]'), isEmpty);
+    // The car and the lock screen say "playing from" this name too.
+    final request = await browser.resolvePlay('album:al-bucket');
+    expect(request!.sourceName, 'Songs without an album');
   });
 
   test('liked songs list the starred tracks', () async {

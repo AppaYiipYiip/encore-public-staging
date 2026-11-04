@@ -11,6 +11,7 @@ import '../../data/catalogue/catalogue_models.dart' show CatalogueTrack;
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import '../../domain/artwork_color.dart';
 import '../catalogue/artist_sections.dart';
 import '../catalogue/catalogue_providers.dart';
@@ -213,11 +214,11 @@ class AlbumScreen extends ConsumerWidget {
     final tint = swatch == null ? null : backdropFor(swatch);
 
     return CollectionScaffold(
-      title: album.name,
+      title: albumDisplayName(album.name),
       tint: tint,
       art: CoverArt(
         coverArtId: album.coverArt,
-        fallbackLabel: album.name,
+        fallbackLabel: albumDisplayName(album.name),
         fallbackArtist: album.artist,
         radius: Radii.hero,
       ),
@@ -252,7 +253,7 @@ class AlbumScreen extends ConsumerWidget {
       ],
       actions: _ActionRow(
         tracks: tracks,
-        sourceName: album.name,
+        sourceName: albumDisplayName(album.name),
         sourceId: 'album:${album.id}',
         pinType: PinTargetType.album,
         pinId: album.id,
@@ -261,7 +262,7 @@ class AlbumScreen extends ConsumerWidget {
       slivers: [
         _TrackList(
           tracks: tracks,
-          sourceName: album.name,
+          sourceName: albumDisplayName(album.name),
           sourceId: 'album:${album.id}',
           numbered: true,
         ),
@@ -294,7 +295,7 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
               facade,
               gap.missing,
               index: i,
-              sourceName: album.name,
+              sourceName: albumDisplayName(album.name),
               sourceId: sourceId,
             ));
         return PreviewTrackTile(
@@ -305,7 +306,9 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
           instant: instant,
           status: status,
           onTap: () => unawaited(tapPlayRun(ref, gap.missing,
-              startIndex: i, sourceName: album.name, sourceId: sourceId)),
+              startIndex: i,
+              sourceName: albumDisplayName(album.name),
+              sourceId: sourceId)),
           onLongPress: instant && t.previewUrl != null ? preview : null,
         );
       },
@@ -502,7 +505,7 @@ class ArtistScreen extends ConsumerWidget {
           itemBuilder: (context, i) {
             final a = albums[i];
             return MediaCard(
-              title: a.name,
+              title: albumDisplayName(a.name),
               subtitle: a.year?.toString(),
               coverArtId: a.coverArt,
               artistName: artist.name,
@@ -723,7 +726,7 @@ class GenreScreen extends ConsumerWidget {
               itemBuilder: (context, i) {
                 final a = albums[i];
                 return MediaCard(
-                  title: a.name,
+                  title: albumDisplayName(a.name),
                   subtitle: a.artist,
                   coverArtId: a.coverArt,
                   artistName: a.artist,

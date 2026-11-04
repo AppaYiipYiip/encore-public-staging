@@ -1,0 +1,9 @@
+{
+ "id": "20261104T224536Z-agent-4c5a",
+ "item": "P2-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T22:45:36Z",
+ "type": "note",
+ "body": "The rule 'the music server's [Unknown Album] bucket is not a release; show it as Songs without an album, and a song of it as a song with no album' lives in the app today (app/lib/domain/album_names.dart, PR 136). A browser inherits it (same Flutter code), but a TV app or any other client would not. When the rulebook is written, the server should own it: normalise the bucket in the server's answers so every client gets it for free."
+}

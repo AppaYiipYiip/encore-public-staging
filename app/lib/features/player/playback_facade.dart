@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/db/app_database.dart';
+import '../../domain/album_names.dart';
 import '../../playback/queue_model.dart';
 
 /// What the UI needs to know about the playing track (a thin view; the engine
@@ -27,7 +28,7 @@ class NowPlayingTrack {
         id: t.id,
         title: t.title,
         artist: t.artist,
-        album: t.album,
+        album: realAlbumName(t.album),
         albumId: t.albumId,
         artistId: t.artistId,
         coverArt: t.coverArt,

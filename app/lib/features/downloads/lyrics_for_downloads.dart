@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/logger.dart';
+import '../../domain/album_names.dart';
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 
@@ -54,7 +55,7 @@ final lyricsForDownloadsProvider = Provider<void>((ref) {
             trackId: track.id,
             title: track.title,
             artist: track.artist,
-            album: track.album,
+            album: realAlbumName(track.album),
             durationSec: track.durationSec,
           );
         } on Object catch (error) {

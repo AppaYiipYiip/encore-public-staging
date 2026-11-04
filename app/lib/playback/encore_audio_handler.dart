@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../core/logger.dart';
+import '../domain/album_names.dart';
 import '../features/player/playback_facade.dart';
 import 'library_browser.dart';
 
@@ -418,7 +419,7 @@ class EncoreAudioHandler extends BaseAudioHandler with SeekHandler {
           id: BrowseIds.track(t.id, request.sourceId),
           title: t.title,
           artist: t.artist,
-          album: t.album,
+          album: realAlbumName(t.album),
           artUri:
               t.coverArt == null ? null : await _coverArt?.call(t.coverArt!),
           playable: true,

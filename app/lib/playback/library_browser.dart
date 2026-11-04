@@ -4,6 +4,7 @@ import '../data/db/app_database.dart';
 import '../data/db/search_dao.dart';
 import '../data/repos/downloads_repository.dart';
 import '../data/repos/library_repository.dart';
+import '../domain/album_names.dart';
 
 /// One entry of the browse tree shown by Android Auto / media browsers.
 @immutable
@@ -162,7 +163,7 @@ class DbLibraryBrowser implements LibraryBrowser {
 
   BrowseNode _albumNode(AlbumRow a) => BrowseNode(
         id: BrowseIds.album(a.id),
-        title: a.name,
+        title: albumDisplayName(a.name),
         subtitle: a.artist,
         coverArtId: a.coverArt,
         browsable: true,
@@ -252,7 +253,7 @@ class DbLibraryBrowser implements LibraryBrowser {
       final a = await _library
           .watchAlbum(collection.substring('album:'.length))
           .first;
-      return a?.name ?? 'Album';
+      return a == null ? 'Album' : albumDisplayName(a.name);
     }
     if (collection.startsWith('artist:')) {
       final a = await _library

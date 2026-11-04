@@ -1,0 +1,9 @@
+{
+ "id": "20261104T224536Z-agent-98a0",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T22:45:36Z",
+ "type": "note",
+ "body": "PR 136 only fixes how the bucket is SHOWN. The cause (a Spotify import carries no album) is still this item's. The music server probably has the same catch-all for songs with no artist: check the fixtures and server constants when this is done."
+}

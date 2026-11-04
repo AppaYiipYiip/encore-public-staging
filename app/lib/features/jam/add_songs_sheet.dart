@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import '../common/encore_sheet.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart';
@@ -112,7 +113,7 @@ class _AddSongsSheetState extends ConsumerState<_AddSongsSheet> {
                           Add(t.id,
                               title: t.title,
                               artist: t.artist,
-                              album: t.album,
+                              album: realAlbumName(t.album),
                               durationSec: t.durationSec),
                         ),
                       ),

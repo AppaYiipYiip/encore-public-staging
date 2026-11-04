@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logger.dart';
 import '../../data/catalogue/catalogue_models.dart';
+import '../../domain/album_names.dart';
 import '../../domain/text_match.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart' show catalogueClientProvider;
@@ -120,6 +121,8 @@ final albumGapProvider =
   final tracks = await ref.watch(albumTracksProvider(albumId).future);
   final artist = album?.artist;
   if (album == null || artist == null || tracks.isEmpty) return null;
+  // The server's catch-all for songs with no album is not a release: the catalogue has nothing to compare it with.
+  if (isCatchAllAlbum(album.name)) return null;
   return findAlbumGap(
     catalogue: ref.watch(catalogueClientProvider),
     artist: artist,

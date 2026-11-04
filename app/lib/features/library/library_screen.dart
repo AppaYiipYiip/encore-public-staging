@@ -11,6 +11,7 @@ import '../../data/repos/downloads_repository.dart';
 import '../../data/repos/library_repository.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import '../../domain/household.dart';
 import '../common/collection_menu.dart';
 import '../common/cover_art.dart';
@@ -357,7 +358,7 @@ class _LibraryEntry {
   _LibraryEntry.album(AlbumRow a)
       : kind = _Kind.album,
         id = a.id,
-        title = a.name,
+        title = albumDisplayName(a.name),
         subtitle = 'Album • ${a.artist ?? ''}',
         coverArt = a.coverArt,
         count = a.songCount,

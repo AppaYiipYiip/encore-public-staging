@@ -9,6 +9,7 @@ import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import '../downloads/download_providers.dart';
 import '../instant/release_save.dart';
 import '../providers.dart';
@@ -141,8 +142,10 @@ class _TrackMenu extends ConsumerWidget {
                     dimension: 56,
                     child: CoverArt(
                       coverArtId: track.coverArt,
-                      fallbackLabel: track.album ?? track.title,
-                      fallbackArtist: track.album == null ? null : track.artist,
+                      fallbackLabel: realAlbumName(track.album) ?? track.title,
+                      fallbackArtist: realAlbumName(track.album) == null
+                          ? null
+                          : track.artist,
                     ),
                   ),
                   const SizedBox(width: Space.md),

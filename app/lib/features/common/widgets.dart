@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
+import '../../domain/album_names.dart';
 import 'cover_art.dart';
 import 'format.dart';
 
@@ -198,9 +199,10 @@ class TrackTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final titleColor = isCurrent ? c.accent : c.onBg;
+    final album = realAlbumName(track.album);
     final subtitle = [
       if (track.artist != null) track.artist!,
-      if (showAlbum && track.album != null) track.album!,
+      if (showAlbum && album != null) album,
     ].join(' • ');
 
     final row = Row(
@@ -210,8 +212,8 @@ class TrackTile extends StatelessWidget {
             dimension: 48,
             child: CoverArt(
               coverArtId: track.coverArt,
-              fallbackLabel: track.album ?? track.title,
-              fallbackArtist: track.album == null ? null : track.artist,
+              fallbackLabel: album ?? track.title,
+              fallbackArtist: album == null ? null : track.artist,
             ),
           )
         else

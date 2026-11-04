@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/player/playback_facade.dart';
@@ -134,6 +135,21 @@ void main() {
   test('voice search plays the best match', () async {
     await handler.playFromSearch('Periphery');
     expect(facade.calls.single, startsWith('playTracks('));
+  });
+
+  test(
+      'a song the music server filed under its catch-all album shows no album in the car\'s search results',
+      () async {
+    await db.into(db.tracks).insert(TracksCompanion.insert(
+          serverId: serverId,
+          id: 'loose-1',
+          title: 'Loose Wanderer',
+          album: const Value('[Unknown Album]'),
+          artist: const Value('Alcest'),
+        ));
+    final found = await handler.search('Loose Wanderer');
+    expect(found.single.title, 'Loose Wanderer');
+    expect(found.single.album, isNull);
   });
 
   // docs/23, B12: when the car starts the app cold, the browse request arrives

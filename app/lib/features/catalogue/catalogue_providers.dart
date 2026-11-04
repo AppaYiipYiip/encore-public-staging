@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart' show AlbumRow;
 import '../../data/repos/request_repository.dart';
+import '../../domain/album_names.dart';
 import '../../domain/text_match.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart';
@@ -70,7 +71,7 @@ List<ArtistRelease> withLibraryAlbums(
         ArtistRelease(
           CatalogueAlbum(
             id: 'library:${a.id}',
-            title: a.name,
+            title: albumDisplayName(a.name),
             artistName: a.artist ?? '',
             year: a.year,
             recordType: 'album',

@@ -1,0 +1,9 @@
+{
+ "id": "20261104T230946Z-agent-afcb",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T23:09:46Z",
+ "type": "note",
+ "body": "Left over from PR 136 (the 'Songs without an album' display rule), all small: the Library sorts the bucket by its raw name '[Unknown Album]', so it lands at the top of an A-Z list; searching 'unknown' still finds the bucket; the song menu still offers 'Go to album' for a song that now shows no album (harmless, the page exists). Row R2-F3 in docs/tasks/AUDIT.md."
+}
