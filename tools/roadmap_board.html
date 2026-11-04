@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encore roadmap</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #14181f; --muted: #5a6472; --line: #dfe3e8; --accent: #0a8f5b; --accent-ink: #ffffff;
+    --warn: #8a5a00; --warn-bg: #fff4d6; --bad: #a3261f; --bad-bg: #fde7e5; --info: #1d4f91; --info-bg: #e7f0fb;
+    --built: #8a5a00; --built-bg: #fff0c2; --drop: #0a8f5b; --chip: #eef1f4; --shadow: 0 8px 30px rgba(0,0,0,.18);
+    --role-owner: #0a8f5b; --role-dev: #1d4f91; --role-agent: #7a3fb0; --pink: #c2185b; --pink-bg: #fde4ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1215; --card: #181c21; --ink: #eceff3; --muted: #9aa5b4; --line: #2a313a; --accent: #2fd08c; --accent-ink: #06150e;
+      --warn: #f2c14e; --warn-bg: #3a2f10; --bad: #ff8f86; --bad-bg: #3b1714; --info: #8ab8f5; --info-bg: #14263d;
+      --built: #f2c14e; --built-bg: #3a2f10; --drop: #2fd08c; --chip: #232932; --shadow: 0 8px 30px rgba(0,0,0,.6);
+      --role-owner: #2fd08c; --role-dev: #8ab8f5; --role-agent: #c79bf0; --pink: #ff7eb6; --pink-bg: #3a1526; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header, main, footer { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 16px; }
+  h1 { margin: 0 0 2px; font-size: 1.5rem; }
+  h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  h3 { margin: 14px 0 4px; font-size: 1rem; }
+  .sub { color: var(--muted); margin: 0 0 8px; max-width: 70ch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+  .card b { font-variant-numeric: tabular-nums; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 10px 0; }
+  .controls label { cursor: pointer; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible, select:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.link { border: 0; background: none; color: var(--info); padding: 0 2px; text-decoration: underline; }
+  button.small { padding: 1px 8px; font-size: .88rem; }
+  button.add { display: block; width: 100%; margin-top: 10px; padding: 10px; border-style: dashed; font-weight: 650; font-size: 1.05rem; color: var(--accent); }
+  button[disabled] { opacity: .55; cursor: default; }
+  select, input[type=text], textarea { font: inherit; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+  input[type=text], textarea { width: 100%; }
+  textarea { min-height: 84px; resize: vertical; }
+  #msg { min-height: 1.5em; margin: 6px 0; font-weight: 600; }
+  #msg.error { color: var(--bad); background: var(--bad-bg); padding: 8px 12px; border-radius: 8px; }
+  #msg.ok { color: var(--accent); }
+  .banner { border-radius: 10px; padding: 8px 12px; margin: 8px 0; font-size: .95rem; }
+  .banner.bad { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+  .banner.info { background: var(--info-bg); color: var(--info); }
+  .banner.warn { background: var(--warn-bg); color: var(--warn); }
+  .banner ul { margin: 4px 0 0 18px; padding: 0; font-weight: 400; }
+  details { margin: 4px 0; }
+  summary { cursor: pointer; color: var(--muted); }
+  ul.items { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+  li.item { display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  li.item.done { opacity: .72; background: transparent; border-style: dashed; }
+  li.item.later { opacity: .9; }
+  li.item.dragging { opacity: .45; }
+  li.item.drop-before { box-shadow: 0 -4px 0 0 var(--drop); }
+  li.item.drop-after { box-shadow: 0 4px 0 0 var(--drop); }
+  li.item.waiting { border-color: var(--accent); box-shadow: inset 4px 0 0 0 var(--accent); }
+  li.item.needsyou { border: 2px solid var(--pink); background: var(--pink-bg); box-shadow: none; }
+  .todo { margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: var(--card); border: 1px dashed var(--pink); color: var(--ink); font-size: .93rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .lead { display: grid; justify-items: center; gap: 2px; min-width: 2.2rem; }
+  .handle { cursor: grab; user-select: none; color: var(--muted); font-size: 1.3rem; line-height: 1; padding: 0 4px; }
+  .rank { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+  /* the checkbox that says how far an item is: empty = not done, half = built but not proven yet, filled with a tick = done (proven) */
+  .mark { display: inline-block; width: 22px; height: 22px; border: 2px solid var(--muted); border-radius: 6px; position: relative; flex: none; }
+  .mark.built { border-color: var(--built); background: linear-gradient(90deg, var(--built) 50%, transparent 50%); }
+  .mark.done { border-color: var(--accent); background: var(--accent); }
+  .mark.done::after { content: "✓"; position: absolute; inset: 0; color: var(--accent-ink); font-weight: 800; font-size: 15px; line-height: 18px; text-align: center; }
+  .mark.reopened { border-color: var(--bad); }
+  .mark.reopened::after { content: "!"; position: absolute; inset: 0; color: var(--bad); font-weight: 800; font-size: 15px; line-height: 18px; text-align: center; }
+  .title { font-weight: 650; }
+  .titlebtn { font: inherit; font-weight: 650; border: 0; background: none; padding: 0; color: var(--ink); text-align: left; cursor: pointer; }
+  .titlebtn:hover { text-decoration: underline; }
+  .note { color: var(--muted); font-size: .93rem; margin-top: 2px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chip { display: inline-block; background: var(--chip); border-radius: 999px; padding: 0 9px; font-size: .8rem; color: var(--muted); margin-left: 6px; vertical-align: middle; }
+  .chip.built { background: var(--built-bg); color: var(--built); font-weight: 650; }
+  .chip.new { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+  .chip.wait { background: var(--info-bg); color: var(--info); font-weight: 650; }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); font-weight: 650; }
+  .chip.pink { background: var(--pink); color: #fff; font-weight: 700; }
+  .chip.role-owner { color: var(--role-owner); border: 1px solid var(--role-owner); background: none; }
+  .chip.role-dev { color: var(--role-dev); border: 1px solid var(--role-dev); background: none; }
+  .chip.role-agent { color: var(--role-agent); border: 1px solid var(--role-agent); background: none; }
+  .needs { margin-top: 4px; font-size: .88rem; color: var(--muted); }
+  .needs .rule { color: var(--warn); }
+  .warnline { margin-top: 6px; font-size: .9rem; color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 4px 8px; }
+  .arrows { display: grid; gap: 4px; justify-items: stretch; }
+  .arrows button { padding: 2px 9px; line-height: 1.2; }
+  .evidence { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+  .hint { color: var(--muted); font-size: .9rem; }
+  .sr { position: absolute; left: -9999px; }
+  .claim { padding: 6px 0; border-top: 1px solid var(--line); }
+  .claim:first-child { border-top: 0; }
+  .claim .state { color: var(--muted); font-size: .92rem; margin-top: 2px; white-space: pre-wrap; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+  .flush { margin: 0 0 4px; }
+  fieldset.plain { border: 0; padding: 0; margin: 6px 0; }
+  legend.plain { padding: 0; color: var(--muted); font-size: .9rem; }
+  label.inl { margin-right: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .formrow { margin: 6px 0; }
+  .formrow label { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 2px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .filters input[type=text] { width: 16rem; max-width: 100%; }
+  progress { width: 100%; height: 10px; accent-color: var(--accent); }
+  .ideaform { border: 1px solid var(--accent); border-radius: 12px; padding: 10px 12px; margin-top: 8px; background: var(--card); }
+  .ideaform .err { color: var(--bad); font-weight: 600; min-height: 1.3em; }
+  .section { margin-top: 26px; }
+  .section > h2 { font-size: 1.3rem; border-bottom: 3px solid var(--line); padding-bottom: 4px; }
+  .section.later > h2 { color: var(--muted); }
+  /* the item drawer */
+  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--card); border-left: 1px solid var(--line); box-shadow: var(--shadow); display: flex; flex-direction: column; z-index: 20; }
+  #drawer[hidden] { display: none; }
+  #drawer header { max-width: none; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+  #drawer h2 { margin: 0; font-size: 1.1rem; }
+  #drawer .grid2 { grid-template-columns: 1fr; }
+  #dBody { overflow-y: auto; padding: 8px 16px 20px; flex: 1; }
+  .facts { display: grid; gap: 2px; font-size: .92rem; color: var(--muted); margin-bottom: 6px; }
+  .nt { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; background: var(--bg); }
+  .nt.detail { border-color: var(--accent); }
+  .nt .head { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; font-size: .9rem; }
+  .nt .body { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 4px; }
+  .nt .acts { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .nt .quote { color: var(--muted); font-size: .85rem; border-left: 3px solid var(--line); padding-left: 8px; margin-top: 4px; }
+  .actions { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+  .actions .row { margin: 4px 0; }
+  .composer { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 8px; }
+  .composer .err { color: var(--bad); font-weight: 600; min-height: 1.3em; }
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 10; }
+  .scrim[hidden] { display: none; }
+  footer { padding: 18px 16px 40px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } li.item { grid-template-columns: auto 1fr; } .arrows { grid-column: 1 / -1; grid-auto-flow: column; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Encore roadmap</h1>
+  <p class="sub"><b>Now</b> is the one list you want done, in your order. <b>Later</b> is future work to keep in mind and not bother with yet. Drag an item (or use the arrows) to change the order, or press Move to Later or Move to Now. A tick means done and proven. Pink means <b>only you can do it</b>: open it for the exact steps. Estimates are in Claude Code working days.</p>
+  <div id="banners" aria-live="polite"></div>
+  <div class="controls">
+    <button id="boardNotes" type="button">General notes</button>
+    <button id="reload" type="button">Reload from the files</button>
+    <span class="hint" id="checked"></span>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</header>
+<main>
+  <section class="card" aria-label="Working now" id="workingCard"></section>
+  <section class="card" aria-label="Waiting for you" id="waitingCard" hidden></section>
+  <section class="card" id="summary" aria-live="polite" aria-label="Progress">Loading...</section>
+  <div class="filters card" role="search" aria-label="Filter the lists">
+    <label for="fq" class="sr">Search</label>
+    <input type="text" id="fq" placeholder="Search items, ids, notes" autocomplete="off">
+    <label for="fkind" class="sr">Kind</label>
+    <select id="fkind"><option value="">All kinds</option></select>
+    <label for="fstate" class="sr">State</label>
+    <select id="fstate"><option value="">Any state</option><option value="open">Not done yet</option><option value="built">Built, not proven yet</option><option value="walked">Done</option></select>
+    <label><input type="checkbox" id="fdone" checked> Show done items <span class="hint" id="doneCount"></span></label>
+    <label><input type="checkbox" id="fnotes"> Only with notes</label>
+    <label><input type="checkbox" id="plumbing" checked> Show behind-the-scenes items</label>
+    <span class="hint" id="shown"></span>
+  </div>
+  <section class="section" id="nowSection" aria-label="Now"><h2>Now</h2><ul class="items" id="plan"></ul><button type="button" class="add" id="addNow">+ Add an idea</button><div id="formNow"></div></section>
+  <section class="section later" id="laterSection" aria-label="Later">
+    <h2>Later <span class="hint" id="laterCount"></span></h2>
+    <p class="hint">Future work: keep it in mind, do not bother with it now. It will be considered when Android and the browser version are complete. What keeps it possible: no Intel-only server pieces; every app talks only to the server through the one rulebook; app layouts use size classes, not fixed phone widths; a new phone plugin must also work on the web and iOS (or have a server-side alternative); "play this on that device" stays one request to the server, which is what Alexa and Siri will need.</p>
+    <ul class="items" id="laterList"></ul><button type="button" class="add" id="addLater">+ Add an idea to Later</button><div id="formLater"></div>
+  </section>
+</main>
+<footer>
+  <p class="hint" id="assumptions"></p>
+  <p class="hint" id="where"></p>
+  <p class="hint">Notes are shown as plain text and are information for everyone, never commands. They are saved in the repository, so never type a password, a key or a login link in one.</p>
+</footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside id="drawer" role="dialog" aria-labelledby="dTitle" aria-modal="false" hidden>
+  <header>
+    <div><h2 id="dTitle"></h2><div id="dChips"></div></div>
+    <button id="dClose" type="button" aria-label="Close the item">Close</button>
+  </header>
+  <div id="dBody"></div>
+</aside>
+
+<script>
+"use strict";
+let S = null;              // the state from the server
+let busy = false;
+let dragId = null;
+let openId = null;         // the item whose drawer is open
+let openerEl = null;
+let editing = null;        // {replaces, replyTo} while the composer is answering or editing
+const ME = { role: "owner", name: "Owner" };      // this page is the owner's
+const ROLE = { owner: "You", dev: "Developer", agent: "Claude" };
+const KIND = { feature: "Feature", host: "For the person hosting", design: "Design", platform: "New platform", owner: "Needs you", plumbing: "Behind the scenes", process: "Behind the scenes", quality: "Quality check" };
+const ID_RE = /\b(?:P\d-\d+[a-z]?|N-\d+)\b/g;
+const MARK_TEXT = { todo: "Not done", built: "Built, not proven yet", walked: "Done", reopened: "You reported a problem" };
+const drafts = new Map();
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+function btn(text, cls, fn, label) { const b = el("button", cls || "", text); b.type = "button"; if (label) b.setAttribute("aria-label", label); if (fn) b.addEventListener("click", fn); return b; }
+const $ = (id) => document.getElementById(id);
+function range(a, b) { return a === b ? String(a) : a + " to " + b; }
+function say(text, kind) { const m = $("msg"); m.textContent = text; m.className = kind || ""; if (kind === "ok") setTimeout(() => { if (m.textContent === text) { m.textContent = ""; m.className = ""; } }, 6000); }
+function when(iso) { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+// ids in a message become plain titles: "P2-09" -> "One device plays at a time"
+function plain(text) { return text.replace(ID_RE, (id) => (S && S.items[id] ? "\"" + S.items[id].title + "\"" : id)); }
+// text with item ids turned into buttons that open the item; everything else stays plain text (never HTML)
+function linkify(text) {
+  const frag = document.createDocumentFragment(); let last = 0; let m;
+  ID_RE.lastIndex = 0;
+  while ((m = ID_RE.exec(text)) !== null) {
+    if (S && S.items[m[0]]) { frag.append(text.slice(last, m.index)); const b = btn(m[0], "link", null); const id = m[0]; b.addEventListener("click", () => openDrawer(id, b)); frag.append(b); last = m.index + m[0].length; }
+  }
+  frag.append(text.slice(last)); return frag;
+}
+function markEl(state) { const m = el("span", "mark " + (state === "walked" ? "done" : state === "built" ? "built" : state === "reopened" ? "reopened" : "todo")); m.setAttribute("role", "img"); m.setAttribute("aria-label", MARK_TEXT[state] || "Not done"); m.title = MARK_TEXT[state] || ""; return m; }
+const titles = (ids) => ids.map((id) => "“" + (S.items[id] ? S.items[id].title : id) + "”").join(", ");
+
+// ---- talking to the board
+async function api(method, path, body) {
+  const opt = { method, headers: {}, cache: "no-store" };
+  if (method === "POST") { opt.headers["Content-Type"] = "application/json"; opt.headers["X-Roadmap"] = "1"; opt.body = JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  let data = null; try { data = await r.json(); } catch (e) { /* not JSON */ }
+  return { status: r.status, data: data || {} };
+}
+async function load() {
+  const r = await api("GET", "/api/state");
+  if (r.status !== 200) throw new Error(r.data.error || ("HTTP " + r.status));
+  S = r.data;
+  renderAll();
+  $("checked").textContent = "Checked " + new Date().toLocaleTimeString();
+}
+
+// an item that needs the owner is never hidden by a filter: it is the one thing he has to do
+function matches(it) {
+  if (it.kind === "owner" && it.state !== "walked") return true;
+  if (!$("plumbing").checked && (it.kind === "plumbing" || it.kind === "process")) return false;
+  const q = $("fq").value.trim().toLowerCase();
+  if (q && !(it.title + " " + it.id + " " + it.note + " " + it.kind).toLowerCase().includes(q)) return false;
+  if ($("fkind").value && it.kind !== $("fkind").value) return false;
+  const st = $("fstate").value;
+  if (st === "open" && it.state === "walked") return false;
+  if (st === "built" && it.state !== "built") return false;
+  if (st === "walked" && it.state !== "walked") return false;
+  if ($("fnotes").checked && !it.notes.count) return false;
+  return true;
+}
+const isDone = (it) => it.state === "walked";
+const listOf = (id) => (S.later.includes(id) ? S.later : S.order);
+const sectionOf = (id) => (S.later.includes(id) ? "later" : "now");
+
+function renderAll() {
+  renderBanners(); renderWorking(); renderWaiting(); renderLists(); renderFoot();
+  if (openId) { if (openId === "_board" || S.items[openId]) fillDrawerFacts(); }
+}
+
+// ---- banners: things that need a person's attention
+function renderBanners() {
+  const b = $("banners"); b.textContent = "";
+  if (S.stale) b.append(el("div", "banner bad", "This board is running OLD code: the files changed after it started. Close the black window that started it (or press Ctrl+C in it) and open the board again. Until then what you see may not match the rules CI checks."));
+  if (S.pending && S.pending.length) {
+    const d = el("div", "banner info"); d.append("Changes to the plan or the notes that exist only on this computer (not in git yet): " + S.pending.length + ". ");
+    d.append(el("b", "", "Tell Claude: \"turn the board's changes into a PR\"")); d.append(" so other worktrees, the other Claude account and developers can see them.");
+    const ul = el("ul"); S.pending.slice(0, 6).forEach((l) => ul.append(el("li", "", l.slice(3)))); if (S.pending.length > 6) ul.append(el("li", "", "and " + (S.pending.length - 6) + " more")); d.append(ul); b.append(d);
+  }
+  if (S.errors.length) b.append(el("div", "banner warn", "The plan files have " + S.errors.length + " problem(s): " + plain(S.errors[0])));
+  if (S.note_problems.length) b.append(el("div", "banner warn", S.note_problems.length + " note file(s) are not readable: " + S.note_problems[0]));
+}
+
+// ---- Working now: what Claude sessions announced (the page only shows it)
+function renderWorking() {
+  const card = $("workingCard"); card.textContent = "";
+  card.append(el("h2", "flush", "Working now"));
+  const live = S.working.claims.filter((c) => c.status !== "done"), done = S.working.claims.filter((c) => c.status === "done");
+  if (!live.length) card.append(el("p", "hint", "Nobody has announced anything. Each Claude session announces here what it is working on, so you can see it."));
+  live.forEach((c) => card.append(claimEl(c)));
+  if (done.length) { const d = el("details"); d.append(el("summary", "", "Finished lately (" + done.length + ")")); done.forEach((c) => d.append(claimEl(c))); card.append(d); }
+}
+function claimEl(c) {
+  const d = el("div", "claim"); const r = el("div", "row");
+  r.append(el("b", "", c.by));
+  c.items.forEach((id) => { const it = S.items[id]; const b = btn(id === "_board" ? "General notes" : id, "link", null); b.addEventListener("click", () => openDrawer(id, b)); r.append(b); if (it) r.append(el("span", "hint", it.title)); });
+  if (c.status === "done") r.append(el("span", "chip", "finished"));
+  else if (c.status === "paused") r.append(el("span", "chip", "paused"));
+  if (c.maybe_stopped) r.append(el("span", "chip bad", "may have stopped: quiet for " + Math.round(c.hours_quiet) + " h"));
+  else if (c.status !== "done") r.append(el("span", "hint", "updated " + (c.hours_quiet < 1 ? "just now" : c.hours_quiet + " h ago")));
+  d.append(r); d.append(el("div", "", c.doing));
+  if (c.state) d.append(el("div", "state", (c.status === "done" ? "Result: " : "If it stops: ") + c.state));
+  if (c.branch || c.pr) d.append(el("div", "state", [c.branch && ("branch " + c.branch), c.pr && ("PR " + c.pr)].filter(Boolean).join("  ·  ")));
+  return d;
+}
+
+// ---- waiting for you: questions that need your answer
+function renderWaiting() {
+  const card = $("waitingCard"); card.textContent = "";
+  const asks = [];
+  if (S.board_thread.waiting.includes("owner")) asks.push(["_board", "General notes"]);
+  Object.values(S.items).forEach((it) => { if (it.notes.waiting.includes("owner")) asks.push([it.id, it.title]); });
+  card.hidden = !asks.length; if (card.hidden) return;
+  card.append(el("h2", "flush", "Waiting for you"));
+  card.append(el("p", "hint", "Somebody asked you something. Open one, answer, and it stops waiting."));
+  asks.forEach(([id, title]) => { const r = el("div", "claim row"); const b = btn(title, "titlebtn", null); b.addEventListener("click", () => openDrawer(id, b)); r.append(b); if (id !== "_board") r.append(el("span", "hint", id)); card.append(r); });
+}
+
+// ---- the two lists
+function renderLists() {
+  const ul = $("plan"), lul = $("laterList"); ul.textContent = ""; lul.textContent = "";
+  const doneAll = Object.values(S.items).filter(isDone).sort((a, b) => a.id.localeCompare(b.id));
+  const posOf = {}; S.order.forEach((id, i) => { posOf[id] = i; });
+  let shown = 0, total = 0;
+  $("doneCount").textContent = "(" + doneAll.length + ")";
+  if ($("fdone").checked) doneAll.forEach((it) => { if (matches(it)) { ul.append(doneRow(it)); shown += 1; } });
+  S.order.forEach((id, i) => {
+    const it = S.items[id]; if (!it || isDone(it)) return;
+    total += 1; if (!matches(it)) return;
+    ul.append(row(it, i + 1, posOf, "now")); shown += 1;
+  });
+  S.later.forEach((id) => {
+    const it = S.items[id]; if (!it || isDone(it)) return;
+    total += 1; if (!matches(it)) return;
+    lul.append(row(it, 0, posOf, "later")); shown += 1;
+  });
+  if (!ul.children.length) ul.append(el("li", "hint", "Nothing matches these filters."));
+  if (!lul.children.length) lul.append(el("li", "hint", "Nothing in Later matches."));
+  $("laterCount").textContent = "(" + S.later.length + " items)";
+  $("shown").textContent = "Showing " + shown + " of " + (total + ($("fdone").checked ? doneAll.length : 0));
+  [ul, lul].forEach((list, i) => {                       // dropping on the empty part of a list puts the item at the end of that list
+    list.ondragover = (ev) => { if (dragId) ev.preventDefault(); };
+    list.ondrop = (ev) => { ev.preventDefault(); if (dragId) moveTo(dragId, i === 0 ? "now" : "later", null); };
+  });
+  // progress
+  const c = S.counts, t = S.total; const s = $("summary"); s.textContent = "";
+  const line = el("div"); line.append(el("b", "", c.done + " of " + c.all + " done")); line.append(" · " + c.built + " built and waiting for a walk" + (c.reopened ? " · " + c.reopened + " reopened by you" : "") + " · " + c.left + " still to do now · " + c.later + " later. About ");
+  line.append(el("b", "", t.work + " Claude days")); line.append(" of work left in Now: roughly "); line.append(el("b", "", range(t.lo, t.hi) + " working days"));
+  line.append(" (" + range(t.weeks_lo, t.weeks_hi) + " weeks) if everything goes in this order. Never a date."); s.append(line);
+  const pr = el("progress"); pr.max = c.all; pr.value = c.done; pr.setAttribute("aria-label", c.done + " of " + c.all + " done"); s.append(pr);
+  if (S.warnings.length) s.append(el("div", "warnline", S.warnings.length + " rule warning(s): an item sits before something your own rules say it should follow. You may keep it; see the items marked below."));
+  const kinds = $("fkind"); const cur = kinds.value; if (kinds.options.length === 1) ["feature", "host", "design", "platform", "owner", "quality", "plumbing"].forEach((k) => { const o = el("option", "", KIND[k]); o.value = k; kinds.append(o); }); kinds.value = cur;
+}
+
+function notesChip(it) {
+  const n = it.notes;
+  const dl = n.details + (n.details === 1 ? " detail" : " details");
+  const lab = !n.count ? "Add a note or detail" : n.details === n.count ? dl : (n.count + (n.count === 1 ? " note" : " notes") + (n.details ? " (" + dl + ")" : ""));
+  const b = btn(lab, "small", null, "Open notes and details: " + it.title); b.addEventListener("click", () => openDrawer(it.id, b)); return b;
+}
+
+function doneRow(it) {
+  const li = el("li", "item done"); li.dataset.id = it.id;
+  const lead = el("div", "lead"); lead.append(markEl("walked"));
+  const mid = el("div");
+  const tt = el("div", "title"); const tb = el("button", "titlebtn", it.title); tb.type = "button"; tb.addEventListener("click", () => openDrawer(it.id, tb)); tt.append(tb);
+  tt.append(el("span", "chip", it.kind === "owner" ? "You did this" : (KIND[it.kind] || it.kind))); mid.append(tt);
+  mid.append(el("div", "evidence", "Proof: " + (it.evidence || "(none written)")));
+  const nrow = el("div", "meta"); nrow.append(notesChip(it)); nrow.append(el("span", "", it.id)); mid.append(nrow);
+  li.append(lead, el("div"), mid, el("div"));
+  return li;
+}
+
+function row(it, rank, posOf, section) {
+  const li = el("li", "item" + (section === "later" ? " later" : "")); li.draggable = true; li.dataset.id = it.id;
+  const needsYou = it.kind === "owner";
+  if (needsYou) li.classList.add("needsyou");
+  else if (it.notes.waiting.includes("owner")) li.classList.add("waiting");
+  const lead = el("div", "lead"); lead.append(markEl(it.state));
+  if (section === "now") lead.append(el("span", "rank", "#" + rank));
+  const handle = el("div", "handle", "⠿"); handle.setAttribute("aria-hidden", "true"); handle.title = "Drag to move";
+  const mid = el("div");
+  const tt = el("div", "title"); const tb = el("button", "titlebtn", it.title); tb.type = "button"; tb.addEventListener("click", () => openDrawer(it.id, tb)); tt.append(tb);
+  if (needsYou) tt.append(el("span", "chip pink", "Needs you"));
+  else tt.append(el("span", "chip", KIND[it.kind] || it.kind));
+  if (it.state === "built") tt.append(el("span", "chip built", "Built, not proven yet"));
+  if (it.state === "reopened") tt.append(el("span", "chip bad", "You reported a problem: Claude will look"));
+  if (it.owner_check && it.state !== "walked") tt.append(el("span", "chip new", "You checked it"));
+  if (it.proposal) tt.append(el("span", "chip new", it.pending ? "Your idea: write-up pending" : "Idea: write-up pending"));
+  if (it.notes.waiting.length) tt.append(el("span", "chip wait", "Waiting for " + it.notes.waiting.map((r) => ROLE[r] || r).join(", ")));
+  mid.append(tt);
+  if (needsYou) mid.append(el("div", "todo", it.what_to_do ? "What to do: " + it.what_to_do.slice(0, 420) + (it.what_to_do.length > 420 ? " ... (open it for all the steps)" : "") : "What to do: open this item for the exact steps."));
+  if (it.note) mid.append(el("div", "note", it.note));
+  const meta = el("div", "meta");
+  meta.append(el("span", "", "about " + it.days + " Claude days (size " + it.size + ")"));
+  if (section === "now" && it.est) meta.append(el("span", "", "ready around working day " + range(it.est.lo, it.est.hi)));
+  meta.append(el("span", "", it.id));
+  mid.append(meta);
+  if (it.needs.length) {
+    const n = el("div", "needs"); n.append("Needs: ");
+    it.needs.forEach((nd, i) => { if (i) n.append(", "); n.append(el("span", nd.mark === "p" ? "rule" : "", nd.title + (nd.mark === "p" ? " (a rule of the plan)" : ""))); });
+    mid.append(n);
+    const early = it.needs.filter((nd) => nd.mark === "p" && posOf[nd.id] !== undefined && posOf[it.id] !== undefined && posOf[nd.id] > posOf[it.id]);
+    if (early.length) {
+      const w = el("div", "warnline", "Heads-up: this comes before " + early.map((nd) => "“" + nd.title + "”").join(", ") + ", which a rule of the plan puts first. You may keep it.");
+      if (it.why) w.title = it.why;
+      mid.append(w);
+    }
+  }
+  const claims = S.working.claims.filter((c) => c.status !== "done" && c.items.includes(it.id));
+  if (claims.length) mid.append(el("div", "note", "Claude is on it: " + claims.map((c) => c.by).join(", ") + (claims.some((c) => c.maybe_stopped) ? " (quiet for a long time: may have stopped)" : "")));
+  const nrow = el("div", "meta"); nrow.append(notesChip(it)); mid.append(nrow);
+  const arrows = el("div", "arrows");
+  arrows.append(btn("↑", "", () => step(it.id, -1), "Move up: " + it.title), btn("↓", "", () => step(it.id, 1), "Move down: " + it.title));
+  arrows.append(btn(section === "now" ? "To Later" : "To Now", "small", () => moveTo(it.id, section === "now" ? "later" : "now", null), (section === "now" ? "Move to Later: " : "Move to Now: ") + it.title));
+  li.append(lead, handle, mid, arrows);
+  li.addEventListener("dragstart", (ev) => { dragId = it.id; li.classList.add("dragging"); ev.dataTransfer.setData("text/plain", it.id); ev.dataTransfer.effectAllowed = "move"; });
+  li.addEventListener("dragend", () => { dragId = null; li.classList.remove("dragging"); document.querySelectorAll(".drop-before,.drop-after").forEach((x) => x.classList.remove("drop-before", "drop-after")); });
+  li.addEventListener("dragover", (ev) => { if (!dragId || dragId === it.id) return; ev.preventDefault(); const r = li.getBoundingClientRect(); const after = ev.clientY > r.top + r.height / 2; li.classList.toggle("drop-after", after); li.classList.toggle("drop-before", !after); });
+  li.addEventListener("dragleave", () => li.classList.remove("drop-before", "drop-after"));
+  li.addEventListener("drop", (ev) => {
+    ev.preventDefault(); ev.stopPropagation();
+    const r = li.getBoundingClientRect(); const after = ev.clientY > r.top + r.height / 2; li.classList.remove("drop-before", "drop-after");
+    if (!dragId || dragId === it.id) return;
+    const list = listOf(it.id).filter((x) => x !== dragId), i = list.indexOf(it.id);
+    moveTo(dragId, sectionOf(it.id), after ? (list[i + 1] || null) : it.id);
+  });
+  return li;
+}
+
+function renderFoot() {
+  const c = S.constants;
+  $("assumptions").textContent = "How the numbers are made: sizes are an assumption (S = " + c.S + ", M = " + c.M + ", L = " + c.L + " Claude days for one agent). The pace is measured: about " + c.rate + " Claude days per working day for all agents together; the estimate is then multiplied by " + c.slowdown[0] + " to " + c.slowdown[1] + " for your own steps, real devices and outside gates, and an item is never shorter than the chain of things it needs (one big task cannot be split across agents). Built-but-not-proven items count a quarter. Your own steps are not in the numbers, and Later is not counted.";
+  $("where").textContent = "This board reads and writes " + S.root + (S.branch ? " (branch " + S.branch + ")" : "") + ". Started " + when(S.started) + ".";
+  $("boardNotes").textContent = "General notes" + (S.board_thread.count ? " (" + S.board_thread.count + ")" : "") + (S.board_thread.waiting.includes("owner") ? " - waiting for you" : "");
+}
+
+// ---- the + buttons: an idea lands where the button is (Now: at the end; Later: at the end of Later)
+function ideaForm(where, holder, button) {
+  holder.textContent = "";
+  const f = el("div", "ideaform");
+  const r1 = el("div", "formrow"), r2 = el("div", "formrow");
+  const l1 = el("label", "", "What's the idea?"); l1.htmlFor = "ideaTitle_" + where; const i1 = el("input"); i1.type = "text"; i1.id = "ideaTitle_" + where; i1.maxLength = 120; r1.append(l1, i1);
+  const l2 = el("label", "", "Anything else? (optional)"); l2.htmlFor = "ideaNote_" + where; const i2 = el("textarea"); i2.id = "ideaNote_" + where; i2.maxLength = 600; r2.append(l2, i2);
+  const err = el("div", "err"); err.setAttribute("role", "alert");
+  const go = btn("Add it", "primary", async () => {
+    err.textContent = "";
+    const r = await api("POST", "/api/ideas", { role: ME.role, by: ME.name, title: i1.value, note: i2.value, kind: "feature", size: "M", position: where === "later" ? "later" : "end" });
+    if (r.status === 200) { holder.textContent = ""; button.hidden = false; await load(); say("Added " + r.data.idea.id + " at the end of " + (where === "later" ? "Later" : "Now") + ". Claude will sort out what it is and how big. Drag it where you want it.", "ok"); }
+    else err.textContent = r.data.error || "Could not add the idea";
+  });
+  const cancel = btn("Cancel", "", () => { holder.textContent = ""; button.hidden = false; });
+  const row2 = el("div", "row"); row2.append(go, cancel);
+  f.append(r1, r2, err, row2); holder.append(f); button.hidden = true; i1.focus();
+}
+$("addNow").addEventListener("click", () => ideaForm("now", $("formNow"), $("addNow")));
+$("addLater").addEventListener("click", () => ideaForm("later", $("formLater"), $("addLater")));
+
+// ---- the item drawer: details and the conversation
+function openDrawer(id, opener) {
+  if (openId && openId !== id) drafts.set(openId, composerValue());          // a draft belongs to its item
+  openId = id; openerEl = opener || null; editing = null;
+  $("drawer").hidden = false; $("scrim").hidden = false;
+  fillDrawerFacts(); resetComposer(drafts.get(id) || ""); loadThread();
+  try { history.replaceState(null, "", "#" + id); } catch (e) { /* ignore */ }
+  $("dClose").focus();
+}
+function closeDrawer() {
+  if (openId) drafts.set(openId, composerValue());
+  openId = null; $("drawer").hidden = true; $("scrim").hidden = true;
+  try { history.replaceState(null, "", location.pathname); } catch (e) { /* ignore */ }
+  if (openerEl && document.contains(openerEl)) openerEl.focus(); openerEl = null;
+}
+$("dClose").addEventListener("click", closeDrawer);
+$("scrim").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && openId) closeDrawer(); });
+$("boardNotes").addEventListener("click", (e) => openDrawer("_board", e.currentTarget));
+
+function fillDrawerFacts() {
+  const body = $("dBody");
+  let facts = $("dFacts");
+  if (!facts) { body.textContent = ""; facts = el("div"); facts.id = "dFacts"; const th = el("div"); th.id = "dThread"; body.append(facts, th); buildComposer(body); }
+  facts.textContent = "";
+  const chips = $("dChips"); chips.textContent = "";
+  if (openId === "_board") { $("dTitle").textContent = "General notes"; facts.append(el("p", "hint", "Anything that is not about one item: questions for everybody, decisions, hand-overs between Claude accounts, thanks.")); return; }
+  const it = S.items[openId];
+  $("dTitle").textContent = it.title;
+  chips.append(markEl(it.state), el("span", "chip", it.id), it.kind === "owner" ? el("span", "chip pink", "Needs you") : el("span", "chip", KIND[it.kind] || it.kind));
+  if (it.state === "built") chips.append(el("span", "chip built", "Built, not proven yet")); else if (it.state === "walked") chips.append(el("span", "chip new", "Done"));
+  if (it.proposal) chips.append(el("span", "chip new", it.pending ? "Your idea: write-up pending" : "Idea"));
+  const f = el("div", "facts");
+  f.append(el("div", "", "About " + it.days + " Claude days (size " + it.size + ")" + (it.est ? ", ready around working day " + range(it.est.lo, it.est.hi) : "")));
+  if (it.note) f.append(el("div", "", it.note));
+  if (it.evidence) f.append(el("div", "", "Proof: " + it.evidence));
+  if (it.needs.length) { const n = el("div"); n.append("Needs: "); it.needs.forEach((nd, i) => { if (i) n.append(", "); const b = btn(nd.title, "link", null); b.addEventListener("click", () => openDrawer(nd.id, b)); n.append(b); if (nd.mark === "p") n.append(" (a rule of the plan)"); }); f.append(n); }
+  if (it.why) f.append(el("div", "", "Why: " + it.why));
+  if (S.order.includes(it.id)) f.append(el("div", "", "In Now: number " + (S.order.indexOf(it.id) + 1) + "."));
+  else if (S.later.includes(it.id)) f.append(el("div", "", "In Later: future work, not counted in the estimate."));
+  else if (it.state !== "walked") f.append(el("div", "", "Not in a list."));
+  S.working.claims.filter((c) => c.status !== "done" && c.items.includes(it.id)).forEach((c) => f.append(el("div", "", c.by + " is working on it: " + c.doing)));
+  facts.append(f);
+  facts.append(actionsEl(it));
+}
+
+// ---- your buttons. His rules: he is not the tester, and "built, not walked" is the word until an item is proven; so his tick never proves an engineering item.
+//   I did this      only for what only he can finish (protect main, the keystore): his word is the proof
+//   I checked it    only where his own judgement is part of the acceptance: recorded, and cited when Claude proves the item
+//   It does not work  for anything built or done: reopens it at the top of Now, but never before what it needs, and leaves Claude a note
+function actionsEl(it) {
+  const box = el("div", "actions"); box.id = "dActions";
+  const say1 = (t) => box.append(el("div", "hint", t));
+  async function send(action, body, okText) {
+    const r = await api("POST", "/api/check", { role: ME.role, by: ME.name, item: it.id, action, body });
+    if (r.status === 200) { await load(); await loadThread(); say(okText, "ok"); } else say(r.data.error || "Could not save", "error");
+  }
+  function ask(label, hint, required, action, okText, primary) {
+    const wrap = el("div"); const b = btn(label, primary ? "primary small" : "small", null);
+    b.addEventListener("click", () => {
+      wrap.textContent = ""; wrap.append(el("div", "hint", hint));
+      const ta = el("textarea"); ta.maxLength = 600; ta.setAttribute("aria-label", hint); const err = el("div", "err"); err.setAttribute("role", "alert");
+      const row2 = el("div", "row"); const go = btn("Send", "primary small", () => { if (required && !ta.value.trim()) { err.textContent = "Write a sentence first."; return; } send(action, ta.value, okText); });
+      row2.append(go, btn("Cancel", "small", () => { wrap.textContent = ""; wrap.append(b); })); wrap.append(ta, err, row2); ta.focus();
+    });
+    wrap.append(b); return wrap;
+  }
+  if (it.state === "walked") say1(it.owner_check && it.kind === "owner" ? "Done: you said you did this." : "Done and proven: " + (it.evidence || "(no proof written)"));
+  else if (it.state === "built") say1("Built, but not proven yet: it counts as done only after Claude walks it on the real pair and records the proof.");
+  else if (it.state === "reopened") say1("Reopened: you reported a problem and Claude has a note waiting. It is at the front of Now.");
+  if (it.problem) say1("You reported: \"" + it.problem.body + "\" (" + when(it.problem.at) + ")");
+  if (it.owner_check) say1("You checked it (" + when(it.owner_check.at) + "): " + it.owner_check.body);
+  if (it.can_finish) box.append(ask("I did this", "What did you do? (optional)", false, "finish", "Marked done with your word.", true));
+  if (it.can_judge && !it.owner_check) box.append(ask("I checked it", "What did you see? (optional)", false, "judge", "Saved: you checked it. Claude cites it when it proves the item.", true));
+  if (it.owner_check) { const w = el("div"); w.append(btn(it.kind === "owner" && it.state === "walked" ? "Not done after all" : "Take my check back", "small", () => send("uncheck", "", "Taken back."))); box.append(w); }
+  if (["built", "walked", "reopened"].includes(it.state) && !it.problem) box.append(ask("It doesn't work", "What does not work? Claude gets this as a note and the item goes to the front of Now.", true, "problem", "Reported. The item is at the front of Now and Claude has a note waiting.", false));
+  if (it.state !== "walked" && (S.order.includes(it.id) || S.later.includes(it.id))) { const w = el("div"); w.append(btn(S.later.includes(it.id) ? "Move to Now" : "Move to Later", "small", () => moveTo(it.id, S.later.includes(it.id) ? "now" : "later", null))); box.append(w); }
+  if (!box.children.length) box.hidden = true;
+  return box;
+}
+async function loadThread() {
+  const id = openId; if (!id) return;
+  const r = await api("GET", "/api/notes?item=" + encodeURIComponent(id));
+  if (id !== openId) return;
+  const th = $("dThread"); th.textContent = "";
+  if (r.status !== 200) { th.append(el("p", "banner warn", r.data.error || "Could not load the notes")); return; }
+  const list = r.data.notes, byId = {}; list.forEach((n) => { byId[n.id] = n; });
+  const det = list.filter((n) => n.type === "detail"), rest = list.filter((n) => n.type !== "detail");
+  th.append(el("h3", "", "Details"));
+  if (!det.length) th.append(el("p", "hint", "None yet. A detail says how this item should turn out; whoever builds it reads these first."));
+  det.forEach((n) => th.append(noteEl(n, byId)));
+  th.append(el("h3", "", "Conversation"));
+  if (!rest.length) th.append(el("p", "hint", "Nothing yet."));
+  rest.forEach((n) => th.append(noteEl(n, byId)));
+}
+function noteEl(n, byId) {
+  const d = el("div", "nt" + (n.type === "detail" ? " detail" : ""));
+  const h = el("div", "head"); h.append(el("b", "", n.by), el("span", "chip role-" + n.role, ROLE[n.role] || n.role), el("span", "hint", when(n.at)));
+  if (n.type === "check") h.append(el("span", "chip new", "Your check"));
+  if (n.type === "problem") h.append(el("span", "chip bad", "Problem report"));
+  if (n.edited) h.append(el("span", "hint", "(edited)"));
+  (n.to || []).forEach((r) => h.append(el("span", "chip" + (n.waiting_for && n.waiting_for.includes(r) ? " wait" : ""), "to " + (ROLE[r] || r) + (n.waiting_for && n.waiting_for.includes(r) ? ": waiting" : ""))));
+  d.append(h);
+  if (n.reply_to && byId[n.reply_to]) d.append(el("div", "quote", "in reply to " + byId[n.reply_to].by + ": " + byId[n.reply_to].body.slice(0, 120)));
+  const b = el("div", "body"); b.append(linkify(n.body)); d.append(b);
+  const a = el("div", "acts");
+  a.append(btn("Reply", "small", () => startCompose({ replyTo: n.id, prefillTo: [n.role] }, "")));
+  if (n.role === ME.role) {
+    a.append(btn("Edit", "small", () => startCompose({ replaces: n.id, type: n.type }, n.body)));
+    const ret = btn("Retract", "small", null);
+    ret.addEventListener("click", async () => { ret.textContent = "Really retract?"; ret.classList.add("primary"); ret.onclick = async () => { const r = await api("POST", "/api/notes", { item: openId, role: ME.role, by: ME.name, body: "", replaces: n.id }); if (r.status === 200) { await load(); await loadThread(); say("Retracted (the history keeps it).", "ok"); } else say(r.data.error || "Could not retract", "error"); }; }, { once: true });
+    a.append(ret);
+  }
+  d.append(a);
+  return d;
+}
+function composerValue() { const t = $("cBody"); return t ? t.value : ""; }
+function buildComposer(parent) {
+  const c = el("div", "composer"); c.id = "composer";
+  const h = el("h3", "", "Write here"); h.id = "cHead";
+  const grid = el("div", "grid2");
+  const f1 = el("div", "formrow"); const l1 = el("label", "", "This is"); l1.htmlFor = "cType"; const s1 = el("select"); s1.id = "cType";
+  [["note", "A note"], ["detail", "A detail: how this should turn out"]].forEach(([v, t]) => { const o = el("option", "", t); o.value = v; s1.append(o); }); f1.append(l1, s1);
+  const f2 = el("fieldset", "plain");
+  f2.append(el("legend", "plain", "Ask (it waits for them until they write here)"));
+  ["dev", "agent"].forEach((r) => { const lab = el("label", "inl"); const cb = el("input"); cb.type = "checkbox"; cb.value = r; cb.className = "cTo"; lab.append(cb, " " + ROLE[r]); f2.append(lab); });
+  grid.append(f1, f2);
+  const f3 = el("div", "formrow"); const l3 = el("label", "", "Your words (plain text; no passwords or keys)"); l3.htmlFor = "cBody"; const ta = el("textarea"); ta.id = "cBody"; ta.maxLength = 4000; f3.append(l3, ta);
+  const cnt = el("div", "hint"); cnt.id = "cCount";
+  const err = el("div", "err"); err.id = "cErr"; err.setAttribute("role", "alert");
+  const acts = el("div", "acts"); const go = btn("Post", "primary", postNote); go.id = "cGo"; const cancel = btn("Cancel edit", "", () => startCompose({}, "")); cancel.id = "cCancel"; cancel.hidden = true; acts.append(go, cancel);
+  ta.addEventListener("input", () => { cnt.textContent = ta.value.length + " / 4000"; });
+  ta.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") postNote(); });
+  c.append(h, grid, f3, cnt, err, acts); parent.append(c);
+  resetComposer(drafts.get(openId) || "");
+}
+function resetComposer(text, opts) {
+  opts = opts || {};
+  editing = (opts.replaces || opts.replyTo) ? opts : null;
+  $("cBody").value = text; $("cType").value = opts.type || "note"; $("cErr").textContent = "";
+  document.querySelectorAll(".cTo").forEach((cb) => { cb.checked = (opts.prefillTo || []).includes(cb.value); });
+  $("cHead").textContent = opts.replaces ? "Edit your note (the old version stays in the history)" : opts.replyTo ? "Reply" : "Write here";
+  $("cCancel").hidden = !opts.replaces; $("cGo").textContent = opts.replaces ? "Save the edit" : "Post";
+  $("cBody").dispatchEvent(new Event("input"));
+}
+function startCompose(opts, text) { resetComposer(text, opts); $("cBody").focus(); }
+async function postNote() {
+  const err = $("cErr"); err.textContent = "";
+  const text = $("cBody").value.trim(); if (!text) { err.textContent = "Write something first."; return; }
+  const to = Array.from(document.querySelectorAll(".cTo")).filter((c) => c.checked).map((c) => c.value);
+  const payload = { item: openId, role: ME.role, by: ME.name, body: text, type: $("cType").value, to };
+  if (editing && editing.replaces) payload.replaces = editing.replaces;
+  if (editing && editing.replyTo) payload.reply_to = editing.replyTo;
+  $("cGo").disabled = true;
+  const r = await api("POST", "/api/notes", payload);
+  $("cGo").disabled = false;
+  if (r.status !== 200) { err.textContent = r.data.error || "Could not save the note"; return; }
+  drafts.delete(openId); startCompose({}, "");
+  await load(); await loadThread(); say("Saved as a file in docs/roadmap/notes. It is committed with the next docs PR.", "ok");
+}
+
+// ---- moving items: a move is never refused for a need, it CARRIES (the server says what moved with it)
+async function moveTo(id, to, before) {
+  if (busy) return; busy = true;
+  try {
+    const r = await api("POST", "/api/move", { version: S.version, item: id, to, before });
+    if (r.status === 200) {
+      const y = window.scrollY; await load(); window.scrollTo(0, y);
+      const also = r.data.also_moved || [];
+      say("Moved" + (to === "later" ? " to Later" : to === "now" && S.later.includes(id) === false ? "" : "") + "." + (also.length ? " Also moved with it, because they belong together: " + titles(also) + "." : ""), "ok");
+    }
+    else if (r.status === 409) { await load(); say("The plan changed on disk while this page was open (another session, or a status update), so it was reloaded. Your move was not applied: please repeat it.", "error"); }
+    else { say("Not allowed: " + plain(r.data.error || "the plan would break") + ". Nothing was changed.", "error"); renderAll(); }
+  } catch (e) { say("Could not reach the board: " + e + ". Is the window that started it still open?", "error"); }
+  finally { busy = false; }
+}
+function step(id, dir) {
+  const list = listOf(id).slice(), section = sectionOf(id);
+  const i = list.indexOf(id);
+  let j = i + dir;
+  while (j >= 0 && j < list.length && !(S.items[list[j]] && matches(S.items[list[j]]) && !isDone(S.items[list[j]]))) j += dir;      // skip hidden or filtered-out items
+  if (j < 0 || j >= list.length) return;
+  moveTo(id, section, dir < 0 ? list[j] : (list[j + 1] || null));
+}
+
+// ---- filters, reload, polling
+["fq", "fkind", "fstate", "fnotes", "fdone", "plumbing"].forEach((id) => $(id).addEventListener(id === "fq" ? "input" : "change", () => {
+  if (id === "plumbing" || id === "fdone") { try { localStorage.setItem("roadmap." + id, $(id).checked ? "1" : "0"); } catch (e) { /* private window */ } }
+  if (S) renderLists();
+}));
+$("reload").addEventListener("click", async () => { await load(); if (openId) await loadThread(); say("Reloaded from the files.", "ok"); });
+try { const pv = localStorage.getItem("roadmap.plumbing"); if (pv !== null) $("plumbing").checked = pv === "1"; const fd = localStorage.getItem("roadmap.fdone"); if (fd !== null) $("fdone").checked = fd === "1"; } catch (e) { /* private window */ }
+async function poll() {
+  if (document.hidden || busy) return;
+  try {
+    const r = await api("GET", "/api/state");
+    if (r.status === 200 && r.data.stamp !== (S && S.stamp)) {
+      const active = document.activeElement; const typing = active && (active.tagName === "TEXTAREA" || active.tagName === "INPUT") && active.id !== "fq";
+      S = r.data; renderAll(); if (openId) loadThread();
+      if (typing && active.id && document.getElementById(active.id)) document.getElementById(active.id).focus();
+    }
+    $("checked").textContent = "Checked " + new Date().toLocaleTimeString();
+  } catch (e) { $("checked").textContent = "Cannot reach the board: is its window still open?"; }
+}
+setInterval(poll, 10000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+// a link to #P3-12 opens that item, also when the board is already open (a link from a document, or the browser's back button)
+function openFromHash() { const h = decodeURIComponent(location.hash.slice(1)); if (S && (h === "_board" || S.items[h])) { if (h !== openId) openDrawer(h, null); } else if (!h && openId) closeDrawer(); }
+window.addEventListener("hashchange", openFromHash);
+load().then(() => openFromHash()).catch((e) => say("Could not load the plan: " + e, "error"));
+</script>
+</body>
+</html>

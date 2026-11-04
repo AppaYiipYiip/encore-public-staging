@@ -1,0 +1,12 @@
+{
+ "id": "20261104T193516Z-agent-246a",
+ "item": "P5-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:35:16Z",
+ "type": "note",
+ "body": "This item (the install guide) is last in your list, but the first friend (P3-12) needs it: you will see a heads-up on P3-12. Where do you want it?",
+ "to": [
+  "owner"
+ ]
+}

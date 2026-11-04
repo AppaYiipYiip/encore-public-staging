@@ -1,0 +1,597 @@
+{
+ "P0-01": {
+  "kind": "process",
+  "title": "Behind the scenes: secrets and old leftovers cleaned out of the code",
+  "note": ""
+ },
+ "P0-06": {
+  "kind": "process",
+  "title": "Behind the scenes: automatic checks run on every change",
+  "note": ""
+ },
+ "P0-07": {
+  "kind": "owner",
+  "title": "Protect the main branch on GitHub (nobody can overwrite your code by accident)",
+  "note": "Only you can switch this on. The exact clicks are pinned on the item."
+ },
+ "P0-08": {
+  "kind": "process",
+  "title": "Behind the scenes: written rules so every Claude works the same way",
+  "note": ""
+ },
+ "P0-09": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: one command starts a full test setup on any computer",
+  "note": ""
+ },
+ "P0-10": {
+  "kind": "process",
+  "title": "Behind the scenes: check that every library we use may legally be used",
+  "note": "Needed before the repository goes public."
+ },
+ "P0-11": {
+  "kind": "process",
+  "title": "Behind the scenes: keep the automatic checks and build tools up to date",
+  "note": "Flutter will drop the current Gradle, AGP and Kotlin."
+ },
+ "P0-12": {
+  "kind": "process",
+  "title": "Behind the scenes: fix the places where the documents promise more than the app does",
+  "note": "Documents that promise what the code does not do."
+ },
+ "P0-13": {
+  "kind": "quality",
+  "title": "Before your first friend: Claude checks everything built so far, like a real user",
+  "note": "On a clean phone and a clean server, written up and fixed. Nothing counts as done before this."
+ },
+ "P1-01": {
+  "kind": "feature",
+  "title": "Songs you do not own start playing in about 2 seconds",
+  "note": ""
+ },
+ "P1-02": {
+  "kind": "feature",
+  "title": "Playing starts first; size limits only apply when you keep a song",
+  "note": ""
+ },
+ "P1-03": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: YouTube is asked gently, so your home address is never blocked",
+  "note": "YouTube can block a home address that asks too often."
+ },
+ "P1-04": {
+  "kind": "feature",
+  "title": "The next songs are prepared before you tap them",
+  "note": "Faster starts for albums and queues."
+ },
+ "P1-05": {
+  "kind": "feature",
+  "title": "Imported playlists play the same video they came with",
+  "note": ""
+ },
+ "P1-06": {
+  "kind": "process",
+  "title": "Behind the scenes: tools that measure how fast the app really feels",
+  "note": ""
+ },
+ "P1-07": {
+  "kind": "feature",
+  "title": "Search shows one clear best result at the top",
+  "note": ""
+ },
+ "P1-08": {
+  "kind": "feature",
+  "title": "The player never gets stuck",
+  "note": ""
+ },
+ "P1-09": {
+  "kind": "feature",
+  "title": "Offline: no skipping, greyed-out songs, and it recovers by itself",
+  "note": ""
+ },
+ "P1-10": {
+  "kind": "feature",
+  "title": "Covers show everywhere, also when you are offline",
+  "note": ""
+ },
+ "P1-11": {
+  "kind": "feature",
+  "title": "Playback resumes after the phone closes the app, with the right lock-screen position",
+  "note": ""
+ },
+ "P1-12": {
+  "kind": "feature",
+  "title": "Big text, right-to-left languages and screen readers work",
+  "note": ""
+ },
+ "P1-13": {
+  "kind": "feature",
+  "title": "One volume and the same loudness for every song",
+  "note": ""
+ },
+ "P1-14": {
+  "kind": "feature",
+  "title": "Less syncing, so less battery and mobile data",
+  "note": ""
+ },
+ "P1-15": {
+  "kind": "feature",
+  "title": "The app tells you when you are offline",
+  "note": "Found in round 2: today only the airplane icon tells you."
+ },
+ "P2-01": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the server's core, where a song is one entry whoever owns it",
+  "note": ""
+ },
+ "P2-02": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the app's database rebuilt around songs as entries",
+  "note": ""
+ },
+ "P2-03": {
+  "kind": "feature",
+  "title": "Playing something is not saving it; albums play even for songs you do not own",
+  "note": ""
+ },
+ "P2-04": {
+  "kind": "feature",
+  "title": "Import a playlist in seconds",
+  "note": ""
+ },
+ "P2-05": {
+  "kind": "feature",
+  "title": "Importing has a stop button, shows progress and counts correctly",
+  "note": ""
+ },
+ "P2-06": {
+  "kind": "feature",
+  "title": "Spotify import works beyond 100 songs and brings your Liked Songs",
+  "note": "Needs the experiment X-4 (sign in to Spotify's page inside the app)."
+ },
+ "P2-07": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: remove leftover old code and a duplicate import screen",
+  "note": ""
+ },
+ "P2-08": {
+  "kind": "feature",
+  "title": "Pick up where you left off on another device",
+  "note": ""
+ },
+ "P2-09": {
+  "kind": "feature",
+  "title": "One device plays at a time, like Spotify",
+  "note": ""
+ },
+ "P2-10": {
+  "kind": "feature",
+  "title": "Sign in by invitation, and bring your own music",
+  "note": ""
+ },
+ "P2-11": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: move over installs from the old version (probably not needed: proposed to close)",
+  "note": "The old installs were destroyed on 2026-11-03."
+ },
+ "P2-12": {
+  "kind": "feature",
+  "title": "Search and artist pages come from your own server",
+  "note": "So a browser or a TV can work; stops the phone calling Deezer."
+ },
+ "P2-13": {
+  "kind": "feature",
+  "title": "Downloads in the right format; stale files get replaced",
+  "note": ""
+ },
+ "P2-14": {
+  "kind": "feature",
+  "title": "Lyrics come from your own server",
+  "note": "Stops the phone calling LRCLIB."
+ },
+ "P2-15": {
+  "kind": "feature",
+  "title": "Your server checks for new releases; the news shows in the app",
+  "note": "The base of 'an artist I follow released something'."
+ },
+ "P2-16": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: your library repairs itself after a restore",
+  "note": ""
+ },
+ "P2-17": {
+  "kind": "feature",
+  "title": "Imported playlists can follow the original playlist",
+  "note": ""
+ },
+ "P2-18": {
+  "kind": "feature",
+  "title": "A changed or expired sign-in is handled calmly",
+  "note": ""
+ },
+ "P2-19": {
+  "kind": "feature",
+  "title": "The app finds your server without typing an address",
+  "note": "A link or QR, then 'Servers on this Wi-Fi'.",
+  "judge": true
+ },
+ "P2-20": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the app keeps only a device key, not your music server password",
+  "note": "So a stolen phone cannot reveal your music password."
+ },
+ "P2-21": {
+  "kind": "feature",
+  "title": "Playlist description and picture; select many songs at once",
+  "note": ""
+ },
+ "P2-22": {
+  "kind": "feature",
+  "title": "A download shows where it is: progress, a notification, and why if it stops",
+  "note": "Found by the owner on 2026-11-03."
+ },
+ "P2-23": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: one written rulebook that every app and the server follow",
+  "note": "So any app (phone, browser, TV, Alexa, Siri) can use the same server in the same way."
+ },
+ "P3-01": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the whole server is one program",
+  "note": ""
+ },
+ "P3-02": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the server packaged for Intel and AMD computers",
+  "note": "Only Intel/AMD is built today."
+ },
+ "P3-03": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: each phone gets its own key to the server",
+  "note": ""
+ },
+ "P3-04": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: risky leftovers removed (full control of the server computer, Firefox and Google sign-in)",
+  "note": ""
+ },
+ "P3-05": {
+  "kind": "host",
+  "title": "Install the server with one command",
+  "note": ""
+ },
+ "P3-06": {
+  "kind": "host",
+  "title": "A setup wizard and admin pages in the browser, on a PC",
+  "note": "The owner put Jam before this.",
+  "judge": true
+ },
+ "P3-07": {
+  "kind": "host",
+  "title": "Proof that a fresh computer installs the server from the guide, also on a slow line",
+  "note": ""
+ },
+ "P3-08": {
+  "kind": "host",
+  "title": "Move the server to another computer, see statistics, and test restores every night",
+  "note": ""
+ },
+ "P3-09": {
+  "kind": "host",
+  "title": "Privacy rules tested; export your data; delete your account",
+  "note": ""
+ },
+ "P3-10": {
+  "kind": "feature",
+  "title": "Add a device with a QR code; settings follow you; cancel a lost device",
+  "note": ""
+ },
+ "P3-11": {
+  "kind": "host",
+  "title": "Use a music server you already run (for people who like tinkering)",
+  "note": ""
+ },
+ "P3-12": {
+  "kind": "feature",
+  "title": "Your first friend uses your server from outside your home",
+  "note": "Five checks, then a week of use."
+ },
+ "P3-13": {
+  "kind": "host",
+  "title": "You set a storage limit, and the server says plainly when it is full",
+  "note": ""
+ },
+ "P3-14": {
+  "kind": "host",
+  "title": "Server updates that undo themselves if something goes wrong",
+  "note": ""
+ },
+ "P3-15": {
+  "kind": "quality",
+  "title": "Before your first friend: a security check of everything reachable from the internet",
+  "note": ""
+ },
+ "P3-16": {
+  "kind": "host",
+  "title": "Reset a forgotten password with one command",
+  "note": ""
+ },
+ "P4-01": {
+  "kind": "feature",
+  "title": "A Home made for you: suggestions, smart shuffle, radio and \"Not for me\"",
+  "note": "Smart shuffle: about one song in five is a marked suggestion; one tap to keep or skip.",
+  "judge": true
+ },
+ "P4-02": {
+  "kind": "feature",
+  "title": "Jam: listen together",
+  "note": "",
+  "judge": true
+ },
+ "P4-03": {
+  "kind": "feature",
+  "title": "See what your friends listen to (only if they agree)",
+  "note": ""
+ },
+ "P4-04": {
+  "kind": "feature",
+  "title": "Optional lossless (CD-quality) audio",
+  "note": "Off by default; brings its own containers."
+ },
+ "P4-05": {
+  "kind": "feature",
+  "title": "Your Year in Music, from what you really played",
+  "note": ""
+ },
+ "P4-06": {
+  "kind": "quality",
+  "title": "Before the public release: Claude walks the whole app again like a real user",
+  "note": "",
+  "judge": true
+ },
+ "P4-07": {
+  "kind": "feature",
+  "title": "Control one device from another, with remote volume",
+  "note": ""
+ },
+ "P4-08": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: your phone only ever talks to your own server, even for friends' servers",
+  "note": "So a friend's server never learns anything about your phone."
+ },
+ "P4-09": {
+  "kind": "feature",
+  "title": "Friends on other servers",
+  "note": "The riskiest code: an ultrareview comes first."
+ },
+ "P4-10": {
+  "kind": "feature",
+  "title": "Jam across servers, sharing, and shared playlists",
+  "note": ""
+ },
+ "P4-11": {
+  "kind": "platform",
+  "title": "Tablet version",
+  "note": "Un-parked by the owner on 2026-11-03."
+ },
+ "P4-12": {
+  "kind": "feature",
+  "title": "The extras Spotify has: Android Auto, a home-screen widget, crossfade and more",
+  "note": ""
+ },
+ "P4-13": {
+  "kind": "feature",
+  "title": "Problem reports and battery-saver tips (shelved)",
+  "note": ""
+ },
+ "P4-14": {
+  "kind": "feature",
+  "title": "\"Wrong song?\" fix, and editing song details",
+  "note": ""
+ },
+ "P4-15": {
+  "kind": "feature",
+  "title": "Browse, history and playlist details",
+  "note": ""
+ },
+ "P4-16": {
+  "kind": "feature",
+  "title": "Profiles for several people on one device",
+  "note": ""
+ },
+ "P4-17": {
+  "kind": "feature",
+  "title": "Compare music taste with a friend (only if they agree)",
+  "note": ""
+ },
+ "P4-18": {
+  "kind": "feature",
+  "title": "Follow artists, and get told when one releases something",
+  "note": "Opt-in phone notification; the server does the checking."
+ },
+ "P5-01": {
+  "kind": "owner",
+  "title": "Make your release key (so updates never force a reinstall)",
+  "note": "Made with the owner; he keeps the keystore."
+ },
+ "P5-02": {
+  "kind": "feature",
+  "title": "The app checks for updates by itself",
+  "note": ""
+ },
+ "P5-03": {
+  "kind": "quality",
+  "title": "Claude tests on many phones, and you use the app without Spotify for 5 days",
+  "note": "",
+  "judge": true
+ },
+ "P5-04": {
+  "kind": "feature",
+  "title": "The app opens in under 0.7 seconds",
+  "note": ""
+ },
+ "P5-05": {
+  "kind": "owner",
+  "title": "The website, the name and the legal texts",
+  "note": "When the owner wants."
+ },
+ "P5-06": {
+  "kind": "owner",
+  "title": "Make the code public on GitHub and publish the first release",
+  "note": ""
+ },
+ "P5-07": {
+  "kind": "feature",
+  "title": "A guide that shows a friend how to install the app from GitHub",
+  "note": "No store and no developer account (D-56): screenshots per phone brand, including Android's advanced install flow."
+ },
+ "P5-08": {
+  "kind": "feature",
+  "title": "A \"what's new\" screen and help inside the app",
+  "note": ""
+ },
+ "P6-01": {
+  "kind": "design",
+  "title": "Drawings of the browser version, approved by you before any code",
+  "note": "Drawn and approved before any code.",
+  "judge": true
+ },
+ "P6-02": {
+  "kind": "platform",
+  "title": "The browser version: the same app in any desktop browser",
+  "note": "Same code as the tablet if the owner agrees (D-55)."
+ },
+ "P6-03": {
+  "kind": "platform",
+  "title": "Android TV version",
+  "note": "",
+  "judge": true
+ },
+ "P6-04": {
+  "kind": "platform",
+  "title": "iPhone: can it be installed without Apple's store? (check first)",
+  "note": "A 'no' is a result, not a delay."
+ },
+ "P6-05": {
+  "kind": "platform",
+  "title": "iPhone version of the app",
+  "note": ""
+ },
+ "P6-06": {
+  "kind": "platform",
+  "title": "iPhone: how people install it from GitHub",
+  "note": "No App Store and no TestFlight (D-56)."
+ },
+ "P6-07": {
+  "kind": "platform",
+  "title": "Casting to other speakers",
+  "note": "Not scheduled."
+ },
+ "N-01": {
+  "kind": "feature",
+  "title": "Share a song, album or playlist as a link",
+  "note": "Opens in Encore; a page for people without the app.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-02": {
+  "kind": "feature",
+  "title": "Export a playlist as a file",
+  "note": "Leave with your data.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-03": {
+  "kind": "feature",
+  "title": "Send what you play to ListenBrainz or Last.fm",
+  "note": "Opt in per person; also feeds the suggestions.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-04": {
+  "kind": "host",
+  "title": "Get told when the server is down, full or YouTube is blocking it",
+  "note": "By e-mail, a webhook or ntfy, outside the app.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-05": {
+  "kind": "host",
+  "title": "Back up your music with one command",
+  "note": "The database backup does not hold the music.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-06": {
+  "kind": "feature",
+  "title": "Podcasts and audiobooks",
+  "note": "Parked by the owner; listed so it is not forgotten.",
+  "proposal": true,
+  "size": "L",
+  "needs": []
+ },
+ "N-07": {
+  "kind": "design",
+  "title": "A better logo and app icon",
+  "note": "Today's launcher icon is explicitly temporary: a green waveform on dark. Includes Android's adaptive and themed icon.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-08": {
+  "kind": "design",
+  "title": "A fresh visual design for the phone app",
+  "note": "Drawn first (D-43), approved before any code.",
+  "proposal": true,
+  "size": "L",
+  "needs": []
+ },
+ "N-09": {
+  "kind": "design",
+  "title": "A first-run experience that feels designed",
+  "note": "The empty-server screen exists; make the first five minutes feel designed.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "P3-17": {
+  "kind": "host",
+  "title": "The server on ARM computers (Raspberry Pi and others)",
+  "note": "Later. Keep it possible, do not build it now (D-58)."
+ },
+ "P6-08": {
+  "kind": "design",
+  "title": "Drawings of the tablet version",
+  "note": "Later (D-58)."
+ },
+ "P4-20": {
+  "kind": "process",
+  "title": "Behind the scenes: choose how suggestions are made, a ready-made engine or our own",
+  "note": "A study with numbers on your real plays; the advisor decides from the results."
+ },
+ "P3-18": {
+  "kind": "owner",
+  "title": "Install your real server, with Claude guiding you step by step",
+  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+ },
+ "P3-19": {
+  "kind": "owner",
+  "title": "Start Claude's deep security review before your first friend (one command, it costs money)",
+  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+ },
+ "P4-19": {
+  "kind": "owner",
+  "title": "Start Claude's deep security review of friends on other servers (one command, it costs money)",
+  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+ },
+ "P5-09": {
+  "kind": "owner",
+  "title": "Start Claude's deep security review before going public (one command, it costs money)",
+  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+ }
+}

@@ -1,5 +1,7 @@
 # P6 — Later (after the first public version; each needs a decision first)
 
+> **Updated 2026-11-03 (D-54):** the **tablet, TV and iPhone** versions and the **browser player** are now scheduled as the last items of the list (`08`, tasks P4-11 and P6-01 to P6-06 in `P6-platforms.md`). The rows below keep their prerequisites; what stays unscheduled is listed in `P6-platforms.md` (casting) and `PROPOSED.md` (podcasts).
+
 Jam, friend activity, recommendations, the quality tier and Year in Music are **not** here: the owner put them in the first version
 (phase P4, `P4-full-feature-set.md`).
 

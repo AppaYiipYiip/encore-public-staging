@@ -1,0 +1,9 @@
+{
+ "id": "20261104T193516Z-agent-4eb1",
+ "item": "P3-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:35:16Z",
+ "type": "detail",
+ "body": "Owner's part: install the real server by hand with the guide; remove the old Encore device from your Tailscale machines page before turning the Funnel on for the new server; sign in for the Funnel; decide whether lyrics move to the server before the friend connects (D-51)."
+}

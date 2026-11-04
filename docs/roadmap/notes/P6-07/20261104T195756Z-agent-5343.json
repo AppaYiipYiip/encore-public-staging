@@ -1,0 +1,10 @@
+{
+ "id": "20261104T195756Z-agent-5343",
+ "item": "P6-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:57:56Z",
+ "type": "note",
+ "body": "Done by default, yours to overrule: casting is back at the end of the list: the docs say it is not scheduled and comes later (P6-later.md). To change it, drag it.",
+ "replaces": "20261104T193516Z-agent-f5d8"
+}

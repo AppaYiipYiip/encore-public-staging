@@ -1,0 +1,9 @@
+{
+ "id": "20261104T193516Z-agent-d0d2",
+ "item": "P6-04",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:35:16Z",
+ "type": "detail",
+ "body": "D-56: Encore is on GitHub only, so there is no App Store, no TestFlight and no Apple developer account. This check decides whether an iPhone version can reach anybody at all; a \"no\" is a result."
+}

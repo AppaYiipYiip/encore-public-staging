@@ -1,0 +1,10 @@
+{
+ "id": "20261104T195756Z-agent-eaaa",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:57:56Z",
+ "type": "note",
+ "body": "Done by default, yours to overrule: the four moves I found uncommitted on 4 Nov (commit ddc93e2) are undone, because nobody could confirm who made them and you did not confirm them. The order is back to what it was before them (first friend before Jam, the install guide before the first friend, casting at the end), and the nine proposals are back under \"Ideas waiting for your yes\": the docs say you accept or reject each, and podcasts (N-06) is recorded as parked by you. To undo any of this, drag items where you want them or press \"Yes\" on a proposal.",
+ "replaces": "20261104T193516Z-agent-9381"
+}

@@ -5,7 +5,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 ---
 
 ## P0-01 to P0-05 — done (kept as a record)
-
+* **Order.** Needs: none.
 * **P0-01 Secrets out of git.** Done. Login files live in `..\local\logins\` and are never committed; the pre-commit hook refuses
   `*login*` files, `.env`, keys and APK/AAB files. No password rotation (owner, 2026-10-21: the test passwords are temporary).
 * **P0-02 The homelab folder leaves the repository.** Done. Nothing of the owner's homelab is in this repository; the scripts that
@@ -18,6 +18,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
   launcher icon (green waveform on dark), GPL-3.0 `LICENSE`, `README.md`, `CHANGELOG.md`, `SECURITY.md`, `PRIVACY.md`.
 
 ## P0-06 — CI for the app and the server
+* **Order.** Needs: none.
 * **Why.** D7.
 * **Do.** `.github/workflows/app.yml`, `server.yml`, `docs.yml` as in `../06` §7 (release.yml comes in P5-01). Flutter version pinned
   (the one in today's `ci.yml`: 3.47.7). Python 3.12; run each legacy server suite (`python -m unittest discover`) until P3-01 replaces them.
@@ -26,6 +27,8 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Size.** M.
 
 ## P0-07 — GitHub set-up
+* **Order.** Needs: none.
+* **Open inside this task (2026-11-04).** Only one thing is left: protect `main` (a GitHub setting, the owner's). The GitHub project board and one issue per task are **dropped**: the owner does not use GitHub, and the roadmap board (`docs/roadmap/`, `roadmap.bat`) replaces them. The rules, decided by the advisor: a pull request is required with 0 approvals (he is the only person), the two checks that run on every change (`checks`, `secrets`) must pass (the others are path-filtered and would block documentation changes forever), no force push, no deletion. The exact clicks are pinned on the item.
 * **Why.** Owner: "the GitHub is shit, confusing and weird". `../05` §4.
 * **Context.** Today: `AppaYiipYiip/encore`, private, default branch `better-audio-player` (stale since 2026-10-16, README emptied),
   branches `master` (the upstream project) and `work/eng-review` (with passwords), 16 upstream tags, no releases, no description.
@@ -38,6 +41,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Depends on.** P0-04, D-8. **Size.** S.
 
 ## P0-08 — Files that guide agents
+* **Order.** Needs: none.
 * **Do.** `AGENTS.md` (copy of `../06` §5 + "read `docs/README.md` first"), `CLAUDE.md` with one line pointing to it,
   `.github/pull_request_template.md` (what changed for a person, evidence, setup measured on, not tested + why, checklist from
   `../07` §10), a `gitleaks` pre-commit hook and CI step, `.gitignore` for `*.apk *.aab *.env *login*.txt *cookies*.txt build/`.
@@ -45,6 +49,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Size.** S.
 
 ## P0-09 — Environments as code (first part) — Size M
+* **Order.** Needs: none.
 * **Why.** `../24` §2: every test environment rebuildable by one command; real data, legally.
 * **Do.** `tools/env/stack up` (server + Navidrome + a seeded library of Creative Commons albums with real tags, covers and lyrics; licences
   listed), `tools/emulators/create A B C D E` and `profile <X>` from configs in the repo, `tools/fixtures/refresh` (recorded outside-service
@@ -52,7 +57,29 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Acceptance.** A fresh clone runs `tools/env/stack up` and the unit + integration suites against it with no manual step.
 
 ## P0-10 — Licence inventory and checks — Size S
+* **Order.** Needs: none.
 * **Why.** `../25`: a public GPL-3.0 project must know every component's licence and every service's terms.
 * **Do.** Verify every *verify* row of `../25`; a CI step that lists Dart and Python dependency licences and fails on an unknown or
   incompatible one; `THIRD_PARTY_NOTICES` generation; About → "Open-source licences" in the app.
 * **Acceptance.** CI green with the check; the table in `../25` has no *verify* left.
+
+## P0-11 — CI upkeep and the toolchain — Size S
+* **Order.** Needs: none.
+* **Why.** Debts that pile up silently (`RELEASE-CANDIDATE.md` §5, `AUDIT.md` P0, the audit of 3 Nov, A-17): GitHub's own annotations on a green run (Node.js 20 is deprecated for `actions/checkout@v4` and `setup-java@v4`, `setup-java@v4` itself is deprecated, `ubuntu-latest` is migrating to Ubuntu 26, the runner's NDK install flaked once); Gradle 8.14, AGP 8.11 and Kotlin 2.2.20 "will soon be dropped" by Flutter; mypy reports one unused `type: ignore` (`keeper/tagging.py`); issue #41 (a flaky account-model test) is fixed by B28 and still open; the tracker rule (use Issues or delete the rule) is undecided.
+* **Do.** Move the actions to versions that run on Node 24 and to `setup-java@v5`; pin `runs-on` to a fixed image and make the NDK step retry; plan and do the Gradle/AGP/Kotlin upgrade before the first release (a branch that builds both APKs); remove the unused `type: ignore`; close #41 with the PR that fixed it; decide the tracker in one line in `AGENTS.md`.
+* **Acceptance.** A run of every workflow shows no deprecation annotation; both APKs build on the upgraded toolchain; `main` is protected (P0-07, the owner's setting).
+* **Size.** S.
+
+## P0-12 — Documentation honesty (the open items of the audit of 3 Nov) — Size S
+* **Order.** Needs: none.
+* **Why.** The audit of `main` on 3 Nov found documents that promise what the code does not do. Four are open: **A-1** `17` §2 says the Auth row is built while the app still sends `u/t/s` in the URL (the code fix is the Bearer move, P2-20 slice 3); **A-6** `CHANGELOG.md` lacks the ~25 user-visible lines (the AUDIT F-table already has them); **A-15** the guide must state the 2 GB / 6 GB the installer enforces; **A-16** `04` §7, `26` §2 to 3 and `06` §1's diagram need "(target; not built)" markers. (A-2, A-3 and A-7 are fixed; A-9 is the ratchet in `check_rows.py`.)
+* **Do.** Make those four edits, each with the evidence line, in one documentation pull request.
+* **Acceptance.** For each item a reader can tell from the document what is built and what is a target.
+* **Size.** S.
+
+## P0-13 — Release candidate 1 walked (the walk record b11) — Size M
+* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P2-22 [d], P5-01 [d].
+* **Why.** This was the first gate of the old, phased plan (D-57 removed the phases, so it is a task now). The owner's definition of pass: nothing is "walked" until it is walked as a person on the release-candidate pair (the published image plus the app built from the same commit, signed with the release key) on a clean machine, to the end state; and nothing goes to the owner as ready until the walk record exists and the advisor and the critic have read it.
+* **Do.** Rounds 2 and 3 of the walk (`RELEASE-CANDIDATE.md` section 3), written up as `b11`; the advisor reads it, then the critic; every built item it covers is marked walked (or reopened) with `python tools/roadmap.py mark`; the open round-2 findings are fixed or triaged "later" in `AUDIT.md`.
+* **Acceptance.** `b11` exists on the final pair; the advisor and the critic have read it; the built items it covers are marked walked with their proof, or reopened.
+* **Size.** M.

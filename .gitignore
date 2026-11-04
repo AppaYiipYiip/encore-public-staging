@@ -65,3 +65,6 @@ app/test/**/failures/
 
 # Python packaging leftovers
 *.egg-info/
+
+# the roadmap board's "Working now" claims when there is no git (with git they live inside .git)
+.encore-working/

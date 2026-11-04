@@ -1,0 +1,9 @@
+{
+ "id": "20261104T193516Z-agent-e7a1",
+ "item": "P3-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:35:16Z",
+ "type": "detail",
+ "body": "Owner's part: run `/code-review ultra` on the branch Claude prepares (billed; only you can start it) before the first friend connects."
+}

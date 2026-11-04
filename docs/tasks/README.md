@@ -33,5 +33,6 @@ the stories it cites (`../03a`), the architecture section it cites (`../04`), an
 
 * Work in the repository `encore/`.
 * The test server: VM 108 `encore-install-test` (yours to change). The old dev VM 106, VM 107 and CT 104 were destroyed on 2026-11-03. The owner's homelab: hands off.
+* **Every task has an Order line** (`* **Order.** Needs: ...`): its place in the one list (no phases, D-57). A new task gets one; `python -I tools/check_order.py` must pass (it runs in CI) and `--write` refreshes the table in `08`.
 * Test accounts' login files: `..\local\logins\`. Type passwords only with
   `python -I tools/journeys/ui.py typefile PATH` (types only the `password:` line of a login file), never print them, never screenshot a visible password field.

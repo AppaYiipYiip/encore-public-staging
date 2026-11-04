@@ -1,0 +1,10 @@
+{
+ "id": "20261104T195756Z-agent-1790",
+ "item": "P6-05",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T19:57:56Z",
+ "type": "note",
+ "body": "Decided by default, yours to overrule: this item stays in the list. It already needs P6-04 (can an iPhone be installed without Apple's store?), whose answer decides whether it is ever started, so it costs nothing until then.",
+ "replaces": "20261104T193516Z-agent-d7cb"
+}

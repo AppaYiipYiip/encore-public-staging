@@ -28,6 +28,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 ---
 
 ## P2-01 — Encore server skeleton, song refs and the library API (server) — Size L
+* **Order.** Needs: none.
 * **Why.** C3, C11, ADR-R3/R4. This is the first piece of the single server (P3 moves the rest in).
 * **Context.** Old services are stdlib-only Python (`server/encore-*`), each with its own Navidrome client and token check. The YouTube
   package from P1-01 is reusable as is.
@@ -62,6 +63,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   music-server administrator (today an environment variable).
 
 ## P2-02 — The app's data layer on song refs (app) — Size L
+* **Order.** Needs: none.
 * **Why.** C3. Today local tables are keyed by Navidrome ids (`lib/data/db/tables.dart`: `Tracks`, `Playlists`, `PlaylistEntries`,
   `Pins`, `PlayHistory`…) and synced from Subsonic (`lib/data/sync/sync_engine.dart`, `outbox.dart`, `playlist_mutations.dart`).
 * **Do.** Add a `SongRefs` table (ref id, metadata, optional `fileId`), point likes, playlist entries, pins (downloads), history and
@@ -74,6 +76,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   migration, counts identical; a like made on device A appears on device B ≤ 2 s (N9).
 
 ## P2-03 — Play is not save; albums and playlists play through catalogue songs (app + server) — Size M
+* **Order.** Needs: none.
 * **Why.** A3, E4, ADR-R5. Today a tap adds the song to the library (ADR-066) and Play on "Lateralus" (2 of 13 owned) plays 2 songs.
 * **Do.** Playing a catalogue song never creates a like/library entry; "Recently played" records it (history). The queue builder takes
   every song of an album/playlist as refs and plays each by its playability (P1-09): kept file, else stream, with the next 2 prepared
@@ -84,6 +87,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   keeping the same song produce one file.
 
 ## P2-04 — Imports in seconds (server + app) — Size M
+* **Order.** Needs: none.
 * **Why.** B5, B6, E9; owner: "in Spotify it's 5 seconds".
 * **Context.** Measured list reads: YTM 189 songs in 2.1–3.2 s (`ytmusicapi.get_playlist`, all with video ids); Spotify embed ≤ 100
   songs in 2.2–3.5 s (`__NEXT_DATA__` → `props.pageProps.state.data.entity.trackList`); file imports exist in the app
@@ -96,6 +100,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   playlist visible ≤ 15 s.
 
 ## P2-05 — Import stop, progress and consistent counts (server + app) — Size S
+* **Order.** Needs: none.
 * **Why.** E8, E9.
 * **Do.** Stop cancels the person's queued work at once and running work for them alone within 2 s; shared work continues (`../04`
   §10). Progress on `import.progress` events. Notification texts by end state: "All 189 songs are ready offline" / "Import stopped:
@@ -104,6 +109,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   show the same numbers.
 
 ## P2-06 — Spotify beyond 100 songs, and Liked Songs (app) — Size M
+* **Order.** Needs: none.
 * **Why.** B8, E17; Spotify's developer route needs Premium (Feb 2026).
 * **Do.** Polish the data-export path (plain steps with screenshots: where to request it, what arrives, pick the zip; all playlists +
   Liked Songs). Run experiment X-4 (sign in to Spotify's own page in a WebView on the phone, read playlists and Liked Songs); if it
@@ -111,6 +117,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** The owner's real export imports every playlist with correct counts; X-4 report in the PR.
 
 ## P2-07 — Remove the homelab portal code and the second import screen (app) — Size S
+* **Order.** Needs: none.
 * **Why.** A4.
 * **Context.** `lib/data/requests/{portal_client,portal_discovery,request_service}.dart`, `lib/data/repos/request_repository.dart`,
   `lib/features/requests/{download_service_sheet,request_providers}.dart`, portal parts of `lib/app/alerts_wiring.dart` and
@@ -120,6 +127,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   `Requests` table safely.
 
 ## P2-08 — Playback state and resume anywhere (server + app) — Size M
+* **Order.** Needs: none.
 * **Why.** C11; owner: pause at x:xx, continue at x:xx on the same or another device, including YouTube songs; a web/PC client later.
 * **Do.** Server `playback` module (one row per person, `rev` for optimistic concurrency). App: `PUT /playback` on pause, seek, track
   change, and every 15 s while playing; on cold start and on resume-to-foreground, `GET /playback` and show the mini-player paused at
@@ -128,6 +136,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   away from home through the public address (X-7).
 
 ## P2-09 — One device at a time (server + app) — Size M
+* **Order.** Needs: P2-08 [i]. Why: the active-device lease is taken against the person's playback state, which is the one row per person that P2-08 builds..
 * **Why.** Owner: "the user cannot be listening on his phone and a different device at the same time, same as Spotify".
 * **Do.** `POST /playback/claim` when a device starts playing; the server pushes `device.takeover` on `/encore/live` to the previous
   holder, which pauses and shows "Playing on <device name>" with "Play here". Devices have names (set at sign-in, editable). A device
@@ -135,6 +144,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** J-09 second half (A plays → B pauses ≤ 2 s); two different people never affect each other.
 
 ## P2-10 — Invite-first sign-in and "Bring your music" (app) — Size M
+* **Order.** Needs: P2-19 [d].
 * **Paper first:** pages A1–A6 of `../15` §3, drawn in the tokens with the look of `../16` §3; the owner's OK on the drawings before code.
 * **Why.** E14, US-04, US-05.
 * **Context.** `lib/features/onboarding/connect_screen.dart`, `join_screen.dart`, `lib/domain/invite_link.dart`; **no QR scanner exists in the app today** (checked 2026-10-23: no scanner
@@ -146,6 +156,8 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** J-01 on profile A; a person who skips import still has a non-empty Home.
 
 ## P2-11 — Migrate today's installs without losing anything (server) — Size L
+* **Order.** Needs: none.
+* **Proposed: close (2026-11-03), the owner decides.** The installs this migrates (CT 104 and the legacy services) were destroyed at his word on 2026-11-03 and nobody else has one; the migration endpoint stays built. Reopen only if a real old install turns up.
 * **Why.** `../18` §3–4: the owner's server (CT 104) and phones hold real likes, playlists, plays and kept files.
 * **Do.** The migration of `../18` §4 (backup → people → files to refs, duplicates merged → likes/playlists/plays via the gateway header or
   the phones → running imports → count check → switch, old services stopped not deleted). Rehearse on a copy of CT 104's data on the dev
@@ -153,6 +165,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** Per-person counts identical before/after on the rehearsal; Year in Music shows the same numbers before and after.
 
 ## P2-12 — The catalogue module: search, matching, duplicates (server + app) — Size L
+* **Order.** Needs: none.
 * **Why.** `../19`: one identity engine for search, imports, keeper, Jam and recommendations; the phone stops calling Deezer/LRCLIB.
 * **Do.** `textnorm` with the Arabic and featured-artist rules, the matching table of `../19` §3, the two-phase search endpoint and ranking
   of §4 (the app merges phone results + fast + full without jumping), aliases from MusicBrainz, automatic ref merges and the duplicates
@@ -161,7 +174,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   address, so a browser can play them too) and the new-release check that today runs in the phone's background (`app/background_sync.dart`). When it lands, delete
   `app/lib/data/catalogue/deezer_client.dart`'s use in the app and lower the outside-host ratchet (`../30` §5).
 * **Acceptance.** Precision ≥ 99 % / recall ≥ 90 % on the labelled set; search p50 ≤ 400 ms (fast phase) on TYPICAL; "fairouz",
-  "fairuz" and "فيروز" find the same artist.
+  "fairuz" and "فيروز" find the same artist. The app no longer calls Deezer: the outside-host ratchet drops by one.
 * **Found 2026-10-23 (owner, `AUDIT.md` F12 and F13), to be fixed here:** (1) **new releases**: Deezer lags (the EP KAIZEN of L'morphine was on YouTube Music and Spotify the day it came out and absent from Deezer, whose newest album for him was ten days older),
   so the catalogue takes artist pages, albums and search from **YouTube Music as well as Deezer**, merged by the matching rules, and a release that YouTube Music has appears on the artist's page the same day; (2) **names**: "lmorphine chrono",
   "l'morphine chrono" and "L'morphine - CHRONO" all find CHRONO first (Deezer finds none of them): an apostrophe, a space, a missing letter or the other order of artist and title never hides a song; (3) **several artists**: a song has an **ordered list** of artists
@@ -169,6 +182,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   it came from without saying why. Acceptance for these three: the pairs listed in `AUDIT.md` are in the labelled set and pass; a walk on the emulator shows KAIZEN on L'morphine's page and "Aymane Haqqi, L'morphine" under MESSI MARADONA.
 
 ## P2-13 — Downloads: formats, manifest, stale-file replacement (server + app) — Size M
+* **Order.** Needs: none.
 * **Why.** `../23` §1–2, H19, H20, H37.
 * **Do.** Format policy per situation; download quality setting; `downloads/prepare` and `downloads/manifest`; temp-file + checksum +
   rename; resume with Range; replace outdated downloads on Wi-Fi; smart downloads for playlists and Liked Songs; the `download` priority.
@@ -176,17 +190,20 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   unplayable; a download killed at 50 % resumes; Liked Songs stays in sync offline.
 
 ## P2-14 — Lyrics on the server (server + app) — Size S
+* **Order.** Needs: none.
+* **The owner's call (D-51).** Because the friend's phone still calls LRCLIB until this lands, the owner may pull the small lyrics part forward into M1; that changes only this line and the milestone table.
 * **Why.** `../23` §3.
 * **Do.** Server-side lookup (tags, `.lrc`, LRCLIB), cache per ref, delivered with the song and with downloads; right-to-left rendering;
   per-person timing offset. The phone stops calling LRCLIB (`app/lib/data/api/lrclib_client.dart`, ADR-R38) and the outside-host ratchet drops by one (`../30` §5).
   Also the answer to F9 (a song LRCLIB does not have): more sources are added on the server, once, for every client.
-* **Acceptance.** 30 songs from the test pool: lyrics shown when LRCLIB has them, offline for downloaded ones, Arabic lyrics right-to-left.
+* **Acceptance.** 30 songs from the test pool: lyrics shown when LRCLIB has them, offline for downloaded ones, Arabic lyrics right-to-left. The app no longer calls LRCLIB: the outside-host ratchet drops by one.
 
 ## P2-15 — Notifications without push (server + app) — Size S
+* **Order.** Needs: P2-12 [i]. Why: the ADR-R38 table sends new-release alerts through P2-12 first and then the server-side check that this task builds..
 * **Why.** `../23` §4. **Amended 2026-10-24 (ADR-R44): the in-app bell is the channel; phone notifications are opt-in (at most two categories, off by default) and the permission is asked only then; remove today's permission prompt after sign-in and the default new-release alerts (`background_sync` > `AlertsService`).**
 * **Do.** `GET notifications?since=`; live events → local notifications while running; periodic background check (≤ every 6 h);
   channels and the daily new-release digest; honest "not online" for Jam invites.
-* **Acceptance.** Each channel can be switched off; no more than one background wake-up per 6 h (battery check in `dumpsys`).
+* **Acceptance.** Each channel can be switched off; no more than one background wake-up per 6 h (battery check in `dumpsys`). New-release checks run on the server, so the phone makes no catalogue call of its own for them: the outside-host ratchet drops by one.
 * **Slice A (server), designed 2026-10-25 from the drawing S-24 "What's new" (`design/directions/screens-player-together-and-more.html`).** The drawing has four kinds of news and no others: a **release** from an artist the person plays, a **Jam invitation**, an **invitation of theirs that was used** (owners), an **import that finished**. The server keeps them per person (table `notification`: id, person, kind, title, body, route, `dedupe`, created, read) and says them in words, so any client (a browser, a TV) shows the same list (ADR-R42).
   * `GET /notifications?since=<id>&limit=50` answers `{items (newest first), unread, cursor}`; with `since` only what is newer. `POST /notifications/read {upTo: id}` marks everything up to an id read (idempotent; `upTo` omitted means all). Each item is `{id, kind, title, body, route, createdAt, read}`; `route` is where a tap goes in the app (`/settings/import`) or `null`.
   * The live channel says `notification.new {unread}` to the person's phones, so the bell's dot changes within a second; the list is fetched when the page opens and on return to the app (nothing polls).
@@ -195,6 +212,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   * **Not here:** the phone's own notification (ADR-R44: off by default, asked only when the person switches it on), the bell and the page in the app (slice B).
 
 ## P2-16 — A self-describing, self-healing library (server) — Size M
+* **Order.** Needs: none.
 * **Why.** `../26` §2: a lost database or a dead disk must not lose people's music where it can be recovered.
 * **Do.** Write `ENCORE_REF`, the YouTube video id, ISRC/MBID, cover and loudness into every kept file; rebuild refs from tags when the
   database is missing; after a restore, re-fetch missing YouTube-sourced files by video id (paced, background) and list the files that
@@ -203,6 +221,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   re-linked; delete 20 kept files → they are re-fetched within the pace and play again with likes intact.
 
 ## P2-17 — "Follow the original" for imported playlists (server + app) — Size M
+* **Order.** Needs: none.
 * **Why.** `../26` §3: imports go stale; following public and editorial playlists for free is a reason to leave Spotify.
 * **Do.** Per imported playlist a switch (default on for public playlists); daily re-read in the night window; add new songs; remove songs
   removed at the source unless the person changed them here (then ask); a quiet line "3 new songs from the original"; works for YouTube
@@ -210,12 +229,14 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** A real public playlist that changes during a week stays in step; a person's own additions are never removed.
 
 ## P2-18 — A changed or expired login is a normal event (app + server) — Size M
+* **Order.** Needs: P3-03 [d].
 * **Status 2026-10-22: app part done and walked on the emulator (J-21); server part (device tokens, who revoked) belongs to P3-03.** One state (`lib/features/auth/login_problem.dart`): the sync, and a song the person tapped that the login refused (`InstantStatus.error == 'login'`), both say so; Home shows a quiet card "Sign in again"; an action that failed for it opens the prompt once; the prompt asks only for the password (`ServerSetupService.replacePassword`: checked against the server, then stored; nothing else is touched); "Use a different account" is the one way that removes data. Tests: `test/features/login_problem_test.dart`. Walked: password rotated on the test server, app reopened, card shown, new password typed, Home back with the queue and playlists intact.
 * **Why.** `../01` E23, H30, `../21` §4 (device tokens): today a stale password breaks sync silently, produces a cryptic row message, and the only fix deletes the person's downloads.
 * **Do.** One place that sees every authentication failure (any service, the live channel, streaming) and turns it into one state "Sign in again": a quiet banner on Home and a full-screen prompt on the next action, never a per-row sentence. **Sign in again** keeps the library, downloads and queue (only the credential is replaced; if the person signs in as someone else, then the old data is removed after asking). Sign out is separate and says plainly what it removes. With device tokens (P3-03) a password change on the server revokes devices explicitly and the app shows who revoked it.
 * **Acceptance.** Rotate a test account's password on the server: within one app launch the person sees "Sign in again", signs in with the new password, and everything (downloads, queue, likes) is still there; journey J-21 (add to `../14` section 3).
 
 ## P2-19 — Find your server: a key, the server's own addresses, a first screen without an IP address (server + app + installer) — Size L (four slices)
+* **Order.** Needs: P2-20 [d].
 * **Why.** Owner, 2026-10-23: a non-technical person cannot be asked for an IP address; Plex and Jellyfin find the server by themselves; what about several Wi-Fi networks and several servers? Decision and research: `../11` **ADR-R40** (read it first). Also closes **S2** (the app sends credentials to unverified addresses, `AUDIT.md`), serves US-04 and `../15` A1, and the owner's own step "Your server > Add an address".
 * **Context (checked 2026-10-23).** `app/lib/data/sync/endpoint_resolver.dart` (races candidates; probe = Subsonic `ping` with credentials, `app/lib/app/session.dart`, first candidate used before any probe), `features/onboarding/{connect,join}_screen.dart` (one or two typed addresses; the join stores one), `data/auth/server_setup_service.dart` (a server row = local autoincrement id), `features/settings/server_addresses.dart`; server `api.py` `/info`, `server/encore_server/deploy/{install.sh,encore}` (the terminal QR encodes the bare address); no QR scanner library in the app; Android target SDK 36. A legacy server answers an unauthenticated `ping` with an error envelope (`evidence`: ADR-R40).
 * **Slice A (M): the key and the checked probe.** Server: an Ed25519 key pair made once at first start and kept in the database (so a restored backup is the same server); `serverId` = short base32 hash of the public key; `GET /encore/api/v1/info?challenge=<nonce>` returns `serverId`, `publicKey` and a signature over nonce and id; `GET /encore/api/v1/server` (signed in) returns `{serverId, name, addresses: [{kind, url}]}`; the installer records the home address, `encore funnel on` the away address. App: servers keyed by `serverId` (a new column; an older row learns the key once); the probe is the public `/info` with a fresh challenge, **no login, no token**, verified against the pinned id; **credentials and tokens go only to an address that has proved itself**, and the first candidate is not used before it has; the list of addresses comes from `/server` and is refreshed after each sign-in and when an address stops answering; join and pairing links carry the id and the addresses; legacy servers are recognised by the unauthenticated `ping` error envelope. `cryptography` (Python, Dart) added and listed in `../25`. **Done when:** S2 cannot be reproduced (a test server that answers with another key never sees a credential), and the owner never has to type "Add an address".
@@ -228,7 +249,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Depends on / Size.** A needs nothing; B needs A (ids in the link) and, **for the pairing half, P2-20** (a pairing link gives a device token and no password, and today the app cannot work on a token alone); B's other half (the first screen without "address") needs the Welcome drawing and not P2-20; C needs A and the owner's phone; D needs C and P2-20. A and B come **before P1-06 and P1-04** because they touch the owner's own install and fix S2; the friend (an https link) does not wait for them.
 
 ## P2-20 — In Encore mode the app holds only the device token: no `/rest` calls, no music-server login on the phone (app + server) — Size L
-
+* **Order.** Needs: P2-12 [d], P2-14 [d], P3-03 [i], P2-15 [p]. Why: P2-15: the release check is the last outside call the app makes, so the end state "the app calls no outside host" can only be asserted after it; P3-03's own text: the gateway forwards requests to Navidrome with a trusted header, which is what lets the app stop sending the music server's login in `/rest` URLs..
 * **Why.** Found 2026-10-24 while building the owner's pairing code (P2-19 slice B). A pairing link, Quick Connect (AC-8), a TV signed in by a code (S-08) and a browser client all give a device a **device token and no password**. Today the app in Encore mode still signs every `/rest` call with the music-server login (`u`, `t` = md5 of password and salt, `s`), and the gateway forwards those calls to Navidrome, which checks them itself; a phone that holds only a device token cannot make them. This is also the clean end state of ADR-R38 (clients talk only to their own server) and ADR-R42 (the server decides, the client draws).
 * **Rejected, on purpose:** (1) *reset the person's music-server password at pairing and give it to the phone*: it silently changes the owner's own password (which he also uses for the admin site and his other phones) and leaves every other phone with a stale password, which is the lockout of `evidence/b05` again; (2) *the gateway re-signs token requests with the administrator's login*: it lends admin rights to a device token and needs a fragile allowlist of paths.
 * **Do.** In Encore mode (`serverCapabilities.encore`), every call the app makes goes to `/encore/api/v1` with `Authorization: Bearer <device token>` (the live channel already does), and what is still asked of the music server is served by the Encore server itself:
@@ -248,17 +269,18 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   * **Covers.** A screen shows 30 covers at once, so one signed address per cover would be 30 round trips. Instead the server gives **one cover pass per device**: `GET /covers/pass` answers `{p, e, sig}`, a signature over the scope `covers` (not over one picture) valid for **7 days**, and `/encore/cover/{id}` accepts either that or the per-picture signature that exists today. The app keeps the pass in memory, renews it a day before it ends or on a `401` from a cover, and builds `/encore/cover/{id}?size=&p=&e=&sig=` by itself, so `CoverArtResolver.resolve` stays synchronous and the image cache keys do not change (`(server, id, size)`, ADR-017). Until the first pass arrives (a second after sign-in) covers show their letters, as offline does. A cover is a public picture of a record, not a secret: a pass lets its holder fetch pictures, nothing else.
   * **Not changed.** A plain (non-Encore) music server keeps `/rest` and its login. The catalogue's own picture addresses (`https://...`) stay what they are.
   * **Proof.** A fake server of the Encore kind: playing a kept song, showing a list of covers and downloading one song record **no** `/rest/stream`, `/rest/download` or `/rest/getCoverArt` request and no `u`/`t`/`s` parameter; the address is asked once for two plays of the same song; a pass that expired is renewed once and the cover loads; the quality extras reach the server's stream (server test with a fake music server). `N1` (tap to sound) does not get worse: measured on the emulator against the dev VM, 10 taps, before and after (`evidence/b07`).
-* **Acceptance.** An emulator signed in by a device token alone (the sign-in screen's password is used once, to get the token, then **forgotten**: no password in secure storage in Encore mode) browses, searches, plays a kept song and a catalogue song, downloads, likes, edits a playlist, and the impostor server of `evidence/b03` records **no** `/rest` request and no `u`/`t`/`s` query parameter at all from this phone. Changing the person's music-server password (AC-25) no longer breaks the phone. Server: every route the app needs accepts the device token; tests per row of the table. The `architecture_test` ratchet gains: no `OpenSubsonicClient` use inside Encore mode.
+* **Acceptance.** An emulator signed in by a device token alone (the sign-in screen's password is used once, to get the token, then **forgotten**: no password in secure storage in Encore mode) browses, searches, plays a kept song and a catalogue song, downloads, likes, edits a playlist, and the impostor server of `evidence/b03` records **no** `/rest` request and no `u`/`t`/`s` query parameter at all from this phone. Changing the person's music-server password (AC-25) no longer breaks the phone. Server: every route the app needs accepts the device token; tests per row of the table. The `architecture_test` ratchet gains: no `OpenSubsonicClient` use inside Encore mode. After this the outside-host ratchet's baseline in the app's `architecture_test` is empty: the app calls no Deezer, no LRCLIB and no other outside host.
 * **Depends on / Size.** Needs P2-12 (catalogue and search on the server) and P2-14 (lyrics) for the last rows; the rest can start now. **Blocks the pairing half of P2-19 slice B**, P2-19 slice D (Quick Connect), S-08 (TV sign-in) and any web client. Parked meanwhile: `park/p2-19b-pairing-server` (the server half of the pairing code, unused).
 
 ## P2-21: Menus and selection, the RC2 part (app), Size M
+* **Order.** Needs: none.
 * **Status.** RC2, drawn first (D-26 in `../10`; `RELEASE-CANDIDATE.md` section 2, "Added 2026-10-30"). The RC1 part is built: a long press and a visible ⋯ on every Library row that has a collection, and a long press on every song row (the phone batch, #91).
 * **Why.** AUDIT F31 and F32: no way to change a playlist's picture or description, and no way to select several songs and add them to a playlist.
 * **Do.** (1) A playlist's description and picture, set and shown. (2) Multi-select on song rows: pick several, then add to a playlist, add to the queue, download or remove. Draw both before building (D-43: a page is drawn when it is new and about to be built).
 * **Acceptance.** Written when it is drawn.
 
 ## P2-22 — A download shows where it is: the server stage, the phone stage, and why it waits (server + app) — Size M
-
+* **Order.** Needs: none.
 * **Why.** Round 2, found by the owner on 2026-11-03 (`AUDIT` R2-F2): he pressed Download on two playlists (217 and 4 songs) and could not tell
   what was happening: no notification, only "N of M" on the phone and "Waiting for a connection". D-29 puts "download a song, album or playlist"
   in RC1 and forbids silent failures. Measured the same evening on the test server: the *server* needed about **46 minutes** to fetch a 217-song
@@ -276,4 +298,11 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** Importing and downloading a 200-song playlist on a fresh install: at every moment a person can say how many songs the server
   has ready, how many are on the phone and why anything waits; the notification appears after the one permission prompt; in airplane mode the
   app says "Waiting for a connection" and claims nothing else. Measured, with the setup written in the PR.
-* **Depends on.** The live channel (built), P2-13 (the downloads manifest). **Size.** M. **Triage (D-29):** RC1.
+* **Depends on.** The live channel (built). (P2-13, the downloads manifest, is related and not needed for this task.) **Size.** M. **Triage (D-29):** RC1.
+
+## P2-23 — One API contract, checked in CI (ADR-R41 T5) — Size M
+* **Order.** Needs: none.
+* **Why.** ADR-R41 T5 and `AUDIT.md` P2-01 name it as open, and it is a task nowhere: "the API is the product", and every later client (a tablet layout, a TV, an iPhone, a web player) must be built against a checked schema, not against the Android app's habits (`tasks/P6-later.md`).
+* **Do.** The server writes `openapi.json` into the repository and a server test fails when the file is out of date; `schemathesis` runs against a test instance in the server job (5xx and schema conformance only, to start); the Dart client's models are checked against the same file; a version field and a rule for breaking changes in `17`.
+* **Acceptance.** Changing a route without regenerating the file fails CI; a contract test finds a deliberately broken response; `17` §3's table is generated from the same file.
+* **Size.** M.

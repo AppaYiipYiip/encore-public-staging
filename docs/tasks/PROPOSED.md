@@ -1,0 +1,17 @@
+# Proposed additions (not scope): the owner accepts or rejects each
+
+`docs/30` §0 question 1: a feature with no story is not built, it is filed. These come from the gap sweep of 3 Nov 2026 and from looking at what the app already has (checked in `app/lib`: a sleep timer, EQ presets, crossfade and gapless, lyrics and a Year in Music card exist; sharing a song as a link, playlist export, scrobbling, Android Auto and a home-screen widget do not). **None is scheduled until the owner says yes**; on the local roadmap board (`tools/roadmap_board.py`) they sit in the Inbox lane, and dragging one into the plan is saying yes: it becomes a story in `03a` plus a task with an Order line in the next session (until then it shows as "accepted, write-up pending").
+
+| Id | Story (as a Listener or a Host, I want ...) | Why it may be worth it | Rough size | Where it would go |
+|----|---------------------------------------------|------------------------|------------|--------------|
+| N-01 | to share a song, album or playlist as a link that opens in Encore (and a page for people without the app, like the invitation page) | The invitation page already shows how; sharing is how a music app spreads; no outside service is needed | M | quality and extras |
+| N-02 | to export a playlist (M3U, CSV, JSON) and to leave with my data | "Your data" (P3-09) covers the account; playlist-level export is the portability a stranger expects before trusting a new app | S | with the host pages |
+| N-03 | to scrobble my plays to ListenBrainz or Last.fm, opt in per person | Not built anywhere (searched); the owner's own homelab already feeds ListenBrainz; it also gives P4-01 better input | M | M4 or M7 |
+| N-04 | as a Host, to be told when the server is down, the disk is nearly full or YouTube is resting, outside the app (e-mail, a webhook or ntfy) | A friend's server is a home computer; today the Host finds out from a friend. P3-13 shows the disk in the app; this is the out-of-band half | M | with the host pages |
+| N-05 | as a Host, to back up my music (a one-command copy to another disk) as I can back up the database | `encore backup` does not hold the music (the guide says so); a stranger will assume it does. The self-healing library (P2-16) re-fetches YouTube-sourced songs, not files that were the Host's own | S | with the host pages |
+| N-06 | podcasts and audiobooks | Parked by the owner (`tasks/P6-later.md`); listed so it is not forgotten | L | parked |
+| N-07 | a better logo and app icon, including Android's adaptive and themed icon | Today's launcher icon is explicitly temporary ("a green waveform on dark", P0-05); the first impression and any store listing need a real one, and it ties to the name decision (P5-05) | S | quality and extras |
+| N-08 | a visual design pass of the phone app | A designed look is part of "familiar like Spotify"; drawn first and approved before any code (D-43), so it can reuse the large-screen drawings of P6-01 | L | quality and extras |
+| N-09 | the first five minutes to feel designed: first run and empty states | The empty-server screen exists and reads well (round 2, 2026-11-03); the sign-in, the first import and the first empty library are where a stranger decides | M | with Discover |
+
+Already planned, so **not** proposals: Android Auto search and a home-screen widget (P4-12), recommendations and radio (P4-01), collaborative playlists (P4-10), compare tastes (P4-17), "Wrong song?" (P4-14), more languages and accessibility options (the owner will ask after daily use, `P6-later.md`).

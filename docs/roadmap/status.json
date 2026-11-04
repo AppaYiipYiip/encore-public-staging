@@ -1,0 +1,80 @@
+{
+ "P0-01": {
+  "state": "walked",
+  "evidence": "README State: P0 done; gitleaks runs in CI"
+ },
+ "P0-06": {
+  "state": "walked",
+  "evidence": "CI runs on every change (workflows app, server, docs, goldens, server-image)"
+ },
+ "P0-08": {
+  "state": "walked",
+  "evidence": "AGENTS.md and docs/30 exist and the pre-commit hook enforces them"
+ },
+ "P1-01": {
+  "state": "built",
+  "evidence": "built; measured 1.6 to 4 s on the earlier stack (docs/09 section 7); the walk record b11 re-measures it on the pair"
+ },
+ "P1-02": {
+  "state": "built",
+  "evidence": "built; measured on the earlier stack; b11 walks it on the pair"
+ },
+ "P1-03": {
+  "state": "walked",
+  "evidence": "the 217-song YouTube import fetched through VM 108 in about 46 minutes with no refusal (build 125 pair, 3 Nov 2026; AUDIT round 2)"
+ },
+ "P1-06": {
+  "state": "built",
+  "evidence": "built; the timing tools exist (evidence/b03 measured on the earlier stack); b11 uses them on the pair"
+ },
+ "P1-08": {
+  "state": "built",
+  "evidence": "built; walked on the old dev server (evidence/b04), before the pair existed; b11 walks it again"
+ },
+ "P1-09": {
+  "state": "walked",
+  "evidence": "round 2 on build 125 against VM 108 (3 Nov 2026): a downloaded song plays offline, a row that is not downloaded says so (ROUND2-LOG)"
+ },
+ "P1-11": {
+  "state": "built",
+  "evidence": "built; a 22 Oct screenshot on the old build (evidence/2026-10-22-e6); b11 walks it again"
+ },
+ "P2-01": {
+  "state": "walked",
+  "evidence": "installed by the guide on a bare VM (evidence/c06); signed in, invited and imported against it in round 2 on build 125 (3 Nov 2026)"
+ },
+ "P2-02": {
+  "state": "built",
+  "evidence": "built; walked on the dev VM before the pair; its flows ran in round 2 on build 125 but b11 walks it to the end state"
+ },
+ "P2-04": {
+  "state": "walked",
+  "evidence": "the owner imported two playlists (4 and 217 songs) on build 125 against VM 108 (3 Nov 2026)"
+ },
+ "P3-05": {
+  "state": "walked",
+  "evidence": "evidence/c06: the installer by the guide on a bare VM with the published image (3 Nov 2026); c01 and c03 earlier"
+ },
+ "P1-05": {
+  "state": "built",
+  "evidence": "built; the walk record b11 (M0) walks it"
+ },
+ "P2-03": {
+  "state": "built",
+  "evidence": "built; the walk record b11 (M0) walks it"
+ },
+ "P3-01": {
+  "state": "built",
+  "evidence": "built; one server program since P2-01"
+ },
+ "P3-04": {
+  "state": "built",
+  "evidence": "built; the installer's compose has no Docker socket and no Firefox"
+ },
+ "P0-07": {
+  "state": "walked",
+  "evidence": "verified with gh api on 2026-11-04: ruleset 'protect main' (id 26569683) is active on the default branch, no bypass; blocks deletion and force push; a pull request is required (0 approvals); checks 'checks' and 'secrets' must pass",
+  "at": "2026-11-04T22:12:05Z",
+  "by": "Claude (Sonnet 5.5)"
+ }
+}

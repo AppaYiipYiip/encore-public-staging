@@ -1,0 +1,9 @@
+{
+ "id": "20261104T220408Z-agent-6e9a",
+ "item": "P0-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T22:04:08Z",
+ "type": "detail",
+ "body": "WHAT TO DO (about 2 minutes). GitHub, your repository, Settings, Rules, Rulesets, New branch ruleset:\n1. In 'Ruleset Name' type: protect main\n2. Click the grey 'Disabled' button and choose 'Active'.\n3. Bypass list: leave it empty.\n4. Target branches: click 'Add target', then 'Include default branch'.\n5. Scroll down to 'Branch rules'. Leave 'Restrict deletions' ticked.\n6. Tick 'Require a pull request before merging'. Leave 'Required approvals' at 0.\n7. Tick 'Require status checks to pass', click 'Add checks', type 'checks' and click it; click 'Add checks' again, type 'secrets' and click it. Only those two.\n8. Tick 'Block force pushes'.\n9. Scroll to the very bottom and click the green 'Create' button.\nA yellow box saying the rules are not enforced on a private repository is expected on the free plan: nothing is broken.\nThen press 'I did this' here, or tell Claude 'protect main done': it checks the result itself."
+}
