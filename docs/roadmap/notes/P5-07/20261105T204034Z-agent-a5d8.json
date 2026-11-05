@@ -1,0 +1,12 @@
+{
+ "id": "20261105T204034Z-agent-a5d8",
+ "item": "P5-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:40:34Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md, B-26: Google's developer verification for sideloaded apps is a schedule, not an 'if' (first countries from 30 Sep 2026, global 2027). Decide with the friend's country known: register (a free limited-distribution account is said to cover 20 devices) or write the advanced flow into this guide and the invitation page.",
+ "to": [
+  "agent"
+ ]
+}

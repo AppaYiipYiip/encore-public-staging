@@ -26,6 +26,22 @@ Rules that follow from this:
 * **The owner:** the board (`roadmap.bat`); the pink items are the only things asked of him.
 * **Somebody who wants to know why something is the way it is:** the decision log (`10`, `11`), then `docs/history/`.
 
+## Ground rules that do not change
+
+* **No easy choices that cost the future** (the owner's standing rule, repeated every session). Do not consider, choose or suggest the easy option that fixes the problem now but costs **upgradeability, improvement or compatibility** later. Spend the time to engineer the proper answer first: the root cause with proof, the fix at the source, a defensive layer only as a *second* layer that stays correct afterwards. When a stop-gap is truly unavoidable, say so, say what it costs later, and give it a removal trigger, a task for the proper fix and a visible reminder. Never offer "leave it as it is" as an equal option next to the proper one. Full text and the review checks: `30`.
+* **Encore is a public product** (website with the guide, server download and APK). Nothing about the owner's homelab (addresses,
+  container numbers, scripts, his request portal, his dashboard at `:8687`) belongs in Encore's code, docs or defaults.
+* **No trace of the old project** (owner, 2026-10-21), done through a fresh repository (P0-04), after checking nothing copied remains.
+* **Clients are thin** (owner, 2026-10-23, ADR-R38): the app, and any web, desktop or TV client later, talk only to their own Encore server; the server talks to YouTube, Deezer,
+  lyrics and every other outside service. Always choose the solution that still works when the client is a browser. Today's exceptions and the tasks that remove them are in `11` ADR-R38.
+* **Free for the user**: no feature depends on a paid account (no Tidal, no Spotify Premium, no Plex Pass).
+* **For everyone**: other countries, weak PCs, slow or shared lines, flagged or blocked addresses, non-Latin text. Nothing may only
+  work on the owner's setup. Never put a Host's internet address or accounts at risk.
+* **Speed limits are requirements**: a song you don't own plays in ~2 s typically, **≤ 10 s worst case**; an import is on screen in
+  ≤ 5 s; nobody waits for background downloads.
+* **Never print, commit or screenshot a password.** Login files live outside the repository.
+* **Say what was measured and on what setup.** "Tests pass" is not "it works".
+
 ## Who does what
 
 | Who | Does |

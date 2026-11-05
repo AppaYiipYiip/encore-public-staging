@@ -94,7 +94,7 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
 
 ## 6. Where the truth lives, and how not to be misled
 
-* **Current state and what is next:** `docs/README.md` and `docs/tasks/AUDIT.md`. **Decisions waiting for the owner:** `docs/10`.
+* **Current state and what is next:** `python tools/roadmap.py brief --role agent` (the board); `docs/README.md` is the map of every document. **Decisions waiting for the owner:** `docs/10`.
   **Decisions made and why, with the options compared:** `docs/11` (ADR-R1…). Older documents (anything before the 2026-10-21 reset) are
   history: read one only when a task links it.
 * **The state tables `docs/31`-`34`** (ways to join and play, states, failures, conflicts) are enforced by `tools/check_rows.py`: a "Built"

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T204045Z-agent-677a",
+ "item": "P4-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:40:45Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md, B-26 and the design conflicts: Android Auto hides apps not installed from the Play Store unless a developer setting is on, and D-18 parks car frames, so it needs a decision to unpark and a drawing; the home-screen widget has no drawing at all (D-43: drawn before built). Decide before either stays on the friend-ready list.",
+ "to": [
+  "agent"
+ ]
+}
