@@ -20,7 +20,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 
 ## 0. Before you write a line: ten questions (answer them in the pull request; if you cannot, stop)
 
-1. **Which story (`03a`) and which promise (`03` §4) does this serve?** None: do not build it, file an issue.
+1. **Which story (`03a`) and which promise (`03` §4) does this serve?** None: do not build it; write it as an idea on the board (the + button, or `roadmap.py note`).
 2. **Does the core promise still hold** (a song you don't own: ~2 s typical, **≤ 10 s worst case**)? An open S1 bug in the area is fixed before new work there.
 3. **Would a web, desktop or TV client get this for free?** Does every outside service (YouTube, Deezer, lyrics, covers) go through the server (ADR-R38)? If only the phone can do
    it, write down why it must.

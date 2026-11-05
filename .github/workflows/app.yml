@@ -1,5 +1,9 @@
 name: App
 
+# Runner: `ubuntu-26.04` on purpose, not `ubuntu-latest`. GitHub moves that label from 24.04 to 26.04 during November 2026; naming the image makes a
+# change of image a pull request that is tested, not a surprise on some run. When GitHub announces the end of the 26.04 image, move it here on
+# purpose (all workflows, one pull request; reminder: `docs/roadmap/notes/P0-11`).
+
 on:
   push:
     branches: [main]
@@ -14,13 +18,13 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -59,15 +63,15 @@ jobs:
     # About 8 minutes a run, a fifth of October's Actions minutes, on every push to every pull request. It proves the app still builds as an APK, which
     # only a change to the Android side or to a dependency can break and which `main` and a manual run still check (D-44).
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: verify
     timeout-minutes: 45
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -78,4 +82,13 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter build apk --debug --target-platform android-arm64
+      # The build downloads the Android NDK and Gradle's packages on a fresh runner, and a download of it failed once (a runner-side flake, RELEASE-CANDIDATE.md section 5): up to
+      # three tries, the next one reusing what the last one fetched. A real compile error fails all three the same way, in the same log.
+      - name: Build the APK (up to three tries)
+        run: |
+          for attempt in 1 2 3; do
+            if flutter build apk --debug --target-platform android-arm64; then exit 0; fi
+            echo "::warning::APK build, try $attempt of 3 failed"
+            sleep 30
+          done
+          exit 1

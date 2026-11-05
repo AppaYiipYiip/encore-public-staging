@@ -40,7 +40,7 @@ merge only when every check has finished, polled by run id, and `main`'s own run
 * **Never make a client call an outside service** (YouTube, Deezer, lyrics, covers, anything): clients talk only to their own Encore server, the server talks to the
   outside, so a web or desktop client can exist later (`docs/11` ADR-R38).
 * Ask the strongest model you have before committing to an architecture or any hard-to-undo choice, and again before calling a multi-step task done (`docs/30` §3).
-* Do not start other tasks; file new problems as issues.
+* Do not start other tasks; write new problems as an idea or a note on the roadmap board (`python tools/roadmap.py note ITEM "..."`; the board's + button for the owner). **The board is the one tracker; GitHub Issues are not used for planning** (D-60): a problem you find becomes a board note on the item it belongs to, or a new item.
 * **Never take, or offer the owner as an equal option, the easy choice that costs upgradeability, improvement or compatibility later.** Engineer the proper answer first: root cause with proof, the fix at the source; a stop-gap only with a removal trigger, a task and a reminder (the owner's standing rule, `docs/30` at the top; he repeats it every session).
 * Do not touch the owner's homelab or anything outside this repository's own test machines (`docs/06` section 8).
 

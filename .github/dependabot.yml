@@ -1,0 +1,18 @@
+# Keeps the automatic checks up to date by themselves (P0-11). The debt it replaces: a green run that carries "Node.js 20 is deprecated" for months
+# because nobody was told. Once a month ONE pull request moves every action in .github/workflows to its newest release; the normal checks
+# run on it like on any change, and a person (or Claude) merges it when they are green.
+#
+# Only the actions, on purpose: the app's packages, the server's packages and the Android toolchain (Gradle, the Android plugin, Kotlin, Flutter)
+# are upgraded deliberately, as their own pull request with a build on both phones' processors, because a package that works is not worth the
+# risk of an automatic bump (docs/tasks/P0-11 and the engineering guide, docs/30). A run of this bot costs about a minute of GitHub Actions time.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: 'ci'

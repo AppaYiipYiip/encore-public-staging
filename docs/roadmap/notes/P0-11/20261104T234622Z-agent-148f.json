@@ -1,0 +1,9 @@
+{
+ "id": "20261104T234622Z-agent-148f",
+ "item": "P0-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T23:46:22Z",
+ "type": "note",
+ "body": "Runner reminder (from PR A): every workflow names the image ubuntu-26.04 instead of ubuntu-latest, because GitHub moves that label from 24.04 to 26.04 during November 2026 (runner-images issue 14748). It is a deliberate choice, not a stop-gap. Removal trigger: when GitHub announces the end of the 26.04 image, move all workflows to the then-current image in one pull request. Dependabot (monthly, actions only) keeps the actions current; the app, server and Android toolchain are upgraded on purpose (PR B)."
+}

@@ -1,5 +1,9 @@
 name: Server image
 
+# Runner: `ubuntu-26.04` on purpose, not `ubuntu-latest`. GitHub moves that label from 24.04 to 26.04 during November 2026; naming the image makes a
+# change of image a pull request that is tested, not a surprise on some run. When GitHub announces the end of the 26.04 image, move it here on
+# purpose (all workflows, one pull request; reminder: `docs/roadmap/notes/P0-11`).
+
 # Builds the Encore server image and publishes it to GitHub's container registry (private while the repository is private):
 # `ghcr.io/appayiipyiip/encore-server:main` for the newest main, `:<tag>` for a release tag and `:sha-<commit>` for every build. The installer
 # (server/encore_server/deploy/install.sh) pulls it. 64-bit Intel/AMD only for now; arm64 comes later.
@@ -39,11 +43,11 @@ jobs:
     # The same lint, types and tests as the Server workflow's `encore-server` job. Skipped for the weekly rebuild, which exists to refresh yt-dlp
     # and the base image, not to test the code again.
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install
@@ -61,21 +65,21 @@ jobs:
     needs: tests
     # Runs when the tests passed, or were skipped (the weekly rebuild and a manual run); never when they failed or were cancelled.
     if: ${{ !cancelled() && (needs.tests.result == 'success' || needs.tests.result == 'skipped') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/encore-server
           tags: |
@@ -87,7 +91,7 @@ jobs:
             org.opencontainers.image.description=The Encore music server: songs as references, playlists, likes and the live channel, in front of a music server.
 
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: server/encore_server
           platforms: linux/amd64

@@ -1,5 +1,9 @@
 name: Hygiene
 
+# Runner: `ubuntu-26.04` on purpose, not `ubuntu-latest`. GitHub moves that label from 24.04 to 26.04 during November 2026; naming the image makes a
+# change of image a pull request that is tested, not a surprise on some run. When GitHub announces the end of the 26.04 image, move it here on
+# purpose (all workflows, one pull request; reminder: `docs/roadmap/notes/P0-11`).
+
 on:
   push:
     branches: [main]
@@ -12,23 +16,23 @@ permissions:
 
 jobs:
   secrets:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Scan for committed secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   checks:
     # Two checks that take seconds each, in one job: a job is billed for at least a whole minute (D-44).
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: No logins, keys, cookies, environment files or binaries
         run: |
           bad=$(git ls-files | grep -Ei '(login[^/]*\.txt$|(^|/)credentials?[^/]*\.(txt|md|json)$|cookies[^/]*\.txt$|(^|/)\.env$|\.(apk|aab|keystore|jks|pem)$)' | grep -vi '\.example$' || true)

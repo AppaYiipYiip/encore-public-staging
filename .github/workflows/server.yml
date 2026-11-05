@@ -1,5 +1,9 @@
 name: Server
 
+# Runner: `ubuntu-26.04` on purpose, not `ubuntu-latest`. GitHub moves that label from 24.04 to 26.04 during November 2026; naming the image makes a
+# change of image a pull request that is tested, not a surprise on some run. When GitHub announces the end of the 26.04 image, move it here on
+# purpose (all workflows, one pull request; reminder: `docs/roadmap/notes/P0-11`).
+
 on:
   push:
     branches: [main]
@@ -15,11 +19,11 @@ concurrency:
 
 jobs:
   encore-server:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install
@@ -35,10 +39,10 @@ jobs:
 
   install-scripts:
     # The installer and the encore command run on other people's computers: they must at least be free of the mistakes a checker finds.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: shellcheck
         run: |
           shellcheck server/encore_server/deploy/install.sh server/encore_server/deploy/encore
@@ -47,10 +51,10 @@ jobs:
 
   encore-server-navidrome:
     # The keeper, the scanner link and the refs against a real Navidrome (docs/tasks P2-01 acceptance).
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Real music server, real ffmpeg
         working-directory: server/encore_server
         run: docker compose -f tests/integration/compose.yaml up --build --abort-on-container-exit --exit-code-from tests

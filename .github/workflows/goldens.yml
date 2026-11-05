@@ -1,5 +1,9 @@
 name: Goldens (Linux)
 
+# Runner: `ubuntu-26.04` on purpose, not `ubuntu-latest`. GitHub moves that label from 24.04 to 26.04 during November 2026; naming the image makes a
+# change of image a pull request that is tested, not a surprise on some run. When GitHub announces the end of the 26.04 image, move it here on
+# purpose (all workflows, one pull request; reminder: `docs/roadmap/notes/P0-11`).
+
 # Draws the Linux set of the screen pictures that the App job compares against (app/test/flutter_test_config.dart keeps one set per
 # operating system: a screen drawn on Windows differs by a few pixels on Linux). It is the ONLY source of the Linux pictures: never draw
 # them with `flutter test --update-goldens` on another machine, even one that renders the same (the owner's rule, 2026-11-01).
@@ -23,7 +27,7 @@ on:
 
 jobs:
   draw:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     # `contents: write` only so that the last step can commit the pictures back to the branch this run was started on. Nothing else is written.
     permissions:
@@ -32,7 +36,7 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -49,7 +53,7 @@ jobs:
       - name: Draw the pictures
         run: flutter test --no-pub --update-goldens test/features/screens_golden_test.dart test/features/lyrics_controls_test.dart test/features/year_in_music_screen_test.dart
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: goldens-linux
           path: app/test/features/goldens/linux/*.png

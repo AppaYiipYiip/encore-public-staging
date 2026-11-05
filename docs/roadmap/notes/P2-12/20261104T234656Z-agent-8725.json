@@ -1,0 +1,9 @@
+{
+ "id": "20261104T234656Z-agent-8725",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-04T23:46:56Z",
+ "type": "note",
+ "body": "GitHub issues #13 (a song with two artists shown with one) and #14 (a day-old release and the search 'lmorphine chrono' find nothing) are mirrored here under D-60 (the board is the one tracker); the issues themselves were left open because the permission system refused an agent closing them on 5 Nov 2026. Their full text and the evidence are rows F13 and F12 of docs/tasks/AUDIT.md; they are this item's acceptance: an ordered list of artists shown everywhere, the song on every credited artist's page; YouTube Music as a first-class source; tolerant names; the F12 pairs in the labelled test set."
+}

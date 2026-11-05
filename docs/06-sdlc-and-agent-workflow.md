@@ -31,10 +31,12 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 
 ## 3. Tracking
 
-* **GitHub Issues** are the single list of bugs and features (replaces B-, F-, Q-, E- numbers in markdown). Labels: `bug`,
-  `feature`, `S1`/`S2`/`S3`, `app`/`server`/`install`/`docs`, `needs-owner`, `blocked`.
-* **Project board** columns: Backlog → Ready → In progress → Review → Done.
-* Each task file in `tasks/` has an issue; the issue links the task section; the PR closes the issue.
+* **The roadmap board is the single tracker** (D-60, 2026-11-05; `docs/08-roadmap.md`, `docs/roadmap/README.md`): items (one flat list, Now and Later), notes on an item
+  for a problem, a question or a hand-over, claims for who is working on what. GitHub Issues and GitHub Projects are not used for planning: the owner does not use
+  GitHub and the board works the same whichever Claude account is signed in. A problem found while working is a note on the item it belongs to, or a new item
+  (`python tools/roadmap.py note ITEM "..."`). The old labels and columns were never used and are gone. (The audit rows R-, F- and A- in `tasks/AUDIT.md` keep their
+  numbers: they are findings with evidence, not a second list.)
+* Each task file in `tasks/` is an item on the board; the pull request that does the work marks it (`python tools/roadmap.py mark ITEM built|walked --evidence "..."`).
 * Bug report template (also for agents): **What I did** (steps), **What I expected**, **What happened** (screenshot/log),
   **Device/setup** (phone model, Android version, nav mode, font scale, network, server version, line), **How often**.
 
@@ -55,8 +57,8 @@ and the evidence. It must:
 
 * Read, in order: `docs/README.md`, the task section, the stories it cites, `04` for the area, `07` §1–3. Do not read old docs
   unless the task links one.
-* Work only on your task's branch. Do not start other tasks; write new problems you find as issues.
-* Tests before or with the code; never weaken a test to make it pass; a skipped test needs an issue number.
+* Work only on your task's branch. Do not start other tasks; write new problems you find as notes on the board (§3).
+* Tests before or with the code; never weaken a test to make it pass; a skipped test names the board item that will un-skip it.
 * Every user-visible number in the acceptance criteria is **measured and written in the PR** with the setup it was measured on
   (device, network, server, line).
 * Plain words on Listener screens; no "Navidrome", "Subsonic", "codec", "kbps", "server address" outside Advanced/Host screens.
