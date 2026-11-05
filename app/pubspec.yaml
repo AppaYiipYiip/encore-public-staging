@@ -44,7 +44,7 @@ dependencies:
   # The type of the streams audio_service hands out (browse-tree change notices).
   rxdart: ^0.28.0
   background_downloader: ^9.6.4
-  wakelock_plus: ^1.4.0
+  wakelock_plus: ^1.8.2
 
   # --- artwork and icons -----------------------------------------------------
   # Flutter's own widgets reference a few Cupertino glyphs; the font is

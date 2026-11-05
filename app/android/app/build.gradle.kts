@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -26,10 +25,6 @@ android {
         // flutter_local_notifications (new-music alerts) needs java.time on
         // older Android versions.
         isCoreLibraryDesugaringEnabled = true
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -71,6 +66,13 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+// Built-in Kotlin (AGP 9): the Kotlin Gradle plugin is no longer applied here, the compiler options live in this block.
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

@@ -76,5 +76,11 @@
   "evidence": "verified with gh api on 2026-11-04: ruleset 'protect main' (id 26569683) is active on the default branch, no bypass; blocks deletion and force push; a pull request is required (0 approvals); checks 'checks' and 'secrets' must pass",
   "at": "2026-11-04T22:12:05Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "P0-11": {
+  "state": "built",
+  "evidence": "PR A (#141, e425865): GitHub annotations on 6 runs went from Node.js 20 + ubuntu-latest notices to none (before/after tables in that PR); Dependabot's first run on main succeeded (run 41940763972); main protected (gh api rules: pull_request, required_status_checks, deletion, non_fast_forward; ruleset 'protect main' active, 5 Nov). PR B (#142): Gradle 9.3.1 / AGP 9.1.0 / Kotlin 2.4.0, built-in Kotlin on, wakelock_plus 1.8.2; CI: verify passed, the Android job started by hand built the APK on the first try with no annotations and none of Flutter's three 'will soon be dropped' lines (run 41947967979), the Goldens workflow started by hand passed with no annotations and nothing committed (run 41952031831). Smoke test on emulator-5554 (x86_64), NOT a walk: b126 x64 release installed fresh, signed in to test VM 108, library song played with no YouTube, paused and resumed from the notification; an in-place 'adb install -r' of b126 over build 125 kept the signing and the session, Home loaded, a song played, no FATAL in the log. Built, not walked: the arm64 release build was built but not run; no real phone.",
+  "at": "2026-11-05T02:00:03Z",
+  "by": "Claude"
  }
 }

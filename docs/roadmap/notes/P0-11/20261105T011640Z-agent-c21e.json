@@ -1,0 +1,9 @@
+{
+ "id": "20261105T011640Z-agent-c21e",
+ "item": "P0-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T01:16:40Z",
+ "type": "note",
+ "body": "Reminders from PR B (Android toolchain, 5 Nov 2026), each with its trigger. (1) android.newDsl=false stays in app/android/gradle.properties because Flutter 3.47.7's own template carries it (the old DSL types are still used by Flutter's Gradle plugin, flutter/flutter#184839): delete it when the next Flutter's 'flutter create' template no longer has it. (2) 'flutter build' prints 'your app uses plugins that apply KGP: workmanager_android': a false positive (a text scan; the plugin applies the Kotlin plugin only when built-in Kotlin is off, and its Kotlin compiles). Trigger: when workmanager_android drops the conditional or Flutter stops printing it, nothing to do; if a build ever FAILS naming a plugin that applies kotlin-android, upgrade the plugin that brings it (flutter pub deps --style=compact). (3) When Flutter is upgraded: diff a fresh 'flutter create' android folder against app/android, as for this change. See docs/guides/dev-gotchas.md."
+}

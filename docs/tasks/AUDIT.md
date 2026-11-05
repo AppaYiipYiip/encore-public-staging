@@ -115,7 +115,7 @@ The owner installed the server from the guide (the installer's own count: **14 m
   the project board, one issue per task.
 * P0-09 environments as code, P0-10 licence checks: not done.
 * Before the repository goes public (P5-06): several plan documents still name the owner's own machines and containers; scrub them (see `../README.md`).
-* Android build tooling warns that Gradle 8.14, AGP 8.11 and Kotlin 2.2.20 "will soon be dropped" by Flutter: upgrade before the first release.
+* ~~Android build tooling warns that Gradle 8.14, AGP 8.11 and Kotlin 2.2.20 "will soon be dropped" by Flutter: upgrade before the first release.~~ Done in P0-11 PR B (5 Nov 2026): Gradle 9.3.1, AGP 9.1.0, Kotlin 2.4.0 (the versions of Flutter 3.47.7's own `flutter create` template), built-in Kotlin on; build 125 predates it.
 
 ## P1 — instant play and the worst bugs
 
