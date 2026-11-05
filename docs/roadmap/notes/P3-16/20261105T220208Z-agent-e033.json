@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-e033",
+ "item": "P3-16",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "Register row B-30 (docs/tasks/AUDIT-BUILT-2026-11-05.md): besides the command, a forgotten password has two more gaps. (1) The owner-made reset link and the list of one's own devices are built on the server and have NO screen in the app (docs/32 D-1, AC-6, DV-3): a friend who is sent a reset link cannot use it. (2) Under D-61 the Host's side must be a button as well as a command, and the Host's own password cannot be a plain button on a page anyone on the network can open: the proof of 'I am the Host' is physical (a code printed on the server computer or the install's recovery file). Design both doors on one operation.",
+ "to": [
+  "agent"
+ ]
+}

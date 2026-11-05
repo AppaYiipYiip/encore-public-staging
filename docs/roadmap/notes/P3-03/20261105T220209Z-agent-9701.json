@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220209Z-agent-9701",
+ "item": "P3-03",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:09Z",
+ "type": "note",
+ "body": "Register row B-36 (docs/tasks/AUDIT-BUILT-2026-11-05.md): the one-way mirror of likes and playlists into the music server (docs/04 section 3, the promise to people who keep another Subsonic app, ticked in docs/27) lives only in this task's text; the board title says 'each phone gets its own key'. navidrome.py has no star or playlist call. Give the mirror its own title, or move it to P3-11 (use a music server you already run), or take the promise out of docs/04 and docs/27.",
+ "to": [
+  "agent"
+ ]
+}

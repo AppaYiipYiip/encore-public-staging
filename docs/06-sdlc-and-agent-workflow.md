@@ -75,12 +75,12 @@ and the evidence. It must:
 * `docs/` describes **the present**. No work logs, no "progress notes", no dated narratives in living docs. History lives in PRs,
   issues, releases and `docs/history/`.
 * One topic per file, ≤ ~300 lines; tables over prose; numbers with the setup they were measured on.
-* Decisions: one ADR file each in `docs/adr/` (Context → Options → Decision → Why it beats the others → Consequences → Revisit
-  when). Superseding an ADR edits its status line and links the new one.
+* Decisions: one entry each in the two logs, `10` (the owner's D-xx) and `11` (ADR-Rxx: Context → Options → Decision → Why it beats the others →
+  Consequences → Revisit when). Superseding a decision edits its status line and links the new one.
 * A doc that disagrees with the code is a bug: fix one of them in the same PR.
-* **OPEN (needs owner/advisor):** these rules name folders that were never made (`docs/adr/`, `docs/product/`, `docs/architecture/`, `docs/engineering/`, `docs/history/`) and a limit of about 300 lines per file and "no dated narratives" that the practice does not keep: the decisions are one log (`11`, over 580 lines), and `10`, `history/reviews-2026-10-31.md#audit` and `tasks/RELEASE-CANDIDATE.md` are dated logs. Either the rules change to the practice (numbered documents, logs under `tasks/`, which is what `05` §2 now shows) or the files are split into the folders. Until it is decided the rules above are the intention and `05` §2 is the layout.
-* The planning agent owns `docs/product/`, `docs/architecture/` and the roadmap; implementing agents update `docs/guides/` and
-  `docs/engineering/` when their change affects them.
+* **Decided (the advisor, 5 Nov 2026, when the owner asked for fewer files; `docs/README.md` is the map):** the folders `docs/adr/`, `product/`, `architecture/` and `engineering/` are not made and will not be. Documents keep their numbers, because code, tests and the board cite them (`17`, `31 CN-1`, D-xx, ADR-Rxx); the groups are `tasks/`, `history/`, `evidence/`, `guides/` and `design/`, and `docs/README.md` names every file's kind. The 300-line limit is a goal: `tools/check_docs.py` reports the files over 4,500 words and a dated story inside a truth document.
+* The planning agent owns the plan (the board) and the product and architecture documents (`03` to `04`); implementing agents update `docs/guides/` and the
+  documents of the area they change, in the same pull request.
 
 ## 7. CI (GitHub Actions)
 

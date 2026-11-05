@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-f774",
+ "item": "P3-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "From reading all the documents (register rows B-27 and B-29 in docs/tasks/AUDIT-BUILT-2026-11-05.md, section 'What reading all the documents added'). B-27 (HIGH): docs/21 section 4 promises an installer-generated ND_PASSWORDENCRYPTIONKEY; nothing sets it (grep outside docs finds nothing), so the music server keeps member passwords under its published default key, and every `encore backup` packs navidrome.db AND the install's .env (deploy/encore 226-244), and the install guide tells the Host to copy the backup to another machine. Proper fix: the installer generates the key into .env (mode 600) before the first account exists and the compose file passes it on; for existing installs read the music server's documented key-change procedure first. B-29: the app never compares the server's apiVersion (session.dart:588 only checks it is not empty) and docs/31 CN-27 'Update Encore' is Designed with no code; with every server following :main (B-2) an old APK against a newer server is undefined. Design the update and the version sentence together. Record only: the owner said the audit does not change code.",
+ "to": [
+  "agent"
+ ]
+}

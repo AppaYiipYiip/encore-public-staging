@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-b019",
+ "item": "P1-06",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "Register row B-32 (docs/tasks/AUDIT-BUILT-2026-11-05.md): the item is marked built with the evidence 'the timing tools exist', but its Do starts with X-Request-Id / X-Device-Id on every request and structured server logs (docs/24 section 1). The app has the log ring buffer and the Diagnostics screen; no request id exists in app/lib or in the server's api.py. docs/30 says a bug report without request ids is incomplete, which cannot be followed on a stranger's server. Build the two ids (small) or re-open the item and say what is left.",
+ "to": [
+  "agent"
+ ]
+}

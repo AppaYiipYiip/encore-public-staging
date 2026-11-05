@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220209Z-agent-28f1",
+ "item": "P3-18",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:09Z",
+ "type": "note",
+ "body": "From reading docs/15 and docs/guides/install-test.md (register rows B-1, B-27, B-34 in docs/tasks/AUDIT-BUILT-2026-11-05.md): the install as written needs a terminal AND a GitHub login with the read:packages permission (the image is private), so the first install by the owner cannot be by buttons until the image is public or a pink step gives him exact clicks for a token. Also the backup/restore design says 'the restore command (never a button)' and the Updates page says 'run sudo encore update': both reversed by D-61, and docs/15 sections 1 and 4 and the install guide must be rewritten in the pull request that applies the three-gates draft.",
+ "to": [
+  "agent"
+ ]
+}

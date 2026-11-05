@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220608Z-agent-fd21",
+ "item": "P3-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:06:08Z",
+ "type": "note",
+ "body": "Register row B-27 (docs/tasks/AUDIT-BUILT-2026-11-05.md): the installer never sets the music server's ND_PASSWORDENCRYPTIONKEY that docs/21 section 4 promises, so member passwords are stored under a key shared by every install (Navidrome's security page: 'just for the sake of obfuscation', 'can be easily found in the codebase'). Setting the option later is documented (restart re-encrypts every password) but then the key can never change, so a restore on another computer needs the same key: it must travel in the backup, next to the database and the administrator login that .env holds in plain text. Fix in two parts: the key at install time, AND the backup treated as secret material (a passphrase-encrypted archive, or an open decision that it stays plain with the message saying so). Part of the security check before the first friend.",
+ "to": [
+  "agent"
+ ]
+}

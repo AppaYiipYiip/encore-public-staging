@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-d139",
+ "item": "P3-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "Register row B-33 (docs/tasks/AUDIT-BUILT-2026-11-05.md): on the live board P3-14 (20), P3-15 (21), P3-19 (26) and P5-01 (18) are before this item (27), so the 3 Nov order problems 1, 4 and 5 are fixed. NOT fixed: P2-20 device-key sign-in (38), so the friend's phone puts a replayable login token in the address of every call over the internet (B-5); P2-12 and P2-14 (34, 35), so it calls Deezer and LRCLIB itself; P2-19 (39). The draft three-gates plan (PR #151) puts all of them before gate 3.",
+ "to": [
+  "agent"
+ ]
+}

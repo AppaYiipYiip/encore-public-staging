@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220209Z-agent-6c5c",
+ "item": "P0-10",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:09Z",
+ "type": "note",
+ "body": "Register row B-35 (docs/tasks/AUDIT-BUILT-2026-11-05.md): docs/25 keeps two legal questions open: the app began as a fork under CC BY-NC-SA 4.0 (about 1.3 percent of lines still identical; whether anything must be kept or the project must stay non-commercial is undecided) and there is no THIRD_PARTY_NOTICES. The order is right (this item 72, public release P5-06 at 82) but the answer decides whether the repository may go public and whether an APK may be handed to a friend, so it must be done before either. The one owner decision goes to the advisor.",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-ad5f",
+ "item": "P0-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "Register row B-31 (docs/tasks/AUDIT-BUILT-2026-11-05.md): docs/33 lists as Open, never verified on a real phone and not on the board: another app or a call takes audio focus (PB-F15), headphones or Bluetooth disconnect (PB-F16, the proper behaviour is certain: pause), the phone's disk is full (PB-F17), a downloaded file is damaged (PB-F18), the 6-hour signed song address expires after a long pause and it is not known whether the quiet retry fetches a new one (PB-F9), and the server's reason (removed, age check, YouTube busy) never reaches the notice (PB-F10/F11). Put them in the walk as rows. Also B-32: the board marks P1-06 built but the request-id half of its task is missing.",
+ "to": [
+  "agent"
+ ]
+}

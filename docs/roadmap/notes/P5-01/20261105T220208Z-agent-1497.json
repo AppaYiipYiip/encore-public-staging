@@ -1,0 +1,12 @@
+{
+ "id": "20261105T220208Z-agent-1497",
+ "item": "P5-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T22:02:08Z",
+ "type": "note",
+ "body": "Register row B-28 (docs/tasks/AUDIT-BUILT-2026-11-05.md): app/android/app/build.gradle.kts 42-69 signs BOTH the release and debug build types with the Android debug key when key.properties is missing, silently; no checkout has that file and there is no release.yml, so every APK so far carries a laptop's debug key (docs/06 section 7 says 'built by hand with the signing key', docs/12 says it is the debug key: they disagree). When this item is built: the release build must FAIL without the key (only debug may use the debug key), the release workflow signs from a secret, and `apksigner verify --print-certs` is its last step. As it stands the fallback is a stop-gap with no removal trigger.",
+ "to": [
+  "agent"
+ ]
+}
