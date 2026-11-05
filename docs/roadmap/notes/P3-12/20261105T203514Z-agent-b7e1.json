@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-b7e1",
+ "item": "P3-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md: B-3 the away-from-home route has never run for real and Tailscale's Funnel is a beta service with undisclosed bandwidth limits; prove it with real music and a websocket from a phone on mobile data before anything depends on it.",
+ "to": [
+  "agent"
+ ]
+}

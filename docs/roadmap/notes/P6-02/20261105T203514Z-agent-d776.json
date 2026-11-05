@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-d776",
+ "item": "P6-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md, feasibility table: 9 files import dart:io; workmanager and background_downloader have no web implementation; the local database on the web needs a WASM SQLite and special response headers; the server must serve the web build; only the browser shell has a frame of its own (webplayer: home). Feasible and Large; behind P2-20.",
+ "to": [
+  "agent"
+ ]
+}

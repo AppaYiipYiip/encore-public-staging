@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-44d3",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "The audit of what is already built (docs/tasks/AUDIT-BUILT-2026-11-05.md) records 25 findings, B-1 to B-25, with evidence and whether the 3 Nov book already had each. NONE is scheduled and none is to be fixed on an agent's own initiative (owner, 5 Nov 2026: the audit records, it does not correct code). The owner and the advisor decide what enters the plan. One fix drafted before that instruction is held on branch held/server-db-lock.",
+ "to": [
+  "agent"
+ ]
+}

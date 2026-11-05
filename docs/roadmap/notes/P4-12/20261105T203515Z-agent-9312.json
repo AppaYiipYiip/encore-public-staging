@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203515Z-agent-9312",
+ "item": "P4-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:15Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md, feasibility: B-8 crossfade does not exist (two documents wrongly say it does); it needs a second player and an engine change, so it is Large with real risk. Android Auto browse and voice search are already built (encore_audio_handler.dart); the home-screen widget has no code. The word 'Data saver' already names a quality level (domain/audio_quality.dart).",
+ "to": [
+  "agent"
+ ]
+}

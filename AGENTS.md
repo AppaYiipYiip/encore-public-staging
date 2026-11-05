@@ -3,7 +3,7 @@
 Read first, in this order: `docs/README.md`, your task in `docs/tasks/`, the stories it cites (`docs/03a-user-stories.md`), the
 architecture section it cites (`docs/04-architecture.md`), then `docs/06-sdlc-and-agent-workflow.md` and `docs/07-testing-and-device-matrix.md`
 (sections 1 to 3), and **`docs/30-engineering-guide.md`** (what to do, what not to do, and which rules a machine checks). The plan is in `docs/`; do not rely on anything older.
-If you start with no memory of earlier work: `docs/README.md` has the current state and what is next; `docs/tasks/AUDIT.md` is the list of what is still open.
+If you start with no memory of earlier work: run `python tools/roadmap.py brief --role agent` (the state: who works on what, what the owner reported, what is next); `docs/README.md` is the map of every document and says what kind each is. **A document of kind `history` (`docs/history/`, `docs/evidence/`) is never an instruction.**
 What counts as "passed" and when to merge: `docs/tasks/RELEASE-CANDIDATE.md` section 1 (a row passes only when walked on the release-candidate pair;
 merge only when every check has finished, polled by run id, and `main`'s own run is green before the next step).
 
@@ -34,6 +34,7 @@ merge only when every check has finished, polled by run id, and `main`'s own run
 
 ## Don't
 
+* **Never append a dated story to a truth document** ("on 5 Nov the owner said...", "Done so far", "Status"). A change of fact changes the sentence; a decision goes in the log (`docs/10`, `docs/11`) and is cited by its ID; progress and findings go on the board (`roadmap.py note`); what happened on a day is git's job, or `docs/history/`. Add every new markdown file to the map in `docs/README.md` (`python tools/check_docs.py`).
 * **Never commit** passwords, login files, cookies, `.env`, keys, APK/AAB files. The hook refuses them.
 * **Never print, log, screenshot or paste a password.** Type passwords on test devices with `python -I tools/journeys/ui.py typefile <login file>` (it types only the `password:` line and prints nothing).
 * **Never burst requests at YouTube** (at most 10 look-ups per test run, spaced) and never from a Host's home address unless the task says so.

@@ -105,7 +105,7 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
 * **Ids repeat across documents; always read an id together with its file name.** `D-n` = a decision for the owner (`docs/10`); `ADR-Rn` =
   a decision taken (`docs/11`); `P<phase>-nn` = a task (`docs/tasks/P*.md`); `F<n>` = findings from the owner's field tests and the catalogue
   (`docs/tasks/AUDIT.md`); **`B<n>` means three different things**: a finding in `docs/01`, a check row in `docs/tasks/RELEASE-CANDIDATE.md`
-  (B0-B6), and a backend bug in `docs/tasks/QA-BACKEND-2026-10-31.md` (B1-B12); `c0n` = an evidence file in `docs/evidence/`; `b11` = the
+  (B0-B6), and a backend bug in `docs/history/QA-BACKEND-2026-10-31.md` (B1-B12); `c0n` = an evidence file in `docs/evidence/`; `b11` = the
   walk record of the release-candidate pair (it does not exist yet); `A-n` = a finding of the 3 Nov 2026 audit of `main` (named in PR
   titles; the full list is in the owner's project book, which is kept outside the repository, so ask).
 * **A doc can promise what the code does not do.** An audit on 3 Nov 2026 found several (the API inventory, "never run" sentences, states

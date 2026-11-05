@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203515Z-agent-0277",
+ "item": "P1-16",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:15Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md: B-17 (eleven notions of reachability). The Search-offline build will read serverAwayProvider and phoneHasInternetProvider; the audit recommends one reachability state computed in one place before more screens read it.",
+ "to": [
+  "agent"
+ ]
+}

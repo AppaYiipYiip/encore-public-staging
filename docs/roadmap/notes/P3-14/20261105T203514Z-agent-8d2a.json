@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-8d2a",
+ "item": "P3-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md: B-2 the default tag is main (an update pulls whatever was merged last: it needs a release channel that only moves on purpose); B-12 nothing stops an older server from starting on a newer database (the rollback must restore the pre-update copy and say what it loses).",
+ "to": [
+  "agent"
+ ]
+}

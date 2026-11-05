@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203515Z-agent-2501",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:15Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md: B-17 the app now has eleven notions of 'can I reach the server' (P1-15 added three); the parts of this item that remain add more readers of serverAwayProvider. Recorded, not fixed: the owner asked for the audit to record issues. Decide with the advisor whether one reachability state comes first.",
+ "to": [
+  "agent"
+ ]
+}

@@ -37,7 +37,7 @@ The owner: *"if the backend is flawed, the entire app is flawed."* A testing age
 * **B3.** First read how the app's outbox handles `not_found` and `conflict` on an entry add: which case actually loses the data, and what does an older build (the owner's 120) do with a 409 (does it retry for ever)? Then change the server and the app **in one PR**.
 * **B12.** Facts first: grep the app for every Navidrome path it calls in Encore mode. If it uses none of `/auth`, `/api` or the web UI, block those on the away host in S1; narrowing `/rest` comes later. **How Funnel sets `X-Forwarded-For` cannot be learned without the owner's Funnel: open.**
 
-## The order (pushed and merged in this order on 2026-11-01; the record is `CLOUD-RESUME.md`, Progress. S0, S1, W-05 with B15, S2 and S3 are on main; B3 is in the phone batch, PR #91)
+## The order (pushed and merged in this order on 2026-11-01; the record is `history/CLOUD-RESUME.md`, Progress. S0, S1, W-05 with B15, S2 and S3 are on main; B3 is in the phone batch, PR #91)
 
 1. **S0, CI hygiene, the first push after the reset:** B25 (build the image only on `main` and tags, only after the tests pass), B28, B27.
 2. **S1, safety on the public internet:** B2, B1, B11, B9, B19, B12's blocked paths. **Blocks the friend milestone and blocks telling the owner he can turn Funnel on.**
@@ -49,7 +49,7 @@ The owner: *"if the backend is flawed, the entire app is flawed."* A testing age
 
 ## What the owner is told
 
-*B1, B2 and B12 are live on any server whose Funnel is on today.* Do not turn Funnel on for a friend until S1 is merged. (S1 is merged since 2026-11-01, PR #86; whether to turn it on is the owner's decision, written in `CLOUD-RESUME.md`, Progress.) If a Funnel is on now (the October 17 reference stack; whether VM 107 has one is unknown), turning it off with `encore funnel off` is the owner's decision; nothing of the owner's machines is touched by us.
+*B1, B2 and B12 are live on any server whose Funnel is on today.* Do not turn Funnel on for a friend until S1 is merged. (S1 is merged since 2026-11-01, PR #86; whether to turn it on is the owner's decision, written in `history/CLOUD-RESUME.md`, Progress.) If a Funnel is on now (the October 17 reference stack; whether VM 107 has one is unknown), turning it off with `encore funnel off` is the owner's decision; nothing of the owner's machines is touched by us.
 
 ## Not verified, and how to find out
 

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T202748Z-agent-4beb",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:27:48Z",
+ "type": "note",
+ "body": "HELD, do not merge: the branch held/server-db-lock holds a drafted fix for B-10, B-18 and B-19 (signing in takes the database write lock; with 20 phones a plain read waited up to 12 s) with a 20-phone load test and 9 tests. The owner said the audit records issues and does not correct code. Apply it only on his word. Numbers and the method: docs/tasks/AUDIT-BUILT-2026-11-05.md.",
+ "to": [
+  "owner"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-76b6",
+ "item": "P3-18",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "Hidden needs found by the audit (docs/tasks/AUDIT-BUILT-2026-11-05.md): B-1 the repository and the server image are private, so the installer asks for a GitHub token (a stranger cannot install; the owner says the repository goes public later); B-2 every installed server follows the :main tag, so an Update button would pull unwalked code; B-3 the away-from-home route (Tailscale Funnel, beta, undisclosed bandwidth cap) has never run for real.",
+ "to": [
+  "agent"
+ ]
+}

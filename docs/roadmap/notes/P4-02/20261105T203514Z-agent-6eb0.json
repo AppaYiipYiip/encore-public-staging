@@ -1,0 +1,12 @@
+{
+ "id": "20261105T203514Z-agent-6eb0",
+ "item": "P4-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T20:35:14Z",
+ "type": "note",
+ "body": "Audit docs/tasks/AUDIT-BUILT-2026-11-05.md: B-20 the app's Jam client connects to the old Jam hub on port 8703 (server/legacy/hub), which the shipped compose neither runs nor publishes; the server has no Jam module. The first step is deciding where the hub lives, without ever having two implementations of one protocol. Also B-3 (Funnel limits) and B-18/B-10 (the server stalls under many people: measured).",
+ "to": [
+  "agent"
+ ]
+}

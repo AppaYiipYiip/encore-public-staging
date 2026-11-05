@@ -4,7 +4,7 @@ Owner, 2026-10-22: *"I would expect you double-checking everything after being d
 and fix it, and also try things from beginning to end, like a new user: fresh install of the server and of the Android app, import
 playlists and use the app, invite friends, Jam, Jam with someone outside the server. Test every single feature from the UI."*
 
-This page lists, task by task, everything a status line says is open, and the owner's findings of 2026-10-22 with where each stands. **The findings of QA round 1 (F59 to F66, R1-1 to R1-26) are in `QA-ROUND1-2026-10-31.md`, not here; the "not done" parts that a task file's own status line carries (P1-02, P1-05, P1-08, P1-09, P1-11) are read in the task file.**
+This page lists, task by task, everything a status line says is open, and the owner's findings of 2026-10-22 with where each stands. **The findings of QA round 1 (F59 to F66, R1-1 to R1-26) are in `history/QA-ROUND1-2026-10-31.md`, not here; the "not done" parts that a task file's own status line carries (P1-02, P1-05, P1-08, P1-09, P1-11) are read in the task file.**
 Update it whenever a status changes; nothing is "done" while it is listed here. The journeys at the end are the final proof.
 
 ## Owner's findings, 2026-10-22
