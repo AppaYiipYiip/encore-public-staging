@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-66d9",
+ "item": "P1-03",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-11-01, in the new server (`encore_server`):** random spacing of background look-ups is built (`sources/youtube/pace.py`: a gap of 6 to 18 s, 12 s on average, `ENCORE_YOUTUBE_PACE_S`) and so is the doubling rest after a refusal (`sources/youtube/rest.py`: 30 minutes up to a day). The hourly cap (â‰¤ 120 per hour) is **not built** there; only the older fetch service has an hourly import budget (`IMPORT_MAX_PER_HOUR`, default 120).",
+ "to": [
+  "agent"
+ ]
+}

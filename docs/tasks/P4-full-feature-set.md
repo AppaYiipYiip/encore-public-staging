@@ -121,7 +121,6 @@ and activity).
 ## P4-11 — Tablets and large screens — Size M (un-parked by D-54)
 * **Order.** Needs: P5-06 [p], P6-02 [d], P6-08 [d]. Why: the tablet reuses the large-screen layouts that the browser player (P6-02) builds (D-58); the layouts are drawn first (D-43), which is P6-08; and docs/tasks/P6-later.md says the tablet layouts need "the phone app proven in daily use", which is the public release..
 * **Un-parked (2026-11-03, D-54, amending D-18).** It is the first of the three last items (tablet, then TV, then iPhone).
-* **Status.** **Un-parked by the owner on 2026-11-03 (D-54):** after the public release and after the drawings (P6-01). It was parked by D-18 and D-48 a (2026-11-01). The text below is the task.
 * **Why.** U1: the owner uses a tablet; Android 16 ignores orientation/resizability locks on screens ≥ 600 dp for apps targeting SDK 36.
 * **Do.** Adaptive layout: navigation rail, list + detail panes, player as a side panel in landscape; keyboard and mouse basics.
 * **Acceptance.** Profile E and a landscape tablet emulator: every screen usable in both orientations and split-screen; screenshots in the PR.

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210328Z-agent-6b6a",
+ "item": "P2-21",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:28Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P2-songs-as-references.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status.** RC2, drawn first (D-26 in `../10`; `RELEASE-CANDIDATE.md` section 2, \"Added 2026-10-30\"). The RC1 part is built: a long press and a visible â‹¯ on every Library row that has a collection, and a long press on every song row (the phone batch, #91).",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210327Z-agent-d026",
+ "item": "P1-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:27Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: queue part done, tests green, walked on the emulator (same evidence file).** The saved queue also stores artist/title/album of songs streamed from the catalogue (`named`) and `restore()` finds them in the library by that (`findByName`); those the library does not have are dropped and the rest of the queue comes back. Not done: the 5 s save while playing, the lock-screen position check, and songs the server did not keep (a song played once is not kept: the song-ref design in P2 re-prepares it by its catalogue id instead of dropping it).",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210327Z-agent-a316",
+ "item": "P1-09",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:27Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: engine part done, tests green, walked on the emulator (same evidence file).** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Greyed rows done too (`lib/features/common/playability.dart`: offline, songs not on the phone are dimmed with a cloud-off mark in album/playlist lists, search rows and the Top result; `test/features/offline_rows_test.dart`). Not done: queue sheet rows, the \"once per session\" explanation (the player's own notice covers a tap), covers offline (done in P1-10).",
+ "to": [
+  "agent"
+ ]
+}

@@ -2,7 +2,6 @@
 
 ## P5-01 — Release signing and the release pipeline — Size S
 * **Order.** Needs: none.
-* **Moved up (2026-11-03).** It comes before the *final* release-candidate build, not after the first outside user: the walk record `b11` must be of the binary a friend will actually install, and this task's own text says that changing the key later forces every user to uninstall and lose their downloads. The keystore is made with the owner (D-10).
 * **Read first:** `../12-app-signing-key.md` (the agreed plan, in plain words, and the rules).
 * **Why.** D6: "release" APKs are signed with the PC's debug key; changing keys later forces every user to reinstall.
 * **Do.** Generate the release keystore with the owner (D-10: he keeps it + a backup); CI secret; `release.yml` signs the APK on tags

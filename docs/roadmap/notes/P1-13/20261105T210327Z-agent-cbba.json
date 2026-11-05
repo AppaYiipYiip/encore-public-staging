@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210327Z-agent-cbba",
+ "item": "P1-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:27Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: app part done, server part open.** Levelling now only turns loud songs down by default (the loudness enhancer is off: `ReplayGainSettings.allowBoost`, setting \"Quiet places\" is the only boost; the preamp slider is gone), so the phone's volume buttons are the one volume; engine tests prove the player volume is exactly 1 with levelling off through play/next/previous/seek/pause/failure and that the levelled volume comes back after a sleep-timer fade. Open: measuring loudness on the server when a file is kept (ReplayGain tags), YouTube-reported loudness for streams, the 20-song loudness measurement, and asking the owner which slider he meant.",
+ "to": [
+  "agent"
+ ]
+}

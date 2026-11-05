@@ -19,7 +19,6 @@ installer and a browser wizard that a person who never used Docker can follow. R
 
 ## P3-02 — Published server images for Intel and AMD computers — Size S
 * **Order.** Needs: none.
-* **Status 2026-11-03.** Only `linux/amd64` is built (`server-image.yml`: "64-bit Intel/AMD only for now; arm64 is later work (P3-17, D-58)").
 * **Do.** `server/Dockerfile` (slim Python, ffmpeg, Deno pinned per arch, yt-dlp pinned and updated by the daily check), built in CI for
   amd64 (Intel and AMD), pushed to `ghcr.io/<owner>/encore-server:<version>`; compose uses pinned tags; image size target ≤ 450 MB.
 * **Acceptance.** `docker compose pull && up -d` on a clean amd64 VM; no local build.
@@ -45,7 +44,6 @@ installer and a browser wizard that a person who never used Docker can follow. R
 
 ## P3-05 — Install script, `encore.local`, `encore` CLI — Size M
 * **Order.** Needs: none.
-* **Status 2026-11-03.** The install script and the `encore` CLI are built and proved on bare VMs (`evidence/c01`, `c03`, `c06`). `encore.local` was replaced by the find-your-server design (ADR-R40, P2-19 slice C: "Servers on this Wi-Fi"); confirm with the owner when P2-19 lands.
 * **Why.** ADR-R7; owner has never used Docker and does not expect users to.
 * **Do.** `server/deploy/install.sh` (served at a stable URL): checks 64-bit Linux (Debian/Ubuntu first), CPU arch, RAM ≥ 2 GB, disk
   ≥ 20 GB (**built as 6 GB**: `install.sh` refuses below 6 GB free, and `guides/install-test.md` says so); asks before installing Docker from Docker's own repository; creates `/opt/encore` (compose + generated `.env` with
@@ -137,7 +135,6 @@ installer and a browser wizard that a person who never used Docker can follow. R
   own volume), `encore restore`, and a restore tried on a clean machine. (3) *On hold (R35):* an in-app report; the friend messages the owner and can paste Diagnostics > Copy report. (4) A one-page friend's guide (`docs/guides/friend.md`): get the app, tap the
   link, sign in, what to expect, how to report. (5) Measure what two daily users do to the single home address YouTube sees: count the
   look-ups per day per person; the pacing and the rest already protect it; write the next step (a cookie or another way out, `../04` §5).
-* **Done so far.** Item (2): `encore backup`, `encore restore`, `encore autobackup` and the Python copy tool are written with tests and proved on real machines (`docs/evidence/README.md#c02`). Item (1): `encore funnel on|off|status` was rewritten after reading a real Tailscale 1.98.9 client's help (no per-site `off`: it resets only when Encore is the only site, otherwise changes nothing and says so) and its control flow was run against a stand-in `tailscale` on the VM in 11 situations (free 443, 443 taken, all public ports taken, Funnel not enabled on the tailnet, already on, off, never on); the text it reads is tested against Tailscale's documented output; **not yet run with a real sign-in** (the owner's). Item (5): the server counts how many times it asks YouTube per day and tells the log every 25th time (`encore logs | grep look-ups`), and when YouTube refuses; no person, no song; the five days of two people's use will say what the number is. Item (3): built, then put on hold (branch `parked/in-app-report`). Item (4): `docs/guides/friend.md` is a draft.
 * **Don't.** Show the owner what the friend listens to. Update the server while he is likely to be listening without saying so.
 * **Acceptance.** The friend installs the app, joins by the link from outside the owner's home, listens for a week; a backup of his data is
   restored on a second machine and his playlists are all there; his first problem report reaches the owner with the report attached (the in-app report is on hold, ADR-R35: until it exists, he pastes Diagnostics > Copy report). (The old gate of the first friend: **five checks, in order** hold first: (1) the owner installed his own server by the guide, by hand, and uses it; (2) the away-from-home address answers a phone on mobile data, websockets included (X-7); (3) the data can come back; (4) the friend's guide is final; (5) five days of the owner's own use.)

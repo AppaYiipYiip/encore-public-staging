@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210328Z-agent-0d4d",
+ "item": "P3-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:28Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P3-one-server-and-install.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-11-03.** Only `linux/amd64` is built (`server-image.yml`: \"64-bit Intel/AMD only for now; arm64 is later work (P3-17, D-58)\").",
+ "to": [
+  "agent"
+ ]
+}

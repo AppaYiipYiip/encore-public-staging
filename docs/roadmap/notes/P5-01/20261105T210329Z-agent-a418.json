@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210329Z-agent-a418",
+ "item": "P5-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:29Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P5-public-release.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Moved up (2026-11-03).** It comes before the *final* release-candidate build, not after the first outside user: the walk record `b11` must be of the binary a friend will actually install, and this task's own text says that changing the key later forces every user to uninstall and lose their downloads. The keystore is made with the owner (D-10).",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-1031",
+ "item": "P1-04",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: partly done.** The Top result of a search (or the first catalogue song) is prepared while the person reads (`SearchResultsView`); on the emulator a prepared Top result is audible 1.0-1.9 s after the tap. Not done: the first 3 songs of an opened album/playlist/imported playlist, the next 2 songs of the queue, cancelling stale prepares, dropping prepares first under back-off (P1-03).",
+ "to": [
+  "agent"
+ ]
+}

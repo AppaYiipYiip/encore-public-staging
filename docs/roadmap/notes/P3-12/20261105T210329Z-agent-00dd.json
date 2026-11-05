@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210329Z-agent-00dd",
+ "item": "P3-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:29Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P3-one-server-and-install.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Done so far.** Item (2): `encore backup`, `encore restore`, `encore autobackup` and the Python copy tool are written with tests and proved on real machines (`docs/evidence/README.md#c02`). Item (1): `encore funnel on|off|status` was rewritten after reading a real Tailscale 1.98.9 client's help (no per-site `off`: it resets only when Encore is the only site, otherwise changes nothing and says so) and its control flow was run against a stand-in `tailscale` on the VM in 11 situations (free 443, 443 taken, all public ports taken, Funnel not enabled on the tailnet, already on, off, never on); the text it reads is tested against Tailscale's documented output; **not yet run with a real sign-in** (the owner's). Item (5): the server counts how many times it asks YouTube per day and tells the log every 25th time (`encore logs | grep look-ups`), and when YouTube refuses; no person, no song; the five days of two people's use will say what the number is. Item (3): built, then put on hold (branch `parked/in-app-report`). Item (4): `docs/guides/friend.md` is a draft.",
+ "to": [
+  "agent"
+ ]
+}

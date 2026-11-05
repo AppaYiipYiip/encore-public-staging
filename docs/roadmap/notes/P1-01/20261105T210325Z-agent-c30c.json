@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210325Z-agent-c30c",
+ "item": "P1-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:25Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: implemented** in `server/legacy/encore-fetch` (`lean.py`, `direct.py`; 62 new tests incl. real recorded YouTube Music answers). Measured: search 13.5 s â†’ 0.5 s median, tap to audio-ready 38 s â†’ 4.3â€“8.7 s (`../09` Â§7). Left for later tasks: stream proxy without any download (P1-02), separate interactive/background pools and pacing (P1-03), preparing ahead (P1-04).",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-d308",
+ "item": "P1-08",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: code done, tests green, walked on the emulator (`../evidence/README.md#walk-2026-10-22`).** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer \"play this\" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).",
+ "to": [
+  "agent"
+ ]
+}

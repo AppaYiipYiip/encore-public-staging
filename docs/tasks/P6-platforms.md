@@ -46,7 +46,6 @@ All of them need the same foundation: the app talks only to its own server (the 
 
 ## P6-07 — Casting to speakers that are not Encore devices — Size M
 * **Order.** Needs: none.
-* **Status.** Not scheduled: an owner decision. Encore's own devices are in v1 (P4-07).
 
 ## P6-08 — Tablet design: the drawings for the tablet — Size S
 * **Order.** Needs: P6-01 [d].

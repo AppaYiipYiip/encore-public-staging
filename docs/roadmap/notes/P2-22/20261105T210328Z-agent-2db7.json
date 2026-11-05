@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210328Z-agent-2db7",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:28Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P2-songs-as-references.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status (5 Nov 2026).** **Part (3) is built** (the question about download progress: `app/lib/features/downloads/download_notifications_prompt.dart`, `askForDownloadNotificationsOnce` in `app/lib/app/notifications.dart`; drawn first as S-92 \"notifications for download progress\"; tests; a smoke test on an emulator, `docs/evidence/README.md#c07`): **built, not walked**. **Parts (1), (2) and (4) are not built:** they wait for their drawing (the server stage, the two stages and the reason for a wait, a failed song), drawn together with the offline state P1-15. So this item is **not** marked built.",
+ "to": [
+  "agent"
+ ]
+}

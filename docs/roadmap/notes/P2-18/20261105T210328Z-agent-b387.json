@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210328Z-agent-b387",
+ "item": "P2-18",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:28Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P2-songs-as-references.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: app part done and walked on the emulator (J-21); server part (device tokens, who revoked) belongs to P3-03.** One state (`lib/features/auth/login_problem.dart`): the sync, and a song the person tapped that the login refused (`InstantStatus.error == 'login'`), both say so; Home shows a quiet card \"Sign in again\"; an action that failed for it opens the prompt once; the prompt asks only for the password (`ServerSetupService.replacePassword`: checked against the server, then stored; nothing else is touched); \"Use a different account\" is the one way that removes data. Tests: `test/features/login_problem_test.dart`. Walked: password rotated on the test server, app reopened, card shown, new password typed, Home back with the queue and playlists intact.",
+ "to": [
+  "agent"
+ ]
+}

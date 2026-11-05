@@ -12,7 +12,7 @@ tasks (marked **new**).
 | ✓ Join by invite or QR (US-04) | ✓ Artist, album pages (U4) | ✓ Queue, play next, reorder | ✓ Playlists of any song (P2-01) | ✓ Friends on other servers (US-72) | ✓ Change my password (people module; **ensure an app screen**, P3-09) |
 | ✓ Bring my music (US-05) | ✓ Home made for me (US-60) | ✓ Shuffle, repeat, smart shuffle (P4-01) | ✓ Save albums, follow artists (U3) | ✓ Jam with anyone (US-73) | ✓ Settings follow me (P3-10) |
 | ✓ Pick some artists (A5) | ✓ Radio from any song/artist (P4-01) | ✓ Lyrics full screen (P2-14) | ◐ Organise: sort, filter, pins, folders, cover (U7, P4-12) — **descriptions missing → added to P4-15** | ✓ Share a song/playlist (U5) | ✓ Privacy switches (US-41, `21`) |
-| ✓ First Home not empty (US-04) | ✗→**new** Browse: charts of my country, moods/genres, editorial playlists (P4-15) | ✓ Crossfade, gapless (U9) | ✓ Downloads, smart downloads (P2-13) | ✓ Collaborative playlists (U6) | ✓ Explicit filter (`21` §5) |
+| ✓ First Home not empty (US-04) | ✗→**new** Browse: charts of my country, moods/genres, editorial playlists (P4-15) | ✓ Gapless, ✗ crossfade (U9; audit B-8) | ✓ Downloads, smart downloads (P2-13) | ✓ Collaborative playlists (U6) | ✓ Explicit filter (`21` §5) |
 | | ✓ New releases from artists I love (P4-01) | ✓ Sleep timer, speed, equaliser (exist) | ✗→**new** Recently played: a full history screen (P4-15) | ✓ Friend activity (US-62) | ✓ Export / delete my data (`21` §6) |
 | | ✓ "Wrong song?" (P4-14) | ✓ One volume, even loudness (US-76) | ✓ Year in Music (US-64) | | ✓ Report a problem (P4-13) |
 | | | ✓ Lock screen, notification, headset, calls (US-15, H13, H14) | | | ✗→**new** What's new after an update, in-app help (P5-08) |

@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-deb0",
+ "item": "P1-03",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: pools, single flight and the state report done; random spacing and the interactive rate limit open.** `Dispatcher` has two pools that never share a worker (interactive: taps first, then lookups ahead, at most one at a time; background: bulk songs of imports and albums); the same song asked by two people at once is fetched once (a lock per upload, the second takes the kept copy); `GET /api/info` carries `youtube: {state: ok|resting, message, resumesInSec}`; the default budget is 120 songs an hour (was 200; `IMPORT_MAX_PER_HOUR`). The back-off after a refusal (doubling, resting for all) already existed in `imports.py`. Not done: random 5-20 s spacing of background look-ups (the import gap is fixed 2 s), the doubling up to 24 h (now up to 30 min), \\\"interactive at most one look-up per 5 s while resting\\\", the J-02 comparison with an import running.",
+ "to": [
+  "agent"
+ ]
+}

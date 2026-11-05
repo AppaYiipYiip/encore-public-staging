@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-fdca",
+ "item": "P1-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: done and walked on the emulator.** `lib/domain/search_rank.dart` (pure ranking), `lib/features/search/search_assembly.dart`, `search_results.dart`; Top result, then songs (library and catalogue mixed, same look), artists, albums; no header about the library. Real answers recorded from Deezer (`tools/record_deezer_fixtures.py`, `test/fixtures/deezer/search.json`): the intended song is the Top result for 18 of 20 queries; the two misses are known (Deezer's eight results hold no Beach House song; an Arabic title cannot be matched with Latin letters yet, docs/19). Also fixed on the way: the server treated \"(The Avener Rework)\" as noise, so the plain song tapped played the library's rework (`version_signature`); covers rank below the artist's own versions; compilation repeats are folded. Not done: keystroke-to-results timing (â‰¤ 300 ms) not measured on a device.",
+ "to": [
+  "agent"
+ ]
+}

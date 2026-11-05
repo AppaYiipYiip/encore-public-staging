@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210325Z-agent-4c26",
+ "item": "P1-03",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:25Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-11-03.** The new server has the pacing and the rest (`sources/youtube/rest.py`); the only open part was on the legacy server, which no longer runs anywhere. Proved at scale: a 217-song import was fetched in about 46 minutes with no refusal (`AUDIT.md`, round 2).",
+ "to": [
+  "agent"
+ ]
+}

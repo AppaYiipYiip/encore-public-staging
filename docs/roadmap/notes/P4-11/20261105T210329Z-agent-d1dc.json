@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210329Z-agent-d1dc",
+ "item": "P4-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:29Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P4-full-feature-set.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status.** **Un-parked by the owner on 2026-11-03 (D-54):** after the public release and after the drawings (P6-01). It was parked by D-18 and D-48 a (2026-11-01). The text below is the task.",
+ "to": [
+  "agent"
+ ]
+}

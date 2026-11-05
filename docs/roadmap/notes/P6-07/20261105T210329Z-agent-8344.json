@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210329Z-agent-8344",
+ "item": "P6-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:29Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P6-platforms.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status.** Not scheduled: an owner decision. Encore's own devices are in v1 (P4-07).",
+ "to": [
+  "agent"
+ ]
+}

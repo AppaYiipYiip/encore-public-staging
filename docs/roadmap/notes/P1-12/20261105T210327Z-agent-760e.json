@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210327Z-agent-760e",
+ "item": "P1-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:27Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: steps 1 and 4 done, 6 partly, the rest open.** `showEncoreSheet` (`lib/features/common/encore_sheet.dart`) is used by all 14 bottom sheets (safe area, keyboard lift, drag handle, 90 % height). `test/support/device_profile.dart` + `test/features/device_profiles_test.dart` open every main screen, the player with its Speed / Sleep timer / Queue sheets, the track menu and the create menu under three profiles (3 buttons 48 dp, gesture 24 dp, small phone 360x640 with 2x text) and assert no overflow and nothing tappable under the system bar (lists scrolled to their end first); the check itself is tested against a plain bottom sheet (`test/support/device_profile_test.dart`). A new server is called \"My music server\", not \"Navidrome\". Open: step 2 (labels on every custom tappable, sign-in field labels, TalkBack walk), 3 (grow-with-text audit beyond the screens above), 5 (notification permission when first needed), the rest of 6 (codec chips, \"Only your music\" wording), 7 (back from an imported playlist), RTL profile, walking the profiles on the emulator with 3-button navigation.",
+ "to": [
+  "agent"
+ ]
+}

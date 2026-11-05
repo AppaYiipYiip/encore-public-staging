@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210325Z-agent-b1bf",
+ "item": "P1-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:25Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: server done and measured, app part for long songs done (not yet walked with a real long video on the emulator).** `GET /api/stream` (`stream.py`): resolves inside the request, proxies the googlevideo bytes in ranged chunks (256 KiB first, then 2 MiB), Range/206/Content-Range, one address look-up however many players ask, expired addresses asked for again once, a first byte that cannot come within 10 s ends in 504 with a sentence, refusals are 404/503 with words, no length limit; `ENCORE_FAULT=youtube_refuse|slow_extract:<ms>|no_results`. 23 tests incl. the real HTTP handler. With the fast client (P1-01 addendum, `../09` 7.3) the first byte is 1.9-3.5 s and the 2 h 21 min recitation starts in 1.9 s, a jump in 1.1 s. App: a catalogue song of 40 minutes or more is played from the stream (no job, no download; `kLongSong`). Not done: ordinary taps still go through the job path (the library keeps what was played until P2's keep rule); the app does not prepare via the stream; `bufferForPlaybackMs` tuning (X-6); a single fetch session shared by reader and cache file.",
+ "to": [
+  "agent"
+ ]
+}

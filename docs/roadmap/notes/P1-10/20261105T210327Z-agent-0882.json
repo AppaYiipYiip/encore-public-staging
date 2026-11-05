@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210327Z-agent-0882",
+ "item": "P1-10",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:27Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: covers part done, walked on the emulator.** Two fetch sizes only (`lib/core/cover_sizes.dart`: small 256, large 768) instead of seven, the other size stands in when only one is cached (widgets and lock-screen art); a background fetch (`CoverPrefetcher`, `lib/app/cover_wiring.dart`) keeps the covers of playlists, downloaded and liked songs, the newest albums and the biggest artists in the disk cache (at start, after every sync, when the network returns; mobile data: small only, at most 120). Evidence: `../evidence/2026-10-22-e3-before-letters-offline.png` (new playlist a gradient, mini-player \"IR\") and `../evidence/2026-10-22-e3-after-covers-offline.png` (same state after the fix, offline, app restarted). Later the same day the song rows of a playlist were still letters offline (a row shows the song's own cover id `mf-...`, the collage the album's): the fetch now takes both (`../evidence/2026-10-22-offline-playlist-covers-and-greyed-rows.png`: covers and greyed rows, offline, from the emulator). Not done: catalogue/imported songs that have no library cover (`imageUrl` from the match), the media notification via a `content://` URI (B35), retry of failed image loads when the network returns (the stand-in handles the offline case), and the 30-imported-songs check.",
+ "to": [
+  "agent"
+ ]
+}

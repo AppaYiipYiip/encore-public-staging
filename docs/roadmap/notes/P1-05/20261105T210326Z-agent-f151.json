@@ -1,0 +1,12 @@
+{
+ "id": "20261105T210326Z-agent-f151",
+ "item": "P1-05",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:03:26Z",
+ "type": "note",
+ "body": "Moved from docs/tasks/P1-instant-play-and-worst-bugs.md on 6 Nov 2026 (the task files hold the definition only; how far a task is lives on the board). **Status 2026-10-22: done on the server, walked in the app.** `playlists.py` lists YouTube / YouTube Music playlists through `ytmusicapi` (149 songs in 1.5 s on the server, 2.0 s through the public address; real title, artists, album, length and video id; yt-dlp stays as the fallback and for the \"private\" wording). Songs that are YouTube's own audio upload carry `official` and are used directly (no search; `jobs.py` already did this). Songs YouTube no longer has keep name and album and are searched by them. Walked in the app on the emulator with the 10-song In Rainbows album: link pasted â†’ list on screen in 1.1 s â†’ Import â†’ playlist open and playable 1.3 s later â†’ all 10 in the library about 2.5 min later (9 s a song, two at a time), 0 missing, server log shows no title search (the job label \"searching\" there is the stream look-up). Not done: Spotify entries keep the video id they were matched to (the resolutions memory already does this per song); the 57th-song-right-after-start check on the 189-song list.",
+ "to": [
+  "agent"
+ ]
+}

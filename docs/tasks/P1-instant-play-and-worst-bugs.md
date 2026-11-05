@@ -14,7 +14,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 ## P1-01 — The lean resolver (server) — Size M
 * **Order.** Needs: none.
 * **Addendum 2026-10-22:** the in-process extractor now tries yt-dlp's `visionos` client first for a visitor: 1.3 s instead of 3.7 s, and its address opens at once. Fallback to yt-dlp's own choice, no second look-up for a block or a gone video, a breaker rests it for an hour after three failures in a row; `YT_FAST_CLIENTS` (empty switches it off). `../09` 7.3.
-* **Status 2026-10-22: implemented** in `server/legacy/encore-fetch` (`lean.py`, `direct.py`; 62 new tests incl. real recorded YouTube Music answers). Measured: search 13.5 s → 0.5 s median, tap to audio-ready 38 s → 4.3–8.7 s (`../09` §7). Left for later tasks: stream proxy without any download (P1-02), separate interactive/background pools and pacing (P1-03), preparing ahead (P1-04).
 * **Why.** B1, B2, B3: 33–35 s of "searching" per song; up to 8 `yt-dlp` processes and 5 watch-page extractions per song.
 * **Context.**
   * Today: `server/encore-fetch/encore_fetch/resolve.py` (`YtDlpResolver`: `plain_candidates` = `ytsearch8` subprocess, then
@@ -47,7 +46,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-02 — Stream first; length limits only for keeping; fault flags (server + app) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: server done and measured, app part for long songs done (not yet walked with a real long video on the emulator).** `GET /api/stream` (`stream.py`): resolves inside the request, proxies the googlevideo bytes in ranged chunks (256 KiB first, then 2 MiB), Range/206/Content-Range, one address look-up however many players ask, expired addresses asked for again once, a first byte that cannot come within 10 s ends in 504 with a sentence, refusals are 404/503 with words, no length limit; `ENCORE_FAULT=youtube_refuse|slow_extract:<ms>|no_results`. 23 tests incl. the real HTTP handler. With the fast client (P1-01 addendum, `../09` 7.3) the first byte is 1.9-3.5 s and the 2 h 21 min recitation starts in 1.9 s, a jump in 1.1 s. App: a catalogue song of 40 minutes or more is played from the stream (no job, no download; `kLongSong`). Not done: ordinary taps still go through the job path (the library keeps what was played until P2's keep rule); the app does not prepare via the stream; `bufferForPlaybackMs` tuning (X-6); a single fetch session shared by reader and cache file.
 * **Why.** B1; a 2-hour audio recording must play. Today the app polls a job every 1.2 s and starts on a growing file after 24 KiB of a
   `yt-dlp` download; songs > 45 min or > 80 MB are refused (`config.py` `MAX_DURATION_S=2700`, `MAX_FILE_MB=80`).
 * **Context.** Measured: 2:21:21 recitation (163 MB) ready in 2.7 s, jump to 90 % in 0.4 s via Range (`../09` §2.5). Stream URLs are
@@ -69,9 +67,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-03 — Two pools, single flight, pacing and back-off (server) — Size M
 * **Order.** Needs: none.
-* **Status 2026-11-03.** The new server has the pacing and the rest (`sources/youtube/rest.py`); the only open part was on the legacy server, which no longer runs anywhere. Proved at scale: a 217-song import was fetched in about 46 minutes with no refusal (`AUDIT.md`, round 2).
-* **Status 2026-10-22: pools, single flight and the state report done; random spacing and the interactive rate limit open.** `Dispatcher` has two pools that never share a worker (interactive: taps first, then lookups ahead, at most one at a time; background: bulk songs of imports and albums); the same song asked by two people at once is fetched once (a lock per upload, the second takes the kept copy); `GET /api/info` carries `youtube: {state: ok|resting, message, resumesInSec}`; the default budget is 120 songs an hour (was 200; `IMPORT_MAX_PER_HOUR`). The back-off after a refusal (doubling, resting for all) already existed in `imports.py`. Not done: random 5-20 s spacing of background look-ups (the import gap is fixed 2 s), the doubling up to 24 h (now up to 30 min), \"interactive at most one look-up per 5 s while resting\", the J-02 comparison with an import running.
-* **Status 2026-11-01, in the new server (`encore_server`):** random spacing of background look-ups is built (`sources/youtube/pace.py`: a gap of 6 to 18 s, 12 s on average, `ENCORE_YOUTUBE_PACE_S`) and so is the doubling rest after a refusal (`sources/youtube/rest.py`: 30 minutes up to a day). The hourly cap (≤ 120 per hour) is **not built** there; only the older fetch service has an hourly import budget (`IMPORT_MAX_PER_HOUR`, default 120).
 * **Why.** ADR-R6, ADR-R8; measured: 6 shared workers made each look-up 9 s instead of 2 s.
 * **Context.** `jobs.py` has priorities `now` / `prep` / `bulk` with 3 workers and "bulk may use at most two"; imports have their own
   pacing (`IMPORT_MAX_PER_HOUR`, back-off after refusals) in `imports.py`; `classify_failure()` maps yt-dlp errors to codes.
@@ -85,7 +80,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-04 — Prepare what the person will probably tap (app + server) — Size S
 * **Order.** Needs: none.
-* **Status 2026-10-22: partly done.** The Top result of a search (or the first catalogue song) is prepared while the person reads (`SearchResultsView`); on the emulator a prepared Top result is audible 1.0-1.9 s after the tap. Not done: the first 3 songs of an opened album/playlist/imported playlist, the next 2 songs of the queue, cancelling stale prepares, dropping prepares first under back-off (P1-03).
 * **Re-read 2026-10-24 (paper, before code):** (1) **the next songs of the queue are already prepared** by the player: it preloads the next source, which makes the server look the song up while the current one plays (`PlaybackEngine._syncWindowTail`, `GET /encore/stream/{ref}`), so "the next 2 of the queue" is not missing code; only a third song ahead is not. (2) In **Encore mode `prepare` only resolves a row** (`EncoreInstantBackend.prepare`): the look-up at YouTube waits for the tap, which is the cost left on the first tap of an opened album. (3) A real prepare is **two YouTube operations per song** (the match search and the stream address, kept 50 minutes in `StreamProxy._info`), and the home address was refused after about 35 look-ups in a few minutes (2026-10-22). So the missing part is a **server-side `POST /refs/prepare {ids ≤ 3}` that goes through the background pacer** (`sources/youtube/pace.py`, a slot every ~12 s), is skipped while YouTube is resting, dedupes in-flight ids, caps at 20 per hour per server, and **only when a person has opened a list and stayed 400 ms**; the app calls it for the first 3 songs of an opened album, playlist or imported playlist, and does nothing to cancel (a stale prepare costs one paced slot). **Not built**: it spends the owner's YouTube budget, so it needs the measured N2 first (`play_timing.py` on the dev VM, ≤ 10 look-ups per run) to show it is worth it.
 * **Why.** N3: ≤ 1 s for likely taps.
 * **Context.** `POST /api/prepare` exists (resolve + park 20 min). The app prepares the top search result and the first song of an
@@ -97,7 +91,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-05 — Imported songs use the video id they came with (server) — Size S
 * **Order.** Needs: none.
-* **Status 2026-10-22: done on the server, walked in the app.** `playlists.py` lists YouTube / YouTube Music playlists through `ytmusicapi` (149 songs in 1.5 s on the server, 2.0 s through the public address; real title, artists, album, length and video id; yt-dlp stays as the fallback and for the "private" wording). Songs that are YouTube's own audio upload carry `official` and are used directly (no search; `jobs.py` already did this). Songs YouTube no longer has keep name and album and are searched by them. Walked in the app on the emulator with the 10-song In Rainbows album: link pasted → list on screen in 1.1 s → Import → playlist open and playable 1.3 s later → all 10 in the library about 2.5 min later (9 s a song, two at a time), 0 missing, server log shows no title search (the job label "searching" there is the stream look-up). Not done: Spotify entries keep the video id they were matched to (the resolutions memory already does this per song); the 57th-song-right-after-start check on the 189-song list.
 * **Why.** B6: '00s Hip Hop songs were searched again (7–35 s each) although the playlist gave each video id.
 * **Context.** `imports.py`, `playlists.py` (YTM playlists via yt-dlp `--flat-playlist`; replace with `ytmusicapi.get_playlist`,
   which returned 189 songs in 2.1–3.2 s with video ids).
@@ -117,7 +110,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-07 — Search: a Top result and one list (app) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: done and walked on the emulator.** `lib/domain/search_rank.dart` (pure ranking), `lib/features/search/search_assembly.dart`, `search_results.dart`; Top result, then songs (library and catalogue mixed, same look), artists, albums; no header about the library. Real answers recorded from Deezer (`tools/record_deezer_fixtures.py`, `test/fixtures/deezer/search.json`): the intended song is the Top result for 18 of 20 queries; the two misses are known (Deezer's eight results hold no Beach House song; an Arabic title cannot be matched with Latin letters yet, docs/19). Also fixed on the way: the server treated "(The Avener Rework)" as noise, so the plain song tapped played the library's rework (`version_signature`); covers rank below the artist's own versions; compilation repeats are folded. Not done: keystroke-to-results timing (≤ 300 ms) not measured on a device.
 * **Why.** E5: the typed song came 6th, after albums and covers; a technical header splits owned/not owned.
 * **Context.** `lib/features/search/search_screen.dart`, `lib/features/search/catalogue_section.dart` (header "Not in your library
   yet" + "It is added to your library first…"), Deezer client `lib/data/catalogue/deezer_client.dart`, local FTS search.
@@ -130,7 +122,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-08 — The player never gets stuck (app) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: code done, tests green, walked on the emulator (`../evidence/README.md#walk-2026-10-22`).** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer "play this" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).
 * **Why.** E1 (stuck after a network loss; play/pause replaced by a 1-px sliver; other taps ignored), E7 (spinner = full-frame cost).
 * **Evidence (deep read, `../26` H40).** One first-in-first-out chain `_run` holds every command; a load waiting on a vanished network
   has no own time limit, so later taps wait behind it; the retry-once / stop-after-3 logic in `_onBackendError` is right but is not
@@ -148,7 +139,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-09 — Offline: no skipping, greyed rows, recovers by itself (app) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: engine part done, tests green, walked on the emulator (same evidence file).** Offline a song that is not downloaded is not tried and nothing is skipped; Next goes to the next downloaded song or says so; the next song is preloaded only when it can play; a waiting song starts by itself when the network returns (`networkChanged`). Greyed rows done too (`lib/features/common/playability.dart`: offline, songs not on the phone are dimmed with a cloud-off mark in album/playlist lists, search rows and the Top result; `test/features/offline_rows_test.dart`). Not done: queue sheet rows, the "once per session" explanation (the player's own notice covers a tap), covers offline (done in P1-10).
 * **Why.** E2 (offline taps start a silent skip cascade every ~3 s through the playlist). The connection strip stays: the owner
   asked for it on 2026-10-17 (`../01` E10 corrected).
 * **Context.** Banner: `lib/features/common/connection_banner.dart` ("You're offline. Downloaded music still plays."); connectivity in
@@ -161,7 +151,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-10 — Covers everywhere, offline too (app + server) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: covers part done, walked on the emulator.** Two fetch sizes only (`lib/core/cover_sizes.dart`: small 256, large 768) instead of seven, the other size stands in when only one is cached (widgets and lock-screen art); a background fetch (`CoverPrefetcher`, `lib/app/cover_wiring.dart`) keeps the covers of playlists, downloaded and liked songs, the newest albums and the biggest artists in the disk cache (at start, after every sync, when the network returns; mobile data: small only, at most 120). Evidence: `../evidence/2026-10-22-e3-before-letters-offline.png` (new playlist a gradient, mini-player "IR") and `../evidence/2026-10-22-e3-after-covers-offline.png` (same state after the fix, offline, app restarted). Later the same day the song rows of a playlist were still letters offline (a row shows the song's own cover id `mf-...`, the collage the album's): the fetch now takes both (`../evidence/2026-10-22-offline-playlist-covers-and-greyed-rows.png`: covers and greyed rows, offline, from the emulator). Not done: catalogue/imported songs that have no library cover (`imageUrl` from the match), the media notification via a `content://` URI (B35), retry of failed image loads when the network returns (the stand-in handles the offline case), and the 30-imported-songs check.
 * **Why.** E3 + owner: "the song icon disappeared and got replaced by a letter in offline mode; we need to download the icons as well".
 * **Context.** `lib/app/providers.dart` `CoverArtResolver` builds `coverArtUrl(coverArtId, size: size)` **per widget size**, so each
   size is a separate cache entry (offline: album page had the cover, mini-player showed a letter for the same album, `a14`).
@@ -178,7 +167,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-11 — Resume after any kill; correct lock-screen position (app) — Size S
 * **Order.** Needs: none.
-* **Status 2026-10-22: queue part done, tests green, walked on the emulator (same evidence file).** The saved queue also stores artist/title/album of songs streamed from the catalogue (`named`) and `restore()` finds them in the library by that (`findByName`); those the library does not have are dropped and the rest of the queue comes back. Not done: the 5 s save while playing, the lock-screen position check, and songs the server did not keep (a song played once is not kept: the song-ref design in P2 re-prepares it by its catalogue id instead of dropping it).
 * **Why.** E6 (force-stop while playing a catalogue song lost the song and queue; a normal kill while paused restored correctly),
   E20 (media session position stayed at its start value).
 * **Context.** `PlaybackEngine` persists every 15 s (`persistEvery`) and has `restore()`. **Root cause found (`../26` H39):**
@@ -191,7 +179,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-12 — Accessibility, insets, big text, device-profile tests, small UX fixes (app) — Size L (split if needed)
 * **Order.** Needs: none.
-* **Status 2026-10-22: steps 1 and 4 done, 6 partly, the rest open.** `showEncoreSheet` (`lib/features/common/encore_sheet.dart`) is used by all 14 bottom sheets (safe area, keyboard lift, drag handle, 90 % height). `test/support/device_profile.dart` + `test/features/device_profiles_test.dart` open every main screen, the player with its Speed / Sleep timer / Queue sheets, the track menu and the create menu under three profiles (3 buttons 48 dp, gesture 24 dp, small phone 360x640 with 2x text) and assert no overflow and nothing tappable under the system bar (lists scrolled to their end first); the check itself is tested against a plain bottom sheet (`test/support/device_profile_test.dart`). A new server is called "My music server", not "Navidrome". Open: step 2 (labels on every custom tappable, sign-in field labels, TalkBack walk), 3 (grow-with-text audit beyond the screens above), 5 (notification permission when first needed), the rest of 6 (codec chips, "Only your music" wording), 7 (back from an imported playlist), RTL profile, walking the profiles on the emulator with 3-button navigation.
 * **Why.** E11–E13, E15, E16, E18; owner: "sometimes there are buttons under the 3 navigation buttons … we should be testing all cases".
 * **Context.** Only 5 of 14 `showModalBottomSheet` calls pass `useSafeArea: true` (`playlist_actions.dart`, `track_menu.dart`,
   `jam/add_songs_sheet.dart`, `queue_sheet.dart`, `sleep_timer_sheet.dart`); target SDK 36 forces edge-to-edge. UI Automator showed
@@ -214,7 +201,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-13 — One volume, consistent loudness (app + server) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: app part done, server part open.** Levelling now only turns loud songs down by default (the loudness enhancer is off: `ReplayGainSettings.allowBoost`, setting "Quiet places" is the only boost; the preamp slider is gone), so the phone's volume buttons are the one volume; engine tests prove the player volume is exactly 1 with levelling off through play/next/previous/seek/pause/failure and that the levelled volume comes back after a sleep-timer fade. Open: measuring loudness on the server when a file is kept (ReplayGain tags), YouTube-reported loudness for streams, the 20-song loudness measurement, and asking the owner which slider he meant.
 * **Why.** Owner's volume report (old F12 "not in sync with my phone's slider, sometimes works"; repeated 2026-10-21), `../13` §1
   findings V1–V5, H11.
 * **Context.** `lib/playback/replay_gain.dart` (`planReplayGain`: cuts through the player's internal volume, boosts up to +9 dB through
@@ -237,7 +223,6 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-14 — Stop the sync storm (app + server) — Size S
 * **Order.** Needs: none.
-* **Status 2026-10-22: code done, unit-tested; the data-usage measurement is open.** App: a moved scan status no longer makes a full library pass due sooner than `SyncOptions.libraryPassGap` (1 hour; 6 hours on mobile data) after the last one; a pull to refresh ignores the gap; the cheap probe stops asking for a pass inside the gap. The task said 30 minutes: for the owner's 6,700 songs a pass is 8.6 MB, so 30 minutes would be 17 MB an hour against the 10 MB target; an hour gives about 9 MB. Server: the per-song `startScan` is now a fallback after `WATCHER_WAIT_S` (6 s) when Navidrome's own watcher has not listed the new file. Not done: the Android data-usage measurement during a 50-song import on another account; P2's change cursors make all of this disappear.
 * **Why.** `../26` H38: an open phone re-downloads the whole library listing (8.6 MB, 18 requests for the owner's 6,731 songs) every time
   anyone's import keeps a song, with no minimum gap.
 * **Do.** App: at most one full library pass per 30 minutes unless the person pulls to refresh; on metered networks at most one per 6 hours;
