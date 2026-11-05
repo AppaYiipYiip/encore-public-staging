@@ -1,0 +1,9 @@
+{
+ "id": "20261105T050751Z-agent-aa5d",
+ "item": "P1-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T05:07:51Z",
+ "type": "note",
+ "body": "Update (5 Nov, advisor review): Search offline now has its own board item, P1-16 (placed before P0-13, which depends on it). Also changed in this item after the review: ONE 'on the phone' source (onPhoneProvider, built from the downloads table) behind every Not downloaded / Plays offline; the strip's words for a silent server follow Android's own internet check (no internet found = You're offline, internet found = Can't reach your server); a tap on a song that is not downloaded says which of the two."
+}

@@ -1,0 +1,9 @@
+{
+ "id": "20261105T044428Z-agent-6cce",
+ "item": "P1-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T04:44:28Z",
+ "type": "note",
+ "body": "Built 5 Nov 2026 in the pull request that adds app/test/features/offline_look_test.dart: the drawn lasting offline look (Home tiles, shelves and the 'Downloaded, Plays offline' shelf; Library playlists and albums; song rows say 'Not downloaded'), driven by serverAwayProvider (the real state of the connection, not the 5 s strip), plus the CN-4b strip words 'Can't reach your server.' (D-45 amended, no Try again). Built, not walked: smoke test docs/evidence/c08. NOT built: Search offline (S-11, S-12: not drawn, waits for its drawing; D-55 means C and X frames are needed)."
+}

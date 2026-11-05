@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repos/downloads_repository.dart' show PinTargetType;
+import '../../data/repos/library_repository.dart' show OnPhone;
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
 import '../../domain/album_names.dart';
@@ -12,7 +14,9 @@ import '../../domain/household.dart';
 import '../auth/login_problem.dart';
 import '../common/cover_art.dart';
 import '../common/format.dart';
+import '../common/playability.dart';
 import '../common/widgets.dart';
+import '../downloads/download_providers.dart' show PinEntry, pinEntriesProvider;
 import '../import/import_card.dart';
 import '../instant/instant_controller.dart' show fetchServiceProvider;
 import '../jam/jam_providers.dart' show jamEntryShownProvider;
@@ -101,9 +105,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(
                     Space.gutter, Space.lg, Space.gutter, 0),
                 sliver: SliverGrid.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    mainAxisExtent: 56,
+                    mainAxisExtent: _quickTileHeight(context),
                     crossAxisSpacing: Space.sm,
                     mainAxisSpacing: Space.sm,
                   ),
@@ -111,6 +115,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemBuilder: (context, i) => _QuickTile(item: quick[i]),
                 ),
               ),
+            if (_chip == null)
+              const SliverToBoxAdapter(child: _PlaysOfflineShelf()),
             if (_chip == null) const SliverToBoxAdapter(child: _YearCard()),
             if (_chip == null) ...friendsShelf(context, friends),
             if (showAlbums && recent.isNotEmpty)
@@ -177,6 +183,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
     return unique.take(8).toList();
   }
+}
+
+/// The height of a quick tile: 56 as always, and taller with a larger text size so that the title and, offline, "Not downloaded" under it both fit
+/// (text at 200 % is a rule of every screen, ADR-R42).
+double _quickTileHeight(BuildContext context) {
+  final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+  return scale <= 1 ? 56 : 56 + (scale - 1) * 44;
 }
 
 class _Header extends ConsumerWidget {
@@ -401,26 +414,52 @@ class _QuickTile extends ConsumerWidget {
         ),
     };
 
-    return Material(
-      color: c.surfaceHigh,
-      borderRadius: BorderRadius.circular(Radii.card),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          children: [
-            SizedBox.square(dimension: 56, child: art),
-            const SizedBox(width: Space.md),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: context.text.titleSmall,
+    // While the server is away, a tile with nothing on the phone is grey and says so in words (S-10 offline). Liked Songs is never judged as a
+    // whole, as drawn: some of those songs can be on the phone through another download, and its page greys them one by one (S-15 offline).
+    final target = switch (item) {
+      _LikedItem() => null,
+      _AlbumItem(:final album) => (PinTargetType.album, album.id),
+      _PlaylistItem(:final playlist) => (PinTargetType.playlist, playlist.id),
+    };
+    final gone = target != null && ref.watch(notDownloadedNowProvider(target));
+    return Opacity(
+      opacity: gone ? 0.45 : 1,
+      child: Material(
+        color: c.surfaceHigh,
+        borderRadius: BorderRadius.circular(Radii.card),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Row(
+            children: [
+              SizedBox.square(dimension: 56, child: art),
+              const SizedBox(width: Space.md),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: gone ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.titleSmall,
+                      ),
+                    ),
+                    if (gone)
+                      Flexible(
+                        child: Text(kNotDownloadedWords,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.text.bodySmall),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: Space.sm),
-          ],
+              const SizedBox(width: Space.sm),
+            ],
+          ),
         ),
       ),
     );
@@ -447,19 +486,27 @@ class _PlaylistArt extends ConsumerWidget {
   }
 }
 
-class _AlbumCard extends StatelessWidget {
+class _AlbumCard extends ConsumerWidget {
   const _AlbumCard({required this.album});
 
   final AlbumRow album;
 
   @override
-  Widget build(BuildContext context) => MediaCard(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // While the server is away, an album with nothing on the phone is grey and says so in words (S-10 offline); it goes by itself.
+    final gone =
+        ref.watch(notDownloadedNowProvider((PinTargetType.album, album.id)));
+    return Opacity(
+      opacity: gone ? 0.45 : 1,
+      child: MediaCard(
         title: albumDisplayName(album.name),
-        subtitle: albumSubtitle(album),
+        subtitle: gone ? kNotDownloadedWords : albumSubtitle(album),
         coverArtId: album.coverArt,
         artistName: album.artist,
         onTap: () => Nav.album(context, album.id),
-      );
+      ),
+    );
+  }
 }
 
 class _PlaylistCard extends ConsumerWidget {
@@ -471,14 +518,21 @@ class _PlaylistCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ids =
         ref.watch(playlistCoverIdsProvider(playlist.id)).value ?? const [];
-    return MediaCard(
-      title: playlist.name,
-      subtitle: playlist.comment?.isNotEmpty == true
-          ? playlist.comment
-          : trackCountLabel(playlist.songCount),
-      coverArtId: playlist.coverArt,
-      mosaicIds: ids,
-      onTap: () => Nav.playlist(context, playlist.id),
+    final gone = ref
+        .watch(notDownloadedNowProvider((PinTargetType.playlist, playlist.id)));
+    return Opacity(
+      opacity: gone ? 0.45 : 1,
+      child: MediaCard(
+        title: playlist.name,
+        subtitle: gone
+            ? kNotDownloadedWords
+            : playlist.comment?.isNotEmpty == true
+                ? playlist.comment
+                : trackCountLabel(playlist.songCount),
+        coverArtId: playlist.coverArt,
+        mosaicIds: ids,
+        onTap: () => Nav.playlist(context, playlist.id),
+      ),
     );
   }
 }
@@ -605,6 +659,56 @@ class _EmptyLibrary extends ConsumerWidget {
       title: 'Your library will show up here',
       message: "We'll keep trying to reach your server. You can check what "
           'it provides under Settings > Your server.',
+    );
+  }
+}
+
+/// "Downloaded - Plays offline" (S-10 offline): while the server is away, what is on the phone, so a person sees what they can listen to
+/// without opening the Library. Not there while the server is; an album or playlist the phone holds, in part or whole.
+class _PlaysOfflineShelf extends ConsumerWidget {
+  const _PlaysOfflineShelf();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(serverAwayProvider)) return const SizedBox.shrink();
+    // Only what has a song on the phone: a download that was pressed and has no file yet (a tunnel) is not "Plays offline".
+    final held = ref.watch(onPhoneProvider).value ?? OnPhone.none;
+    final entries = [
+      for (final e in ref.watch(pinEntriesProvider).value ?? const <PinEntry>[])
+        if (e.releaseId == null &&
+            ((e.pin.targetType == 'playlist' &&
+                    held.playlists.contains(e.pin.targetId)) ||
+                (e.pin.targetType == 'album' &&
+                    held.albums.contains(e.pin.targetId))))
+          e,
+    ];
+    if (entries.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Downloaded'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              Space.gutter, 0, Space.gutter, Space.sm),
+          child: Text('Plays offline', style: context.text.bodySmall),
+        ),
+        MediaShelf(
+          itemCount: entries.length,
+          itemBuilder: (c, i) {
+            final e = entries[i];
+            final isPlaylist = e.pin.targetType == 'playlist';
+            return MediaCard(
+              title: e.title,
+              subtitle: isPlaylist ? 'Playlist' : (e.artist ?? 'Album'),
+              coverArtId: e.coverArt,
+              artistName: e.artist,
+              onTap: () => isPlaylist
+                  ? Nav.playlist(c, e.pin.targetId)
+                  : Nav.album(c, e.pin.targetId),
+            );
+          },
+        ),
+      ],
     );
   }
 }

@@ -49,6 +49,15 @@ final serverReachableProvider = StreamProvider<bool>((ref) async* {
       () => session.endpoints.isReachable, session.endpoints.reachability);
 });
 
+/// Whether the network the phone uses has internet, as Android itself found out (`true` while that is not known). Asked again whenever the
+/// network changes and whenever the problem shown changes: that is after the grace of [connectionGraceProvider], which also gives Android the
+/// time to finish checking a network the phone has only just joined (its first answer is "not yet").
+final phoneHasInternetProvider = StreamProvider<bool>((ref) async* {
+  ref.watch(networkKindProvider);
+  ref.watch(connectionProblemProvider);
+  yield await ref.read(networkValidationProvider).validated() ?? true;
+});
+
 /// The address that answered with another server's key while none proved itself (docs/31 CN-11), or `null`.
 final anotherServerAtProvider = StreamProvider<Uri?>((ref) async* {
   final session = await ref.watch(sessionProvider.future);

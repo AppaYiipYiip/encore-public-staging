@@ -245,9 +245,16 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   watcher. P2's `library/changes` replaces all of this.
 * **Acceptance.** During a 50-song import on another account, an open phone's traffic (Android data usage) stays under 10 MB per hour.
 
+## P1-16 — Search says when you are offline (draw first) — Size S
+* **Order.** Needs: P1-15 [d]. Why: it uses the lasting offline state (`serverAwayProvider`) and the same words and look that P1-15 built.
+* **Why.** P1-15 built the drawn offline look for Home, the Library and the song rows. **Search's own page has no offline state drawn** (S-11 the start page and S-12 the results; `docs/design/04` item 7), so nothing was built there beyond what the shared song row already does (a song result that is not downloaded is grey and says "Not downloaded"). A person who opens Search with no connection should see at once that it cannot look anything up, and what still works.
+* **Do.** Draw first (C and X; the browser is in Now, D-55; T stays parked): the start page offline (recent searches still shown; the catalogue and the server's results cannot be reached) and the results offline (what is on the phone is searched, the rest is said once in words). Then build as drawn, with the one predicate, `serverAwayProvider`.
+* **Acceptance.** Drawn (C and X), looked at by the advisor, then built; airplane mode on: Search says what it can and cannot do, searches what is on the phone, and the words agree with the strip's on the same screen; airplane mode off: it goes by itself.
+* **Size.** S.
+
 ## P1-15 — The app says when it is offline — Size S
 * **Order.** Needs: none.
 * **Why.** Round 2 (`AUDIT.md` R2-F5, 2026-11-03): with airplane mode on, Home and Library show no sign of being offline; the only hint is the status bar's airplane icon, so a person cannot tell "offline" from "the server is down". US-14: everything that cannot work offline says so. D-29: no misleading states.
 * **Do.** An offline state in the connection banner (`app/lib/app/connection.dart` already has the machinery for "Waiting for your server"): one calm line, no permanent banner (P1-09's rule), distinguishing "this phone has no network" from "your server does not answer". Drawn first.
-* **Acceptance.** Airplane mode on: the line appears within 3 s on Home and Library and says what still works (downloads); airplane mode off: it goes away by itself; a stopped server shows the other wording.
+* **Acceptance.** Airplane mode on: the strip appears after the 4 s grace of CN-1 (a blink is not news; the 3 s first written here was wrong) on Home and Library and says what still works (downloads), **and after the strip has gone the screens still show what cannot be played: grey, with "Not downloaded" in words (S-10, S-14, S-17, S-18), until the connection is back**; airplane mode off: all of it goes by itself; a phone whose server is stopped shows the other wording, "Can't reach your server.", **when Android found internet on its network**, and "You're offline..." when it found none (4G with no data, a sign-in page): CN-4b, D-45 amended; a tap on a song that is not downloaded says the same two things. **Built 5 Nov 2026 for Home, Library and the song rows (built, not walked); Search offline is not drawn and waits for its drawing.** The lasting look was already drawn (D-45 amended: the strip says it once, the sign stays).
 * **Size.** S. **Triage (D-29):** RC1.

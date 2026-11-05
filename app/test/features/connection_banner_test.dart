@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:encore/app/connection.dart';
 import 'package:encore/app/providers.dart';
+import 'package:encore/core/network_validation.dart';
 import 'package:encore/features/providers.dart' show downloadedIdsProvider;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,7 +48,7 @@ void main() {
   });
 
   testWidgets(
-      'a server that does not answer says the same calm thing as no internet, and can be put away (field test 2026-10-31)',
+      "a server that does not answer says 'Can't reach your server.' (CN-4b, D-45 amended), once, and can be put away (field test 2026-10-31)",
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
@@ -57,14 +58,50 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await settle(tester);
 
-    expect(find.textContaining("You're offline"), findsOneWidget);
-    expect(find.textContaining('Downloaded music still plays'), findsOneWidget);
-    expect(find.textContaining("Can't reach"), findsNothing,
-        reason: 'the radio is on and there is no data: that is being offline');
+    expect(find.text("Can't reach your server."), findsOneWidget);
+    expect(find.textContaining("You're offline"), findsNothing,
+        reason:
+            'the phone cannot tell no data, a sign-in page and a server that is off apart: "offline" would be false for two of the three');
 
     await tester.tap(find.byTooltip('Dismiss'));
     await settle(tester);
 
+    expect(find.textContaining("Can't reach"), findsNothing);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      "CN-4b: a network that Android found no internet on (4G with no data, a sign-in page) and a silent server says You're offline, the person's own word",
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      connectionGraceProvider.overrideWithValue(Duration.zero),
+      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      networkValidationProvider.overrideWithValue(_Validation(false)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+
+    expect(find.textContaining("You're offline"), findsOneWidget);
+    expect(find.textContaining("Can't reach your server"), findsNothing,
+        reason:
+            'there is no internet: the person is offline, not cut off from one server');
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      "CN-4b: when Android found internet and the server is silent, only the server is away: Can't reach your server.",
+      (tester) async {
+    final app = await pumpApp(tester, overrides: [
+      connectionGraceProvider.overrideWithValue(Duration.zero),
+      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      networkValidationProvider.overrideWithValue(_Validation(true)),
+      downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+    ]);
+    await tester.pump(const Duration(milliseconds: 50));
+    await settle(tester);
+
+    expect(find.text("Can't reach your server."), findsOneWidget);
     expect(find.textContaining("You're offline"), findsNothing);
     await closeApp(tester, app.db);
   });
@@ -146,4 +183,13 @@ void main() {
       await changes.close();
     });
   });
+}
+
+class _Validation implements NetworkValidation {
+  _Validation(this.answer);
+
+  final bool? answer;
+
+  @override
+  Future<bool?> validated() async => answer;
 }

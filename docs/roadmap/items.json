@@ -593,5 +593,10 @@
   "kind": "owner",
   "title": "Start Claude's deep security review before going public (one command, it costs money)",
   "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+ },
+ "P1-16": {
+  "kind": "feature",
+  "title": "Search says when you are offline (drawn first)",
+  "note": "Home, the Library and the song rows already do (P1-15); Search's own page was never drawn offline."
  }
 }

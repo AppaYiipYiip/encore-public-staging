@@ -107,6 +107,9 @@ class Harness {
   /// The phone has a network although [reachable] says the server was last found out of reach (the radio is on and data came back).
   bool network = false;
 
+  /// Android found internet on the network in use (false: 4G with no data, a sign-in page).
+  bool internetFound = true;
+
   /// While set, the server does not answer the engine's look at all (it hangs: a network without data).
   Completer<void>? serverGate;
 
@@ -143,6 +146,7 @@ class Harness {
       loadTimeout: loadTimeout,
       canReachServer: () => h.reachable,
       networkPresent: () => h.network,
+      internetFound: () => h.internetFound,
       serverAnswers: () async {
         h.serverAsked++;
         await h.serverGate?.future;
@@ -1487,8 +1491,27 @@ void main() {
       await h.engine.playTracks(h.tracks.sublist(1, 3));
 
       expect(h.backend.setSourcesCount, 0);
-      expect(h.notices.first.message, 'Not downloaded. Connect to play it.');
+      expect(
+          h.notices.first.message, "Not downloaded. Can't reach your server.",
+          reason:
+              'the phone has a network: "Connect" would send a connected person looking for a connection');
       expect(h.serverAsked, 1);
+      await h.dispose();
+    });
+
+    test(
+        "a network with no internet (4G, no data) says the same as the strip: Connect to play it, not 'Can't reach your server' (31 Oct, D-45 amended)",
+        () async {
+      final h = await Harness.start();
+      h.reachable = false;
+      h.network = true;
+      h.internetFound = false;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.backend.setSourcesCount, 0);
+      expect(h.notices.first.message, 'Not downloaded. Connect to play it.');
       await h.dispose();
     });
 

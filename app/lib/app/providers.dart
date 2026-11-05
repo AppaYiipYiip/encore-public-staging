@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
 import '../core/cover_sizes.dart';
+import '../core/network_validation.dart';
 import '../data/auth/credential_store.dart';
 import '../data/auth/server_setup_service.dart';
 import '../data/db/app_database.dart';
@@ -172,6 +173,10 @@ final networkKindProvider = StreamProvider<NetworkKind>((ref) async* {
   yield kindOf(await connectivity.checkConnectivity());
   yield* connectivity.onConnectivityChanged.map(kindOf).distinct();
 });
+
+/// The reader of Android's own "this network has internet" check (see [NetworkValidation]). Replaced by a fake in tests.
+final networkValidationProvider =
+    Provider<NetworkValidation>((ref) => MethodChannelNetworkValidation());
 
 /// Whether the phone has a network at all (`true` while that is not known yet). The address resolver keeps saying "reachable" after the
 /// phone lost its network (nothing tells it), so a page that says the server is working must ask this as well (Q31).

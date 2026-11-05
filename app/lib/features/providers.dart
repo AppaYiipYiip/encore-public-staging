@@ -182,6 +182,15 @@ final downloadedIdsProvider = StreamProvider.autoDispose<Set<String>>(
       _none(),
 );
 
+/// The albums and playlists that have at least one song on the phone: the one source of "Not downloaded" and "Plays offline" (P1-15).
+final onPhoneProvider = StreamProvider.autoDispose<OnPhone>(
+  (ref) =>
+      _repo(ref)
+          ?.watchOnPhone()
+          .throttleLatest(const Duration(milliseconds: 500)) ??
+      _none(),
+);
+
 /// Whether any song is on the phone. The words about being offline promise that "downloaded songs still play" only when there are some.
 final hasDownloadsProvider = Provider.autoDispose<bool>((ref) =>
     (ref.watch(downloadedIdsProvider).value ?? const <String>{}).isNotEmpty);

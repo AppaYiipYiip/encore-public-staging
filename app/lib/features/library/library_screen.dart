@@ -17,6 +17,7 @@ import '../common/collection_menu.dart';
 import '../common/cover_art.dart';
 import '../common/encore_sheet.dart';
 import '../common/format.dart';
+import '../common/playability.dart';
 import '../common/playlist_actions.dart';
 import '../common/widgets.dart';
 import '../downloads/download_providers.dart';
@@ -534,6 +535,16 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
     WidgetRef ref, _LibraryEntry entry) {
   final pin = entry.pin;
   if (pin == null) {
+    // Not on the phone, and the server is away (S-14 offline): grey, and "Not downloaded" in words, until the connection is back. Only playlists
+    // and albums are judged as a whole: an artist is not downloaded as such, and Liked Songs (like on Home) is greyed song by song on its page.
+    final type = switch (entry.kind) {
+      _Kind.playlist => PinTargetType.playlist,
+      _Kind.album => PinTargetType.album,
+      _ => null,
+    };
+    if (type != null && ref.watch(notDownloadedNowProvider((type, entry.id)))) {
+      return (subtitle: kNotDownloadedWords, complete: false, usable: false);
+    }
     return (subtitle: entry.subtitle, complete: false, usable: true);
   }
   final type = PinTargetType.values.byName(pin.targetType);
@@ -546,8 +557,7 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
               )))
               .value ??
           PinState.none;
-  final offline =
-      ref.watch(networkKindProvider.select((k) => k.value == NetworkKind.none));
+  final offline = ref.watch(serverAwayProvider);
   final s = _stateOf(state,
       offline: offline, waiting: ref.watch(downloadsWaitProvider));
   return (

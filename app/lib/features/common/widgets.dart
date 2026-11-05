@@ -8,6 +8,7 @@ import '../../design/tokens.dart';
 import '../../domain/album_names.dart';
 import 'cover_art.dart';
 import 'format.dart';
+import 'playability.dart' show kNotDownloadedWords;
 
 /// Bold section title with an optional "Show all" action.
 class SectionHeader extends StatelessWidget {
@@ -200,10 +201,14 @@ class TrackTile extends StatelessWidget {
     final c = context.colors;
     final titleColor = isCurrent ? c.accent : c.onBg;
     final album = realAlbumName(track.album);
-    final subtitle = [
-      if (track.artist != null) track.artist!,
-      if (showAlbum && album != null) album,
-    ].join(' • ');
+    // A song that cannot be played now says so in words, as drawn (S-17, S-18: "Not downloaded" where the artist stood); it is also greyed, and
+    // a tap on it says what to do.
+    final subtitle = !available
+        ? kNotDownloadedWords
+        : [
+            if (track.artist != null) track.artist!,
+            if (showAlbum && album != null) album,
+          ].join(' • ');
 
     final row = Row(
       children: [
@@ -286,7 +291,7 @@ class TrackTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${track.title}, ${track.artist ?? ''}'
-          '${available ? '' : ', not available offline'}',
+          '${available ? '' : ', not downloaded'}',
       excludeSemantics: true,
       child: Opacity(
         opacity: available ? 1 : 0.45,

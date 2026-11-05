@@ -3,6 +3,8 @@ package app.encore.player
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.MediaRouter2
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
@@ -30,6 +32,7 @@ class MainActivity : AudioServiceFragmentActivity() {
     private val STORAGE_CHANNEL = "app.encore/storage"
     private val SHARE_CHANNEL = "app.encore/share"
     private val POWER_CHANNEL = "app.encore/power"
+    private val NETWORK_CHANNEL = "app.encore/network"
     private val FILES_CHANNEL = "app.encore/files"
     private val PICK_REQUEST = 7301
 
@@ -212,6 +215,25 @@ class MainActivity : AudioServiceFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Whether Android itself found internet on the active network (NET_CAPABILITY_VALIDATED): false for a mobile network with no data
+        // and for a Wi-Fi with a sign-in page, true otherwise. Android does that check; the app makes no call of its own (ADR-R38). `null` when
+        // it cannot be known. It only chooses the words of the "server does not answer" strip (D-45, CN-4b).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NETWORK_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method != "validated") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        val manager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+                        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork)
+                        result.success(
+                            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                    } catch (e: Exception) {
+                        result.success(null)
+                    }
+                }
+            }
 
         // Battery level / charging / screen state, for the listening log in
         // Diagnostics (real "% per hour of listening" on the owner's phone).

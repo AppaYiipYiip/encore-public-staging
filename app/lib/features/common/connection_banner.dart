@@ -36,15 +36,20 @@ class _Strip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final hasDownloads = ref.watch(hasDownloadsProvider);
-    // No internet and a server that does not answer are one thing to the person (4G on, no data): one calm sentence. The details are on
-    // Settings > Your server.
+    // No internet is "You're offline", and so is a network that Android itself found no internet on (a 4G radio with no data, a Wi-Fi with a sign-in
+    // page): the person's own word for it (31 Oct: "it never says offline"). Only when the internet is there and the server does not answer is it
+    // "Can't reach your server." (docs/31 CN-4b, D-45 amended 5 Nov 2026). Said once, like every outage; the details are on Settings > Your server.
+    final internet = ref.watch(phoneHasInternetProvider).value ?? true;
     final offline = hasDownloads
         ? 'You\'re offline. Downloaded music still plays.'
         : 'You\'re offline. Nothing can play until you reconnect.';
     final another = ref.watch(anotherServerAtProvider).value;
     final (icon, text) = switch (problem) {
       ConnectionProblem.offline => (Icons.cloud_off_rounded, offline),
-      ConnectionProblem.serverUnreachable => (Icons.cloud_off_rounded, offline),
+      ConnectionProblem.serverUnreachable => (
+          Icons.cloud_off_rounded,
+          internet ? "Can't reach your server." : offline,
+        ),
       // A wrong key is not an outage and is not said as one (docs/31 O-6): the phone is online, and something that is not the server answers.
       ConnectionProblem.anotherServer => (
           Icons.gpp_maybe_rounded,

@@ -26,7 +26,7 @@ import '../playback/playback_engine.dart';
 import '../playback/playback_state_store.dart';
 import '../playback/queue_model.dart';
 import '../playback/source_resolver.dart';
-import 'connection.dart' show serverReachableProvider;
+import 'connection.dart' show phoneHasInternetProvider, serverReachableProvider;
 import 'providers.dart';
 import 'session.dart';
 
@@ -61,6 +61,9 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
   final clock = ref.watch(clockProvider);
 
   ServerSession? session() => ref.read(sessionProvider).value;
+
+  // Kept alive for as long as the engine is: the first tap must read the answer, not "still loading".
+  ref.listen(phoneHasInternetProvider, (_, __) {});
 
   // A car that starts the app cold asks for the browse tree before the engine
   // has restored its queue. The library only needs the database and the server
@@ -153,6 +156,8 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
         ref.read(networkKindProvider).value, session()?.endpoints),
     networkPresent: () =>
         ref.read(networkKindProvider).value != NetworkKind.none,
+    // The strip's own answer about internet (Android's check): the words of a tap on a song that is not downloaded must say what the strip says.
+    internetFound: () => ref.read(phoneHasInternetProvider).value ?? true,
     // One fresh look at the server's addresses: a song that failed with a network but no server is waited for, not skipped (docs/33 G-1).
     serverAnswers: () async {
       final s = session() ??

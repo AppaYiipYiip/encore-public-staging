@@ -606,6 +606,37 @@ class LibraryRepository {
 
   // ------------------------------------------------------------- downloads
 
+  /// What is on the phone, by album and by playlist: those with at least one finished download among their songs. Built from the same
+  /// `downloads` rows as [watchDownloadedTrackIds] (state done), so a song, an album and a playlist can never disagree about what is
+  /// there. This is the one fact behind every "Not downloaded" and "Plays offline" (P1-15).
+  Stream<OnPhone> watchOnPhone() => _db
+      .customSelect(
+        '''
+SELECT 'album' AS kind, t.album_id AS id
+FROM tracks t
+JOIN downloads d ON d.server_id = t.server_id AND d.track_id = t.id AND d.state = 2
+WHERE t.server_id = ?1 AND t.album_id IS NOT NULL AND t.deleted_at_ms IS NULL
+UNION
+SELECT 'playlist' AS kind, e.playlist_id AS id
+FROM playlist_entries e
+JOIN downloads d ON d.server_id = e.server_id AND d.track_id = e.track_id AND d.state = 2
+WHERE e.server_id = ?1
+''',
+        variables: [Variable<int>(serverId)],
+        readsFrom: {_db.downloads, _db.tracks, _db.playlistEntries},
+      )
+      .watch()
+      .map((rows) => OnPhone(
+            albums: {
+              for (final r in rows)
+                if (r.read<String>('kind') == 'album') r.read<String>('id'),
+            },
+            playlists: {
+              for (final r in rows)
+                if (r.read<String>('kind') == 'playlist') r.read<String>('id'),
+            },
+          ));
+
   Stream<Set<String>> watchDownloadedTrackIds() => (_db.select(_db.downloads)
         ..where((d) => d.serverId.equals(serverId) & d.state.equals(2)))
       .watch()
@@ -629,4 +660,25 @@ class LibraryRepository {
         }
         return const <String>[];
       });
+}
+
+/// The albums and playlists that have at least one song on the phone ([LibraryRepository.watchOnPhone]).
+class OnPhone {
+  const OnPhone({this.albums = const {}, this.playlists = const {}});
+
+  static const OnPhone none = OnPhone();
+
+  final Set<String> albums;
+  final Set<String> playlists;
+
+  @override
+  bool operator ==(Object other) =>
+      other is OnPhone &&
+      other.albums.length == albums.length &&
+      other.playlists.length == playlists.length &&
+      other.albums.containsAll(albums) &&
+      other.playlists.containsAll(playlists);
+
+  @override
+  int get hashCode => Object.hash(albums.length, playlists.length);
 }

@@ -80,6 +80,7 @@ class PlaybackEngine implements PlaybackFacade {
     bool Function()? moreComing,
     bool Function()? canReachServer,
     bool Function()? networkPresent,
+    bool Function()? internetFound,
     Future<bool> Function()? serverAnswers,
     this.serverRetryDelays = const [
       Duration(seconds: 1),
@@ -93,6 +94,7 @@ class PlaybackEngine implements PlaybackFacade {
   })  : _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
         _networkPresent = networkPresent ?? (() => false),
+        _internetFound = internetFound ?? (() => true),
         _serverAnswers = serverAnswers ?? (() async => true),
         _findByName = findByName,
         _backend = backend,
@@ -148,6 +150,9 @@ class PlaybackEngine implements PlaybackFacade {
   /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
   final bool Function() _canReach;
   final bool Function() _networkPresent;
+
+  /// Whether Android itself found internet on the network in use (the strip's test, D-45 amended): `true` when that is not known.
+  final bool Function() _internetFound;
 
   /// Asks the server whether it answers *now* (one fresh look at its addresses). A phone with a network and a server that does not answer is
   /// not a phone with a bad song (docs/33 PB-F7, PB-F8, G-1).
@@ -437,8 +442,7 @@ class PlaybackEngine implements PlaybackFacade {
       if (!await _canReachNow() && !await _playable(items[start])) {
         PerfMonitor.instance.cancel('play.tap->playing');
         PerfMonitor.instance.cancel('play.audible');
-        _notify(const PlaybackNotice('Not downloaded. Connect to play it.',
-            isError: false));
+        _notify(PlaybackNotice(_notDownloadedWords(), isError: false));
         return;
       }
       _finishItem();
@@ -872,6 +876,13 @@ class PlaybackEngine implements PlaybackFacade {
   /// Whether a song that is not downloaded can be asked for. [_canReach] is what was last found out; a server that was out of reach may be
   /// back (data returned on the same network is not a network change), so when the phone has a network the server is asked once before a
   /// song is refused ([ReachLook]: callers share the look, and a look that found nobody is not repeated for a few seconds).
+  /// What a tap on a song that is not downloaded says while the server cannot be reached: by cause, with the SAME test as the strip (CN-1 and
+  /// CN-4b, D-45 amended). With no network, or a network on which Android found no internet (4G with no data, a sign-in page), "Connect" is the
+  /// way out; only with internet found is the person connected and the server alone away.
+  String _notDownloadedWords() => _networkPresent() && _internetFound()
+      ? "Not downloaded. Can't reach your server."
+      : 'Not downloaded. Connect to play it.';
+
   Future<bool> _canReachNow() async {
     if (_canReach()) return true;
     if (!_networkPresent()) return false;
@@ -1083,7 +1094,7 @@ class PlaybackEngine implements PlaybackFacade {
     // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
     if (!results.first.isLocal && !await _canReachNow()) {
       await _backend.pause();
-      _waitForConnection('Not downloaded. Connect to play it.',
+      _waitForConnection(_notDownloadedWords(),
           isError: false, position: position);
       return;
     }
