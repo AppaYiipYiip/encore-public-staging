@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-32a5",
+ "item": "P2-19",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F24: \"When I first opened Encore I had to type the server address. How come it did not detect that there is a server around, or at least ask me to scan a QR code?\" || *Checked.* Not built: ADR-R40 slice B (link and QR) and slice C (the phone finds servers on the Wi-Fi by itself). The app asks for an address, a name and a password | **P2-19 slices B and C move to the front**: scanning is the first thing the first screen offers, a server on the same Wi-Fi is shown by name, and the typed address is last under \"Other ways\""
+}

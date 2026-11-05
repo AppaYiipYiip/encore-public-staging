@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210630Z-agent-bef9",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:30Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F55: **The queue sheet has a lone \"Save\"** that does not say what it saves || *Seen on the emulator.* Presumably \"save the queue as a playlist\"; the label does not say | **Later:** name the result (\"Save as playlist\"), after finding what it does. Not built"
+}

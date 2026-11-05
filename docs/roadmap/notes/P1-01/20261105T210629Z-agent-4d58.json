@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-4d58",
+ "item": "P1-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F33: **A tap plays a 30-second snippet, not the song** (\"which makes the app unusable\") || *Cause read in the code, not reproduced on his phone.* A song row is playable when `instant |  | previewUrl != null`; **when the instant-play backend is not there, a tap starts a 30-second Deezer preview (`playPreviewRun`) without a word** (only search rows say \"(preview)\"). The backend is missing (a) in the **old mode that a fresh sign-in stays in for about two minutes (F30)**, which is exactly a new person's first use, and (b) while it is still loading. He used build 120 (the same two-minute wait) | **Blocker. Merged in #52 (2026-10-30), built, not walked (J13).** Never a silent snippet: while the backend is not ready a tap waits for it and then plays the full song (or says in words why it cannot); a preview only on an explicit long-press, labelled; F30's fix (#47) shortens (a) to seconds. Then walked at a cold start, tapping at once"
+}

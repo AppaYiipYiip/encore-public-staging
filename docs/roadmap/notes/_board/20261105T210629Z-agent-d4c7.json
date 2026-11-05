@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-d4c7",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F27: **Retracted, 2026-10-30.** I first wrote that the phone showed 5 of the server's 6 likes because the change feed omitted a song reference. **That was a misreading:** the sixth \"like\" in `likes` is an *unliked* song (`removed: true`; the feed lists removals so a phone can drop them, and rightly delivers no reference for them), so the phone's 5 live likes are correct. What remains is only an observation: Liked Songs showed 0 songs at the first look after the first sign-in on a fresh install (the emulator, 10 minutes after signing in) and 5 after the second sign-in || Not diagnosed; a live like that does not show after a fresh install would be a bug, a removed one is not. To reproduce once (fresh install, sign in, look at Liked Songs after the first sync)"
+}

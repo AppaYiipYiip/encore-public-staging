@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210630Z-agent-d675",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:30Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F54: **Settings > Library & sync shows the last sync as a raw timestamp** (`2026-10-30 19:43:04`) (found by me, UX review batch 2) || *Seen on the emulator.* The server card on Settings says \"Synced 1 min ago\"; this page prints the stamp with seconds | **Later:** the same words as the card (\"5 minutes ago\"). Not built"
+}

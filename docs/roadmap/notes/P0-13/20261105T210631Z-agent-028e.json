@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210631Z-agent-028e",
+ "item": "P0-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:31Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): J13: A cold start, then a tap: the full song || **partly**: a song played past 30 s with the app already running (mini-player 17 % to 35 % in 45 s of a 264 s song); the cold-start check is still open | `b11`"
+}

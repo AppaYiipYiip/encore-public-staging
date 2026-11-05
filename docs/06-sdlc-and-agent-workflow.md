@@ -34,7 +34,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 * **The roadmap board is the single tracker** (D-60, 2026-11-05; `docs/08-roadmap.md`, `docs/roadmap/README.md`): items (one flat list, Now and Later), notes on an item
   for a problem, a question or a hand-over, claims for who is working on what. GitHub Issues and GitHub Projects are not used for planning: the owner does not use
   GitHub and the board works the same whichever Claude account is signed in. A problem found while working is a note on the item it belongs to, or a new item
-  (`python tools/roadmap.py note ITEM "..."`). The old labels and columns were never used and are gone. (The audit rows R-, F- and A- in `tasks/AUDIT.md` keep their
+  (`python tools/roadmap.py note ITEM "..."`). The old labels and columns were never used and are gone. (The audit rows R-, F- and A- in `history/reviews-2026-10-31.md#audit` keep their
   numbers: they are findings with evidence, not a second list.)
 * Each task file in `tasks/` is an item on the board; the pull request that does the work marks it (`python tools/roadmap.py mark ITEM built|walked --evidence "..."`).
 * Bug report template (also for agents): **What I did** (steps), **What I expected**, **What happened** (screenshot/log),
@@ -78,7 +78,7 @@ and the evidence. It must:
 * Decisions: one ADR file each in `docs/adr/` (Context → Options → Decision → Why it beats the others → Consequences → Revisit
   when). Superseding an ADR edits its status line and links the new one.
 * A doc that disagrees with the code is a bug: fix one of them in the same PR.
-* **OPEN (needs owner/advisor):** these rules name folders that were never made (`docs/adr/`, `docs/product/`, `docs/architecture/`, `docs/engineering/`, `docs/history/`) and a limit of about 300 lines per file and "no dated narratives" that the practice does not keep: the decisions are one log (`11`, over 580 lines), and `10`, `tasks/AUDIT.md` and `tasks/RELEASE-CANDIDATE.md` are dated logs. Either the rules change to the practice (numbered documents, logs under `tasks/`, which is what `05` §2 now shows) or the files are split into the folders. Until it is decided the rules above are the intention and `05` §2 is the layout.
+* **OPEN (needs owner/advisor):** these rules name folders that were never made (`docs/adr/`, `docs/product/`, `docs/architecture/`, `docs/engineering/`, `docs/history/`) and a limit of about 300 lines per file and "no dated narratives" that the practice does not keep: the decisions are one log (`11`, over 580 lines), and `10`, `history/reviews-2026-10-31.md#audit` and `tasks/RELEASE-CANDIDATE.md` are dated logs. Either the rules change to the practice (numbered documents, logs under `tasks/`, which is what `05` §2 now shows) or the files are split into the folders. Until it is decided the rules above are the intention and `05` §2 is the layout.
 * The planning agent owns `docs/product/`, `docs/architecture/` and the roadmap; implementing agents update `docs/guides/` and
   `docs/engineering/` when their change affects them.
 

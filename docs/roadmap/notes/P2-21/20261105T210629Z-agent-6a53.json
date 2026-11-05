@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-6a53",
+ "item": "P2-21",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F31: **Library: no long-press and no menu on a playlist, album or artist row.** \"If I want to delete a playlist I must open it first. What if I want to rename it, change its picture, give it a description?\" || *Checked in the code (2026-10-30).* The Library rows only open (`library_screen.dart`: an `InkWell(onTap:)`, no `onLongPress`, no menu). **Rename and delete exist only inside the playlist's own page** (`collection_menu.dart`, `playlist_actions.dart`). **A description and a picture for a playlist do not exist anywhere in the app.** `../design/00-screen-inventory.md` has no row for a context menu, a selection mode or a playlist's details: **it was never drawn** (the missing-pages review of F14 to F26 did not include it) | Draw first (a row's long-press menu and a visible â‹¯, a playlist's \"Edit details\" with name, description and picture, in the cover-led look), then build; not a release-candidate-1 blocker, written as P2-21"
+}

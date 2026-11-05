@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210631Z-agent-dbe5",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:31Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): R2-F4: A new member sees the shared \"New on the server\" shelf at once || later | said in `docs/guides/friend.md`"
+}

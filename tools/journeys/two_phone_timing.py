@@ -1,6 +1,6 @@
 """two_phone_timing.py A_SERIAL B_SERIAL TAP_X TAP_Y TEXT [TIMEOUT_S]
 
-Journey 4 (docs/tasks/AUDIT.md): the same person on two phones. Taps one point on phone A (the last step of an action, such as "Create" or the
+Journey 4 (docs/history/reviews-2026-10-31.md#audit): the same person on two phones. Taps one point on phone A (the last step of an action, such as "Create" or the
 heart) and says how long until TEXT shows on phone B's screen, which is polled with a screen dump. Both phones must already be on the screens
 where the change will show (B on the list that will gain the item). The dump itself takes about a second, so the time is an upper bound
 (at most about 1.5 s too long). Never prints anything secret; the text is what you typed, so choose a non-secret name.

@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210631Z-agent-04f1",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:31Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): R2-F1: After a wrong server address the error text stays under the corrected field || later | recheck with a real keyboard"
+}

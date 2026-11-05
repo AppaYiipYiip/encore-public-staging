@@ -207,7 +207,7 @@ The sweep read every user story, README promise, ADR consequence, AUDIT row, the
 | P4-13 | Problem reports and battery-saver tips (shelved) | M | none |
 | P5-05 | The website, the name and the legal texts | M | P3-07 |
 
-**Done** (9 items with their proof; what is left inside them is in `tasks/AUDIT.md`)
+**Done** (9 items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)
 
 | Item | What | Proof |
 |------|------|-------|

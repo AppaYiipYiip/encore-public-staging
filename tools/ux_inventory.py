@@ -1,4 +1,4 @@
-"""Builds docs/tasks/UX-REVIEW.md's inventory from the app's code: every control (ListTile, button, switch, icon button, menu entry) per screen file with its
+"""Builds the inventory that is frozen in docs/history/reviews-2026-10-31.md#ux-review (it writes a new one to the path below; do not commit it as a new file) from the app's code: every control (ListTile, button, switch, icon button, menu entry) per screen file with its
 label and what its handler does, and flags: DUP (the same label on more than one screen), NOOP (no handler, or an empty one), MODE (mentions legacy, portal,
 fetch service or people service: may only work on one kind of server)."""
 import collections

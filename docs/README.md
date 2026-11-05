@@ -115,10 +115,9 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/guides/install-test.md` | guide | Install Encore on a fresh computer (the install test) | keep |
 | `docs/history/README.md` | history | What a history record is and the index of the archive files | read-only; not instructions |
 | `docs/history/design-reviews.md` | history | The design brief, the direction choice and the two design reviews (24 to 30 Oct 2026) | read-only; not instructions |
-| `docs/history/reviews-2026-10-31.md` | history | Five records: the resume notes, the docs audit and the three QA reviews (31 Oct to 1 Nov 2026) | read-only; not instructions |
+| `docs/history/reviews-2026-10-31.md` | history | Six records: the resume notes, the docs audit, the three QA reviews (31 Oct to 1 Nov 2026) and the frozen AUDIT.md, UX-REVIEW.md, the rehearsal and the log of the release candidate (finding IDs F1 to F66, B1 to B50, R2-F1 cited by code and tests) | read-only; not instructions |
 | `docs/roadmap/README.md` | entry | How the roadmap board works: one place per fact, who writes what | keep |
 | `docs/tasks/AUDIT-BUILT-2026-11-05.md` | record | The audit of what is already built: findings with evidence, and the feasibility read | keep |
-| `docs/tasks/AUDIT.md` | plan | What is not finished or only partly (living; its open rows move to the board, then it is archived) | move the open rows to the board, then archive |
 | `docs/tasks/P0-reset.md` | plan | The task definitions: P0 — Reset (no product changes) | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
 | `docs/tasks/P1-instant-play-and-worst-bugs.md` | plan | The task definitions: P1 — Instant play, and stop the worst bugs | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
 | `docs/tasks/P2-songs-as-references.md` | plan | The task definitions: P2 — Songs as references (the new library) | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
@@ -129,7 +128,6 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/tasks/P6-platforms.md` | plan | The task definitions: P6 — The last items: large screens (tablet and browser), TV, iPhone, and what stays parked | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
 | `docs/tasks/PROPOSED.md` | plan | Ideas that are not scope until the owner says yes | keep |
 | `docs/tasks/RELEASE-CANDIDATE.md` | plan | What must be true before the owner is told "ready": the walk checklist and the build log | keep the checklist; move the build log to the board |
-| `docs/tasks/UX-REVIEW.md` | record | The review of every control of the phone app | keep |
 | `server/legacy/encore-fetch/README.md` | legacy | encore-fetch | delete with `server/legacy` (audit B-16) |
 | `server/legacy/encore-people/README.md` | legacy | encore-people | delete with `server/legacy` (audit B-16) |
 | `server/legacy/reference/README.md` | legacy | Encore reference server | delete with `server/legacy` (audit B-16) |

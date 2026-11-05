@@ -378,7 +378,7 @@ def render_table(p: Plan) -> str:
         out.append("")
     walked = sorted(x for x in set(p.status) | p.owner_done if state_of(p, x) == "walked")
     if walked:
-        out += [f"**Done** ({len(walked)} items with their proof; what is left inside them is in `tasks/AUDIT.md`)", "", "| Item | What | Proof |", "|------|------|-------|"]
+        out += [f"**Done** ({len(walked)} items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)", "", "| Item | What | Proof |", "|------|------|-------|"]
         for x in walked:
             out.append(f"| {x} | {title_of(p, x)} | {evidence_of(p, x)} |")
         out.append("")

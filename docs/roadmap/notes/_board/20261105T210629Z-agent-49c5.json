@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-49c5",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F30: *Found while walking F21 (`../evidence/README.md#b10`).* On a **fresh sign-in the app stays in the old music-server mode for about two minutes** (1 min 59 s and 2 min 50 s measured) before it switches to Encore mode by itself; until then the page says \"It is added to your library first\", and Add to library and Download run the old code path || *Measured, cause not found.* The server log shows the identity probe and two looks at `/info`, then the upgrade call (`POST migrate/navidrome`, device login, cover pass, library feed) only after the retry pause (`ServerSession._detectAndUpgrade` waits 2 minutes, doubling). The first look does not lead to the upgrade | The first look after sign-in leads to the upgrade at once (find why it does not), or the app says \"Getting ready\" and keeps Add to library and Download off until Encore mode is on; a first-run walk with a stopwatch. Likely part of what the owner saw: he tapped right after installing"
+}

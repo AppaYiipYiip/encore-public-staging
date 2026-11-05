@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-f74c",
+ "item": "P2-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F22: \"Lyrics are not working, which is weird, confusing\" || *Explained by his follow-up and the code (2026-10-30).* The song was *Loathe, Gifted Every Strength*: at first \"lyrics not available\", later they showed. LRCLIB has it now (a synced entry of 370 s). A song LRCLIB has (*Time*, Pink Floyd) showed a Lyrics card on `main` (`b08`). The phone asks LRCLIB itself (a thin-client debt, ADR-R38) and **remembers \"no lyrics\" for a day per song** (`LyricsRepository._negativeTtl`), with no way to ask again, so a recent release that LRCLIB lacked at first stays empty until the day is up. A failed lookup is not remembered (correct). Not established: whether LRCLIB gained the entry meanwhile or the first lookup missed for another reason (the entry's length is matched within a tolerance) | A miss is remembered for minutes to hours for a recent release and for days only for an old song, and the empty lyrics card offers \"Try again\"; the lookups move to the server (P2-14), which retries on its own schedule and tells the phone"
+}

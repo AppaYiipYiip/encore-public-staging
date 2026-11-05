@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210630Z-agent-acbe",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:30Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): R2-F3: Home shows \"[Unknown Album]\" cards for songs with no album || **RC1 for the display layer** (PR #136, built, not walked: unit and widget tests only, no device has shown it); the cause is later | The display rule (`app/lib/domain/album_names.dart`, one predicate) now covers: Home shelves (the bucket is dropped), the album names (Home, Library, artist page, the all-albums grid, the artist's release row, the media browser and its \"playing from\" name) as \"Songs without an album\", and every song row, cover, queue, player and lock-screen album line (shown as a song with no album); the bucket's own page no longer asks the catalogue what it is \"missing\". Left (small): the Library sorts the bucket by its raw name (it lands at the top of an A-Z list), searching \"unknown\" still finds it, and the song menu still offers \"Go to album\" for a song that now shows no album. The rule lives in the app today; the server's rulebook (P2-23) should own it so a browser, a TV app or any other client gets it for free. The cause: the Spotify import reader carries title, artists and length only and builds no album, and nothing fills it in (the YouTube Music reader does read albums); fix = P2-12 (fill from a strong song match, tag the file, backfill, rescan), held until `b11` (D-51)"
+}

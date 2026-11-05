@@ -139,7 +139,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 |-------|----|-----------|
 | Ask a question after two minutes of installing (found on 2026-10-22: a missing password was noticed late) | Ask first, install after; every message says what to do next; never touch the person's music; an update makes a backup first (ADR-R19 to R26, R37) | Convention; the proofs `c01` to `c03` |
 | Call a guide done because it works on your machine | Run it **as written** on a clean machine and write the time down; fix the guide where reality differs (`c01`) | Convention |
-| Assume a dependency stays fresh (yt-dlp: the server only has the version of its last image build, and `encore update` brings it) | Know how each moving part gets updated; the permanent fix is P3-08 (`tasks/AUDIT.md`) | Convention |
+| Assume a dependency stays fresh (yt-dlp: the server only has the version of its last image build, and `encore update` brings it) | Know how each moving part gets updated; the permanent fix is P3-08 (`history/reviews-2026-10-31.md#audit`) | Convention |
 
 ---
 
@@ -202,4 +202,4 @@ enforced by the machine for everything written into the source. It cannot see an
 ## 6. Where to read more
 
 `AGENTS.md` · `06` how a change travels · `07` how to test · `04` the architecture and §10 the rules against spaghetti · `28` the code module by module ·
-`11` every decision with its alternatives (ADR-R38 is the thin-client rule) · `tasks/AUDIT.md` what is still open · `01` what went wrong and why.
+`11` every decision with its alternatives (ADR-R38 is the thin-client rule) · `history/reviews-2026-10-31.md#audit` what is still open · `01` what went wrong and why.

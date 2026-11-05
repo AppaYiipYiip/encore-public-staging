@@ -79,7 +79,7 @@ Settings > Playback, Library & sync, Notifications, Lyrics; Library > Artists / 
 or committed); an album page, an artist page, search results, the queue, Year in Music, the lyrics view, the playlist ⋯ menu, long-press on any row,
 the two invite flows, Switch user, Sign out, the friends and profile surfaces (none seen). The "Jam" page was looked at only in its "no Jam" state.
 
-#### What this batch found (all are rows in `AUDIT.md`)
+#### What this batch found (all are rows in `history/reviews-2026-10-31.md#audit`)
 
 * **F50 (RC1, a dead end):** the Home "Jam" chip, on a server without Jam, which is every fresh Encore install. Proposal: show it only where the server has Jam.
 * **F51 (RC1, D-27):** the avatar and the gear are one control twice until the "You" page exists.
@@ -208,7 +208,7 @@ does not retry by itself (a task for the join screen).
 
 ### B-02 — Journey 4: one person, two phones, an import, a like and an edit (2026-10-23, build 120)
 
-Journey 4 of `tasks/AUDIT.md`: the same account on two emulators; what is done on one appears on the other. `b01` proved a new playlist and a like; this adds **an import** and **a playlist edit** and records what is **not** there (resume).
+Journey 4 of `history/reviews-2026-10-31.md#audit`: the same account on two emulators; what is done on one appears on the other. `b01` proved a new playlist and a like; this adds **an import** and **a playlist edit** and records what is **not** there (resume).
 
 #### Setup
 
@@ -521,7 +521,7 @@ None (all songs were kept songs).
 
 ### B-08 — A re-walk of what the notes call done, on `main` (2026-10-30)
 
-The owner doubted that what the status notes call done is done. This walk repeats the headline claims on **`main` at `346bd75`**, in the record shape of `07` §12, instead of quoting earlier walks. It also diagnoses two of the owner's findings of the same day (`tasks/AUDIT.md` F21, F22) and records new ones (F25 to F28).
+The owner doubted that what the status notes call done is done. This walk repeats the headline claims on **`main` at `346bd75`**, in the record shape of `07` §12, instead of quoting earlier walks. It also diagnoses two of the owner's findings of the same day (`history/reviews-2026-10-31.md#audit` F21, F22) and records new ones (F25 to F28).
 
 #### Setup (what exactly was walked)
 
@@ -552,7 +552,7 @@ The owner doubted that what the status notes call done is done. This walk repeat
 
 `_CatalogueDownloadButton` (`catalogue_screens.dart`) shows the notice "Getting … it will download to this phone when it is in your library", then calls `addAndKeepOffline` (`instant_controller.dart`). That function **ends silently** in two places: when no song came back as ready, and when `findAlbum(artist, title)` does not find the album in the phone's own library. Why the album was not found is **not established**; it is not the odd release (the repeat below fails the same way), and the server holds nothing, so the songs did not reach the library either. Both exits return "nothing pinned", and the page then shows **no spinner, no "Downloading…" notice and no error**. The green "In your library" and the checks come from the songs' own state, not from the library having them. Nothing was written to the server's library (`savedAlbums: 0`). The cause of the green marks is not proved; the silence is.
 
-#### New findings (`tasks/AUDIT.md` F25 to F28)
+#### New findings (`history/reviews-2026-10-31.md#audit` F25 to F28)
 
 * **F25: a false "The music catalogue could not be reached."** The page of a small artist (*Beach House*, 4 fans) shows, under **Popular**, "Nothing to show right now. The music catalogue could not be reached. Try again". Deezer **was** reached: its list of popular songs for that artist is **empty** (`"data":[],"total":0`) and it lists one album. `artist_sections.dart` treats an empty list like a network error (`if (items.isEmpty) return retrySliver(…)`). The release is shown below it, under "Singles and EPs".
 * **F26: the sign-out warning probably counts something the person cannot send.** The dialog said "1 change has not reached your server yet and is lost if you sign out" for many minutes with the server up, and again after "Sync now". The app's own log has one outbox line: `[outbox] scrobble parked: That song is not known to this server.` (a play mark the server refuses). So the "change" is **most likely** that parked play mark; the outbox itself was not read. **Which song** it was is not known (the log gives no title), and every song played before it has a reference on the server. If play marks are refused for songs the person did play, history and Year in Music are affected; **not checked**.

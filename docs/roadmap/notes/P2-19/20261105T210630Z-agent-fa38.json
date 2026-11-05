@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210630Z-agent-fa38",
+ "item": "P2-19",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:30Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F47: **The sign-in has no album wall** (the owner likes S-03's floating covers: \"it would be nice to have those squares be albums already on the server, from the playlist imported at setup, so a person installing the app sees them\") || *Checked.* `connect_screen.dart` has no wall; the drawn S-03 does | **D-31, RC2:** real covers only on the join screen of a valid invitation (the code authorises about a dozen thumbnails) and on a phone that already signed in to that server once; plain sign-in shows neutral artwork (a server's covers must not show to anyone who merely knows the address); the owner can switch it off in the admin, on by default; the wizard's empty-server step offers a playlist import that feeds it (F23)"
+}

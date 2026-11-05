@@ -1,0 +1,9 @@
+{
+ "id": "20261105T210629Z-agent-c7a9",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T21:06:29Z",
+ "type": "note",
+ "body": "Still open when AUDIT.md was retired (6 Nov 2026; the file is now the frozen section `audit` of docs/history/reviews-2026-10-31.md): F26: *Found while reproducing F21.* The sign-out dialog says \"1 change has not reached your server yet and is lost if you sign out\" for many minutes with the server up, and again after \"Sync now\" || *Most likely (`b08`; the outbox was not read).* The app's only outbox line is `[outbox] scrobble parked: That song is not known to this server.`, so the \"change\" is probably a play mark the server refuses, not an edit of the person's; `../34` G-5 counts it. Which song, and whether play marks of songs the person did play are refused (history, Year in Music), is **not checked** | **Fixed in PR #44** (the play-mark case seen failing first, 3 against 1): the dialog counts only what a person made (likes, playlist edits, saves); a play mark the server refuses is dropped or parked without a warning (`../34`)"
+}
