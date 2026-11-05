@@ -67,6 +67,8 @@ folders) and the installer's `--restore <file>` option in one step; a guide page
 | Away from home | limited by the Host's **upload**: about 1 listener per 150 kbit/s (Opus 128 + overhead); the wizard prints the number (`15` page 4) |
 The keeper, the loudness measurer (P1-13) and recommendations run as **background** work that yields to people playing (`04` §10).
 
+**Measured, 5 Nov 2026, for the owner's target of 1 to 20 people on one server (or more):** `docs/tasks/AUDIT-BUILT-2026-11-05.md` (B-10, B-18, B-19) has the numbers. With 20 simulated phones the server answers about 320 calls a second (one Python process is the limit), but **today's code lets some calls wait 2.5 s at the 95th percentile and up to 12 s**, because every signed-in call takes the database's write lock and SQLite does not queue waiting callers fairly; a drafted fix (held, not applied) brings that to 135 ms and 175 ms. The measuring tool is `server/encore_server/tests/bench/bench_users.py` on the branch `held/server-db-lock`. **Not measured:** audio streaming, YouTube look-ups, a large import running at the same time (X-8).
+
 ## 7. Scanning without storms
 
 Navidrome rescans when files change. The keeper writes many files during an import, so: write each file to a temporary name and rename
