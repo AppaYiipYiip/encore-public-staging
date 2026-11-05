@@ -27,6 +27,7 @@ and activity).
 
 ## P4-02 — Jam on the live channel — Size L
 * **Order.** Needs: P2-08 [d], P2-09 [d], P3-12 [p]. Why: P3-12 is policy (D-53): the first friend comes first; Jam does not technically need it.
+* **D-53 is replaced by D-61 (`10`, owner 2026-11-05): the setup pages and a button installer come BEFORE Jam and before any friend. The Order line below still shows the old order until the three-gates draft is applied (PR #151, after its hidden needs are added); do not plan from the old order.**
 * **Order (D-53, owner 2026-11-03; wording corrected after the order analysis).** This goes first among the features and **ahead of P3-06** (the browser wizard and admin pages). Its prerequisites are P2-08 and P2-09 (the device model, server half built, app not wired) and a public address walked on mobile data (check 2 of P3-12). The catalogue, lyrics and find-my-server work (P2-12, P2-14, P2-19) run in parallel and are **not** prerequisites.
 * **Why.** US-61; finding C8 (today the Jam wraps every play).
 * **Context.** `packages/encore_session` (Jam engine, 145 tests) and the Dart hub worked end to end on two emulators (old journeys

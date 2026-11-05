@@ -66,6 +66,7 @@ installer and a browser wizard that a person who never used Docker can follow. R
 
 ## P3-06 — Setup wizard and admin pages — Size L
 * **Order.** Needs: P4-02 [p]. Why: P4-02 is policy (D-53): the owner put Jam before the browser setup wizard and admin pages.
+* **D-53 is replaced by D-61 (`10`, owner 2026-11-05): the setup pages and a button installer come BEFORE Jam and before any friend. The Order line below still shows the old order until the three-gates draft is applied (PR #151, after its hidden needs are added); do not plan from the old order.**
 * **Order (D-53, owner 2026-11-03):** after Jam (P4-02). The first friends use the terminal installer and the app. Because of this, P3's old exit criterion "the admin Health page explains every state" is the acceptance of this item, not a condition of the first friend (see `08`).
 * **Paper first:** build exactly the pages of `../15` §2 and §4; first add drawings of each page in the design tokens with the
   illustrations of `../16` to the PR and get the owner's OK on the drawings before code. The setup code of `../15` §1 is required.
