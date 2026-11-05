@@ -262,7 +262,7 @@
  },
  "P3-06": {
   "kind": "host",
-  "title": "A setup wizard and admin pages in the browser, on a PC",
+  "title": "The setup pages and admin pages in the browser, with a button for everything",
   "note": "The owner put Jam before this.",
   "judge": true
  },
@@ -293,8 +293,8 @@
  },
  "P3-12": {
   "kind": "feature",
-  "title": "Your first friend uses your server from outside your home",
-  "note": "Five checks, then a week of use."
+  "title": "Your friend's first week on your server",
+  "note": "After you have invited him (gate 3). Five checks hold first; then a week of use."
  },
  "P3-13": {
   "kind": "host",
@@ -303,8 +303,8 @@
  },
  "P3-14": {
   "kind": "host",
-  "title": "Server updates that undo themselves if something goes wrong",
-  "note": ""
+  "title": "Server updates that undo themselves: a button, and a command",
+  "note": "Both call the same helper on the server computer, which does the rollback (D-61)."
  },
  "P3-15": {
   "kind": "quality",
@@ -313,8 +313,8 @@
  },
  "P3-16": {
   "kind": "host",
-  "title": "Reset a forgotten password with one command",
-  "note": ""
+  "title": "Reset a forgotten password: a button, and a command",
+  "note": "Resetting a friend's password is already a button. For your own, the proof of ownership is something only the person at the server has."
  },
  "P4-01": {
   "kind": "feature",
@@ -376,7 +376,7 @@
  },
  "P4-12": {
   "kind": "feature",
-  "title": "The extras Spotify has: Android Auto, a home-screen widget, crossfade and more",
+  "title": "Android Auto, a home-screen widget, crossfade and a Data saver switch",
   "note": ""
  },
  "P4-13": {
@@ -442,8 +442,8 @@
  },
  "P5-07": {
   "kind": "feature",
-  "title": "A guide that shows a friend how to install the app from GitHub",
-  "note": "No store and no developer account (D-56): screenshots per phone brand, including Android's advanced install flow."
+  "title": "The install guide for your friend: how to install the app from GitHub",
+  "note": "For your friend, not for you. No developer account (D-56)."
  },
  "P5-08": {
   "kind": "feature",
@@ -521,11 +521,21 @@
  },
  "N-05": {
   "kind": "host",
-  "title": "Back up your music with one command",
-  "note": "The database backup does not hold the music.",
+  "title": "Back up your music files to another place, with a button",
+  "note": "Today's backup holds the database, not the music. Two doors: a button on the admin pages and an `encore` command (D-61); the place comes from the add-ons model.",
   "proposal": true,
   "size": "S",
-  "needs": []
+  "needs": [
+   {
+    "id": "P3-25",
+    "mark": "d"
+   },
+   {
+    "id": "P3-20",
+    "mark": "i"
+   }
+  ],
+  "why": "The music copy is an add-on of the model (P3-20) and runs through the helper (P3-25)."
  },
  "N-06": {
   "kind": "feature",
@@ -576,27 +586,123 @@
  },
  "P3-18": {
   "kind": "owner",
-  "title": "Install your real server, with Claude guiding you step by step",
-  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+  "title": "Gate 2: you install your real server yourself, by clicking",
+  "note": "Nothing to do yet. Claude will walk you through the clicks when it is time. The server runs on your homelab. The command stays a full door for people who prefer it."
  },
  "P3-19": {
   "kind": "owner",
   "title": "Start Claude's deep security review before your first friend (one command, it costs money)",
-  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+  "note": "One line you paste into this chat (not a terminal). It costs money; Claude tells you the line when it is time."
  },
  "P4-19": {
   "kind": "owner",
   "title": "Start Claude's deep security review of friends on other servers (one command, it costs money)",
-  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+  "note": "One line you paste into this chat (not a terminal). It costs money; Claude tells you the line when it is time."
  },
  "P5-09": {
   "kind": "owner",
   "title": "Start Claude's deep security review before going public (one command, it costs money)",
-  "note": "Nothing to do yet. Claude will tell you when it is time, with exact steps."
+  "note": "One line you paste into this chat (not a terminal). It costs money; Claude tells you the line when it is time."
  },
  "P1-16": {
   "kind": "feature",
   "title": "Search says when you are offline (drawn first)",
   "note": "Home, the Library and the song rows already do (P1-15); Search's own page was never drawn offline."
+ },
+ "P0-14": {
+  "kind": "owner",
+  "title": "Gate 1: you try the app on your own phone",
+  "note": "You only tap. Claude gives you the app with one short instruction and provides the server. Which server is decided with you when it is close."
+ },
+ "P3-20": {
+  "kind": "design",
+  "title": "Add-ons: built in, bring your own, or off (designed on paper first)",
+  "note": "One model for the lossless sources, an existing music server, the away-from-home address and the backup place. Builds on the earlier decisions about the wizard."
+ },
+ "P3-21": {
+  "kind": "design",
+  "title": "Two doors to the same installation: the button installer and the command (designed on paper first)",
+  "note": "Starts from the earlier installer decision and the rule that the server may not control the computer it runs on. First target: your homelab."
+ },
+ "P3-22": {
+  "kind": "design",
+  "title": "Change the drawn setup pages for the new rules, approved by you",
+  "note": "The pages are already drawn. Only what changes is drawn again, and you approve exactly that.",
+  "judge": true
+ },
+ "P3-23": {
+  "kind": "host",
+  "title": "Build the button installer",
+  "note": "Built exactly as designed; no terminal for the person; the command keeps working."
+ },
+ "P3-24": {
+  "kind": "owner",
+  "title": "Gate 3: you invite your friend and jam with him",
+  "note": "You on the PC in a browser, him on his phone, in two cities. You said yes to the whole friend-ready list on 5 Nov 2026."
+ },
+ "P3-25": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a small helper on the server computer for the buttons and the command",
+  "note": "Does only a fixed list of things (update, back up, restore, change the address); the web page never controls the computer."
+ },
+ "P4-21": {
+  "kind": "feature",
+  "title": "Library polish: search aliases, sort and filter, pins and folders, custom covers",
+  "note": "Split out of the extras; comes after the invitation."
+ },
+ "P1-17": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: one \"can I reach my server\" state in the app instead of eleven",
+  "note": "The app decides this in eleven places that can disagree. One state, read by everything, before more offline work is built on top."
+ },
+ "P1-18": {
+  "kind": "quality",
+  "title": "Check on a real phone: calls, headphones, a full phone and a long pause",
+  "note": "Never tried on a phone: a call comes in, headphones come out, the phone is full, a song is paused overnight."
+ },
+ "P1-19": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: every request carries an id so a failure can be followed",
+  "note": "Half of the speed-tools item was never built; without this nobody can follow a failure on someone else's server."
+ },
+ "P1-20": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: every word the app shows lives in one place",
+  "note": "So other languages and right-to-left are a translation job and not a rewrite."
+ },
+ "P2-24": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the app and the server tell each other their versions",
+  "note": "An old app against a newer server shows one clear sentence instead of breaking."
+ },
+ "P3-26": {
+  "kind": "design",
+  "title": "Where the server and the app come from while the code is still private (designed first)",
+  "note": "Today a person without a GitHub account cannot get either. Decided by Claude's advisor for you; yours to overrule."
+ },
+ "P3-27": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a release channel that only moves when someone decides",
+  "note": "Today every server follows whatever was merged last."
+ },
+ "P3-28": {
+  "kind": "process",
+  "title": "Behind the scenes: prove the away-from-home address with real music from a phone on mobile data",
+  "note": "Every friend and the Jam depend on it, and it has never carried music. If it needs a sign-in from you it arrives as its own step."
+ },
+ "P3-29": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: server hygiene, so one slow request cannot freeze everyone",
+  "note": "Measured with 20 phones: some waited 12 seconds. The fix is ready and waits for your word."
+ },
+ "P3-30": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: set a password key at install, and make backups secret",
+  "note": "Today a copied backup holds what is needed to read everyone's password."
+ },
+ "P3-31": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: split the one big server file into one file per area",
+  "note": "A pure move that stops merges colliding."
  }
 }

@@ -7,12 +7,12 @@ tasks and tests cite them. Personas are defined in `03` §2. "Catalogue song" = 
 
 **US-01 Host installs the server.** As a Host with a spare PC running Linux, I want to install Encore with one command and finish
 setup in my browser, so that I don't need to understand Docker. Every page is drawn in `15` §1–2.
-* One command from the website installs everything (installs Docker if missing, after asking), prints an address and a QR code.
+* One command from the website installs everything (installs Docker if missing, after asking), prints an address and a QR code. This is the command door; an installer with buttons is the other (D-61), and the Host never has to open a terminal.
 * The browser wizard asks only: my name and password (I become the owner), where my music folder is (optional; empty is fine),
-  the server's name. It finishes in ≤ 5 minutes on a Raspberry Pi 4.
+  the server's name. It finishes in ≤ 5 minutes on a 2 GB Intel/AMD computer.
 * It measures the machine and line once (CPU, free disk, download/upload speed, YouTube reachability) and shows the results in
   plain words ("Songs from YouTube: working", "Away from home: not set up yet").
-* Works on Ubuntu/Debian on x86-64 and ARM64; the guide says which systems were actually tested.
+* Works on Ubuntu/Debian on x86-64 (ARM64 is Later, D-58); the guide says which systems were actually tested.
 
 **US-02 Host sets up away-from-home.** As a Host, I want my family to listen outside the house without opening router ports.
 * The wizard walks through Tailscale Funnel with screenshots and one sign-in (there is no key to paste, `11` ADR-R25); it checks the result itself and shows the public

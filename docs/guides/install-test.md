@@ -1,5 +1,7 @@
 # Install Encore on a fresh computer (the install test)
 
+> **This is the command door (D-61).** A button installer is the other door (P3-23, designed in P3-21); until it exists this is the only way in, and gate 2 (P3-18) waits for the button door. It also needs a GitHub login while the image is private (audit B-1; P3-26 decides what a person without one does).
+
 This is the guide for the first real install, done the way a user would do it. It is an **install test**, not the daily-driver release:
 the setup wizard, the admin pages, backups, update rollback and ARM computers are not built yet (list at the bottom). Things that go
 wrong are what this test is for: write down what you see, even small things.

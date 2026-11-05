@@ -26,20 +26,22 @@ and activity).
   two people with different tastes on two emulators get different rows; the owner rates his own Home after a week. Smart shuffle marks about one song in five as a suggestion with a one-tap keep or skip; song radio plays; "Not for me" on a suggested song or band removes it from that person's rows only.
 
 ## P4-02 — Jam on the live channel — Size L
-* **Order.** Needs: P2-08 [d], P2-09 [d], P3-12 [p]. Why: P3-12 is policy (D-53): the first friend comes first; Jam does not technically need it.
+* **Order.** Needs: P2-08 [d], P2-09 [d], P3-18 [p], P3-28 [d]. Why: D-61 (replaces D-53): the invitation comes AFTER Jam, so Jam can no longer wait for the first friend. It is walked through the owner's real address (the setup is gate 2, P3-18).
 * **D-53 is replaced by D-61 (`10`, owner 2026-11-05): the setup pages and a button installer come BEFORE Jam and before any friend. The Order line below still shows the old order until the three-gates draft is applied (PR #151, after its hidden needs are added); do not plan from the old order.**
-* **Order (D-53, owner 2026-11-03; wording corrected after the order analysis).** This goes first among the features and **ahead of P3-06** (the browser wizard and admin pages). Its prerequisites are P2-08 and P2-09 (the device model, server half built, app not wired) and a public address walked on mobile data (check 2 of P3-12). The catalogue, lyrics and find-my-server work (P2-12, P2-14, P2-19) run in parallel and are **not** prerequisites.
+* **Order (D-61, owner 2026-11-05, replaces D-53).** The setup pages (P3-06) come BEFORE Jam, and Jam comes before the invitation (gate 3, P3-24). **First step: check ADR-083's recorded Tailscale Funnel limits against two listeners at the bitrate used for a Jam** (an owner on a PC browser and a friend on a phone, each on its own connection); if the limits do not hold, say so on the board before building.
 * **Why.** US-61; finding C8 (today the Jam wraps every play).
 * **Context.** `packages/encore_session` (Jam engine, 145 tests) and the Dart hub worked end to end on two emulators (old journeys
   E-60, E-63) and had real bugs only two real phones found (B48, B49). Field-test expectation: the Jam *is* the normal player.
 * **Design.** `../13` section 5 (joining, clock, where each phone gets audio). This task builds the same-server Jam; P4-10 adds
   people on other servers on top of it, so keep descriptors and grants in mind from the start.
+* **Acceptance (D-61).** The owner's PC browser and a phone, each on its own internet connection, through the away-from-home address, stay in step for a whole session, smooth, with seek, pause and a song change from either side.
 * **Do.** Module `jam` in the Encore server on `/encore/live` (or keep the Dart hub as a sidecar if porting `encore_session` costs
   more than it saves — decide with a one-page comparison in the PR first). In the app, a Jam is a **session layer** that the normal
   player follows while in a Jam; outside a Jam the player has no Jam code on its path. Catalogue songs work in a Jam (each phone
   streams by song ref; the host's next songs are prepared).
 * **Acceptance.** The old two-phone Jam journeys rewritten for the new design pass on two emulators, plus: leave/rejoin, host hands
   the speaker over, a catalogue song in the Jam, a network drop on one phone.
+* **Audit B-20.** The app's Jam client targets the old hub on port 8703, which the shipped product does not run, and the Encore server has no Jam module. Decide first where the hub lives (the protocol, reducer and clock of `packages/encore_session` ported to the server, or the existing Dart hub run behind the server's own websocket); two implementations of one protocol must never exist at once.
 
 ## P4-03 — Friend activity — Size M
 * **Order.** Needs: none.
@@ -60,6 +62,7 @@ and activity).
   old file 14 days for a way back.
 * **Acceptance.** On the dev VM (private Soulseek network as before): a kept song is upgraded to FLAC and its likes, playlist places,
   downloads and resume position are unchanged; switching the tier off stops all network activity of the three programs.
+* **D-61.** The lossless sources are an add-on of the model of the add-ons document that P3-20 writes (to be numbered 35): off by default with its plain risk text, switched on by a button or by `encore`, and either run by Encore or pointed at the person's own containers. Do not design a second switch here.
 
 ## P4-05 — Year in Music from the server's play history — Size S
 * **Order.** Needs: none.
@@ -126,12 +129,9 @@ and activity).
 * **Do.** Adaptive layout: navigation rail, list + detail panes, player as a side panel in landscape; keyboard and mouse basics.
 * **Acceptance.** Profile E and a landscape tablet emulator: every screen usable in both orientations and split-screen; screenshots in the PR.
 
-## P4-12 — Spotify-class extras — Size L (split into sub-tasks when started)
-* **Order.** Needs: none.
-* **Why.** U2, U3, U7–U11, U13.
-* **Do.** Search aliases/transliteration and history; library sort (**Follow artists moved to P4-18**)/filter/pins/folders/custom covers; Liked Songs
-  download with new likes following; crossfade setting (gapless kept); Android Auto search and `MEDIA_PLAY_FROM_SEARCH`; a home-screen
-  widget; a single "Data saver" switch.
+## P4-12 — Spotify-class extras: Android Auto, the home-screen widget, crossfade, Data saver — Size L (split into sub-tasks when started)
+* **Order.** Needs: none. Why: U2, U3, U7–U11, U13. Reduced on 2026-11-05 (D-61): the owner asked for these four before his friend is invited; the rest is P4-21.
+* **Do.** Crossfade setting (gapless kept); Android Auto search and `MEDIA_PLAY_FROM_SEARCH`; a home-screen widget; a single "Data saver" switch.
 * **Start from** `../29-spotify-gap-review.md` (owner, 2026-10-22: the artist page was fixed first; "Spotify does other things much better").
 * **Acceptance.** Each sub-task has its own journey; the owner compares side by side with Spotify on his phone and lists gaps.
 
@@ -212,3 +212,9 @@ and activity).
 * **Do.** Compare, on the owner's real plays and on the labelled set, at least: (1) a ready-made source of recommendations that the server can ask (for example ListenBrainz's), (2) an open-source recommender library run inside the server, (3) our own similar-artist and taste-profile model of P4-01. Measure: how many useful rows a new person gets in the first 20 songs, how different two people's rows are, what each needs to run on a small home server (memory, time), and what it sends outside (the server makes every outside call; no person's history leaves it). Write the numbers in an evidence file.
 * **Acceptance.** An evidence file with the comparison and a one-paragraph decision by the advisor; P4-01's Do text names the chosen approach.
 * **Size.** S.
+
+## P4-21 — Library polish (split out of P4-12) — Size M
+* **Order.** Needs: none. Why: P4-12 was one Large task for nine small ones. The owner (5 Nov 2026) asked for Android Auto, the home-screen widget, crossfade and the Data saver switch before his friend is invited; the rest of the list can come after.
+* **Do.** Search aliases and transliteration and search history; library sort, filter, pins, folders and custom covers; Liked Songs download with new likes following. Start from `29-spotify-gap-review.md`.
+* **Acceptance.** Each sub-task has its own journey; the owner compares side by side with Spotify on his phone and lists gaps.
+* **Size.** M.

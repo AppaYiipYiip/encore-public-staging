@@ -9,7 +9,7 @@ keeps the music you love on your own disk forever, and lets your family and frie
 
 | Persona | Who | What they want | What they will not do |
 |---------|-----|----------------|-----------------------|
-| **The Host** | Someone with a spare PC or mini-PC who can follow a guide: install Linux, paste one command. Any country, any hardware from a Raspberry Pi 4 upward, any line from 5 Mbit/s ADSL upward. | Stop paying Spotify for the household; own the music; be the "music person" for family and friends. | Edit config files, open router ports, buy a domain, read Docker docs, sign their Google account into a program. |
+| **The Host** | Someone with a spare PC or mini-PC who can follow a guide: install Linux, then install Encore with buttons or with one pasted command (two equal doors, D-61). Any country, any 64-bit Intel/AMD computer (the Raspberry Pi and other ARM computers are Later, D-58), any line from 5 Mbit/s ADSL upward. | Stop paying Spotify for the household; own the music; be the "music person" for family and friends. | Edit config files, open router ports, buy a domain, read Docker docs, sign their Google account into a program. |
 | **The Listener** | A family member or friend who gets an invite link. Not technical. Compares everything to Spotify. | Install, tap the invite, listen. Search anything, play it, make playlists, download for the plane, bring their Spotify playlists. | Learn what a "server" is, type addresses, wait minutes for a song. |
 | **The Tinkerer** | Homelab person with Docker, maybe Navidrome/Lidarr already. | A great Android app, bring-your-own parts, compose file they can edit, Subsonic compatibility for other apps. | Accept a black box that fights their setup. |
 

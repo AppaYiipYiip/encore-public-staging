@@ -115,6 +115,4 @@ Rules (also in `06` §2):
 4. **Before committing**, run the quick check (`tools/check.ps1 -Quick`: format, analyze, unit tests of the touched area); CI runs the rest.
 5. **Never commit**: passwords, login files, cookies, `.env`, APK/AAB/zip files, build folders. The pre-commit hook blocks them
    by file name, and CI scans for secrets with gitleaks.
-6. **The owner must allow pushing once**: add to `~/.claude/settings.json` → `permissions.allow`: `"Bash(git push:*)"` and
-   `"Bash(gh pr create:*)"`, `"Bash(gh pr ready:*)"`, `"Bash(gh pr merge:*)"`. Agents cannot change their own permissions
-   (owner decision D-8). Until then, agents commit locally and the final message of every task says "not pushed: permission".
+6. **Pushing is allowed** (done: agents push branches, open pull requests and merge them with `gh`, each a squash merge on the checked head). Agents cannot change their own permissions (owner decision D-8): if a push is ever refused, the final message of the task says "not pushed: permission" and the owner is asked once.

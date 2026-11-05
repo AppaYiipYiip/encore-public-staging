@@ -53,7 +53,7 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 
 ## 5. Family and kids
 
-* Per person: "Explicit songs" on/off (from the catalogue's flag); the owner can set and lock it for a member.
+* Per person: "Explicit songs" on/off (from the catalogue's flag); the owner can set and lock it for a member. **Not enforced yet (audit B-6, 6 Nov 2026):** the value is stored and settable, but no server code and no screen filters by it; enforcement is part of the server-search task (P2-12), and the admin People page must not draw the switch until it works.
 * A device can be **shared** (a living-room tablet): other members of the server may play on it (like a Connect speaker), each with
   their own queue; the device's owner can turn it off (P4-07).
 

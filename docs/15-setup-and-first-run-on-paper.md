@@ -10,7 +10,9 @@ optional page has "Skip for now"; plain words (no "Docker", "container", "port",
 
 ---
 
-## 1. The Host's terminal (the only command-line moment)
+## 1. The Host's terminal (the command door)
+
+> **D-61 (owner, 5 Nov 2026): this page describes the command door; the button door is designed in P3-21 and built in P3-23.** Nobody is required to open a terminal: the same installation can be made by an installer with buttons, and every Host action afterwards (update, back up, restore, reset a password, switch an add-on) is a button on the admin pages AND an `encore` command that calls the same operation. Both doors are first-class.
 
 The website shows three steps: (1) install Ubuntu Server on the spare computer (link + video), (2) paste one line, (3) open the link it
 gives you. What the terminal shows after pasting `curl -fsSL https://<get address> | sudo sh`:
@@ -233,8 +235,8 @@ The eight pages below are the ones **drawn** (`design/directions/screens-server-
 | **People** | Who has an account, role, invited by, last seen, devices; invite, reset-password link, unlock a locked person, remove with its reason; pending invitations |
 | **Library** | Music folders with counts (read-only, said in words), scan now, what Encore itself kept (count, size, where), duplicates, "songs nobody saved" with a Remove button that asks first |
 | **Away from home** | Address, status, key expiry, re-run the Tailscale steps |
-| **Backups** | Last backup (when, size, where), how often, what is in it and what is not, Back up now, the restore command (never a button) |
-| **Updates** | Versions (Encore, music server, fetching tool), "run `sudo encore update`", update automatically at night (off by default) |
+| **Backups** | Last backup (when, size, where), how often, what is in it and what is not, Back up now, **Restore as a button** that first backs up what is there and asks the Host to type the server's name (D-61; `encore restore` is the other door) |
+| **Updates** | Versions (Encore, music server, fetching tool), an **Update button with its way back** (D-61; `sudo encore update` is the other door), update automatically at night (off by default) |
 | **Settings** | The server's name ("Our music"), friends on other servers (D-13), recommendations (a grey "later" line until they exist), best quality with its plain risk text (D-12), plays any song (YouTube), the highest quality away from home (a cap, only mentioned by the app when set), songs from YouTube status and background downloads |
 | **Logs** | What the server has been saying in the last hour, in plain words (no password, login or song title), filtered by part; copy or download for a bug report; the versions. Opt-in problem reports from phones (P4-13) are not drawn yet |
 

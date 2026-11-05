@@ -80,8 +80,15 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Size.** S.
 
 ## P0-13 — Release candidate 1 walked (the walk record b11) — Size M
-* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d].
+* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d], P1-18 [d], P1-19 [d].
 * **Why.** This was the first gate of the old, phased plan (D-57 removed the phases, so it is a task now). The owner's definition of pass: nothing is "walked" until it is walked as a person on the release-candidate pair (the published image plus the app built from the same commit, signed with the release key) on a clean machine, to the end state; and nothing goes to the owner as ready until the walk record exists and the advisor and the critic have read it.
 * **Do.** Rounds 2 and 3 of the walk (`RELEASE-CANDIDATE.md` section 3), written up as `b11`; the advisor reads it, then the critic; every built item it covers is marked walked (or reopened) with `python tools/roadmap.py mark`; the open round-2 findings are fixed or triaged "later" in `history/reviews-2026-10-31.md#audit`.
 * **Acceptance.** `b11` exists on the final pair; the advisor and the critic have read it; the built items it covers are marked walked with their proof, or reopened.
 * **Size.** M.
+
+## P0-14 — Gate 1: you try the app on your own phone (owner) — Size S
+* **Order.** Needs: P0-13 [d], P5-01 [d], P1-04 [d], P1-10 [d], P1-16 [d], P2-22 [d]. Why: the first of the owner's three thresholds (D-61, decided with the advisor on 2026-11-05): he tries the app alone, on his own phone, before anything is built for a friend. It needs exactly what makes the app worth trying and safe to update: everything above the walk (the next songs prepared, covers offline, Search offline, a download that shows where it is), the walk itself on the release-candidate pair (P0-13) and the release key (without it his first update forces a reinstall and loses his downloads). Nothing else; **no install guide** (the owner installs an app without one; the guide, P5-07, is for his friend).
+* **Owner's step.** He only taps. Claude gives him the app with one short instruction in the chat and provides the server it talks to. **Which server is decided when this is close:** if it is his homelab he says yes explicitly (D-59: nothing on his homelab without his word); otherwise a test server Claude runs.
+* **What he does.** Installs the app, signs in, uses it as his own player for as long as he likes, and tells Claude what is wrong on the board ("It doesn't work"). Nothing is shared with anybody.
+* **Acceptance.** He has the app on his own phone and has used it; what he reported is on the board.
+* **Size.** S (his time, not counted in the estimate).

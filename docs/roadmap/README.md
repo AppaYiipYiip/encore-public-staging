@@ -24,6 +24,10 @@ It prints: uncommitted board changes, **what the owner checked or reported**, wh
 | **Working now**: what Claude sessions announced | `<clone>/.git/encore-working/*.json` (never committed) | the Claude sessions |
 | The explanation, and the generated list | `docs/08-roadmap.md` | text by hand / list by `tools/check_order.py --write` |
 
+## The three thresholds (D-61)
+
+Three **pink** items in the one list stand between the work and a friend: **P0-14** the owner tries the app on his own phone, **P3-18** he installs his real server himself by clicking (it runs on his homelab), **P3-24** he invites his friend and they jam (he in a PC browser, the friend on a phone in another city). Everything the friend-ready list needs (Jam, the browser version, Android Auto, the widget, crossfade, CD-quality sound, a Data saver, suggestions, lyrics, Year in Music, control from another device) is a need of P3-24, so the order of the list is the order of the road. The Host never needs a terminal: every Host action is a button AND a command (D-61).
+
 ## Now and Later, and what a move carries (D-58)
 
 * **Now** is the one list the owner wants done, in his order; the estimate counts only Now. **Later** is future work to keep in mind and not bother with (the server on ARM, the tablet, the iPhone, the TV, casting, ...), and it is not counted. Both lists are in `order.json`.

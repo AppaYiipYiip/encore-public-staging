@@ -259,7 +259,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** Written when it is drawn.
 
 ## P2-22 — A download shows where it is: the server stage, the phone stage, and why it waits (server + app) — Size M
-* **Order.** Needs: none.
+* **Order.** Needs: P1-17 [d].
 * **Why.** Round 2, found by the owner on 2026-11-03 (`AUDIT` R2-F2): he pressed Download on two playlists (217 and 4 songs) and could not tell
   what was happening: no notification, only "N of M" on the phone and "Waiting for a connection". D-29 puts "download a song, album or playlist"
   in RC1 and forbids silent failures. Measured the same evening on the test server: the *server* needed about **46 minutes** to fetch a 217-song
@@ -287,3 +287,9 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Do.** The server writes `openapi.json` into the repository and a server test fails when the file is out of date; `schemathesis` runs against a test instance in the server job (5xx and schema conformance only, to start); the Dart client's models are checked against the same file; a version field and a rule for breaking changes in `17`.
 * **Acceptance.** Changing a route without regenerating the file fails CI; a contract test finds a deliberately broken response; `17` §3's table is generated from the same file.
 * **Size.** M.
+
+## P2-24 — The app and the server tell each other their versions (app + server) — Size S
+* **Order.** Needs: P3-27 [i]. Why: audit B-29: `17` promises that the app refuses a server whose `apiVersion` major it does not know and says "Update Encore"; `31` CN-27 is Designed with no code and no test. The app reads `apiVersion` only to see that it is not empty. A stranger's server updates by itself while a friend's phone stays on an old app; with a release channel (P3-27) the skew is rarer, never impossible.
+* **Do.** The server answers `minAppVersion` and `apiVersion` (already in `info`); the app compares both ways and shows one sentence with the one button that helps ("Update Encore" / "Ask the owner of <server> to update the server"); a contract test pins the sentence; `31` CN-27 becomes Built.
+* **Acceptance.** An app older than `minAppVersion` and a server newer than the app both show the sentence instead of failing in a screen; the tests exist.
+* **Size.** S.

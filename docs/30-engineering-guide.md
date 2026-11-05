@@ -5,6 +5,8 @@ For everyone who writes or reviews code here, person or agent, **especially some
 
 > **The owner's standing rule** (he has had to repeat it in every session; it applies by default and is never news). Do not consider, choose or suggest the easy option that fixes the problem now but costs **upgradeability, improvement or compatibility** later. Spend the time to engineer the proper answer first: the root cause with proof, the fix at the source, a defensive layer only as a *second* layer that stays correct afterwards. When a stop-gap is truly unavoidable, say so, say what it costs later, and give it a removal trigger, a task for the proper fix and a visible reminder. Never offer "leave it as it is" as an equal option next to the proper one.
 
+> **Two doors (D-61, owner 5 Nov 2026).** Everything a Host does exists twice, as a button and as an `encore` command, and both call the same operation; neither is the expert path and nobody is ever required to open a terminal. A change to a Host action that adds only one door is not finished.
+
 Most *Don'ts* below are something that **actually happened here** (the finding ID, such as A2 or C3, is in brackets and is explained in `01` with the evidence); the rest are guards
 for things that would hurt if they happened (secrets in logs, an unsafe migration). Every *Do* is what the repository does now, or the next step where it says so. The last column
 says what catches a violation:
