@@ -130,7 +130,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 
 ## P1-08 — The player never gets stuck (app) — Size M
 * **Order.** Needs: none.
-* **Status 2026-10-22: code done, tests green, walked on the emulator (`../evidence/2026-10-22-walk-e1-e2-e6.md`).** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer "play this" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).
+* **Status 2026-10-22: code done, tests green, walked on the emulator (`../evidence/README.md#walk-2026-10-22`).** `PlaybackEngine`: a load that never ends is given up after 12 s (`loadTimeout`) with one plain notice and the same song waits to be played again; a newer "play this" ends a stuck load at once (latest wins, `_newGeneration`). Not done: the 3 s limit for local files, and the play/pause-control and frame-cost part (UI lane).
 * **Why.** E1 (stuck after a network loss; play/pause replaced by a 1-px sliver; other taps ignored), E7 (spinner = full-frame cost).
 * **Evidence (deep read, `../26` H40).** One first-in-first-out chain `_run` holds every command; a load waiting on a vanished network
   has no own time limit, so later taps wait behind it; the retry-once / stop-after-3 logic in `_onBackendError` is right but is not

@@ -108,4 +108,4 @@ behind what is here are `docs/11-decision-log.md`, ADR-R19 to R32.
 
 ## Measured on a clean VM (Ubuntu 26.04, 2 vCPU, 3 GB)
 
-See the table filled in by the proof runs: `docs/evidence/c01-installer-clean-vm.md`.
+See the table filled in by the proof runs: `docs/evidence/README.md#c01`.

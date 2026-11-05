@@ -37,6 +37,9 @@ jobs:
         run: |
           bad=$(git ls-files | grep -Ei '(login[^/]*\.txt$|(^|/)credentials?[^/]*\.(txt|md|json)$|cookies[^/]*\.txt$|(^|/)\.env$|\.(apk|aab|keystore|jks|pem)$)' | grep -vi '\.example$' || true)
           if [ -n "$bad" ]; then echo "Forbidden files are tracked:"; echo "$bad"; exit 1; fi
+      # docs/README.md: every markdown file is in the map, and no link breaks. The other rules of tools/check_docs.py still only report.
+      - name: The documents are in the map and their links work
+        run: python -I tools/check_docs.py --strict-rules map,links
       # docs/11 ADR-R41 T2: a row of docs/31 to 34 marked Built has a test (named by its id, or listed and existing). The number may only go down.
       - name: Rows marked Built that no test covers (none on 2026-11-01; a new Built row brings its test)
         run: python -I tools/check_rows.py --max-missing 0

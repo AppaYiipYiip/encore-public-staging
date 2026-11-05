@@ -2,7 +2,8 @@
 """Measures the documentation against its own rules (docs/README.md says what the rules are). REPORT ONLY today: it prints the baseline and exits 0.
 
     python tools/check_docs.py            report
-    python tools/check_docs.py --strict   exit 1 when a rule is broken (the day the baseline is clean; not yet)
+    python tools/check_docs.py --strict   exit 1 when any rule is broken (the day the baseline is clean; not yet)
+    python tools/check_docs.py --strict-rules map,links   exit 1 only for these rules (CI uses this: a new file must be in the map, no link may break)
 
 What it looks at, for every tracked markdown file:
   map      every file is listed in the map of docs/README.md with its kind, and every listed file exists
@@ -34,6 +35,18 @@ ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([a-z]+)\s*\|")
 MENTION = re.compile(r"`([A-Za-z0-9_./-]+\.md)`")
 #: Documents that live outside the repository on purpose (they name the owner's machines): mentioning them is fine.
 OUTSIDE = {"STATUS-2026-10-23.md", "YOUR-NEXT-STEPS.md", "ENCORE-PROJECT-BOOK-2026-11-03.md", "NEXT.md", "ROUND2-LOG.md", "credentials-map.md", "CLAUDE.md"}
+
+
+ARCHIVED = re.compile(r"^## .*· (\S+\.md)\s*$", re.M)
+
+
+def archived_names(files: list[str]) -> set[str]:
+    """Old file names that now head a section of an archive file (docs/evidence/README.md, docs/history/*.md): citations of them still resolve."""
+    names: set[str] = set()
+    for f in files:
+        if f == "docs/evidence/README.md" or f.startswith("docs/history/"):
+            names.update(ARCHIVED.findall((ROOT / f).read_text(encoding="utf-8", errors="replace")))
+    return names
 
 
 def tracked() -> list[str]:
@@ -77,6 +90,7 @@ def main(argv: list[str]) -> int:
     mapped = read_map(readme_text)
     problems: dict[str, list[str]] = {"map": [], "size": [], "stories": [], "links": [], "mentions": []}
     known = set(files)
+    old_names = archived_names(files)
 
     for f in files:
         if f not in mapped:
@@ -104,7 +118,7 @@ def main(argv: list[str]) -> int:
             problems["links"].append(f"{f}: link to {target} points at nothing")
         for mention in sorted(set(MENTION.findall(text))):
             base = mention.rsplit("/", 1)[-1]
-            if base in OUTSIDE or "*" in mention:
+            if base in OUTSIDE or base in old_names or "*" in mention:
                 continue
             here = (ROOT / f).parent
             if any(k == mention or k.endswith("/" + mention) for k in known) or (here / mention).resolve().exists() or (ROOT / "docs" / mention).resolve().exists():
@@ -124,8 +138,14 @@ def main(argv: list[str]) -> int:
             print(f"  {item}")
         if len(items) > 60:
             print(f"  ... and {len(items) - 60} more")
-    print(f"\n{total} problem(s). Report only: this does not fail yet.")
-    return 1 if (total and "--strict" in argv) else 0
+    strict: set[str] = set()
+    if "--strict-rules" in argv:
+        i = argv.index("--strict-rules")
+        if i + 1 < len(argv):
+            strict = set(argv[i + 1].split(","))
+    failing = total if "--strict" in argv else sum(len(problems[r]) for r in strict if r in problems)
+    print(f"\n{total} problem(s). " + (f"{failing} in a strict rule: this fails." if failing else "Nothing in a strict rule; the rest only reports."))
+    return 1 if failing else 0
 
 
 if __name__ == "__main__":

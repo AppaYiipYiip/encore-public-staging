@@ -230,7 +230,7 @@ Rules that go with it:
 2. **Walk a state, not a screen.** The unit is a row of `31` to `34`. A screen with no row behind it is a gap in the paper, and the gap list is simply the screens whose states nobody wrote: add a row first.
 3. **Negative and fault rows are first-class.** For every "happy" row there is a row for *the server does not answer*, *another server answers*, *the line drops mid-song*, *the answer is slow*, *the answer is garbage*; each has an expected line like any other.
 4. **A fix needs its walk repeated.** A Fail closed by a code change is re-walked on the same setup and the second record sits beside the first (same table, a new Got/Verdict pair), so "fixed" is an observation.
-5. **Before / after for any change that touches speed or security** (the first example is `evidence/b03-impostor-and-cold-start.md`): the same setup on the old and the new build, in the same session, and both numbers in the pull request.
+5. **Before / after for any change that touches speed or security** (the first example is `evidence/README.md#b03`): the same setup on the old and the new build, in the same session, and both numbers in the pull request.
 
 Template (copy it):
 

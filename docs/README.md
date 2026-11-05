@@ -17,6 +17,7 @@ There are five kinds of document, and each has one rule. A new document, or a ne
 Rules that follow from this:
 * **Do not append a dated story to a truth document.** A change of fact changes the sentence. A decision goes in the log. A finding or a progress note goes on the board (`roadmap.py note`). What happened on a day goes in git, or in `docs/history/` if it will be needed.
 * **IDs never change.** Files keep their names and numbers; `D-xx`, `ADR-Rxx`, `P*-nn`, `docs/31 CN-1` are cited by code, tests and tools.
+* **No new file for a message, a proof or a record.** Agents and developers talk to each other through **board notes** (`roadmap.py note`), never through a markdown file. A new proof is a new section at the end of `docs/evidence/README.md`; a new history record is a new section in an archive file in `docs/history/`; a progress note is a board note. A new truth document or task file is added to the map below in the same pull request: `tools/check_docs.py` refuses the merge otherwise (the `map` and `links` rules are strict in CI).
 * **Rewrite on touch.** A file marked "clean on touch" below is cleaned by whoever next edits it, in the same pull request.
 * `python tools/check_docs.py` measures all of this (the map is complete, size, dated narrative in truth files, broken links). It reports today and will fail the build once the baseline is clean.
 
@@ -41,6 +42,10 @@ Rules that follow from this:
   ≤ 5 s; nobody waits for background downloads.
 * **Never print, commit or screenshot a password.** Login files live outside the repository.
 * **Say what was measured and on what setup.** "Tests pass" is not "it works".
+
+## How a task file is written
+
+A task has an **Order line** (`* **Order.** Needs: P2-08 [d], ...`: its place in the one list; `python -I tools/check_order.py` must pass and `--write` refreshes the table in `08`), then **Why** (the finding or story it serves), **Context** (files, measured numbers, gotchas), **Do** (the steps, in order), **Don't** (the traps), **Acceptance** (what a person sees, with numbers and the setup of `07` section 2), **Tests** (the levels of `07` section 6, the journeys of section 7), **Evidence in the PR**, **Depends on** and **Size** (S up to a day, M two to three, L four to five; split anything bigger). It holds the definition and nothing about how far it is: that is the board. Before any task: work in this repository; the test server is VM 108 `encore-install-test`, the owner's homelab is hands off; test accounts' login files are in `..\local\logins\` and a password is typed only with `python -I tools/journeys/ui.py typefile PATH` and never printed or photographed.
 
 ## Who does what
 
@@ -102,42 +107,15 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/34-conflicts-and-offline-edits.md` | truth | The life of a queued edit, every pair of operations from two devices, other disagreements, the gaps | keep |
 | `docs/README.md` | entry | This map and the rules for the documents | keep |
 | `docs/design/00-screen-inventory.md` | truth | Every screen and the states each must show | keep |
-| `docs/design/01-brief-three-directions.md` | history | The brief for the three drawn directions (history) | read-only; not instructions |
-| `docs/design/02-direction-choice.md` | history | Which direction was chosen and why (history) | read-only; not instructions |
 | `docs/design/README.md` | entry | How the drawings are organised | keep |
-| `docs/evidence/2026-10-22-walk-e1-e2-e6.md` | evidence | Device walk 2026-10-22: E1, E2, E6 on the emulator (build 100, from the new repo) | keep; cited by the board |
-| `docs/evidence/2026-10-30-ux-batch1.md` | evidence | UX review, batch 1: the build next to the frame (2026-10-30) | keep; cited by the board |
-| `docs/evidence/2026-10-30-ux-batch2-and-drawer.md` | evidence | UX review batch 2, and the drawer walked on an emulator (2026-10-30, night) | keep; cited by the board |
-| `docs/evidence/b01-live-channel-two-phones.md` | evidence | B-01 — The live channel: one person, two phones (2026-10-22, build 113) | keep; cited by the board |
-| `docs/evidence/b02-journey4-two-phones.md` | evidence | B-02 — Journey 4: one person, two phones, an import, a like and an edit (2026-10-23, build 120) | keep; cited by the board |
-| `docs/evidence/b03-impostor-and-cold-start.md` | evidence | B-03 — Another server at the saved address, and the cost of the check (2026-10-24, build 120 before / slice A after) | keep; cited by the board |
-| `docs/evidence/b04-server-away-during-playback.md` | evidence | B-04 — The server goes away while a song is asked for or playing (2026-10-24, G-1, build 120 from `task/G-1-wait-for-the-server`) | keep; cited by the board |
-| `docs/evidence/b05-sign-out-and-a-stale-password.md` | evidence | B-05 — Signing out ends the phone's device on the server; a phone with an old password locked the account (2026-10-24, D-5) | keep; cited by the board |
-| `docs/evidence/b06-no-phone-notifications.md` | evidence | B-06 — No phone notification unless the person asks, and the media controls still show (2026-10-24, ADR-R44) | keep; cited by the board |
-| `docs/evidence/b07-signed-addresses.md` | evidence | B-07 — In Encore mode a song and a picture come by the server's signed address, with no login of the music server in either (2026-10-25, P2-20 slice 2) | keep; cited by the board |
-| `docs/evidence/b08-rewalk-of-main-2026-10-30.md` | evidence | B-08 — A re-walk of what the notes call done, on `main` (2026-10-30) | keep; cited by the board |
-| `docs/evidence/b09-p220b-rewalk-and-first-download.md` | evidence | B-09 — PR #33 (P2-20 slice 2) walked on the branch brought up to date with `main` (2026-10-30) | keep; cited by the board |
-| `docs/evidence/b10-f21-download-of-a-release.md` | evidence | B-10 — F21: Download on a catalogue release, on the build of PR #43 (2026-10-30) | keep; cited by the board |
-| `docs/evidence/c01-installer-clean-vm.md` | evidence | C-01 — The installer on a clean machine (2026-10-22) | keep; cited by the board |
-| `docs/evidence/c02-backup-restore.md` | evidence | C-02 — Backup and restore on real machines (2026-10-23) | keep; cited by the board |
-| `docs/evidence/c03-interrupted-install.md` | evidence | C-03 — An install that is cut short, and the music server's sign-in limit (2026-10-23) | keep; cited by the board |
-| `docs/evidence/c04-ytdlp-self-update.md` | evidence | c04 — The server updates its own yt-dlp (P3-08b, ADR-R39), run for real | keep; cited by the board |
-| `docs/evidence/c05-funnel-on-a-real-server.md` | evidence | c05: `encore funnel on` on a real server, a real Tailscale sign-in, 2026-11-03 | keep; cited by the board |
-| `docs/evidence/c06-install-by-the-guide-bare-vm.md` | evidence | c06: the install by the guide, on a bare machine (3 November 2026) | keep; cited by the board |
-| `docs/evidence/c07-download-notification-ask.md` | evidence | c07: the question about download progress, on an emulator (5 November 2026) | keep; cited by the board |
-| `docs/evidence/c08-the-offline-look.md` | evidence | c08: the lasting offline look and the "Can't reach your server." strip, on an emulator (5 November 2026) | keep; cited by the board |
+| `docs/evidence/README.md` | evidence | All the proofs behind the board's marks, one section per ID (`b01` to `c08` and the dated walks); a new proof is a new section here | append only; cited by the board |
 | `docs/guides/dev-gotchas.md` | guide | Developer gotchas: traps met on this project's Windows PC and the pattern that works | keep |
 | `docs/guides/friend.md` | guide | Using Encore on a friend's server (a one-page guide for the first outside user) | keep |
 | `docs/guides/getting-started-for-developers.md` | guide | Getting started as a developer (read this first) | keep |
 | `docs/guides/install-test.md` | guide | Install Encore on a fresh computer (the install test) | keep |
-| `docs/history/CLOUD-RESUME.md` | history | Resume from the repository alone (written 2026-11-01, the day the weekly usage limit ran out) | read-only; not instructions |
-| `docs/history/DOCS-AUDIT-2026-11-01.md` | history | Docs coherence audit, 2026-10-31 night (two read-only agents, 80 markdown files) | read-only; not instructions |
-| `docs/history/QA-BACKEND-2026-10-31.md` | history | The backend review, 2026-10-30/31: findings, triage and the order to fix them | read-only; not instructions |
-| `docs/history/QA-ROUND1-2026-10-31.md` | history | QA round 1 and the owner's first field test (2026-10-31): findings and their triage | read-only; not instructions |
-| `docs/history/QA-UI-2026-10-31.md` | history | The phone-app walk by a testing agent, 2026-10-30/31: findings and triage | read-only; not instructions |
-| `docs/history/README.md` | history | What a history record is and the index of the moved ones | read-only; not instructions |
-| `docs/history/design-03-owner-review-2026-10-24.md` | history | Design 03 — The owner's review of the three drawings (2026-10-24), one verdict per point | read-only; not instructions |
-| `docs/history/design-04-review-2026-10-30.md` | history | Design 04: the review of every drawn screen against what is built (2026-10-30) | read-only; not instructions |
+| `docs/history/README.md` | history | What a history record is and the index of the archive files | read-only; not instructions |
+| `docs/history/design-reviews.md` | history | The design brief, the direction choice and the two design reviews (24 to 30 Oct 2026) | read-only; not instructions |
+| `docs/history/reviews-2026-10-31.md` | history | Five records: the resume notes, the docs audit and the three QA reviews (31 Oct to 1 Nov 2026) | read-only; not instructions |
 | `docs/roadmap/README.md` | entry | How the roadmap board works: one place per fact, who writes what | keep |
 | `docs/tasks/AUDIT-BUILT-2026-11-05.md` | record | The audit of what is already built: findings with evidence, and the feasibility read | keep |
 | `docs/tasks/AUDIT.md` | plan | What is not finished or only partly (living; its open rows move to the board, then it is archived) | move the open rows to the board, then archive |
@@ -150,7 +128,6 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/tasks/P6-later.md` | plan | The task definitions: P6 — Later (after the first public version; each needs a decision first) | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
 | `docs/tasks/P6-platforms.md` | plan | The task definitions: P6 — The last items: large screens (tablet and browser), TV, iPhone, and what stays parked | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |
 | `docs/tasks/PROPOSED.md` | plan | Ideas that are not scope until the owner says yes | keep |
-| `docs/tasks/README.md` | entry | How the task files are used | keep |
 | `docs/tasks/RELEASE-CANDIDATE.md` | plan | What must be true before the owner is told "ready": the walk checklist and the build log | keep the checklist; move the build log to the board |
 | `docs/tasks/UX-REVIEW.md` | record | The review of every control of the phone app | keep |
 | `server/legacy/encore-fetch/README.md` | legacy | encore-fetch | delete with `server/legacy` (audit B-16) |

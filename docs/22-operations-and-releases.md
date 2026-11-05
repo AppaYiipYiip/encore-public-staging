@@ -25,7 +25,7 @@ YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the 
   server **restarts itself, but only once nothing has gone through it for a minute and never by force**; Docker starts it again on the new copy (`/info` says which
   version runs and which waits). On a fail the server stays on its copy; if the running copy fails the same canary, YouTube is the problem, the release stays eligible
   and the state is `degraded`. Every use of yt-dlp follows the pointer (the playlist reader runs `python -m yt_dlp`, not a `yt-dlp` command). `ENCORE_AUTO_TOOLS=0` switches it off.
-  Run for real on the dev VM, including the failure drills: `evidence/c04-ytdlp-self-update.md`.
+  Run for real on the dev VM, including the failure drills: `evidence/README.md#c04`.
 * If every copy fails the canary, the admin Home says "Songs from YouTube are not working right now; Encore will try again every
   hour", and the app says the same when a catalogue song fails.
 * The same rule is meant for `ytmusicapi`, the PO-token provider (if enabled) and Deno (not built: the first slice is yt-dlp only).
@@ -38,8 +38,8 @@ YouTube changes often; a stale yt-dlp breaks "play anything" for every Host the 
 | Music files | never automatically (Host's choice, ADR-077) | — | GBs |
 * `encore backup` makes one now; `encore restore <file>` checks it, asks, stops the servers, **sets the current files aside** in `before-restore-<time>/` (never deletes them),
   puts the two databases back, starts again and waits until the server answers. The decision and its reasons: `11` ADR-R37; run on real machines, including a move to another
-  computer: `evidence/c02-backup-restore.md`. A backup is also taken before every `encore update`.
-* **Planned, not built:** CI that restores a real backup every night on a fresh server and compares counts (today restore was proved by hand, `evidence/c02-backup-restore.md`).
+  computer: `evidence/README.md#c02`. A backup is also taken before every `encore update`.
+* **Planned, not built:** CI that restores a real backup every night on a fresh server and compares counts (today restore was proved by hand, `evidence/README.md#c02`).
 * Backups contain secrets (`.env` holds the music server's administrator login): stored with owner-only permissions. **Planned, not built:** the admin warning when the backup folder is on
   a share others can read.
 

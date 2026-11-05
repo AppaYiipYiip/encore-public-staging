@@ -34,7 +34,7 @@ merge only when every check has finished, polled by run id, and `main`'s own run
 
 ## Don't
 
-* **Never append a dated story to a truth document** ("on 5 Nov the owner said...", "Done so far", "Status"). A change of fact changes the sentence; a decision goes in the log (`docs/10`, `docs/11`) and is cited by its ID; progress and findings go on the board (`roadmap.py note`); what happened on a day is git's job, or `docs/history/`. Add every new markdown file to the map in `docs/README.md` (`python tools/check_docs.py`).
+* **Never append a dated story to a truth document** ("on 5 Nov the owner said...", "Done so far", "Status"). A change of fact changes the sentence; a decision goes in the log (`docs/10`, `docs/11`) and is cited by its ID; progress and findings go on the board (`roadmap.py note`); what happened on a day is git's job, or `docs/history/`. **Never write a new markdown file to tell another agent or the developer something:** use a board note (`roadmap.py note`). A proof is a new section in `docs/evidence/README.md`, a history record a new section in `docs/history/`. A new truth document or task file is added to the map in `docs/README.md` in the same pull request (`python tools/check_docs.py`; the `map` and `links` rules are strict in CI).
 * **Never commit** passwords, login files, cookies, `.env`, keys, APK/AAB files. The hook refuses them.
 * **Never print, log, screenshot or paste a password.** Type passwords on test devices with `python -I tools/journeys/ui.py typefile <login file>` (it types only the `password:` line and prints nothing).
 * **Never burst requests at YouTube** (at most 10 look-ups per test run, spaced) and never from a Host's home address unless the task says so.
