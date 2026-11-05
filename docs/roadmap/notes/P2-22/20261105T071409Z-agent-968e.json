@@ -1,0 +1,12 @@
+{
+ "id": "20261105T071409Z-agent-968e",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T07:14:09Z",
+ "type": "note",
+ "body": "The raw error text of a failed keep still reaches members: GET refs/{id}/keep and the keep map of PUT saved-albums return work_item.error as 'reason' to anyone (it can hold exception class names and paths). POST /keep/progress no longer does. Fix as its own PR before the app parts: send failed reasons through keeper/failures.describe_failure with host from the role, and never send raw text for queued items to members. The app does not read 'reason', so nothing breaks.",
+ "to": [
+  "agent"
+ ]
+}

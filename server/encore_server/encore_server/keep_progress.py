@@ -43,10 +43,10 @@ class Group:
     refs: tuple[str, ...] = ()
 
 
-def parse_groups(body: dict[str, Any]) -> list[Group]:
-    """The groups a phone asks about, or a `validation` error in words."""
+def parse_groups(body: dict[str, Any], *, allow_empty: bool = False) -> list[Group]:
+    """The groups a phone asks about, or a `validation` error in words. [allow_empty]: an empty list is a real answer (stop watching)."""
     raw = body.get("groups")
-    if not isinstance(raw, list) or not raw or len(raw) > MAX_GROUPS:
+    if not isinstance(raw, list) or (not raw and not allow_empty) or len(raw) > MAX_GROUPS:
         raise ApiError("validation", f"Ask about between 1 and {MAX_GROUPS} downloads at a time.")
     groups: list[Group] = []
     for item in raw:
@@ -184,7 +184,7 @@ def progress(db: Database, scheduler: Scheduler, person: str, *, host: bool, gro
 def _verdict(is_linked: bool, item: dict[str, object] | None, *, host: bool) -> tuple[str, str | None, bool]:
     """One song: which bucket, and for `failed` the sentence and whether trying again can help. Kept in step with `api._keep_state`:
     kept is ready, keeping is keeping, queued is queued, failed is failed, and `none` (finished without a file, cancelled, never tried) is failed for a
-    wanted song. `test_the_buckets_agree_with_the_state_of_one_song_asked_alone_in_all_six_states` walks every situation through both."""
+    wanted song. `test_the_buckets_agree_with_the_state_of_one_song_asked_alone_in_all_seven_situations` walks every situation through both."""
     if is_linked:
         return ("ready", None, False)
     state = item["state"] if item is not None else None

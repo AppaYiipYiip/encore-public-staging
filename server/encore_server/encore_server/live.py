@@ -1,6 +1,7 @@
 """The live channel (docs/17 section 4): one websocket per running app; events make things faster, never correct.
 
-Events (server to app) are `library.changed {cursor}`, `playback.changed {state}`, `device.takeover {by}`, later `import.progress`.
+Events (server to app) are `library.changed {cursor}`, `playback.changed {state}`, `device.takeover {by}`, `keep.progress {groups, youtube, serverTime}` (to the one device that
+watches, `keep_watch.py`), later `import.progress`.
 Writes happen in worker threads and the sockets live on the event loop, so [Hub.publish] is safe to call from any thread.
 """
 
@@ -59,6 +60,11 @@ class Hub:
         for connection in targets:
             connection.ended = True
             loop.call_soon_threadsafe(self._offer, connection, END)
+
+    def connected(self, person: str, device: str) -> bool:
+        """Is this device listening right now?"""
+        with self._lock:
+            return any(c.device == device and not c.ended for c in self._connections.get(person, ()))
 
     def count(self, person: str | None = None) -> int:
         with self._lock:

@@ -125,7 +125,7 @@ def test_a_song_the_server_has_is_ready_even_if_it_is_also_on_the_phone(rig: Rig
     assert "onPhone" not in group and "on_phone" not in group
 
 
-def test_the_buckets_agree_with_the_state_of_one_song_asked_alone_in_all_six_states(rig: Rig) -> None:
+def test_the_buckets_agree_with_the_state_of_one_song_asked_alone_in_all_seven_situations(rig: Rig) -> None:
     """`GET refs/{id}/keep` and the batch answer must not tell two stories. The one place they differ in words is on purpose: for a song somebody WANTS,
     the single-song call says `none` (nothing queued, which is what `save_album` and `keep_now` act on) and the batch says `failed` (so the phone names it
     and offers Retry)."""

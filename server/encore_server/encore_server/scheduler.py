@@ -226,6 +226,15 @@ class Scheduler:
             ).fetchone()
         return dict(row) if row is not None else None
 
+    def activity(self, kind: str) -> tuple[int, int]:
+        """`(how many items of this kind, when one last changed)`: two numbers that differ whenever anything of this kind was queued, started, finished,
+        failed, cancelled or promoted. A watcher compares them to know whether a recount can give a new answer, without recounting."""
+        with self._db.read() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n, COALESCE(MAX(updated_at), 0) AS at FROM work_item WHERE kind = ?", (kind,)
+            ).fetchone()
+        return int(row["n"]), int(row["at"])
+
     def states_of(self, kind: str, ref_ids: list[str]) -> dict[str, dict[str, object]]:
         """[state_of] for many songs in a few queries: the newest item of this kind for each song that has one (a song with none is absent).
         This is what a phone asks for to show how a 200-song download is going, so it must not cost one query per song."""

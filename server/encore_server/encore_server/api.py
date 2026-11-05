@@ -55,6 +55,7 @@ from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
 from .keep_progress import MAX_RELEASE_SONGS, parse_groups, progress
+from .keep_watch import KeepWatch, fingerprint
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import END, Hub
@@ -99,6 +100,8 @@ class Services:
     identity: ServerIdentity | None = None
     #: The music server as this server's own account: kept songs and covers are passed on through it, so a phone needs no login of the music server.
     music: NavidromeClient | None = None
+    #: Tells a device how its downloads are going (`PUT keep/watch`, the live event `keep.progress`); `None` when this server does not keep songs.
+    keep_watch: KeepWatch | None = None
 
 
 def services(request: Request) -> Services:
@@ -222,10 +225,10 @@ def _ok(payload: dict[str, Any] | None = None, status: int = 200) -> JSONRespons
 router = APIRouter(prefix="/encore/api/v1")
 
 
-def _youtube_status(svc: Services) -> dict[str, Any]:
+def _youtube_status(youtube: YoutubeSource | None) -> dict[str, Any]:
     """`{state: off|ok|resting, resumesInSec}`: whether YouTube is holding this server back, and for how long (the same in `info` and in the keep progress)."""
-    if svc.youtube is not None and hasattr(svc.youtube, "status"):
-        return svc.youtube.status()
+    if youtube is not None and hasattr(youtube, "status"):
+        return youtube.status()
     return {"state": "off", "resumesInSec": 0}
 
 
@@ -248,7 +251,7 @@ def info(request: Request, challenge: str | None = None) -> JSONResponse:
             "serverVersion": __version__,
             "name": svc.settings.server_name,
             "features": [*FEATURES, *(["keep"] if svc.keeper is not None else [])],
-            "youtube": _youtube_status(svc),
+            "youtube": _youtube_status(svc.youtube),
             **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
     )
@@ -660,7 +663,26 @@ def keep_progress(
         raise ApiError("not_found", "This server does not keep songs.")
     groups = parse_groups(body)
     answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=groups)
-    return _ok({"groups": answer, "youtube": _youtube_status(svc)})
+    return _ok({"groups": answer, "youtube": _youtube_status(svc.youtube)})
+
+
+@router.put("/keep/watch")
+def keep_watch(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """This device says which pinned downloads it is watching (the same groups as `POST keep/progress`; an empty list stops watching). The reply is the
+    current answer, so a phone that has just connected needs no second call; from then on the server pushes `keep.progress` to this device when
+    the answer changes. Only a signed-in device (it has a live connection to be told on)."""
+    svc = services(request)
+    if svc.scheduler is None or svc.keep_watch is None or not svc.scheduler.handles("keep"):
+        raise ApiError("not_found", "This server does not keep songs.")
+    if p.device_id is None:
+        raise ApiError("validation", "Only a signed-in device can ask to be told.")
+    groups = parse_groups(body, allow_empty=True)
+    answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=groups) if groups else []
+    youtube = _youtube_status(svc.youtube)
+    svc.keep_watch.watch(p.person_id, p.device_id, groups, fingerprint(answer, youtube))
+    return _ok({"groups": answer, "youtube": youtube})
 
 
 @router.get("/refs/{ref_id}/keep")
@@ -1341,6 +1363,11 @@ def create_app(
         identity = load_or_create(conn)
     notifications = Notifications(database, hub)
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
+    keep_watch = (
+        KeepWatch(database, scheduler, hub, lambda: _youtube_status(youtube))
+        if scheduler is not None and scheduler.handles("keep")
+        else None
+    )
     the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
 
     def ended(person_id: str, user: str | None) -> None:
@@ -1384,9 +1411,13 @@ def create_app(
                 linker.start()
             if tools is not None:
                 tools.start()
+            if keep_watch is not None:
+                keep_watch.start()
         try:
             yield
         finally:
+            if keep_watch is not None:
+                keep_watch.stop()
             if tools is not None:
                 tools.stop()
             if linker is not None:
@@ -1411,6 +1442,7 @@ def create_app(
         tools=tools,
         identity=identity,
         music=client,
+        keep_watch=keep_watch,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
