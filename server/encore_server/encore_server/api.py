@@ -54,7 +54,7 @@ from .errors import ApiError
 from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
-from .keep_progress import MAX_RELEASE_SONGS, parse_groups, progress
+from .keep_progress import MAX_RELEASE_SONGS, parse_group, parse_groups, progress, retryable_refs
 from .keep_watch import KeepWatch, fingerprint
 from .keeper.failures import describe_failure, describe_wait
 from .keeper.keeper import Keeper, KeepSettings
@@ -669,6 +669,29 @@ def keep_progress(
     groups = parse_groups(body)
     answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=groups)
     return _ok({"groups": answer, "youtube": _youtube_status(svc.youtube)})
+
+
+@router.post("/keep/retry")
+def keep_retry(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """Asks the server again for the songs of ONE download that it could not get (the Retry button under "3 songs did not come"): the failed ones
+    that asking again can help, first in line, the way `PUT saved-albums` and `POST refs/{id}/keep` ask. A song YouTube does not have is left alone.
+    The answer is that download as `keep/progress` would give it now, and how many songs were asked for. A download the person does not have is
+    `not_found`, exactly as one that does not exist."""
+    svc = services(request)
+    if svc.scheduler is None or not svc.scheduler.handles("keep"):
+        raise ApiError("not_found", "This server does not keep songs.")
+    group = parse_group(body)
+    again = retryable_refs(svc.db, svc.scheduler, p.person_id, group)
+    if again is None:
+        raise ApiError("not_found", "That download does not exist (any more).")
+    with svc.db.tx() as conn:
+        want_kept(svc, conn, p.person_id, again)
+    for ref_id in again:
+        svc.scheduler.promote("keep", ref_id)
+    answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=[group])
+    return _ok({"retried": len(again), "group": answer[0] if answer else None, "youtube": _youtube_status(svc.youtube)})
 
 
 @router.put("/keep/watch")

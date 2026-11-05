@@ -63,8 +63,8 @@ class Rig:
             conn.execute("DELETE FROM work_item WHERE kind = 'keep' AND ref = ?", (ref,))
 
 
-@pytest.fixture()
-def rig(tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch) -> Iterator[Rig]:
+def build_rig(tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch) -> Iterator[Rig]:
+    """A server that keeps songs (a fake YouTube and music server), for these tests and the neighbours that build on them."""
     music = tmp_path / "music"
     music.mkdir()
     settings = Settings(
@@ -78,6 +78,11 @@ def rig(tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr("encore_server.keeper.keeper.run_command", fake_ffmpeg)
     with TestClient(create_app(settings, verifier=verifier, youtube=FakeSource(), navidrome=Configured(music))) as client:  # type: ignore[arg-type]
         yield Rig(client)
+
+
+@pytest.fixture()
+def rig(tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch) -> Iterator[Rig]:
+    yield from build_rig(tmp_path, verifier, monkeypatch)
 
 
 def only(answer: dict[str, Any]) -> dict[str, Any]:

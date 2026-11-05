@@ -43,25 +43,27 @@ class Group:
     refs: tuple[str, ...] = ()
 
 
+def parse_group(item: object) -> Group:
+    """One download as a phone names it, or a `validation` error in words."""
+    if not isinstance(item, dict) or item.get("kind") not in KINDS:
+        raise ApiError("validation", f"A download is a playlist, a release or the liked songs ({', '.join(KINDS)}).")
+    gid = item.get("id")
+    if not isinstance(gid, str) or not gid or len(gid) > 100:
+        raise ApiError("validation", "Every download needs its id.")
+    named = item.get("refs")
+    if named is None:
+        named = []
+    if not isinstance(named, list) or len(named) > MAX_RELEASE_SONGS or not all(isinstance(r, str) for r in named):
+        raise ApiError("validation", f"A release names its songs as a list of at most {MAX_RELEASE_SONGS} song ids.")
+    return Group(item["kind"], gid, tuple(dict.fromkeys(named)))
+
+
 def parse_groups(body: dict[str, Any], *, allow_empty: bool = False) -> list[Group]:
     """The groups a phone asks about, or a `validation` error in words. [allow_empty]: an empty list is a real answer (stop watching)."""
     raw = body.get("groups")
     if not isinstance(raw, list) or (not raw and not allow_empty) or len(raw) > MAX_GROUPS:
         raise ApiError("validation", f"Ask about between 1 and {MAX_GROUPS} downloads at a time.")
-    groups: list[Group] = []
-    for item in raw:
-        if not isinstance(item, dict) or item.get("kind") not in KINDS:
-            raise ApiError("validation", f"A download is a playlist, a release or the liked songs ({', '.join(KINDS)}).")
-        gid = item.get("id")
-        if not isinstance(gid, str) or not gid or len(gid) > 100:
-            raise ApiError("validation", "Every download needs its id.")
-        named = item.get("refs")
-        if named is None:
-            named = []
-        if not isinstance(named, list) or len(named) > MAX_RELEASE_SONGS or not all(isinstance(r, str) for r in named):
-            raise ApiError("validation", f"A release names its songs as a list of at most {MAX_RELEASE_SONGS} song ids.")
-        groups.append(Group(item["kind"], gid, tuple(dict.fromkeys(named))))
-    return groups
+    return [parse_group(item) for item in raw]
 
 
 def _chunks(items: list[str]) -> list[list[str]]:
@@ -133,8 +135,10 @@ def _named(conn: sqlite3.Connection, ref_ids: list[str]) -> dict[str, tuple[str,
     return out
 
 
-def progress(db: Database, scheduler: Scheduler, person: str, *, host: bool, groups: list[Group]) -> list[dict[str, Any]]:
-    """The answer for these groups (those the person has), in the order asked. [host]: the person is the Host, who reads causes."""
+def _judge(
+    db: Database, scheduler: Scheduler, person: str, *, host: bool, groups: list[Group]
+) -> tuple[list[tuple[Group, list[str]]], dict[str, tuple[str, str | None, bool]]]:
+    """The groups the person has, with their songs, and the verdict on every one of those songs: ref -> (bucket, reason, retry)."""
     with db.read() as conn:
         found = [(g, m) for g in groups if (m := members(conn, person, g)) is not None]
     every = list(dict.fromkeys(r for _, m in found for r in m))
@@ -143,9 +147,22 @@ def progress(db: Database, scheduler: Scheduler, person: str, *, host: bool, gro
     items = scheduler.states_of("keep", every)
     with db.read() as conn:
         linked = _linked(conn, every)
-        verdict: dict[str, tuple[str, str | None, bool]] = {}  # ref -> (bucket, reason, retry)
-        for ref_id in every:
-            verdict[ref_id] = _verdict(ref_id in linked, items.get(ref_id), host=host)
+    return found, {ref_id: _verdict(ref_id in linked, items.get(ref_id), host=host) for ref_id in every}
+
+
+def retryable_refs(db: Database, scheduler: Scheduler, person: str, group: Group) -> list[str] | None:
+    """The songs of one group that Retry should ask for again: failed, and not a kind of failure that cannot change (a song YouTube does not have).
+    `None` when the person has no such group."""
+    found, verdict = _judge(db, scheduler, person, host=False, groups=[group])
+    if not found:
+        return None
+    return [ref_id for ref_id in found[0][1] if verdict[ref_id][0] == "failed" and verdict[ref_id][2]]
+
+
+def progress(db: Database, scheduler: Scheduler, person: str, *, host: bool, groups: list[Group]) -> list[dict[str, Any]]:
+    """The answer for these groups (those the person has), in the order asked. [host]: the person is the Host, who reads causes."""
+    found, verdict = _judge(db, scheduler, person, host=host, groups=groups)
+    with db.read() as conn:
         out: list[dict[str, Any]] = []
         for group, ref_ids in found:
             buckets = {"ready": 0, "keeping": 0, "queued": 0, "failed": 0}
