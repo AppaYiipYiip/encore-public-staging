@@ -10,6 +10,7 @@ import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
 import '../../domain/album_names.dart';
+import '../downloads/download_notifications_prompt.dart';
 import '../downloads/download_providers.dart';
 import '../instant/release_save.dart';
 import '../providers.dart';
@@ -235,6 +236,8 @@ class _TrackMenu extends ConsumerWidget {
                   unawaited(ref
                       .read(downloadActionsProvider)
                       .pin(PinTargetType.track, track.id));
+                  // Before the menu closes: the question takes the root navigator now, because the menu's own context is gone a moment later.
+                  unawaited(askAboutDownloadNotifications(context, ref));
                   close();
                   toast('Downloading "${track.title}" for offline listening');
                 },

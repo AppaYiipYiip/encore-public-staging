@@ -294,6 +294,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   the real reason for any wait on the places a person looks (the Library rows, the playlist or album header, Settings > Downloads & storage);
   **drawn first**. (3) Notifications: ask for the permission once, in context, at the first Download, and only to show progress. Decided by the owner on 2026-11-03 (D-52: yes, once, at the first Download): it switches on no news alert, and ADR-R44 is amended by that one exception. (4) A song that failed says
   which one and why, with Retry.
+* **Status (5 Nov 2026).** **Part (3) is built** (the question about download progress: `app/lib/features/downloads/download_notifications_prompt.dart`, `askForDownloadNotificationsOnce` in `app/lib/app/notifications.dart`; drawn first as S-92 "notifications for download progress"; tests; a smoke test on an emulator, `docs/evidence/c07-download-notification-ask.md`): **built, not walked**. **Parts (1), (2) and (4) are not built:** they wait for their drawing (the server stage, the two stages and the reason for a wait, a failed song), drawn together with the offline state P1-15. So this item is **not** marked built.
 * **Don't.** Poll one request per song. Change the default of the news alerts.
 * **Acceptance.** Importing and downloading a 200-song playlist on a fresh install: at every moment a person can say how many songs the server
   has ready, how many are on the phone and why anything waits; the notification appears after the one permission prompt; in airplane mode the

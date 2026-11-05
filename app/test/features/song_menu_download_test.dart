@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart' show Value;
+import 'package:encore/app/notifications.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/common/widgets.dart';
+import 'package:encore/features/downloads/download_notifications_prompt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -73,6 +75,43 @@ void main() {
   });
 
   testWidgets(
+      'Download in the song menu asks once about download progress after the menu has closed; "Not now" is final (D-52)',
+      (tester) async {
+    final phone = _AskingNotifications();
+    final app = await pumpApp(tester,
+        size: const Size(390, 1400),
+        overrides: [localNotificationsProvider.overrideWithValue(phone)]);
+    await open(tester, '/home/album/al1');
+    await longPressFirstSong(tester);
+
+    await tester.tap(find.text('Download'));
+    await settle(tester);
+
+    final pins = await app.db.select(app.db.pins).get();
+    expect(pins.map((p) => (p.targetType, p.targetId)), [('track', 'al1-t1')],
+        reason: 'the download started first');
+    expect(find.text('Add to playlist'), findsNothing,
+        reason: 'the menu has closed');
+    expect(find.text(DownloadNotificationsPage.title), findsOneWidget,
+        reason: 'and the question still came, although the menu is gone');
+    expect(phone.asked, 0, reason: 'the phone is asked only on "Allow"');
+
+    await tester.tap(find.text('Not now'));
+    await settle(tester);
+    expect(find.text(DownloadNotificationsPage.title), findsNothing);
+
+    // The next Download, from another song's menu: the download goes ahead and nothing is asked.
+    await tester.longPress(find.byType(TrackTile).at(1));
+    await settle(tester);
+    await tester.tap(find.text('Download'));
+    await settle(tester);
+    expect(find.text(DownloadNotificationsPage.title), findsNothing);
+    expect(phone.asked, 0);
+    expect((await app.db.select(app.db.pins).get()).length, 2);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
       'a song with its own download offers Remove download, and choosing it takes it off',
       (tester) async {
     final app = await pumpApp(tester, size: const Size(390, 1400));
@@ -130,4 +169,18 @@ void main() {
         reason: 'it would not leave the phone: the playlist still wants it');
     await closeApp(tester, app.db);
   });
+}
+
+/// A phone that has not been asked yet (Android 13 or newer, permission not granted).
+class _AskingNotifications extends LocalNotifications {
+  int asked = 0;
+
+  @override
+  Future<bool> areAllowed() async => false;
+
+  @override
+  Future<bool> requestPermission() async {
+    asked++;
+    return true;
+  }
 }

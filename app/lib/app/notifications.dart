@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:background_downloader/background_downloader.dart' as downloader
+    show FileDownloader, PermissionStatus, PermissionType;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,6 +83,22 @@ class LocalNotifications implements AlertSink {
     }
   }
 
+  /// Whether there is nothing to ask: `true` below Android 13 (no question exists there) and once the permission is granted; `false` on Android 13+
+  /// while it is not granted. Asked of the downloader's own permission service (the one whose progress notification this is for), which answers
+  /// "granted" below Android 13. When it cannot be known the answer is `true`: a question is never asked on a guess.
+  Future<bool> areAllowed() async {
+    try {
+      final status = await downloader.FileDownloader()
+          .permissions
+          .status(downloader.PermissionType.notifications);
+      return status != downloader.PermissionStatus.denied &&
+          status != downloader.PermissionStatus.undetermined;
+    } on Object catch (error) {
+      Log.debug('notify', 'permission status unavailable: $error');
+      return true;
+    }
+  }
+
   @override
   Future<void> show(AlertNotification notification) async {
     await init();
@@ -135,6 +153,35 @@ Future<bool> askForNotificationsOnce(
     return true;
   } on Object catch (error) {
     Log.debug('notify', 'permission prompt skipped: $error');
+    return false;
+  }
+}
+
+/// The flag of the download-progress question: its own key, independent of the news-alert question's [_kAsked].
+const String _kDownloadAsked = 'encore.downloadNotificationsAsked';
+
+/// The one question about download progress (D-52, drawn as S-92): **once**, the first time the person presses Download, with our own sentence
+/// first. Its own flag, independent of the news-alert question above: the two never use each other up.
+///
+/// * Nothing to ask (below Android 13, or already granted): `false`, and the flag is left alone.
+/// * Otherwise the flag is set **before** anything is shown, so the question is used up even when the person says "Not now": never asked twice.
+/// * [explain] shows our sentence and answers `true` for "Allow"; on "Not now" the phone's own question is not shown.
+///
+/// The download itself never waits for this: callers start it first and do not await the answer.
+Future<bool> askForDownloadNotificationsOnce(
+  LocalNotifications notifications, {
+  required Future<bool> Function() explain,
+}) async {
+  try {
+    if (await notifications.areAllowed()) return false;
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_kDownloadAsked) ?? false) return false;
+    await prefs.setBool(_kDownloadAsked, true);
+    if (!await explain()) return false;
+    await notifications.requestPermission();
+    return true;
+  } on Object catch (error) {
+    Log.debug('notify', 'download notification question skipped: $error');
     return false;
   }
 }

@@ -1,0 +1,9 @@
+{
+ "id": "20261105T032428Z-agent-a6a6",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T03:24:28Z",
+ "type": "note",
+ "body": "Part 3 (the question about download progress, D-52) is built in the pull request that adds app/lib/features/downloads/download_notifications_prompt.dart: built, not walked (a smoke test on an emulator, docs/evidence/c07-download-notification-ask.md). Parts 1, 2 and 4 (the server stage, the two stages and the reason for a wait, a failed song with Retry) are NOT built: they wait for their drawing, to be drawn together with the offline state P1-15. This item is therefore NOT marked built, and P0-13 still depends on it."
+}

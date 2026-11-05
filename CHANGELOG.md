@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* The first time you press Download, Encore asks once, in plain words, whether it may show how far your downloads have got (Android 13 and newer); say "Not now" and it never asks again, and the download goes ahead either way. No news or alerts are sent unless you switch them on in Settings.
 * Songs the music server could not file under an album no longer show up as an album called "[Unknown Album]" with a grey cover: Home leaves that out, and the lists, the artist page, the player and the lock screen show them as songs, with the one name "Songs without an album" where a name is needed.
 * An Encore server never offers the old "Get new music" request page, whatever the "Play songs your server does not have" switch says.
 * The music server's door on the internet now slows wrong passwords like every other door (a stranger could try 65 a second); an app that sends only a plain password cannot sign in through the public address.

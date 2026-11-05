@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
+import '../downloads/download_notifications_prompt.dart';
 import '../downloads/download_providers.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
@@ -174,6 +175,10 @@ class DownloadButton extends ConsumerWidget {
                   ? 'Nothing to download yet. Songs you add to $name will download.'
                   : 'Downloading $name for offline listening')),
         ));
+      // The first Download asks, once, whether to show its progress (D-52). The download has already started and does not wait for the answer.
+      if (problem == null && !nothing && context.mounted) {
+        unawaited(askAboutDownloadNotifications(context, ref));
+      }
       return;
     }
 

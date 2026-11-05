@@ -96,7 +96,7 @@ A new screen is drawn at **C** and **X** before it is built (**M and T are parke
 |----|--------|-------|--------|---------|---|
 | S-90 | **Connection strip**: one calm sentence for every outage (`../31` CN-1, D-45): "You're offline. Downloaded music still plays." or, with nothing downloaded, "You're offline. Nothing can play until you reconnect."; an address that answers as another server: "Another server answers at <host>." (O-6); a Jam that is listening again: "Reconnecting to the Jam…" | `connection_banner.dart` | O and U say the same sentence; W (another server answers) says "Another server answers at <host>." (`../31` O-6); Jam reconnecting; a cross to dismiss it, no Try again; said once per outage, gone by itself after 5 s | C, X, T | |
 | S-91 | **Failed edits** (`34`) | `failed_edits.dart` | E, one, several, retry | C | |
-| S-92 | **A permission is needed** (notifications, camera for a QR, storage) | platform, with our sentence before | asked, refused once, refused for ever (how to allow it) | C | |
+| S-92 | **A permission is needed** (notifications, camera for a QR, storage) | platform, with our sentence before | asked, refused once, refused for ever (how to allow it); **notifications for download progress: asked once, the first time the person presses Download (D-52; drawn 5 Nov 2026), "Not now" or the phone's "Don't allow" ends it with no second question** | C | |
 | S-93 | **Update needed** (the server needs a newer app, or the app a newer server) | `shrink_notice.dart` partly | the app is too old, the server is too old | C, X, T | |
 | S-94 | **Lock screen, notification and car** | platform (`encore_audio_handler.dart`) | playing, paused, B, cannot play | platform | |
 
