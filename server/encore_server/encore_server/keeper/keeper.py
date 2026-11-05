@@ -45,6 +45,11 @@ TOO_LONG_BEFORE = "longer than "
 TOO_LONG_AFTER = " minutes, so it is played but not kept"
 NOT_IN_MUSIC_FOLDER = "the file is not inside the music folder"
 MUSIC_SERVER_DID_NOT_FIND = "The music server has not found the saved file yet. Check that its library includes the music folder."
+#: ...and the reasons a keep WAITS with (the item stays queued with this as its error).
+RESTING = "YouTube is being given a rest"
+NOT_ANSWERING_BEFORE = "YouTube is not answering ("
+LOW_DISK_BEFORE = "less than "
+LOW_DISK_AFTER = " GB free, so nothing more is kept for now"
 
 
 class Source(Protocol):
@@ -138,13 +143,13 @@ class Keeper:
         s = self._settings
         resting = self._source.resting_for()
         if resting > 0:
-            raise Retry("YouTube is being given a rest", after_s=resting)
+            raise Retry(RESTING, after_s=resting)
         duration_ms = ref.get("durationMs")
         if isinstance(duration_ms, int) and duration_ms > s.max_minutes * 60_000:
             raise GiveUp(f"{TOO_LONG_BEFORE}{s.max_minutes}{TOO_LONG_AFTER}")
         s.root.mkdir(parents=True, exist_ok=True)
         if free_gb(s.root) < s.min_free_gb:
-            raise Retry(f"less than {s.min_free_gb:g} GB free, so nothing more is kept for now", after_s=1800)
+            raise Retry(f"{LOW_DISK_BEFORE}{s.min_free_gb:g}{LOW_DISK_AFTER}", after_s=1800)
         stem = self._work / f"keep-{item.id}"
         downloaded = self._download(ref, stem)
         try:
@@ -162,7 +167,7 @@ class Keeper:
                 raise GiveUp(GIVE_UP[error.code]) from error
             if error.code in _REST:
                 raise Retry(
-                    f"YouTube is not answering ({error.code})", after_s=max(_REST[error.code], self._source.resting_for())
+                    f"{NOT_ANSWERING_BEFORE}{error.code})", after_s=max(_REST[error.code], self._source.resting_for())
                 ) from error
             raise
 

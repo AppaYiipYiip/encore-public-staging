@@ -56,6 +56,7 @@ from .ids import is_id, now_ms
 from .imports.service import ImportService
 from .keep_progress import MAX_RELEASE_SONGS, parse_groups, progress
 from .keep_watch import KeepWatch, fingerprint
+from .keeper.failures import describe_failure, describe_wait
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import END, Hub
@@ -624,7 +625,9 @@ def get_ref(ref_id: str, request: Request, p: Principal = Depends(get_principal)
 # ------------------------------------------------------------------------------------------------ the audio of a ref
 
 
-def _keep_state(svc: Services, conn: Any, ref_id: str) -> dict[str, Any]:
+def _keep_state(svc: Services, conn: Any, ref_id: str, *, host: bool = False) -> dict[str, Any]:
+    """How the server is getting one song. The `reason` is a sentence for the person who asks (`keeper/failures.py`): the Host reads the cause, anybody
+    else the plain fact, and never the raw text the keeper stored (it can name an exception, a file or a folder)."""
     linked = conn.execute("SELECT 1 FROM song_file WHERE ref = ? AND navidrome_song_id IS NOT NULL LIMIT 1", (ref_id,)).fetchone()
     if linked is not None:
         return {"state": "kept"}
@@ -634,7 +637,9 @@ def _keep_state(svc: Services, conn: Any, ref_id: str) -> dict[str, Any]:
     if item is None or item["state"] in ("cancelled", "done"):
         return {"state": "none"}
     state = {"queued": "queued", "running": "keeping", "failed": "failed"}.get(str(item["state"]), "queued")
-    return {"state": state, **({"reason": item["error"]} if item["error"] else {})}
+    error = str(item["error"]) if item["error"] else None
+    reason = describe_failure(error, host=host).reason if state == "failed" else describe_wait(error, host=host)
+    return {"state": state, **({"reason": reason} if reason else {})}
 
 
 @router.post("/refs/{ref_id}/keep")
@@ -649,7 +654,7 @@ def keep_now(ref_id: str, request: Request, p: Principal = Depends(get_principal
     if svc.scheduler is not None:
         svc.scheduler.promote("keep", ref_id)
     with svc.db.read() as conn:
-        return _ok(_keep_state(svc, conn, ref_id))
+        return _ok(_keep_state(svc, conn, ref_id, host=p.role == "owner"))
 
 
 @router.post("/keep/progress")
@@ -691,7 +696,7 @@ def keep_state(ref_id: str, request: Request, p: Principal = Depends(get_princip
     with svc.db.read() as conn:
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
-        return _ok(_keep_state(svc, conn, ref_id))
+        return _ok(_keep_state(svc, conn, ref_id, host=p.role == "owner"))
 
 
 @router.get("/refs/{ref_id}/stream-url")
@@ -991,7 +996,7 @@ def save_album(
     if changed:
         _changed(svc, p, cursor)
     with svc.db.read() as conn:
-        keep = {ref_id: _keep_state(svc, conn, ref_id) for ref_id in ref_ids}
+        keep = {ref_id: _keep_state(svc, conn, ref_id, host=p.role == "owner") for ref_id in ref_ids}
     return _ok({"changed": changed, "cursor": str(cursor), "keep": keep})
 
 

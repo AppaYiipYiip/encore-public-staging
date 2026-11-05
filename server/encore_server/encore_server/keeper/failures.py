@@ -9,7 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .keeper import GIVE_UP, MUSIC_SERVER_DID_NOT_FIND, NOT_IN_MUSIC_FOLDER, TOO_LONG_AFTER, TOO_LONG_BEFORE
+from .keeper import (
+    GIVE_UP,
+    LOW_DISK_AFTER,
+    LOW_DISK_BEFORE,
+    MUSIC_SERVER_DID_NOT_FIND,
+    NOT_ANSWERING_BEFORE,
+    NOT_IN_MUSIC_FOLDER,
+    RESTING,
+    TOO_LONG_AFTER,
+    TOO_LONG_BEFORE,
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +64,23 @@ def describe_failure(error: str | None, *, host: bool) -> Failure:
     if host and text:
         return Failure(f"Something went wrong: {text[:200].rstrip('.')}.", True)
     return Failure(_OTHER, True)
+
+
+def describe_wait(error: str | None, *, host: bool) -> str | None:
+    """Why a song that is still queued is waiting, from the error the scheduler stored with it (`None` when there is nothing worth saying).
+    The Host reads the cause; a member the plain fact, and nothing at all for what is the server's own business."""
+    text = (error or "").strip()
+    if not text:
+        return None
+    if text == RESTING:
+        return "YouTube is resting."
+    if text.startswith(NOT_ANSWERING_BEFORE):
+        return "YouTube is not answering."
+    if text.startswith(LOW_DISK_BEFORE) and text.endswith(LOW_DISK_AFTER):
+        return "The server's disk is nearly full, so nothing more is kept for now." if host else "The server has no room for now."
+    if text == MUSIC_SERVER_DID_NOT_FIND:
+        return _NOT_SEEN[1] if host else "The server could not finish saving it yet."
+    return f"Something went wrong, trying again: {text[:200].rstrip('.')}." if host else None
 
 
 def not_fetched() -> Failure:

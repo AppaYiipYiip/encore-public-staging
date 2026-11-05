@@ -4,6 +4,7 @@ and nothing leaking about what another person has."""
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -480,3 +481,87 @@ def test_the_newest_item_of_each_song_is_the_one_reported(rig: Rig) -> None:
 
     assert states[older]["state"] == "queued" and states[newer]["state"] == "queued"
     assert "sr_" + "0" * 26 not in states, "a song with no item is simply absent"
+
+
+# ------------------------------------------------------------------------------------------------ the single-song call speaks the same way
+
+
+def _reason_of(rig: Rig, user: str, ref: str) -> str | None:
+    """What `GET refs/{id}/keep` tells this person about the song (`None` when it tells nothing)."""
+    body = rig.client.get(f"{V1}/refs/{ref}/keep", params=creds(user)).json()
+    return body.get("reason")  # type: ignore[no-any-return]
+
+
+def test_a_member_is_never_told_the_raw_error_of_a_failed_keep_by_the_single_song_call(rig: Rig) -> None:
+    (ref,) = rig.songs("marwa", "Odd")
+    rig.client.put(f"{V1}/likes/{ref}", params=creds("nina"))
+    rig.set_item(ref, "failed", "OperationalError: unable to open database file /srv/encore/state.db")
+
+    assert _reason_of(rig, "nina", ref) == "Something went wrong on the server."
+    assert (
+        _reason_of(rig, "marwa", ref)
+        == "Something went wrong: OperationalError: unable to open database file /srv/encore/state.db."
+    )
+
+
+@pytest.mark.parametrize(
+    ("stored", "host", "member"),
+    [
+        ("YouTube is being given a rest", "YouTube is resting.", "YouTube is resting."),
+        ("YouTube is not answering (blocked)", "YouTube is not answering.", "YouTube is not answering."),
+        (
+            "less than 10 GB free, so nothing more is kept for now",
+            "The server's disk is nearly full, so nothing more is kept for now.",
+            "The server has no room for now.",
+        ),
+        (
+            "RuntimeError: ffmpeg is not installed",
+            "Something went wrong, trying again: RuntimeError: ffmpeg is not installed.",
+            None,
+        ),
+        (None, None, None),
+    ],
+)
+def test_a_song_that_waits_says_why_in_words_for_the_one_who_asks(
+    rig: Rig, stored: str | None, host: str | None, member: str | None
+) -> None:
+    (ref,) = rig.songs("marwa", "Waiting")
+    rig.client.put(f"{V1}/likes/{ref}", params=creds("nina"))
+    with rig.svc.db.tx() as conn:
+        conn.execute("UPDATE work_item SET error = ? WHERE kind = 'keep' AND ref = ?", (stored, ref))
+
+    assert rig.client.get(f"{V1}/refs/{ref}/keep", params=creds("nina")).json()["state"] == "queued"
+    assert _reason_of(rig, "marwa", ref) == host
+    assert _reason_of(rig, "nina", ref) == member
+
+
+def test_the_reasons_the_real_keeper_waits_with_are_understood(rig: Rig) -> None:
+    """Driven through the keeper, not through a copy of its words: YouTube's rest and a nearly full disk."""
+    resting, full = rig.songs("marwa", "Resting", "Full")
+    rig.client.put(f"{V1}/likes/{resting}", params=creds("nina"))
+    rig.source.resting = 600.0
+    rig.svc.scheduler.drain()
+    assert _reason_of(rig, "nina", resting) == "YouTube is resting."
+
+    rig.source.resting = 0.0
+    rig.svc.keeper._settings = dataclasses.replace(rig.svc.keeper._settings, min_free_gb=1e9)  # type: ignore[attr-defined]
+    rig.client.put(f"{V1}/likes/{full}", params=creds("nina"))
+    rig.svc.scheduler.drain()
+    assert _reason_of(rig, "nina", full) == "The server has no room for now."
+    assert _reason_of(rig, "marwa", full) == "The server's disk is nearly full, so nothing more is kept for now."
+
+
+def test_saving_a_release_tells_each_song_in_words_for_the_one_who_saves(rig: Rig) -> None:
+    (ref,) = rig.songs("marwa", "Waiting")
+    rig.client.put(f"{V1}/likes/{ref}", params=creds("nina"))
+    with rig.svc.db.tx() as conn:
+        conn.execute(
+            "UPDATE work_item SET error = ? WHERE kind = 'keep' AND ref = ?",
+            ("RuntimeError: /srv/encore/work/keep-1 is not writable", ref),
+        )
+
+    member = rig.client.put(f"{V1}/saved-albums/cat-1", params=creds("nina"), json={"refs": [ref]}).json()["keep"][ref]
+    host = rig.client.put(f"{V1}/saved-albums/cat-2", params=creds("marwa"), json={"refs": [ref]}).json()["keep"][ref]
+
+    assert member == {"state": "queued"}, "nothing about the server's folders"
+    assert host["reason"].startswith("Something went wrong, trying again: RuntimeError")
