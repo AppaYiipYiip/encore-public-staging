@@ -32,10 +32,12 @@ What runs where, how the parts talk, and why each choice beats the alternatives.
 Two containers by default (+ the computer's own Tailscale for away from home, which is not a container; + Lidarr, slskd, Soularr when the Host switches the quality tier on).
 One published port. One database file plus Navidrome's own.
 
+**This picture is the target (checked against `main` on 5 Nov 2026).** Built: the two containers (`deploy/compose.yaml` has `navidrome` and `encore-server`), the gateway, the app's local database. **Not built: `http://encore.local` (no mDNS or avahi anywhere in `deploy/` or the server), the admin web app and the setup wizard (no such route in `api.py`).**
+
 ## 2. Server: one program with modules (ADR-R3)
 
 **Encore server** = one Python 3.12 process: Starlette/FastAPI on uvicorn (async), SQLite (WAL) at `/data/encore.db`, published as
-a multi-arch image (amd64, arm64) on GitHub Container Registry. Modules are folders inside one package with clear interfaces;
+a multi-arch image (amd64, arm64) on GitHub Container Registry (**target; built today: amd64 only**, `.github/workflows/server-image.yml` builds `linux/amd64`; arm64 is Later on the board). Modules are folders inside one package with clear interfaces;
 they share one HTTP client, one database, one auth check, one config.
 
 | Module | Owns | Talks to | Replaces (old) |
@@ -164,7 +166,7 @@ where YouTube is slow or blocked. The source module must protect the Host's addr
 
 ## 7. Installing and updating (what a Host experiences) (ADR-R7)
 
-**v1:** a Linux install script, a browser wizard, a tiny CLI. Docker is used underneath and never mentioned to a Host.
+**v1:** a Linux install script, a browser wizard, a tiny CLI. Docker is used underneath and never mentioned to a Host. **Built today: the install script and the CLI (`deploy/install.sh`, `deploy/encore`). The browser wizard and the admin page are a target, not built.**
 
 1. **Website step 1 — "Install Ubuntu Server 26.04 LTS on the spare PC"** (link, 5-minute video). Any Debian-based 64-bit Linux works.
 2. **Step 2 — paste one command:** `curl -fsSL https://get.encore.<domain> | sudo sh`
@@ -172,9 +174,9 @@ where YouTube is slow or blocked. The source module must protect the Host's addr
      (says so first), creates `/opt/encore` with `compose.yaml` and a generated `.env`, pulls published images, starts them, and
      enables `encore.local` on the network (mDNS) so nobody types an IP address;
    * ends with: "Open **http://encore.local** on your phone or computer" + a QR code in the terminal.
-3. **Step 3 — the setup wizard in the browser** (owner account, music folder picker that lists the computer's disks, server name,
+3. **Step 3 — the setup wizard in the browser (target; not built: today the installer asks its four questions in the terminal)** (owner account, music folder picker that lists the computer's disks, server name,
    checks, optional away-from-home, first invitation).
-4. **Day to day:** the admin page; `encore` CLI for `status`, `update`, `logs`, `backup`, `restore`, `uninstall`.
+4. **Day to day:** the admin page (target; not built); the `encore` CLI (built: `deploy/encore` has `status`, `logs`, `start`, `stop`, `restart`, `update`, `funnel`, `backup`, `restore`, `autobackup`, `uninstall`, `version`).
 
 **Options considered.** (a) *Docker commands in a guide* (today): fails "never used Docker". (b) **One command + web wizard**
 (chosen): one paste, then buttons; works on any Debian/Ubuntu machine, x86 or ARM; easy to update. (c) *A flashable "Encore OS"

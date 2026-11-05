@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Songs the music server could not file under an album no longer show up as an album called "[Unknown Album]" with a grey cover: Home leaves that out, and the lists, the artist page, the player and the lock screen show them as songs, with the one name "Songs without an album" where a name is needed.
+* An Encore server never offers the old "Get new music" request page, whatever the "Play songs your server does not have" switch says.
 * The music server's door on the internet now slows wrong passwords like every other door (a stranger could try 65 a second); an app that sends only a plain password cannot sign in through the public address.
 * A server that does not answer no longer makes the player skip songs: it waits and plays on when the server is back.
 * One calm line, once, when the phone is offline or the server is away; "another server answers" gets its own line.

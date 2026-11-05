@@ -7,7 +7,9 @@ wrong are what this test is for: write down what you see, even small things.
 ## What you need
 
 * A **fresh computer or VM with Ubuntu Server or Debian**, 64-bit Intel/AMD, **2 GB memory or more**, **6 GB free disk or more**, on the
-  internet. Nothing else has to be installed; the installer asks before it installs anything.
+  internet. Nothing else has to be installed; the installer asks before it installs anything. On a computer below a limit the installer stops at the very start, before it
+  installs anything, and says in one sentence what is short, for example "This computer has 1024 MB of memory; Encore needs at least 2 GB." or "There is 4 GB of free space where
+  Encore keeps its files; it needs at least 6 GB." (`deploy/install.sh` lines 135-140; the same goes for a system that is not Ubuntu or Debian or a computer that is not 64-bit Intel/AMD).
 * Your **GitHub login** (the Encore download is private for now, so the installer signs in as you).
 * About **10 to 15 minutes**, nearly all of it downloads (about 330 MB, plus Docker if it has to be installed): on a quick line it is 5 to 6 minutes, on a slow
   one longer. The measured times are in the table at the end.

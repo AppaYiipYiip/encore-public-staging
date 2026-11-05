@@ -54,7 +54,7 @@ uninstalled, the forgotten password (including the Host's own: `encore reset-pas
 | Daily rhythm (below) | §7 |
 | Update, rollback | `22` §1 |
 | YouTube changes | `22` §2 |
-| **Disk getting old** (new) | The server reads the disks' health (SMART) weekly and tells the Host in plain words before a disk fails ("The music disk is reporting errors; back up soon") (P3-10) |
+| **Disk getting old** (new) | The server reads the disks' health (SMART) weekly and tells the Host in plain words before a disk fails ("The music disk is reporting errors; back up soon") (P3-10) **(target; not built: no SMART reading anywhere in the server or the installer)** |
 | Disk full | `22`, H29 |
 | Disk failed | restore the database from backup; self-healing re-fetches YouTube-sourced songs (§2) |
 | Move to a new computer | `22` §4 |

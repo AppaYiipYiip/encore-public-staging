@@ -1,7 +1,11 @@
 name: Feature request
 description: An idea, written as a story
-labels: [feature]
+labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for writing this down. The maintainers keep their own list of work on a board outside GitHub, and copy every report onto it; you do not need to do anything else; we reply here when we can.
   - type: textarea
     id: story
     attributes:
