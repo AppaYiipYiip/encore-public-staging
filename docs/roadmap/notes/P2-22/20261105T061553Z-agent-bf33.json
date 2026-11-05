@@ -1,0 +1,9 @@
+{
+ "id": "20261105T061553Z-agent-bf33",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T06:15:53Z",
+ "type": "note",
+ "body": "The downloads' two stages are DRAWN (5 Nov 2026, class C only: the browser has no offline downloads): docs/design S-16 'the two stages', 'waiting: the phone's reason wins', S-17 'downloading'. Waiting for the advisor's look; then part 1 (server progress on the live channel), then parts 2 and 4 (the app) in separate pull requests. Open for the advisor: the notification covers only the phone stage (PB-38)."
+}
