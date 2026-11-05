@@ -54,6 +54,7 @@ from .errors import ApiError
 from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
+from .keep_progress import MAX_RELEASE_SONGS, parse_groups, progress
 from .keeper.keeper import Keeper, KeepSettings
 from .keeper.triggers import want_kept as _want_kept
 from .live import END, Hub
@@ -221,6 +222,13 @@ def _ok(payload: dict[str, Any] | None = None, status: int = 200) -> JSONRespons
 router = APIRouter(prefix="/encore/api/v1")
 
 
+def _youtube_status(svc: Services) -> dict[str, Any]:
+    """`{state: off|ok|resting, resumesInSec}`: whether YouTube is holding this server back, and for how long (the same in `info` and in the keep progress)."""
+    if svc.youtube is not None and hasattr(svc.youtube, "status"):
+        return svc.youtube.status()
+    return {"state": "off", "resumesInSec": 0}
+
+
 @router.get("/info")
 def info(request: Request, challenge: str | None = None) -> JSONResponse:
     """What this server is, without a login. With `?challenge=<nonce>` the answer is also signed, so a phone can tell this server from anything else
@@ -240,9 +248,7 @@ def info(request: Request, challenge: str | None = None) -> JSONResponse:
             "serverVersion": __version__,
             "name": svc.settings.server_name,
             "features": [*FEATURES, *(["keep"] if svc.keeper is not None else [])],
-            "youtube": svc.youtube.status()
-            if svc.youtube is not None and hasattr(svc.youtube, "status")
-            else {"state": "off", "resumesInSec": 0},
+            "youtube": _youtube_status(svc),
             **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
     )
@@ -643,6 +649,20 @@ def keep_now(ref_id: str, request: Request, p: Principal = Depends(get_principal
         return _ok(_keep_state(svc, conn, ref_id))
 
 
+@router.post("/keep/progress")
+def keep_progress(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """How far the server is with keeping what this person has pinned for download, for many playlists, releases and the liked songs in one
+    answer (P2-22 part 1, docs/17 "Keep progress"). A group the person does not have is left out. Asking changes nothing."""
+    svc = services(request)
+    if svc.scheduler is None or not svc.scheduler.handles("keep"):
+        raise ApiError("not_found", "This server does not keep songs.")
+    groups = parse_groups(body)
+    answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=groups)
+    return _ok({"groups": answer, "youtube": _youtube_status(svc)})
+
+
 @router.get("/refs/{ref_id}/keep")
 def keep_state(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     svc = services(request)
@@ -912,10 +932,6 @@ def unlike(ref_id: str, request: Request, p: Principal = Depends(get_principal))
     return _item_route("like", request, ref_id, p, add=False)
 
 
-#: How many songs one release may name when it is saved.
-MAX_RELEASE_SONGS = 500
-
-
 def _release_refs(body: dict[str, Any]) -> list[str]:
     """The songs a phone names with a saved release: a list of song ids, or nothing."""
     named = body.get("refs")
@@ -943,6 +959,7 @@ def save_album(
             if not refs.ref_exists(conn, ref_id):
                 raise ApiError("not_found", "That song is not known to this server.", details={"ref": ref_id})
         changed = library.set_item(conn, p.person_id, "saved_album", album_id[:100], at=body.get("at"))
+        library.add_album_refs(conn, p.person_id, album_id[:100], ref_ids)
         # Songs whose keep failed before are asked for again, like a download does (`keep_now`); the rest are kept once.
         want_kept(svc, conn, p.person_id, [r for r in ref_ids if _keep_state(svc, conn, r)["state"] in ("none", "failed")])
         cursor = library.latest_cursor(conn, p.person_id)

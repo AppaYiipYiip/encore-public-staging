@@ -72,6 +72,13 @@ class WorkItem:
 
 Handler = Callable[[WorkItem], None]
 
+#: The songs somebody still has: liked, in a playlist that exists, or in a saved release (the same holders `library.touch_ref_holders` tells).
+_HELD = (
+    "SELECT target FROM library_item WHERE kind = 'like'"
+    " UNION SELECT e.ref FROM playlist_entry e JOIN playlist p ON p.id = e.playlist WHERE e.deleted_at IS NULL AND p.deleted_at IS NULL"
+    " UNION SELECT ref FROM saved_album_ref"
+)
+
 
 class Scheduler:
     def __init__(
@@ -219,6 +226,24 @@ class Scheduler:
             ).fetchone()
         return dict(row) if row is not None else None
 
+    def states_of(self, kind: str, ref_ids: list[str]) -> dict[str, dict[str, object]]:
+        """[state_of] for many songs in a few queries: the newest item of this kind for each song that has one (a song with none is absent).
+        This is what a phone asks for to show how a 200-song download is going, so it must not cost one query per song."""
+        out: dict[str, dict[str, object]] = {}
+        wanted = list(dict.fromkeys(ref_ids))
+        with self._db.read() as conn:
+            for start in range(0, len(wanted), 400):
+                chunk = wanted[start : start + 400]
+                marks = ",".join("?" for _ in chunk)
+                rows = conn.execute(
+                    "SELECT id, ref, state, attempts, error, next_try_at FROM work_item"  # noqa: S608 - only placeholders are formatted in
+                    f" WHERE kind = ? AND ref IN ({marks}) ORDER BY created_at, rowid",
+                    (kind, *chunk),
+                ).fetchall()
+                for row in rows:  # oldest first, so the newest overwrites
+                    out[row["ref"]] = dict(row)
+        return out
+
     # ------------------------------------------------------------------ running it
 
     def recover(self) -> int:
@@ -227,7 +252,10 @@ class Scheduler:
         with self._db.tx() as conn:
             back = conn.execute("UPDATE work_item SET state = 'queued', updated_at = ? WHERE state = 'running'", (now,)).rowcount
             conn.execute(
-                "DELETE FROM work_item WHERE state IN ('done', 'failed', 'cancelled') AND updated_at < ?",
+                "DELETE FROM work_item WHERE state IN ('done', 'failed', 'cancelled') AND updated_at < ?"
+                # A failed keep of a song somebody still has (liked, in a playlist, in a saved release) stays: it is the reason a phone shows
+                # for "3 songs did not come", and forgetting it after a week would turn that into "not fetched yet" with no cause.
+                " AND NOT (state = 'failed' AND kind = 'keep' AND ref IN (" + _HELD + "))",
                 (now - int(self._keep_done_s * 1000),),
             )
         return back

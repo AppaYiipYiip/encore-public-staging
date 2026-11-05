@@ -30,14 +30,21 @@ log = logging.getLogger("encore_server.keeper")
 #: The folder, inside the music folder, that holds everything the server keeps.
 KEPT_FOLDER = "Encore"
 
-#: Why a song was not kept, as `work_item.error` says it (the admin page turns these into sentences).
-_GIVE_UP = {
+#: Why a song was not kept, as `work_item.error` says it. `failures.py` turns these into the sentences a person reads (a test keeps the two in step).
+GIVE_UP = {
     "not_found": "no upload of this song was found",
     "unavailable": "YouTube has no copy that can be fetched",
     "age_restricted": "the only copy needs an age check",
     "too_big": "the file is bigger than the limit for keeping",
 }
 _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
+
+#: The other reasons a keep ends with, named so that `failures.py` (the sentences a person reads, and whether Retry can work) matches the SAME text:
+#: a reworded message here changes there too, and a test drives the real keeper through the too-long path.
+TOO_LONG_BEFORE = "longer than "
+TOO_LONG_AFTER = " minutes, so it is played but not kept"
+NOT_IN_MUSIC_FOLDER = "the file is not inside the music folder"
+MUSIC_SERVER_DID_NOT_FIND = "The music server has not found the saved file yet. Check that its library includes the music folder."
 
 
 class Source(Protocol):
@@ -134,7 +141,7 @@ class Keeper:
             raise Retry("YouTube is being given a rest", after_s=resting)
         duration_ms = ref.get("durationMs")
         if isinstance(duration_ms, int) and duration_ms > s.max_minutes * 60_000:
-            raise GiveUp(f"longer than {s.max_minutes} minutes, so it is played but not kept")
+            raise GiveUp(f"{TOO_LONG_BEFORE}{s.max_minutes}{TOO_LONG_AFTER}")
         s.root.mkdir(parents=True, exist_ok=True)
         if free_gb(s.root) < s.min_free_gb:
             raise Retry(f"less than {s.min_free_gb:g} GB free, so nothing more is kept for now", after_s=1800)
@@ -151,8 +158,8 @@ class Keeper:
         try:
             return self._source.download(wanted_from_ref(ref), stem, max_bytes=self._settings.max_file_mb * 1024 * 1024)
         except DownloadError as error:
-            if error.code in _GIVE_UP:
-                raise GiveUp(_GIVE_UP[error.code]) from error
+            if error.code in GIVE_UP:
+                raise GiveUp(GIVE_UP[error.code]) from error
             if error.code in _REST:
                 raise Retry(
                     f"YouTube is not answering ({error.code})", after_s=max(_REST[error.code], self._source.resting_for())
@@ -212,7 +219,7 @@ class Keeper:
     def _link(self, ref: dict[str, Any], path: Path) -> None:
         """Attach the file to the ref; then wait for the music server to know it, and attach its id."""
         if not inside(self._settings.music_dir, path) or path.suffix.lower() not in AUDIO_SUFFIXES:
-            raise GiveUp("the file is not inside the music folder")
+            raise GiveUp(NOT_IN_MUSIC_FOLDER)
         relative = path.resolve().relative_to(self._settings.music_dir.resolve()).as_posix()
         size = path.stat().st_size
         seconds = (ref.get("durationMs") or 0) / 1000
@@ -237,7 +244,7 @@ class Keeper:
         if navidrome_id is None:
             # No pause of its own: a music server that never finds the file (the music folder is not one of its libraries, it cannot read it)
             # is not a wait that ends by itself. The scheduler's pauses apply, and after the last it is recorded as failed with this reason (B7).
-            raise Retry("The music server has not found the saved file yet. Check that its library includes the music folder.")
+            raise Retry(MUSIC_SERVER_DID_NOT_FIND)
         if touched and self._on_changed is not None:
             self._on_changed(touched)
 

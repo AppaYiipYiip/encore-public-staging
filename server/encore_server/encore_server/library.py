@@ -86,7 +86,17 @@ def set_item(conn: sqlite3.Connection, person: str, kind: str, target: str, *, a
     return False
 
 
+def add_album_refs(conn: sqlite3.Connection, person: str, album: str, ref_ids: list[str]) -> None:
+    """The songs of a saved release, remembered with the save: the phone's Download screen counts how many of them the server has ready."""
+    conn.executemany(
+        "INSERT OR IGNORE INTO saved_album_ref (person, album, ref) VALUES (?,?,?)",
+        [(person, album, ref_id) for ref_id in ref_ids],
+    )
+
+
 def clear_item(conn: sqlite3.Connection, person: str, kind: str, target: str) -> bool:
+    if kind == "saved_album":
+        conn.execute("DELETE FROM saved_album_ref WHERE person = ? AND album = ?", (person, target))
     cursor = conn.execute("DELETE FROM library_item WHERE person = ? AND kind = ? AND target = ?", (person, kind, target))
     if cursor.rowcount:
         _touch(conn, person, kind, target)

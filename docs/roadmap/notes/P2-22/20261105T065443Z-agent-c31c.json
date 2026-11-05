@@ -1,0 +1,12 @@
+{
+ "id": "20261105T065443Z-agent-c31c",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-05T06:54:43Z",
+ "type": "note",
+ "body": "Part 2 / P3-13: a keep that waits for a reason of its own (the disk is full: retried every 30 minutes, never failed) is 'queued' in POST /keep/progress and its stored reason is not shown, so the Host would see 'waiting its turn' for ever with no cause. Show it (to the Host) when the storage limit is drawn (P3-13).",
+ "to": [
+  "agent"
+ ]
+}
