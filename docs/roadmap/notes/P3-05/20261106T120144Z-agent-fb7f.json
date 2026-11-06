@@ -1,0 +1,9 @@
+{
+ "id": "20261106T120144Z-agent-fb7f",
+ "item": "P3-05",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:01:44Z",
+ "type": "detail",
+ "body": "Audit B-90 (install.sh read 6 Nov 2026, not run): the installer strips $, quotes, backquotes, # and backslashes from the server's name before it writes the settings file, but writes ENCORE_MUSIC_DIR=$MUSIC_DIR exactly as typed. Docker Compose reads that .env: a $ in a path is taken for a variable and a # after a space starts a comment, so a folder like '/srv/My Music #2' or '/mnt/$music' is cut or emptied and the music server starts on another folder with nothing in it. A stranger types whatever their folder is called. Quote the value the way Compose reads it (single quotes, refusing a path with a single quote) or refuse such a path with a sentence, and run the same check in 'encore' when the folder is changed. Add a case to this item's install walk: a music folder with a space and a #. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-90."
+}

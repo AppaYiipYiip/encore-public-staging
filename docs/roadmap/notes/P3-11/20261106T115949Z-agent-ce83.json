@@ -1,0 +1,9 @@
+{
+ "id": "20261106T115949Z-agent-ce83",
+ "item": "P3-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:59:49Z",
+ "type": "detail",
+ "body": "Audit B-85 (server code read 6 Nov 2026, not run): two rules of the accounts code are right on an install Encore made and wrong on a music server you already run, which is what this item builds.\n\n1. WHO IS THE OWNER. library.ensure_person (library.py:28-41) makes the first person to sign in the owner, and _sign_in (api.py) asks the music server once whether a new person is an administrator there and makes every administrator an owner. On a fresh install only the owner's account exists, so this is the rule (docs/32 AC-1). On an attached music server that already has accounts, whichever of them signs in first becomes the owner, every other administrator of it becomes an owner at their first sign-in, and every account of it can sign in without an invitation. The attach step must name the owner (the administrator login it asks for) and nobody may become owner by signing in first.\n\n2. WHAT 'REMOVE' DELETES. Accounts.remove_person (accounts.py:407-420) calls NavidromeAdmin.delete_user: it deletes the person's account in the music server, with the stars, playlists and play history their other Subsonic apps use. On an attached server that is a family member's account in the Host's own Navidrome. Remove the Encore person and leave the music-server account (or ask first).\n\nAdd both to this item's acceptance, with a test on a music server that has three accounts before Encore is attached. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-85."
+}

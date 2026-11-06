@@ -1,0 +1,9 @@
+{
+ "id": "20261106T115949Z-agent-8bfe",
+ "item": "P3-09",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:59:49Z",
+ "type": "detail",
+ "body": "Audit B-88 (read 6 Nov 2026): PRIVACY.md, the public statement of what leaves a server, does not match the code; this item owns 'privacy rules tested', so its test list should include the statement.\n\n(1) It says 'the app talks only to your own server'. The app has two outside clients: data/catalogue/deezer_client.dart (catalogue search on the phone, the ADR-R38 debt of P2-12) and data/api/lrclib_client.dart (lyrics). They send song titles and artist names, and the phone's address, to Deezer and LRCLIB.\n(2) It says look-ups happen for songs 'that are not on your server'. The server's cover finder (cover_finder.py, an errand before each hourly library link) sends the first artist and the title of every song ON the server that has no picture, the Host's own collection included, to api.deezer.com, up to 300 per pass, without anyone using a feature.\n(3) It names MusicBrainz and ListenBrainz as outside look-ups; no code in the server or the app calls either.\n\nWanted: PRIVACY.md written from the code (hosts, what is sent, when, whether it can be switched off); a decision on whether the cover finder asks only for songs a person put on the server and can be switched off; a check that every outside host in the code is named in PRIVACY.md (the app already has a ratchet on outside hosts; the server has none). The text is the owner's to approve. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-88 (see also B-76)."
+}

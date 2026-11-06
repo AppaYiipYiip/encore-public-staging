@@ -1,0 +1,9 @@
+{
+ "id": "20261106T115949Z-agent-b743",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:59:49Z",
+ "type": "detail",
+ "body": "Audit B-86 (resolve half, run) and B-89 (server code read 6 Nov 2026).\n\nB-86: POST /refs/resolve takes a videoId from the phone (refs.parse_item) and refs.find matches by ISRC, Deezer id or video id BEFORE it looks at the title. Run in a scratch database: a description 'Bohemian Rhapsody / Queen' that carries the video id of 'Imagine / John Lennon' resolves to Imagine's ref, and a made-up 11-character id is attached to an existing ref that had none (refs._enrich). Every member then plays and keeps the wrong audio. A description's video id should be a hint: used when the title and artist agree with the ref (or the id is new), never to override them. The 'dead id is never forgotten' half is in the note on P2-26.\n\nB-89: library_item.target holds two kinds of id for saved albums and followed artists. 0001_initial.sql says 'the catalogue's album / artist id', but migration.migrate_from_navidrome writes the music server's own ids and the Library album page saves the music server's album id (encore_api.dart saveAlbum): such an album has no saved_album_ref rows (keep progress counts nothing) and the same album saved later from the catalogue is a second row. docs/18 does not name the id space. Decide one (a catalogue id, with the music server's id mapped to it at save) and name it in docs/18.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-86, B-89."
+}

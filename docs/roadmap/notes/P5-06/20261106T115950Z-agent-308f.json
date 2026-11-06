@@ -1,0 +1,9 @@
+{
+ "id": "20261106T115950Z-agent-308f",
+ "item": "P5-06",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:59:50Z",
+ "type": "detail",
+ "body": "Audit B-88 (read 6 Nov 2026): PRIVACY.md is a public file of the repository and is wrong in three ways today (it says the app talks only to the Encore server, but the app calls Deezer and LRCLIB itself; it says look-ups are for songs not on the server, but the server's cover finder sends the titles of songs on it to Deezer; it names MusicBrainz and ListenBrainz, which nothing calls). It has to be true before the code is made public. Details and the fix are in the note on P3-09 and in docs/tasks/AUDIT-BUILT-2026-11-05.md B-88. Also B-75 (the owner's first name, a tailnet name and a LAN address in the tree) blocks this item."
+}
