@@ -9,7 +9,7 @@ import pytest
 
 from encore_server import library, refs
 from encore_server.db import Database
-from encore_server.scheduler import GiveUp, Retry, Scheduler, WorkItem
+from encore_server.scheduler import PROMOTE_MANY, GiveUp, Retry, Scheduler, WorkItem
 
 
 class Clock:
@@ -29,6 +29,11 @@ def make_refs(db: Database, count: int) -> list[str]:
             str(refs.resolve(conn, {"title": f"Song {n}", "artists": ["Artist"], "durationMs": 180000 + n * 10000})["id"])
             for n in range(count)
         ]
+
+
+def priority_of(db: Database, ref: str) -> int:
+    with db.read() as conn:
+        return int(conn.execute("SELECT priority FROM work_item WHERE kind = 'keep' AND ref = ?", (ref,)).fetchone()["priority"])
 
 
 def make_person(db: Database, name: str) -> str:
@@ -97,6 +102,74 @@ def test_a_tap_on_a_song_being_kept_moves_it_to_the_front(db: Database, rig: Rig
     rig.scheduler.drain()
 
     assert [ref for _, ref in rig.log][0] == third
+
+
+def test_a_whole_download_asked_for_stands_behind_a_single_tap_even_when_it_is_longer_than_the_window(
+    db: Database, rig: Rig
+) -> None:
+    """B-62 and B-39 together: the scheduler looks at the first 200 queued items by (priority, age) before it shares the turn. If a 250-song download were
+    promoted to the level of a tap, the next person's tap would sit outside that window and wait for the whole download."""
+    *crowd, tap = make_refs(db, 251)  # (make_refs names songs by number, so asking twice would give the same songs again)
+    big, small = make_person(db, "marwa"), make_person(db, "nina")
+    for ref in crowd:
+        rig.scheduler.submit("keep", ref, big)
+        rig.clock.advance(0.01)  # one after the other, as a real download is asked for: the tap is the youngest of them all
+    rig.scheduler.submit("keep", tap, small)
+
+    assert rig.scheduler.promote_many("keep", crowd, priority=PROMOTE_MANY) == 250
+    assert rig.scheduler.promote("keep", tap) is True
+    rig.scheduler.run_one("background")
+
+    assert rig.log == [("keep", tap)]
+
+
+def test_a_promotion_never_lowers_what_a_tap_already_raised(db: Database, rig: Rig) -> None:
+    tapped, plain = make_refs(db, 2)
+    who = make_person(db, "marwa")
+    rig.scheduler.submit("keep", tapped, who)
+    rig.scheduler.submit("keep", plain, who)
+    rig.scheduler.promote("keep", tapped)
+
+    assert rig.scheduler.promote_many("keep", [tapped, plain], priority=PROMOTE_MANY) == 1, (
+        "the tapped one is already ahead and stays"
+    )
+
+    levels = {ref: priority_of(db, ref) for ref in (tapped, plain)}
+    assert levels == {tapped: 0, plain: PROMOTE_MANY}
+
+
+def test_a_download_never_ends_a_pause_but_a_tap_does_and_a_repeat_writes_nothing(db: Database, rig: Rig) -> None:
+    """A phone says what it wants again at every connection. If that ended the scheduler's back-off (or YouTube's rest) each time, the songs would be tried
+    again and again from the Host's address."""
+    paused, tapped = make_refs(db, 2)
+    who = make_person(db, "marwa")
+    for ref in (paused, tapped):
+        rig.scheduler.submit("keep", ref, who)
+    with db.tx() as conn:
+        conn.execute("UPDATE work_item SET next_try_at = next_try_at + 3600000")
+
+    assert rig.scheduler.promote_many("keep", [paused, tapped], priority=PROMOTE_MANY) == 2
+    assert rig.scheduler.run_one("background") is False, "both still wait out their pause"
+    before = rig.scheduler.activity("keep")
+    assert rig.scheduler.promote_many("keep", [paused, tapped], priority=PROMOTE_MANY) == 0
+    assert rig.scheduler.activity("keep") == before, "a repeat changes nothing, so no watcher has anything to recount"
+
+    assert rig.scheduler.promote("keep", tapped) is True
+    assert rig.scheduler.run_one("background") is True and rig.log == [("keep", tapped)], "a tap ends the pause of its song only"
+
+
+def test_promoting_many_touches_only_what_waits_and_ignores_the_rest(db: Database, rig: Rig) -> None:
+    waiting, running, done, unknown = make_refs(db, 3) + ["sr_" + "0" * 26]
+    who = make_person(db, "marwa")
+    for ref in (waiting, running, done):
+        rig.scheduler.submit("keep", ref, who)
+    with db.tx() as conn:
+        conn.execute("UPDATE work_item SET state = 'running' WHERE ref = ?", (running,))
+        conn.execute("UPDATE work_item SET state = 'done' WHERE ref = ?", (done,))
+
+    assert rig.scheduler.promote_many("keep", [waiting, running, done, unknown], priority=PROMOTE_MANY) == 1
+    assert rig.scheduler.promote_many("keep", [], priority=PROMOTE_MANY) == 0
+    assert priority_of(db, running) == 4, "what runs already is not touched"
 
 
 def test_people_take_turns_so_a_big_import_cannot_starve_a_small_one(db: Database, rig: Rig) -> None:

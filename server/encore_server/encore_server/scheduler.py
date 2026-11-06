@@ -2,7 +2,8 @@
 
 * **Single flight.** One active item per kind and song, however many people want it: a second request joins the first.
 * **Priorities, strictly in this order:** play, prepare, download, match, keep, measure. A tap on a song whose keep is queued
-  promotes it.
+  promotes it to the front; a whole download asked for at once (a playlist, the liked songs, a saved release, Retry) promotes its songs
+  to the level of `download`, behind a tap and ahead of every import and other background work (`PROMOTE_ONE`, `PROMOTE_MANY`).
 * **Fair share inside a priority:** the person who was served longest ago goes next, so a 2,000-song import cannot starve a friend's
   20-song import.
 * **Two pools.** `interactive` (play, prepare, download) never waits behind `background` (match, keep, measure).
@@ -29,6 +30,13 @@ log = logging.getLogger("encore_server.scheduler")
 
 #: Lower runs first.
 PRIORITY = {"play": 0, "prepare": 1, "download": 2, "match": 3, "keep": 4, "measure": 5}
+#: How far a keep is promoted when somebody is waiting for it. ONE song a person is looking at (a tap) goes ahead of everything. A WHOLE download asked
+#: for at once (a playlist, the liked songs, a saved release, Retry: up to hundreds of songs) goes ahead of other people's imports and background work but
+#: BEHIND a tap: the claim looks at the first 200 items by (priority, age) before it shares the turn (B-39), so a download promoted to the level of a tap
+#: would stand in front of the next person's tap for as long as it lasts. A promotion only ever raises: a song somebody tapped stays where the tap put it.
+#: Only a tap also ends a pause before a retry; a download never does (`promote_many`).
+PROMOTE_ONE = 0
+PROMOTE_MANY = PRIORITY["download"]
 POOL = {
     "play": "interactive",
     "prepare": "interactive",
@@ -148,15 +156,41 @@ class Scheduler:
         return item
 
     def promote(self, kind: str, ref: str) -> bool:
-        """Someone is waiting for this now: it jumps to the front of its pool and any pause before a retry ends."""
+        """A tap: someone is waiting for this one song now. It jumps to the front of its pool and any pause before a retry ends, because the wait
+        that counts is the one of the person looking at it."""
+        now = self._now_ms()
         with self._db.tx() as conn:
             changed = conn.execute(
-                "UPDATE work_item SET priority = 0, next_try_at = MIN(next_try_at, ?), updated_at = ? WHERE kind = ? AND ref = ? AND state = 'queued'",
-                (self._now_ms(), self._now_ms(), kind, ref),
+                "UPDATE work_item SET priority = MIN(priority, ?), next_try_at = MIN(next_try_at, ?), updated_at = ? WHERE kind = ? AND ref = ? AND state = 'queued'",
+                (PROMOTE_ONE, now, now, kind, ref),
             ).rowcount
         with self._wake:
             self._wake.notify_all()
         return bool(changed)
+
+    def promote_many(self, kind: str, ref_ids: list[str], *, priority: int) -> int:
+        """A whole download is wanted: what waits in the queue moves up to [priority], in one write. **Only the priority**: a pause before a retry is not
+        ended (a phone says what it wants again at every connection, and ending the scheduler's back-off or YouTube's rest each time would try the songs
+        again and again), and a song that is already there changes nothing, not even `updated_at` (a repeated ask must not make every watcher recount).
+        Returns how many songs moved."""
+        wanted = list(dict.fromkeys(ref_ids))
+        if not wanted:
+            return 0
+        now = self._now_ms()
+        changed = 0
+        with self._db.tx() as conn:
+            for start in range(0, len(wanted), 400):
+                chunk = wanted[start : start + 400]
+                marks = ",".join("?" for _ in chunk)
+                changed += conn.execute(
+                    "UPDATE work_item SET priority = ?, updated_at = ?"  # noqa: S608 - placeholders only
+                    f" WHERE kind = ? AND state = 'queued' AND priority > ? AND ref IN ({marks})",
+                    (priority, now, kind, priority, *chunk),
+                ).rowcount
+        if changed:
+            with self._wake:
+                self._wake.notify_all()
+        return changed
 
     def cancel_person(self, person: str, kind: str | None = None) -> int:
         """Stop: this person no longer wants their queued work. What nobody else wants is cancelled (a running one at its next check);

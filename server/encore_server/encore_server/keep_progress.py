@@ -10,7 +10,7 @@ Rules (each has a test):
   fetched now), `queued` (waiting, including a wait for YouTube's rest), `failed` (named, with whether trying again can help).
 * A group the person cannot see is **left out of the answer**, the same as one that does not exist: no id can be probed.
 * The sentence of a failure depends on who asks: the Host gets the cause, a member the plain fact (`keeper/failures.py`).
-* Nothing is changed by asking.
+* Nothing is changed by asking (`progress`); the one call that changes something is `POST keep/ask`, which uses [askable_refs].
 """
 
 from __future__ import annotations
@@ -137,8 +137,9 @@ def _named(conn: sqlite3.Connection, ref_ids: list[str]) -> dict[str, tuple[str,
 
 def _judge(
     db: Database, scheduler: Scheduler, person: str, *, host: bool, groups: list[Group]
-) -> tuple[list[tuple[Group, list[str]]], dict[str, tuple[str, str | None, bool]]]:
-    """The groups the person has, with their songs, and the verdict on every one of those songs: ref -> (bucket, reason, retry)."""
+) -> tuple[list[tuple[Group, list[str]]], dict[str, tuple[str, str | None, bool]], dict[str, dict[str, object]]]:
+    """The groups the person has, with their songs, the verdict on every one of those songs (ref -> (bucket, reason, retry)) and the newest queue item of
+    each song that has one."""
     with db.read() as conn:
         found = [(g, m) for g in groups if (m := members(conn, person, g)) is not None]
     every = list(dict.fromkeys(r for _, m in found for r in m))
@@ -147,21 +148,38 @@ def _judge(
     items = scheduler.states_of("keep", every)
     with db.read() as conn:
         linked = _linked(conn, every)
-    return found, {ref_id: _verdict(ref_id in linked, items.get(ref_id), host=host) for ref_id in every}
+    return found, {ref_id: _verdict(ref_id in linked, items.get(ref_id), host=host) for ref_id in every}, items
 
 
 def retryable_refs(db: Database, scheduler: Scheduler, person: str, group: Group) -> list[str] | None:
     """The songs of one group that Retry should ask for again: failed, and not a kind of failure that cannot change (a song YouTube does not have).
     `None` when the person has no such group."""
-    found, verdict = _judge(db, scheduler, person, host=False, groups=[group])
+    found, verdict, _ = _judge(db, scheduler, person, host=False, groups=[group])
     if not found:
         return None
     return [ref_id for ref_id in found[0][1] if verdict[ref_id][0] == "failed" and verdict[ref_id][2]]
 
 
+def askable_refs(db: Database, scheduler: Scheduler, person: str, groups: list[Group]) -> list[str]:
+    """The songs a Download of these groups asks the server for now, once each: those that wait in the queue (they are promoted) and those nobody is
+    fetching and no try has failed (never queued, cancelled, or kept once and the file is gone: they are queued). **Not a song whose keep failed**: that
+    one comes back only when the person presses Retry (`retryable_refs`). A phone says what it wants again whenever it connects, so asking must never
+    be the thing that tries a failed song again each time the app opens (it would hit YouTube from the Host's address for ever). Not the ones being
+    kept this moment, not the ones the server has. A group the person does not have contributes nothing."""
+    found, verdict, items = _judge(db, scheduler, person, host=False, groups=groups)
+    every = dict.fromkeys(ref_id for _, ref_ids in found for ref_id in ref_ids)
+
+    def waits(ref_id: str) -> bool:
+        bucket, _, retry = verdict[ref_id]
+        item = items.get(ref_id)
+        return bucket == "queued" or (bucket == "failed" and retry and (item is None or item["state"] != "failed"))
+
+    return [ref_id for ref_id in every if waits(ref_id)]
+
+
 def progress(db: Database, scheduler: Scheduler, person: str, *, host: bool, groups: list[Group]) -> list[dict[str, Any]]:
     """The answer for these groups (those the person has), in the order asked. [host]: the person is the Host, who reads causes."""
-    found, verdict = _judge(db, scheduler, person, host=host, groups=groups)
+    found, verdict, _ = _judge(db, scheduler, person, host=host, groups=groups)
     with db.read() as conn:
         out: list[dict[str, Any]] = []
         for group, ref_ids in found:

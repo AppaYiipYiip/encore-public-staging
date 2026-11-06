@@ -54,7 +54,7 @@ from .errors import ApiError
 from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
-from .keep_progress import MAX_RELEASE_SONGS, parse_group, parse_groups, progress, retryable_refs
+from .keep_progress import MAX_RELEASE_SONGS, askable_refs, parse_group, parse_groups, progress, retryable_refs
 from .keep_watch import KeepWatch, fingerprint
 from .keeper.failures import describe_failure, describe_wait
 from .keeper.keeper import Keeper, KeepSettings
@@ -66,7 +66,7 @@ from .navidrome_admin import NavidromeAdmin
 from .notifications import DEFAULT_PAGE, MAX_PAGE, Notifications
 from .quiet import InFlight, InFlightMiddleware
 from .scanner import LibraryLinker
-from .scheduler import Scheduler
+from .scheduler import PROMOTE_MANY, Scheduler
 from .sources.youtube.errors import DownloadError
 from .sources.youtube.pace import Pacer
 from .sources.youtube.rest import DbRestStore, Rest
@@ -78,6 +78,9 @@ from .sources.youtube.updater import Tools, create_tools
 log = logging.getLogger("encore_server.api")
 
 FEATURES = ["library", "playback", "live", "refs"]
+#: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`) and `keep-ask` (`POST keep/ask`, a
+#: whole download asked for at once). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
+KEEP_FEATURES = ["keep", "keep-ask"]
 
 
 @dataclass
@@ -251,7 +254,7 @@ def info(request: Request, challenge: str | None = None) -> JSONResponse:
             "minAppVersion": MIN_APP_VERSION,
             "serverVersion": __version__,
             "name": svc.settings.server_name,
-            "features": [*FEATURES, *(["keep"] if svc.keeper is not None else [])],
+            "features": [*FEATURES, *(KEEP_FEATURES if svc.keeper is not None else [])],
             "youtube": _youtube_status(svc.youtube),
             **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
@@ -671,12 +674,38 @@ def keep_progress(
     return _ok({"groups": answer, "youtube": _youtube_status(svc.youtube)})
 
 
+def _ask_for(svc: Services, scheduler: Scheduler, person: str, ref_ids: list[str]) -> None:
+    """A whole download is asked for: the songs the server does not have are wanted for this person (queued, or queued again after a failure) and move
+    ahead of the background work, behind a single tap (`scheduler.PROMOTE_MANY`). Safe to repeat."""
+    if not ref_ids:
+        return
+    with svc.db.tx() as conn:
+        want_kept(svc, conn, person, ref_ids)
+    scheduler.promote_many("keep", ref_ids, priority=PROMOTE_MANY)
+
+
+@router.post("/keep/ask")
+def keep_ask(request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)) -> JSONResponse:
+    """The person pressed Download on playlists, releases or the liked songs (P2-22, B-62): ask the server for the songs it does not have yet, first in line
+    behind a single tap, for as long as the person's pins last. The batched sibling of `POST refs/{id}/keep`, in the groups of `keep/progress`: a group the
+    person does not have is left out of the answer, like one that does not exist, and nothing is started for it. The answer is those downloads as
+    `keep/progress` gives them now, and how many songs were asked for. Safe to repeat. (`keep/watch` never does this: telling a phone how it goes asks for nothing.)"""
+    svc = services(request)
+    if svc.scheduler is None or not svc.scheduler.handles("keep"):
+        raise ApiError("not_found", "This server does not keep songs.")
+    groups = parse_groups(body)
+    again = askable_refs(svc.db, svc.scheduler, p.person_id, groups)
+    _ask_for(svc, svc.scheduler, p.person_id, again)
+    answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=groups)
+    return _ok({"asked": len(again), "groups": answer, "youtube": _youtube_status(svc.youtube)})
+
+
 @router.post("/keep/retry")
 def keep_retry(
     request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
 ) -> JSONResponse:
     """Asks the server again for the songs of ONE download that it could not get (the Retry button under "3 songs did not come"): the failed ones
-    that asking again can help, first in line, the way `PUT saved-albums` and `POST refs/{id}/keep` ask. A song YouTube does not have is left alone.
+    that asking again can help, first in line, the way `keep/ask` asks. A song YouTube does not have is left alone.
     The answer is that download as `keep/progress` would give it now, and how many songs were asked for. A download the person does not have is
     `not_found`, exactly as one that does not exist."""
     svc = services(request)
@@ -686,10 +715,7 @@ def keep_retry(
     again = retryable_refs(svc.db, svc.scheduler, p.person_id, group)
     if again is None:
         raise ApiError("not_found", "That download does not exist (any more).")
-    with svc.db.tx() as conn:
-        want_kept(svc, conn, p.person_id, again)
-    for ref_id in again:
-        svc.scheduler.promote("keep", ref_id)
+    _ask_for(svc, svc.scheduler, p.person_id, again)
     answer = progress(svc.db, svc.scheduler, p.person_id, host=p.role == "owner", groups=[group])
     return _ok({"retried": len(again), "group": answer[0] if answer else None, "youtube": _youtube_status(svc.youtube)})
 
@@ -1014,8 +1040,9 @@ def save_album(
         want_kept(svc, conn, p.person_id, [r for r in ref_ids if _keep_state(svc, conn, r)["state"] in ("none", "failed")])
         cursor = library.latest_cursor(conn, p.person_id)
     if svc.scheduler is not None:
-        for ref_id in ref_ids:
-            svc.scheduler.promote("keep", ref_id)
+        svc.scheduler.promote_many(
+            "keep", ref_ids, priority=PROMOTE_MANY
+        )  # a whole release at once: ahead of imports, behind a single tap
     if changed:
         _changed(svc, p, cursor)
     with svc.db.read() as conn:
