@@ -26,6 +26,20 @@ def adb(*args):
     return subprocess.run([ADB, "-s", SERIAL, *args], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
 
 
+_SCALE = None
+
+
+def at(x, y):
+    """A point measured on a 720x1600 screen, moved to this device's screen: the tool used to tap fixed pixels, which hit the wrong place on a 1080x2400 emulator or a
+    1080x2340 phone (found 6 Nov 2026, P1-06)."""
+    global _SCALE
+    if _SCALE is None:
+        size = re.search(r"(\d+)x(\d+)", adb("shell", "wm", "size"))
+        w, h = (int(size.group(1)), int(size.group(2))) if size else (720, 1600)
+        _SCALE = (w / 720, h / 1600)
+    return str(round(x * _SCALE[0])), str(round(y * _SCALE[1]))
+
+
 def screen():
     for _ in range(4):
         out = adb("exec-out", "uiautomator", "dump", "/dev/tty")
@@ -70,6 +84,12 @@ def player_state():
     return (m.group(1) if m else "NONE", int(m.group(2)) if m else -1, title.group(1) if title else "", bool(audio))
 
 
+def _core(text):
+    """A title without its bracketed tail: the catalogue lists "Instant Crush (feat. Julian Casablancas)" and "Windowpane (Remastered 2015)" for what a person types as
+    "Instant Crush" and "Windowpane" (found 6 Nov 2026: the strict match made a real song "not found")."""
+    return _plain(re.sub(r"\s*[\(\[][^)\]]*[\)\]]", "", text))
+
+
 def _plain(text):
     return re.sub(r"[^a-z0-9 ]", "", text.lower()).strip()
 
@@ -82,7 +102,7 @@ def find_row(artist, title):
         if label.startswith("Top result: Song, "):
             _, _, rest = label.partition("Top result: Song, ")
             name, _, by = rest.rpartition(", ")
-            if _plain(name) == _plain(title) and artist.lower() in by.lower():
+            if _core(name) == _core(title) and artist.lower() in by.lower():
                 return label, x, y
     for label, x, y, click in screen():
         parts = label.split(" | ")
@@ -91,8 +111,19 @@ def find_row(artist, title):
         by = re.split(r" [-•] ", parts[1])[0]
         if artist.lower() not in by.lower() or re.search(r" - \d+ songs?$", parts[1]):
             continue
-        if _plain(re.sub(r"\s*\((?:\d{4} )?remaster(?:ed)?[^)]*\)", "", parts[0])) == _plain(title):
+        if _core(parts[0]) == _core(title):
             return label, x, y
+    return None
+
+
+def app_span():
+    """The app's own `[perf] span play.audible N ms` for the tap just made: THE number (docs/07 section 3). This tool's own polling (three adb calls a round) added
+    about 0.6 s to what it printed before 6 Nov 2026 (the app said 2.55 s where this tool said 3.2 s)."""
+    for _ in range(8):
+        found = re.findall(r"span play\.audible (\d+) ms", adb("logcat", "-d", "-s", "flutter:I"))
+        if found:
+            return round(int(found[-1]) / 1000, 2)
+        time.sleep(0.4)
     return None
 
 
@@ -101,11 +132,12 @@ def measure(artist, title, limit=90.0):
     if not tap_label("Search | Tab"):
         raise SystemExit("the Search tab is not on screen: open the app's main screen first")
     time.sleep(0.8)
-    box = next(((x, y) for label, x, y, click in screen() if click and y < 400 and "Search" not in label), None)
+    top = int(at(0, 400)[1])
+    box = next(((x, y) for label, x, y, click in screen() if click and y < top and "Search" not in label), None)
     # The search box is the first clickable element under the title (its label is the typed text or empty).
     tap_label("Clear", clickable_only=True)  # the app's own button empties the box
     time.sleep(0.4)
-    adb("shell", "input", "tap", "360", "277")
+    adb("shell", "input", "tap", *(map(str, box) if box else at(360, 277)))   # the box the screen shows; the old fixed point only when none was found
     adb("shell", "input", "text", f"{artist} {title}".replace(" ", "%s"))
     adb("shell", "input", "keyevent", "KEYCODE_BACK")  # hide the keyboard
     if wait_for(title.split()[0], 25) is None:
@@ -115,11 +147,12 @@ def measure(artist, title, limit=90.0):
         row = find_row(artist, title)
         if row is not None:
             break
-        adb("shell", "input", "swipe", "360", "1300", "360", "500", "300")
+        adb("shell", "input", "swipe", *at(360, 1300), *at(360, 500), "300")
         time.sleep(0.8)
     if row is None:
         return None, f"no result row for {title!r} by {artist!r}"
     label, x, y = row
+    adb("logcat", "-c")                       # so the span read below is this tap's
     t0 = time.monotonic()
     adb("shell", "input", "tap", str(x), str(y))
     last = None
@@ -127,7 +160,10 @@ def measure(artist, title, limit=90.0):
         state, pos, desc, started = player_state()
         last = (state, pos, desc, started)
         if state == "PLAYING" and started and title.lower().split()[0] in desc.lower():
-            return round(time.monotonic() - t0, 1), label
+            span = app_span()
+            if span is not None:
+                return span, label
+            return round(time.monotonic() - t0, 2), label + "   [this tool's own polling: the app logged no span]"
         time.sleep(0.25)
     return None, f"not audible within {limit:.0f} s (last: {last})"
 
@@ -140,14 +176,14 @@ def main():
     results = []
     for artist, title in songs:
         seconds, note = measure(artist.strip(), title.strip())
-        print(f"{artist.strip()} - {title.strip():30} {'%.1f s' % seconds if seconds is not None else 'FAILED'}   {note[:70]}")
+        print(f"{artist.strip()} - {title.strip():30} {'%.2f s' % seconds if seconds is not None else 'FAILED'}   {note[:70]}")
         if seconds is not None:
             results.append(seconds)
         time.sleep(3)
     if results:
         ordered = sorted(results)
         p95 = ordered[min(len(ordered) - 1, int(0.95 * len(ordered)))]
-        print(f"n={len(results)}  median {statistics.median(results):.1f} s  p95 {p95:.1f} s  slowest {max(results):.1f} s  "
+        print(f"n={len(results)}  median {statistics.median(results):.2f} s  p95 {p95:.2f} s  slowest {max(results):.2f} s  "
               f"(device {SERIAL}; a song new to the server each time)")
     return 0
 
