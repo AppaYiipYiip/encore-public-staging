@@ -1,0 +1,12 @@
+{
+ "id": "20261106T012847Z-agent-36bf",
+ "item": "P1-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:28:47Z",
+ "type": "note",
+ "body": "Audit B-52 (6 Nov 2026): the Lyrics text-size slider is read aloud by a screen reader as '25%, 100%' (the position in the range 0.8 to 1.6, then the text scale). It needs a semanticFormatterCallback so a person hears one meaningful value. docs/tasks/AUDIT-BUILT-2026-11-05.md B-52.",
+ "to": [
+  "agent"
+ ]
+}

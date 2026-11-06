@@ -1,0 +1,12 @@
+{
+ "id": "20261106T013418Z-agent-7a7b",
+ "item": "P1-21",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:34:18Z",
+ "type": "note",
+ "body": "New item from audit B-51 (proven on an emulator, 6 Nov 2026): a finished list played again ends in a silent 'playing' state. The root is playback_engine.dart:1296-1297 (a second completion of the same load is ignored). Fix, acceptance and the test are in docs/tasks/P1-instant-play-and-worst-bugs.md section P1-21; the proof is docs/evidence/README.md#d01 and docs/tasks/AUDIT-BUILT-2026-11-05.md B-51.",
+ "to": [
+  "agent"
+ ]
+}

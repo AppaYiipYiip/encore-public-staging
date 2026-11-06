@@ -724,5 +724,10 @@
   "kind": "plumbing",
   "title": "Behind the scenes: a music disk that is briefly missing no longer wipes the library link",
   "note": "Proven: an empty answer from the music server removed every file link in one pass."
+ },
+ "P1-21": {
+  "kind": "feature",
+  "title": "Playing a finished list again works, and the player never says playing while it is silent",
+  "note": "Found by running it: after the last song ends, Play plays one song and then the player shows Pause in silence."
  }
 }

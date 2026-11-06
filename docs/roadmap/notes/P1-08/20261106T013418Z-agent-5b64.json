@@ -1,0 +1,12 @@
+{
+ "id": "20261106T013418Z-agent-5b64",
+ "item": "P1-08",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:34:18Z",
+ "type": "note",
+ "body": "CORRECTION to my earlier note (6 Nov 2026, advisor-prompted re-test): B-51 is not 'Play replays the last song and stops'. After the last song of a list ends the engine marks that load completed and pauses; Play resumes the same load, and when the song ends again _onCompleted is skipped (playback_engine.dart:1296, _completedSerial == serial; _loadSerial changes only on a new load). The player then says PLAYING / Pause with a full bar while the phone's audio track is stopped: silent and stuck, which is what this item is named after although it is marked built. Timed samples are in docs/evidence/README.md#d01. The fix is the new item P1-21 (size S, before gate 1); this item stays built.",
+ "to": [
+  "agent"
+ ]
+}

@@ -80,7 +80,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Size.** S.
 
 ## P0-13 — Release candidate 1 walked (the walk record b11) — Size M
-* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d], P1-18 [d], P1-19 [d], P2-25 [d], P2-26 [d].
+* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d], P1-18 [d], P1-19 [d], P2-25 [d], P2-26 [d], P1-21 [d].
 * **Why.** This was the first gate of the old, phased plan (D-57 removed the phases, so it is a task now). The owner's definition of pass: nothing is "walked" until it is walked as a person on the release-candidate pair (the published image plus the app built from the same commit, signed with the release key) on a clean machine, to the end state; and nothing goes to the owner as ready until the walk record exists and the advisor and the critic have read it.
 * **Do.** Rounds 2 and 3 of the walk (`RELEASE-CANDIDATE.md` section 3), written up as `b11`; the advisor reads it, then the critic; every built item it covers is marked walked (or reopened) with `python tools/roadmap.py mark`; the open round-2 findings are fixed or triaged "later" in `history/reviews-2026-10-31.md#audit`.
 * **Acceptance.** `b11` exists on the final pair; the advisor and the critic have read it; the built items it covers are marked walked with their proof, or reopened.
