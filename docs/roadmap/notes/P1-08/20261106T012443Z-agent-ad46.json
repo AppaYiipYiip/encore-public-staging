@@ -1,0 +1,12 @@
+{
+ "id": "20261106T012443Z-agent-ad46",
+ "item": "P1-08",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:24:43Z",
+ "type": "note",
+ "body": "Audit B-51 (proven on an emulator, offline, 6 Nov 2026): after an album or playlist has played to its end the player waits paused on the last song, and the Play button of that page (detail_screens.dart:111-112) only toggles play/pause, so it replays the last song alone and then stops; it should start the list from the first song. Small fix plus a playback test. See docs/tasks/AUDIT-BUILT-2026-11-05.md B-51 and docs/evidence/README.md#d01. Also recorded there: the Download and offline path passed on the emulator (download in under 8 s, offline library, offline playback, queue advance).",
+ "to": [
+  "agent"
+ ]
+}
