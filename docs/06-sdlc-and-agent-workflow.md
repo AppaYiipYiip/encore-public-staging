@@ -34,7 +34,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 * **The roadmap board is the single tracker** (D-60, 2026-11-05; `docs/08-roadmap.md`, `docs/roadmap/README.md`): items (one flat list, Now and Later), notes on an item
   for a problem, a question or a hand-over, claims for who is working on what. GitHub Issues and GitHub Projects are not used for planning: the owner does not use
   GitHub and the board works the same whichever Claude account is signed in. A problem found while working is a note on the item it belongs to, or a new item
-  (`python tools/roadmap.py note ITEM "..."`). The old labels and columns were never used and are gone. (The audit rows R-, F- and A- in `history/reviews-2026-10-31.md#audit` keep their
+  (`python tools/roadmap.py note ITEM "..."`). The old labels and columns were never used and are gone. (The audit rows R-, F- and A- in `history/README.md#audit` keep their
   numbers: they are findings with evidence, not a second list.)
 * Each task file in `tasks/` is an item on the board; the pull request that does the work marks it (`python tools/roadmap.py mark ITEM built|walked --evidence "..."`).
 * Bug report template (also for agents): **What I did** (steps), **What I expected**, **What happened** (screenshot/log),
@@ -91,7 +91,7 @@ and the evidence. It must:
 | `server-legacy.yml` (Server legacy) | push to `main` and pull requests touching `server/legacy/` | the five older Python services (unittest) and the Jam hub (Dart analyze and test) |
 | `server-image.yml` (Server image) | push to `main` that touches `server/encore_server/`; `v*` tags; weekly (Monday 04:17 UTC); by hand | `tests` (the server's lint, types and tests; skipped for the weekly rebuild), then `image`: build and publish to GitHub's container registry (`:main`, `:<tag>`, `:sha-<commit>`); amd64 only |
 | `docs.yml` (Hygiene) | push to `main` and every pull request | `secrets`: gitleaks over the history; `checks`: no logins, keys, cookies, environment files or binaries are tracked, and the untested-rows ratchet (`tools/check_rows.py`, `11` ADR-R41 T2) |
-| `goldens.yml` (Goldens (Linux)) | by hand, on the branch that needs the pictures (never `main`) | draws the Linux screen pictures, commits the changed `goldens/linux/*.png` back to that branch (and nothing else) and uploads them as an artifact; App is then started by hand on the new commit (`dev-gotchas.md`, `history/reviews-2026-10-31.md#cloud-resume`) |
+| `goldens.yml` (Goldens (Linux)) | by hand, on the branch that needs the pictures (never `main`) | draws the Linux screen pictures, commits the changed `goldens/linux/*.png` back to that branch (and nothing else) and uploads them as an artifact; App is then started by hand on the new commit (`dev-gotchas.md`, `history/README.md#cloud-resume`) |
 
 **Planned, not built:** `release.yml` (a tag makes the signed APK, the server images and a GitHub Release with checksums; today a `v*` tag only makes `server-image.yml` publish the server image, and the APK is built by hand with the signing key); a documentation link check, markdown lint and website build; a nightly run of the emulator journeys (`07` section 6) and of the yt-dlp canary; arm64 server images.
 

@@ -16,8 +16,8 @@ There are five kinds of document, and each has one rule. A new document, or a ne
 
 Rules that follow from this:
 * **Do not append a dated story to a truth document.** A change of fact changes the sentence. A decision goes in the log. A finding or a progress note goes on the board (`roadmap.py note`). What happened on a day goes in git, or in `docs/history/` if it will be needed.
-* **IDs never change.** Files keep their names and numbers; `D-xx`, `ADR-Rxx`, `P*-nn`, `docs/31 CN-1` are cited by code, tests and tools.
-* **No new file for a message, a proof or a record.** Agents and developers talk to each other through **board notes** (`roadmap.py note`), never through a markdown file. A new proof is a new section at the end of `docs/evidence/README.md`; a new history record is a new section in an archive file in `docs/history/`; a progress note is a board note. A new truth document or task file is added to the map below in the same pull request: `tools/check_docs.py` refuses the merge otherwise (the `map` and `links` rules are strict in CI).
+* **IDs never disappear** (D-62). `D-xx`, `ADR-Rxx`, `P*-nn`, `CN-1`, `PB-F7` are cited by code, tests and tools. The documents are being merged into about ten topic files; **a document's old number stays as the id of its section** (`## 17 · API and sync contract`), so `docs/17 section 5` in a source comment still finds `17.5`, and the **index of old numbers** below says which file holds each. `python docs/evidence/scripts/doc_ids.py diff docs/evidence/scripts/doc_ids.baseline.txt` proves that no ID was lost.
+* **No new file for a message, a proof or a record.** Agents and developers talk to each other through **board notes** (`roadmap.py note`), never through a markdown file. A new proof is a new section at the end of `docs/evidence/README.md`; a new history record is a new section at the end of `docs/history/README.md`; a progress note is a board note. A new truth document or task file is added to the map below in the same pull request: `tools/check_docs.py` refuses the merge otherwise (the `map` and `links` rules are strict in CI).
 * **Rewrite on touch.** A file marked "clean on touch" below is cleaned by whoever next edits it, in the same pull request.
 * `python tools/check_docs.py` measures all of this (the map is complete, size, dated narrative in truth files, broken links). It reports today and will fail the build once the baseline is clean.
 
@@ -55,6 +55,14 @@ A task has an **Order line** (`* **Order.** Needs: P2-08 [d], ...`: its place in
 | **Planning agent** | Researches, measures, keeps the truth documents and the task definitions; does not write product code. |
 | **Implementing agents** | Do the tasks, one per branch, by pull request, following `06`. |
 | **Reviewing agents** | Re-run each pull request's acceptance on devices and walk the screens as a person (`07`); never review their own work. |
+
+## Index of the old document numbers (D-62)
+
+Source comments, tests and tools cite documents by number (`docs/17`, `31 CN-1`). Until a number appears in the table below it is still its own file with that number in its name. Documents that are merged get a section with their old number as id.
+
+| Old number or path | Now |
+|--------------------|-----|
+| `history/reviews-2026-10-31.md`, `history/design-reviews.md` and their section ids (`#audit`, `#cloud-resume`, `#qa-backend-2026-10-31`, `#qa-round1-2026-10-31`, `#qa-ui-2026-10-31`, `#docs-audit-2026-11-01`, `#ux-review`, `#rc-rehearsal-vm107`, `#rc-log`, `#design-01-brief` to `#design-04-review-2026-10-30`) | `history/README.md`, the same ids |
 
 ## The map: every tracked markdown file
 
@@ -113,9 +121,9 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/guides/friend.md` | guide | Using Encore on a friend's server (a one-page guide for the first outside user) | keep |
 | `docs/guides/getting-started-for-developers.md` | guide | Getting started as a developer (read this first) | keep |
 | `docs/guides/install-test.md` | guide | Install Encore on a fresh computer (the install test) | keep |
-| `docs/history/README.md` | history | What a history record is and the index of the archive files | read-only; not instructions |
-| `docs/history/design-reviews.md` | history | The design brief, the direction choice and the two design reviews (24 to 30 Oct 2026) | read-only; not instructions |
-| `docs/history/reviews-2026-10-31.md` | history | Six records: the resume notes, the docs audit, the three QA reviews (31 Oct to 1 Nov 2026) and the frozen AUDIT.md, UX-REVIEW.md, the rehearsal and the log of the release candidate (finding IDs F1 to F66, B1 to B50, R2-F1 cited by code and tests) | read-only; not instructions |
+| `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
+| `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
+| `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
 | `docs/roadmap/README.md` | entry | How the roadmap board works: one place per fact, who writes what | keep |
 | `docs/tasks/AUDIT-BUILT-2026-11-05.md` | record | The audit of what is already built: findings with evidence, and the feasibility read | keep |
 | `docs/tasks/P0-reset.md` | plan | The task definitions: P0 — Reset (no product changes) | keep the definitions; move "Status" and "Done so far" narrative to the board's notes, one file at a time |

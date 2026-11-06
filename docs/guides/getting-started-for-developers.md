@@ -30,7 +30,7 @@ rules: the rules are in `AGENTS.md` and `docs/30-engineering-guide.md`, and this
 | `server/legacy/*` | Older services, tested only when their own folder changes (D-44); do not build on them |
 | `tools/` | `check.ps1` (the one command that proves a change), `env.ps1` (toolchain paths), `check_rows.py` (the state-table ratchet), `journeys/` (drive an emulator), `hooks/` (the pre-commit hook) |
 | `docs/` | The plan and the source of truth. Start at `docs/README.md` |
-| `docs/tasks/` | One file per phase with the task list; `history/reviews-2026-10-31.md#audit` lists what is still open; `RELEASE-CANDIDATE.md` says what "passed" means |
+| `docs/tasks/` | One file per phase with the task list; `history/README.md#audit` lists what is still open; `RELEASE-CANDIDATE.md` says what "passed" means |
 | `docs/guides/` | How-tos: this page, `install-test.md` (install on a fresh machine), `dev-gotchas.md` (traps met on this project), `friend.md` |
 | `docs/evidence/` | Measurements and walk records, one file each (`c01`…), written when something is proved |
 | `.github/workflows/` | `app.yml`, `server.yml`, `docs.yml`, `goldens.yml`, `server-image.yml` (builds and publishes the server image) |
@@ -79,7 +79,7 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
 
 ## 5. How a change goes (the short version of `docs/06` and `AGENTS.md`)
 
-1. **Find the task** in `docs/tasks/` (open items: `history/reviews-2026-10-31.md#audit`). One task, one branch: `task/<id>-<slug>` (docs-only changes: `docs/<slug>`).
+1. **Find the task** in `docs/tasks/` (open items: `history/README.md#audit`). One task, one branch: `task/<id>-<slug>` (docs-only changes: `docs/<slug>`).
 2. **Answer the ten questions** in `docs/30-engineering-guide.md` §0 before writing code. If you cannot, stop and ask.
 3. **Test first, with the change.** Never weaken a test to make it pass; a skipped test needs an issue number. For a bug fix, make the
    test fail on the old code first (the project checks its own tests this way: break the code on purpose and see the test go red).
@@ -104,8 +104,8 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
   including "no client calls an outside host" (two known calls today: Deezer and LRCLIB), are in `app/test/architecture_test.dart`.
 * **Ids repeat across documents; always read an id together with its file name.** `D-n` = a decision for the owner (`docs/10`); `ADR-Rn` =
   a decision taken (`docs/11`); `P<phase>-nn` = a task (`docs/tasks/P*.md`); `F<n>` = findings from the owner's field tests and the catalogue
-  (`docs/history/reviews-2026-10-31.md#audit`); **`B<n>` means three different things**: a finding in `docs/01`, a check row in `docs/tasks/RELEASE-CANDIDATE.md`
-  (B0-B6), and a backend bug in `docs/history/reviews-2026-10-31.md#qa-backend-2026-10-31` (B1-B12); `c0n` = an evidence file in `docs/evidence/`; `b11` = the
+  (`docs/history/README.md#audit`); **`B<n>` means three different things**: a finding in `docs/01`, a check row in `docs/tasks/RELEASE-CANDIDATE.md`
+  (B0-B6), and a backend bug in `docs/history/README.md#qa-backend-2026-10-31` (B1-B12); `c0n` = an evidence file in `docs/evidence/`; `b11` = the
   walk record of the release-candidate pair (it does not exist yet); `A-n` = a finding of the 3 Nov 2026 audit of `main` (named in PR
   titles; the full list is in the owner's project book, which is kept outside the repository, so ask).
 * **A doc can promise what the code does not do.** An audit on 3 Nov 2026 found several (the API inventory, "never run" sentences, states
@@ -124,7 +124,7 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
   Encore for real people are changed only with the owner's word, and a backup comes first (`encore backup`).
 * **Ask the strongest model you have** before a hard-to-undo choice and again before calling a multi-step task done (`docs/30` §3).
 
-## 8. Snapshot, 3 November 2026 (will go stale; the live version is `docs/README.md` and `docs/history/reviews-2026-10-31.md#audit`)
+## 8. Snapshot, 3 November 2026 (will go stale; the live version is `docs/README.md` and `docs/history/README.md#audit`)
 
 * The server and the app are built; an install by the guide on a bare VM took 9 min 51 s (`docs/evidence/c06`). The release-candidate pair
   (app build 125 and the server image from the same server code) is **built, not walked**: QA rounds 2 and 3 and the walk record `b11` are
