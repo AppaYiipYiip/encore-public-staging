@@ -172,6 +172,7 @@ phone; play a song. Expect: ≤ 15 minutes; no Docker word on any screen; the gu
 | Very long | Surah Al-Baqarah (Mishary Alafasy) 2:21:21, 163 MB | length limits, seeking |
 | Long prog | Opeth – Windowpane 7:45; Pink Floyd – Dogs 17:04 | keeper limits, gapless |
 | Non-Latin titles | Fairuz – Kifak Inta (Arabic), BABYMETAL (Japanese), Alcest – Améthyste (accents) | normalisation, RTL, fonts |
+| **Native-script titles** (never only a transliteration; audit B-37) | فيروز – كيفك إنت and فيروز – نسّم علينا الهوا (two songs, 1.5 s apart); Кино – Группа крови; 宇多田ヒカル – First Love; BTS – 봄날 | the alphabets the matcher must keep: two songs stay two songs, an exact match is accepted, a Host's library in these scripts links one ref per file |
 | Covers vs original | "Weird Fishes" (Radiohead vs covers) | ranking, matching |
 | Same title, different artists | "Animals" (Pink Floyd) vs Animals as Leaders | matcher strictness |
 | Age-restricted | Overnight Celebrity (Remix) – Twista ft. … (`4uEUiodPr7E`) | honest failure |

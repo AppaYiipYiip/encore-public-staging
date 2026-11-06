@@ -692,7 +692,7 @@
  },
  "P3-29": {
   "kind": "plumbing",
-  "title": "Behind the scenes: server hygiene, so one slow request cannot freeze everyone",
+  "title": "Behind the scenes: server hygiene, so one slow request or one hiccup cannot hurt everyone",
   "note": "Measured with 20 phones: some waited 12 seconds. The fix is ready and waits for your word."
  },
  "P3-30": {
@@ -704,5 +704,25 @@
   "kind": "plumbing",
   "title": "Behind the scenes: split the one big server file into one file per area",
   "note": "A pure move that stops merges colliding."
+ },
+ "P2-25": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: songs in Arabic, Russian, Korean and Japanese are told apart and found",
+  "note": "Proven broken: two different Fairuz songs become one, and an exact Arabic match is rejected. Fix before you try the app on your phone."
+ },
+ "P2-26": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a short YouTube hiccup no longer fails a song for good",
+  "note": "Proven: one 12-second timeout marks the song 'Not available' with no Retry."
+ },
+ "P3-32": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a big import no longer makes a friend's small one wait for hours",
+  "note": "Proven: 2,000 queued songs push another person's 20 to position 1,802."
+ },
+ "P3-33": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a music disk that is briefly missing no longer wipes the library link",
+  "note": "Proven: an empty answer from the music server removed every file link in one pass."
  }
 }

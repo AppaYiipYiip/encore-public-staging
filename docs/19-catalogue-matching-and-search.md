@@ -20,6 +20,8 @@ one ranking. Lyrics are fetched by the server too and travel with downloads.
 
 ## 2. Normalisation (one function, `textnorm`, shared everywhere)
 
+> **Not implemented as written (audit B-37, proven 6 Nov 2026).** The server's `textnorm` folds to ASCII, so every Arabic, Cyrillic, Korean or Japanese name becomes the empty string, different songs merge into one and an exact non-Latin match from YouTube Music is rejected. The steps below are the specification; P2-25 builds them.
+
 1. Unicode NFKC, case-fold, collapse spaces.
 2. Latin: strip diacritics (Beyoncé → beyonce), `&`/`and`/`+` → `and`, drop a leading "the ".
 3. Arabic: unify alef forms (أ إ آ → ا), ى → ي, ة → ه, drop tatweel and harakat; Persian/Urdu variants of ي and ك.
