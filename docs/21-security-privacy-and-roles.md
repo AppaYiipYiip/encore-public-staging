@@ -72,7 +72,7 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 | Stranger on the home Wi-Fi | claim a fresh server; sniff traffic | setup code (H36); tokens not passwords; pinned HTTPS later |
 | Curious member | see others' listening; read others' playlists | the privacy matrix enforced server-side, tested (one test per cell of §2) |
 | Malicious remote server | spam friend requests; pull a library; stream everything | codes from a person, signed requests, pinned keys, grants scoped to one song in one live Jam, per-server rate limits, Host switch |
-| Lost or stolen phone | play as the person; read their library | revoke the device from another device or the admin; tokens hashed on the server |
+| Lost or stolen phone | play as the person; read their library | revoke the device from another device or the admin; tokens hashed on the server. **Not true for the app of build 125 until P3-03 and P2-20** (audit B-55: its calls carry the music-server login, which a revoked device keeps); until then a locked account or a changed password is what cuts a phone off |
 | Forwarded invite link | a stranger joins | one-time use, 7-day expiry, owner sees who used which invite and can remove them |
 | Compromised dependency | malicious update | pinned versions, checksums on releases, `pip-audit`/`osv-scanner` and Dependabot in CI, yt-dlp updates pinned to releases ≥ 24 h old and verified by hash |
 

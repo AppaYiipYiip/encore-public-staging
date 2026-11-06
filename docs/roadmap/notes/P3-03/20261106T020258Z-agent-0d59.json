@@ -1,0 +1,12 @@
+{
+ "id": "20261106T020258Z-agent-0d59",
+ "item": "P3-03",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:02:58Z",
+ "type": "note",
+ "body": "Audit B-55 (proven, 6 Nov 2026): revoking a device does not stop the shipped app, because its calls carry the music-server login (u/t/s) and only name the device in a header; api.py get_principal (legacy branch) never reads revoked_at. This item is the fix: acceptance should be the repeatable check `python -X utf8 docs/evidence/scripts/audit_stack.py check revoke` printing PASS twice (the app's own style of call must be refused for a revoked device, within 15 s), plus a walk on a phone. docs/32 DV-3 and docs/21 now say it is not true until this lands. docs/tasks/AUDIT-BUILT-2026-11-05.md B-55.",
+ "to": [
+  "agent"
+ ]
+}

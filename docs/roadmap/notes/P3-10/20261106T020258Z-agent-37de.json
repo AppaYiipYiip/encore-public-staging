@@ -1,0 +1,12 @@
+{
+ "id": "20261106T020258Z-agent-37de",
+ "item": "P3-10",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:02:58Z",
+ "type": "note",
+ "body": "Audit B-55: 'cancel a lost device' must not be offered or called done while the app's calls carry the music-server login: a revoked phone still reads and writes (proven on an emulator). It depends on P3-03/P2-20 for real; test it with `audit_stack.py check revoke` and on a phone.",
+ "to": [
+  "agent"
+ ]
+}

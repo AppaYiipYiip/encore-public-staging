@@ -1,0 +1,12 @@
+{
+ "id": "20261106T020259Z-agent-e0b0",
+ "item": "P2-20",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:02:59Z",
+ "type": "note",
+ "body": "Audit B-55 (proven): until the app's calls carry only the device token, revoking a lost phone does not stop it. `audit_stack.py check revoke` is the repeatable proof; it must print PASS for the app's own style of call.",
+ "to": [
+  "agent"
+ ]
+}

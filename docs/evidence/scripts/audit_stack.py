@@ -6,6 +6,7 @@ with a small tagged library in three alphabets, and the end-to-end checks of the
     python docs/evidence/scripts/audit_stack.py check outage         [B-41] the music server is down: what does a sign-in with the CORRECT password say? (wanted: 503, not 401)
     python docs/evidence/scripts/audit_stack.py check badsig         [B-44] a song address with a non-ASCII signature (wanted: 401, not 500)
     python docs/evidence/scripts/audit_stack.py check prune          [B-40] the music folder is emptied, rescanned, relinked (wanted: the file links stay)
+    python docs/evidence/scripts/audit_stack.py check revoke         [B-55] a device is revoked: does the app's own kind of call (the music-server login in the address) still work? (wanted: refused)
     python docs/evidence/scripts/audit_stack.py check transient      [B-38] YouTube unreachable: what happens to a liked song? (wanted: a wait with Retry, not 'no copy')
     python docs/evidence/scripts/audit_stack.py connections          established connections to the server (count them with the app on screen and in the background, B-45)
     python docs/evidence/scripts/audit_stack.py down                 stop the stack (the folder is left; delete it by hand)
@@ -17,6 +18,7 @@ Needs Docker. The app side (B-37 in the app, B-45) is walked with an emulator: `
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import secrets
 import shutil
@@ -195,6 +197,36 @@ def check_badsig(stack: Path) -> None:
     print("wanted: 401 ->", "PASS" if status == 401 else "FAIL")
 
 
+def check_revoke(stack: Path) -> None:
+    """B-55: the person revokes one of their phones from another phone. A call that carries the revoked device's token is refused (that part is
+    built); the app of build 125 does not carry a token, it carries the music-server login (u, t, s) and only NAMES its device in a header."""
+    env = env_of(stack)
+    name, password = OWNER, env["TEST_OWNER_PASSWORD"]
+    phone_a, phone_b = Phone(stack), Phone(stack)
+    answers = []
+    for phone, label in ((phone_a, "audit-lost-phone"), (phone_b, "audit-other-phone")):
+        status, body = phone.call("POST", "/encore/api/v1/auth/login", {"username": name, "password": password, "deviceName": label})
+        assert status == 200, (status, body)
+        phone.token, phone.device = body["deviceToken"], body["device"]["id"]
+        answers.append(phone.device)
+    status, body = phone_b.call("DELETE", f"/encore/api/v1/me/devices/{phone_a.device}")
+    print("the other phone revokes the lost one:", status)
+    lost_token = phone_a.call("GET", "/encore/api/v1/playlists")[0]
+    print("a call with the revoked device's token:", lost_token)
+    print("wanted: 401 ->", "PASS" if lost_token == 401 else "FAIL")
+    salt = secrets.token_hex(4)
+    login = f"?u={name}&t={hashlib.md5((password + salt).encode()).hexdigest()}&s={salt}&v=1.16.1&c=audit&f=json"
+    app_style = Phone(stack)
+    request = urllib.request.Request(app_style.base + "/encore/api/v1/playlists" + login, headers={"X-Encore-Device": phone_a.device})
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            status = response.status
+    except urllib.error.HTTPError as error:
+        status = error.code
+    print("a call in the app's own style (music-server login in the address, the revoked device named in a header):", status)
+    print("wanted: 401 ->", "PASS" if status == 401 else "FAIL (the revoked phone still reads and writes)")
+
+
 def check_prune(stack: Path) -> None:
     music = Path(env_of(stack)["ENCORE_MUSIC_DIR"])
     away = stack / "music_away"
@@ -265,7 +297,7 @@ def connections(stack: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["up", "check", "connections", "down"])
-    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient"])
+    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke"])
     parser.add_argument("--dir", type=Path, default=Path(tempfile.gettempdir()) / "encore-audit-stack")
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
@@ -276,4 +308,4 @@ if __name__ == "__main__":
     elif args.command == "down":
         compose(args.dir, "down")
     else:
-        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient}[args.which or "library"](args.dir)
+        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke}[args.which or "library"](args.dir)
