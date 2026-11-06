@@ -66,7 +66,7 @@ to be.
 (B3). Most of the existing server code is Python and well-tested; it can be moved, not rewritten.
 
 **Why SQLite.** One file, no admin, trivial backup (SQLite's online backup, run while the server keeps running: `11` ADR-R37), fast enough for a household (thousands of songs, tens of
-people). PostgreSQL would add a container and an administrator for no benefit.
+people). PostgreSQL would add a container and an administrator for no benefit. **Measured 6 Nov 2026 and decided (ADR-R45):** SQLite is not what limited twenty simulated people; the server's use of it was, and that is fixed in P3-29.
 
 ## 3. The data model: songs are references; files are attached (ADR-R4)
 

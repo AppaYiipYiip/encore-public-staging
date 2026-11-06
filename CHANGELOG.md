@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Behind the scenes: when many people use one server at the same moment, looking at your library or your playlists no longer waits for other people's changes to finish. With twenty simulated people the slowest wait fell from about 6 seconds to under a second; two changes still take turns, but each is short and nothing slow happens inside one.
 * After a list has played to its end, pressing Play (on the album page, the mini player, the lock screen or a headset) now starts it over from the first song, and when it ends again the player stops and shows Play. Before, Play replayed the last song once and then showed Pause with no sound.
 * On the server, pressing Download on a playlist or on your liked songs can now ask the server for the songs it does not have yet, ahead of other people's imports; a single tap on a song still comes first, and a long download can no longer push another person's tap behind it. Saving a release and Retry follow the same rule.
 * On your phone, pressing Download on a playlist or on your liked songs now asks your server to get the songs it does not have yet, ahead of other people's imports, and the phone keeps checking while the app is open.

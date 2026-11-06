@@ -104,6 +104,11 @@ class Services:
     identity: ServerIdentity | None = None
     #: The music server as this server's own account: kept songs and covers are passed on through it, so a phone needs no login of the music server.
     music: NavidromeClient | None = None
+    #: The secret that signs song and picture addresses. Made once and never changed, so it is read once at start: a screen shows thirty pictures,
+    #: and each of those requests used to open a write transaction just to read it.
+    #: **If a way to change it is ever added** (a "sign out everywhere" that also invalidates handed-out addresses, a leaked key), that change must
+    #: replace THIS copy too: the database row is no longer read per request, so changing only the row would leave the old key signing and checking.
+    stream_key: bytes = b""
     #: Tells a device how its downloads are going (`PUT keep/watch`, the live event `keep.progress`); `None` when this server does not keep songs.
     keep_watch: KeepWatch | None = None
 
@@ -119,34 +124,57 @@ def get_principal(request: Request) -> Principal:
     svc = services(request)
     headers = dict(request.headers.items())
     token = bearer_token(headers.get("authorization"))
+    # Signing in is a READ. The database is in WAL mode so that readers never wait for the writer; a sign-in that wrote (or merely took the write lock)
+    # on every request made every call of every phone queue behind every other (measured: B-10, 20 phones, p95 of a plain read 2.5 s).
     if token is not None:
-        with svc.db.tx() as conn:
+        with svc.db.read() as conn:
             row = conn.execute(
-                "SELECT d.id AS device, p.id AS person, p.navidrome_user AS user, p.role AS role, p.locked AS locked"
+                "SELECT d.id AS device, d.last_seen AS seen, p.id AS person, p.navidrome_user AS user, p.role AS role, p.locked AS locked"
                 " FROM device d JOIN person p ON p.id = d.person WHERE d.token_hash = ? AND d.revoked_at IS NULL",
                 (hash_token(token),),
             ).fetchone()
-            if row is None or row["locked"]:
-                raise ApiError("unauthorized", "This device is not signed in any more. Sign in again.")
-            conn.execute(
-                "UPDATE device SET last_seen = ? WHERE id = ? AND (last_seen IS NULL OR last_seen < ?)",
-                (now_ms(), row["device"], now_ms() - 60_000),
-            )
-            return Principal(row["person"], row["user"], row["role"], row["device"])
+        if row is None or row["locked"]:
+            raise ApiError("unauthorized", "This device is not signed in any more. Sign in again.")
+        _note_device_seen(svc, row["device"], row["seen"])
+        return Principal(row["person"], row["user"], row["role"], row["device"])
 
     creds = subsonic_credentials(dict(request.query_params.items()), headers)
     if creds is None:
         raise ApiError("unauthorized")
     user, subsonic, salt = creds
     check_music_login(request, user, subsonic, salt)
-    with svc.db.tx() as conn:
-        existing = conn.execute("SELECT * FROM person WHERE navidrome_user = ?", (user,)).fetchone()
-        admin = existing is None and svc.verifier.is_admin(user, subsonic, salt)
-        person = library.ensure_person(conn, user, admin=admin)
-        if person["locked"]:
-            raise ApiError("forbidden", "This account is locked.")
-        device = request.headers.get("x-encore-device")
-        return Principal(person["id"], user, person["role"], device if device and is_id(device, "dv") else None)
+    with svc.db.read() as conn:
+        person = conn.execute("SELECT * FROM person WHERE navidrome_user = ?", (user,)).fetchone()
+    if person is None:
+        # A person seen for the first time. The music server is asked OUTSIDE any transaction: a slow answer (8 s at worst) must not hold the
+        # write lock, which would stop every other phone for as long (measured: B-18). `ensure_person` looks again inside its own transaction.
+        admin = svc.verifier.is_admin(user, subsonic, salt)
+        with svc.db.tx() as conn:
+            person = library.ensure_person(conn, user, admin=admin)
+    if person["locked"]:
+        raise ApiError("forbidden", "This account is locked.")
+    device = request.headers.get("x-encore-device")
+    return Principal(person["id"], user, person["role"], device if device and is_id(device, "dv") else None)
+
+
+#: A device's "last seen" is written at most this often.
+LAST_SEEN_EVERY_MS = 60_000
+
+
+def _note_device_seen(svc: Services, device: str, seen: int | None) -> None:
+    """Writes when a device was last seen, at most once a minute. A best effort: being unable to write it (the database is busy) never refuses the
+    request that is being signed in."""
+    now = now_ms()
+    if seen is not None and seen >= now - LAST_SEEN_EVERY_MS:
+        return
+    try:
+        with svc.db.tx() as conn:
+            conn.execute(
+                "UPDATE device SET last_seen = ? WHERE id = ? AND (last_seen IS NULL OR last_seen < ?)",
+                (now, device, now - LAST_SEEN_EVERY_MS),
+            )
+    except sqlite3.OperationalError:
+        log.debug("could not note that a device was seen: the database is busy")
 
 
 def check_music_login(request: Request, user: str, subsonic: str, salt: str) -> None:
@@ -753,12 +781,11 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
     """The address to play a song from when the server has no file of it (or the app prefers it): signed, so a player that cannot set
     headers can use it, and valid for as long as a listen can last."""
     svc = services(request)
-    with svc.db.tx() as conn:
+    with svc.db.read() as conn:
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
-        secret = stream_secret(conn)
     expires = int(time.time()) + STREAM_URL_TTL_S
-    sig = sign_stream(secret, p.person_id, ref_id, expires)
+    sig = sign_stream(svc.stream_key, p.person_id, ref_id, expires)
     return _ok({"url": f"/encore/stream/{ref_id}?p={p.person_id}&e={expires}&sig={sig}", "expiresAt": expires * 1000})
 
 
@@ -769,10 +796,8 @@ _COVER_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 def cover_pass(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     """One ticket that opens every picture for a week: a screen shows thirty covers, and a phone should not ask thirty times. It opens pictures
     and nothing else (it is signed over its own scope, never over a song)."""
-    with services(request).db.tx() as conn:
-        secret = stream_secret(conn)
     expires = int(time.time()) + COVER_PASS_TTL_S
-    sig = sign_stream(secret, p.person_id, COVER_PASS_SCOPE, expires)
+    sig = sign_stream(services(request).stream_key, p.person_id, COVER_PASS_SCOPE, expires)
     return _ok({"pass": {"p": p.person_id, "e": expires, "sig": sig}, "expiresAt": expires * 1000})
 
 
@@ -784,10 +809,8 @@ def cover_url(cover_id: str, request: Request, size: int | None = None, p: Princ
         raise ApiError("not_found", "There is no such picture.")
     if size is not None and not 16 <= size <= 2000:
         raise ApiError("validation", "A picture is asked for between 16 and 2000 pixels.")
-    with services(request).db.tx() as conn:
-        secret = stream_secret(conn)
     expires = int(time.time()) + STREAM_URL_TTL_S
-    sig = sign_stream(secret, p.person_id, f"cover:{cover_id}", expires)
+    sig = sign_stream(services(request).stream_key, p.person_id, f"cover:{cover_id}", expires)
     tail = f"&size={size}" if size else ""
     return _ok({"url": f"/encore/cover/{cover_id}?p={p.person_id}&e={expires}&sig={sig}{tail}", "expiresAt": expires * 1000})
 
@@ -822,8 +845,7 @@ def cover(cover_id: str, request: Request) -> Response:
     """`GET /encore/cover/{id}`: a picture from the music server, behind a signed address."""
     svc = services(request)
     query = request.query_params
-    with svc.db.tx() as conn:
-        secret = stream_secret(conn)
+    secret = svc.stream_key
     try:
         expires = int(query.get("e", "0"))
         size = int(query["size"]) if query.get("size") else None
@@ -870,8 +892,8 @@ def stream(ref_id: str, request: Request) -> StreamingResponse:
     """`GET /encore/stream/{ref}`: the song's audio from YouTube, passed on as it arrives, with Range (docs/04 section 4)."""
     svc = services(request)
     query = request.query_params
-    with svc.db.tx() as conn:
-        secret = stream_secret(conn)
+    with svc.db.read() as conn:
+        secret = svc.stream_key
         person = query.get("p", "")
         try:
             expires = int(query.get("e", "0"))
@@ -1416,6 +1438,7 @@ def create_app(
     )
     with database.tx() as conn:
         identity = load_or_create(conn)
+        stream_key = stream_secret(conn)
     notifications = Notifications(database, hub)
     scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
     keep_watch = (
@@ -1498,6 +1521,7 @@ def create_app(
         identity=identity,
         music=client,
         keep_watch=keep_watch,
+        stream_key=stream_key,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)

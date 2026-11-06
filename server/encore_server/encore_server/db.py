@@ -29,6 +29,8 @@ class Database:
     def __init__(self, path: Path | str, *, backups: Path | None = None) -> None:
         self.path = Path(path)
         self.backups = backups if backups is not None else self.path.parent / "backups"
+        #: `journal_mode=WAL` is a property of the database file, not of a connection: set once, it holds for every later connection.
+        self._wal_set = False
 
     # ------------------------------------------------------------------ connections
 
@@ -37,7 +39,9 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.path, timeout=15, isolation_level=None)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+        if not self._wal_set:
+            conn.execute("PRAGMA journal_mode=WAL")
+            self._wal_set = True
         conn.execute("PRAGMA foreign_keys=ON")
         conn.execute("PRAGMA synchronous=NORMAL")
         return conn
