@@ -729,5 +729,10 @@
   "kind": "feature",
   "title": "Playing a finished list again works, and the player never says playing while it is silent",
   "note": "Found by running it: after the last song ends, Play plays one song and then the player shows Pause in silence."
+ },
+ "P3-34": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the music server's own door stays shut to visitors",
+  "note": "Proven: where a visitor's address is hidden (a Windows or Mac computer as the server, for example) every visitor is treated as being at home."
  }
 }

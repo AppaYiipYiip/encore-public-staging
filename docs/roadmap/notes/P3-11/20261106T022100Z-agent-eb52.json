@@ -1,0 +1,12 @@
+{
+ "id": "20261106T022100Z-agent-eb52",
+ "item": "P3-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:21:00Z",
+ "type": "note",
+ "body": "Audit B-56: the Tinkerer's door (the music server's own web page) must be OFF by default and switched on by the Host; today the gateway serves /app, /api and /auth to anything it calls 'home', and on Docker Desktop that is everybody who arrives by a port forward. See P3-34.",
+ "to": [
+  "agent"
+ ]
+}

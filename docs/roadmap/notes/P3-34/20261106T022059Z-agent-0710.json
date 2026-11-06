@@ -1,0 +1,12 @@
+{
+ "id": "20261106T022059Z-agent-0710",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:20:59Z",
+ "type": "note",
+ "body": "New item from audit B-56: default-shut music-server door, a per-account throttle, a seen-address line in the installer and on the Health page, and the install guide's words for Docker Desktop, rootless Docker and Podman. Acceptance: `audit_stack.py check homedoor` PASS x3.",
+ "to": [
+  "agent"
+ ]
+}

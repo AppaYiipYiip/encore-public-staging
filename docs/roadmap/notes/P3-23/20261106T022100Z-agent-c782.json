@@ -1,0 +1,12 @@
+{
+ "id": "20261106T022100Z-agent-c782",
+ "item": "P3-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:21:00Z",
+ "type": "note",
+ "body": "Audit B-56: the installer's last step must make one request to the server's own published address and report what address the server saw (a Docker bridge address is a warning in words, not an error). See P3-34.",
+ "to": [
+  "agent"
+ ]
+}

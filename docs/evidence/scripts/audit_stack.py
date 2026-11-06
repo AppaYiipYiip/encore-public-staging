@@ -8,6 +8,7 @@ with a small tagged library in three alphabets, and the end-to-end checks of the
     python docs/evidence/scripts/audit_stack.py check prune          [B-40] the music folder is emptied, rescanned, relinked (wanted: the file links stay)
     python docs/evidence/scripts/audit_stack.py check revoke         [B-55] a device is revoked: does the app's own kind of call (the music-server login in the address) still work? (wanted: refused)
     python docs/evidence/scripts/audit_stack.py check authz          a member made by invitation tries the owner's playlists and the owner-only routes (wanted: refused or harmless, all PASS)
+    python docs/evidence/scripts/audit_stack.py check homedoor       [B-56] the music server's own web page and API through the gateway when the visitor's address is hidden (wanted: 404 unless the Host switched it on)
     python docs/evidence/scripts/audit_stack.py check transient      [B-38] YouTube unreachable: what happens to a liked song? (wanted: a wait with Retry, not 'no copy')
     python docs/evidence/scripts/audit_stack.py connections          established connections to the server (count them with the app on screen and in the background, B-45)
     python docs/evidence/scripts/audit_stack.py down                 stop the stack (the folder is left; delete it by hand)
@@ -278,6 +279,29 @@ def check_authz(stack: Path) -> None:
     print("result:", "all PASS" if not fails else f"FAIL: {fails}")
 
 
+def check_homedoor(stack: Path) -> None:
+    """B-56: a visitor whose address Docker hides is seen as the Docker gateway (private, so 'home'). Nothing is forwarded here, which is exactly what
+    a router's port forward to Docker Desktop, rootless Docker or Podman delivers."""
+    base = f"http://127.0.0.1:{PORT}"
+    for path, method in (("/app/", "GET"), ("/auth/login", "POST"), ("/api/user", "GET")):
+        request = urllib.request.Request(base + path, method=method, data=b"{}" if method == "POST" else None)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                status = response.status
+        except urllib.error.HTTPError as error:
+            status = error.code
+        print(f"the music server's {path} through the gateway, address not forwarded:", status)
+        print("wanted: 404 ->", "PASS" if status == 404 else "FAIL (answered as if from the home network)")
+    salt = secrets.token_hex(4)
+    token = hashlib.md5(("nope" + salt).encode()).hexdigest()
+    try:
+        urllib.request.urlopen(f"{base}/encore/api/v1/playlists?u=homedoor{salt}&t={token}&s={salt}&v=1.16.1&c=audit&f=json", timeout=30)
+    except urllib.error.HTTPError:
+        pass
+    seen = [line for line in compose(stack, "logs", "--tail", "40", "encore-server").stdout.splitlines() if "counted against address" in line and f"homedoor{salt}" in line]
+    print("the address the server counted that caller against:", seen[-1].rsplit(" ", 1)[-1] if seen else "(not found in the log)")
+
+
 def check_prune(stack: Path) -> None:
     music = Path(env_of(stack)["ENCORE_MUSIC_DIR"])
     away = stack / "music_away"
@@ -348,7 +372,7 @@ def connections(stack: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["up", "check", "connections", "down"])
-    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke", "authz"])
+    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke", "authz", "homedoor"])
     parser.add_argument("--dir", type=Path, default=Path(tempfile.gettempdir()) / "encore-audit-stack")
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
@@ -359,4 +383,4 @@ if __name__ == "__main__":
     elif args.command == "down":
         compose(args.dir, "down")
     else:
-        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke, "authz": check_authz}[args.which or "library"](args.dir)
+        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke, "authz": check_authz, "homedoor": check_homedoor}[args.which or "library"](args.dir)
