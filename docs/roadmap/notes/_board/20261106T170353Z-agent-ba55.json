@@ -1,0 +1,13 @@
+{
+ "id": "20261106T170353Z-agent-ba55",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T17:03:53Z",
+ "type": "note",
+ "body": "Corrected and shortened (6 Nov 2026, evening). From the simulation of twenty people on one server (docs/evidence/README.md#e02). 1) Slow writes: with twenty people hammering the server a read waited up to 6.6 seconds; with the fix held back since 5 Nov it waits 0.33 seconds, and two people (or one person on three devices) changing the same playlist still end up consistent. I explained it to you in chat and will not merge it until you say so. 2) Songs in Arabic, Russian and Chinese are mixed up today (200 Arabic songs became 26): that fix (P2-25) is already planned before your first friend. Playing Arabic music matters; the app's screens in Arabic do NOT, you said languages can wait, so I withdrew my suggestion to move right-to-left earlier. 3) A recitation of Surat Al-Baqarah (over two hours) or an audiobook can be played but not downloaded, because the server refuses to keep any ONE file over 45 minutes or 80 MB. That limit is per file that the server fetches itself, not per library: your own music collection, however big, is not affected. Correction of my earlier number: 128 kbit/s is about 58 MB an hour, so 250 MB is about four hours and 400 MB about seven. Tell me which limit you want; I suggest one size limit, set by whoever runs the server.",
+ "to": [
+  "owner"
+ ],
+ "replaces": "20261106T164657Z-agent-b3e1"
+}

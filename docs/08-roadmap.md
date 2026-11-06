@@ -139,7 +139,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 73 | P4-07 | Control one device from another, with remote volume | L | todo | P2-08, P2-09 | 54 to 108 |
 | 74 | P0-10 | Behind the scenes: check that every library we use may legally be used | S | todo | none | 54 to 108 |
 | 75 | P2-18 | A changed or expired sign-in is handled calmly | M | todo | P3-03 | 55 to 110 |
-| 76 | P3-13 | You set a storage limit, and the server says plainly when it is full | M | todo | none | 56 to 112 |
+| 76 | P3-13 | You set a storage limit and a biggest-song limit; the server says when it is full | M | todo | none | 56 to 112 |
 | 77 | P3-34 | Behind the scenes: the music server's own door stays shut to visitors | M | todo | none | 57 to 114 |
 | 78 | P3-15 | Before your first friend: a security check of everything reachable from the internet | M | todo | P3-29, P3-30, P3-34 | 58 to 115 |
 | 79 | P3-19 | Start Claude's deep security review before your first friend (one command, it costs money) | S | todo | P3-15 | 58 to 115 |

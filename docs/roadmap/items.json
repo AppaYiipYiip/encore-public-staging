@@ -298,7 +298,7 @@
  },
  "P3-13": {
   "kind": "host",
-  "title": "You set a storage limit, and the server says plainly when it is full",
+  "title": "You set a storage limit and a biggest-song limit; the server says when it is full",
   "note": ""
  },
  "P3-14": {

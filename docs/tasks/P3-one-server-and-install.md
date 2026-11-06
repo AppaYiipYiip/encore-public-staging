@@ -142,20 +142,32 @@ installer and a browser wizard that a person who never used Docker can follow. R
   restored on a second machine and his playlists are all there; his first problem report reaches the owner with the report attached (the in-app report is on hold, ADR-R35: until it exists, he pastes Diagnostics > Copy report). (The old gate of the first friend: **five checks, in order** hold first: (1) the owner installed his own server by the guide, by hand, and uses it; (2) the away-from-home address answers a phone on mobile data, websockets included (X-7); (3) the data can come back; (4) the friend's guide is final; (5) five days of the owner's own use.)
 * **Depends on.** P3-05 (done as a slice), the owner's Tailscale sign-in. **Size.** M.
 
-## P3-13 — Storage: a budget the Host sets, visible in the app, and a plain "the server is full" (server + app + installer) — Size M
+## P3-13 — Storage: a budget and a biggest-song limit the Host sets, visible in the app, and a plain "the server is full" (server + app + installer) — Size M
 * **Order.** Needs: none.
 * **Why.** The owner (2026-11-03): "reserve 100 GB for Encore's music so we do not run out of space"; friends will fill it. For a stranger the
   server has **one shared disk**. Today Encore has only a floor (`ENCORE_MIN_FREE_GB`, default 10: the keeper stops and retries every 30
   minutes) and the Host learns of a full disk from a failed song. A hand-made placeholder file on one machine is not an answer a stranger can use.
-* **Do.** (1) Server: `ENCORE_MAX_KEPT_GB`, a cap on what Encore keeps (unset = only the floor), enforced by the keeper next to the floor;
+  **Second need (audit B-93, 6 Nov 2026, `evidence/README.md#e02`):** the keeper also refuses to keep any ONE file over **45 minutes or 80 MB** (constants, `keeper.py:66-68`), so a
+  2 h 13 min recitation of Surat Al-Baqarah, an audiobook or a DJ mix can be played but never downloaded. That limit is on a file the server fetches itself; it never touches the Host's
+  own library (linked, not fetched) and it is not a total (the budget below is the total). It must be a setting the Host sees and changes.
+* **Do.** (1a) **The biggest single song the server keeps**, a Host setting: ONE limit, in megabytes (a minutes limit protects nothing the size limit does not), replacing the two constants;
+  `ENCORE_MAX_FILE_MB` and the same setting in the admin page (D-61: a button AND a command, one operation). The default is the owner's to choose (128 kbit/s is about 58 MB an hour: 80 MB
+  is 1.4 hours, 250 MB about 4, 400 MB about 7, 1 GB about 17). When the keeper refuses a song for its size the sentence names the limit ("This song is bigger than the 400 MB this server
+  keeps. Ask the person who runs it to raise the limit."; the Host reads the same with where to change it). The limit applies to KEEPING only, never to playing (`04` section 10).
+  (1) Server: `ENCORE_MAX_KEPT_GB`, a cap on what Encore keeps (unset = only the floor), enforced by the keeper next to the floor;
   storage state in the owner's view of `/server`: kept, budget, free, and counts per person. (2) App, owner: a Storage row on Your server (kept,
   budget, free) and an in-app news item at 80 % and 95 %. (3) App, everybody: when the keeper refuses for space, the song says "The server is
   full; ask the owner" instead of failing silently. (4) Installer: say how much room the music folder has and warn under 20 GB; the guide gets a
   "Give Encore its own disk" section (format, mount at `/srv/music`). (5) The guide says plainly that music is not in the backup.
 * **Don't.** Delete anything to make room. Reserve space with placeholder files.
+* **Drawn first (D-43, "draw before coding"):** the Storage card of the admin pages (budget, the free-space floor, the biggest single song, kept and free now) is drawn in **P3-22**,
+  next to W-07 Settings, and the owner approves it; the admin part of this item waits for that drawing. The server settings and the phone's sentence do not need a drawing.
 * **Acceptance.** With a 2 GB budget on a test server the third GB of songs is refused with the plain message, the owner sees the 80 % and 95 %
-  items and the Storage row, nothing already kept is touched, and raising the budget lets the retry continue.
-* **Depends on.** The keeper (built). **Size.** M. **Triage:** later (RC2); the guide's dedicated-disk section covers it meanwhile.
+  items and the Storage row, nothing already kept is touched, and raising the budget lets the retry continue. **And:** with the biggest-song limit at 400 MB a 2 h 13 min recitation is kept and
+  downloads to a phone; with it at 80 MB the same song is refused with the sentence that names the limit and says who can change it; changing it from the admin page and from the `encore`
+  command is the same operation (`python -X utf8 docs/evidence/scripts/audit_people.py long` prints PASS for the recitation).
+* **Depends on.** The keeper (built). **Size.** M. **Triage:** later (RC2); the guide's dedicated-disk section covers it meanwhile. **If the owner wants recitations and audiobooks downloadable
+  before gate 2, drag this item up: the server half is small (one setting) and the drawing comes first anyway.**
 
 ## P3-14 — Update with automatic rollback (the slice of P3-08 the first outside user needs) — Size M
 * **Order.** Needs: P3-25 [d], P3-27 [d], P3-30 [i], P2-24 [i], P2-27 [d]. Why: D-61: the Update button and `encore update` are two doors into the same helper (P3-25), which does the rollback; a web page may not hold control of the host computer (P3-04).
@@ -220,8 +232,8 @@ installer and a browser wizard that a person who never used Docker can follow. R
 
 ## P3-22 — Change the drawn setup pages for the new rules, approved by you — Size S
 * **Order.** Needs: P3-20 [d], P3-21 [d]. Why: the wizard (W-01, eight pages), the admin pages (W-02 to W-08) and the join page (W-05) are **already drawn and decided** (`screens-server-and-browser.html`, `15`, 24 and 25 Oct 2026). Only what the new rules change is drawn again, and the owner approves exactly those.
-* **Do.** (1) The new front: the installer's own screens (P3-21). (2) Admin **Backups**: Back up now stays; **Restore becomes a button** (the drawn rule "never a button" is reversed by D-61) that first makes a backup of what is there and asks the Host to type the server's name to confirm. (3) Admin **Updates**: an Update button with its way back, replacing "run `sudo encore update`". (4) **Away from home**: the page runs the Tailscale steps itself (this closes the OPEN line of `15` page 6). (5) **Add-ons** from P3-20 on wizard page 5 and in W-07 Settings (D-19's off-by-default Soulseek choice and its plain-words note). (6) The Host who forgot his password (P3-21). Each changed page is drawn in the same design tokens (`16`) next to the old frame it replaces.
-* **Acceptance.** The owner has approved exactly the changed drawings (his check is recorded on the board); `15` and the inventory (W-01 to W-08) say what changed.
+* **Do.** (1) The new front: the installer's own screens (P3-21). (2) Admin **Backups**: Back up now stays; **Restore becomes a button** (the drawn rule "never a button" is reversed by D-61) that first makes a backup of what is there and asks the Host to type the server's name to confirm. (3) Admin **Updates**: an Update button with its way back, replacing "run `sudo encore update`". (4) **Away from home**: the page runs the Tailscale steps itself (this closes the OPEN line of `15` page 6). (5) **Add-ons** from P3-20 on wizard page 5 and in W-07 Settings (D-19's off-by-default Soulseek choice and its plain-words note). (6) The Host who forgot his password (P3-21). (7) **Storage** (P3-13): a card in the admin pages beside W-07 Settings with what the Host can set and see: **the room Encore may use** (the budget), **the free space it always leaves** (the floor), **the biggest single song it keeps** (one limit in megabytes, with the plain line "about 58 MB an hour: 250 MB is about 4 hours" so a Host can choose, and the note that it never touches his own library), and what is kept and free now; the sentence the phone shows when a song is over the limit is drawn with it (S-16 words: it names the limit and who can change it). Each changed page is drawn in the same design tokens (`16`) next to the old frame it replaces.
+* **Acceptance.** The owner has approved exactly the changed drawings (his check is recorded on the board), the Storage card with its three settings among them; `15` and the inventory (W-01 to W-08) say what changed.
 * **Size.** S.
 
 ## P3-23 — Build the button installer — Size L

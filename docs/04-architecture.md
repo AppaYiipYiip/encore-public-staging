@@ -108,7 +108,7 @@ where "like anything, play anything, keep it forever" is natural.
 **Length does not matter for starting** (owner asked about a 2-hour Surat Al-Baqarah): the player starts on the first chunk and
 jumps are Range requests. Measured on the server for songs nobody had played there: a 2:21:21 recitation (163 MB) was ready to
 play in **2.7 s** and a jump to 2:07:00 delivered audio in **0.4 s**; three obscure 3–4-minute songs were ready in **1.6–1.8 s**
-(`09` §2.5). Today's code refuses anything over 45 minutes or 80 MB; those limits must apply only to *keeping*, never to playing.
+(`09` §2.5). Today's code refuses anything over 45 minutes or 80 MB; those limits must apply only to *keeping*, never to playing, and they become ONE size limit the Host sees and sets (P3-13, drawn in P3-22; audit B-93).
 
 ```
 tap ─► app: song ref has a local download? ── yes ─► play file (≤ 0.3 s)

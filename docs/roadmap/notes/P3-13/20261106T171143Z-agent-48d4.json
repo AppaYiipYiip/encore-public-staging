@@ -1,0 +1,10 @@
+{
+ "id": "20261106T171143Z-agent-48d4",
+ "item": "P3-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T17:11:43Z",
+ "type": "detail",
+ "body": "BUILT FROM THIS ITEM: (1a) ONE Host setting for the biggest single song the server keeps (ENCORE_MAX_FILE_MB and the admin page; the same operation behind a button and an `encore` command), replacing the two constants in keeper/keeper.py:66-68 (45 minutes and 80 MB). A minutes limit goes: it protects nothing the size limit does not. The default is the owner's to choose (128 kbit/s is about 58 MB an hour: 80 MB = 1.4 h, 250 MB = 4 h, 400 MB = 7 h, 1 GB = 17 h). It is a guard rail against a mislabeled huge upload, not a quota; it applies to KEEPING only (playing is never refused for length) and never to the Host's own library, which is linked from the music server's folder and not fetched. The total is the budget (1): ENCORE_MAX_KEPT_GB next to the floor. DRAWING FIRST: the Storage card is drawn and approved in P3-22 (note there); the admin part waits for it. The phone's sentence for a song over the limit names the limit and who can change it. Acceptance script: `python -X utf8 docs/evidence/scripts/audit_people.py long` must print PASS for the 2 h 13 min recitation. If the owner wants recitations and audiobooks downloadable before gate 2 (#51; this item is #76), drag it up: the server half is one setting. Evidence: docs/evidence/README.md#e02, register row B-93 (corrected 6 Nov: 400 MB is about 7 hours, not 4).",
+ "replaces": "20261106T170352Z-agent-77d6"
+}

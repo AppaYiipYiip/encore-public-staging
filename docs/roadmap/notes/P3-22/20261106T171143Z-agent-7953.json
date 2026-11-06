@@ -1,0 +1,9 @@
+{
+ "id": "20261106T171143Z-agent-7953",
+ "item": "P3-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T17:11:43Z",
+ "type": "detail",
+ "body": "WHAT TO DRAW (owner, 6 Nov 2026: \"this per file limit needs to be mentioned in the roadmap so when we are designing the ui of the server we design it\"). A STORAGE CARD in the admin pages, beside W-07 Settings, with three settings and two readings: (1) the room Encore may use (the budget, P3-13: 'reserve 100 GB'); (2) the free space it always leaves (the floor, 10 GB today); (3) THE BIGGEST SINGLE SONG IT KEEPS: one limit in megabytes, with a plain helper line a Host can choose from ('about 58 MB an hour at normal quality: 250 MB is about 4 hours, 400 MB about 7, 1 GB about 17') and the sentence 'This never touches your own music library: only songs Encore fetches itself.' (4) what is kept and what is free now; (5) the same settings reachable as an `encore` command (D-61, two doors, one operation). ALSO DRAW the sentence the phone shows for a song over the limit (S-16 style: it names the limit and who can change it: 'This song is bigger than the 400 MB this server keeps. Ask the person who runs it to raise the limit.'), for a member and for the Host (the Host's version says where to change it). Why: a 2 h 13 min recitation, an audiobook or a DJ mix can be played but never downloaded today, because the server refuses any ONE file over 45 minutes or 80 MB (audit B-93). The limit is per fetched file, never the Host's own library and never the total. The default value is the owner's to choose; the build is P3-13."
+}
