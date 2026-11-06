@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-7379",
+ "item": "P3-09",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-76 (code read 6 Nov 2026, not run): the privacy matrix of docs/21 section 2 and US-41 promise that other members cannot see your library or likes, but GET /library/files (library.files_since, server library.py:345-357) is a global feed of every kept song in the order it was kept. A song is kept when anyone likes, saves, downloads or imports it, or plays it on two days (the keep triggers), so one member's private save is shown to every member (and the Host) with its time. Home's 'New on the server' shelf (home_screen.dart:141) renders it; the per-phone switch (household_settings_screen.dart:30) only hides it, the data is delivered anyway. docs/guides/friend.md says 'It does not say who': with two to five people the who is easy to guess. D-2 (one copy per song) justifies sharing the FILES, not announcing the saves.\n\nOPTIONS (for the owner and the advisor): (a) say it in docs/21 section 2, the invitation text and friend.md (cheap, honest); (b) show the shelf only for songs kept for two or more people or older than N days, not in save order; (c) a per-person opt-in 'my saves may appear in New on the server', default off (the server decides: ADR-R42); (d) feed the shelf from the Host's own library scan only. Do (a) now; (b) or (c) before the first friend.\n\nTHIS ITEM'S TESTS need a case for it: member A likes or imports a song, member B reads /library/files and the shelf; the answer must match the chosen option. The matrix in docs/21 has no row for it yet. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-76."
+}

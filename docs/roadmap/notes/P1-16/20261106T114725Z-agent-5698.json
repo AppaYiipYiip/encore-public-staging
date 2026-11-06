@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114725Z-agent-5698",
+ "item": "P1-16",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:25Z",
+ "type": "detail",
+ "body": "Audit B-84 (run on SQLite 3.50.4, 6 Nov 2026): the local search that this item shows 'offline' states for cannot find a Thai, Japanese or Chinese word inside a title, and cuts Hindi and Arabic-with-harakat words into single letters (app_database.dart:110, search_dao.dart:17). Latin accents and ligatures work. Add to this item's tests: a song titled in each of Hindi, Thai, Japanese, Chinese and Arabic is found by typing a word of its title. The fix and its proof are in the note on P2-12 and in the register row B-84 (docs/tasks/AUDIT-BUILT-2026-11-05.md)."
+}

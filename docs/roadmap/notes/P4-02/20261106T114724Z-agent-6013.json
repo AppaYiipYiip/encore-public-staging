@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-6013",
+ "item": "P4-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-82 (app/lib read 6 Nov 2026): the UI's only handle on playback is still wrapped by the Jam. features/providers.dart:56-69 playbackFacadeProvider ALWAYS builds JamPlaybackFacade(engine, _ControllerJamLink) and listens to jamControllerProvider / jamLoadingProvider (built at start in app.dart:90-97); features/jam/jam_facade.dart branches on _jam 28 times and re-emits every engine snapshot, queue and position. docs/30 section 1.B lists 'C8: the Jam wrapped every play' as a Don't that already happened; docs/28 section 2.1 and docs/04 section 8 want an engine with no Jam path and the Jam as a layer that sends commands to it.\n\nThe hub does not exist on the new server (B-20, see the note above) and the app hides every way into a Jam (D-18, D-33), so today a bug in the facade or in jamControllerProvider can break play, pause and seek for everybody for a feature nobody can open.\n\nAcceptance to add: the engine's facade is provided directly when the server has no Jam (a capability check, ADR-R42.8); the Jam is a layer above the engine, not a wrapper in front of it. P2-07 can do the first half (unwire) now.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-82."
+}

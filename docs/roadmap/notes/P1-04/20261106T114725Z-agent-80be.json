@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114725Z-agent-80be",
+ "item": "P1-04",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:25Z",
+ "type": "detail",
+ "body": "Audit B-83 (app/lib read 6 Nov 2026): the 'next songs prepared' work has a client-side twin. For a list of catalogue songs on an Encore server the phone fetches one song at a time (InstantController kRunLookahead = 2, _run; callers tap_play.dart:91, detail_screens.dart:553, imported_playlist_screen.dart:97) and resolves with a one-element list (encore_instant.dart) although POST /refs/resolve takes 500. Preparing the next songs belongs to the server (the prepare job kind has no producer: B-66): resolve the whole list in one call, put every ref in the queue and let the server's prepare job warm the next two. Detail in the note on P2-12. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-83."
+}

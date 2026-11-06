@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-1cf5",
+ "item": "P2-20",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-77 and B-80 (app/lib read 6 Nov 2026): two music-server dependencies an Encore phone still has, for this item's acceptance.\n\nB-77: sync_engine._runEncore and probe() ask the music server for its scan status first and give up when that fails (sync_engine.dart:413-418, 637-641), so a stopped Navidrome or a stale music-server login blocks the Encore pull. A slice that can ship before the whole item: treat the scan status as optional input for the browse index only and still run encore.pull() / pullChanges().\n\nB-80: app/background_sync.dart:85-97 and app/alerts_wiring.dart:25-65 build the notification job with readPortalImports(... fallbackUser / fallbackPassword = the music-server login). When the person saved a portal address in the old mode, that login is sent to the address they typed ('the service takes the music server's login', alerts_wiring.dart:40), every 3 to 24 hours, Encore phones included. Delete the fallback now; the portal reader goes with P2-07 (see its note). Also: session.dart keeps the music-server password in memory (SubsonicCredentials, EncoreDevice): that is B-5, this item.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-77, B-80."
+}

@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114725Z-agent-0b5c",
+ "item": "P2-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:25Z",
+ "type": "detail",
+ "body": "Audit B-79 (read 6 Nov 2026): 44 comments in app/lib, the server and packages cite documents that no longer exist or now mean something else ('docs/23, B8', 'docs/23 B2', 'docs/23 D1', 'docs/02-architecture', 'docs/39', 'docs/45', 'docs/50', 'docs/52'), and 102 citations of 37 old 'ADR-0nn' ids in 76 files (ADR-049 in library_repository.dart; ADR-017, ADR-067, ADR-052 most often) that docs/11 does not define (it has only ADR-Rn; the old log survives only in the old repository's bundle in releases-archive/). This item touches most of those files: when a file is deleted or edited here, drop the dead pointer and keep the sentence (keep real ids such as AUDIT Bn, R1-n, F59, D-45). A rule in tools/check_docs.py that fails on a docs/NN citation for a number with no file keeps it from coming back. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-79."
+}

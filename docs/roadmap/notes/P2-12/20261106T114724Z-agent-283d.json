@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-283d",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-83 and B-84 (code read 6 Nov 2026; B-84 run on SQLite 3.50.4).\n\nB-83: on an Encore server a list of catalogue songs (a catalogue album, an artist's popular songs, a genre list, an imported playlist; callers tap_play.dart:91, detail_screens.dart:553, imported_playlist_screen.dart:97) is queued by InstantController._run one song at a time with kRunLookahead = 2, and EncoreInstantBackend._resolve sends a one-element list (encore_instant.dart: _api.resolve([describe(request)])), while POST /refs/resolve takes 1 to 500 songs (api.py:608). Resolve the whole list in one call and queue every ref; keep the one-at-a-time run for the plain music-server mode only until P2-20 deletes it. A library album does not go this way (detail_screens.dart:99,113,169 hand every row to playTracks at once).\n\nB-84: the phone's search index (app_database.dart:110 unicode61 remove_diacritics 2; search_dao.dart:17 splits on [\\p{L}\\p{N}]+) cuts Hindi and Arabic-with-harakat words into single letters and finds a Thai, Japanese or Chinese word only at the start of a run. With categories 'L* N* Co M*' in the tokenizer and \\p{M} in the pattern, Hindi and Arabic-with-harakat whole words match (run). Per-character tokens for Han, Kana and Thai and harakat stripping are still needed, with one word rule shared with the server's textnorm (B-37). If search moves to the server (this item), the server needs the same rule.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-83, B-84."
+}

@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-6353",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-77 and B-78 (app/lib read 6 Nov 2026, not run): two more places where 'which server is down' is guessed, to fold into this item's state.\n\nB-77: in Encore mode sync_engine._runEncore (409-465) and probe() (628-670) call getScanStatus() on the MUSIC server first and return SyncFailed / ProbeFailed on a network or auth failure (413-418, 637-641) BEFORE pulling the Encore feeds, which do not depend on it. So Navidrome restarting (encore update, its own scan) or a stale music-server login makes every phone say it cannot reach the server while the Encore server answers, and edits made on another device do not appear. The derived state must keep 'the Encore server answers' apart from 'the music server answers'; until P2-20 removes the music-server calls, treat the scan status as optional input for the browse index only and still run the pull.\n\nB-78: session._look() (session.dart:622-639) takes ANY non-network failure of GET /info (a 503 from a gateway, a 401, a 429) for 'a plain music server'. The D-24 guard 'a tap waits instead of a 30 s preview' (detecting) is then released and the phone syncs the old way until the next look (2 minutes, doubling to an hour). Only a definite 404 or a non-JSON page means plain. Test: /info answers 503 -> detecting stays true. This is the serverKindProvider (detecting | plain | encore) of trap 4 in my first note.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-77, B-78."
+}

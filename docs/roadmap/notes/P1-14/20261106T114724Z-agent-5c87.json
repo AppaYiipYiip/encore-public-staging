@@ -1,0 +1,9 @@
+{
+ "id": "20261106T114724Z-agent-5c87",
+ "item": "P1-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:47:24Z",
+ "type": "detail",
+ "body": "Audit B-81 (app/lib read 6 Nov 2026): app.dart:258 _onNavigated calls scheduler.poke() (sync_scheduler.dart:210-216) on every route change (at most one per 2 s), and poke() does not look at _live. With the live channel up the probe cadence is 60 s, yet each navigation starts a probe: in Encore mode two requests (the music server's scan status, B-77, and library/changes), on mobile data.\n\nAcceptance to add: poke() is a no-op while the channel is live (the server pushes library.changed), and a navigation is never a trigger on mobile data. The 60 s live cadence (probeLive) and the 10 min foreground interval are constants in sync_scheduler.dart; with a connected channel the poll is only a safety net and can be much longer.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-81."
+}
