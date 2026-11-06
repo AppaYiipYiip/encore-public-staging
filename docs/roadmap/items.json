@@ -735,6 +735,11 @@
   "title": "Playing a finished list again works, and the player never says playing while it is silent",
   "note": "Found by running it: after the last song ends, Play plays one song and then the player shows Pause in silence."
  },
+ "P1-26": {
+  "kind": "feature",
+  "title": "An imported song without a picture shows YouTube's thumbnail, not a letter",
+  "note": "You asked why the hip hop playlist has letters instead of pictures: 43 of 189 songs had none."
+ },
  "P3-34": {
   "kind": "plumbing",
   "title": "Behind the scenes: the music server's own door stays shut to visitors",
@@ -750,9 +755,24 @@
   "title": "New music shows up in the app within minutes",
   "note": "Proven: the server noticed 7,200 new files in under 5 minutes, the app's server linked them 47 minutes later."
  },
+ "P3-36": {
+  "kind": "host",
+  "title": "Saving a playlist says how long is left, and the Host can change the pace",
+  "note": "Saving 200 songs takes about 40 minutes by design, one song about every 12 seconds; nobody can see or change that."
+ },
+ "P3-37": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: updating the server says what it did",
+  "note": "It said 'up to date' after really updating."
+ },
  "P2-28": {
   "kind": "feature",
   "title": "An edit that is still waiting is never undone on the screen",
   "note": "Proven: a renamed playlist went back to its old name for a minute when another device changed it."
+ },
+ "P2-29": {
+  "kind": "feature",
+  "title": "One notification for the whole download while the server is still saving",
+  "note": "You allowed notifications and saw none: today only the copy to the phone has one, not the long part."
  }
 }

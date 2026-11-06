@@ -1,0 +1,9 @@
+{
+ "id": "20261106T233645Z-agent-1c6c",
+ "item": "P3-36",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T23:36:45Z",
+ "type": "note",
+ "body": "The owner, in chat on 6 Nov 2026: 'it takes 2.5 s on average to play a song, which means a 200-song playlist would take 200 x 2.5? can we have some parallelism? does it scale with how fast the disk or internet is? what if multiple users import multiple playlists?'. Answered: playing is 2.5 s; SAVING is paced at one song about every 12 s across the server (22 Oct safety rule), about 40 minutes for 200 songs, not limited by disk or line, parallelism would not help and risks a refusal, several people share the clock fairly, a tap goes first. A decision for the owner is inside the item: may a Host go faster?"
+}

@@ -316,3 +316,15 @@ installer and a browser wizard that a person who never used Docker can follow. R
 * **Do.** Link when the music server's scan finishes (watch `getScanStatus`: when `lastScan` moves or `scanning` goes false, link once, at most every 30 s); wire `poke()`: `encore scan` (a CLI command that pokes through the API) and an owner-only `POST /encore/api/v1/library/scan`; the Health page and `encore status` say "last linked 3 minutes ago, 2 new albums"; keep the hourly tick as the safety net. The phone's probe already carries the change feed.
 * **Acceptance.** `python -X utf8 docs/evidence/scripts/audit_stack.py check newmusic` (to be written with the fix): drop one album into the folder and the server lists it within 2 minutes; the number of new albums is said in words; the existing link tests pass.
 * **Size.** S.
+
+## P3-36 — Saving a playlist says how long is left, and the Host can change the pace — Size S
+* **Order.** Needs: none. Why: the owner asked 6 Nov 2026 how long saving 200 songs takes, whether it can run in parallel, whether disk or internet limits it and what happens when several people import (audit B-101). Answer today: one song about every 12 s across the whole server (`pace.py`), about 40 minutes for 200 songs, shared fairly between people, a tap first, not limited by disk or line. The pace is a safety rule (22 Oct), but nobody can see it or change it.
+* **Do.** (1) Under a download and on the Host's Health page: "about 40 minutes left" from the queue length and the pace. (2) The pace as a Host setting (Advanced) with the reason in one sentence next to it: a faster pace risks YouTube refusing this connection for a day. (3) The hourly cap of P1-03 (still not built) so a household cannot burst. **A decision for the owner**: whether a Host may go faster at all.
+* **Acceptance.** The time left matches the real time within a quarter on a 50-song import; the setting persists and is read by the pacer; a test of the estimate with two people queued.
+* **Size.** S.
+
+## P3-37 — `encore update` says what it did — Size S
+* **Order.** Needs: none. Why: audit B-98: after really pulling a newer image and restarting it printed "Encore is up to date (was 0.1.0, now 0.1.0)" (6 Nov 2026, 9c09a7a over 4b4e783).
+* **Do.** Compare the image's revision label before and after (`org.opencontainers.image.revision`): "updated: 4b4e783 to 9c09a7a (a few MB)" or "nothing new" only when the digest is the same; leave the version number out of the sentence while it does not change.
+* **Acceptance.** Run on the VM with a newer image and with none: two different, true sentences; a test of the sentence for both.
+* **Size.** S.

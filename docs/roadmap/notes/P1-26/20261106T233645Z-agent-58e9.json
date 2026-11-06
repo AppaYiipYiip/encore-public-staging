@@ -1,0 +1,9 @@
+{
+ "id": "20261106T233645Z-agent-58e9",
+ "item": "P1-26",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T23:36:45Z",
+ "type": "note",
+ "body": "The owner, in chat on 6 Nov 2026, about the imported hip hop playlist: 'how come the songs have no icons, just letters instead of pictures? why is that?'. Looked at: most rows DO have real pictures; 43 of the 189 songs have none (the server had tried 178). Cause: no per-song thumbnail fallback for imported songs. This item."
+}

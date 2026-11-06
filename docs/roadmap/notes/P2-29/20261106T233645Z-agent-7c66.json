@@ -1,0 +1,9 @@
+{
+ "id": "20261106T233645Z-agent-7c66",
+ "item": "P2-29",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T23:36:45Z",
+ "type": "note",
+ "body": "The owner, in chat on 6 Nov 2026: 'I did press yes for the notification thing but no notification about download progress. I would have assumed that if I import a playlist it would install in the server from that moment.' It does install from that moment (it did, until a Stop I pressed myself at 21:40 to limit YouTube load, which cancelled the rest and ended it at 24 songs); the notification only exists for the copy to the phone. This item."
+}
