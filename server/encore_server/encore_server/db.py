@@ -31,6 +31,8 @@ class Database:
         self.backups = backups if backups is not None else self.path.parent / "backups"
         #: `journal_mode=WAL` is a property of the database file, not of a connection: set once, it holds for every later connection.
         self._wal_set = False
+        #: One idle connection kept open while the server runs ([hold_open]); see there for why.
+        self._held: sqlite3.Connection | None = None
 
     # ------------------------------------------------------------------ connections
 
@@ -45,6 +47,26 @@ class Database:
         conn.execute("PRAGMA foreign_keys=ON")
         conn.execute("PRAGMA synchronous=NORMAL")
         return conn
+
+    def hold_open(self) -> None:
+        """Keeps one idle connection open until [release]. In WAL mode SQLite checkpoints the journal and deletes its files whenever the LAST connection
+        closes, and [tx] and [read] open and close one per call: with nothing else open, every write paid for that (measured in the server image,
+        `evidence/scripts/audit_db_writes.py`: 144 writes a second; 2,796 with one idle connection kept open, no other change). The held connection runs
+        no query. The server calls this when it starts, after the migrations: a migration that fails puts the backup back by deleting the journal files,
+        and nothing may hold the database open while it does (P3-29 part 1b)."""
+        if self._held is None:
+            self._held = self.connect()
+
+    def release(self) -> None:
+        """Lets go of the connection [hold_open] kept (the server stopping). Harmless when none is held."""
+        held, self._held = self._held, None
+        if held is not None:
+            with suppress(sqlite3.Error):
+                held.close()
+
+    @property
+    def is_held_open(self) -> bool:
+        return self._held is not None
 
     @contextmanager
     def tx(self) -> Iterator[sqlite3.Connection]:

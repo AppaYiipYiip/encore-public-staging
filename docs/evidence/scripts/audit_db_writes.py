@@ -10,6 +10,7 @@ twenty people (docs/evidence/README.md#e02) are SQLite's limit or the way the se
     (b) opening and closing a connection, nothing written                              2,265 a second  (0.44 ms each)
     (c) ONE connection kept open, one transaction per write                          32,706 a second  (0.03 ms each)
     (d) like (a), plus ONE idle connection kept open for the whole run                2,796 a second  (0.36 ms each)
+    (e) the server as it runs since P3-29 part 1b: `Database.hold_open()`, then `tx()`   (same code path as (d); the wanted line)
 
 SQLite itself is not the limit: it does about 30,000 small writes a second here, and twenty real people make a few. The cost of (a) is mostly that when
 the LAST connection to a database in WAL mode closes, SQLite checkpoints the journal and deletes its files, which a connection per call does on every write.
@@ -29,10 +30,11 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--server", type=Path, default=Path(__file__).resolve().parents[3] / "server" / "encore_server")
+    parser.add_argument("--server", type=Path, default=None, help="the server folder (default: server/encore_server of this repository)")
     parser.add_argument("--writes", type=int, default=2000)
     args = parser.parse_args()
-    sys.path.insert(0, str(args.server))
+    server = args.server or Path(__file__).resolve().parents[3] / "server" / "encore_server"
+    sys.path.insert(0, str(server))
     from encore_server import library  # noqa: PLC0415
     from encore_server.db import Database  # noqa: PLC0415
 
@@ -76,11 +78,24 @@ def main() -> None:
     d = time.perf_counter() - t
     idle.close()
 
+    held = Database(Path(tempfile.mkdtemp()) / "held.db")
+    held.migrate()
+    with held.tx() as c3:
+        who = str(library.ensure_person(c3, "amy")["id"])
+    held.hold_open()  # what the server does when it starts
+    t = time.perf_counter()
+    for n in range(n_writes):
+        with held.tx() as c3:
+            c3.execute("INSERT OR IGNORE INTO library_item (person, kind, target, at) VALUES (?, 'like', ?, ?)", (who, f"sr_{n:026d}"[:29], n))
+    e = time.perf_counter() - t
+    held.release()
+
     print(f"(a) a new connection per write (today):                  {n_writes / a:8.0f} writes a second ({a / n_writes * 1000:.3f} ms each)")
     print(f"(b) opening and closing a connection only:               {n_writes / b:8.0f} per second     ({b / n_writes * 1000:.3f} ms each)")
     print(f"(c) one kept connection, one transaction per write:      {n_writes / kept:8.0f} writes a second ({kept / n_writes * 1000:.3f} ms each)")
     print(f"(d) like (a), plus one idle connection kept open:        {n_writes / d:8.0f} writes a second ({d / n_writes * 1000:.3f} ms each)")
-    print(f"PASS" if n_writes / a >= 1000 else f"FAIL  wanted (a) to reach 1,000 writes a second: it does {n_writes / a:.0f}; (d) shows {n_writes / d:.0f} with one idle connection kept open")
+    print(f"(e) the server as it runs, Database.hold_open() first:  {n_writes / e:8.0f} writes a second ({e / n_writes * 1000:.3f} ms each)")
+    print("PASS" if n_writes / e >= 1000 else f"FAIL  wanted the server's own write path to reach 1,000 writes a second: it does {n_writes / e:.0f}")
 
 
 if __name__ == "__main__":

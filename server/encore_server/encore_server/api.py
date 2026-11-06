@@ -1482,6 +1482,7 @@ def create_app(
 
     @contextlib.asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        database.hold_open()  # after the migrations (create_app ran them): see Database.hold_open
         if settings.workers:
             if scheduler is not None:
                 scheduler.start()
@@ -1502,6 +1503,7 @@ def create_app(
                 linker.stop()
             if scheduler is not None:
                 scheduler.stop()
+            database.release()
 
     app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.services = Services(
