@@ -55,6 +55,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   starve another; the Host's address stays safe on any line.
 
 ### ADR-R7 — Install: one command + browser wizard; Docker hidden
+* **Status.** **Amended by D-61 (owner, 2026-11-05):** the one command is one of two equal doors; the other is an installer with buttons (P3-21 designs it, P3-23 builds it, P3-25 is the small helper behind the buttons), and the choice of the front door for a person who will not use a terminal is re-decided openly in P3-21. The OS image stays "a candidate after v1".
 * **Options.** Docker guide (today); **script + wizard**; flashable OS image; desktop GUI installer; native packages; Windows.
 * **Why.** One paste then buttons, any Debian/Ubuntu x86/ARM, updates by one command; an OS image is friendlier but means
   maintaining an operating system (candidate after v1).
@@ -169,6 +170,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   `server/deploy/` as `05` sketched. Changing them means publishing a new image.
 
 ### ADR-R22 — The first install pulls the private image with the owner's GitHub login
+* **Status.** **A hidden need (audit B-1, 6 Nov 2026):** while the repository and the image are private (D-49) a person without a GitHub account cannot install, and the owner's own button install (gate 2) hits the same wall; P3-26 decides what such a person gets (a public image alone, an app served from the invitation page, or a token step the owner is walked through).
 * **Context.** The repository and the image are private until the full feature set is done (`05`); a fresh machine cannot download
   from them anonymously. Owner, 2026-10-22: "I'll login, it's my GitHub account."
 * **Options.** Make the image (and a tiny installer repository) public now; copy the files and build the image on the machine (about ten
@@ -272,6 +274,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   never what anybody listens to.
 
 ### ADR-R34 — Which server the first friend uses, and when (decided by the stronger model, the owner delegated it)
+* **Status.** **Superseded in part (6 Nov 2026):** VM 107 was destroyed on 3 Nov and the owner's real server will run on his homelab (D-61), so "VM 107 becomes `encore-home`" no longer holds. The gates below are now D-61's three thresholds on the board (P0-14, P3-18, P3-24); this ADR's own gates survive as P3-12's five checks (the public address on mobile data, a restore tried, the friend's guide, a week of use). The rule that a server a person depends on is never rolled back or used for tests still holds.
 * **Context.** The owner will install Encore himself on a fresh VM first and later on his real Proxmox server (ADR-R19, R22); a friend will use
   the owner's server daily from outside (ADR-R33). Open: which machine, and from when.
 * **Options.** The dev VM (redeployed all the time); the VM the installer was proven on, handed over as it is; the real Proxmox server (not
