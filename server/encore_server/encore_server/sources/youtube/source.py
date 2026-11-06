@@ -59,7 +59,7 @@ class YoutubeSource:
         )
         work_dir.mkdir(parents=True, exist_ok=True)
         self._proxy = proxy or StreamProxy(
-            candidates=self._candidates, extract=self._extractor.extract, work_dir=work_dir, fault=fault
+            candidates=self._candidates, extract=self._extractor.extract, work_dir=work_dir, fault=fault, lookups=lookups
         )
 
     def _candidates(self, wanted: Wanted) -> list[tuple[str, str, int | None]]:

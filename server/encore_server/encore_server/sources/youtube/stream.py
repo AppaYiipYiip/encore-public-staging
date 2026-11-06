@@ -118,7 +118,11 @@ class StreamProxy:
         first_byte_s: float = 10.0,
         info_ttl_s: float = 3000.0,
         fault: str = "",
+        lookups: Any = None,
     ) -> None:
+        #: The count of requests made to YouTube today (`rest.Lookups`): named in the stage lines below, so that a person or a test run can read from the
+        #: server's own log how many look-ups it used (the rule is at most 10 in a test run, and the count was only ever logged every 25th).
+        self._lookups = lookups
         self._candidates = candidates
         self._extract = extract
         self._work = work_dir
@@ -132,6 +136,10 @@ class StreamProxy:
         self._infos: dict[str, _Info] = {}
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
+
+    def _lookups_said(self) -> str:
+        """` (look-ups today: N)` for the stage lines, or nothing when no counter was given."""
+        return f" (look-ups today: {self._lookups.today})" if self._lookups is not None else ""
 
     # ------------------------------------------------------------------ the request
 
@@ -154,10 +162,11 @@ class StreamProxy:
             try:
                 upstream = self._start(video_id, range_header, deadline)
                 log.info(
-                    "stream %s: the song found in %.1f s, the first bytes after %.1f s",
+                    "stream %s: the song found in %.1f s, the first bytes after %.1f s%s",
                     video_id,
                     found_at - began,
                     self._clock() - began,
+                    self._lookups_said(),
                 )
                 return upstream
             except DownloadError as error:
@@ -277,7 +286,7 @@ class StreamProxy:
                 at=self._clock(),
             )
             self._infos[video_id] = info
-            log.info("stream %s: the address was asked for (%.1f s)", video_id, self._clock() - asked)
+            log.info("stream %s: the address was asked for (%.1f s)%s", video_id, self._clock() - asked, self._lookups_said())
             return info
 
     # ------------------------------------------------------------- the bytes

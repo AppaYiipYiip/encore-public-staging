@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from encore_server.sources.youtube.errors import DownloadError
+from encore_server.sources.youtube.rest import Lookups
 from encore_server.sources.youtube.stream import CHUNK, FIRST_CHUNK, StreamError, StreamProxy
 
 
@@ -96,7 +97,7 @@ class ProxyTest(unittest.TestCase):
         self.slept: list[float] = []
         self.extracted: list[str] = []
 
-    def proxy(self, youtube, *, candidates=None, extract=None, fault="", ttl=3000.0, first_byte_s=10.0):
+    def proxy(self, youtube, *, candidates=None, extract=None, fault="", ttl=3000.0, first_byte_s=10.0, lookups=None):
         extractor = extract or info_file(size=len(self.data))
 
         def recording(video_id, path):
@@ -117,6 +118,7 @@ class ProxyTest(unittest.TestCase):
             fault=fault,
             info_ttl_s=ttl,
             first_byte_s=first_byte_s,
+            lookups=lookups,
         )
 
     def read(self, upstream):
@@ -145,6 +147,28 @@ class ProxyTest(unittest.TestCase):
         up = self.proxy(FakeYouTube(self.data)).open(Request("A", "B"), "bytes=100-199")
         self.assertEqual(self.read(up), self.data[100:200])
         self.assertEqual(up.headers["Content-Range"], f"bytes 100-199/{len(self.data)}")
+
+    def test_the_stage_lines_say_how_many_look_ups_were_made_today(self):
+        """A test run has a budget of look-ups at YouTube (at most 10 from a home address). The count was logged only every 25th time, so a run could not
+        be counted from the server's own log; now each song's two stage lines carry it."""
+        lookups = Lookups()
+        for _ in range(3):
+            lookups.note()
+        with self.assertLogs("encore_server.sources.youtube.stream", level="INFO") as logged:
+            up = self.proxy(FakeYouTube(self.data), lookups=lookups).open(Request("A", "B"), None)
+            self.read(up)
+        text = "\n".join(logged.output)
+
+        self.assertIn("the first bytes after", text)
+        self.assertIn("the address was asked for", text)
+        for line in logged.output:
+            self.assertIn("(look-ups today: 3)", line, "every stage line names the count")
+
+    def test_without_a_counter_the_stage_lines_are_as_they_were(self):
+        with self.assertLogs("encore_server.sources.youtube.stream", level="INFO") as logged:
+            self.read(self.proxy(FakeYouTube(self.data)).open(Request("A", "B"), None))
+
+        self.assertTrue(all("look-ups" not in line for line in logged.output))
 
     def test_the_first_bytes_arrive_in_a_small_request(self):
         youtube = FakeYouTube(self.data)
