@@ -1,0 +1,12 @@
+{
+ "id": "20261106T020631Z-agent-182f",
+ "item": "P3-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:06:31Z",
+ "type": "note",
+ "body": "Audit (6 Nov 2026): the authorization of the real server was run, not read: `python -X utf8 docs/evidence/scripts/audit_stack.py check authz` makes a member through an invitation and tries the owner's playlists and every owner-only route: 15 of 15 PASS (404 for another person's playlist, 403 for owner-only routes, a member cannot promote themself). Use it as the starting set of this check and extend it (the Subsonic door, the signed song addresses, the live channel). Not covered: B-55 (a revoked phone) fails, see docs/tasks/AUDIT-BUILT-2026-11-05.md.",
+ "to": [
+  "agent"
+ ]
+}

@@ -7,6 +7,7 @@ with a small tagged library in three alphabets, and the end-to-end checks of the
     python docs/evidence/scripts/audit_stack.py check badsig         [B-44] a song address with a non-ASCII signature (wanted: 401, not 500)
     python docs/evidence/scripts/audit_stack.py check prune          [B-40] the music folder is emptied, rescanned, relinked (wanted: the file links stay)
     python docs/evidence/scripts/audit_stack.py check revoke         [B-55] a device is revoked: does the app's own kind of call (the music-server login in the address) still work? (wanted: refused)
+    python docs/evidence/scripts/audit_stack.py check authz          a member made by invitation tries the owner's playlists and the owner-only routes (wanted: refused or harmless, all PASS)
     python docs/evidence/scripts/audit_stack.py check transient      [B-38] YouTube unreachable: what happens to a liked song? (wanted: a wait with Retry, not 'no copy')
     python docs/evidence/scripts/audit_stack.py connections          established connections to the server (count them with the app on screen and in the background, B-45)
     python docs/evidence/scripts/audit_stack.py down                 stop the stack (the folder is left; delete it by hand)
@@ -227,6 +228,56 @@ def check_revoke(stack: Path) -> None:
     print("wanted: 401 ->", "PASS" if status == 401 else "FAIL (the revoked phone still reads and writes)")
 
 
+def check_authz(stack: Path) -> None:
+    """A member (made through an invitation, so the join path is exercised too) against the owner's data and the owner-only routes."""
+    env = env_of(stack)
+    owner = Phone(stack)
+    status, body = owner.call("POST", "/encore/api/v1/auth/login", {"username": OWNER, "password": env["TEST_OWNER_PASSWORD"], "deviceName": "authz-owner"})
+    assert status == 200, (status, body)
+    owner.token, owner_id = body["deviceToken"], body["person"]["id"]
+    status, body = owner.call("POST", "/encore/api/v1/invites", {"note": "authz check"})
+    assert status in (200, 201), (status, body)
+    code = body["invite"]["code"]
+    member, name, password = Phone(stack), "member" + secrets.token_hex(3), secrets.token_urlsafe(18)
+    status, body = member.call("POST", "/encore/api/v1/auth/join", {"code": code, "username": name, "password": password, "displayName": "Authz Member", "deviceName": "authz-member"})
+    assert status in (200, 201), ("join", status, body)
+    member.token, member_id = body["deviceToken"], body["person"]["id"]
+    print("a member joined by invitation; roles:", body["person"]["role"])
+    made = owner.call("POST", "/encore/api/v1/playlists", {"name": "Owner private"})[1]["id"]
+    fails: list[str] = []
+
+    def expect(label: str, got: int, wanted: tuple[int, ...]) -> None:
+        print(("PASS " if got in wanted else "FAIL ") + f"{label}: {got} (wanted {'/'.join(map(str, wanted))})")
+        if got not in wanted:
+            fails.append(label)
+
+    api = "/encore/api/v1"
+    expect("member reads the owner's playlist", member.call("GET", f"{api}/playlists/{made}")[0], (403, 404))
+    expect("member renames the owner's playlist", member.call("PATCH", f"{api}/playlists/{made}", {"name": "pwned"})[0], (403, 404))
+    expect("member adds songs to the owner's playlist", member.call("POST", f"{api}/playlists/{made}/entries", {"songs": []})[0], (403, 404))
+    gone = member.call("DELETE", f"{api}/playlists/{made}")
+    expect("member's delete of the owner's playlist changes nothing", 0 if gone[0] == 200 and gone[1].get("changed") is False else gone[0], (0, 403, 404))
+    still = owner.call("GET", f"{api}/playlists/{made}")[1]
+    expect("the owner's playlist is still there and not renamed", 200 if still.get("name") == "Owner private" and not still.get("deleted") else 500, (200,))
+    for label, method, path, body in (
+        ("member lists the people", "GET", "/people", None),
+        ("member lists the invitations", "GET", "/invites", None),
+        ("member makes an invitation", "POST", "/invites", {"note": "x"}),
+        ("member demotes the owner", "PATCH", f"/people/{owner_id}", {"role": "member"}),
+        ("member promotes themself", "PATCH", f"/people/{member_id}", {"role": "owner"}),
+        ("member locks the owner", "PATCH", f"/people/{owner_id}", {"locked": True}),
+        ("member resets the owner's password", "POST", f"/people/{owner_id}/reset", {}),
+        ("member removes the owner", "DELETE", f"/people/{owner_id}", None),
+    ):
+        expect(label, member.call(method, api + path, body)[0], (403,))
+    member.call("PATCH", f"{api}/me", {"role": "owner"})
+    again = member.call("POST", f"{api}/auth/login", {"username": name, "password": password, "deviceName": "authz-member-2"})[1]
+    expect("a member who asks for the owner role through /me stays a member", 200 if again["person"]["role"] == "member" else 500, (200,))
+    expect("no token on a private route", Phone(stack).call("GET", f"{api}/playlists")[0], (401,))
+    owner.call("DELETE", f"{api}/playlists/{made}")
+    print("result:", "all PASS" if not fails else f"FAIL: {fails}")
+
+
 def check_prune(stack: Path) -> None:
     music = Path(env_of(stack)["ENCORE_MUSIC_DIR"])
     away = stack / "music_away"
@@ -297,7 +348,7 @@ def connections(stack: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["up", "check", "connections", "down"])
-    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke"])
+    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke", "authz"])
     parser.add_argument("--dir", type=Path, default=Path(tempfile.gettempdir()) / "encore-audit-stack")
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
@@ -308,4 +359,4 @@ if __name__ == "__main__":
     elif args.command == "down":
         compose(args.dir, "down")
     else:
-        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke}[args.which or "library"](args.dir)
+        {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke, "authz": check_authz}[args.which or "library"](args.dir)
