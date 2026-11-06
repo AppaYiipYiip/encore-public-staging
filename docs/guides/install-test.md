@@ -43,7 +43,7 @@ It asks, in this order:
 |----------|----------------|
 | What should this server be called? | Anything; people you invite see it. |
 | Your username / a password (twice) | Your own Encore login. 8 or more characters. |
-| Where is your music? | A folder with your music (it is only read), or press Enter for `/srv/music` and add music later. |
+| Where is your music? | A folder with your music (Encore never changes your files; songs you keep from the web are saved in a folder called `Encore/` inside it), or press Enter for `/srv/music` and add music later. |
 | Install Docker? (only if it is missing; **asked last**, after the music folder) | Yes. Docker is what runs Encore. It takes a minute or two, so stay until it is done. |
 
 Then it downloads Encore, starts it and prints the address and your username to type into the app, the commands for looking after the server (there is no admin page in the browser yet), and what `encore funnel on` is for (optional; it needs a free Tailscale account). It prints no QR code: the one it used to print opened the music server's own page in a phone's browser and the app cannot scan it; a code that carries an Encore setup link comes with the pairing link (AUDIT F16).
@@ -83,7 +83,7 @@ encore uninstall --everything  remove Encore's data too (never your music)
 ```
 
 Backups are in `/opt/encore/backups` (the newest 7, readable by the administrator only; each holds a login that Encore needs, so keep copies
-private). Your **music** is not in them: it is your own folder, which Encore only reads. A backup is also what moves Encore to another
+private). Your **music** is not in them: it is your own folder, which Encore reads and never changes (the songs it keeps from the web are added in the `Encore/` folder inside it). A backup is also what moves Encore to another
 computer: copy the backup file **and your music folder** (with the `Encore/` folder inside it, where songs Encore kept are), install Encore there
 pointing at that folder, then `encore restore FILE`. `encore uninstall --everything` also deletes the backups, so copy them away first if you want to keep them.
 

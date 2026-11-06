@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* The installer and the install guide no longer say your music folder is "only read". What is true: Encore never changes your own files; songs you keep from the web are saved in a folder called Encore inside it, and the installer now says so when it asks where your music is.
 * Behind the scenes: when many people use one server at the same moment, looking at your library or your playlists no longer waits for other people's changes to finish. With twenty simulated people the slowest wait fell from about 6 seconds to under a second; two changes still take turns, but each is short and nothing slow happens inside one.
 * Behind the scenes: the server writes about 18 times faster (each change no longer pays for closing and re-opening its database), so many people changing things at once wait less.
 * After a list has played to its end, pressing Play (on the album page, the mini player, the lock screen or a headset) now starts it over from the first song, and when it ends again the player stops and shows Play. Before, Play replayed the last song once and then showed Pause with no sound.

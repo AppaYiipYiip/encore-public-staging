@@ -194,7 +194,7 @@ if [ "$FRESH" = 0 ]; then
 else
     [ -n "$SERVER_NAME" ] || SERVER_NAME="$(ask 'What should this server be called?' "$(hostname)'s music")"
     ask_owner
-    MUSIC_DIR="$(ask 'Where is your music? (a folder; it is only read)' "$MUSIC_DIR")"
+    MUSIC_DIR="$(ask 'Where is your music? (a folder; Encore never changes your files)' "$MUSIC_DIR")"
     # The name goes into a settings file: leave out what that file treats as more than text.
     SERVER_NAME=${SERVER_NAME//[\$\"\`\'#\\]/}
     [ -n "$SERVER_NAME" ] || SERVER_NAME="My music server"
@@ -206,6 +206,7 @@ trap '' HUP
 mkdir -p "$MUSIC_DIR" || die "The music folder ${MUSIC_DIR} could not be made."
 SONGS=$(find "$MUSIC_DIR" -type f \( -iname '*.mp3' -o -iname '*.flac' -o -iname '*.m4a' -o -iname '*.ogg' -o -iname '*.opus' -o -iname '*.wav' \) 2>/dev/null | wc -l)
 ok "Your music: ${MUSIC_DIR} (${SONGS} songs found)"
+note "Songs you keep from the web are saved in a folder called Encore inside it; nothing else in it is changed."
 
 # ---------------------------------------------------------------------------------------------------------------- Docker
 
