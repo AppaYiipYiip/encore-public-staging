@@ -1,0 +1,12 @@
+{
+ "id": "20261106T025719Z-agent-29e9",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:57:19Z",
+ "type": "note",
+ "body": "Audit B-58 (proven on an emulator, 6 Nov 2026): an edit made while only the Encore server was down (the phone stayed on the network) reached the server 549 s after the server answered again, because nothing wakes the outbox after a failed delivery except the next queued edit or the next sync run (10-minute foreground interval, 6-hour background job). The reachable state this item builds must deliver the outbox when it turns to reachable, and the outbox must schedule its own retry. Added to this item's acceptance. docs/tasks/AUDIT-BUILT-2026-11-05.md B-58.",
+ "to": [
+  "agent"
+ ]
+}
