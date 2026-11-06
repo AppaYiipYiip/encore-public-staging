@@ -1,0 +1,12 @@
+{
+ "id": "20261106T023739Z-agent-e5d7",
+ "item": "P3-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T02:37:39Z",
+ "type": "note",
+ "body": "Audit B-57 (proven by accident, 6 Nov 2026): `python -m encore_server --help` (or any unknown word) starts the server on the live data instead of printing help: __main__.main handles only setup and backup and everything else runs uvicorn. The migrations and the scheduler ran before the port bind failed. Parse the argument: unknown words print the commands and exit non-zero. docs/tasks/AUDIT-BUILT-2026-11-05.md B-57.",
+ "to": [
+  "agent"
+ ]
+}
