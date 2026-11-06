@@ -1,0 +1,12 @@
+{
+ "id": "20261106T010509Z-agent-7127",
+ "item": "P3-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:05:09Z",
+ "type": "note",
+ "body": "Audit B-48: a Host who reinstalls without restoring a backup gives the server a new identity key and every phone is locked out (it must sign out and loses its downloads). `encore update` keeps the key; `encore restore` brings the old key back; a plain reinstall does not. The installer and `encore uninstall` must say so in plain words, and the Update and Restore buttons of D-61 must keep the key.",
+ "to": [
+  "agent"
+ ]
+}

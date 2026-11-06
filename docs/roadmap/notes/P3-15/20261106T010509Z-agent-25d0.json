@@ -1,0 +1,12 @@
+{
+ "id": "20261106T010509Z-agent-25d0",
+ "item": "P3-15",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:05:09Z",
+ "type": "note",
+ "body": "Audit B-49 (read, not run): the Android manifest allows plain http for every domain (usesCleartextTraffic and a network config meant for development) and the exported media browser has no caller allow-list, so another app on the phone can list the library and start playback. Part of the security check; docs/tasks/AUDIT-BUILT-2026-11-05.md B-49.",
+ "to": [
+  "agent"
+ ]
+}

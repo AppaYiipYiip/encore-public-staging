@@ -1,0 +1,12 @@
+{
+ "id": "20261106T010509Z-agent-7c6d",
+ "item": "P2-19",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:05:09Z",
+ "type": "note",
+ "body": "Audit B-48, proven on an emulator against two real stacks (6 Nov 2026): after a server is reinstalled (a new identity key) every phone says 'Another server answers at <address>' once and then 'Not reachable / No answer' on the Your server page, and the only way out is signing out, which deletes the downloads (docs/31 CN-28). Add the re-trust step to the pairing slice (the person's password, or a new pairing link) and make the page say what is true. See docs/tasks/AUDIT-BUILT-2026-11-05.md B-48 and docs/evidence/README.md#d01.",
+ "to": [
+  "agent"
+ ]
+}
