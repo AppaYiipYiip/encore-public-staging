@@ -98,6 +98,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   match (normalised artist + title, duration ± 3 s) and keep the chosen video id with the entry.
 * **Acceptance.** Importing '00s Hip Hop: zero search calls in the server log; tapping song 57 right after the import starts is
   audible ≤ 3 s.
+* **6 Nov 2026, the walk on the test VM found it NOT met (audit B-96), fixed in the pull request that marks this line:** importing the real '00s Hip Hop (now 288 songs, 240 of them with a video id) queued 154 `match` jobs and the server searched YouTube for songs whose id it already had (about 50 look-ups in the first five minutes; a tap on song 57, not yet matched, searched at the tap: 0.9 s of its 3.56 s). Cause: `_song_of` attached the playlist's video to a song only when it was YouTube's own Topic audio; any other upload was kept aside and used when a search found nothing (docs/19's preference for official audio, and the old test pinned it). Now the video the playlist points at is attached whatever the upload, so those songs start "matched" and play at once; a Spotify or file list has no video and is still matched by name. **What is left, on purpose:** looking for a better (official) upload is a separate matter, done only when a song is kept; saving is still paced at about 12 s a song across the whole server (the 22 Oct refusal), so 200 songs take about 40 minutes.
 
 ## P1-06 — Measure what a person experiences (app + tools) — Size S
 * **Order.** Needs: none.

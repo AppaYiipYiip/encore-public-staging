@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Importing a YouTube Music playlist no longer searches YouTube for every song: the songs play, and are saved on your server, from the video the playlist points at. Before, a 288-song import made about 50 searches in its first five minutes, a song you tapped before its turn was searched at the tap, and saving a 200-song playlist took about an hour and a half instead of about forty minutes.
 * If the app is closed or killed while a song is playing (the system ending it, a swipe from the recent apps), it now comes back within 2 seconds of where you were. Before, it could be up to 15 seconds off, and a jump you had just made inside the song was forgotten: seeking to 2:28 and being killed 2 seconds later brought the song back at 4:01.
 * Updating the server (the command encore update) after a small change now downloads a few megabytes instead of about 240: the server's libraries are kept in a layer of their own that only changes when the libraries do. On a slow line the last update took over 7 minutes.
 * The installer and the install guide no longer say your music folder is "only read". What is true: Encore never changes your own files; songs you keep from the web are saved in a folder called Encore inside it, and the installer now says so when it asks where your music is.

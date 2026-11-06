@@ -145,17 +145,39 @@ def test_matching_finds_each_song_and_the_counts_come_from_the_import(rig: Rig) 
     assert [states[i] for i in range(5)] == ["matched", "not_found", "matched", "not_found", "matched"]
 
 
-def test_a_song_not_found_by_name_falls_back_to_the_video_the_playlist_pointed_at(rig: Rig) -> None:
-    rig.source.missing = {"Song 1"}
+def test_a_song_the_playlist_points_at_plays_from_that_video_whatever_the_upload_and_is_never_searched_for(rig: Rig) -> None:
+    """P1-05: "imported playlists play the same video they came with". Until 6 Nov 2026 only YouTube's own Topic audio was used as it came; for any
+    other upload (a music video, a user's upload: most of a real playlist) the server SEARCHED first and used the playlist's video only when the
+    search found nothing: importing a 288-song playlist made about 50 look-ups in five minutes, and a tap on a song not yet matched searched at tap time."""
     rig.playlist = Playlist(
-        "Uploads", "youtube", "playlist", (Track("Song 1", "Artist", video_id="abcdefghijk", official=False),), False
+        "Uploads",
+        "youtube",
+        "playlist",
+        (
+            Track("Song 1", "Artist", video_id="abcdefghijk", official=False),
+            Track("Song 2", "Artist", video_id="bcdefghijkl", official=False),
+        ),
+        False,
     )
 
     made = rig.imported()
-    rig.svc.scheduler.drain("background")
 
-    assert rig.get("marwa", f"/imports/{made['import']['id']}")["import"]["matched"] == 1
-    assert rig.get("marwa", f"/refs/{made['refs'][0]['id']}")["videoId"] == "abcdefghijk"
+    # At once: nothing pending, so the songs play from their own videos the moment the playlist exists.
+    assert (made["import"]["matched"], made["import"]["pending"], made["import"]["state"]) == (2, 0, "done")
+    assert [r["videoId"] for r in made["refs"]] == ["abcdefghijk", "bcdefghijkl"]
+    rig.drain()
+    assert rig.source.looked_up == [], "no search at all: not at import, not later"
+    with rig.svc.db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM work_item WHERE kind = 'match'").fetchone()["n"] == 0
+
+
+def test_a_playlist_without_videos_is_still_matched_by_name(rig: Rig) -> None:
+    """A list that came from Spotify (or a file) has no video to use: those songs are looked up with the strict match, as before."""
+    made = rig.imported()  # the default five tracks have no video id
+
+    assert made["import"]["pending"] == 5
+    rig.svc.scheduler.drain("background")
+    assert sorted(rig.source.looked_up) == [f"Song {n}" for n in range(1, 6)]
 
 
 def test_the_kept_count_grows_as_the_background_keeps(rig: Rig) -> None:

@@ -40,14 +40,17 @@ class Finder(Protocol):
 
 
 def _song_of(track: Track) -> dict[str, Any]:
-    """A track the readers found, described the way `refs.resolve` wants it. The video is attached to the ref only when it *is* the song
-    (YouTube's own audio upload); any other upload is kept aside and used when the song cannot be found by its name."""
+    """A track the readers found, described the way `refs.resolve` wants it. **The video the playlist points at is attached to the song, whatever
+    kind of upload it is** (P1-05: "imported playlists play the same video they came with"): the song plays from it at once, no job is queued to
+    look for it, and nothing is searched at YouTube at import. Until 6 Nov 2026 only YouTube's own "Topic" audio was attached; any other video
+    was kept aside and the server SEARCHED for a better upload first (a 288-song playlist made about 50 background look-ups in five minutes, and a
+    tap on a song not yet matched searched at tap time). Looking for a better upload is a separate matter, done only when a song is kept."""
     return {
         "title": track.title,
         "artists": list(track.artists) or ([track.artist] if track.artist else []),
         "album": track.album,
         "durationMs": track.duration_s * 1000 if track.duration_s else None,
-        "videoId": track.video_id if track.official else None,
+        "videoId": track.video_id,
     }
 
 
@@ -176,7 +179,7 @@ class ImportService:
                 url.strip(),
                 name,
                 [_song_of(t) for t in playlist.tracks],
-                [None if t.official else t.video_id for t in playlist.tracks],
+                [t.video_id for t in playlist.tracks],
                 playlist.truncated,
                 playlist.cover_url,
             )
