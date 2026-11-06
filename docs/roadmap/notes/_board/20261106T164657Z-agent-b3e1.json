@@ -1,0 +1,12 @@
+{
+ "id": "20261106T164657Z-agent-b3e1",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T16:46:57Z",
+ "type": "note",
+ "body": "Three questions for you, in plain words, from the simulation of twenty people on one server (details: docs/evidence/README.md#e02). 1) The slow-writes problem you remembered is real: with twenty people hammering the server a read waited up to 6.6 seconds; with the fix I held back since 5 Nov it waits 0.33 seconds, and the fixes for two people changing the same playlist from different devices all still hold (nine of nine: two playlists with one name are allowed, a repeated request makes one playlist not two, the last rename wins, a delete beats late edits, nothing crashed). Shall I merge that held fix? (I will not without your word.) 2) Songs in Arabic, Russian and Chinese are mixed up today (200 Arabic songs became 26): that fix is already planned before your first friend. 3) A recitation of Surat Al-Baqarah (over two hours) or an audiobook can be played but not downloaded, because the server refuses to keep anything over 45 minutes or 80 MB. I propose one size limit, set by whoever runs the server, about 400 MB by default (roughly four hours); say if you want it different.",
+ "to": [
+  "owner"
+ ]
+}

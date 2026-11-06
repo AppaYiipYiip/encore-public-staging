@@ -1,0 +1,9 @@
+{
+ "id": "20261106T164655Z-agent-a7aa",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T16:46:55Z",
+ "type": "note",
+ "body": "6 Nov 2026, twenty people simulated (docs/evidence/README.md#e02, `python -X utf8 docs/evidence/scripts/audit_people.py scripts`). This is the acceptance at scale: today 200 Arabic, 80 Russian and 40 Chinese songs from five, two and one people become 26 songs; 174 of 200 Arabic requests come back as ANOTHER song, and Arabic, Russian and Chinese songs of one length are ONE song across languages. Extend the fix: (1) Arabic-Indic and Western digits must fold to one (`أغنية ١٢` = `أغنية 12`; NFKC does not do it, map with unicodedata.digit); (2) `cover_finder.deezer_lookup` compares norm_artist/norm_title too, so a Deezer hit for ANY Arabic song matches any other and can put a wrong cover on an Arabic song: it must use the same new textnorm; (3) the same song with and without vowel marks must meet AND two different songs must not (the script checks both together, because a merge proves nothing while everything merges). Done when `audit_people.py scripts` prints no FAIL."
+}

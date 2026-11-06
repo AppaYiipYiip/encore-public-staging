@@ -1,0 +1,9 @@
+{
+ "id": "20261106T164656Z-agent-016a",
+ "item": "P3-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T16:46:56Z",
+ "type": "note",
+ "body": "NEW FINDING B-93 (6 Nov 2026, docs/tasks/AUDIT-BUILT-2026-11-05.md): the keeper refuses to KEEP anything over 45 minutes or 80 MB (keeper/keeper.py:66-68, constants, nothing in the admin changes them), so a 2 h 13 min recitation of Surat Al-Baqarah, a 3 h audiobook and a 70 min DJ mix can be played but never downloaded; the member reads 'Too long to keep.' with no Retry. 45:00 passes, 45:01 does not (`audit_people.py long`). Extend this item: the length and size limits become Host settings next to the storage budget, with defaults chosen on purpose (disk is what is scarce: one limit in MB, about 400 MB is roughly four hours at 128 kbit/s; a minutes limit protects nothing the MB limit does not), and the phone's sentence says what the person can do. The default is the advisor's decision (disk use for strangers), the owner's to overrule."
+}

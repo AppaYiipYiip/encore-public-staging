@@ -1,0 +1,9 @@
+{
+ "id": "20261106T164656Z-agent-7d37",
+ "item": "P3-32",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T16:46:56Z",
+ "type": "note",
+ "body": "Measured again with twenty people (docs/evidence/README.md#e02, `audit_people.py fair`): one person asks for 260 songs, another then asks for 20; the 20 run at positions 62 to 100 of 280 (they wait until the first backlog is under the 200-item window). The bar for done: the first of the 20 within the first 5, all 20 within the first 60 (taking turns would be about every second position). The script prints PASS/FAIL for exactly that."
+}

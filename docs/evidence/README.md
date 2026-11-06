@@ -30,6 +30,7 @@ One file. A proof of what was run, on what, and what it showed; the board's `sta
 | `c08-the-offline-look.md` | [c08](#c08) |
 | (new, 6 Nov 2026) the code pass proved on a real server and an emulator | [d01](#d01) |
 | (new, 6 Nov 2026) P2-22: a download's two stages checked in the app against a real server (not the release-candidate pair) | [e01](#e01) |
+| (new, 6 Nov 2026) twenty people on one server: five scripts, very long items, one account on three devices (`audit_people.py`) | [e02](#e02) |
 
 ---
 
@@ -1121,3 +1122,35 @@ The only golden picture that changed is the "now playing, waiting for the server
 3. **Stale names while offline**: the names of songs that did not come stayed on screen in airplane mode; they are now hidden while the phone's reason holds.
 
 **Not done (so the board says "built, not walked"):** a Retry on a retryable failure (every failure the real server gave was a song YouTube does not have; Retry is covered by widget tests and by the server's tests); a 200-song playlist; a real phone; the release-candidate pair; right-to-left; double text size on the emulator (a widget test pins no overflow at double size); the Wi-Fi-only reason and the storage-pause reason ("paused: your storage limit is reached", "paused: your phone is almost full") on a phone (both are pinned by tests, neither was seen on the emulator). One trap met: three taps at fixed positions typed the stack's generated owner password into a plain field and `ui.py dump` printed it once (the known trap in `handoff NEXT.md`); it belongs to a throwaway stack, and after the walk the stack was stopped, the file that held the password and the login file were deleted and the app was uninstalled from the emulator (the stack's folder is a scratch copy in a temporary directory). Nothing real was exposed.
+
+<a id="e02"></a>
+## e02 · twenty people on one server: five scripts, very long items, one account on three devices (6 Nov 2026; `e` = checked by running it; the simulation is `docs/evidence/scripts/audit_people.py`)
+
+**Setup.** The real server code behind a real socket (uvicorn), the real keeper and scheduler; the music server, YouTube and the keeper's picture look-up (Deezer) are fakes, so a run is offline and takes about two minutes. Twenty people: 7 English, 5 French (é, è, ç, œ), 5 Arabic (some with vowel marks), 2 Russian, 1 Chinese; each has 40 different songs by an artist of their own, in their own script. Everything goes over the server's HTTP API only, which is the rulebook any other client (a tablet, a TV, a browser) has to rely on (D-55, `docs/17`).
+
+`C:/dev/venv-encore-server/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_people.py [scripts|crowd|fair|long|chaos] [--people 20] [--seconds 20] [--server DIR]`
+
+| Scene | What it measured | Result (6 Nov 2026, `main` at `3a601ca`) |
+|-------|------------------|----------------------------------------|
+| S1 English, French | 280 and 200 different songs | **PASS**: every song kept apart, every person got THEIR song back; a French song typed with a composed and with a decomposed accent is one song |
+| S1 Arabic, Russian, Chinese | 200, 80 and 40 different songs | **FAIL (B-37, P2-25)**: the server holds **27 songs for the 320**; 173 of 200 Arabic, 80 of 80 Russian and 40 of 40 Chinese songs came back as **another song**, and a Russian, an Arabic and a Chinese song of the same length are ONE song. The same Arabic song with Arabic-Indic and with Western digits: two songs (should be one) |
+| S2 twenty people at once, 12 s | about 2,300 calls (reads, likes, playlists, playback position, download progress) | no call failed; p95 of a plain read 140 to 580 ms. **FAIL (B-10, B-18)**: the slowest plain read took **6.6 s**, the slowest write 4.6 s while others wrote (wanted none over 2 s) |
+| S3 fairness | one person asks for 260 songs, another then asks for 20 | **FAIL (B-39, P3-32)**: the 20 ran at positions **62 to 100 of 280** (wanted: the first within 5, all within 60) |
+| S4 long items | a 2 h 13 min recitation, a 3 h audiobook, a 70 min mix, 45:00, 45:01, a 3 min 35 s song | the server keeps every length and name as given and the signed address lasts 6 h (**PASS**); **FAIL (B-93)**: only 45:00 and the song are kept; the others are "Too long to keep." with no Retry |
+| S5 chaos: ONE account on three devices | three playlists with one name at the same moment; one playlist id and one entry id sent twice; three renames at once; delete against two edits; like against unlike for fifteen rounds; two devices writing the playback state with one revision; **while the other nineteen kept writing** | **PASS, all nine rules hold**: three playlists with the same name are allowed and every device sees all three; a repeated id or entry id is one playlist or one entry, never two (and never an error); the last rename to arrive wins and all devices agree; delete wins over the late edits (they answer 404); the playback state gives one 200 and one 409 with the current state; **0 server errors** in 63 raced calls and 1,700 to 2,800 writes by the others. **FAIL (B-10, B-18)**: over several runs the slowest raced call took 2.1 to 5.2 s and the others' slowest write 3.3 to 7.3 s |
+
+**The write lock, before and after.** The held fix (`held/server-db-lock`, not merged, the owner's word is needed) was run with the same script in a throwaway checkout:
+
+| Same twenty people, 12 s | `main` today | with the held fix |
+|---|---|---|
+| slowest plain read | 6,585 ms | **331 ms** |
+| slowest write | 4,556 ms | **482 ms** |
+| median of a plain read | 15 to 26 ms | 56 to 132 ms (the honest price: every call now does a little more of its own work) |
+| chaos: slowest raced call / slowest write by the others (one run each) | 5.2 s / 7.3 s | 1.1 s / 2.8 s |
+| conflict rules (S5) | 9 of 9 | 9 of 9 |
+
+What is left after the fix is writes queuing behind other writes: SQLite takes one writer at a time, so two writes cannot run together; the fix makes sure a read never waits and nothing holds the lock while it talks to another program. **Mind the load:** the simulated people write 15 to 50 times faster than twenty real people would (about 60 writes a second in S2, about 200 in S5; a person adds a song or a like every few seconds), so these are stress numbers, not a forecast of a normal evening.
+
+Total on `main`: **S1 to S5 print 22 PASS and 16 FAIL**, every FAIL a register row (B-37, B-10, B-18, B-39) or the new B-93. **Not covered, so nothing here says it works:** the live channel with twenty open connections, the real music server's sign-in under load, real YouTube (the pace and the refusals), playing a two-hour stream from YouTube, the same account signing in on three devices at once, and the phone's own search of Arabic and French text.
+
+**An honest correction.** The first three runs of this script did not stub the keeper's picture look-up, which is a **real call to Deezer on every keep** (`cover_finder.deezer_lookup`, 8 s timeout, run inside the keep): they sent about a thousand searches with invented names ("Queue 042 Noor Long") from the dev PC to `api.deezer.com`, and the first docstring said nothing leaves the machine. It is stubbed now and the docstring says so. Two things this shows about the server: each keep waits for that call (about a second each here), and, because `deezer_lookup` compares `norm_artist`/`norm_title` (empty for every non-Latin name), a Deezer hit for ANY Arabic song counts as a match for any other, so a wrong cover can be put on an Arabic song (the same root as B-37).

@@ -1,0 +1,9 @@
+{
+ "id": "20261106T164656Z-agent-aa80",
+ "item": "P3-31",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T16:46:56Z",
+ "type": "note",
+ "body": "The held lock fix (branch held/server-db-lock; B-10, B-18) measured with twenty simulated people, `audit_people.py crowd --server <checkout of that branch>` (docs/evidence/README.md#e02): slowest plain read 6.6 s today vs 0.33 s with the fix; slowest write 4.6 s vs 0.48 s; the conflict rules of one account on three devices still 9 of 9. Price: the median of a read goes from about 20 ms to about 60 ms. What stays is writes queuing behind writes (SQLite takes one writer at a time). It waits for the owner's word to merge (a note to him is on the board); it should land before this split."
+}
