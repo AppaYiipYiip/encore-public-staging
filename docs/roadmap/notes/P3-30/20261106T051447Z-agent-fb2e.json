@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051447Z-agent-fb2e",
+ "item": "P3-30",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:14:47Z",
+ "type": "note",
+ "body": "Audit B-59 and the restore round trip (6 Nov 2026, run): identity, accounts, passwords, device tokens, playlists and a pre-backup signed address survive a restore; what was made after the backup is gone from the server but stays on phones (P2-27). The restored file must belong to the server's user (uid 1000), as `encore restore` does with chown. docs/evidence/README.md#d01.",
+ "to": [
+  "agent"
+ ]
+}

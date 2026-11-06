@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051447Z-agent-5a4a",
+ "item": "P3-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:14:47Z",
+ "type": "note",
+ "body": "Audit B-59: the rollback of an update puts back 'a copy of the data', and every phone that wrote in the meantime keeps rows the server no longer has. P2-27 is now a need of this item; the Restore and Update buttons must say what lies between the copy and now.",
+ "to": [
+  "agent"
+ ]
+}

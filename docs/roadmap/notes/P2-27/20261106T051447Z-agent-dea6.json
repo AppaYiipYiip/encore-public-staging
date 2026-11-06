@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051447Z-agent-dea6",
+ "item": "P2-27",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:14:47Z",
+ "type": "note",
+ "body": "New item from audit B-59 (proven, 6 Nov 2026): after a restore the phone kept a playlist the server no longer had. Restore id in /info, a phone that sees it change pulls again and offers to send what only it has. Details and acceptance in docs/tasks/P2-songs-as-references.md section P2-27.",
+ "to": [
+  "agent"
+ ]
+}

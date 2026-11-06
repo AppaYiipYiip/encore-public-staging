@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051448Z-agent-bc82",
+ "item": "P1-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:14:48Z",
+ "type": "note",
+ "body": "Audit (6 Nov 2026, run): the app's language set to Arabic on the emulator (the phone reported [ar]) left the whole app English and left-to-right: no right-to-left or Arabic UI exists yet. The owner's question (do users need the app in Arabic?) still decides whether this moves before gate 1. docs/evidence/README.md#d01.",
+ "to": [
+  "agent"
+ ]
+}

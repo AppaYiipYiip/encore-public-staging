@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051447Z-agent-cd02",
+ "item": "P3-35",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:14:47Z",
+ "type": "note",
+ "body": "New item from audit B-60 (proven): the Encore server links new music on an hourly tick (ENCORE_SCAN_EVERY_MIN=60); LibraryLinker.poke() has no caller; no CLI or API asks for a scan. 7,200 files: the music server scanned in 4 min 36 s, the link came 47 min later. Link when the scan finishes, wire poke, say it in words. A need of P0-13 (the walk).",
+ "to": [
+  "agent"
+ ]
+}

@@ -734,5 +734,15 @@
   "kind": "plumbing",
   "title": "Behind the scenes: the music server's own door stays shut to visitors",
   "note": "Proven: where a visitor's address is hidden (a Windows or Mac computer as the server, for example) every visitor is treated as being at home."
+ },
+ "P2-27": {
+  "kind": "feature",
+  "title": "After a restore, phones and server agree again",
+  "note": "Proven: a phone kept a playlist the restored server no longer had, and never sent it again."
+ },
+ "P3-35": {
+  "kind": "feature",
+  "title": "New music shows up in the app within minutes",
+  "note": "Proven: the server noticed 7,200 new files in under 5 minutes, the app's server linked them 47 minutes later."
  }
 }
