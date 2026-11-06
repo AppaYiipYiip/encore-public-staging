@@ -34,50 +34,15 @@ Every row has a mark: **empty = not done; half = built but not proven yet; a tic
 * **Claude marks** an item with `python tools/roadmap.py mark ITEM built|walked --evidence "..."` in the PR of the work. `walked` refuses a missing proof, takes the item out of `order.json` in the same step, and cites the owner's own check when there is one.
 * **The owner's buttons never prove an engineering item** (he is not the tester): *I did this* only on an item that needs him (protect `main`, the keystore): his word is the proof; *I checked it* only where his own judgement is part of the acceptance (`judge`): recorded, cited when Claude proves the item; *It doesn't work* on anything built or done: it reopens the item at the front of the list (never before something it needs) and leaves Claude a note waiting; *Not done after all* takes a check back. They write **notes**, and the state shown is derived from `status.json` plus those notes, so `status.json` keeps one writer.
 
-### Why the list is in this order (the questions of 2026-11-03)
+### Why the list is in this order
 
-* **Suggestions come right after Jam, not after the cross-server work.** They are what makes daily use compelling for every user from the first day, and the owner's own acceptance is "does Home know me?" after a week. Federation only matters once there are several servers.
+* **Gates first (D-61).** The owner's three thresholds are pink items: P0-14 (he tries the app), P3-18 (he installs by clicking), P3-24 (he invites his friend and they jam). Everything the friend-ready list needs is a need of P3-24, so the order of the list is the order of the road.
 * **Notification when an artist you follow releases something** has three parts: the server's daily check (P2-15, it replaces the phone calling Deezer), the follow and the shelf (P4-18) and the phone notification, which stays **opt-in** (ADR-R44; D-52 allows the one exception for download progress only).
 * **"Not for me"** is part of P4-01 (`POST recs/feedback`, `17`): a person's dislike changes only that person's rows.
-* **Design before building, on Android first.** The phone's drawings exist; the large-screen drawings are the first large-screen task (P6-01) and are drawn by the planning agent and approved by the owner before any code (D-43). All of that is Android and the browser, long before the iPhone.
-* **Browser or tablet first?** They share their main cost, the large-screen layouts. If the browser player is built from the same Flutter code (recommended: one design system, no second app to maintain), the tablet layouts must exist first and the browser reuses them. If the owner prefers a separate web app, the browser could go earlier but it becomes a second code base for ever. This is **D-55**, to be decided.
-* **The iPhone is last, and it is the only item whose feasibility is decided outside the project.** The app is distributed on GitHub only (D-56): there is no App Store, no TestFlight and no Apple developer account, so an iPhone version can only be installed by sideloading, which the checking task (P6-04) verifies before any code; a "no" is a result, not a delay. A browser that works on an iPhone may already cover part of the need.
+* **Design before building, on Android first** (D-43): the phone's drawings exist; the large-screen drawings are the first large-screen task (P6-01), drawn by the planning agent and approved by the owner before any code. The browser is built from the same Flutter code (D-55), so the tablet and the TV reuse its layouts later (D-58).
+* **The iPhone is last, and it is the only item whose feasibility is decided outside the project.** The app is distributed on GitHub only (D-56): there is no App Store or TestFlight, so an iPhone version can only be installed by sideloading, which P6-04 verifies before any code; a "no" is a result, not a delay.
 
-### What the old phases demanded, and where it lives now
-
-The first draft of this plan had twelve phases with a gate each. They are gone (D-57); every condition that mattered is now enforced on the item it constrains, so nothing was lost and nothing groups the list:
-
-| The old gate (history) | Where it is now |
-|------------------------|-----------------|
-| The release-candidate pair is walked on a clean machine, signed with the release key, with the walk record `b11`, the advisor and the critic; the open round-2 findings are fixed or triaged | **P0-13** (a task of its own), which needs the release key (P5-01), the offline indicator (P1-15), the download state (P2-22) and every built item it walks |
-| The first friend can connect: five checks, a forced bad update rolls back, the security review and the first ultrareview are done, a lost password can be recovered | **P3-12** needs P0-13, P3-14 (rollback), P3-15 (security review + first ultrareview), P3-16 (password recovery), P5-01 (the key) and P5-07 (the install guide); its five checks are its acceptance |
-| The thin client and the device model: the app talks only to its own server (the outside-host ratchet baseline empty), the API contract checked in CI, the device token only, a first screen with no IP address, resume anywhere and one device at a time, new-release checks done by the server | acceptance of P2-12, P2-14 and P2-15 (each lowers the ratchet), P2-20 (device token only; the baseline is empty; it needs P2-15 as a policy need), P2-23 (the contract in CI), P2-19 (no IP address), P2-08 and P2-09 (resume anywhere, one device at a time) |
-| Jam and Connect pass on two emulators; Discover (suggestions, smart shuffle, "Not for me", follow with a notification) walked, the owner rates his own Home after a week | acceptance of P4-02, P4-07, P4-01, P4-18; the owner's own checks are `judge` items (his tick is recorded and cited) |
-| The host pages and wider installs: install in at most 15 minutes on a fresh x86 and a fresh ARM64 machine, one published port, the Health page explains every state, the full privacy matrix, the update path complete | acceptance of P3-05 (both machines), P3-07 (at most 15 minutes on TYPICAL), P3-01 (one published port), P3-06 (the Home page explains every state), P3-09 (the privacy matrix), P3-08 (updates with rollback, moving computers) |
-| Two servers: friends by QR in 30 s, removing a friend stops all sharing, a forged request is refused, a capture of a cross-server Jam shows only the guest's own server; the federation code reviewed by an ultrareview before it merges | acceptance of P4-09 and P4-08 (and its "Before it merges" line: the owner runs `/code-review ultra`); P4-10 |
-| Quality, polish and extras: the quality tier upgrades a kept song without moving a like, a playlist place or a resume position; "Wrong song?"; the Spotify-class extras each walked; Spotify beyond 100 songs | acceptance of P4-04, P4-14, P4-12, P2-06 |
-| The whole app walked, no open S1 or S2, every promise N1 to N11 measured on SLOW and TYPICAL and on two real phones, five days without opening Spotify, scrub list, licence inventory, the third ultrareview, `v1.0.0` | P4-06 and P5-03 (their acceptance; the promises are in `03` §4), P0-10 (licences), P5-06's own "Before it" lines and acceptance |
-| Large screens (drawings approved first; both orientations and split screen; the browser's capture shows only the home server), Android TV (D-pad only; sign-in by a code), iPhone | acceptance of P6-01, P4-11, P6-02, P6-03; P6-04 to P6-06 (D-56) |
-| What each phase needed from the owner | a pinned **detail** on the item ("Owner's part: ...") and the kind "Needs you" on the items only he can do |
-
-### What the sweep found missing
-
-The sweep read every user story, README promise, ADR consequence, AUDIT row, the round-2 findings, the audit's open items, the release-candidate debts, the ratchet baselines and `P6-later.md`. New tasks, each with its evidence in its own text:
-
-| New task | What | Evidence |
-|----------|------|----------|
-| P0-11 | CI upkeep and the toolchain (Node 24 actions, pinned runner, Gradle/AGP/Kotlin, issue #41) | `RELEASE-CANDIDATE.md` §5 debts, AUDIT P0, the audit's A-17 |
-| P0-12 | The four open documentation-honesty items (A-1, A-6, A-15, A-16) | the audit of 3 Nov |
-| P0-13 | Release candidate 1 walked (the old first gate, now a task of its own) | `RELEASE-CANDIDATE.md`, D-57 |
-| P1-15 | The app says when it is offline | round 2, R2-F5 |
-| P2-23 | One API contract checked in CI | ADR-R41 T5, AUDIT P2-01 |
-| P3-14 | Update with automatic rollback | P3-12's own warning; `22` |
-| P3-15 | Security review and first ultrareview before the first outside user | P3-09 said "before P5", but exposure starts at P3-12 |
-| P3-16 | The Host can recover a lost password | `credentials-map.md`: "not built yet" |
-| P4-18 | Follow artists and the release notification | the owner's question of 3 Nov; server `follows` built, phone check calls Deezer |
-| P6-01 to P6-07 | Drawings, browser, TV, iPhone, casting | D-54, `P6-later.md` |
-
-`tasks/PROPOSED.md` lists more ideas that are **not scope** until the owner accepts them.
+The conditions of the twelve phases the first draft had (history, D-57), and the sweep of 3 Nov that found the tasks P0-11 to P0-13, P1-15, P2-23, P3-14 to P3-16, P4-18 and P6-01 to P6-07, are in git (`git show a7693a2:docs/08-roadmap.md`); every condition that mattered now sits on the item it constrains.
 
 ### How long (the method, so it can be recomputed)
 
