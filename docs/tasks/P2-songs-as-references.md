@@ -106,6 +106,7 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
   `lib/features/settings/import_screen.dart` (remove, route to the first).
 * **Acceptance.** `git grep -i portal -- app/lib` empty; no screen mentions port 8700; tests green; the drift migration drops the
   `Requests` table safely.
+* **Audit B-54 (6 Nov 2026).** Also: no screen says "requests" for the portal (the Notifications page says "Imports and requests" today),.
 
 ## P2-08 — Playback state and resume anywhere (server + app) — Size M
 * **Order.** Needs: none.

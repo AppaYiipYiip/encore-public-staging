@@ -1,0 +1,12 @@
+{
+ "id": "20261106T014030Z-agent-da72",
+ "item": "P1-20",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:40:30Z",
+ "type": "note",
+ "body": "Audit B-54 (walked, 6 Nov 2026): Your server page for a listener shows the switch 'Play songs your server does not have' ON above 'Not available on this server' (Host's YouTube off), a raw http address and '483 ms', and 'the name Tailscale gives your server'. Copy that contradicts itself or names a vendor belongs in the one-place words pass. docs/tasks/AUDIT-BUILT-2026-11-05.md B-54.",
+ "to": [
+  "agent"
+ ]
+}

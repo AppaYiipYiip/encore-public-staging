@@ -1,0 +1,12 @@
+{
+ "id": "20261106T014030Z-agent-a458",
+ "item": "P3-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:40:30Z",
+ "type": "note",
+ "body": "Audit B-53: the installer must ask for the name friends will see ('What should your friends call you?') and the server must keep it (today the invitation says 'owner1 invited you': setup gives the name to the music server only). docs/tasks/AUDIT-BUILT-2026-11-05.md B-53.",
+ "to": [
+  "agent"
+ ]
+}

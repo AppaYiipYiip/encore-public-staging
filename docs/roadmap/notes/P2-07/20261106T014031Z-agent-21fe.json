@@ -1,0 +1,12 @@
+{
+ "id": "20261106T014031Z-agent-21fe",
+ "item": "P2-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:40:31Z",
+ "type": "note",
+ "body": "Audit B-54 (3): the Notifications page still says 'Imports and requests'; the request feature behind it is the old homelab portal (about 2,100 lines in data/requests, features/requests). Acceptance now includes that no screen says 'requests' for the portal. docs/tasks/AUDIT-BUILT-2026-11-05.md B-54.",
+ "to": [
+  "agent"
+ ]
+}

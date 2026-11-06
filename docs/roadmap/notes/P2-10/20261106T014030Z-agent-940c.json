@@ -1,0 +1,12 @@
+{
+ "id": "20261106T014030Z-agent-940c",
+ "item": "P2-10",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T01:40:30Z",
+ "type": "note",
+ "body": "Audit B-53, proven on a real stack (6 Nov 2026): setup was given the owner's name 'Audit Owner' but the login answer says person.name 'owner1' and the invitation page says 'owner1 invited you'. setup.py:129 gives the name to the music server only; library.ensure_person (library.py:37-40) stores the login as the display name. A friend's first screen names the owner by a login. Fix in setup + ensure_person, and the installer asks 'What should your friends call you?'. docs/tasks/AUDIT-BUILT-2026-11-05.md B-53.",
+ "to": [
+  "agent"
+ ]
+}
