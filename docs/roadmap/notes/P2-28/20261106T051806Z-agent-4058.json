@@ -1,0 +1,12 @@
+{
+ "id": "20261106T051806Z-agent-4058",
+ "item": "P2-28",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T05:18:06Z",
+ "type": "note",
+ "body": "New item from audit B-61 (proven on an emulator, 6 Nov 2026): the pull (encore_writer.dart applyPlaylists, lines 153-185) writes the server's playlist name and un-deletes without looking at the outbox; only likes, saved albums and follows are protected (pending_intent.dart). The rename on the phone was undone on screen at 40 s and redone at 68 s. Details and acceptance in docs/tasks/P2-songs-as-references.md section P2-28.",
+ "to": [
+  "agent"
+ ]
+}

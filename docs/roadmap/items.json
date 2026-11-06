@@ -744,5 +744,10 @@
   "kind": "feature",
   "title": "New music shows up in the app within minutes",
   "note": "Proven: the server noticed 7,200 new files in under 5 minutes, the app's server linked them 47 minutes later."
+ },
+ "P2-28": {
+  "kind": "feature",
+  "title": "An edit that is still waiting is never undone on the screen",
+  "note": "Proven: a renamed playlist went back to its old name for a minute when another device changed it."
  }
 }
