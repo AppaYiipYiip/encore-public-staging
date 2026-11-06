@@ -73,7 +73,7 @@ class PlaybackEngine implements PlaybackFacade {
     Clock clock = const SystemClock(),
     Random? random,
     this.restartThreshold = const Duration(seconds: 3),
-    this.persistEvery = const Duration(seconds: 15),
+    this.persistEvery = const Duration(seconds: 2),
     this.maxConsecutiveFailures = 3,
     this.loadTimeout = const Duration(seconds: 12),
     PeriodicTimerFactory? periodicTimer,
@@ -134,7 +134,10 @@ class PlaybackEngine implements PlaybackFacade {
   /// "Previous" restarts the track when it has played longer than this.
   final Duration restartThreshold;
 
-  /// How often the position is written while playing.
+  /// How often the position is written while playing: a kill (the system
+  /// ending the app, a swipe from the recent apps) gives no warning, so this
+  /// is the most that can be lost (J-08 asks for 2 s). Only the small progress
+  /// record is written this often, never the whole queue (`PlaybackProgress`).
   final Duration persistEvery;
 
   /// After this many tracks in a row fail, playback stops with a notice.
@@ -327,7 +330,16 @@ class PlaybackEngine implements PlaybackFacade {
     if (_queue.isEmpty) return;
     _sourceName = saved.sourceName;
     _sourceId = saved.sourceId;
-    _resumePosition = Duration(milliseconds: saved.positionMs);
+    // The progress record is newer than the snapshot's position (it is written
+    // every couple of seconds and on every seek); it counts only if it is for
+    // the song that is current now.
+    var resume = Duration(milliseconds: saved.positionMs);
+    final progress = await _store.loadProgress();
+    final current = _queue.current;
+    if (progress != null && current != null && progress.itemId == current.id) {
+      resume = Duration(milliseconds: progress.positionMs);
+    }
+    _resumePosition = resume;
     _loaded = false;
     _emitAll();
   }
@@ -601,6 +613,7 @@ class PlaybackEngine implements PlaybackFacade {
           _lastPosition = target;
           _positions.add(target);
           _emitSnapshot();
+          unawaited(_persistProgress());
           return;
         }
         // Never ask for a position the player does not have. What is loaded can
@@ -615,6 +628,9 @@ class PlaybackEngine implements PlaybackFacade {
         // Reset after the backend has moved, so a "completed" the seek itself might echo is still taken for the old end.
         _endedQueue = false;
         _completedSerial = -1;
+        // Where the person has put the song is where a kill must bring them back to: written now, not at the next tick (a seek, then the system
+        // ending the app within a few seconds, used to bring the song back at the old position: 2:28 became 4:01 in the 6 Nov 2026 walk).
+        unawaited(_persistProgress());
       });
 
   @override
@@ -1448,7 +1464,10 @@ class PlaybackEngine implements PlaybackFacade {
     final last = _lastPersist;
     if (_backend.state.playing &&
         (last == null || _clock.now().difference(last) >= persistEvery)) {
-      _schedulePersist(immediate: true);
+      // Only the position: the queue has not changed (a change writes the
+      // snapshot itself), and the snapshot of a long queue is not something
+      // to rewrite every couple of seconds for hours.
+      unawaited(_persistProgress());
     }
   }
 
@@ -1611,6 +1630,25 @@ class PlaybackEngine implements PlaybackFacade {
       ));
     } on Object catch (error) {
       Log.warn('playback', 'could not save queue', error);
+    }
+    // The progress record must never be older than the snapshot just written
+    // (a restore prefers it): refresh it with the same position.
+    await _persistProgress();
+  }
+
+  /// Writes where the current song has got to, and only that (see
+  /// [PlaybackProgress]): on every seek, with every snapshot, and every
+  /// [persistEvery] while playing.
+  Future<void> _persistProgress() async {
+    _lastPersist = _clock.now();
+    final current = _queue.current;
+    if (current == null) return;
+    final position = _loaded ? _backend.position : _resumePosition;
+    try {
+      await _store.saveProgress(PlaybackProgress(
+          itemId: current.id, positionMs: position.inMilliseconds));
+    } on Object catch (error) {
+      Log.warn('playback', 'could not save position', error);
     }
   }
 

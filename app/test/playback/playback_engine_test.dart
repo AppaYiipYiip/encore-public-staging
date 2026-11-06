@@ -877,6 +877,121 @@ void main() {
       await h2.dispose();
     });
 
+    // P1-11 / J-08: the app can be killed at any moment (the system, a swipe
+    // from the recent apps) and gives no warning. Where the person was must
+    // come back, to within 2 s. Found 6 Nov 2026: a seek to 2:28, then a kill 2 s
+    // later, brought the song back at 4:01 (a seek was never saved, and the
+    // position only every 15 s).
+    test('P1-11: a seek is saved at once, not at the next tick', () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks, startIndex: 0);
+      h.backend.emitPosition(const Duration(minutes: 4, seconds: 1));
+      await h.settle();
+      final snapshotsBefore = store.saves;
+
+      await h.engine.seek(const Duration(minutes: 2, seconds: 28));
+      await h.settle(); // no time passes: no tick, no debounce
+
+      expect(store.progress?.itemId, 't1');
+      expect(store.progress?.positionMs, 148000);
+      expect(store.saves, snapshotsBefore,
+          reason: 'a seek writes the small progress record, not the queue');
+      await h.dispose();
+    });
+
+    test(
+        'P1-11: while a song plays its position is written every persistEvery, and only the position',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks, startIndex: 0);
+      await h.settle();
+      final snapshots = store.saves;
+      final progress = store.progressSaves;
+
+      for (var second = 2; second <= 20; second += 2) {
+        h.clock.advance(const Duration(seconds: 2));
+        h.backend.emitPosition(Duration(seconds: second));
+        await h.settle();
+      }
+
+      expect(store.progressSaves - progress, greaterThanOrEqualTo(9),
+          reason: 'twenty seconds of play, one write every 2 s');
+      expect(store.progress?.positionMs, 20000);
+      expect(store.saves, snapshots,
+          reason: 'the whole queue is not rewritten every 2 s');
+      await h.dispose();
+    });
+
+    test('P1-11: a kill one second after the last write comes back within 2 s',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks, startIndex: 1);
+      for (var second = 60; second <= 64; second += 2) {
+        h.clock.advance(const Duration(seconds: 2));
+        h.backend.emitPosition(Duration(seconds: second));
+        await h.settle();
+      }
+      // 1 s later the app is killed: nothing more is written.
+      h.backend.emitPosition(const Duration(seconds: 65));
+
+      final h2 = await Harness.start(store: store, library: {
+        for (final t in h.tracks) t.id: t,
+      });
+      await h2.engine.restore();
+
+      expect(h2.currentId, 't2');
+      final restored = h2.engine.snapshot.position.inMilliseconds;
+      expect((65000 - restored).abs(), lessThanOrEqualTo(2000));
+      await h.dispose();
+      await h2.dispose();
+    });
+
+    test('P1-11: the progress of the current song beats the snapshot position',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks, startIndex: 2);
+      await h.engine.pause();
+      await h.settle();
+      expect(store.value, isNotNull);
+      store.progress = const PlaybackProgress(itemId: 't3', positionMs: 25000);
+
+      final h2 = await Harness.start(store: store, library: {
+        for (final t in h.tracks) t.id: t,
+      });
+      await h2.engine.restore();
+
+      expect(h2.currentId, 't3');
+      expect(h2.engine.snapshot.position, const Duration(seconds: 25));
+      await h.dispose();
+      await h2.dispose();
+    });
+
+    test('P1-11: a progress for another song is ignored (the queue changed)',
+        () async {
+      final store = MemoryPlaybackStateStore();
+      final h = await Harness.start(store: store);
+      await h.engine.playTracks(h.tracks, startIndex: 2);
+      h.backend.emitPosition(const Duration(seconds: 42));
+      await h.engine.pause();
+      await h.settle();
+      store.progress = const PlaybackProgress(itemId: 't5', positionMs: 5000);
+
+      final h2 = await Harness.start(store: store, library: {
+        for (final t in h.tracks) t.id: t,
+      });
+      await h2.engine.restore();
+
+      expect(h2.currentId, 't3');
+      expect(h2.engine.snapshot.position, const Duration(seconds: 42),
+          reason: 'the snapshot position, not another song\'s progress');
+      await h.dispose();
+      await h2.dispose();
+    });
+
     test('restore drops tracks that left the library', () async {
       final store = MemoryPlaybackStateStore();
       final h = await Harness.start(store: store);

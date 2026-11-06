@@ -176,6 +176,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   (store what is needed to play them again: video id/song ref, title, artist, cover). Restore shows the mini-player paused at the
   saved second. Verify the lock-screen seek bar on the emulator and one real phone; push position updates if it drifts.
 * **Acceptance.** J-08 (force-stop at 2:31 → reopen paused at 2:31 ± 2 s) for an owned song and a catalogue song; reboot case too.
+* **6 Nov 2026, the walk found two defects in what was built (audit B-94), fixed in the pull request that marks this line:** `seek()` never saved the position (a seek to 2:28, then a kill 2 s later, brought the song back at 4:01, reproduced twice on the emulator), and the position was written every 15 s (the text above says 5 s and J-08 says ± 2 s). Now the position is a small record of its own (the current song's id and the position), written every 2 s while playing, at once on every seek and with every queue write; the queue snapshot is written only when the queue changes, so a long queue is not rewritten every 2 s. Five tests, each failing without its part of the fix.
 
 ## P1-12 — Accessibility, insets, big text, device-profile tests, small UX fixes (app) — Size L (split if needed)
 * **Order.** Needs: P1-20 [d].
