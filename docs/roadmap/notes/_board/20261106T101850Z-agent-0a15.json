@@ -1,0 +1,12 @@
+{
+ "id": "20261106T101850Z-agent-0a15",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T10:18:50Z",
+ "type": "note",
+ "body": "What happened to the order you dragged on 5 Nov (18:36 UTC), and what was done with it.\n\nYour board saved a new order.json on 5 Nov at 18:36 UTC. It was never committed. About four hours later (22:26 UTC) the three gates and D-61 were applied to the plan (#161), which re-sequenced the whole list and added 28 new items. Your drag was made on the OLD plan (89 Now items, 15 Later), so it could not be merged with the new one as it was: taking it as-is would have removed all 28 new items from the plan.\n\nDecision (by the advisor on your behalf, yours to overrule):\n* Applied: the three items you moved to Later: P1-13 (one volume and the same loudness), N-07 (a better logo and app icon), N-08 (a fresh visual design for the phone app). Each was moved with the board's own drag logic; none of them carried another item with it.\n* Not applied: the reordering you did inside Now (P2-08 and P5-07 earlier, P2-06 later, and so on). The gate order from #161 replaced the whole sequence on purpose; the old positions do not map onto it. If you still want any of them, drag it on the board again.\n* Kept: your exact file is in the pull request description and in a commit on the branch backup/owner-order-drag-2026-11-05 (one revert undoes exactly that).\n\nIf the three moves to Later were NOT what you meant, drag them back to Now: nothing else depends on them.",
+ "to": [
+  "owner"
+ ]
+}
