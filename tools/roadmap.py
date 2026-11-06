@@ -208,7 +208,8 @@ def main(argv: list[str]) -> int:
             print(f"done: {', '.join(c['items'])}   {c['state']}")
         elif a.cmd == "mark":
             r = rp.mark(root, a.item, a.state, a.evidence, a.by or os.environ.get("ROADMAP_BY", ""))
-            print(f"marked {r['item']} as {r['state']}" + ("; it left the list (order.json)" if r["state"] == "walked" else "") + ". Commit docs/roadmap/status.json and order.json with the work.")
+            print(f"marked {r['item']} as {r['state']}" + ("; it left the list (order.json)" if r["state"] == "walked" else "")
+                  + (f"; the generated lists in {rp.ROADMAP} were regenerated" if r["lists_changed"] else "") + f". Commit docs/roadmap/status.json, order.json and {rp.ROADMAP} with the work.")
         elif a.cmd == "working":
             for c in rw.list_claims(root):
                 print(f"{c['status']:<7} {c['by']} ({c['role']}) {', '.join(c['items'])}: {c['doing']}  [quiet {c['hours_quiet']} h]{'  MAYBE STOPPED' if c['maybe_stopped'] else ''}")

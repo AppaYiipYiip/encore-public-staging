@@ -101,7 +101,7 @@ def main(argv: list[str]) -> int:
     if not ok:
         errors.append(f"{rp.ROADMAP}: the markers `{rp.BEGIN}` ... `{rp.END}` are missing")
     elif "--write" in argv:
-        (rp.ROOT / rp.ROADMAP).write_text(table, encoding="utf-8")
+        rp.write_generated_lists()
         print("generated lists written to", rp.ROADMAP)
     elif table != road:
         errors.append(f"{rp.ROADMAP}: the generated lists are stale (run: python -I tools/check_order.py --write)")

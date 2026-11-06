@@ -395,6 +395,21 @@ def refresh_roadmap(p: Plan, root: Path = ROOT) -> tuple[bool, str]:
     return True, pat.sub(lambda _: render_table(p), road)
 
 
+def write_generated_lists(root: Path = ROOT) -> bool:
+    """Regenerate the lists between the markers of docs/08 from the plan as it is NOW; returns whether the file changed. The ONE writer of that table: `check_order.py
+    --write` and `mark` both call it, so a change of state and the lists that show it are made together and land in the same commit (CI's Hygiene job fails on stale
+    lists, which used to mean a second commit after every `mark`)."""
+    import roadmap_notes as rn
+    ok, table = refresh_roadmap(load(root), root)
+    if not ok:
+        raise rn.NoteError(f"{ROADMAP}: the markers `{BEGIN}` ... `{END}` are missing")
+    path = root / ROADMAP
+    if table == path.read_text(encoding="utf-8").replace("\r\n", "\n"):
+        return False
+    path.write_text(table, encoding="utf-8")
+    return True
+
+
 # ------------------------------------------------------------------------------------------------------------------ saving (used by the board)
 def write_order(root: Path, order: list, later: list | None = None) -> str:
     """One entry per line, so a change of order is a readable diff. Atomic: write a temp file, then replace. `later` None keeps the Later list as it is. Returns the new
@@ -639,6 +654,8 @@ def mark(root: Path, item: str, state: str, evidence: str = "", by: str = "", no
     chk = p.owner_checks.get(item)
     if state == "walked" and chk:
         evidence += f" | you checked it on {chk['at'][:10]} (note {chk['id']})"
+    if not refresh_roadmap(p, root)[0]:                                 # refuse BEFORE writing anything: a state without its lists is what CI's Hygiene job rejects
+        raise rn.NoteError(f"{ROADMAP}: the markers `{BEGIN}` ... `{END}` are missing, so the generated lists cannot be kept in step; nothing was changed")
     status = _json(root / PLAN / "status.json", {})
     status[item] = {"state": state, "evidence": evidence, "at": now or _now_iso(), "by": (by or "Claude").strip()[:60]}
     _write_status(root, status)
@@ -651,7 +668,8 @@ def mark(root: Path, item: str, state: str, evidence: str = "", by: str = "", no
         new, newl = (order if item in order else _at_the_top(p, order, item)), later
     if (new, newl) != (order, later):
         write_order(root, new, newl)
-    return {"item": item, "state": state, "in_order": item in new}
+    lists_changed = write_generated_lists(root)                         # docs/08 shows the state: regenerate it in the same step
+    return {"item": item, "state": state, "in_order": item in new, "lists_changed": lists_changed}
 
 
 OWNER_ACTIONS = ("finish", "judge", "problem", "uncheck")

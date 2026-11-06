@@ -62,6 +62,41 @@ class MarkTests(unittest.TestCase):
             with self.assertRaises(rn.NoteError):
                 rp.mark(d, item, state, "x" * 20)
 
+    def lists(self, d: Path) -> str:
+        return (d / "docs/08-roadmap.md").read_text(encoding="utf-8").replace("\r\n", "\n")
+
+    def test_mark_regenerates_the_lists_in_docs_08_so_a_second_commit_is_never_needed(self) -> None:
+        """The cause of the "Hygiene failed" emails: a mark changed status.json and order.json but left docs/08's generated lists stale, and CI compares them."""
+        d = self.tree(tasks=FREE)
+        self.assertNotIn("walked on the pair, record b12", self.lists(d))
+        r = rp.mark(d, "P1-03", "walked", "walked on the pair, record b12", by="Claude", now=iso(0))
+        self.assertTrue(r["lists_changed"])
+        self.assertIn("walked on the pair, record b12", self.lists(d), "the Done table of docs/08 shows the proof just recorded")
+        ok, fresh = rp.refresh_roadmap(rp.load(d), d)
+        self.assertTrue(ok)
+        self.assertEqual(self.lists(d), fresh, "exactly what check_order.py computes, so CI finds nothing stale")
+        rp.mark(d, "P1-03", "todo", "", now=iso(5))                              # reopening changes the lists back
+        ok, fresh = rp.refresh_roadmap(rp.load(d), d)
+        self.assertEqual(self.lists(d), fresh)
+        self.assertNotIn("walked on the pair, record b12", self.lists(d))
+
+    def test_marking_the_same_state_again_changes_nothing_in_the_lists(self) -> None:
+        d = self.tree()
+        rp.mark(d, "P1-02", "built", "built in #12; waits for the walk", now=iso(0))
+        before = self.lists(d)
+        r = rp.mark(d, "P1-02", "built", "built in #12; waits for the walk", now=iso(0))
+        self.assertFalse(r["lists_changed"])
+        self.assertEqual(self.lists(d), before)
+
+    def test_mark_refuses_before_changing_anything_when_docs_08_lost_its_markers(self) -> None:
+        d = self.tree(tasks=FREE, road="# roadmap, someone removed the generated block\n")
+        before = (d / "docs/roadmap/status.json").read_bytes()
+        with self.assertRaises(rn.NoteError) as cm:
+            rp.mark(d, "P1-03", "walked", "walked on the pair, record b12")
+        self.assertIn("markers", str(cm.exception))
+        self.assertEqual((d / "docs/roadmap/status.json").read_bytes(), before, "no state is recorded without its lists")
+        self.assertEqual(rp.load(d).order, ["P1-01", "P1-02", "P1-03"])
+
     def test_todo_after_walked_puts_the_item_back_at_the_top(self) -> None:
         d = self.tree(tasks=FREE, status={"P1-03": {"state": "walked", "evidence": "old record b01"}}, order=["P1-01", "P1-02"])
         rp.mark(d, "P1-03", "todo", "", now=iso(0))

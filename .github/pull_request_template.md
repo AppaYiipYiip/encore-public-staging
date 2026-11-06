@@ -1,7 +1,7 @@
 ## What changed for a person
 <!-- One or two sentences in plain words. -->
 
-Board item: <!-- the id on the roadmap board, e.g. P1-01 (`docs/tasks/` has its text). If this pull request finishes it, `python tools/roadmap.py mark ITEM built|walked --evidence "..."` is IN this pull request, followed by `python -I tools/check_order.py --write`. Issues are not used for planning (D-60). -->
+Board item: <!-- the id on the roadmap board, e.g. P1-01 (`docs/tasks/` has its text). If this pull request finishes it, `python tools/roadmap.py mark ITEM built|walked --evidence "..."` is IN this pull request (it also regenerates the lists in `docs/08-roadmap.md`: commit that file too). Issues are not used for planning (D-60). -->
 
 ## Evidence
 <!-- Screenshots (never with a password visible), timings, log excerpts. Every number says what it was measured on. -->
