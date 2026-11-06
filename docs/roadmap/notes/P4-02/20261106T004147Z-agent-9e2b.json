@@ -1,0 +1,12 @@
+{
+ "id": "20261106T004147Z-agent-9e2b",
+ "item": "P4-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T00:41:47Z",
+ "type": "note",
+ "body": "Audit B-45, proven on an emulator against a real server (6 Nov 2026): the app closes its live connection whenever it is not on screen, INCLUDING while music plays (connections to the server: on screen 1, in the background 0, music playing in the background 0). Jam rides on the live channel and is mostly listened to with the screen off, so the rule must change first: keep the channel while a media session is active. See docs/tasks/AUDIT-BUILT-2026-11-05.md B-45 and docs/evidence/README.md#d01.",
+ "to": [
+  "agent"
+ ]
+}

@@ -28,6 +28,7 @@ One file. A proof of what was run, on what, and what it showed; the board's `sta
 | `c06-install-by-the-guide-bare-vm.md` | [c06](#c06) |
 | `c07-download-notification-ask.md` | [c07](#c07) |
 | `c08-the-offline-look.md` | [c08](#c08) |
+| (new, 6 Nov 2026) the code pass proved on a real server and an emulator | [d01](#d01) |
 
 ---
 
@@ -1045,3 +1046,27 @@ Search offline (S-11, S-12: no offline state is drawn: it waits for its drawing)
 
 #### Pictures
 The only golden picture that changed is the "now playing, waiting for the server" one (the strip's words): the Windows one was redrawn here, the **Linux one by the Goldens (Linux) workflow** on this branch (run 41969982446, commit `35d099f`, looked at before the merge: the strip reads "Can't reach your server.", nothing else moved).
+
+<a id="d01"></a>
+## d01 · the code pass, proved on a real server and an emulator (6 Nov 2026; `d` = a defect proven by the code pass)
+
+**Setup (everything real, YouTube off so nothing was asked of YouTube).** Docker Desktop on the dev PC; the product's own `deploy/compose.yaml` (Navidrome 0.64.2 and the Encore server image built from `main` at `42ae1c6`); the installer's `setup` step (the owner as JSON on standard input); seven tagged FLAC files made with the image's own ffmpeg: three Fairuz songs in Arabic (10.0, 11.5 and 11.0 s), two Kino songs in Russian (12.0 and 12.5 s), two Radiohead songs in Latin letters. The app: build 125 (`fad1b45`, x64) on the emulator `encore_a07` (Android 16), signed in at `10.0.2.2:14533`.
+
+| Check | What was run | What it showed |
+|-------|--------------|----------------|
+| **B-37** server | `GET /library/files` and the server's database after the library link | 7 files became **3 songs**; the 5 Arabic and Russian files hang on ONE song, «Группа крови» by Кино (`song_file` 7 rows, 3 distinct songs); the Latin ones were right |
+| **B-37** app | Your Library, Everything on the server, Albums, then the Fairuz album | three albums (In Rainbows, Группа крови, كيفك إنت); the Fairuz album says **"1 song"** and its only track is **«Группа крови» by Кино**, a Russian song, while the folder holds three Fairuz songs (pictures below) |
+| **B-40** | music folder emptied, music server rescanned (0 songs), Encore server restarted | `library linked: 0 songs seen, 0 new refs, 7 files pruned`; file links 7 to 0 (3 songs kept); the file feed 7 to 17 rows. The app's Albums list stayed empty after the folder came back until the next library pass |
+| **B-41** | music server stopped, `POST /auth/login` with the correct password | `401 unauthorized: The username or the password was not accepted.` |
+| **B-44** | `GET /encore/stream/sr_...?p=pn_x&e=9999999999&sig=%C3%A9`, no login | **HTTP 500**, `TypeError: comparing strings with non-ASCII characters is not supported` in the log |
+| **B-38** | YouTube made unreachable (its hostnames point to the container itself: connection refused, no traffic leaves the PC); a person likes a song the server does not have | after 3 s: `failed`, "YouTube has no copy of this song that can be fetched.", `retry: false`; the download screen's numbers `failed 1, retryable 0`; **pressing Retry asked for 0 songs** |
+| **B-45** | the app on the emulator, music playing (media session `PLAYING`), connections to the server's port 4533 counted in the server's container | app on screen: 1 (the live channel); in the background: **0** at 8 s and at 48 s; **music playing and the app in the background: 0**; on screen again: 1 |
+
+**Suspected and withdrawn.** The app showed "Songs in your library: 0" for five minutes after the server had its files again. That is the sync rhythm (an open app pulls the server's files every 10 minutes, `SyncScheduler.foregroundInterval`), not a defect: "Sync now" showed all three albums at once.
+
+**A finding about the walk tools.** `tools/journeys/ui.py dump` crashes on an Arabic label under a Windows console (`cp1252`); run it with `python -X utf8` (the `-I` flag ignores `PYTHONUTF8`). The walk of P2-25's native-script row needs the tool to be UTF-8 safe.
+
+**Not run:** playing a song of this library (the 5 Arabic and Russian files share one song, so which file a tap plays is the next thing to check); a Jam or a remote command while the screen is off (not built).
+
+![The Fairuz album shows one song, and it is Russian](2026-11-06-d01-fairuz-album-shows-a-russian-song.png)
+![The three albums](2026-11-06-d01-albums-of-the-arabic-russian-latin-library.png)

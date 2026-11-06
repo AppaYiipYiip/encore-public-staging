@@ -1,0 +1,12 @@
+{
+ "id": "20261106T004147Z-agent-a63e",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T00:41:47Z",
+ "type": "note",
+ "body": "Proof in the app (emulator, real server, 6 Nov 2026): after the server linked seven tagged files (3 Fairuz in Arabic, 2 Kino in Russian, 2 Radiohead) the Fairuz album shows '1 song' and its only track is the Russian song 'Gruppa krovi'. Pictures and the full table: docs/evidence/README.md#d01. Also B-46 (the phone's matcher keeps every script, the server's folds to ASCII) and B-47 (tools/journeys/ui.py crashes on Arabic labels unless run with python -X utf8 -I): the walk of the native-script row needs both fixed. What a tap on a track of this library plays (the five Arabic and Russian files share one song) was not yet run.",
+ "to": [
+  "agent"
+ ]
+}

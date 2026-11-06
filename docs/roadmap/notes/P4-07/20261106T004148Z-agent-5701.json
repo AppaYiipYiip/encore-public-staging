@@ -1,0 +1,12 @@
+{
+ "id": "20261106T004148Z-agent-5701",
+ "item": "P4-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T00:41:48Z",
+ "type": "note",
+ "body": "Audit B-45 (proven 6 Nov 2026): the live connection is closed whenever the app is not on screen, including while music plays; docs/13 section 2 (device commands, takeover, 'available for 10 minutes after use') assumes it stays. Settle the rule before building the remote: keep the channel while a media session is active, close it only when nothing plays and the app is hidden.",
+ "to": [
+  "agent"
+ ]
+}
