@@ -22,7 +22,7 @@ the owner's existing data or keep the old model alongside the new one forever.
 | `file_log` | seq, ref, at | which songs' files changed, in order: the feed of `GET /library/files?since=` |
 | `invite` / `reset_code` | id, code_hash, role, created_by, note, created_at, expires_at, used_by, used_at, revoked_at / id, person, code_hash, created_at, expires_at, used_at | `21`; only the hash of a code is kept, the code is shown once |
 | `notification` | id, person, kind (`release`, `jam`, `invite_used`, `import_done`), title, body, route, dedupe, created_at, read_at | the bell (ADR-R44): news kept per person and said in words, the same news told twice is made once |
-| `idempotency_key`, `setting` | person, key, response, status, at / key, value | a write that is not naturally idempotent remembers its answer for 7 days (the `Idempotency-Key` header); settings |
+| `idempotency_key`, `setting` | person, key, response, status, at / key, value | `idempotency_key` is created by migration 0001 and **no code uses it yet** (the `Idempotency-Key` header is a target, `17` section 1, register B-63); `setting` holds settings |
 | `profile` | person, vectors (json), updated_at | **planned, no migration yet**: recommendations (`20`) |
 | `friend` / `remote_server` | person, remote_handle, server, state / server, public_key, first_seen, allowed | **planned, no migration yet**: federation (`13` §4) |
 | `session_code`, `problem_report` | | **planned, no migration yet** |
@@ -32,14 +32,15 @@ Migrations: numbered SQL files run at start-up inside a transaction, with a back
 
 ## 2. The phone's database (drift)
 
-Keep the existing tables where they still fit; the changes:
-* New `SongRefs` (mirror of `song_ref` for the refs this person uses) and `SongFiles` (only the server file ids needed to stream).
-* `Likes`, `PlaylistEntries`, `Pins` (downloads), `PlayHistory`, the saved queue: keyed by **ref id** instead of Navidrome id.
-* `Tracks`/`Albums`/`Artists` stay as the **browse index of the server's files** (for the Library's Albums/Artists views of kept music).
-* New `Outbox` operation types (`17` §5), `SyncState.cursor` for `library/changes`.
-* Every schema version has a drift migration with a test that upgrades a real database captured from build 40 (P2-02).
+Drift, schema 7 (`app/lib/data/db/tables.dart`, `app/lib/data/db/app_database.dart`), additive migrations only: every shipped version has a frozen snapshot in `app/drift_schemas/` and an upgrade test that keeps its rows (`app/test/data/db/migration_test.dart`, `app/test/generated_migrations/`).
+* **The Encore song references did not get tables of their own.** One `tracks` table carries both a plain music server's songs and an Encore server's song references: for a reference, `is_ref` is true, `id` is the ref id (`sr_...`, the same on every device) and `file_id` is the music server's id of the kept file when the server holds one (null: the song plays from the server's stream by ref); `video_id`, `artists_json`, `cover_url` and `explicit` carry what a catalogue song brings with it (schema 6). There is no `SongRefs` or `SongFiles` table.
+* A like is `tracks.starred_at_ms` (saved albums and followed artists the same way on `albums` and `artists`); `pins` and `downloads` are keyed by the track id, which is the ref id on an Encore server; `playlist_entries` keeps the server's entry id and its fractional position next to the phone's own order.
+* `outbox` holds the operation kinds of `17` section 5; `sync_state` holds the cursors of `library/changes` and `library/files` and the saved queue.
+* `albums`, `artists` and the rest of `tracks` are the browse index of the server's files. `requests` is the old homelab request portal (P2-07 removes it).
 
 ## 3. What exists today and must survive
+
+This section and section 4 are the migration of task P2-11 (now Later). The machines named in the table, CT 104 and the dev VM, were destroyed on 2026-11-03 (`06`); the table records what that migration had to preserve. A real old install is the test input when P2-11 is scheduled.
 
 | Where | What | Owner's data? |
 |-------|------|---------------|
@@ -62,4 +63,4 @@ Keep the existing tables where they still fit; the changes:
    the work folder) so nothing waits for downloads anymore.
 6. **Check:** counts per person (likes, playlists, entries, plays) before and after are printed; any difference stops the switch.
 7. **Switch:** the app talks to the new server only after the check passes; the old services stop (not deleted) for 14 days.
-* Proof: run it first on a copy of CT 104's data on the dev VM; then on CT 104 itself with the owner's go.
+* Proof (when P2-11 is scheduled): run it first on a copy of a real old install on the test VM 108; only then on anybody's server, with their go and a backup first.

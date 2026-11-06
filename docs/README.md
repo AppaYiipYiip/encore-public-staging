@@ -2,6 +2,34 @@
 
 Encore is a music server you run at home and an app on your phone (and soon in a browser) that plays your music and, when a song is not on your server, fetches it for you. This folder is the plan, the design and the rules. **The roadmap board is the plan and the state**; everything else here is one of the kinds below.
 
+## New here? Fifteen minutes, in this order
+
+1. **What it is and where things are (5 min).** `README.md` (one screen), then `docs/guides/getting-started-for-developers.md` sections 1 and 2. Three programs: the Android app (`app/`, Flutter); the Encore server (`server/encore_server`, one Python program that sits beside a Navidrome music server and does everything the app asks, including YouTube, Deezer and lyrics, because the app only ever talks to its own server, ADR-R38); and the shared rules of listening together (`packages/encore_session`). `server/legacy/` holds the older separate services; do not build on them (B-16, P2-07).
+2. **What is true now (3 min).** `python tools/roadmap.py brief --role agent`: who is working on what, what the owner reported, what is next. That output is the state; no document is.
+3. **What is wrong or open (3 min).** The register `docs/tasks/AUDIT-BUILT-2026-11-05.md` lists findings `B-1` and up, each with its evidence, the proper fix and the item it lands in. For the item you take, `python tools/roadmap.py notes ITEM`: the pinned **detail** notes come first and name files, lines, traps and the tests that must change.
+4. **How to change something (4 min).** `AGENTS.md`, your task in `docs/tasks/`, the truth documents it cites, `docs/30` (what to do and not to do) and `docs/06` (how a change goes).
+
+**What the ids mean.** The same letters mean different things in different files; read an id with its file.
+
+| Id | Means | Where it is defined |
+|----|-------|---------------------|
+| `P0-nn` to `P6-nn`, `N-nn` | a task on the board, an idea on the board | `docs/tasks/P*.md`, `docs/tasks/PROPOSED.md`, `docs/roadmap/` |
+| `D-nn`, `X-n` | a decision for the owner, an experiment | `10` |
+| `ADR-Rnn` | an architecture decision, with the options compared | `11` |
+| `B-nn` **(with a hyphen)** | a finding about what is built, with evidence and the proper fix | `docs/tasks/AUDIT-BUILT-2026-11-05.md` (the open problems) |
+| `B1` to `B34` (no hyphen) | the backend review of 30 to 31 Oct | `docs/history/README.md#qa-backend-2026-10-31` |
+| `B0` to `B9` (no hyphen) | the check rows of the release candidate | `docs/tasks/RELEASE-CANDIDATE.md` |
+| `B1` to `B8` (no hyphen) | the diagnosis of the old project | `01` |
+| `F`, `Q`, `R1-`, `R2-F`, `M` | findings of the review rounds of 22 to 31 Oct (history) | `docs/history/README.md` |
+| `A-nn` | a finding of the audit of 3 Nov 2026, cited in pull request titles | the workspace's `archive/` folder, outside the repository, read-only |
+| `CN`, `AC`, `DV`, `IV`, `JN`, `PB`, `PB-F`, `CF`, `G`, `O` | one row of a state table: connecting, accounts, devices, invitations, joining, playback and its failures, conflicts, gaps, open questions | `31` to `34` (when you touch a state, update its row) |
+| `US-nn` | a user story with its acceptance | `03a` |
+| `S-nn`, `W-nn` | a phone screen; a Host's page in the browser (installer, admin), with the states each must show | `docs/design/00-screen-inventory.md` |
+| `Hnn` (no hyphen) | a hidden risk | `13`, `14` |
+| `c05`, `d01`, ... | a proof (evidence section) | `docs/evidence/README.md` |
+
+**Three things that mislead a newcomer.** (1) A document of kind `history` or `evidence` is never an instruction; where it disagrees with a truth document, the truth wins. (2) *Built* is not *walked*: the board says "built, not walked" until the item is walked as a person on the release-candidate pair. (3) A document can promise what the code does not do (register rows B-63 and B-64 are two): the code is the fact; fix the document in the same pull request. The old test machines (VM 106, VM 107, CT 104) were destroyed on 3 Nov 2026; the test server is VM 108.
+
 ## How the documents work
 
 There are five kinds of document, and each has one rule. A new document, or a new paragraph, goes into exactly one of them.
@@ -121,8 +149,6 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/guides/friend.md` | guide | Using Encore on a friend's server (a one-page guide for the first outside user) | keep |
 | `docs/guides/getting-started-for-developers.md` | guide | Getting started as a developer (read this first) | keep |
 | `docs/guides/install-test.md` | guide | Install Encore on a fresh computer (the install test) | keep |
-| `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
-| `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
 | `docs/history/README.md` | history | What happened, in short: the review records of 22 Oct to 5 Nov 2026 and the design records, with the finding IDs (F1 to F66, B1 to B34, Q, R1, R2-F, M1 to M8) explained in one line each; the long forms are in git at a pinned commit (D-62) | read-only; not instructions |
 | `docs/roadmap/README.md` | entry | How the roadmap board works: one place per fact, who writes what | keep |
 | `docs/tasks/AUDIT-BUILT-2026-11-05.md` | record | The audit of what is already built: findings with evidence, and the feasibility read | keep |

@@ -1,0 +1,9 @@
+{
+ "id": "20261106T110639Z-agent-dbcc",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T11:06:39Z",
+ "type": "detail",
+ "body": "LINE REFERENCES, corrected (supplements my P1-17 note of 10:37 UTC): the outbox trigger I cited at outbox.dart:554,588 is the OLD-mode MutationService (likes). On an Encore server the playlist editor is EncorePlaylistEditor (data/encore/encore_mutations.dart, onQueued at lines 92 and 134), and both editors are wired in app/session.dart:303-318 with 'onQueued: () => unawaited(outbox.flush())'. The conclusion stands: a delivery starts only from a queued edit or a sync run, and the backoff (outbox.dart:212) has no timer of its own; B-58's fix subscribes the outbox to the derived reachability state in that one place (session.dart), whichever editor queued the edit."
+}

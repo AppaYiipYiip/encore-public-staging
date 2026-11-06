@@ -102,12 +102,7 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
 * **Ratchets** (`docs/30` §5): a rule with a *baseline* of known violations. A new violation fails the test; a baseline entry that has been
   fixed also fails until you delete it from the baseline, so it cannot creep back. The goal of every baseline is empty. The app's rules,
   including "no client calls an outside host" (two known calls today: Deezer and LRCLIB), are in `app/test/architecture_test.dart`.
-* **Ids repeat across documents; always read an id together with its file name.** `D-n` = a decision for the owner (`docs/10`); `ADR-Rn` =
-  a decision taken (`docs/11`); `P<phase>-nn` = a task (`docs/tasks/P*.md`); `F<n>` = findings from the owner's field tests and the catalogue
-  (`docs/history/README.md#audit`); **`B<n>` means three different things**: a finding in `docs/01`, a check row in `docs/tasks/RELEASE-CANDIDATE.md`
-  (B0-B6), and a backend bug in `docs/history/README.md#qa-backend-2026-10-31` (B1-B12); `c0n` = an evidence file in `docs/evidence/`; `b11` = the
-  walk record of the release-candidate pair (it does not exist yet); `A-n` = a finding of the 3 Nov 2026 audit of `main` (named in PR
-  titles; the full list is in the owner's project book, which is kept outside the repository, so ask).
+* **Ids repeat across documents; always read an id together with its file name.** The table of what every prefix means (`D-`, `ADR-R`, `P`, `B-` with a hyphen and `B` without, `F`, `CN`, `PB`, `CF`, `S-` and the rest) is in `docs/README.md`, "What the ids mean". Two of the guide's own: `c0n` = an evidence section in `docs/evidence/README.md`; `b11` = the walk record of the release-candidate pair (it does not exist yet).
 * **A doc can promise what the code does not do.** An audit on 3 Nov 2026 found several (the API inventory, "never run" sentences, states
   marked built without a test). If a document and the code disagree, the code is the fact: fix the document in the same PR and say so.
 * **Plain words on screens meant for listeners** (no "Navidrome", "Subsonic", "codec", "port"). Every tappable widget has a semantics
@@ -124,16 +119,9 @@ ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactl
   Encore for real people are changed only with the owner's word, and a backup comes first (`encore backup`).
 * **Ask the strongest model you have** before a hard-to-undo choice and again before calling a multi-step task done (`docs/30` §3).
 
-## 8. Snapshot, 3 November 2026 (will go stale; the live version is `docs/README.md` and `docs/history/README.md#audit`)
+## 8. Where the state is (it is not in this guide)
 
-* The server and the app are built; an install by the guide on a bare VM took 9 min 51 s (`docs/evidence/c06`). The release-candidate pair
-  (app build 125 and the server image from the same server code) is **built, not walked**: QA rounds 2 and 3 and the walk record `b11` are
-  next, and nothing goes to the owner until `b11` exists and has been read.
-* Open and held: lyrics on the server (P2-14, branch and draft PR, held until `b11`); the catalogue move to the server (P2-12) and moving
-  Deezer and LRCLIB off the app (D-51, ratchet 2 to 0); the pairing link and QR (P2-19); the quality tier (P4-04, off by default, brings its
-  own containers); a public image so the installer needs no GitHub sign-in.
-* Not proved yet: a phone on mobile data through the Funnel, the live connection for two hours through it (X-7), a real update to a newer
-  image, and ARM computers.
+Nothing here says how far the work is, because that goes stale in days. The state is `python tools/roadmap.py brief --role agent`. The open problems are the register `docs/tasks/AUDIT-BUILT-2026-11-05.md`; for one item, `python tools/roadmap.py notes ITEM` (the pinned detail notes come first); what was proved, and on which setup, is `docs/evidence/README.md`. What the 3 November 2026 snapshot that stood here said is in git: `git log -p -- docs/guides/getting-started-for-developers.md`.
 
 ## 9. When you are stuck
 

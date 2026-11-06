@@ -21,7 +21,7 @@ guidance to do better testing, better examples."* This page is that guidance. It
 |------|--------|--------------------|-------|
 | **SLOW** | 2 vCPU, 2 GB VM (stand-in for a Raspberry Pi 4) | 10 Mbit/s down, 1 Mbit/s up, 40 ms (shaped with `tc … netem` on the VM) | Emulator 2 CPU, 2 GB, 720×1600, `-netspeed lte -netdelay umts` |
 | **TYPICAL** | 4 vCPU, 4 GB (measured on the former dev VM `encore-dev`, destroyed 2026-11-03; the test VM 108 has 3 GB, so its memory numbers run a little worse than TYPICAL) | the real home line (~18 Mbit/s down, ~7 up, shared with a family) | Emulator 4 CPU, 4 GB, 1080×2400 |
-| **REAL** | the dev VM | real line | the owner's phone + one friend's phone over the public address |
+| **REAL** | the test VM 108 (the owner's real server after gate 2, P3-18) | real line | the owner's phone + one friend's phone over the public address |
 
 A result reads: *"tap → audible, never-played songs, p50 2.4 s / p95 3.8 s / max 6.1 s, n=12 distinct songs, TYPICAL, build 0.2.0+47"*.
 
@@ -84,7 +84,7 @@ What the player is **supposed to do** in each condition below (and what it does 
 | Flaky network | toggle airplane every 20 s for 5 min while playing a playlist | never stuck; no duplicate plays; play/pause always present |
 | Slow network | `adb emu network speed edge` | tap → audible ≤ 10 s; a spinner, then sound; nothing frozen |
 | Server down | `docker stop encore-server` on the VM | library and downloads work; "Your server isn't answering" only on actions that need it; recovers by itself |
-| **Radio on, no data** (the state most phones live in away from home; **airplane mode is not it**) | stop `encore-server` on the dev VM while the phone is on Wi-Fi, or block the server address with the emulator's network controls; a real phone with mobile data switched off but the radio on | one strip once; downloaded songs play; a list with songs that are not downloaded plays only the downloaded ones (Play, Shuffle, Next, the end of a song); the title and cover shown are always those of the song heard (Now playing, mini player, notification, lock screen); lyrics say "no lyrics" within ~12 s, never a spinner |
+| **Radio on, no data** (the state most phones live in away from home; **airplane mode is not it**) | stop `encore-server` on the test VM 108 while the phone is on Wi-Fi, or block the server address with the emulator's network controls; a real phone with mobile data switched off but the radio on | one strip once; downloaded songs play; a list with songs that are not downloaded plays only the downloaded ones (Play, Shuffle, Next, the end of a song); the title and cover shown are always those of the song heard (Now playing, mini player, notification, lock screen); lyrics say "no lyrics" within ~12 s, never a spinner |
 | A partly downloaded list | download a playlist, take one song in the middle off the phone, go to the state above | Play and Shuffle start at a downloaded song; rows show which songs are downloaded (arrow) and, offline, dim the rest |
 | A list deleted while downloaded (also an imported one) | delete the playlist | Library > Downloaded and "N songs on this phone" fall within seconds; the files are gone from Settings > Downloads & storage |
 | A long outage | server stopped for 10 minutes | the strip appears once and goes by itself; not again until everything has worked for 10 s; the person is never asked for a password |
@@ -105,7 +105,7 @@ What the player is **supposed to do** in each condition below (and what it does 
 | Server integration | Real parts together | Real Navidrome in Docker + the server: like a catalogue song → keep job → file appears → ref gets a file id → like still there; YouTube answered from recorded fixtures | Navidrome mocked |
 | Live canary | YouTube still works | 1–3 real look-ups per night (a fixed obscure song), alert if the stage times move by >2× | 200 look-ups "to be sure" (`06` §8) |
 | Widget/golden | A screen is right on every profile | Search results screen at profile A: Top result first, nothing under the nav bar, all rows labelled | A golden at one size only |
-| On-device journey | A person's task works end to end | §7 journeys on emulators against the dev VM, measured | A journey against `FAKE_MODE` |
+| On-device journey | A person's task works end to end | §7 journeys on emulators against the test VM 108, measured | A journey against `FAKE_MODE` |
 | Exploratory | What nobody thought of | §9 charters | — |
 | Field | Real phones, real lives | Owner + a friend use a beta for 5 days; issues filed with the template | — |
 
