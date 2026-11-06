@@ -367,6 +367,13 @@ class EncoreInfo {
   final int youtubeResumesInSec;
 
   bool get hasRefs => features.contains('refs');
+
+  /// The server keeps songs of its own and tells a phone how it goes (`keep/progress`, `keep/watch`, `keep/retry`).
+  bool get hasKeep => features.contains('keep');
+
+  /// The server can be asked for a whole download at once (`keep/ask`). An app does without a feature that is not listed; it never tries a route to
+  /// find out (docs/17 "Versions").
+  bool get hasKeepAsk => features.contains('keep-ask');
 }
 
 /// What bringing a person's library over from the music server did on the Encore server.
@@ -735,4 +742,194 @@ class EncoreReleaseSave {
 
   /// By song id.
   final Map<String, EncoreKeep> keep;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------- how the server keeps
+
+/// One download as the server knows it, by the kind and id the phone pinned (docs/17 "Keep progress"): a playlist (`pl_...`), the liked songs
+/// (`liked`), or a catalogue release (`cat:<id>`, with the songs the phone knows, which the server uses only for a release saved before it stored them).
+@immutable
+class KeepGroupKey {
+  const KeepGroupKey(this.kind, this.id, {this.refs = const []});
+
+  final String kind;
+  final String id;
+  final List<String> refs;
+
+  Map<String, Object?> toJson() =>
+      {'kind': kind, 'id': id, if (refs.isNotEmpty) 'refs': refs};
+
+  @override
+  bool operator ==(Object other) =>
+      other is KeepGroupKey && other.kind == kind && other.id == id;
+
+  @override
+  int get hashCode => Object.hash(kind, id);
+
+  @override
+  String toString() => '$kind:$id';
+}
+
+/// A song the server could not get, with the sentence for the person (the cause for the Host, the plain fact for a member) and whether asking
+/// again can help.
+@immutable
+class KeepFailure {
+  const KeepFailure({
+    required this.ref,
+    required this.title,
+    required this.artist,
+    required this.reason,
+    required this.retry,
+  });
+
+  factory KeepFailure.fromJson(Map<String, dynamic> json) => KeepFailure(
+        ref: readString(json['ref']) ?? '',
+        title: readString(json['title']) ?? '',
+        artist: readString(json['artist']) ?? '',
+        reason: readString(json['reason']) ?? '',
+        retry: readBool(json['retry']),
+      );
+
+  final String ref;
+  final String title;
+  final String artist;
+  final String reason;
+  final bool retry;
+}
+
+/// How far the server is with the songs of ONE download. Every song is in exactly one of [ready], [keeping], [queued] and [failed], so they add up to
+/// [total].
+@immutable
+class KeepGroup {
+  const KeepGroup({
+    required this.kind,
+    required this.id,
+    required this.total,
+    required this.ready,
+    required this.keeping,
+    required this.queued,
+    required this.failed,
+    required this.retryable,
+    required this.failures,
+  });
+
+  factory KeepGroup.fromJson(Map<String, dynamic> json) => KeepGroup(
+        kind: readString(json['kind']) ?? '',
+        id: readString(json['id']) ?? '',
+        total: readInt(json['total']) ?? 0,
+        ready: readInt(json['ready']) ?? 0,
+        keeping: readInt(json['keeping']) ?? 0,
+        queued: readInt(json['queued']) ?? 0,
+        failed: readInt(json['failed']) ?? 0,
+        retryable: readInt(json['retryable']) ?? 0,
+        failures: [
+          for (final f in readObjectList(json['failures']))
+            KeepFailure.fromJson(f)
+        ],
+      );
+
+  final String kind;
+  final String id;
+  final int total;
+
+  /// The server holds the file.
+  final int ready;
+
+  /// Being fetched this moment.
+  final int keeping;
+
+  /// Waiting its turn (or for YouTube's rest).
+  final int queued;
+
+  /// Not coming: named in [failures] (at most the first few; the count is all of them).
+  final int failed;
+
+  /// Of the failed, how many asking again can help.
+  final int retryable;
+  final List<KeepFailure> failures;
+
+  KeepGroupKey get key => KeepGroupKey(kind, id);
+
+  /// On its way to the server: being fetched or waiting.
+  int get waiting => keeping + queued;
+
+  bool get serverHasAll => total > 0 && ready >= total;
+}
+
+/// YouTube as the server describes it while it keeps songs: `ok`, `resting` (it will go on after [resumesInSec]) or `off`.
+@immutable
+class KeepYoutube {
+  const KeepYoutube({this.state = 'off', this.resumesInSec = 0});
+
+  factory KeepYoutube.fromJson(Object? json) {
+    final m = readMap(json);
+    return KeepYoutube(
+        state: readString(m?['state']) ?? 'off',
+        resumesInSec: readInt(m?['resumesInSec']) ?? 0);
+  }
+
+  final String state;
+  final int resumesInSec;
+
+  bool get resting => state == 'resting';
+}
+
+/// The answer of `keep/watch`, and what `keep.progress` pushes: the downloads the person has, in the order asked.
+@immutable
+class KeepProgress {
+  const KeepProgress(
+      {required this.groups, this.youtube = const KeepYoutube()});
+
+  factory KeepProgress.fromJson(Map<String, dynamic> json) => KeepProgress(
+        groups: [
+          for (final g in readObjectList(json['groups']))
+            if ((readString(g['kind']) ?? '').isNotEmpty &&
+                (readString(g['id']) ?? '').isNotEmpty)
+              KeepGroup.fromJson(g)
+        ],
+        youtube: KeepYoutube.fromJson(json['youtube']),
+      );
+
+  final List<KeepGroup> groups;
+  final KeepYoutube youtube;
+
+  KeepGroup? of(KeepGroupKey key) {
+    for (final g in groups) {
+      if (g.kind == key.kind && g.id == key.id) return g;
+    }
+    return null;
+  }
+}
+
+/// The answer of `keep/ask`: how many songs the server was asked for, and how the downloads go now.
+@immutable
+class KeepAsked {
+  const KeepAsked({required this.asked, required this.progress});
+
+  factory KeepAsked.fromJson(Map<String, dynamic> json) => KeepAsked(
+      asked: readInt(json['asked']) ?? 0,
+      progress: KeepProgress.fromJson(json));
+
+  final int asked;
+  final KeepProgress progress;
+}
+
+/// The answer of `keep/retry`: how many songs were asked for again, and how that download goes now.
+@immutable
+class KeepRetried {
+  const KeepRetried(
+      {required this.retried, required this.group, required this.youtube});
+
+  factory KeepRetried.fromJson(Map<String, dynamic> json) {
+    final g = readMap(json['group']);
+    return KeepRetried(
+      retried: readInt(json['retried']) ?? 0,
+      group: g == null ? null : KeepGroup.fromJson(g),
+      youtube: KeepYoutube.fromJson(json['youtube']),
+    );
+  }
+
+  final int retried;
+  final KeepGroup? group;
+  final KeepYoutube youtube;
 }

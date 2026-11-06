@@ -195,6 +195,29 @@ class EncoreApi {
         return SignedAddress(address, _expiry(body));
       });
 
+  // ------------------------------------------------------------------ how the server keeps the songs of a download
+
+  /// Says which downloads this device watches (an empty list stops) and reads how they go now; from then on the server pushes `keep.progress` to
+  /// THIS device when the answer changes (it finds the device in the `X-Encore-Device` header, the same id the live channel signs in with). Say it
+  /// again on every reconnect: the reply is the current answer. Asking changes nothing on the server (docs/17 "Keep progress").
+  Future<Result<KeepProgress>> watchKeep(List<KeepGroupKey> groups) =>
+      guard(() async =>
+          KeepProgress.fromJson(await _send('PUT', '/keep/watch', body: {
+            'groups': [for (final g in groups) g.toJson()]
+          })));
+
+  /// Pressing Download on playlists, releases or the liked songs: the server is asked for the songs it does not have yet, first in line behind a
+  /// single tap. Safe to repeat. A song whose keep failed is not tried again by this, only by [retryKeep].
+  Future<Result<KeepAsked>> askKeep(List<KeepGroupKey> groups) => guard(
+      () async => KeepAsked.fromJson(await _send('POST', '/keep/ask', body: {
+            'groups': [for (final g in groups) g.toJson()]
+          })));
+
+  /// The Retry button: asks the server again for the songs of ONE download that failed and that asking again can help.
+  Future<Result<KeepRetried>> retryKeep(KeepGroupKey group) =>
+      guard(() async => KeepRetried.fromJson(
+          await _send('POST', '/keep/retry', body: group.toJson())));
+
   // ------------------------------------------------------------------ the bell
 
   /// The person's news, newest first (`GET /notifications`); with [since] only what is newer than the cursor the last answer gave.

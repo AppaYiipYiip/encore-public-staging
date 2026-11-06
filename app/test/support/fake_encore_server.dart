@@ -18,6 +18,9 @@ class FakeEncoreServer {
             for (final a in addresses) {'kind': a.$1, 'url': a.$2}
           ],
         });
+    _handlers['/encore/api/v1/keep/watch'] = _keepWatch;
+    _handlers['/encore/api/v1/keep/ask'] = _keepAsk;
+    _handlers['/encore/api/v1/keep/retry'] = _keepRetry;
     _handlers['/encore/api/v1/refs/resolve'] = _resolve;
     _handlers['/encore/api/v1/library/changes'] = _changes;
     _handlers['/encore/api/v1/library/files'] = _files;
@@ -126,6 +129,23 @@ class FakeEncoreServer {
   /// about each song (`queued` unless a test says otherwise).
   final Map<String, List<String>> savedReleases = {};
   final Map<String, String> keepStates = {};
+
+  /// How the server says each download goes (`keep/progress`'s groups, by `kind:id`: a test sets these). A download that is not here does not exist
+  /// for the person: it is left out of every answer, like on the real server.
+  final Map<String, Map<String, Object?>> keepGroups = {};
+
+  /// YouTube's state in `keep/*` answers.
+  Map<String, Object?> keepYoutube = {'state': 'off', 'resumesInSec': 0};
+
+  /// The server does not list `keep` / `keep-ask` in `info` (an older server, or one that keeps no songs).
+  bool hasKeep = true;
+  bool hasKeepAsk = true;
+
+  /// What each `PUT keep/watch`, `POST keep/ask` and `POST keep/retry` carried: the groups as `kind:id`, and the device header of the call.
+  final List<List<String>> keepWatches = [];
+  final List<List<String>> keepAsks = [];
+  final List<String> keepRetries = [];
+  final List<String?> keepWatchDevices = [];
 
   /// How many requests of each route were made (`PUT /likes/...` is counted under `PUT likes`).
   final Map<String, int> calls = {};
@@ -477,12 +497,68 @@ class FakeEncoreServer {
   String? serverId;
   final List<(String, String)> addresses = [];
 
+  List<(String, String, Map<String, dynamic>)> _asked(RecordedRequest r) {
+    final body = (jsonDecode(r.body) as Map).cast<String, Object?>();
+    return [
+      for (final g in (body['groups'] as List? ?? const []))
+        ('${(g as Map)['kind']}', '${g['id']}', g.cast<String, dynamic>()),
+    ];
+  }
+
+  List<Map<String, Object?>> _answerFor(
+          List<(String, String, Object?)> asked) =>
+      [
+        for (final (kind, id, _) in asked)
+          if (keepGroups['$kind:$id'] != null) keepGroups['$kind:$id']!,
+      ];
+
+  FakeResponse _keepWatch(RecordedRequest r) {
+    if (!hasKeep) return _error(404, 'not_found');
+    final asked = _asked(r);
+    keepWatches.add([for (final (k, i, _) in asked) '$k:$i']);
+    keepWatchDevices.add(r.headers['x-encore-device']);
+    return _ok({'groups': _answerFor(asked), 'youtube': keepYoutube});
+  }
+
+  FakeResponse _keepAsk(RecordedRequest r) {
+    if (!hasKeep || !hasKeepAsk) return _error(404, 'not_found');
+    final asked = _asked(r);
+    keepAsks.add([for (final (k, i, _) in asked) '$k:$i']);
+    final groups = _answerFor(asked);
+    return _ok({
+      'asked': groups.fold<int>(0, (n, g) => n + ((g['queued'] as int? ?? 0))),
+      'groups': groups,
+      'youtube': keepYoutube,
+    });
+  }
+
+  FakeResponse _keepRetry(RecordedRequest r) {
+    if (!hasKeep) return _error(404, 'not_found');
+    final body = (jsonDecode(r.body) as Map).cast<String, Object?>();
+    final key = '${body['kind']}:${body['id']}';
+    final group = keepGroups[key];
+    if (group == null) return _error(404, 'not_found');
+    keepRetries.add(key);
+    return _ok({
+      'retried': group['retryable'] ?? 0,
+      'group': group,
+      'youtube': keepYoutube,
+    });
+  }
+
   FakeResponse _info() => _ok({
         'apiVersion': '1.0',
         'minAppVersion': '0.1.0',
         'serverVersion': '0.1.0',
         'name': 'Fake Encore',
-        'features': ['library', 'playback', 'live', 'refs', 'keep'],
+        'features': [
+          'library',
+          'playback',
+          'live',
+          'refs',
+          if (hasKeep) 'keep',
+          if (hasKeep && hasKeepAsk) 'keep-ask',
+        ],
         'youtube': {'state': youtubeState, 'resumesInSec': 0},
       });
 
