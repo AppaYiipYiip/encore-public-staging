@@ -20,7 +20,9 @@ import '../common/format.dart';
 import '../common/playability.dart';
 import '../common/playlist_actions.dart';
 import '../common/widgets.dart';
+import '../downloads/download_line_providers.dart';
 import '../downloads/download_providers.dart';
+import '../downloads/download_status.dart';
 import '../instant/release_save.dart' show releasePinStateProvider;
 import '../providers.dart';
 import '../settings/settings_controller.dart';
@@ -497,42 +499,21 @@ class _EntryArt extends ConsumerWidget {
   }
 }
 
-/// How far a download the person chose has got, and whether it can be used now (a phone without a connection plays only what is on it).
-class _EntryState {
-  const _EntryState(this.line, {this.complete = false, this.usable = true});
-
-  /// "Downloaded - 40 songs", "Downloading 12 of 40", ...
-  final String? line;
-  final bool complete;
-  final bool usable;
-}
-
-_EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
-  switch (s.phase) {
-    case PinPhase.complete:
-      return _EntryState('Downloaded • ${plural(s.total, 'song')}',
-          complete: true);
-    case PinPhase.downloading:
-      return _EntryState(
-          waiting == null
-              ? 'Downloading ${s.done} of ${s.total}'
-              : '$waiting • ${s.done} of ${s.total}',
-          usable: !offline || s.done > 0);
-    case PinPhase.attention:
-      return _EntryState(
-          '${s.done} of ${s.total} downloaded • some did not come',
-          usable: !offline || s.done > 0);
-    case PinPhase.empty:
-      return const _EntryState('Nothing to download yet');
-    case PinPhase.preparing:
-    case PinPhase.off:
-      return _EntryState('Getting ready to download', usable: !offline);
-  }
-}
+/// Whether a download the person chose can be used now: a phone without a connection plays only what is on it.
+bool _usableNow(PinState s, {required bool offline}) => switch (s.phase) {
+      PinPhase.complete || PinPhase.empty => true,
+      PinPhase.downloading || PinPhase.attention => !offline || s.done > 0,
+      PinPhase.preparing || PinPhase.off => !offline,
+    };
 
 /// The entry's own line, or - for a download the person chose - how far it is.
-({String subtitle, bool complete, bool usable}) _lineFor(
-    WidgetRef ref, _LibraryEntry entry) {
+({
+  String subtitle,
+  bool complete,
+  bool usable,
+  DownloadTarget? target,
+  bool twoStages,
+}) _lineFor(WidgetRef ref, _LibraryEntry entry) {
   final pin = entry.pin;
   if (pin == null) {
     // Not on the phone, and the server is away (S-14 offline): grey, and "Not downloaded" in words, until the connection is back. Only playlists
@@ -543,11 +524,27 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
       _ => null,
     };
     if (type != null && ref.watch(notDownloadedNowProvider((type, entry.id)))) {
-      return (subtitle: kNotDownloadedWords, complete: false, usable: false);
+      return (
+        subtitle: kNotDownloadedWords,
+        complete: false,
+        usable: false,
+        target: null,
+        twoStages: false
+      );
     }
-    return (subtitle: entry.subtitle, complete: false, usable: true);
+    return (
+      subtitle: entry.subtitle,
+      complete: false,
+      usable: true,
+      target: null,
+      twoStages: false
+    );
   }
   final type = PinTargetType.values.byName(pin.targetType);
+  final target = entry.releaseId != null
+      ? DownloadTarget.release(entry.releaseId!, entry.releaseRefIds)
+      : DownloadTarget.pin(
+          type, type == PinTargetType.liked ? kLikedPinId : pin.targetId);
   final state = entry.releaseId != null
       ? ref.watch(releasePinStateProvider(entry.releaseRefIds.join(',')))
       : ref
@@ -557,13 +554,17 @@ _EntryState _stateOf(PinState s, {required bool offline, String? waiting}) {
               )))
               .value ??
           PinState.none;
-  final offline = ref.watch(serverAwayProvider);
-  final s = _stateOf(state,
-      offline: offline, waiting: ref.watch(downloadsWaitProvider));
+  // One vocabulary for every screen (docs/design S-16): on an Encore server that keeps songs a download in progress says both stages and takes the
+  // whole line; on a plain music server it is the line the app has always had, after the kind of the entry.
+  final line = ref.watch(downloadLineProvider(target));
+  final text = line?.text ?? 'Getting ready to download';
+  final replaces = line != null && line.twoStages && !line.complete;
   return (
-    subtitle: '${entry.subtitle} • ${s.line}',
-    complete: s.complete,
-    usable: s.usable,
+    subtitle: replaces ? text : '${entry.subtitle} • $text',
+    complete: line?.complete ?? false,
+    usable: _usableNow(state, offline: ref.watch(serverAwayProvider)),
+    target: target,
+    twoStages: replaces,
   );
 }
 
@@ -581,73 +582,90 @@ class _ListEntry extends ConsumerWidget {
     // own beside it, outside what the row hides.
     return Opacity(
       opacity: line.usable ? 1 : 0.45,
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Semantics(
-              button: true,
-              label: '${entry.title}, ${line.subtitle}',
-              onLongPress: entry.hasMenu
-                  ? () => unawaited(entry.openMenu(context, ref))
-                  : null,
-              excludeSemantics: true,
-              child: InkWell(
-                onTap: () => entry.open(context, offline: offline),
-                onLongPress: entry.hasMenu
-                    ? () => unawaited(entry.openMenu(context, ref))
-                    : null,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      Space.gutter, Space.xs + 2, 0, Space.xs + 2),
-                  child: Row(
-                    children: [
-                      SizedBox.square(
-                        dimension: 56,
-                        child: _EntryArt(entry: entry),
-                      ),
-                      const SizedBox(width: Space.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(entry.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.text.bodyLarge),
-                            Row(
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: '${entry.title}, ${line.subtitle}',
+                  onLongPress: entry.hasMenu
+                      ? () => unawaited(entry.openMenu(context, ref))
+                      : null,
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: () => entry.open(context, offline: offline),
+                    onLongPress: entry.hasMenu
+                        ? () => unawaited(entry.openMenu(context, ref))
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          Space.gutter, Space.xs + 2, 0, Space.xs + 2),
+                      child: Row(
+                        children: [
+                          SizedBox.square(
+                            dimension: 56,
+                            child: _EntryArt(entry: entry),
+                          ),
+                          const SizedBox(width: Space.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (line.complete)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: Icon(Icons.arrow_circle_down_rounded,
-                                        size: 16, color: context.colors.accent),
-                                  ),
-                                Expanded(
-                                  child: Text(line.subtitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: context.text.bodyMedium),
+                                Text(entry.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.text.bodyLarge),
+                                Row(
+                                  children: [
+                                    if (line.complete)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 4),
+                                        child: Icon(
+                                            Icons.arrow_circle_down_rounded,
+                                            size: 16,
+                                            color: context.colors.accent),
+                                      ),
+                                    Expanded(
+                                      // The lines of the two stages are longer than the old ones ("3 of 6 on this phone · 3 songs did not come").
+                                      child: Text(line.subtitle,
+                                          maxLines: line.twoStages ? 2 : 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: context.text.bodyMedium),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (entry.hasMenu)
+                Padding(
+                  padding: const EdgeInsets.only(right: Space.gutter - 12),
+                  child: IconButton(
+                    tooltip: 'More options for ${entry.title}',
+                    icon: Icon(Icons.more_vert_rounded,
+                        color: context.colors.onBgMuted),
+                    onPressed: () => unawaited(entry.openMenu(context, ref)),
+                  ),
+                ),
+            ],
           ),
-          if (entry.hasMenu)
-            Padding(
-              padding: const EdgeInsets.only(right: Space.gutter - 12),
-              child: IconButton(
-                tooltip: 'More options for ${entry.title}',
-                icon: Icon(Icons.more_vert_rounded,
-                    color: context.colors.onBgMuted),
-                onPressed: () => unawaited(entry.openMenu(context, ref)),
-              ),
+          // The bar of the two stages, and the songs that did not come with Retry, under the text (the line itself is the subtitle above).
+          if (line.target != null)
+            DownloadStatus(
+              target: line.target!,
+              showNames: true,
+              showLine: false,
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                  Space.gutter + 56 + Space.md, 0, Space.gutter, Space.xs),
             ),
         ],
       ),

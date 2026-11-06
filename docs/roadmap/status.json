@@ -94,5 +94,11 @@
   "evidence": "Built 5 Nov 2026, built not walked, after the advisor's review: the drawn lasting offline look (S-10, S-14, S-17, S-18) on Home (grey tiles and cards, Not downloaded in words, the Downloaded / Plays offline shelf), Library playlists and albums and the song rows; ONE on-phone source (onPhoneProvider, one query over the same downloads rows as the song test) behind every Not downloaded and the shelf; driven by serverAwayProvider (the real connection state, not the 5 s strip). The strip's words follow Android's own internet check (NET_CAPABILITY_VALIDATED, one 20-line read through app.encore/network; no internet found = You're offline, internet found and a silent server = Can't reach your server; D-45 amended in docs/10) and a tap on a song that is not downloaded says the same two things from the same test. Tests: offline_look_test.dart (8, incl. the R2-F5 regression red without the lasting state, a pin with no file not on the shelf, an album held only through a pinned playlist keeps its colour), connection_banner_test.dart, network_validation_test.dart, playback_engine_test.dart, now_playing_layout_test.dart. Emulator smoke tests, not a walk (docs/evidence/c08): airplane mode, the look to 34 s and gone when back; server stopped while online: Can't reach your server once at 10 s; the native read proven wired by a temporary forced answer. Not built: Search offline (its own item P1-16, not drawn, C and X). Not run: a real network with no internet, a real phone.",
   "at": "2026-11-05T05:13:18Z",
   "by": "Claude"
+ },
+ "P2-22": {
+  "state": "built",
+  "evidence": "All four parts are built: the server half (#147, #148, #149, #150, and the batched ask #193 b76edfe, which settles B-62), the notification question (#144), the app's keep calls, wording and live watch (#194 39cde33) and the lines, bar, names, Retry and PB-38 in this pull request. Checked in the app against a real server and an emulator: docs/evidence/README.md#e01 (it found and fixed three defects). Built, not walked: not the release-candidate pair, no 200-song playlist, no real phone, no Retry on a retryable failure on the real stack.",
+  "at": "2026-11-06T15:41:55Z",
+  "by": "Claude (Sonnet 5.5)"
  }
 }

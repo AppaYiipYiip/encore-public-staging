@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:encore/app/providers.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/features/downloads/download_status.dart';
 import 'package:encore/features/library/library_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,6 +80,24 @@ void main() {
     expect(find.text('Liked Songs'), findsNothing,
         reason: 'only what was chosen for the phone');
     expect(find.text('Playlist • 3 songs'), findsNothing);
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'on a plain music server a row takes no room for the two stages: it looks exactly as it did',
+      (tester) async {
+    final app = await pumpApp(tester, size: const Size(390, 1400));
+    await pin(app, 'playlist', 'pl2');
+    await downloaded(app, ['al1-t1', 'al2-t3', 'al2-t4']);
+    await open(tester, '/library');
+
+    await chooseDownloaded(tester);
+
+    expect(find.byType(DownloadStatus), findsWidgets);
+    for (final e in tester.elementList(find.byType(DownloadStatus))) {
+      expect(tester.getSize(find.byWidget(e.widget)), Size.zero,
+          reason: 'nothing to say, so no padding either');
+    }
     await closeApp(tester, app.db);
   });
 

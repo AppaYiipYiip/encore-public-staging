@@ -12,6 +12,8 @@ import '../common/download_button.dart';
 import '../common/format.dart';
 import '../common/widgets.dart';
 import '../detail/hero_header.dart';
+import '../downloads/download_line_providers.dart';
+import '../downloads/download_status.dart';
 import '../instant/instant_controller.dart';
 import '../instant/instant_warmup.dart';
 import '../instant/release_save.dart';
@@ -180,6 +182,9 @@ class _CatalogueDownloadButton extends ConsumerWidget {
       type: PinTargetType.album,
       targetId: releaseId,
       name: album.title,
+      target: release?.phase == ReleasePhase.saved && asked
+          ? DownloadTarget.release(releaseId, release!.refIds)
+          : null,
       stateOverride: tracks.isEmpty ? PinState.none : state,
       preparingLabel: 'Getting ${album.title} on your server',
       onPin: () => ref.read(releaseSavesProvider.notifier).save(
@@ -347,6 +352,12 @@ class CatalogueAlbumScreen extends ConsumerWidget {
           ),
         ),
         if (meta.isNotEmpty) Text(meta, style: context.text.bodyMedium),
+        // How far the two stages have got, once the server confirmed the save and the person asked for the phone too (docs/design S-17).
+        if (saves != null &&
+            saves.phase == ReleasePhase.saved &&
+            saves.download)
+          DownloadStatus(
+              target: DownloadTarget.release('cat:$albumId', saves.refIds)),
       ],
       actions: Row(
         children: [

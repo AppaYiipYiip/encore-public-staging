@@ -124,7 +124,11 @@ final keepProvider =
 
 class KeepController extends Notifier<KeepState> {
   EncoreApi? _api;
-  bool _alive = true;
+
+  /// Riverpod keeps ONE instance of this class and runs [build] again when the session changes (another server, a new sign-in), so every field is set
+  /// again there, and every asynchronous step checks that the session it started in is still the current one: a late answer of the old server must
+  /// not be written into the new state.
+  int _generation = 0;
   Timer? _timer;
   bool _syncing = false;
   bool _again = false;
@@ -141,10 +145,19 @@ class KeepController extends Notifier<KeepState> {
 
   @override
   KeepState build() {
+    final generation = ++_generation;
     _api = ref.watch(keepApiProvider);
-    _alive = true;
+    _timer?.cancel();
+    _syncing = false;
+    _again = false;
+    _featuresKnown = false;
+    _hasKeep = false;
+    _hasAsk = false;
+    _asked.clear();
+    _watched = {};
+    _reportedMissing.clear();
     ref.onDispose(() {
-      _alive = false;
+      _generation++; // what is still on its way belongs to a session that is over
       _timer?.cancel();
     });
     final api = _api;
@@ -154,7 +167,7 @@ class KeepController extends Notifier<KeepState> {
       ref.watch(keepEventsProvider).listen((event) {
         if (event.type != 'keep.progress') return;
         final progress = KeepProgress.fromJson(event.data);
-        if (!_alive) return;
+        if (generation != _generation) return;
         state = state.copyWith(
           groups: {for (final g in progress.groups) g.key: g},
           youtube: progress.youtube,
@@ -194,10 +207,13 @@ class KeepController extends Notifier<KeepState> {
 
   void _schedule() {
     _timer?.cancel();
-    _timer = Timer(ref.read(keepDebounceProvider), () => unawaited(_sync()));
+    final generation = _generation;
+    _timer = Timer(ref.read(keepDebounceProvider), () {
+      if (generation == _generation) unawaited(_sync(generation));
+    });
   }
 
-  Future<void> _sync() async {
+  Future<void> _sync(int generation) async {
     if (_syncing) {
       _again = true;
       return;
@@ -206,16 +222,16 @@ class KeepController extends Notifier<KeepState> {
     try {
       do {
         _again = false;
-        await _syncOnce();
-      } while (_again && _alive);
+        await _syncOnce(generation);
+      } while (_again && generation == _generation);
     } finally {
-      _syncing = false;
+      if (generation == _generation) _syncing = false;
     }
   }
 
-  Future<void> _syncOnce() async {
+  Future<void> _syncOnce(int generation) async {
     final api = _api;
-    if (api == null || !_alive) return;
+    if (api == null || generation != _generation) return;
     var groups = ref.read(keepGroupsProvider);
     if (groups.length > maxKeepGroups) {
       Log.warn('keep',
@@ -225,7 +241,7 @@ class KeepController extends Notifier<KeepState> {
 
     if (!_featuresKnown) {
       final info = (await api.info()).valueOrNull;
-      if (!_alive) return;
+      if (generation != _generation) return;
       if (info == null) {
         state = state.copyWith(stale: true);
         return;
@@ -241,7 +257,7 @@ class KeepController extends Notifier<KeepState> {
     if (groups.isEmpty && _watched.isEmpty) return;
 
     final watched = (await api.watchKeep(groups)).valueOrNull;
-    if (!_alive) return;
+    if (generation != _generation) return;
     if (watched == null) {
       state = state.copyWith(stale: true);
       return;
@@ -275,7 +291,7 @@ class KeepController extends Notifier<KeepState> {
     if (todo.isEmpty) return;
     _asked.addAll(todo);
     final asked = (await api.askKeep(todo)).valueOrNull;
-    if (!_alive) return;
+    if (generation != _generation) return;
     if (asked == null) {
       // Not heard (a line that dropped): the next look asks again.
       _asked.removeAll(todo);
@@ -300,8 +316,9 @@ class KeepController extends Notifier<KeepState> {
   Future<int?> retry(KeepGroupKey key) async {
     final api = _api;
     if (api == null) return null;
+    final generation = _generation;
     final result = (await api.retryKeep(key)).valueOrNull;
-    if (result == null || !_alive) return null;
+    if (result == null || generation != _generation) return null;
     final group = result.group;
     state = state.copyWith(
       groups: {...state.groups, if (group != null) group.key: group},

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:encore/core/logger.dart';
@@ -23,6 +24,36 @@ class _Groups extends Notifier<List<KeepGroupKey>> {
 
 final _groupsProvider =
     NotifierProvider<_Groups, List<KeepGroupKey>>(_Groups.new);
+
+/// The server this phone is on, changeable: the session of another server or a new sign-in.
+class _Api extends Notifier<EncoreApi?> {
+  @override
+  EncoreApi? build() => null;
+
+  void use(EncoreApi? api) => state = api;
+}
+
+final _apiProvider = NotifierProvider<_Api, EncoreApi?>(_Api.new);
+
+/// Holds the answer of `PUT keep/watch` until the test lets it go: a slow server.
+class _Gated implements HttpClientAdapter {
+  _Gated(this.inner);
+
+  final HttpClientAdapter inner;
+  Completer<void>? hold;
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options,
+      Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
+    if (hold != null && options.uri.path.endsWith('/keep/watch')) {
+      await hold!.future;
+    }
+    return inner.fetch(options, requestStream, cancelFuture);
+  }
+
+  @override
+  void close({bool force = false}) => inner.close(force: force);
+}
 
 void main() {
   late FakeEncoreServer server;
@@ -146,6 +177,9 @@ void main() {
           groupJson('playlist', 'pl_1', queued: 10);
       final c = start([playlist]);
       await until(() => c.read(keepProvider).answered);
+      // the one ask of this connection comes after the first answer: let it finish, so that the count below is of what follows the push
+      await until(() => server.keepAsks.isNotEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
       final before = server.calls.values.fold<int>(0, (a, b) => a + b);
 
       events.add(LiveEvent('keep.progress', {
@@ -327,6 +361,109 @@ void main() {
       final retried = await c.read(keepProvider.notifier).retry(playlist);
 
       expect(retried, isNull);
+    });
+  });
+
+  group('another server, a new sign-in', () {
+    EncoreApi apiOn(FakeEncoreServer on, {HttpClientAdapter? adapter}) =>
+        EncoreApi(
+          dio: Dio()..httpClientAdapter = adapter ?? on.adapter,
+          baseUrl: () => Uri.parse('http://other.test:4540'),
+          auth: () => {'u': 'tester', 't': 'tok', 's': 'salt'},
+          deviceId: 'dv_other',
+        );
+
+    ProviderContainer startOn(EncoreApi first) {
+      final c = ProviderContainer(overrides: [
+        keepApiProvider.overrideWith((ref) => ref.watch(_apiProvider)),
+        keepEventsProvider.overrideWithValue(events.stream),
+        keepConnectionProvider.overrideWithValue(connection.stream),
+        keepGroupsProvider.overrideWith((ref) => ref.watch(_groupsProvider)),
+        keepDebounceProvider.overrideWithValue(Duration.zero),
+      ]);
+      addTearDown(c.dispose);
+      c.read(_apiProvider.notifier).use(first);
+      c.read(_groupsProvider.notifier).set([playlist]);
+      c.listen(keepProvider, (_, __) {});
+      return c;
+    }
+
+    test(
+        'everything is said again to the new server, nothing of the old one stays',
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 1, queued: 9);
+      final second = FakeEncoreServer();
+      second.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 4, queued: 6);
+      final c = startOn(api);
+      await until(() => server.keepAsks.isNotEmpty);
+
+      c.read(_apiProvider.notifier).use(apiOn(second));
+      await until(() => second.keepAsks.isNotEmpty);
+
+      expect(
+          second.keepWatches,
+          [
+            ['playlist:pl_1']
+          ],
+          reason: 'the new server is told what is watched');
+      expect(
+          second.keepAsks,
+          [
+            ['playlist:pl_1']
+          ],
+          reason:
+              'and asked, although the old server was asked for it on this connection');
+      expect(c.read(keepProvider).of(playlist)?.ready, 4);
+    });
+
+    test(
+        'a new server that keeps no songs is left alone and shows nothing of the old one',
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 1, queued: 9);
+      final plain = FakeEncoreServer()..hasKeep = false;
+      final c = startOn(api);
+      await until(() => c.read(keepProvider).answered);
+      expect(c.read(keepProvider).supported, isTrue);
+
+      c.read(_apiProvider.notifier).use(apiOn(plain));
+      await until(() => !c.read(keepProvider).supported);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(c.read(keepProvider).supported, isFalse);
+      expect(c.read(keepProvider).groups, isEmpty);
+      expect(c.read(keepProvider).answered, isFalse);
+      expect(plain.keepWatches, isEmpty);
+      expect(plain.keepAsks, isEmpty);
+    });
+
+    test(
+        'a slow answer of the old server that arrives after the switch is not written',
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 99, queued: 1);
+      final gate = _Gated(server.adapter)..hold = Completer<void>();
+      final second = FakeEncoreServer();
+      second.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 4, queued: 6);
+      final c = startOn(apiOn(server, adapter: gate));
+      await until(() => server.calls.containsKey('GET info'));
+      await Future<void>.delayed(const Duration(
+          milliseconds: 30)); // the old server's watch is now held
+
+      c.read(_apiProvider.notifier).use(apiOn(second));
+      await until(() => c.read(keepProvider).answered);
+      expect(c.read(keepProvider).of(playlist)?.ready, 4);
+
+      gate.hold!.complete(); // the old server answers at last
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      expect(c.read(keepProvider).of(playlist)?.ready, 4,
+          reason: 'the late answer belongs to a session that is over');
+      expect(server.keepAsks, isEmpty,
+          reason: 'and the old session did not go on to ask its server either');
     });
   });
 }

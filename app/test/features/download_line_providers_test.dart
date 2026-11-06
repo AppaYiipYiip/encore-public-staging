@@ -8,6 +8,7 @@ import 'package:encore/data/encore/encore_live.dart';
 import 'package:encore/data/encore/encore_models.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/domain/download_line.dart';
+import 'package:encore/domain/storage_guard.dart';
 import 'package:encore/features/common/playability.dart';
 import 'package:encore/features/downloads/download_line_providers.dart';
 import 'package:encore/features/downloads/download_providers.dart';
@@ -80,10 +81,13 @@ void main() {
     bool away = false,
     NetworkKind network = NetworkKind.wifi,
     bool wifiOnly = false,
+    StorageVerdict verdict = StorageVerdict.ok,
     List<KeepGroupKey> groups = const [KeepGroupKey('playlist', 'pl_1')],
     List<Override> more = const [],
   }) async {
     final c = ProviderContainer(overrides: [
+      // The storage guard belongs to the real download manager, which these tests do not build.
+      downloadVerdictProvider.overrideWith((ref) => Stream.value(verdict)),
       keepApiProvider.overrideWithValue(onEncore ? api : null),
       keepEventsProvider.overrideWithValue(events.stream),
       keepConnectionProvider.overrideWithValue(connection.stream),
@@ -99,6 +103,8 @@ void main() {
     addTearDown(c.dispose);
     c.listen(keepProvider, (_, __) {});
     c.listen(networkKindProvider, (_, __) {});
+    c.listen(downloadVerdictProvider, (_, __) {});
+    await c.read(downloadVerdictProvider.future);
     c.listen(pinStateProvider((PinTargetType.playlist, 'pl_1')), (_, __) {});
     await c.read(networkKindProvider.future);
     await c.read(pinStateProvider((PinTargetType.playlist, 'pl_1')).future);
@@ -122,7 +128,7 @@ void main() {
 
       final c = await start(phone: phone(done: 12, active: 3));
 
-      expect(c.read(downloadLineProvider(playlist)).text,
+      expect(c.read(downloadLineProvider(playlist))?.text,
           '12 of 217 on this phone · 40 ready on your server');
     });
 
@@ -136,16 +142,16 @@ void main() {
           phone: phone(done: 12, active: 3),
           network: NetworkKind.mobile,
           wifiOnly: true);
-      expect(wifi.read(downloadLineProvider(playlist)).text,
+      expect(wifi.read(downloadLineProvider(playlist))?.text,
           '12 of 217 on this phone · waiting for Wi-Fi');
 
       final none = await start(
           phone: phone(done: 12, active: 3), network: NetworkKind.none);
-      expect(none.read(downloadLineProvider(playlist)).text,
+      expect(none.read(downloadLineProvider(playlist))?.text,
           '12 of 217 on this phone · waiting for a connection');
 
       final silent = await start(phone: phone(done: 12, active: 3), away: true);
-      expect(silent.read(downloadLineProvider(playlist)).text,
+      expect(silent.read(downloadLineProvider(playlist))?.text,
           '12 of 217 on this phone · waiting for your server');
     });
 
@@ -157,12 +163,12 @@ void main() {
       server.keepYoutube = {'state': 'resting', 'resumesInSec': 5400};
 
       final c = await start(phone: phone(done: 3, total: 9, active: 1));
-      expect(c.read(downloadLineProvider(playlist)).text,
+      expect(c.read(downloadLineProvider(playlist))?.text,
           '3 of 9 on this phone · your server is resting until 21:30');
 
       clock.advance(const Duration(minutes: 20));
       c.invalidate(downloadLineProvider(playlist));
-      expect(c.read(downloadLineProvider(playlist)).text,
+      expect(c.read(downloadLineProvider(playlist))?.text,
           '3 of 9 on this phone · your server is resting until 21:30',
           reason: 'the clock moving on does not move the time the rest ends');
     });
@@ -171,7 +177,7 @@ void main() {
         () async {
       final c = await start(phone: phone(done: 12, active: 3));
       // the fake knows no such download: it is left out, as on the real server
-      expect(c.read(downloadLineProvider(playlist)).text,
+      expect(c.read(downloadLineProvider(playlist))?.text,
           '12 of 217 on this phone');
       expect(c.read(keepProvider).missing,
           {const KeepGroupKey('playlist', 'pl_1')});
@@ -194,7 +200,7 @@ void main() {
         ],
       );
 
-      expect(c.read(downloadLineProvider(release)).text,
+      expect(c.read(downloadLineProvider(release))?.text,
           'Downloading to this phone · 1 of 2');
     });
 
@@ -206,8 +212,14 @@ void main() {
       const album = DownloadTarget.pin(PinTargetType.album, 'al_1');
       c.listen(pinStateProvider((PinTargetType.album, 'al_1')), (_, __) {});
       await c.read(pinStateProvider((PinTargetType.album, 'al_1')).future);
-      expect(c.read(downloadLineProvider(album)).text, 'Downloading 4 of 10');
+      expect(c.read(downloadLineProvider(album))?.text, 'Downloading 4 of 10');
     });
+  });
+
+  test('a download the person has not made has no line', () async {
+    final c = await start(phone: PinState.none);
+
+    expect(c.read(downloadLineProvider(playlist)), isNull);
   });
 
   group('a plain music server', () {
@@ -216,7 +228,7 @@ void main() {
           phone: phone(done: 4, total: 10, active: 3), onEncore: false);
 
       expect(
-          c.read(downloadLineProvider(playlist)).text, 'Downloading 4 of 10');
+          c.read(downloadLineProvider(playlist))?.text, 'Downloading 4 of 10');
     });
 
     test('and its waiting words', () async {
@@ -225,7 +237,7 @@ void main() {
           onEncore: false,
           network: NetworkKind.none);
 
-      expect(c.read(downloadLineProvider(playlist)).text,
+      expect(c.read(downloadLineProvider(playlist))?.text,
           'Waiting for a connection • 4 of 10');
     });
 
@@ -236,7 +248,7 @@ void main() {
           away: true);
 
       expect(
-          c.read(downloadLineProvider(playlist)).text, 'Downloading 4 of 10');
+          c.read(downloadLineProvider(playlist))?.text, 'Downloading 4 of 10');
     });
   });
 
@@ -248,8 +260,28 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(
-          c.read(downloadLineProvider(playlist)).text, 'Downloading 4 of 10');
+          c.read(downloadLineProvider(playlist))?.text, 'Downloading 4 of 10');
     });
+  });
+
+  test(
+      'a paused queue is the phone reason too, after the connection and the server',
+      () async {
+    final limited = await start(
+        phone: phone(done: 12, active: 3),
+        verdict: StorageVerdict.limitReached);
+    expect(limited.read(phoneWaitProvider), PhoneWait.limit);
+
+    final full = await start(
+        phone: phone(done: 12, active: 3), verdict: StorageVerdict.lowSpace);
+    expect(full.read(phoneWaitProvider), PhoneWait.space);
+
+    final away = await start(
+        phone: phone(done: 12, active: 3),
+        away: true,
+        verdict: StorageVerdict.limitReached);
+    expect(away.read(phoneWaitProvider), PhoneWait.server,
+        reason: 'one cause: the server first');
   });
 
   test('the phone\'s reason is the same test the strip uses', () async {

@@ -29,6 +29,7 @@ One file. A proof of what was run, on what, and what it showed; the board's `sta
 | `c07-download-notification-ask.md` | [c07](#c07) |
 | `c08-the-offline-look.md` | [c08](#c08) |
 | (new, 6 Nov 2026) the code pass proved on a real server and an emulator | [d01](#d01) |
+| (new, 6 Nov 2026) P2-22: a download's two stages checked in the app against a real server (not the release-candidate pair) | [e01](#e01) |
 
 ---
 
@@ -1094,3 +1095,29 @@ The only golden picture that changed is the "now playing, waiting for the server
 
 ![The Fairuz album shows one song, and it is Russian](2026-11-06-d01-fairuz-album-shows-a-russian-song.png)
 ![The three albums](2026-11-06-d01-albums-of-the-arabic-russian-latin-library.png)
+
+<a id="e01"></a>
+## e01 · P2-22: a download shows both stages, checked in the app against a real server (6 Nov 2026; `e` = a built feature checked on an emulator against a real stack; this is NOT the walk of the release-candidate pair, `b11`)
+
+**Setup.** The product's own `deploy/compose.yaml` through `docs/evidence/scripts/audit_stack.py` (Navidrome and the Encore server image built from `main` at `b76edfe`, the server half of P2-22), with YouTube **switched on but every YouTube name pointed at 127.0.0.1**, so the keeper really runs and nothing leaves the PC. A debug build of branch `task/P2-22-keep-app-lines` (x86-64) on the emulator `encore_a07`, signed in as the stack's owner. The library holds 3 linked songs; a playlist "Walk list" of 6 songs (3 of them the server has, 3 nobody has) and "Slow list" of 12 songs nobody has were made through the API the way the app makes them.
+
+| Check | What was run | What it showed |
+|-------|--------------|----------------|
+| The push reaches the app's own socket (a device the server finds in `X-Encore-Device` is the device the live channel signs in as) | the app's own `EncoreApi` and `EncoreLive` in a throwaway test: `PUT keep/watch` over the app's door, then one change on the server | `keep.progress` arrived on the app's socket; the `pl_...` and `liked` ids the app uses are the ids the server answers for; `keep/ask` is the same when repeated |
+| Pressing Download on a playlist (the first Download asks about notifications once; "Not now" never asks again) | Library > Playlists > "Slow list" > the download arrow | the page said **"Getting it on your server · 0 of 12 ready"**, and the button read it aloud: "Downloading Slow list. Getting it on your server · 0 of 12 ready" |
+| The server stage moves on its own (no refresh) | waited with the app in front | the line became **"12 songs did not come"** by the server's push, and the button turned to its warning look ("Some downloads failed. 12 songs did not come. Tap for options") |
+| A playlist where some songs are ready | "Walk list" | **"3 of 6 on this phone · 3 ready on your server"** with a bar of two tones while the server still tried; then **"3 of 6 on this phone · 3 songs did not come"** |
+| Songs that did not come, named | Library > Downloaded, Settings > Downloads & storage | the first three named with the server's sentence ("YouTube has no copy of this song that can be fetched."), then "and 9 more"; no Retry, because the server said asking again cannot help (`retryable` 0) |
+| A catalogue release (`cat:<id>`) as a download | the API: save a release with 2 songs (`PUT saved-albums/cat:12345678`), then `keep/progress`, `keep/watch` and `keep/ask` with `{"kind": "release", "id": "cat:12345678"}` | the server found the group in all three (total 2): the id the app sends is the id the server answers for |
+| Airplane mode | `cmd connectivity airplane-mode enable`, 14 s | every download says its own phone's reason and **nothing else**: "3 of 6 on this phone · waiting for a connection"; the server's names are gone (they are as old as its counts). Back online the lines came back |
+
+![A 12-song playlist while the server gets its songs](2026-11-06-e01-getting-it-on-your-server.png)
+![Two downloads with songs that did not come, named](2026-11-06-e01-library-downloads-that-did-not-come.png)
+![The same downloads in airplane mode](2026-11-06-e01-airplane-mode.png)
+
+**Defects the walk found, and the fixes (each has a test written from the real state):**
+1. **"3 ready on your server" for ever.** The server said `failed 3, retryable 0`, but the line never said "did not come": the phone keeps a queued row for every song the server has not got (PB-35), so "the phone is still busy" was always true. "Settled" is now told by the server's numbers (nothing on the way, nothing it holds is waiting for the phone). The button stops spinning and shows its warning look when nothing more is coming.
+2. **A line cut off in the Library list** ("3 songs did not co..."): the lines of the two stages may use two lines.
+3. **Stale names while offline**: the names of songs that did not come stayed on screen in airplane mode; they are now hidden while the phone's reason holds.
+
+**Not done (so the board says "built, not walked"):** a Retry on a retryable failure (every failure the real server gave was a song YouTube does not have; Retry is covered by widget tests and by the server's tests); a 200-song playlist; a real phone; the release-candidate pair; right-to-left; double text size on the emulator (a widget test pins no overflow at double size); the Wi-Fi-only reason and the storage-pause reason ("paused: your storage limit is reached", "paused: your phone is almost full") on a phone (both are pinned by tests, neither was seen on the emulator). One trap met: three taps at fixed positions typed the stack's generated owner password into a plain field and `ui.py dump` printed it once (the known trap in `handoff NEXT.md`); it belongs to a throwaway stack, and after the walk the stack was stopped, the file that held the password and the login file were deleted and the app was uninstalled from the emulator (the stack's folder is a scratch copy in a temporary directory). Nothing real was exposed.

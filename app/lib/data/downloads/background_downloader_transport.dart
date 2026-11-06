@@ -8,6 +8,14 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/logger.dart';
 import 'download_transport.dart';
 
+/// What the notification says when the phone's queue of files has emptied. It must be true at ANY such moment, and "Downloads finished" is not: the queue
+/// is fed a few files at a time and the server's stage overlaps the phone's, so it can empty while the server still holds most of a playlist (docs/33
+/// PB-38). The notification covers only the phone's stage; how the whole download is going is shown in the app (docs/design S-16).
+const TaskNotification kDownloadsQueueEmptiedNotification = TaskNotification(
+  'Some of your music is ready offline',
+  'Open Encore to see how your downloads are going',
+);
+
 /// [DownloadTransport] on `background_downloader` (WorkManager on Android):
 /// transfers continue with the app in the background, survive process death,
 /// honour "Wi-Fi only" at the OS level and show one grouped notification.
@@ -23,10 +31,7 @@ class BackgroundDownloaderTransport implements DownloadTransport {
         'Downloading music',
         '{numFinished} songs downloaded so far',
       ),
-      complete: const TaskNotification(
-        'Downloads finished',
-        'Your music is ready offline',
-      ),
+      complete: kDownloadsQueueEmptiedNotification,
       error: const TaskNotification(
         'Some downloads did not finish',
         '{numFailed} songs will be retried',

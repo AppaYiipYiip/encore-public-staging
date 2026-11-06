@@ -117,6 +117,41 @@ void main() {
       }
     });
 
+    test(
+        'the songs that did not come are not told while the phone cannot reach the server',
+        () {
+      final l = describeDownload(withServer(
+          done: 3, total: 6, ready: 3, failed: 3, wait: PhoneWait.connection));
+
+      expect(l.text, '3 of 6 on this phone · waiting for a connection');
+      expect(l.failed, 0,
+          reason:
+              'what the server said about them is stale: no names, no Retry that could not be sent');
+      expect(l.canRetry, isFalse);
+      expect(l.stuck, isFalse);
+    });
+
+    test(
+        'a paused queue says why: the storage limit, or a phone that is almost full',
+        () {
+      expect(
+          line(withServer(
+              done: 12,
+              total: 40,
+              ready: 30,
+              queued: 10,
+              wait: PhoneWait.limit)),
+          '12 of 40 on this phone · paused: your storage limit is reached');
+      expect(
+          line(withServer(
+              done: 12,
+              total: 40,
+              ready: 30,
+              queued: 10,
+              wait: PhoneWait.space)),
+          '12 of 40 on this phone · paused: your phone is almost full');
+    });
+
     test('it replaces the resting reason too: one cause, the phone\'s', () {
       expect(
           line(withServer(
@@ -176,6 +211,43 @@ void main() {
           reason: 'the row shows it as its own line with Retry');
     });
 
+    test(
+        'the phone keeps a queued row for every song the server has not got: that is not "still busy"',
+        () {
+      // Found on a real server (6 Nov 2026): 3 songs ready and on the phone, 3 that YouTube does not have. The phone's table says 3 are
+      // queued (they wait for a file), for ever.
+      final l = describeDownload(DownloadFacts(
+        phoneDone: 3,
+        phoneTotal: 6,
+        phoneActive: 3,
+        serverKeeps: true,
+        server: const ServerStage(
+            total: 6, ready: 3, keeping: 0, queued: 0, failed: 3, retryable: 0),
+      ));
+
+      expect(l.text, '3 of 6 on this phone · 3 songs did not come');
+      expect(l.stuck, isTrue,
+          reason:
+              'nothing more is coming: a screen must not go on saying "downloading"');
+      expect(l.canRetry, isFalse);
+    });
+
+    test(
+        'but while the phone still has songs to take from the server it is not stuck',
+        () {
+      final l = describeDownload(DownloadFacts(
+        phoneDone: 3,
+        phoneTotal: 6,
+        phoneActive: 4,
+        serverKeeps: true,
+        server: const ServerStage(
+            total: 6, ready: 4, keeping: 0, queued: 0, failed: 2, retryable: 0),
+      ));
+
+      expect(l.text, '3 of 6 on this phone · 4 ready on your server');
+      expect(l.stuck, isFalse);
+    });
+
     test('a song the server will never get is a failure but not a Retry', () {
       final f = DownloadFacts(
         phoneDone: 0,
@@ -196,8 +268,8 @@ void main() {
         () {
       expect(
           line(withServer(
-              done: 5, total: 10, ready: 10, phoneFailed: 2, active: 0)),
-          '5 of 10 on this phone · 2 songs did not come');
+              done: 8, total: 10, ready: 10, phoneFailed: 2, active: 0)),
+          '8 of 10 on this phone · 2 songs did not come');
     });
   });
 
@@ -273,6 +345,14 @@ void main() {
           '4 of 10 downloaded • some did not come');
       expect(line(plain(total: 0, empty: true)), 'Nothing to download yet');
       expect(line(plain(total: 0)), 'Getting ready to download');
+    });
+
+    test('a storage pause is not a reason a plain server ever showed either',
+        () {
+      expect(line(plain(done: 4, active: 3, wait: PhoneWait.limit)),
+          'Downloading 4 of 10');
+      expect(line(plain(done: 4, active: 3, wait: PhoneWait.space)),
+          'Downloading 4 of 10');
     });
 
     test(

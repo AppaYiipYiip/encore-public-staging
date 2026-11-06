@@ -26,7 +26,9 @@ import '../common/playlist_actions.dart';
 import '../common/track_menu.dart';
 import '../common/track_swipe.dart';
 import '../common/widgets.dart';
+import '../downloads/download_line_providers.dart';
 import '../downloads/download_providers.dart';
+import '../downloads/download_status.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart';
 import '../instant/tap_play.dart';
@@ -369,6 +371,9 @@ class PlaylistScreen extends ConsumerWidget {
             formatTotalDuration(total),
           ].where((e) => e.isNotEmpty).join(' • '),
         ),
+        // How far the two stages of the download have got (docs/design S-17); nothing when it is not downloaded or finished.
+        DownloadStatus(
+            target: DownloadTarget.pin(PinTargetType.playlist, playlist.id)),
       ],
       actions: _ActionRow(
         tracks: tracks,

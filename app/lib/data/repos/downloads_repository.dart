@@ -90,6 +90,21 @@ class PinState {
       'failed: $failed)';
 }
 
+/// A song the phone could not take, with what the downloader recorded (never shown as it is: see `phoneFailureWords`).
+@immutable
+class FailedSong {
+  const FailedSong(
+      {required this.ref,
+      required this.title,
+      required this.artist,
+      this.error});
+
+  final String ref;
+  final String title;
+  final String artist;
+  final String? error;
+}
+
 @immutable
 class StorageSummary {
   const StorageSummary({this.tracks = 0, this.bytes = 0});
@@ -205,6 +220,68 @@ SELECT
               },
             ))
         .distinct();
+  }
+
+  /// The songs of one pinned target that the phone could not take, newest first (at most 20), live.
+  Stream<List<FailedSong>> watchFailedSongs(
+      PinTargetType type, String targetId) {
+    final id = type == PinTargetType.liked ? kLikedPinId : targetId;
+    final sql = '''
+WITH m AS (${_membersSql(type)})
+SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
+  FROM m
+  JOIN downloads d ON d.server_id = ?1 AND d.track_id = m.id AND d.state = ${DownloadState.failed}
+  JOIN tracks t ON t.server_id = ?1 AND t.id = m.id
+ ORDER BY d.updated_at_ms DESC
+ LIMIT 20
+''';
+    return _db
+        .customSelect(
+          sql,
+          variables: [Variable.withInt(serverId), Variable.withString(id)],
+          readsFrom: {
+            _db.downloads,
+            _db.tracks,
+            _db.playlistEntries,
+            _db.playlists
+          },
+        )
+        .watch()
+        .map((rows) => [
+              for (final r in rows)
+                FailedSong(
+                  ref: r.read<String>('id'),
+                  title: r.read<String>('title'),
+                  artist: r.readNullable<String>('artist') ?? '',
+                  error: r.readNullable<String>('error'),
+                )
+            ]);
+  }
+
+  /// The same for a list of songs (a catalogue release, whose songs the phone pinned one by one).
+  Stream<List<FailedSong>> watchFailedSongsIn(List<String> trackIds) {
+    if (trackIds.isEmpty) return Stream.value(const []);
+    final q = _db.select(_db.tracks).join([
+      innerJoin(
+        _db.downloads,
+        _db.downloads.serverId.equalsExp(_db.tracks.serverId) &
+            _db.downloads.trackId.equalsExp(_db.tracks.id),
+      ),
+    ])
+      ..where(_db.tracks.serverId.equals(serverId) &
+          _db.tracks.id.isIn(trackIds) &
+          _db.downloads.state.equals(DownloadState.failed))
+      ..orderBy([OrderingTerm.desc(_db.downloads.updatedAtMs)])
+      ..limit(20);
+    return q.watch().map((rows) => [
+          for (final r in rows)
+            FailedSong(
+              ref: r.readTable(_db.tracks).id,
+              title: r.readTable(_db.tracks).title,
+              artist: r.readTable(_db.tracks).artist ?? '',
+              error: r.readTable(_db.downloads).lastError,
+            )
+        ]);
   }
 
   // -------------------------------------------------------------------- pins

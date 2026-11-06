@@ -343,4 +343,47 @@ void main() {
       expect(await repo.localPathFor('nope'), isNull);
     });
   });
+
+  group('the songs the phone could not take', () {
+    Future<void> failed(String id, String error) =>
+        db.into(db.downloads).insertOnConflictUpdate(DownloadsCompanion.insert(
+              serverId: serverId,
+              trackId: id,
+              state: const Value(DownloadState.failed),
+              lastError: Value(error),
+              updatedAtMs: clock.now().millisecondsSinceEpoch,
+            ));
+
+    test('are named for a playlist, with the error the manager recorded',
+        () async {
+      await failed('b1', 'SocketException: reset');
+      await failed('a2', 'not in the playlist, so not listed');
+
+      final songs = await repo
+          .watchFailedSongs(PinTargetType.playlist, 'pl1')
+          .firstWhere((l) => l.isNotEmpty);
+
+      expect(songs.map((f) => f.title), ['Song b1']);
+      expect(songs.single.error, 'SocketException: reset');
+    });
+
+    test('are named for a list of songs (a catalogue release)', () async {
+      await failed('a1', 'x');
+      await failed('b2', 'y');
+
+      final songs = await repo
+          .watchFailedSongsIn(['a1', 'a2']).firstWhere((l) => l.isNotEmpty);
+
+      expect(songs.map((f) => f.ref), ['a1']);
+    });
+
+    test('and a song that is fine is not listed', () async {
+      await setDownload('b1', DownloadState.done);
+
+      final songs =
+          await repo.watchFailedSongs(PinTargetType.playlist, 'pl1').first;
+
+      expect(songs, isEmpty);
+    });
+  });
 }

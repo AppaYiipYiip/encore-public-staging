@@ -19,7 +19,13 @@ enum PhoneWait {
   connection('waiting for a connection', 'Waiting for a connection'),
 
   /// Internet is found but the person's server does not answer. A plain music server never gave this reason ([legacyWords] is null).
-  server('waiting for your server', null);
+  server('waiting for your server', null),
+
+  /// The storage limit the person set is reached: the downloads wait (the same words as the banner, `DownloadsPausedBanner`).
+  limit('paused: your storage limit is reached', null),
+
+  /// The phone is nearly full: downloads never take the last of it.
+  space('paused: your phone is almost full', null);
 
   const PhoneWait(this.words, this.legacyWords);
 
@@ -109,6 +115,8 @@ class DownloadLine {
     this.complete = false,
     this.failed = 0,
     this.canRetry = false,
+    this.twoStages = false,
+    this.stuck = false,
   }) : serverFraction = serverFraction ?? phoneFraction;
 
   /// The line itself.
@@ -128,6 +136,26 @@ class DownloadLine {
 
   /// Asking again can help at least one of them.
   final bool canRetry;
+
+  /// This is a line of the two stages (the server keeps the songs), as against the line a plain music server has always had: a screen draws the bar
+  /// and the failures only for these.
+  final bool twoStages;
+
+  /// Nothing more is coming: every song that can come has, and some did not. A control must not go on saying "downloading".
+  final bool stuck;
+}
+
+/// Why the phone could not take a song, in plain words. [recorded] is what the downloader wrote down (an exception class, a path, an HTTP status): it
+/// is read to pick the sentence and is never shown.
+String phoneFailureWords(String? recorded) {
+  final raw = (recorded ?? '').toLowerCase();
+  if (raw.contains('no longer on the server')) {
+    return 'The server no longer has this song.';
+  }
+  if (raw.contains('space') || raw.contains('enospc')) {
+    return 'There is no room on this phone.';
+  }
+  return 'Could not be saved on this phone.';
 }
 
 DownloadLine describeDownload(DownloadFacts f) =>
@@ -153,34 +181,47 @@ DownloadLine _twoStages(DownloadFacts f) {
   final canRetry = (s?.retryable ?? 0) > 0 || f.phoneFailed > 0;
   final tone = s == null ? phone : _max(phone, _fraction(s.ready, s.total));
 
-  DownloadLine say(String text, {double? server, bool complete = false}) =>
+  DownloadLine say(String text,
+          {double? server, bool complete = false, bool stuck = false}) =>
       DownloadLine(text,
           phoneFraction: phone,
           serverFraction: server ?? tone,
           complete: complete,
           failed: failed,
-          canRetry: canRetry);
+          canRetry: canRetry,
+          twoStages: true,
+          stuck: stuck);
 
   if (total > 0 && done >= total) {
     return DownloadLine('Downloaded • ${_songs(total)}',
-        phoneFraction: 1, complete: true);
+        phoneFraction: 1, complete: true, twoStages: true);
   }
   if (f.phoneTotal == 0 && f.confirmedEmpty && (s == null || s.total == 0)) {
-    return say('Nothing to download yet');
+    // Not a stage of anything: the same words as ever, no bar.
+    return const DownloadLine('Nothing to download yet');
   }
 
   // The phone's reason wins: the server's counts are stale while the phone cannot reach it, and one cause is told for the whole screen.
   final wait = f.wait;
   if (wait != null) {
-    return say('$done of $total on this phone · ${wait.words}', server: phone);
+    // What the server said about songs that did not come is as old as its counts: not told now, and no Retry that could not be sent.
+    return DownloadLine('$done of $total on this phone · ${wait.words}',
+        phoneFraction: phone, twoStages: true);
   }
 
-  // Everything that can come has come, and some did not: say so (the row offers Retry).
-  final settled = (s == null || s.waiting == 0) && f.phoneActive == 0;
+  // Everything that can come has come, and some did not: say so (the row offers Retry when asking again can help). "Settled" is told by the
+  // server's numbers: it has nothing on the way, and nothing it holds is waiting for the phone. The phone's own count of queued rows cannot tell:
+  // it keeps a queued row for every song the server has not got (PB-35), for ever, so it would never be settled (found on a real server).
+  // (a song the phone failed to take is not waiting for the phone: it waits for Retry)
+  final settled = s == null
+      ? f.phoneActive == 0
+      : s.waiting == 0 && s.ready <= done + f.phoneFailed;
   if (failed > 0 && settled) {
-    return say(done > 0
-        ? '$done of $total on this phone · ${_songs(failed)} did not come'
-        : '${_songs(failed)} did not come');
+    return say(
+        done > 0
+            ? '$done of $total on this phone · ${_songs(failed)} did not come'
+            : '${_songs(failed)} did not come',
+        stuck: true);
   }
 
   if (s == null) {

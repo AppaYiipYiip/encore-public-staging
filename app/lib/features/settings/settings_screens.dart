@@ -13,7 +13,9 @@ import '../../design/theme_rules.dart';
 import '../../design/tokens.dart';
 import '../../domain/audio_quality.dart';
 import '../common/format.dart';
+import '../downloads/download_line_providers.dart';
 import '../downloads/download_providers.dart';
+import '../downloads/download_status.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart' show requestPortalOfferedProvider;
 import '../instant/release_save.dart' show releaseSavesProvider;
@@ -560,8 +562,14 @@ class DownloadsSettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.arrow_downward_rounded),
             title: Text(e.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle:
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text('${e.kind} • ${AudioQuality.byId(e.pin.quality).label}'),
+                // How far the two stages have got, and what did not come (docs/design S-16); nothing for a plain music server.
+                _PinStatus(entry: e),
+              ],
+            ),
             trailing: IconButton(
               tooltip: 'Remove download',
               icon: const Icon(Icons.delete_outline_rounded),
@@ -701,3 +709,22 @@ class AboutSettingsScreen extends StatelessWidget {
 }
 
 String settingsFormatStorage(int bytes) => formatBytes(bytes);
+
+/// The two stages of one download under its row on Settings > Downloads & storage (docs/design S-16): the line, its bar, and what did not come.
+class _PinStatus extends StatelessWidget {
+  const _PinStatus({required this.entry});
+
+  final PinEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = PinTargetType.values.asNameMap()[entry.pin.targetType];
+    final target = entry.releaseId != null
+        ? DownloadTarget.release(entry.releaseId!, entry.releaseRefIds)
+        : type == null
+            ? null
+            : DownloadTarget.pin(type, entry.pin.targetId);
+    if (target == null) return const SizedBox.shrink();
+    return DownloadStatus(target: target, showNames: true);
+  }
+}

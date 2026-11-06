@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
+import '../../domain/download_line.dart';
+import '../downloads/download_line_providers.dart';
 import '../downloads/download_notifications_prompt.dart';
 import '../downloads/download_providers.dart';
+import '../downloads/download_status.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
 
@@ -27,6 +30,7 @@ class DownloadButton extends ConsumerWidget {
     this.onPin,
     this.onRemove,
     this.preparingLabel,
+    this.target,
   });
 
   final PinTargetType type;
@@ -49,16 +53,26 @@ class DownloadButton extends ConsumerWidget {
   /// What the button says while the songs are not on the phone yet because the server is still getting them.
   final String? preparingLabel;
 
+  /// The download as the line of the two stages names it, when it is not the plain pin of [type] and [targetId] (a catalogue release).
+  final DownloadTarget? target;
+
+  DownloadTarget get _target => target ?? DownloadTarget.pin(type, targetId);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = stateOverride ??
         ref.watch(pinStateProvider((type, targetId))).value ??
         PinState.none;
     final waiting = ref.watch(downloadsWaitProvider);
+    final line = ref.watch(downloadLineProvider(_target));
     final c = context.colors;
+    // Nothing more is coming and some songs did not: the control stops saying "downloading" (the lines under the title say which ones).
+    final phase = line != null && line.twoStages && line.stuck
+        ? PinPhase.attention
+        : state.phase;
 
     final (IconData icon, Color fg, Color? fill, String label) =
-        switch (state.phase) {
+        switch (phase) {
       PinPhase.off => (
           Icons.arrow_downward_rounded,
           c.onBgMuted,
@@ -69,11 +83,14 @@ class DownloadButton extends ConsumerWidget {
           Icons.arrow_downward_rounded,
           c.accent,
           null,
-          state.phase == PinPhase.preparing && preparingLabel != null
+          phase == PinPhase.preparing && preparingLabel != null
               ? preparingLabel!
-              : waiting == null
-                  ? 'Downloading $name, ${(state.progress * 100).round()} percent'
-                  : '$waiting to download $name',
+              : line != null && line.twoStages
+                  // Both stages, in the words every screen uses (docs/design S-16): "12 of 217 on this phone · 40 ready on your server".
+                  ? 'Downloading $name. ${line.text}'
+                  : waiting == null
+                      ? 'Downloading $name, ${(state.progress * 100).round()} percent'
+                      : '$waiting to download $name',
         ),
       PinPhase.empty => (
           Icons.arrow_downward_rounded,
@@ -91,12 +108,13 @@ class DownloadButton extends ConsumerWidget {
           Icons.priority_high_rounded,
           c.onAccent,
           c.warning,
-          'Some downloads failed. Tap for options',
+          line != null && line.stuck
+              ? 'Some downloads failed. ${line.text}. Tap for options'
+              : 'Some downloads failed. Tap for options',
         ),
     };
 
-    final busy = state.phase == PinPhase.preparing ||
-        state.phase == PinPhase.downloading;
+    final busy = phase == PinPhase.preparing || phase == PinPhase.downloading;
 
     return Semantics(
       button: true,
@@ -185,7 +203,10 @@ class DownloadButton extends ConsumerWidget {
     final remove = await showEncoreSheet<bool>(
       context: context,
       builder: (sheet) => _RemoveSheet(
-          name: name, state: state, waiting: ref.read(downloadsWaitProvider)),
+          name: name,
+          state: state,
+          waiting: ref.read(downloadsWaitProvider),
+          line: ref.read(downloadLineProvider(_target))),
     );
     if (remove == true) {
       String? note;
@@ -199,16 +220,21 @@ class DownloadButton extends ConsumerWidget {
         ..showSnackBar(
             SnackBar(content: Text(note ?? 'Removed $name from this phone')));
     } else if (remove == false) {
-      await actions.retry();
+      // The server again for the songs it failed to get, and the phone again for the files it could not take.
+      await ref.read(retryDownloadProvider)(_target);
     }
   }
 }
 
 class _RemoveSheet extends StatelessWidget {
-  const _RemoveSheet({required this.name, required this.state, this.waiting});
+  const _RemoveSheet(
+      {required this.name, required this.state, this.waiting, this.line});
 
   final String name;
   final PinState state;
+
+  /// The line of the two stages, when the server keeps songs: it replaces the phone-only wording.
+  final DownloadLine? line;
 
   /// Why nothing is moving ("Waiting for Wi-Fi"), when that is the case.
   final String? waiting;
@@ -217,14 +243,20 @@ class _RemoveSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final size = formatBytes(state.bytes);
-    final title = switch (state.phase) {
-      PinPhase.empty => 'Nothing to download yet',
-      PinPhase.complete => 'Downloaded',
-      PinPhase.attention => 'Some songs could not be downloaded',
-      _ => waiting == null
-          ? 'Downloading ${state.done} of ${state.total}'
-          : '$waiting - ${state.done} of ${state.total}',
-    };
+    final stages = line != null && line!.twoStages && !line!.complete;
+    final title = stages
+        ? line!.text
+        : switch (state.phase) {
+            PinPhase.empty => 'Nothing to download yet',
+            PinPhase.complete => 'Downloaded',
+            PinPhase.attention => 'Some songs could not be downloaded',
+            _ => waiting == null
+                ? 'Downloading ${state.done} of ${state.total}'
+                : '$waiting - ${state.done} of ${state.total}',
+          };
+    // Asking again is offered for what the phone could not take and for what the server could not get.
+    final canTryAgain = state.phase == PinPhase.attention ||
+        (line != null && line!.failed > 0 && line!.canRetry);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -246,7 +278,7 @@ class _RemoveSheet extends StatelessWidget {
               style: context.text.bodyMedium,
             ),
             const SizedBox(height: Space.lg),
-            if (state.phase == PinPhase.attention)
+            if (canTryAgain)
               ListTile(
                 leading: const Icon(Icons.refresh_rounded),
                 title: const Text('Try again now'),

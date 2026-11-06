@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../data/encore/encore_models.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../domain/download_line.dart';
+import '../../domain/storage_guard.dart' show StorageVerdict;
 import '../common/playability.dart' show serverAwayProvider;
 import '../instant/release_save.dart' show releasePinStateProvider;
 import '../settings/settings_controller.dart';
@@ -23,7 +24,12 @@ final phoneWaitProvider = Provider<PhoneWait?>((ref) {
       ref.watch(settingsProvider.select((s) => s.wifiOnlyDownloads));
   if (wifiOnly && network != NetworkKind.wifi) return PhoneWait.wifi;
   if (ref.watch(serverAwayProvider)) return PhoneWait.server;
-  return null;
+  // The queue is held back by the storage guard (the same verdict the banner in Settings shows).
+  return switch (ref.watch(downloadVerdictProvider).value) {
+    StorageVerdict.limitReached => PhoneWait.limit,
+    StorageVerdict.lowSpace => PhoneWait.space,
+    _ => null,
+  };
 });
 
 /// What a download is, for the line under its title: something the person pinned (a playlist, the liked songs, an album, a song) or a catalogue
@@ -61,13 +67,14 @@ class DownloadTarget {
 }
 
 /// The line under a download's title, the same on every screen: the phone's own table, what the server says about its stage, and why the phone waits.
-/// On a plain music server it is exactly the line the app has always shown.
+/// On a plain music server it is exactly the line the app has always shown. `null` when the person has not downloaded this.
 final downloadLineProvider =
-    Provider.autoDispose.family<DownloadLine, DownloadTarget>((ref, target) {
+    Provider.autoDispose.family<DownloadLine?, DownloadTarget>((ref, target) {
   final PinState phone = target.isRelease
       ? ref.watch(releasePinStateProvider(target.releaseRefIds.join(',')))
       : ref.watch(pinStateProvider((target.type!, target.id))).value ??
           PinState.none;
+  if (!phone.pinned) return null;
   final keep = ref.watch(keepProvider);
   final key = target.keepKey;
   final group = key == null ? null : keep.of(key);
