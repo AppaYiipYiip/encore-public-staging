@@ -8,6 +8,8 @@ and D-3 (keep on save, download, or plays on 2 different days) are decided.
 
 Auth in P2: the existing Subsonic token (`u`,`t`,`s`) validated with Navidrome and cached 10 min; P3-03 replaces it with device tokens.
 
+*Marked 6 Nov 2026 (register B-68): this block is the first sketch, not the contract. `../17` is the contract and the built routes differ in places: the prefix is `/encore/api/v1`; entries are added as `{songs: [{ref, id}], after}`; a play is `{id, ref, at, msPlayed, context}` (the device comes from the sign-in, and the phone makes the play's id); a claim answers the state and no lease; the audio is `GET /encore/stream/{ref}?p=&e=&sig=` with the address from `GET /refs/{id}/stream-url`; there is no multipart import. Keep the block as history.*
+
 ```
 GET    /encore/api/info                                  → {version, name, features, youtube: ok|busy|paused-until|unreachable}
 POST   /encore/api/refs/resolve        [{title, artists[], album?, durationMs?, isrc?, deezerId?, videoId?, coverUrl?}] → [{ref, …}]

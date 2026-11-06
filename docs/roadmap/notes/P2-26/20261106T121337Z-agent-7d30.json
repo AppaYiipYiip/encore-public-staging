@@ -1,0 +1,10 @@
+{
+ "id": "20261106T121337Z-agent-7d30",
+ "item": "P2-26",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:13:37Z",
+ "type": "detail",
+ "body": "(Replaces my note of 11:59 UTC on this item, one sentence added.) Audit B-86 and B-87 (server code read 6 Nov 2026; the first half of B-86 run). B-86, the part that belongs here: a ref that has a YouTube video id is played and kept from that id alone (sources/youtube/source.py:66-67 returns [video_id] with no search), and nothing ever clears the id (refs.remember_video fills only an empty column; StreamProxy.open tries the stored id only; the comment on _GONE in stream.py says these answers ask for another upload, but with one stored id there is none to ask for). So when YouTube removes that upload, the codes unavailable / not_found / age_restricted end in 'Not available' for ever, though another upload of the song exists; the same for a wrong id. Acceptance to add: a stored id that comes back 'gone' is forgotten and searched again once (the ref is marked, so a dead song is not searched on every tap), and the keeper compares the length of the fetched audio with the ref's before it keeps the file. The 'wrong id from a phone' half is in the note on P2-12 and needs a decision on docs/19 section 2. P4-14 ('Wrong song?') is the person-facing half and needs the forgetting first. B-87: docs/22 section 7 asks for one scan per batch (or the music server's file watcher); Keeper._wait_for_music_server asks for a quick scan for every kept song (and again after about 13 s) and polls getScanStatus and search3 every 0.5 s for up to 45 s (about 270 requests when the file is never found). The pinned Navidrome 0.64.2 rescans changed folders by itself in 0.2 to 0.4 s (docs/22): poll find_song only, and let one shared gate in NavidromeClient allow at most one explicit scan in N seconds for all keeps. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-86, B-87.",
+ "replaces": "20261106T115949Z-agent-1c2d"
+}

@@ -1,0 +1,9 @@
+{
+ "id": "20261106T121337Z-agent-efeb",
+ "item": "P4-09",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:13:37Z",
+ "type": "note",
+ "body": "Audit (schema read 6 Nov 2026): migration 0001 gives person.federation_ok a default of 1 (and GET /me returns federationOk: true for everyone), while PRIVACY.md and docs/13 describe friends on other servers as something that is turned on, after both people agree. Nothing reads the column yet; when federation is built, make the default 0 (a new migration) so that the first build cannot treat every existing person as having agreed. Register: docs/tasks/AUDIT-BUILT-2026-11-05.md (found while reading B-88's neighbours)."
+}

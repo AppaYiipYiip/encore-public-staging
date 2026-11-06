@@ -1,0 +1,9 @@
+{
+ "id": "20261106T120715Z-agent-d863",
+ "item": "P2-20",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:07:15Z",
+ "type": "detail",
+ "body": "Audit B-91 (app code read 6 Nov 2026, not run): one more music-server call an Encore phone still makes. SessionPlayRecorder.nowPlaying (app/playback_providers.dart:263-274) is not gated on the server kind and calls the Subsonic scrobble with item.id; on an Encore server that id is the song's ref (sr_...), not a music-server song id, so the call can only fail (logged at debug level, dropped) and costs one request carrying the person's music-server login at every song start. The Encore delivery already drops the same thing when it arrives through the outbox (encore_delivery.dart: submission == false and rating are ignored). Skip it when session.encoreMode now; delete it with the rest of the music-server calls here. The other Subsonic calls left in the app are in the outbox's old-mode kinds (outbox.dart:385-399), instant play's library lookups (instant_controller.dart:207,223) and the library resolver (library_resolver.dart:49). Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-91."
+}

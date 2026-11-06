@@ -1,0 +1,10 @@
+{
+ "id": "20261106T120715Z-agent-b906",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:07:15Z",
+ "type": "detail",
+ "body": "(Replaces my note of 11:59 UTC on this item: B-89 was worded too broadly.) Audit B-86 (resolve half, run) and B-89 (code read 6 Nov 2026).\n\nB-86: POST /refs/resolve takes a videoId from the phone (refs.parse_item) and refs.find matches by ISRC, Deezer id or video id BEFORE it looks at the title. Run in a scratch database: a description 'Bohemian Rhapsody / Queen' that carries the video id of 'Imagine / John Lennon' resolves to Imagine's ref, and a made-up 11-character id is attached to an existing ref that had none (refs._enrich). Every member then plays and keeps the wrong audio. A description's video id should be a hint: used when the title and artist agree with the ref (or the id is new), never to override them. The 'dead id is never forgotten' half is in the note on P2-26.\n\nB-89: saved albums come in two kinds of id told apart by a PREFIX only the app knows. A release saved from the catalogue is stored as cat:<catalogue id> (catalogue_screens.dart:358, release_store.dart:91, navigation.dart:70) with its songs in saved_album_ref; an album of the music server's library is saved under the music server's own album id (encore_api.dart saveAlbum; migration.py migrate_from_navidrome writes these, and the music server's artist ids as follows). The places describe the column three ways: 0001_initial.sql says 'the catalogue's album / artist id', encore_writer.dart says 'the music server's album and artist ids', and docs/17 and docs/18 mention neither the prefix nor the two kinds. The server never checks (album_id[:100]); a music-server album has no saved_album_ref rows, so keep progress counts nothing for it. Write the convention in docs/17 section 3, docs/18 and the migration comment, and let PUT /saved-albums/{id} refuse anything else.\n\nRegister: docs/tasks/AUDIT-BUILT-2026-11-05.md B-86, B-89.",
+ "replaces": "20261106T115949Z-agent-b743"
+}

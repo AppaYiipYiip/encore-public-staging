@@ -1,0 +1,10 @@
+{
+ "id": "20261106T121337Z-agent-daca",
+ "item": "P5-06",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T12:13:37Z",
+ "type": "detail",
+ "body": "(Replaces my note of 12:08 UTC on this item: the sentence about GitHub and registry redirects was my recollection, not something checked, and is taken out; the finding does not need it.) Audit B-92 (installer and update script read 6 Nov 2026): the registry path of the server image is the owner's personal GitHub handle, and it is written into every install. install.sh writes ENCORE_IMAGE=ghcr.io/appayiipyiip/encore-server into each server's .env (line 13 and the .env block); the value overrides the default in compose.yaml (line 39, ${ENCORE_IMAGE:-...}) and encore update (lines 71 and 116) pulls that path and never rewrites it. D-5 leaves the final name open and this item makes the repository public, maybe under another organisation. After the day the name or the owner of the path changes, every server installed before that day keeps asking the old path, and only an image published at the old path could tell it where to go. Acceptance to add: the public path is decided before the first friend installs from public instructions; encore update reads where the image says it lives (a label, or a file such as /app/deploy/IMAGE) and rewrites ENCORE_IMAGE in .env when it changes; the old path publishes a last 'moved' image. Also the other leftovers of the owner's handle: .github/workflows/server-image.yml (a comment) and app/lib/data/api/lrclib_client.dart (the User-Agent names github.com/AppaYiipYiip/encore, sent to LRCLIB by every phone). Register: docs/tasks/AUDIT-BUILT-2026-11-05.md B-92 (see also B-75).",
+ "replaces": "20261106T120854Z-agent-384a"
+}
