@@ -1,5 +1,7 @@
 # 09 — Research and measurements
 
+> **In short.** Every number and outside fact the plan rests on, with its setup and source. Almost all were measured on 21 and 22 Oct 2026 on machines that no longer exist (the dev VM and the old test server CT 104) and on the owner's home line, so they are the baseline to beat, not today's values: 38 s from tap to sound became about 2 to 3 s with the lean path (section 7). Sections 4 and 5 hold the outside facts and the legal notes.
+
 Everything here was measured or looked up on **2026-10-21**. Measurement scripts are in [`evidence/scripts/`](evidence/scripts/)
 (they are measurement tools, not product code). "Dev VM" = `encore-dev` (4 vCPU, 4.8 GB, Debian, Docker; on the owner's Proxmox
 host); "CT 104" = the old Encore test server; "PC" = the owner's Windows laptop on the same home line.

@@ -1,5 +1,7 @@
 # 28 — Code-level re-engineering (the app and the server)
 
+> **In short.** A module-by-module view of the code as it was on 21 Oct 2026, what was structurally wrong and the target shape (an explicit player state machine, a change feed, feature folders, one server package). Many of its numbers are out of date (the engine has grown from 1,182 to 1,576 lines); the one server package and the change feed it asks for exist, the player state machine does not.
+
 Owner, 2026-10-21: *"stay technical: how to improve the code, the program, the server side."* This page says, module by module,
 what the code does today (read on 2026-10-21), what is structurally wrong, and the target shape an implementing agent should build.
 It complements `04` (system design) with the inside of each part. Evidence: `26` §1 (deep read), `01`, test runs in `29`.

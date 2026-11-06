@@ -1,5 +1,7 @@
 # 13 — Devices, volume, Jam and friends across servers (system design)
 
+> **In short.** The design of three things for the first version: one volume per device, "Encore Connect" (control your other devices) and friends on other servers (federation, Jam across servers). **None of it is built** (P4-07, P4-09, P4-10). The findings V1 and V2 of section 1 describe the code of 21 Oct 2026 and have changed since (D-28, P1-13).
+
 Owner, 2026-10-21: *"the volume control of the app isn't synced with my phone … I need to increase the sound of the music playing on
 the tablet from my phone, as long as it's the same account. I should be able to play/pause, jam with someone who is or isn't on the
 same server as me. How can I add a friend who is on a different server, and jam with him songs I have on my server, songs he has on
@@ -9,8 +11,8 @@ his server, and songs none of us have?"* All of this is in the **first version**
 
 | Finding | Evidence | Consequence |
 |---------|----------|-------------|
-| **V1** The app has **no volume control of its own**; the player's "Devices" button opens Android's Bluetooth/speaker picker (`AudioOutput.showSwitcher()` in `now_playing_screen.dart`) | code, 2026-10-21 | Controlling another device's volume is impossible |
-| **V2** "Volume levelling" (ReplayGain) is **on by default** and changes the player's **internal** volume per song (`replay_gain.dart`, `playback_engine.dart` `_backend.setVolume`); positive gains add up to **+9 dB** through a loudness enhancer | code; on the test server 2 of 182 songs had tags, both positive (+0.9, +11.1 dB) | Songs jump in loudness depending on whether they happen to carry tags; the phone's slider can't compensate; tagged songs can distort |
+| **V1** The app has **no volume control of its own**; the player's "Devices" button opens Android's Bluetooth/speaker picker (`AudioOutput.showSwitcher()` in `now_playing_screen.dart`) | code, 2026-10-21 | Controlling another device's volume is impossible. *Update: the button is gone (D-28); the Dart half of the output chooser is dead code (register B-25).* |
+| **V2** "Volume levelling" (ReplayGain) is **on by default** and changes the player's **internal** volume per song (`replay_gain.dart`, `playback_engine.dart` `_backend.setVolume`); positive gains add up to **+9 dB** through a loudness enhancer | code; on the test server 2 of 182 songs had tags, both positive (+0.9, +11.1 dB) | Songs jump in loudness depending on whether they happen to carry tags; the phone's slider can't compensate; tagged songs can distort. *Update: levelling now only turns loud songs down and the boost is off by default (P1-13, `ReplayGainSettings.allowBoost`).* |
 | **V3** Untagged songs (everything fetched from YouTube) get 0 dB; tagged ones are moved; streams from YouTube carry no tags at all | same | Inconsistent loudness between sources |
 | **V4** The Jam protocol has a host `volume` (0–100) that **no phone applies** (`encore_session` `SetVolume`; no use in `lib/features/jam`) | code | A Jam "volume" that does nothing ("sometimes works") |
 | **V5** The sleep-timer fade writes the internal player volume; an interrupted fade restores it in most paths, but internal volume is a second volume the person cannot see | code | Another source of "volume not in sync" |

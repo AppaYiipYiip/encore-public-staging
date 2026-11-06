@@ -1,5 +1,7 @@
 # 12 — The app's signing key (plain explanation and the agreed plan)
 
+> **In short.** What a signing key is and why losing it makes everyone reinstall; the plan to make one release key (P5-01), keep it in GitHub's secrets and give the owner one backup copy. Today every build is signed with a debug key from one laptop (register B-28). The last section is Google's developer verification and the decision to distribute on GitHub only.
+
 Agreed with the owner on 2026-10-21 ("that works, makes sense to me"). Decision D-10. The work is task **P5-01**.
 
 ## What a signing key is
@@ -20,7 +22,7 @@ is ours to look after**.
 ## The situation today (2026-10-21)
 
 Every Encore build so far is signed with a temporary **debug key** that Android's tools created automatically on the owner's laptop
-(`C:\Users\you\.android\debug.keystore`, created 2026-10-14). If the laptop breaks or is reset, that key is gone, every future
+(`.android/debug.keystore` in the user folder of the owner's laptop, created 2026-10-14). If the laptop breaks or is reset, that key is gone, every future
 build would carry a different seal, and everyone would have to uninstall and lose their downloads. A debug key is also not meant
 for releases.
 

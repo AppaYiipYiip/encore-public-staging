@@ -1,5 +1,7 @@
 # 08 — Roadmap
 
+> **In short.** The plan explained: one flat list (Now) and Later, how an item's needs and a drag work, what "done" means (walked as a person on the release-candidate pair, otherwise "built, not walked"), why the list is in this order and how the estimate is computed. The list inside it is generated from `docs/roadmap/` by `tools/check_order.py --write`; never edit it by hand.
+
 Task details: [`tasks/`](tasks/). **Time is the position in the one list in the next section (no phases, D-57); a task prefix such as P2 is only a topic.** Tasks that do not need each other can run in parallel (one agent each). An item is done only when it is walked **with evidence** (`07` §11).
 
 Owner (2026-10-21): **everything goes into the first version**, even if the release waits months. So the full feature set (P4)

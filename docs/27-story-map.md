@@ -1,5 +1,7 @@
 # 27 — Story map: everything each person does, and what is still missing
 
+> **In short.** A story map of what each kind of person does, step by step, marked ✓ designed, ◐ partly, ✗ missing, with the story or task for each step. **A tick means designed, not built.** Use it to see a hole; the board says what is built.
+
 A story map lays out, left to right, the big activities of a person, and under each the steps they take. Marking each step as
 designed (✓ with its story/task), partly designed (◐) or missing (✗) shows the holes at a glance. Missing steps found here became
 tasks (marked **new**).

@@ -1,5 +1,7 @@
 # 15 — Setup and first run, on paper (every page before code)
 
+> **In short.** Every page of the install and first run, on paper: the Host's terminal (the command door), the outputs of the `encore` command, the eight-step browser wizard, the Listener's first run in the app and the eight admin pages. The command door and its outputs are real and match the scripts; **the wizard and the admin pages are not built** (P3-06, P3-21 to P3-23).
+
 Owner, 2026-10-21: *"did we already think of how many pages the setup would have, what each page would include? Everything should be
 on paper before code."* This page is that paper. Agents build exactly these pages (tasks P3-05, P3-06, P2-10); a change to a page is
 first a change here. Look and feel (art, motion, words): `16`. Stories: US-01…US-05.

@@ -1,5 +1,7 @@
 # 16 — Look and feel: making Encore feel alive
 
+> **In short.** How Encore is meant to feel: the music is the art (covers, colour from the music, gentle motion, a few illustrations, warm words), where it matters most, and the rules that keep it fast and accessible. A design intent; the design tokens it names are in `app/lib/design/tokens.dart`.
+
 Owner, 2026-10-21: *"should we include some art? make it more alive?"* Yes, with one rule: **the music is the art.** Spotify, Plexamp and
 Apple Music feel alive because the screen is full of the music's own colours and covers, moving gently. Encore has an advantage:
 it can show *your* music (the Host's library, your imports) instead of stock pictures.

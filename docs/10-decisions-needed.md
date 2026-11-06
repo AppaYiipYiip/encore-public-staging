@@ -1,5 +1,7 @@
 # 10 — Decisions for the owner, and open experiments
 
+> **In short.** The owner's decisions (`D-nn`) and the experiments (`X-n`). Each decision is written once, here, with its date and who decided it, and other documents cite it by id. Part A has the decisions made by the owner, those still open (a default applies), and those made by the advisor on the owner's behalf (reversible); Part B lists the experiments only a test can answer. It is a log: do not reword an entry, add a newer one that supersedes it.
+
 ## Part A — Owner decisions
 
 ### Decided (2026-10-21, in chat)

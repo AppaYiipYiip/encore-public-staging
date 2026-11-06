@@ -1,5 +1,7 @@
 # 25 — Licences and the terms of outside services
 
+> **In short.** Every component Encore ships or runs with its licence and obligation, the outside services it talks to with their terms, the name and trademark question and the provenance of the app code. Several rows say "verify"; the open legal checks are P0-10 and register B-35, and `THIRD_PARTY_NOTICES` does not exist yet.
+
 Why: Encore will be public (GPL-3.0, D-1 default). Every part it ships or depends on must be compatible, credited, and its terms
 understood; otherwise the first public release can be taken down. Items marked *verify* must be checked at the source in task P0-05 /
 P5-06 and this table corrected.

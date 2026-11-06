@@ -1,5 +1,7 @@
 # 29 — Where Spotify does it better (gap review)
 
+> **In short.** Where Spotify does better, from the owner's walks of 22 Oct 2026: a table of screens with a status (Have, Partly, Gap, Not ours) and where each gap goes. It was not checked side by side with a phone running Spotify; P4-12's acceptance does that.
+
 Owner, 2026-10-22, after trying the app: songs and albums were shown mixed together on an artist's page, there was no "Popular" section,
 and "Spotify does this much better, and I'm sure it does other things much better." This page is the list of those other things, kept so
 each becomes a task instead of a remark.

@@ -1,5 +1,7 @@
 # 20 — Recommendations: a profile per person (design for P4-01)
 
+> **In short.** How a profile per person makes Home suggestions: the signals and their weights, where candidates come from, the rows and their ranking, the cost, the privacy and how to know it is good. **Not built** (P4-01, P4-20).
+
 Owner: "each one has his own … recommendation system profile tailored to him". Constraints: runs on a Raspberry Pi class machine, no
 machine-learning service, no listening data leaves the server, works for a person with 5 plays and for one with 50,000, and every
 suggestion is playable (owned or from YouTube).

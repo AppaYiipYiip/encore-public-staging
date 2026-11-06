@@ -1,5 +1,7 @@
 # 11 — Decision log (the reset decisions, ADR-R1 …)
 
+> **In short.** The architecture decisions (`ADR-Rn`): context, options, decision, why it beats the others, consequences, when to revisit. Read first: R2 (YouTube contained), R3 (one server program), R4 (songs are references), R6 and R8 (many people at once), R38 (clients are thin), R40 (a key identifies a server), R42 (the server decides, the client draws), R44 (notifications). It is a log: do not reword an entry, supersede it with a new one.
+
 Format: Context → Options → Decision → Why it beats the others → Consequences → Revisit when. It was planned to
 become one file each in `docs/adr/`; that was not done and the log stays in this one file (`06` §6 has the OPEN line). The 109 old ADRs (`old docs/03`) are history; where one is reversed, it is named.
 

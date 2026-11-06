@@ -1,5 +1,7 @@
 # 14 — Usability gaps and hidden bugs not covered elsewhere
 
+> **In short.** The backlog of what a Spotify user expects (`U1` to `U16`) and of the hidden risks a real phone or server will meet (`H11` to `H47`), each with its owner task, plus the new journeys J-15 to J-21 for `07`. A checklist for design and testing, not a status page.
+
 Owner, 2026-10-21: *"there are still many things not yet mentioned … think design, think usability, think hidden bugs."* This page is
 the backlog of everything a Spotify user expects or a real phone will do that the plan did not yet cover. Each item: what, why it
 matters, what to do, and which phase/task owns it (new tasks are listed in `tasks/`). IDs: **U** = usability, **H** = hidden bug or
