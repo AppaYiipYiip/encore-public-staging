@@ -179,7 +179,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 113 | N-01 | Share a song, album or playlist as a link | M | todo | none | 87 to 174 |
 | 114 | N-02 | Export a playlist as a file | S | todo | none | 87 to 174 |
 
-**Later** (18 items: future work to keep in mind and not bother with now, D-58; no estimate)
+**Later** (19 items: future work to keep in mind and not bother with now, D-58; no estimate)
 
 | Item | What | Size | Needs |
 |------|------|------|-------|
@@ -201,6 +201,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | P1-13 | One volume and the same loudness for every song | M | none |
 | N-07 | A better logo and app icon | S | none |
 | N-08 | A fresh visual design for the phone app | L | none |
+| P0-15 | Behind the scenes: a plugin the app uses will stop a future Flutter from building | S | none |
 
 **Done** (9 items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)
 

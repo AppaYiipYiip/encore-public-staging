@@ -614,6 +614,11 @@
   "title": "Gate 1: you try the app on your own phone",
   "note": "You only tap. Claude gives you the app with one short instruction and provides the server. Which server is decided with you when it is close."
  },
+ "P0-15": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a plugin the app uses will stop a future Flutter from building",
+  "note": "The build prints the warning today; nothing is broken. Found 6 Nov 2026."
+ },
  "P3-20": {
   "kind": "design",
   "title": "Add-ons: built in, bring your own, or off (designed on paper first)",
