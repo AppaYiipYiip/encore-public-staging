@@ -1,0 +1,9 @@
+{
+ "id": "20261106T145909Z-agent-bfbb",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T14:59:09Z",
+ "type": "note",
+ "body": "NEW CALL SITE of the lasting reachability answer (P2-22, 6 Nov 2026, branch task/P2-22-keep-app-lines). The lines under a download (\"... waiting for your server\") read `serverAwayProvider` through ONE provider, `phoneWaitProvider` (app/lib/features/downloads/download_line_providers.dart), together with the network kind and the Wi-Fi-only setting. It adds no new notion of \"can I reach my server\". When P1-17 replaces the eleven with one state, change `phoneWaitProvider` to read that state; it has a test (download_line_providers_test.dart, \"the phone's reason is the same test the strip uses\")."
+}

@@ -1,0 +1,10 @@
+{
+ "id": "20261106T154423Z-agent-ba95",
+ "item": "P2-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T15:44:23Z",
+ "type": "detail",
+ "body": "P2-22 BUILT (6 Nov 2026), not walked. What is where: server #147 #148 #149 #150 (progress, watch, reasons, retry) and #193 b76edfe (POST keep/ask, feature keep-ask, PROMOTE_MANY; settles B-62); notification question #144; app data layer #194 39cde33 (keep calls, controller, one wording function, started at the app root with ref.listen); the lines, bar, names, Retry and PB-38 in #195. Evidence: docs/evidence/README.md#e01 (real server + emulator; it found three defects, fixed with tests).\nWHAT STAYS OPEN, in order of value. (1) Walk it for real: the release-candidate pair, a 200-song playlist, a real phone, Wi-Fi-only, double text size, right-to-left, and a Retry on a retryable failure (every failure the real stack gave was 'YouTube has no copy', which cannot be retried; Retry is covered by widget and server tests). (2) Phone-side failure causes beyond the three sentences (phoneFailureWords: server no longer has it, no room, could not be saved) need the downloader to record a code, not text. (3) A keep that waits for a full disk shows as 'waiting its turn' to the Host: show the cause when P3-13 is drawn. (4) The release group id (cat:<id>) was checked on the fake, not on the real stack.\nTRAPS. `keep/ask` never retries a song whose keep failed and never ends a pause before a retry: the phone re-asks at every connection, so either would hit YouTube from the Host's address at every app start. The phone keeps a queued row for every song the server has not got (PB-35): never read 'phone active' as 'the phone is busy'; the line's 'settled' is told by the server's numbers. A real stack with the keeper needs ENCORE_YOUTUBE=1 plus the YouTube names pointed at 127.0.0.1 (audit_stack.py check transient shows how); the default stack has no keeper and lists no `keep` feature.",
+ "replaces": "20261106T103854Z-agent-3991"
+}

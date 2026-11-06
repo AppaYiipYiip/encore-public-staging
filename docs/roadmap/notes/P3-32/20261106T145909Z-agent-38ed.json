@@ -1,0 +1,9 @@
+{
+ "id": "20261106T145909Z-agent-38ed",
+ "item": "P3-32",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T14:59:09Z",
+ "type": "note",
+ "body": "B-39 matters more since P2-22 (6 Nov 2026): a Download of a playlist or the liked songs now asks the server for the songs it does not have (POST keep/ask, scheduler.PROMOTE_MANY = the level of `download`), and keep/retry and the release save moved to that level too. A single tap (`promote`, level 0) is NOT starved by a long download, but two long downloads by two people still share through the 200-item window of `Scheduler._claim`, so fix the window here as planned. A test to add: person A asks for 500 songs at PROMOTE_MANY, person B asks for 20 at PROMOTE_MANY: B's 20 run before A's item 100. Also the keeper pauses are now guarded: a download never ends a pause before a retry (only a tap does), so the per-person window fix must keep `promote_many` priority-only."
+}
