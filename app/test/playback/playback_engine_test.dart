@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:audio_service/audio_service.dart' show MediaAction;
 import 'package:encore/core/clock.dart';
 import 'package:encore/core/perf.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/player/playback_facade.dart';
 import 'package:encore/playback/audio_backend.dart';
+import 'package:encore/playback/encore_audio_handler.dart';
 import 'package:encore/playback/playback_engine.dart';
 import 'package:encore/playback/playback_state_store.dart';
 import 'package:encore/playback/queue_model.dart';
@@ -397,6 +399,183 @@ void main() {
       await h.engine.skipNext();
       expect(h.currentId, 't2');
       expect(h.backend.state.playing, isFalse);
+      await h.dispose();
+    });
+  });
+
+  group(
+      'a finished list can be played again, and the player never says playing while it is silent (P1-21, B-51)',
+      () {
+    Future<void> playToTheEnd(Harness h) async {
+      h.backend.finishCurrent();
+      await h.settle();
+      h.backend.finishCurrent(); // the last track ends
+      await h.settle();
+    }
+
+    test(
+        'Play after the end starts the list over, and every later end pauses again',
+        () async {
+      final h = await Harness.start(tracks: 2);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+      expect(h.currentId, 't2');
+      expect(h.engine.snapshot.isPlaying, isFalse);
+
+      for (var round = 0; round < 3; round++) {
+        await h.engine.play();
+        await h.settle();
+        expect(h.currentId, 't1', reason: 'round $round: the list starts over');
+        expect(h.backend.state.playing, isTrue);
+        expect(h.engine.snapshot.isPlaying, isTrue);
+
+        await playToTheEnd(h);
+        expect(h.currentId, 't2', reason: 'round $round');
+        expect(h.backend.state.playing, isFalse,
+            reason: 'round $round: the end pauses, it is not swallowed');
+        expect(h.engine.snapshot.isPlaying, isFalse);
+      }
+      await h.dispose();
+    });
+
+    test('the play/pause button does the same as Play', () async {
+      final h = await Harness.start(tracks: 2);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+
+      await h.engine.togglePlayPause();
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.engine.snapshot.isPlaying, isTrue);
+      await h.dispose();
+    });
+
+    test('Next on the last song, then Play, starts the list over too',
+        () async {
+      final h = await Harness.start(tracks: 2);
+      await h.engine.playTracks(h.tracks, startIndex: 1);
+      await h.engine.skipNext();
+      expect(h.currentId, 't2');
+
+      await h.engine.play();
+      await h.settle();
+
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'after the end, a seek into the last song and Play plays that song, and its end is not lost',
+        () async {
+      final h = await Harness.start(tracks: 2);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+
+      await h.engine.seek(const Duration(seconds: 30));
+      await h.engine.play();
+      await h.settle();
+      expect(h.currentId, 't2',
+          reason: 'the person chose that song and that place');
+      expect(h.backend.state.playing, isTrue);
+
+      h.backend.finishCurrent();
+      await h.settle();
+
+      expect(h.backend.state.playing, isFalse);
+      expect(h.engine.snapshot.isPlaying, isFalse);
+      await h.dispose();
+    });
+
+    test('songs added after the end are what Play goes on with', () async {
+      final h = await Harness.start(tracks: 3);
+      await h.engine.playTracks(h.tracks.take(2).toList());
+      await playToTheEnd(h);
+
+      await h.engine.addToQueue(h.tracks[2]);
+      await h.engine.play();
+      await h.settle();
+
+      expect(h.currentId, 't3');
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'the only song of a list: Previous, then Play, plays it again and its end pauses',
+        () async {
+      final h = await Harness.start(tracks: 1);
+      await h.engine.playTracks(h.tracks);
+      h.backend.finishCurrent();
+      await h.settle();
+      expect(h.backend.state.playing, isFalse);
+
+      await h.engine.skipPrevious();
+      await h.engine.play();
+      await h.settle();
+      expect(h.backend.state.playing, isTrue);
+
+      h.backend.finishCurrent();
+      await h.settle();
+
+      expect(h.backend.state.playing, isFalse);
+      expect(h.engine.snapshot.isPlaying, isFalse);
+      await h.dispose();
+    });
+
+    test('the snapshot never says playing while the player has finished',
+        () async {
+      final h = await Harness.start(tracks: 2);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+
+      // Something other than the engine's own Play (a platform quirk, a second controller) starts the last song again and it ends again: the
+      // engine has already handled this end, so nothing pauses, and the player stays "playing" at its end.
+      await h.backend.play();
+      h.backend.finishCurrent();
+      await h.settle();
+      expect(h.backend.state.playing, isTrue,
+          reason: 'the silent state, as B-51 found it');
+
+      expect(h.engine.snapshot.isPlaying, isFalse,
+          reason:
+              'the media session and the buttons copy this: a silent "playing" is the bug');
+      await h.dispose();
+    });
+
+    test(
+        'the lock screen and the notification: Play after the end starts the list over, and the session never says playing while silent',
+        () async {
+      final h = await Harness.start(tracks: 2);
+      final handler = EncoreAudioHandler()..attach(h.engine);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+      expect(handler.playbackState.value.playing, isFalse);
+
+      await handler.play(); // the lock screen's Play
+      await h.settle();
+      expect(h.currentId, 't1');
+      expect(handler.playbackState.value.playing, isTrue);
+      expect(handler.playbackState.value.controls.map((c) => c.action),
+          contains(MediaAction.pause));
+
+      await playToTheEnd(h);
+      expect(handler.playbackState.value.playing, isFalse,
+          reason: 'the end is handled again, the session shows Play');
+      expect(handler.playbackState.value.controls.map((c) => c.action),
+          contains(MediaAction.play));
+      handler.detach();
+      await h.dispose();
+    });
+
+    test('repeat all never ends, so nothing changes for it', () async {
+      final h = await Harness.start(tracks: 2);
+      h.engine.setRepeat(RepeatKind.all);
+      await h.engine.playTracks(h.tracks);
+      await playToTheEnd(h);
+
+      expect(h.backend.state.playing, isTrue);
       await h.dispose();
     });
   });

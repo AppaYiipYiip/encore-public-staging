@@ -240,6 +240,10 @@ class PlaybackEngine implements PlaybackFacade {
   int _loadAttempt = 0;
   int _handledErrorAttempt = -1;
   int _completedSerial = -1;
+
+  /// The list played to its end (or Next was pressed on its last song) and the player waits on that last song: the next Play starts the list over
+  /// (P1-21, B-51). Only a true end sets it; every new load, skip, seek or jump clears it.
+  bool _endedQueue = false;
   Future<void> _serial = Future<void>.value();
   int? _expectedIndex;
   int? _lastIndex;
@@ -533,8 +537,23 @@ class PlaybackEngine implements PlaybackFacade {
         if (_queue.current == null) return;
         if (!_loaded) {
           await _loadCurrent(autoplay: true, position: _resumePosition);
+        } else if (_endedQueue) {
+          // The list is over and the player waits on its last song. Play starts it again from the first song, same source and same shuffle
+          // setting, at every entry point (the album page, the mini player, the lock screen, a headset): this is the one place they all reach.
+          // If songs were added after the end, the first of those is what comes next instead.
+          _endedQueue = false;
+          if (!_queue.skipNext()) _queue.jumpTo(0);
+          _consecutiveFailures = 0;
+          _retried.clear();
+          await _loadCurrent(autoplay: true);
+          _emitAll();
+          _schedulePersist();
         } else {
           await _backend.play();
+          // The same load plays on: when it ends, that is a new end. Reset only here, in the operations a person makes, never from the
+          // backend's own events: pausing a finished player re-announces "completed", and handling that again would pause -> completed ->
+          // pause for ever.
+          _completedSerial = -1;
         }
       });
 
@@ -552,8 +571,16 @@ class PlaybackEngine implements PlaybackFacade {
 
   @override
   Future<void> togglePlayPause() {
-    final soundingOrAboutTo = _backend.state.playing || _loadingToPlay > 0;
+    final soundingOrAboutTo = _sounding || _loadingToPlay > 0;
     return soundingOrAboutTo ? pause() : play();
+  }
+
+  /// Whether sound is coming out. The platform player keeps `playing` true when it reaches the end of the last source, so "playing" alone is not
+  /// enough: it must not have completed. The snapshot (and so the notification, the lock screen and the mini player) and the play/pause button
+  /// share this one check, so none can say "playing" while the others say Play (P1-21, B-51).
+  bool get _sounding {
+    final state = _backend.state;
+    return state.playing && state.processing != BackendProcessing.completed;
   }
 
   /// Whether a finished load or skip may start audio: only when nobody paused
@@ -584,6 +611,10 @@ class PlaybackEngine implements PlaybackFacade {
         if (length != null && target > length) target = length;
         await _backend.seek(target);
         _lastPosition = target;
+        // The person is back inside this song (after the end, or anywhere): it is theirs to play from here, and its next end is a new end.
+        // Reset after the backend has moved, so a "completed" the seek itself might echo is still taken for the old end.
+        _endedQueue = false;
+        _completedSerial = -1;
       });
 
   @override
@@ -609,9 +640,11 @@ class PlaybackEngine implements PlaybackFacade {
         }
         _finishItem();
         if (!_queue.skipNext()) {
-          // End of the queue: stop on the last track, ready to replay it.
+          // End of the queue: stop on the last track; the next Play starts the list over.
           await _backend.pause();
           if (_loaded) await _backend.seek(Duration.zero);
+          _endedQueue = true;
+          _emitAll();
           return;
         }
         await _advanceTo(autoplay: true);
@@ -624,6 +657,8 @@ class PlaybackEngine implements PlaybackFacade {
         if (position > restartThreshold || !_queue.hasPrevious) {
           if (_loaded) {
             await _backend.seek(Duration.zero);
+            _endedQueue = false;
+            _completedSerial = -1; // a restarted song's end is a new end
           } else {
             _resumePosition = Duration.zero;
           }
@@ -1135,6 +1170,7 @@ class PlaybackEngine implements PlaybackFacade {
     final loadMs = timer.elapsedMilliseconds - resolveMs;
     _window = [for (final r in specs) r.uid];
     _loadSerial++;
+    _endedQueue = false;
     _loaded = true;
     _resumePosition = Duration.zero;
     _nowPlayingSent = false;
@@ -1153,6 +1189,7 @@ class PlaybackEngine implements PlaybackFacade {
   Future<void> _advanceTo({required bool autoplay}) async {
     final item = _queue.current;
     if (item == null) return;
+    _endedQueue = false; // the cursor moved by hand
     final index = _lastIndex ?? 0;
     final nextIndex = index + 1;
     if (_loaded &&
@@ -1234,6 +1271,12 @@ class PlaybackEngine implements PlaybackFacade {
     }
     if (state.processing == BackendProcessing.completed && _loaded) {
       final serial = _loadSerial;
+      if (state.playing && _completedSerial == serial) {
+        // This end was already handled (the player was paused at it) and the platform player says it is playing again: that is the silent
+        // "playing" of B-51. It is shown as paused; a person's Play or seek starts a new end.
+        Log.warn('playback',
+            'the player says playing after it finished; shown as paused');
+      }
       _fire(() => _onCompleted(serial));
     }
     _emitSnapshot();
@@ -1306,9 +1349,11 @@ class PlaybackEngine implements PlaybackFacade {
     if (await _stepToPlayable(_queue.advanceAuto)) {
       await _loadCurrent(autoplay: true);
     } else {
-      // End of the queue (or nothing ahead can play without a connection): wait on the last track, ready to replay.
+      // End of the queue (or nothing ahead can play without a connection): wait on the last track. At a true end the next Play starts
+      // the list over; with songs ahead that cannot play now it only plays this one again.
       await _backend.pause();
       if (_loaded) await _backend.seek(Duration.zero);
+      _endedQueue = !_queue.hasNext;
       _emitAll();
     }
   }
@@ -1497,7 +1542,8 @@ class PlaybackEngine implements PlaybackFacade {
               imageUrl: item.imageUrl,
               fullSong: item.fullSong,
             ),
-      isPlaying: state.playing,
+      isPlaying:
+          state.playing && state.processing != BackendProcessing.completed,
       isLoading: state.processing == BackendProcessing.loading ||
           state.processing == BackendProcessing.buffering,
       position: _loaded ? _backend.position : _resumePosition,

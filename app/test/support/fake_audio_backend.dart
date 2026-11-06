@@ -104,6 +104,12 @@ class FakeAudioBackend implements AudioBackend {
     if (index != null) _setIndex(index);
     _position = position;
     _position$.add(position);
+    // Like the real player (just_audio): a seek takes a finished player out of "completed". Without this a test cannot tell a player that has
+    // finished again from one that never left the end (P1-21, B-51).
+    if (_state.processing == BackendProcessing.completed) {
+      _setState(BackendState(
+          playing: _state.playing, processing: BackendProcessing.ready));
+    }
   }
 
   @override
