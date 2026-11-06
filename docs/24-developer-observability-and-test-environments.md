@@ -1,19 +1,21 @@
 # 24 — Seeing what happens, and test environments as code
 
+> **In short.** How to see why something failed: one request followed end to end (a request id from phone to server log), a log ring buffer on the phone, test environments as one command each, recorded answers from outside services, and kill switches in `info.features`. Most of it is a target today (B-73): the phone has the ring buffer; the server logs plain text without request ids, there is no `encore stats`, and the environment commands do not exist yet.
+
 Why: agents (and the owner) must be able to see *why* something failed on a phone or a server without guessing, and every test
 environment must be rebuildable by one command. Today: logs differ per service, nothing links a phone action to the server lines it
 caused, the emulator setup lives in memory notes, and the only test servers are hand-made.
 
 ## 1. One request, followed end to end
 
-* Every app request carries `X-Request-Id` (ULID) and `X-Device-Id`; the server logs them in **structured JSON lines**
+* **Target, not built today (register B-73; P1-19 builds the ids and the log line; the header in code is `X-Encore-Device`):** every app request carries `X-Request-Id` (ULID) and `X-Device-Id`; the server logs them in **structured JSON lines**
   (`time, level, module, request_id, device, person_id, event, ms, error_code`), never titles, passwords, tokens or signed URLs (`21` §2).
 * The app keeps a **ring buffer** of its last 2,000 log lines (same request ids, perf spans like `play.audible`, errors) on the phone.
 * **Debug bundle (on hold, ADR-R35: not built):** Settings → About → "Report a problem" (opt-in per report) would send the phone's ring buffer + device facts (model,
   Android version, navigation mode, font scale, app version, network type) to the Host's server, which attaches its own log lines for
   the same request ids and time window. Admin → Problems → "Download for a bug report" gives one zip to attach to a GitHub issue.
   (Extends P4-13; build the request ids and the ring buffer already in P1-06.)
-* Server stage timings (`search`, `extract`, `first_byte`, `proxy`, `keep`, `scan`) are logged for every work item; `encore stats`
+* **Target (no `encore stats` command exists):** server stage timings (`search`, `extract`, `first_byte`, `proxy`, `keep`, `scan`) are logged for every work item; `encore stats`
   prints p50/p95 of the last day per stage.
 
 ## 2. Test environments, one command each (in `tools/env/`)
@@ -39,7 +41,7 @@ the recordings still match reality (`07` §6).
 
 ## 4. Switches for risky features
 
-The server's `info.features` carries switches the Host or a release can flip without an app update: YouTube source, federation,
+The server's `info.features` (today `library`, `playback`, `live`, `refs` and, when the keeper runs, `keep`) is meant to carry switches the Host or a release can flip without an app update: YouTube source, federation,
 quality tier, smart shuffle, new player code paths. A broken feature can be turned off for everyone the same day (a kill switch), and a
 new one tried by the owner first (per-person beta flag).
 

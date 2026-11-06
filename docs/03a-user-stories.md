@@ -1,5 +1,7 @@
 # 03a — User stories (v1)
 
+> **In short.** The first version as stories: *As a ... I want ... so that ...*, each with acceptance criteria a tester can check on a phone, with numbers. Story ids (`US-nn`) are stable and tasks and tests cite them. Groups: getting started (01 to 05), listening (10 to 16), my library (20 to 22), bringing music in (30, 31), sharing the server (40 to 42), discovery and together (60 to 65), devices and friends everywhere (70 to 76), keeping it running (50 to 52). The promises with numbers are in `03`.
+
 Format: **As a … I want … so that …**, then acceptance criteria a tester can check on a phone, with numbers. Story IDs are stable;
 tasks and tests cite them. Personas are defined in `03` §2. "Catalogue song" = a song not on the server yet.
 

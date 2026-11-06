@@ -1,5 +1,7 @@
 # 32 — Accounts, joining a server, and devices: every way in, every state
 
+> **In short.** The state tables of accounts: every way an account comes to exist (`AC`), the states of an invitation (`IV`), of a person and of a device (`DV`), every way a phone joins (`JN`) and the limits that protect an account. Built on the server: invitations, joining, locking, resetting, removing, revoking. Missing in the app: a screen for the reset link and for a person's own devices. Not true yet for the shipped app: revoking a device (B-55).
+
 Written 2026-10-23 from the server (`accounts.py`, `auth.py`, `api.py`, `setup.py`) and the app (`join_screen.dart`, `connect_screen.dart`, `encore_device.dart`,
 `login_problem.dart`, `profiles/`), and from the decisions in `11` ADR-R40. How the phone finds the server and proves who answers is `31`; this document starts
 where the phone has an address it trusts. Same reading rules as `31`: **Built** (I read the code), **Designed** (in the plan, not in the code), **Open**;

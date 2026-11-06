@@ -1,5 +1,7 @@
 # 05 — Repository, folders and GitHub
 
+> **In short.** Where everything lives: the repository `encore/` (app, packages, server, docs, tools, `.github`), what stays outside it (logins, archived APKs), how GitHub is meant to look, and how commits and pushes are done. Sections 1, 3 and 4 record the reset of the repository and the intended GitHub setup; section 2 is the layout and section 5 the commit rules. `main` is protected by a ruleset (pull request and checks required, no approving review: P0-07), so a second pair of eyes is a convention.
+
 Owner (2026-10-21): "the files and folders here are messy … the homelab folder shouldn't be here at all … the GitHub is shit,
 confusing and weird". This page lists what exists, what each thing becomes, the target layout, and how GitHub must look.
 The work itself was tasks **P0-01 … P0-08** in [`tasks/P0-reset.md`](tasks/P0-reset.md).
@@ -94,9 +96,8 @@ Desktop\homelab\                 the owner's homelab project (separate, already 
 * **Releases** (not files in git): `vX.Y.Z` with the APK (signed with the release key), the server image tag, release notes in plain
   words. Pre-releases `vX.Y.Z-beta.N` for testers.
 * **Tags** only Encore's: `v0.2.0` … (semantic versioning). No upstream tags.
-* **Branch protection on `main`**: PR required, CI green required, 1 approving review (the reviewing agent or the owner), no force push.
-* **Issues** as the only bug/feature tracker, with labels: `bug`, `S1`/`S2`/`S3`, `app`, `server`, `docs`, `good-first-task`;
-  a Project board: Backlog → Ready → In progress → Review → Done.
+* **Branch protection on `main`**: PR required, CI green required, 1 approving review (the reviewing agent or the owner), no force push. **As built (P0-07, a ruleset, verified 4 Nov 2026): a pull request and the checks `checks` and `secrets` are required, force pushes and deletion are blocked, and the number of approving reviews is 0, not 1: the review by a second person is a convention.**
+* **Issues and Projects are not used for planning (D-60):** the roadmap board is the one tracker (`06` section 3).
 * **Packages**: server images on `ghcr.io/appayiipyiip/encore-server` (multi-arch), public when the repo goes public.
 * **Visibility**: private until P4 (public release) is done; then public (GPL-3.0).
 

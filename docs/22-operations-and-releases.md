@@ -1,5 +1,7 @@
 # 22 — Running Encore for years: updates, freshness, backups, moving, capacity
 
+> **In short.** How an installed server stays alive for years: `encore update` (a backup first; automatic rollback is planned), a yt-dlp that updates itself behind a canary, nightly backups and a restore by hand, moving to another computer, health, capacity, scanning. Built: update with backup, the yt-dlp updater, backups and restore, away-from-home. Not built: the rollback, the admin Health page, and the operating-system updates and log cap promised in sections 5 and 8 (B-72).
+
 Why: a Host installs Encore once and expects it to keep working for years without knowing anything about servers. None of this was
 designed: the old stack updated by hand-run scripts, yt-dlp freshness depended on container restarts, and backups were an option.
 
@@ -56,7 +58,7 @@ folders) and the installer's `--restore <file>` option in one step; a guide page
   words, with the action.
 * Owners also get an in-app notice on their phone for "needs you" items (disk 90 % full, backups failing, the Tailscale sign-in on the server's computer running out,
   YouTube not working for 24 h).
-* Logs: rotated, capped (50 MB total), no personal data (`21` §2); `encore logs` shows the last hour in plain text.
+* Logs: no personal data (`21` §2); `encore logs` shows the last hour in plain text. **Not built (register B-72): rotation and the 50 MB cap; `compose.yaml` sets no logging limit, so Docker's default never rotates.**
 
 ## 6. Capacity: what a Host's machine can carry (to measure in X-8 and P3-07, then print on the website)
 
@@ -77,6 +79,6 @@ folder in 0.2–0.4 s); never trigger a full scan for one song.
 
 ## 8. The host machine itself
 
-The installer offers (default yes) automatic security updates of the operating system (`unattended-upgrades` on Debian/Ubuntu) and
+**Not built (register B-72): the installer does neither today.** Target: the installer offers (default yes) automatic security updates of the operating system (`unattended-upgrades` on Debian/Ubuntu) and
 sets the clock to sync (NTP). Encore starts on boot (container restart policies). Power cuts: SQLite in WAL mode, files written by
 rename, so nothing half-written is ever served.

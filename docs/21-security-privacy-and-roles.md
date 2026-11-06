@@ -1,5 +1,7 @@
 # 21 — Security, privacy and roles
 
+> **In short.** Who may do what and see what: the roles, the privacy matrix, which route is reachable from the home network and from the public address, how credentials and one-time codes work, family settings, leaving, and the threat model. The matrix is enforced on the server. Known gaps are marked in place: the explicit-songs switch is stored and not enforced (B-6), revoking a device does not stop the shipped app (B-55), the password-encryption key is planned (B-27, P3-30).
+
 Why: a server in people's homes, reachable from the internet, holding a household's listening, talking to other servers. The old
 project handled pieces (a proxy-header guard, people roles) but never wrote down who may do what, who may see what, or what an attacker
 could try. Binding for P2–P4.
@@ -40,8 +42,7 @@ The server's logs never contain song titles tied to a person (only ids), passwor
 
 ## 4. Credentials
 
-* Passwords live only in Navidrome (which needs them reversible for the Subsonic protocol: the installer generates a strong
-  `ND_PASSWORDENCRYPTIONKEY`). Phones never store passwords after sign-in: they hold a **device token** (256-bit random, stored hashed),
+* Passwords live only in Navidrome (which needs them reversible for the Subsonic protocol: the installer is meant to generate a strong `ND_PASSWORDENCRYPTIONKEY`; **not built: nothing sets it, so the key every install shares is used; register B-27, P3-30**). Phones never store passwords after sign-in: they hold a **device token** (256-bit random, stored hashed),
   revocable per device (**planned, not built:** expiry after 180 days unused, `32` DV-6).
 * One-time codes: setup code (until the owner exists), pairing QR (10 min), invite (7 days, one person), friend code (24 h), Jam code
   (until the Jam ends), password-reset link (1 h).

@@ -96,3 +96,5 @@ search of songs not in the person's library needs the server.
 | Search | 3 s | none (the next keystroke retries) |
 | Stream start | 10 s to first audio byte | 1 retry, then the plain error |
 | Live channel connect | 10 s | back-off up to 30 s, forever while the app runs |
+
+**Target, not built (register B-74).** Today the Encore client is one `Dio` with a 6 s connect timeout and 30 s send and receive timeouts for every call (`app/lib/app/session.dart`, `_buildDio`); there are no per-call classes and no three-fold retry of reads. The outbox's own back-off (20 s doubling to 30 min, `34` CF-5) is real.

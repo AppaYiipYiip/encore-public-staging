@@ -1,9 +1,11 @@
 # 06 — How work is done (SDLC and agent workflow)
 
+> **In short.** How a change travels: a board item or note, a branch `task/<id>-<slug>`, a draft pull request, CI, a second pair of eyes that is not the author, a squash merge. It holds the Git rules (section 2), the board as the one tracker (section 3), review (section 4), the rules for implementing agents (section 5), the documentation rules (section 6), the CI workflows as they run and what is planned (section 7) and which machines an agent may touch (section 8).
+
 ## 1. The life of a change
 
 ```
-idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severity, story (US-xx), acceptance criteria, task file
+idea / bug ─► board item or note (`roadmap.py`) ─► triage (planning agent): severity, story (US-xx), acceptance criteria, task file
           ─► implementing agent: branch task/<id>-<slug>, draft PR on first push, small commits, tests with the change
           ─► CI green ─► reviewing agent (never the author) checks the acceptance criteria on a device/VM, comments
           ─► fixes ─► squash-merge to main ─► nightly beta build (planned, not built: section 7) ─► release when the milestone's exit criteria pass
@@ -14,7 +16,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 * **Definition of Ready** (a task may start): story + acceptance criteria with numbers + test plan + files/context listed + dependencies done.
 * **Definition of Done** (a task may close): acceptance criteria met *on a device or VM as a person would*, evidence attached to the PR
   (screenshots, timings, logs), tests added (unit + the right level from `07`), docs that describe the present updated, CHANGELOG
-  line if a person would notice, CI green, review approved, merged, issue closed.
+  line if a person would notice, CI green, review approved, merged, the item marked (`roadmap.py mark`).
 
 ## 2. Git and GitHub rules
 
@@ -22,7 +24,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 1. Trunk-based: `main` is always releasable. Short-lived branches `task/<task-id>-<slug>`; merge within days, not weeks.
 2. Commit small and often; push after each passing local check and **at least every hour**; open a **draft PR on the first push**.
 3. Commit message: `area: change in a person's words` (areas: `player`, `search`, `library`, `import`, `offline`, `sync`, `server`,
-   `gateway`, `youtube`, `keeper`, `people`, `admin`, `install`, `ci`, `docs`). Body: why, and `Refs #issue`.
+   `gateway`, `youtube`, `keeper`, `people`, `admin`, `install`, `ci`, `docs`). Body: why, and the item id (`Refs P2-22`).
 4. Squash-merge; the PR title becomes the commit on `main`.
 5. Versions: `0.MINOR.PATCH` until 1.0. App `versionCode` = the build number given to `flutter build` with `--build-number` (`pubspec.yaml`'s `+N` when it is left out; D-25, `guides/dev-gotchas.md`); a CI build number once `release.yml` exists. Server image tags = the same version.
 6. Tags and Releases only from CI, never from a laptop (`release.yml` is planned, section 7).
@@ -42,7 +44,7 @@ idea / bug ─► GitHub Issue (template) ─► triage (planning agent): severi
 
 ## 4. Review: the second pair of eyes
 
-The author never approves its own work. A **reviewing agent** (fresh context) receives: the issue, the task section, the PR diff,
+The author never approves its own work. A **reviewing agent** (fresh context) receives: the board item and its notes, the task section, the PR diff,
 and the evidence. It must:
 1. Re-run the acceptance criteria itself on the emulator/VM (not only read the evidence).
 2. Walk the touched screens as a person with the checklist in `07` §7 on two device profiles (one small + 3-button nav, one large +
@@ -90,10 +92,10 @@ and the evidence. It must:
 | `server.yml` (Server) | push to `main` and pull requests touching `server/`, `packages/`, the admin colour files (`tools/gen_admin_tokens.py`, `app/lib/design/tokens.dart`) or the workflow | `encore-server`: ruff, ruff format, mypy, pytest (without the integration tests); `install-scripts`: shellcheck of the installer and `encore`; `encore-server-navidrome`: the integration tests against a real music server and ffmpeg in Docker |
 | `server-legacy.yml` (Server legacy) | push to `main` and pull requests touching `server/legacy/` | the five older Python services (unittest) and the Jam hub (Dart analyze and test) |
 | `server-image.yml` (Server image) | push to `main` that touches `server/encore_server/`; `v*` tags; weekly (Monday 04:17 UTC); by hand | `tests` (the server's lint, types and tests; skipped for the weekly rebuild), then `image`: build and publish to GitHub's container registry (`:main`, `:<tag>`, `:sha-<commit>`); amd64 only |
-| `docs.yml` (Hygiene) | push to `main` and every pull request | `secrets`: gitleaks over the history; `checks`: no logins, keys, cookies, environment files or binaries are tracked, and the untested-rows ratchet (`tools/check_rows.py`, `11` ADR-R41 T2) |
+| `docs.yml` (Hygiene) | push to `main` and every pull request | `secrets`: gitleaks over the history; `checks`: no logins, keys, cookies, environment files or binaries are tracked; the untested-rows ratchet (`tools/check_rows.py --max-missing 0`, `11` ADR-R41 T2); the documentation map and links (`tools/check_docs.py --strict-rules map,links`); the order of the plan (`tools/check_order.py` and its self-test); the board's own unit tests |
 | `goldens.yml` (Goldens (Linux)) | by hand, on the branch that needs the pictures (never `main`) | draws the Linux screen pictures, commits the changed `goldens/linux/*.png` back to that branch (and nothing else) and uploads them as an artifact; App is then started by hand on the new commit (`dev-gotchas.md`, `history/README.md#cloud-resume`) |
 
-**Planned, not built:** `release.yml` (a tag makes the signed APK, the server images and a GitHub Release with checksums; today a `v*` tag only makes `server-image.yml` publish the server image, and the APK is built by hand with the signing key); a documentation link check, markdown lint and website build; a nightly run of the emulator journeys (`07` section 6) and of the yt-dlp canary; arm64 server images.
+**Planned, not built:** `release.yml` (a tag makes the signed APK, the server images and a GitHub Release with checksums; today a `v*` tag only makes `server-image.yml` publish the server image, and the APK is built by hand with the signing key); markdown lint and a website build; a nightly run of the emulator journeys (`07` section 6) and of the yt-dlp canary; arm64 server images.
 
 ## 8. Live environments and safety
 

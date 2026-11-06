@@ -1,5 +1,7 @@
 # 33 — Playing music: the ways a song plays, the player's states, and what happens when it breaks
 
+> **In short.** The state tables of playing: every way a song plays (`PB-1`...), what the server answers for a stream, the player's states, the failure matrix (`PB-F1`..., the internet cut mid-song and the rest) and what is saved for resume. Read section 4 first when something stops playing. The open rows are collected in section 6.
+
 Written 2026-10-23 from the app (`playback/playback_engine.dart`, `source_resolver.dart`, `queue_model.dart`, `playback_state_store.dart`, `app/playback_providers.dart`,
 `app/connection.dart`) and the server (`api.py` `stream`, `stream_url`, `sources/youtube/stream.py`), and the tests that exist. Same reading rules as `31`: **Built** (I read the
 code), **Designed**, **Open**; a Test of "none" is a debt. The failure matrix in section 4 is the part to read first when something stops playing. Conflicts between devices

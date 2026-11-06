@@ -1,5 +1,7 @@
 # 03 — The product
 
+> **In short.** Encore is a free music server a household runs on a spare PC, plus an Android app that plays almost any song within about two seconds, keeps what you love on your own disk and lets family and friends listen too. It is designed for the Listener first, the Host second, the Tinkerer third. Section 4 holds the promises with numbers (N1 to N11), section 5 says what is in the first version, what is Later and what is never, and section 6 is how to decide when this page is silent.
+
 ## 1. One sentence
 
 **Encore is a free music server you install on any spare computer, plus an Android app, that plays almost any song instantly,

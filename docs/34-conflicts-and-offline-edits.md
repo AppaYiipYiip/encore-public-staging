@@ -1,5 +1,7 @@
 # 34 — Conflicts and offline edits: what happens when two devices (or two moments) disagree
 
+> **In short.** The state tables of disagreement: the life of one queued edit (`CF-1`...), what two devices of one person end up showing for every pair of operations, and other disagreements (a changed file, a repeated pull, a wrong clock). The model: local first, deliver in order, the server applies in arrival order, the feed is state-based. A waiting playlist edit is not yet protected from a pull (B-61, P2-28).
+
 Written 2026-10-23 from the server's merge rules (`library.py`, `api.py`), the app's outbox and writer (`data/sync/outbox.dart`, `data/encore/encore_delivery.dart`,
 `encore_writer.dart`), the contract `17` §5 and the tests that exist. Same reading rules as `31`: **Built** (I read the code and a test exists unless it says "none"),
 **Designed**, **Open**. Where `17` says one thing and the code does another, the row says so: that is the most useful kind of row.

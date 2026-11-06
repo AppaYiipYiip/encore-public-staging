@@ -1,5 +1,7 @@
 # 23 — Downloads, audio formats, lyrics and notifications
 
+> **In short.** Four things that decide the day-to-day feel on a phone: audio formats and the quality per network, downloads (written safely, never half a file), lyrics, and notifications without a push service (by default none: the in-app bell, ADR-R44). The app's quality settings and safe download writing are built. The download manifest, lyrics from the server (P2-14, held) and the six notification channels are targets.
+
 Why: these four decide how Encore feels day to day on a phone, and each had a hidden problem: downloads go stale when a file is
 upgraded or fixed, nothing says which format a phone gets on mobile data, lyrics are fetched by the phone from outside services, and
 Encore has no push service, so "notifications" cannot simply arrive.

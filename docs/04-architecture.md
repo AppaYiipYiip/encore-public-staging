@@ -1,5 +1,7 @@
 # 04 — Target architecture (system design)
 
+> **In short.** The system on one page: a phone app with its own database, and on the Host's computer one Encore server program (gateway, accounts, library, playback, live channel, YouTube source, keeper, imports, people) beside a Navidrome music server. Songs are references and files are attached to them (section 3), so likes and playlists never move when a file changes. Section 4 is the path of a tap, section 5 keeps the Host's address safe, section 10 holds the rules for many people at once. **Parts are still a target** (the browser wizard, `encore.local`, the admin pages, the shared fetch session): the marks in sections 1, 2, 4, 7 and 10 say which.
+
 What runs where, how the parts talk, and why each choice beats the alternatives. Decisions are summarised in
 [`11-decision-log.md`](11-decision-log.md) as ADR-R1…; this page is the picture.
 
@@ -32,7 +34,7 @@ What runs where, how the parts talk, and why each choice beats the alternatives.
 Two containers by default (+ the computer's own Tailscale for away from home, which is not a container; + Lidarr, slskd, Soularr when the Host switches the quality tier on).
 One published port. One database file plus Navidrome's own.
 
-**This picture is the target (checked against `main` on 5 Nov 2026).** Built: the two containers (`deploy/compose.yaml` has `navidrome` and `encore-server`), the gateway, the app's local database. **Not built: `http://encore.local` (no mDNS or avahi anywhere in `deploy/` or the server), the admin web app and the setup wizard (no such route in `api.py`).**
+**This picture is the target (checked against `main` on 5 Nov 2026).** Built: the two containers (`deploy/compose.yaml` has `navidrome` and `encore-server`), the gateway, the app's local database. **Not built: `http://encore.local` (no mDNS or avahi anywhere in `deploy/` or the server), the admin web app and the setup wizard (no such route in `api.py`). The fetch session of section 10 and the hand-off of the played bytes to the keeper in section 4 are not built either (register B-69).**
 
 ## 2. Server: one program with modules (ADR-R3)
 
@@ -116,7 +118,7 @@ tap ─► app: song ref has a local download? ── yes ─► play file (≤ 
         └─ GET /encore/stream/{ref}  (server):
               URL cache hit?  ── yes ─► proxy bytes from googlevideo (first byte ~0.2 s)
               no ─► interactive worker: [YTM search if no video id ~0.5–2 s] + [yt-dlp extract ~1.3–2.5 s] ─► proxy
-              (the proxy also writes the bytes to the keeper's cache, so a later "save" needs no second download)
+              (the proxy also writes the bytes to the keeper's cache, so a later "save" needs no second download) [not built: register B-69]
 ```
 
 **Measured (`09` §2):** server, warm process, one search + one extraction → first audio byte in **3.0–4.0 s** under the old
@@ -240,7 +242,7 @@ what if she imports songs I already have…"* Every one of these is answered by 
 3. **Priorities, strictly in this order:** `play` (someone pressed it) > `prepare` (likely next tap) > `download` (someone asked to
    download a song the server does not keep yet, `23` §2) > `match` (import rows on screen first) > `keep` (background copy) >
    `measure` (loudness, P1-13). A tap on a song whose keep job is queued or running is promoted to P0; if
-   its fetch session exists, the player becomes a reader of it.
+   its fetch session exists, the player becomes a reader of it. **Not built (register B-69): a tap does not promote a keep, and there is no fetch session; the stream proxy and the keeper each fetch the song from YouTube.**
 4. **Fair share inside a priority.** Work items of the same priority are taken round-robin **per person**, so a 2,000-song import
    cannot starve a friend's 20-song import, and two people tapping at once are served in turn. Per-person caps: 3 concurrent
    `play`, 1 concurrent import being matched.

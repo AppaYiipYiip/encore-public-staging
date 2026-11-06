@@ -1,5 +1,7 @@
 # 30 — Engineering guide: what to do, what not to do, and how we know
 
+> **In short.** The rules for writing code here, each with what actually went wrong and what catches a violation (a machine, or only a convention): ten questions before a line is written, the rules by area, the signs that stop a diff, when to ask a stronger model, a pull request self-review, and how a rule becomes a ratchet. Read it before coding; the owner's standing rule is at the top.
+
 For everyone who writes or reviews code here, person or agent, **especially someone who starts with no memory of the earlier sessions**
 (a new account, a new agent, a new contributor). The owner reads the quality of the code as the product's first impression and wants it kept.
 
@@ -13,7 +15,7 @@ says what catches a violation:
 
 * **Machine** = a command or a CI job fails (`tools/check.ps1`, the pre-commit hook, GitHub workflows).
 * **Convention** = nothing checks it except you and the reviewer. **Keep those rows in your head; they are the ones that decay.**
-  Until branch protection on `main` is switched on (P0-07, open), "pull request and review" is also a convention.
+  Branch protection on `main` is on (a ruleset, P0-07: a pull request and the checks `checks` and `secrets` are required, force pushes and deletion are blocked, **no approving review is required**), so the pull request and the green checks are a machine; the review by a second person is a convention.
 
 Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06` (how a change travels), `07` (how to test and what a measurement must say),
 `04` (the architecture), `28` (the code, module by module), `11` (the decisions).
@@ -56,7 +58,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 | Many programs for one home server (C1: seven server programs, six ports, each with its own copy of the music-server client) | One program, modules in folders, one HTTP client, one auth check, one port (ADR-R3, `04` §2) | Convention; the old code is being removed (P3-04) |
 | Make a file id the song's identity (C3: it led to "pending likes", an "instant playlist" and an "upgrade map", each a new way to lose a like) | A **song ref** is the identity; files attach to it; likes and playlist entries point to refs (ADR-R4, `18`) | Machine: the integration suite against a real music server (CI `encore-server-navidrome`); otherwise convention |
 | Make the app find each service two ways (C2: by port at home, by path away) | One front door: the gateway; one base URL per server (`04` §2, §8) | Convention |
-| Wrap the critical path for a niche feature (C8: the Jam wrapped every play) | Features are **layers** on the live channel; the player does not know they exist. Lower layers never import `features/` | Machine: architecture test (`core`, `data`, `domain`, `playback` do not import `features/`; `domain` is plain Dart) |
+| Wrap the critical path for a niche feature (C8: the Jam wrapped every play) | Features are **layers** on the live channel; the player does not know they exist. Lower layers never import `features/` | Machine: architecture test (`core`, `data`, `domain`, `playback` do not import `features/`; `domain` is plain Dart), with two accepted exceptions today: `playback` imports `features/player/playback_facade.dart` (register B-70) |
 | Give a service root-like power, or ask for a person's accounts (C5: the Docker socket; C6: a Google account signed into the server) | Least privilege. No account of a person's on the server, ever. Unofficial sources sit behind one interface with a switch (ADR-R2) | Convention; the install proofs check what is published (`c01`) |
 | Put passwords or login tokens in URLs, or keep the password on the phone (C9) | Device tokens in the `Authorization` header. The one exception is a short-lived **signed** address for a media element (`17` §1) | Machine for the signature (`tests/test_stream_route.py`); otherwise convention |
 | Run work that nobody can stop or see | Work is rows in a queue with a kind, a priority and an owner; restart resumes it; Stop cancels it (`04` §10) | Machine: scheduler unit tests; convention for new work |
@@ -128,7 +130,7 @@ Other files this one leans on, not repeats: `AGENTS.md` (the do/don't list), `06
 
 | Don't (what happened) | Do | Caught by |
 |-----------------------|----|-----------|
-| Work for weeks on one branch nobody pushes (D7: 46 commits stuck, CI never ran on the real work) | One task, one branch `task/<id>-<slug>`, a **draft PR on the first push**, push at least hourly, squash-merge (`06` §2) | Convention (branch protection is not on yet) |
+| Work for weeks on one branch nobody pushes (D7: 46 commits stuck, CI never ran on the real work) | One task, one branch `task/<id>-<slug>`, a **draft PR on the first push**, push at least hourly, squash-merge (`06` §2) | Machine for the pull request and the two checks (the ruleset); convention for the second person's review |
 | Trust a green check that did not run your change | Read which workflows ran: the App check runs only when `app/**` or `packages/**` change, the Server check when `server/**` does | Convention |
 | Let documents sprawl (A1: 60 documents, nine plans) | `docs/` describes **the present**: one topic per file, about 300 lines at most, tables over prose; a document that disagrees with the code is a bug fixed in the same PR; decisions are ADRs with the options compared | Convention |
 | Write a vague commit | `area: what changed for a person` | Convention |

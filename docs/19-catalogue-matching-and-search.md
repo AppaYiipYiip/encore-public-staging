@@ -1,5 +1,7 @@
 # 19 — Song identity, matching, search, and fixing wrong songs
 
+> **In short.** The specification of song identity: how two descriptions are decided to be the same song (normalisation, matching rules), how search ranks, how a wrong song is fixed and how duplicates merge. **Built:** the matching and ranking that picks a YouTube upload (`sources/youtube/scoring.py`) and refs found by ISRC, video id or normalised key. **Not built:** the Unicode normalisation of section 2 (the server folds to ASCII, B-37, P2-25), the server's catalogue search (section 4, P2-12), "Wrong song?" (section 5, P4-14) and the merge of refs (section 6, B-71).
+
 Why: "Is this the same song?" decides whether a like survives, whether an import is right, whether a Jam plays the same version on two
 phones, and whether search shows what you typed. It was spread across the fetch service's scoring, the app's Deezer client and the
 import code, with different rules in each. This page makes it one engine (module `catalogue`, used by search, imports, the keeper,
@@ -44,7 +46,7 @@ Prefer YouTube Music **song** results (official "Topic"/art tracks) over music v
 long content (recitations, DJ sets, podcasts) and when no song result passes. Explicit vs clean: follow the source's flag, and the
 person's setting (`21` §5).
 
-## 4. Search (`GET /encore/api/v1/search?q=`)
+## 4. Search (`GET /encore/api/v1/search?q=`; planned, P2-12: the route does not exist yet, `17` section 3)
 
 * **Phone first, instantly:** the person's own library from the phone's database (full-text, ≤ 50 ms), shown at once, offline too.
 * **Server, two phases:** `phase=fast` answers within ~400 ms from the cache, the server's files and Deezer; `phase=full` adds
@@ -68,8 +70,8 @@ Wrong versions will happen (a live take, a clean edit, a fan upload). Today ther
 
 ## 6. Duplicates
 
-* Refs with the same ISRC, video id or MBID are merged automatically (likes, entries and history move to the surviving ref in one
-  transaction; the merge is logged).
+* **Not built (register B-71):** refs with the same ISRC, video id or MBID are meant to be merged automatically (likes, entries and history move to the surviving ref in one
+  transaction; the merge is logged). Today `refs.find` returns the first match and two refs for one recording stay two.
 * Files: one ref with several files keeps the best one as preferred; the others are listed in Admin → Library → duplicates (`15` section 4) with their
   size and a "Remove extra copies" button (owner decision D-2: one copy per song); nothing is deleted without the Host's click.
 

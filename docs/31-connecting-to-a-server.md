@@ -1,5 +1,7 @@
 # 31 — Connecting to a server: the network, the address, who answers, signed in or not
 
+> **In short.** The state tables of connecting: is there a network, which address is the server's, is it really my server (a key it proves), am I signed in. Every row (`CN-n`) says what the person sees, whether it is Built, Designed or Open, and which test pins it. A change to one of these states changes its row in the same pull request.
+
 The state tables for everything between "the phone starts" and "the phone may ask its server for music". Written 2026-10-23 from the code (files named in the
 **Where** column) and from the decisions in `11` ADR-R40 (the key as identity, the server's own addresses). Joining a server and the account's life are in `32`;
 playing and what happens when the connection breaks while playing are in `33`.
