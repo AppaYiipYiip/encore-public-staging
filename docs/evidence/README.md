@@ -1066,7 +1066,11 @@ The only golden picture that changed is the "now playing, waiting for the server
 
 **A finding about the walk tools.** `tools/journeys/ui.py dump` crashes on an Arabic label under a Windows console (`cp1252`); run it with `python -X utf8` (the `-I` flag ignores `PYTHONUTF8`). The walk of P2-25's native-script row needs the tool to be UTF-8 safe.
 
-**Not run:** playing a song of this library (the 5 Arabic and Russian files share one song, so which file a tap plays is the next thing to check); a Jam or a remote command while the screen is off (not built).
+**What the tap check showed.** The Kino album page says "0 songs" and its Play button does nothing; the only track of the Fairuz album is a Kino song. Which of the five files survives depends on the order the music server scanned them (a second run kept «Кукушка», the first «Группа крови»): the outcome is arbitrary, not just wrong.
+
+**Repeat any of it.** `python docs/evidence/scripts/audit_probes.py fair-share|prune|transient|scripts|import-lock` (in-process, no Docker) and `python -X utf8 docs/evidence/scripts/audit_stack.py up`, then `check library|outage|badsig|prune|transient`, `connections`, `down` (Docker; the first `up` builds the image). Each prints PASS or FAIL against what the fix should give: today every check prints FAIL, which is the bug.
+
+**Not run:** a Jam or a remote command while the screen is off (not built).
 
 ![The Fairuz album shows one song, and it is Russian](2026-11-06-d01-fairuz-album-shows-a-russian-song.png)
 ![The three albums](2026-11-06-d01-albums-of-the-arabic-russian-latin-library.png)

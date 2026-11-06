@@ -166,35 +166,35 @@ The sweep read every user story, README promise, ADR consequence, AUDIT row, the
 | 67 | P4-01 | A Home made for you: suggestions, smart shuffle, radio and "Not for me" | L | todo | P2-12, P4-20 | 50 to 101 |
 | 68 | P4-05 | Your Year in Music, from what you really played | S | todo | none | 51 to 101 |
 | 69 | P4-07 | Control one device from another, with remote volume | L | todo | P2-08, P2-09 | 53 to 105 |
-| 70 | P3-15 | Before your first friend: a security check of everything reachable from the internet | M | todo | P3-29, P3-30 | 54 to 107 |
-| 71 | P3-19 | Start Claude's deep security review before your first friend (one command, it costs money) | S | todo | P3-15 | 54 to 107 |
-| 72 | P3-24 | Gate 3: you invite your friend and jam with him | S | todo | P3-18, P5-07, P4-02, P6-02, P2-10, P2-19, P3-10, P2-08, P2-09, P4-12, P4-04, P4-01, P2-14, P4-05, P4-07, P3-15, P3-19, P3-26, P3-28, P2-24, P3-29, P3-30, P3-32 | 54 to 107 |
-| 73 | P3-12 | Your friend's first week on your server | M | todo | P3-05, P3-24 | 54 to 109 |
-| 74 | P4-21 | Library polish: search aliases, sort and filter, pins and folders, custom covers | M | todo | none | 55 to 111 |
-| 75 | P1-07 | Search shows one clear best result at the top | M | todo | none | 56 to 112 |
-| 76 | P1-13 | One volume and the same loudness for every song | M | todo | none | 57 to 114 |
-| 77 | P2-05 | Importing has a stop button, shows progress and counts correctly | S | todo | none | 57 to 115 |
-| 78 | P2-07 | Behind the scenes: remove leftover old code and a duplicate import screen | S | todo | none | 58 to 115 |
-| 79 | P2-13 | Downloads in the right format; stale files get replaced | M | todo | none | 59 to 117 |
-| 80 | P2-18 | A changed or expired sign-in is handled calmly | M | todo | P3-03 | 59 to 119 |
-| 81 | P2-21 | Playlist description and picture; select many songs at once | M | todo | none | 60 to 121 |
-| 82 | P3-13 | You set a storage limit, and the server says plainly when it is full | M | todo | none | 61 to 122 |
-| 83 | P2-06 | Spotify import works beyond 100 songs and brings your Liked Songs | M | todo | none | 62 to 124 |
-| 84 | P2-17 | Imported playlists can follow the original playlist | M | todo | none | 63 to 126 |
-| 85 | P4-15 | Browse, history and playlist details | M | todo | P2-17 | 64 to 128 |
-| 86 | P4-18 | Follow artists, and get told when one releases something | S | todo | P2-15 | 64 to 128 |
-| 87 | P0-09 | Behind the scenes: one command starts a full test setup on any computer | M | todo | none | 65 to 130 |
-| 88 | P2-16 | Behind the scenes: your library repairs itself after a restore | M | todo | none | 66 to 132 |
-| 89 | P3-08 | Move the server to another computer, see statistics, and test restores every night | L | todo | P3-14 | 68 to 136 |
-| 90 | P3-09 | Privacy rules tested; export your data; delete your account | M | todo | none | 69 to 138 |
-| 91 | P4-03 | See what your friends listen to (only if they agree) | M | todo | none | 70 to 140 |
-| 92 | P4-19 | Start Claude's deep security review of friends on other servers (one command, it costs money) | S | todo | none | 70 to 140 |
-| 93 | P4-09 | Friends on other servers | L | todo | P0-09, P4-03, P4-19 | 72 to 144 |
-| 94 | P4-08 | Behind the scenes: your phone only ever talks to your own server, even for friends' servers | M | todo | P4-09 | 73 to 145 |
-| 95 | P4-10 | Jam across servers, sharing, and shared playlists | L | todo | P4-02, P4-09 | 75 to 150 |
-| 96 | P4-17 | Compare music taste with a friend (only if they agree) | M | todo | P4-09 | 76 to 151 |
-| 97 | P4-14 | "Wrong song?" fix, and editing song details | M | todo | P2-12 | 77 to 153 |
-| 98 | P0-10 | Behind the scenes: check that every library we use may legally be used | S | todo | none | 77 to 154 |
+| 70 | P0-10 | Behind the scenes: check that every library we use may legally be used | S | todo | none | 53 to 106 |
+| 71 | P2-18 | A changed or expired sign-in is handled calmly | M | todo | P3-03 | 54 to 108 |
+| 72 | P3-13 | You set a storage limit, and the server says plainly when it is full | M | todo | none | 55 to 110 |
+| 73 | P3-15 | Before your first friend: a security check of everything reachable from the internet | M | todo | P3-29, P3-30 | 56 to 111 |
+| 74 | P3-19 | Start Claude's deep security review before your first friend (one command, it costs money) | S | todo | P3-15 | 56 to 111 |
+| 75 | P3-24 | Gate 3: you invite your friend and jam with him | S | todo | P3-18, P5-07, P4-02, P6-02, P2-10, P2-19, P3-10, P2-08, P2-09, P4-12, P4-04, P4-01, P2-14, P4-05, P4-07, P3-15, P3-19, P3-26, P3-28, P2-24, P3-29, P3-30, P3-32, P0-10, P2-18, P3-13 | 56 to 111 |
+| 76 | P3-12 | Your friend's first week on your server | M | todo | P3-05, P3-24 | 57 to 113 |
+| 77 | P4-21 | Library polish: search aliases, sort and filter, pins and folders, custom covers | M | todo | none | 57 to 115 |
+| 78 | P1-07 | Search shows one clear best result at the top | M | todo | none | 58 to 117 |
+| 79 | P1-13 | One volume and the same loudness for every song | M | todo | none | 59 to 118 |
+| 80 | P2-05 | Importing has a stop button, shows progress and counts correctly | S | todo | none | 59 to 119 |
+| 81 | P2-07 | Behind the scenes: remove leftover old code and a duplicate import screen | S | todo | none | 60 to 120 |
+| 82 | P2-13 | Downloads in the right format; stale files get replaced | M | todo | none | 61 to 121 |
+| 83 | P2-21 | Playlist description and picture; select many songs at once | M | todo | none | 62 to 123 |
+| 84 | P2-06 | Spotify import works beyond 100 songs and brings your Liked Songs | M | todo | none | 62 to 125 |
+| 85 | P2-17 | Imported playlists can follow the original playlist | M | todo | none | 63 to 127 |
+| 86 | P4-15 | Browse, history and playlist details | M | todo | P2-17 | 64 to 128 |
+| 87 | P4-18 | Follow artists, and get told when one releases something | S | todo | P2-15 | 64 to 129 |
+| 88 | P0-09 | Behind the scenes: one command starts a full test setup on any computer | M | todo | none | 65 to 131 |
+| 89 | P2-16 | Behind the scenes: your library repairs itself after a restore | M | todo | none | 66 to 132 |
+| 90 | P3-08 | Move the server to another computer, see statistics, and test restores every night | L | todo | P3-14 | 68 to 137 |
+| 91 | P3-09 | Privacy rules tested; export your data; delete your account | M | todo | none | 69 to 138 |
+| 92 | P4-03 | See what your friends listen to (only if they agree) | M | todo | none | 70 to 140 |
+| 93 | P4-19 | Start Claude's deep security review of friends on other servers (one command, it costs money) | S | todo | none | 70 to 140 |
+| 94 | P4-09 | Friends on other servers | L | todo | P0-09, P4-03, P4-19 | 72 to 144 |
+| 95 | P4-08 | Behind the scenes: your phone only ever talks to your own server, even for friends' servers | M | todo | P4-09 | 73 to 146 |
+| 96 | P4-10 | Jam across servers, sharing, and shared playlists | L | todo | P4-02, P4-09 | 75 to 150 |
+| 97 | P4-17 | Compare music taste with a friend (only if they agree) | M | todo | P4-09 | 76 to 152 |
+| 98 | P4-14 | "Wrong song?" fix, and editing song details | M | todo | P2-12 | 77 to 154 |
 | 99 | P1-12 | Big text, right-to-left languages and screen readers work | L | todo | P1-20 | 79 to 158 |
 | 100 | P1-14 | Less syncing, so less battery and mobile data | S | todo | none | 79 to 158 |
 | 101 | P4-06 | Before the public release: Claude walks the whole app again like a real user | M | todo | P4-02*, P4-07*, P4-09*, P4-10*, P4-01*, P4-04*, P6-02* | 80 to 160 |
