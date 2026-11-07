@@ -128,6 +128,16 @@ def norm_artist(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", t).strip()
 
 
+#: Where a combined artist string ("Daft Punk feat. Pharrell Williams", "Fat Joe, Lil Wayne") is cut into names. The YouTube matcher and the music server's
+#: matcher use this one definition.
+ARTIST_SPLIT = re.compile(r"\s*(?:,|&|\+|\bfeat\.?\s|\bft\.?\s|\bfeaturing\b|\bx\b|\bwith\b)\s*", re.IGNORECASE)
+
+
+def artist_parts(text: str) -> list[str]:
+    """The names a combined artist string is made of ("A, B & C" is "A", "B", "C"); the string itself is not one of them unless it holds only one name."""
+    return [part for part in ARTIST_SPLIT.split(text) if part.strip()]
+
+
 def ratio(a: str, b: str) -> float:
     if not a or not b:
         return 0.0

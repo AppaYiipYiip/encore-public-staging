@@ -28,7 +28,7 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from pathlib import Path
 from typing import Any, Protocol
 
-from ...textnorm import norm_artist, norm_title, ratio, version_signature
+from ...textnorm import artist_parts, norm_artist, norm_title, ratio, version_signature
 from .errors import FORMAT, DownloadError, classify_failure
 from .scoring import ACCEPT, Candidate, Resolver, Scored, Want, score
 
@@ -152,13 +152,11 @@ MIN_TITLE_SIMILARITY = 0.6
 #: How alike two artist names must be to be the same artist ("Oum" is not "Oum Dermam Stars").
 MIN_ARTIST_SIMILARITY = 0.9
 
-_ARTIST_SPLIT = re.compile(r"\s*(?:,|&|\+|\bfeat\.?\s|\bft\.?\s|\bfeaturing\b|\bx\b|\bwith\b)\s*", re.IGNORECASE)
-
 
 def artist_matches(asked: str, names: tuple[str, ...]) -> bool:
     """Whether the artist asked for is one of the artists the upload declares. Whole names only: "Oum" is not "Oum Dermam Stars"."""
     # The whole name first (an artist can be called "Earth, Wind & Fire"), then the names a combined string is made of.
-    wanted = [norm_artist(asked)] + [norm_artist(part) for part in _ARTIST_SPLIT.split(asked) if part.strip()]
+    wanted = [norm_artist(asked)] + [norm_artist(part) for part in artist_parts(asked)]
     declared = [norm_artist(n) for n in names]
     return any(w and d and ratio(w, d) >= MIN_ARTIST_SIMILARITY for w in wanted for d in declared)
 

@@ -8,7 +8,6 @@ the installer made; its password is in the server's environment and nowhere else
 from __future__ import annotations
 
 import logging
-import re
 import secrets
 from collections.abc import Iterator
 from typing import Any
@@ -17,7 +16,7 @@ import httpx
 
 from .auth import subsonic_token
 from .sources.youtube.stream import Upstream
-from .textnorm import norm_artist, norm_title, ratio, version_signature
+from .textnorm import artist_parts, norm_artist, norm_title, ratio, version_signature
 
 log = logging.getLogger("encore_server.navidrome")
 
@@ -179,17 +178,11 @@ def _as_list(value: object) -> list[dict[str, Any]]:
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
 
 
-# Where the music server joins the artists of a song into one string ("Beanie Sigel, Freeway"; "Ludacris, Missy "Misdemeanor" Elliott"), and the words
-# people join them with in a title or a tag.
-_ARTIST_SEPARATORS = re.compile(r"\s*(?:,|;|/|&|\bfeat\.?|\bft\.?|\bfeaturing\b|\band\b|\bwith\b|\bx\b)\s*", re.IGNORECASE)
-
-
 def artist_names(joined: str) -> list[str]:
-    """The artist string as it is, then each name in it: "Fat Joe, Lil Wayne" is that, "Fat Joe" and "Lil Wayne". More names only ever add ways to
-    match; the title (and its version) must still be the same."""
-    names = [joined]
-    names.extend(part for part in _ARTIST_SEPARATORS.split(joined) if part.strip() and part != joined)
-    return names
+    """How the music server writes the artists of a song ("Beanie Sigel, Freeway"; "Ludacris, Missy "Misdemeanor" Elliott") as it is, then each name in
+    it ("Fat Joe, Lil Wayne" is that, "Fat Joe" and "Lil Wayne"; the cut is `textnorm.artist_parts`, the same one the YouTube matcher uses). More names
+    only ever add ways to match: the title (and its version) must still be the same."""
+    return [joined, *(part for part in artist_parts(joined) if part != joined)]
 
 
 def pick_song(
