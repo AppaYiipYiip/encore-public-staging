@@ -1,0 +1,9 @@
+{
+ "id": "20261106T205658Z-agent-108d",
+ "item": "P1-22",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-06T20:56:58Z",
+ "type": "note",
+ "body": "The owner, in chat on 6 Nov 2026, looking at the full player on his phone and on an emulator: 'when a player screen is on, we cannot see the library, home and search buttons at the bottom, I am not sure if that is normal' (it is: S-31 is Spotify's full-screen Now playing, the down arrow at the top left closes it) and then: 'if it is by design, it is ugly, it looks weird, the bottom part of the screen is empty ... I do not know what to say'. The empty part is real: on a tall screen the spare height collects under the controls (screenshots: tools/journeys/shots/p111_player.png, a quarter of the screen). Decision by the advisor on his behalf (his to overrule): fill the screen and put the spare room BETWEEN the sections, as Spotify does; this item, built in the same pull request."
+}

@@ -100,5 +100,11 @@
   "evidence": "All four parts are built: the server half (#147, #148, #149, #150, and the batched ask #193 b76edfe, which settles B-62), the notification question (#144), the app's keep calls, wording and live watch (#194 39cde33) and the lines, bar, names, Retry and PB-38 in this pull request. Checked in the app against a real server and an emulator: docs/evidence/README.md#e01 (it found and fixed three defects). Built, not walked: not the release-candidate pair, no 200-song playlist, no real phone, no Retry on a retryable failure on the real stack.",
   "at": "2026-11-06T15:41:55Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-22": {
+  "state": "built",
+  "evidence": "Built 6 Nov 2026, NOT walked: now_playing_screen.dart fills the screen (CustomScrollView + SliverFillRemaining, spare height between the sections) and goes side by side on a wide or sideways screen; four widget tests (tall 411x914, short 411x731 at text 1.3, foldable 920x1104, sideways 914x411): against the OLD screen three fail (217 px of dead space under the controls on the tall one, limit 110). Windows golden updated; the Linux set is drawn by the Goldens workflow. Waits for the owner's eyes on the emulator and his A35.",
+  "at": "2026-11-06T21:08:00Z",
+  "by": "Claude (Sonnet 5.5)"
  }
 }

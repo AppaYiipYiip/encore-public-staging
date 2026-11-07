@@ -735,6 +735,26 @@
   "title": "Playing a finished list again works, and the player never says playing while it is silent",
   "note": "Found by running it: after the last song ends, Play plays one song and then the player shows Pause in silence."
  },
+ "P1-22": {
+  "kind": "feature",
+  "title": "The full player uses the whole screen: no empty area below the controls",
+  "note": "You said the bottom of the player screen is empty and looks weird. On a tall phone the spare height collects under the controls."
+ },
+ "P1-23": {
+  "kind": "feature",
+  "title": "The Lyrics card shows at the bottom of the full player",
+  "note": "You said the lyrics section is missing. The card exists but never showed on any song of the test; find out why and place it as Spotify does."
+ },
+ "P1-24": {
+  "kind": "feature",
+  "title": "A Share button on the full player",
+  "note": "You said the share section is missing."
+ },
+ "P1-25": {
+  "kind": "feature",
+  "title": "The full player shows which device the sound comes out of, and lets you change it",
+  "note": "You said the output device is missing. It was taken out of the first release on purpose; you want it back."
+ },
  "P1-26": {
   "kind": "feature",
   "title": "An imported song without a picture shows YouTube's thumbnail, not a letter",

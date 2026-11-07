@@ -92,46 +92,109 @@ class NowPlayingScreen extends ConsumerWidget {
                 Expanded(child: LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxHeight < 640;
+                    // Phones come in every shape (P1-22, D-63): the page is laid
+                    // out from the room it is given, never from a fixed size.
+                    // Turned on its side, or opened up (a foldable), the cover
+                    // goes beside the controls instead of above them.
+                    //
+                    // The test is "is there room for a cover above the
+                    // controls", not "is it wider than tall": a foldable
+                    // opened up is nearly square (920 x 1104) and still has no
+                    // room for a cover of its full width above the controls.
+                    // A phone held upright is narrower than 560 and never goes
+                    // beside.
+                    final coverSide = constraints.maxWidth - 2 * Space.xl;
+                    final roomAboveControls = constraints.maxHeight - 56 - 360;
+                    final wide = constraints.maxWidth >= 560 &&
+                        roomAboveControls < coverSide * 0.8;
+                    final topBar = _TopBar(
+                      source: snapshot!.sourceName,
+                      // A 30-second sample has no library entry to act
+                      // on; a song on its way into the library has one
+                      // in a moment.
+                      row: libraryRow,
+                      waiting: waiting,
+                    );
+                    final artwork = _Artwork(track: track, facade: facade);
+                    final controls = <Widget>[
+                      _TitleRow(
+                        track: track,
+                        row: libraryRow,
+                        waiting: waiting,
+                        sample: sample,
+                      ),
+                      const SizedBox(height: Space.sm),
+                      Scrubber(waiting: serverAway && !snapshot.isPlaying),
+                      const SizedBox(height: Space.xs),
+                      _Transport(snapshot: snapshot, facade: facade),
+                      const SizedBox(height: Space.md),
+                      const _BottomRow(),
+                      const SizedBox(height: Space.lg),
+                      // The lyrics belong to the whole song, not to a
+                      // 30-second clip of it (docs/23, B34).
+                      if (!sample) _LyricsPreview(trackId: track.id),
+                      const SizedBox(height: Space.xl),
+                    ];
+                    const side = EdgeInsets.symmetric(horizontal: Space.xl);
+                    if (wide) {
+                      return Padding(
+                        padding: side,
+                        child: Column(
+                          children: [
+                            topBar,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  // The cover takes the height it can get
+                                  // (an AspectRatio shrinks to fit).
+                                  Expanded(child: Center(child: artwork)),
+                                  const SizedBox(width: Space.xl),
+                                  Expanded(
+                                    child: Center(
+                                      child: SingleChildScrollView(
+                                        physics: const ClampingScrollPhysics(),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: controls,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    // Upright: the page fills the screen and scrolls only when
+                    // it is too tall. The spare height goes BETWEEN the sections
+                    // (above the cover and below it), so the title, the
+                    // controls and the bottom row stay together at the bottom
+                    // of a tall phone, as on Spotify, and never leave a dead
+                    // area under the controls (the owner, 6 Nov 2026).
                     return SingleChildScrollView(
                       physics: const ClampingScrollPhysics(),
                       child: ConstrainedBox(
                         constraints:
                             BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: Space.xl),
-                          child: Column(
-                            children: [
-                              _TopBar(
-                                source: snapshot!.sourceName,
-                                // A 30-second sample has no library entry to act
-                                // on; a song on its way into the library has one
-                                // in a moment.
-                                row: libraryRow,
-                                waiting: waiting,
-                              ),
-                              SizedBox(height: compact ? Space.sm : Space.xl),
-                              _Artwork(track: track, facade: facade),
-                              SizedBox(height: compact ? Space.md : Space.xl),
-                              _TitleRow(
-                                track: track,
-                                row: libraryRow,
-                                waiting: waiting,
-                                sample: sample,
-                              ),
-                              const SizedBox(height: Space.sm),
-                              Scrubber(
-                                  waiting: serverAway && !snapshot.isPlaying),
-                              const SizedBox(height: Space.xs),
-                              _Transport(snapshot: snapshot, facade: facade),
-                              const SizedBox(height: Space.md),
-                              const _BottomRow(),
-                              const SizedBox(height: Space.lg),
-                              // The lyrics belong to the whole song, not to a
-                              // 30-second clip of it (docs/23, B34).
-                              if (!sample) _LyricsPreview(trackId: track.id),
-                              const SizedBox(height: Space.xl),
-                            ],
+                        // As tall as the screen when the content is shorter
+                        // (so the spacers have room to spread), and as tall as
+                        // the content when it is longer (the page scrolls).
+                        child: IntrinsicHeight(
+                          child: Padding(
+                            padding: side,
+                            child: Column(
+                              children: [
+                                topBar,
+                                SizedBox(height: compact ? Space.sm : Space.xl),
+                                const Spacer(),
+                                artwork,
+                                SizedBox(height: compact ? Space.md : Space.xl),
+                                const Spacer(),
+                                ...controls,
+                              ],
+                            ),
                           ),
                         ),
                       ),

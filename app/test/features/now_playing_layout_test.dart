@@ -1,4 +1,5 @@
 import 'package:encore/app/connection.dart';
+import 'package:encore/features/common/cover_art.dart';
 import 'package:encore/features/player/scrubber.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -116,5 +117,90 @@ void main() {
     expect(find.text("Can't reach your server."), findsOneWidget);
     expect(tester.widget<Scrubber>(find.byType(Scrubber)).waiting, isFalse);
     await closeApp(tester, app.db);
+  });
+
+  // P1-22 / D-63. The owner, looking at the player on his phone and on an
+  // emulator, 6 Nov 2026: "the bottom part of the screen is empty, it looks
+  // weird, it is ugly", and "android phones are weird, some of them are tall
+  // some are wide". The page is laid out from the room it is given: the spare
+  // height goes between the sections, never as an empty area under the controls.
+  group('P1-22: the page uses the screen it is given', () {
+    Future<Rect> queueButton(WidgetTester tester) async {
+      await tester.ensureVisible(find.byTooltip('Queue'));
+      await tester.pump();
+      return tester.getRect(find.byTooltip('Queue'));
+    }
+
+    testWidgets(
+        'a tall phone (411 x 914): the controls and the queue sit at the bottom, '
+        'no dead area under them', (tester) async {
+      final app = await pumpApp(tester,
+          playing: samplePlaying(), size: const Size(411, 914));
+      await openPlayer(tester);
+
+      final queue = await queueButton(tester);
+      // The page has no lyrics here (a song without them shows no card), so the
+      // queue row is the last thing: at most one control row and the page's
+      // own margin may stand below it. Before, about 230 logical pixels did.
+      expect(914 - queue.bottom, lessThan(110),
+          reason: 'what is left under the queue icon');
+      // The cover is above the title, not squeezed against the top bar.
+      final cover = tester.getRect(find.byType(CoverArt).first);
+      final title = tester.getTopLeft(find.text('Opening The'));
+      expect(cover.bottom, lessThan(title.dy));
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'a short phone with big text (411 x 731, text 1.3): everything is there '
+        'and the page scrolls, nothing is cut off', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final app = await pumpApp(tester,
+          playing: samplePlaying(), size: const Size(411, 731));
+      await openPlayer(tester);
+
+      // A layout error (an overflow) fails the test by itself; these say the
+      // controls can be reached.
+      expect(find.byTooltip('Close player'), findsOneWidget);
+      final queue = await queueButton(tester);
+      expect(queue.bottom, lessThanOrEqualTo(731));
+      expect(queue.top, greaterThanOrEqualTo(0));
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'a wide or unfolded phone (920 x 1104): the cover beside the controls, '
+        'nothing on top of anything', (tester) async {
+      final app = await pumpApp(tester,
+          playing: samplePlaying(), size: const Size(920, 1104));
+      await openPlayer(tester);
+
+      final cover = tester.getRect(find.byType(CoverArt).first);
+      final title = tester.getRect(find.text('Opening The'));
+      expect(cover.right, lessThanOrEqualTo(title.left),
+          reason: 'the cover is on the left, the song on the right');
+      expect(cover.height, greaterThan(300),
+          reason: 'a real cover, not a chip');
+      final queue = await queueButton(tester);
+      expect(queue.right, lessThanOrEqualTo(920));
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'a phone on its side (914 x 411): the cover beside the controls, the '
+        'controls scroll, nothing is cut off', (tester) async {
+      final app = await pumpApp(tester,
+          playing: samplePlaying(), size: const Size(914, 411));
+      await openPlayer(tester);
+
+      final cover = tester.getRect(find.byType(CoverArt).first);
+      final title = tester.getRect(find.text('Opening The'));
+      expect(cover.right, lessThanOrEqualTo(title.left));
+      expect(cover.bottom, lessThanOrEqualTo(411));
+      final queue = await queueButton(tester);
+      expect(queue.bottom, lessThanOrEqualTo(411));
+      await closeApp(tester, app.db);
+    });
   });
 }
