@@ -70,17 +70,39 @@ void main() {
     expect(tapped, isEmpty);
   });
 
-  testWidgets('a long list wraps onto a second line, so no name is cut off',
+  testWidgets(
+      'a long list stays on ONE line (the player does not move) and scrolls sideways; the last name can be reached and pressed',
       (tester) async {
-    await tester.pumpWidget(app(
-        ['Corey Taylor', 'Dave Grohl', 'Rick Nielsen', 'Scott Reeder'], (_) {},
-        width: 220));
+    final tapped = <String>[];
+    const names = [
+      'Corey Taylor',
+      'Dave Grohl',
+      'Rick Nielsen',
+      'Scott Reeder'
+    ];
+    await tester.pumpWidget(app(names, tapped.add, width: 220));
 
-    final size = tester.getSize(find.byType(RichText).first);
-    expect(size.height, greaterThan(24 * 1.2), reason: 'two lines');
-    final taps =
-        spans(tester).whereType<TextSpan>().where((s) => s.recognizer != null);
-    expect(taps.length, 4);
+    final one = tester.getSize(find.byType(RichText).first).height;
+    await tester.pumpWidget(app(const ['Dave Grohl'], (_) {}, width: 220));
+    final single = tester.getSize(find.byType(RichText).first).height;
+    expect(one, single, reason: 'the height of one line, with 1 name or 4');
+
+    await tester.pumpWidget(app(names, tapped.add, width: 220));
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+    await tester.drag(
+        find.byType(SingleChildScrollView), const Offset(-600, 0));
+    await tester
+        .pumpAndSettle(); // a tap on a scroll that is still moving only stops it
+    final render =
+        tester.renderObject<RenderParagraph>(find.byType(RichText).first);
+    const text = 'Corey Taylor, Dave Grohl, Rick Nielsen, Scott Reeder';
+    final start = text.indexOf('Scott Reeder');
+    final boxes = render.getBoxesForSelection(
+        TextSelection(baseOffset: start, extentOffset: start + 12));
+    final point = render.localToGlobal(boxes.first.toRect().center);
+    await tester.tapAt(point);
+
+    expect(tapped, ['Scott Reeder']);
   });
 
   testWidgets('when the names change the taps follow them', (tester) async {
