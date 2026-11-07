@@ -142,9 +142,9 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-25": {
-  "state": "built",
-  "evidence": "7 Nov 2026: first slice built in #216: the output row (read from AudioManager, live), Encore's Devices sheet with 'This phone' and Android's own list one tap away, and a line saying other devices are not built yet (goes with P4-07). Not walked: with a Bluetooth or wired output on the A35; the Kotlin is compiled by build 132.",
-  "at": "2026-11-07T05:16:39Z",
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e06: on the owner's Samsung A35 (build 136 arm64, pair 4: image ee121c1 + the same commit) with his Bluetooth speaker 'soundcore Sport X20' connected, the full player's output row reads 'soundcore Sport X20' with a Bluetooth icon and the Devices sheet ticks it ('The sound is playing here') with 'Choose another sound output' and 'Your other devices: not built yet' (pictures). A wired output was not connected.",
+  "at": "2026-11-07T13:43:49Z",
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-04": {
