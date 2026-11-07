@@ -147,8 +147,8 @@
  },
  "P1-04": {
   "state": "built",
-  "evidence": "built 7 Nov 2026: server POST /refs/prepare (#226: prepare.py, paced by the background pacer, rest-aware, 40 songs an hour, a song that asks YouTube nothing costs no slot; tests test_prepare.py and test_stream.py) and the app half (this PR: PlaybackEngine hands the next 2 queue songs to prepareAhead once a song is audible; idsToPrepare; EncoreApi.prepare; engine, resolver and API tests). Premise proved on a device (audit B-107: the next song was not looked up during play; a Next to unseen songs read 2424 and 2784 ms). NOT walked: the acceptance (a catalogue album, each Next under 1 s by the app's own skip span at a normal pace, with a clean before) waits for the pair walk.",
-  "at": "2026-11-07T10:16:34Z",
+  "evidence": "built 7 Nov 2026, measured on pair 4 (image ee121c1 + build 136, emulator B only; docs/evidence/README.md#e05): Next to a song the server prepared 641-1003 ms at 14 s of listening and 627-670 ms 4-5 s after a tap (before: 2399 and 2380 ms), a 10-song run 294-1551 ms (median 888, five of nine under 1 s). NOT walked: every change under 1 s on a 10-song album, the real phone (the A35 waits for the owner), the album to its end, rapid skipping (1820 and 4335 ms).",
+  "at": "2026-11-07T11:42:39Z",
   "by": "Claude (Sonnet 5.5)"
  }
 }
