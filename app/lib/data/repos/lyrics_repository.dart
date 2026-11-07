@@ -94,7 +94,7 @@ class LyricsRepository {
             for (final l in value.lines)
               LyricLine(
                 startMs: value.synced ? l.startMs : null,
-                text: l.text,
+                text: repairMojibake(l.text),
               ),
           ],
           synced: value.synced,
@@ -174,14 +174,15 @@ class LyricsRepository {
         final m = (item as Map).cast<String, dynamic>();
         lines.add(LyricLine(
           startMs: m['t'] as int?,
-          text: (m['x'] as String?) ?? '',
+          text: repairMojibake((m['x'] as String?) ?? ''),
         ));
       }
       return TrackLyrics(lines: lines, synced: true, source: row.source);
     }
     return TrackLyrics(
       lines: [
-        for (final t in row.body.split('\n')) LyricLine(startMs: null, text: t),
+        for (final t in row.body.split('\n'))
+          LyricLine(startMs: null, text: repairMojibake(t)),
       ],
       synced: false,
       source: row.source,

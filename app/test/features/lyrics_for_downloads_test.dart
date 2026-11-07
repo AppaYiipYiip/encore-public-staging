@@ -32,6 +32,8 @@ void main() {
             'plainLyrics': 'la la la',
             'syncedLyrics': null,
           }),
+      // A plain exact record is no longer the end of the search (B-103): LRCLIB is asked for a synced one too.
+      'search': (_) => const FakeResponse.json(<Object>[]),
     });
   });
 
@@ -108,7 +110,7 @@ void main() {
     await download('al2-t1');
     await until(() => lrclib.requests.isNotEmpty);
     await download('al2-t2');
-    await until(() => lrclib.requests.length >= 2);
+    await until(() => lrclib.count('get') >= 2);
 
     expect(lrclib.count('get'), 2);
   });
