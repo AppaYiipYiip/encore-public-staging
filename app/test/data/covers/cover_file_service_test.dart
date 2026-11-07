@@ -44,6 +44,46 @@ void main() {
     );
   });
 
+  test(
+      'a refused address (401) is told to whoever holds the ticket, and still fails',
+      () async {
+    final refused = <Uri>[];
+    final service = CoverFileService(
+        client:
+            MockClient.streaming((request, _) async => http.StreamedResponse(
+                  Stream.value(const [123]),
+                  401,
+                  headers: const {'content-type': 'application/json'},
+                )),
+        onUnauthorized: refused.add);
+
+    final response = await service.get(
+        'http://home.test:4540/encore/cover/ar-1?size=256&p=pn_x&e=9&sig=old');
+
+    expect(response.statusCode, 401,
+        reason: 'the cache manager still fails it');
+    expect(refused.single.queryParameters['sig'], 'old');
+  });
+
+  test('a good picture and a missing one are not "refused"', () async {
+    var status = 200;
+    final refused = <Uri>[];
+    final service = CoverFileService(
+        client:
+            MockClient.streaming((request, _) async => http.StreamedResponse(
+                  Stream.value(const [1]),
+                  status,
+                  headers: const {'cache-control': 'public'},
+                )),
+        onUnauthorized: refused.add);
+
+    await service.get('http://home.test/encore/cover/al-1');
+    status = 404;
+    await service.get('http://home.test/encore/cover/al-2');
+
+    expect(refused, isEmpty);
+  });
+
   test('a response with no cache header is real art', () {
     expect(CoverFileService.isPlaceholder(const {}), isFalse);
     expect(

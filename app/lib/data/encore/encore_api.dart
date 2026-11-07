@@ -255,11 +255,18 @@ class EncoreApi {
         final ticket = readMap(body['pass']);
         final person = readString(ticket?['p']);
         final signature = readString(ticket?['sig']);
-        if (person == null || signature == null) {
+        // The end of the ticket exactly as the server signed it (its own clock, whole seconds): the address must carry this number, not one
+        // worked out on this phone (audit B-115). The server's `expiresAt` (milliseconds) is the same moment, for a server that omits it.
+        final expires = readInt(ticket?['e']) ??
+            ((readInt(body['expiresAt']) ?? 0) ~/ 1000);
+        if (person == null || signature == null || expires <= 0) {
           throw const ServerFailure('The server gave no ticket for pictures.');
         }
         return CoverPass(
-            person: person, signature: signature, expiresAt: _expiry(body));
+            person: person,
+            expires: expires,
+            signature: signature,
+            expiresAt: _expiry(body));
       });
 
   /// When an address stops working, counted by this phone's own clock: the server says when (`expiresAt`) and what time it is (`serverTime`),
