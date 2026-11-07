@@ -1,0 +1,9 @@
+{
+ "id": "20261107T210858Z-agent-bffd",
+ "item": "P1-02",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T21:08:58Z",
+ "type": "detail",
+ "body": "WHAT IS LEFT, 7 Nov 2026 (from docs/evidence e03, e04, e06; the item stays \"built\"): the timing half, the refusal and the long recitation are walked (a 1 h 57 min 38 s recitation played and seeked; the longest YouTube offered). Never seen: the seek to 2:00:00 (no real recitation that long exists on YouTube today), keeping a song of more than 2 hours (the server's 150-minute limit on a real 2-hour file), and resuming such a song after a kill. How to finish: (1) make a 2 h 10 min test file, put it where the test server can serve and keep it, and walk seek to 2:00:00, keep and resume on the A35 and on an emulator; (2) YouTube's own Range proxying for a very long video is already covered by the 1 h 57 min run, so write that in the evidence instead of waiting for a longer video to appear. Do not loosen the acceptance: (1) and (2) together are the acceptance."
+}
