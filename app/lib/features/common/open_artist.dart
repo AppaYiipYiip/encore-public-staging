@@ -33,8 +33,10 @@ Future<bool> openArtistByName(
 
   CatalogueArtist? found;
   try {
-    final results = await ref.read(catalogueClientProvider).search(wanted);
-    final ranked = rankNamesakes(wanted, results.artists);
+    // Artists only: the full search also asks for albums and songs, three requests where one is enough.
+    final artists =
+        await ref.read(catalogueClientProvider).searchArtists(wanted, limit: 8);
+    final ranked = rankNamesakes(wanted, artists);
     found = ranked.isEmpty ? null : ranked.first;
   } on Object catch (error) {
     Log.warn('artist', 'lookup by name failed', error);

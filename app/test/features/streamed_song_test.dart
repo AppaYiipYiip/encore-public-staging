@@ -503,7 +503,9 @@ void main() {
       await tester.tap(find.text('Dizzy DROS'));
       await settle(tester);
 
-      expect(catalogue.queries, ['Dizzy DROS']);
+      // artists only: one request, not the three of the full search (owner, 7 Nov 2026: the artist took about 3 seconds)
+      expect(catalogue.artistSearches, ['Dizzy DROS']);
+      expect(catalogue.queries, isEmpty);
       expect(find.byType(NowPlayingScreen), findsNothing,
           reason: 'the player closes and the artist opens');
       expect(find.byType(CatalogueArtistScreen), findsOneWidget);
@@ -524,6 +526,9 @@ void main() {
       await settle(tester);
 
       expect(find.byType(ArtistScreen), findsOneWidget);
+      // what the catalogue knows of the artist is asked for artists only, once
+      expect(catalogue.queries, isEmpty);
+      expect(catalogue.artistSearches.length, lessThanOrEqualTo(1));
       await closeApp(tester, app.db);
     });
 
