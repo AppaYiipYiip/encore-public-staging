@@ -12,8 +12,10 @@
   "evidence": "AGENTS.md and docs/30 exist and the pre-commit hook enforces them"
  },
  "P1-01": {
-  "state": "built",
-  "evidence": "built; measured 1.6 to 4 s on the earlier stack (docs/09 section 7); the walk record b11 re-measures it on the pair"
+  "state": "walked",
+  "evidence": "docs/evidence e03: J-02 on the release-candidate pair, 13 never-played songs, median 2.14 s, p95 and slowest 2.60 s, song found in 0.4 to 0.9 s and address in 0.7 to 1.1 s, 3 look-ups a song; server/encore_server/tests/sources/test_lean.py makes subprocess.run and Popen fail on the lean path. The labelled set of 40 searches was split off as N-16 on 7 Nov 2026 and P0-13 needs it.",
+  "at": "2026-11-07T21:07:14Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P1-02": {
   "state": "built",
@@ -24,8 +26,10 @@
   "evidence": "the 217-song YouTube import fetched through VM 108 in about 46 minutes with no refusal (build 125 pair, 3 Nov 2026; AUDIT round 2)"
  },
  "P1-06": {
-  "state": "built",
-  "evidence": "built; the timing tools exist (evidence/b03 measured on the earlier stack); b11 uses them on the pair"
+  "state": "walked",
+  "evidence": "docs/evidence e03 (play_timing.py reads the app's own [perf] span play.audible on the pair: 13 songs) and e05 (the timing tools before and after the P1-04 fix: build 134 against build 136 on the same albums). The request-id half is P1-19 (audit B-32), still to do; the unrunnable build-40 check was dropped on 7 Nov 2026 with its reason written in the task.",
+  "at": "2026-11-07T21:07:14Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P1-08": {
   "state": "built",
@@ -151,6 +155,12 @@
   "state": "walked",
   "evidence": "7 Nov 2026, docs/evidence/README.md#e05: pair 4 (image ee121c1 + build 136 from the same commit). Next to a song the server prepared: median 640 ms on the owner's A35 (9 changes, 373-1148 ms, eight of nine under 1 s) and about 830 ms on emulator B (12-song album 626-1173 ms; a 10-song run median 888 ms); before the fix 2399 and 2380 ms. Seven of 35 changes measured were over 1 s (max 1551 ms), so 'each change under 1 s' is NOT met; the owner saw the numbers and accepted them. Rapid skipping (a Next every 2 s) stays slow for unprepared songs (1820, 4335 ms).",
   "at": "2026-11-07T11:50:41Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P3-02": {
+  "state": "walked",
+  "evidence": "docs/evidence c01 (installer on a clean VM, the image pulled from the registry, five runs), c03, c06 (the guide on a bare VM, image :main), e03 (VM 108 updated with encore update on the release-candidate pair: 4.2 MB of code layers); measured 7 Nov 2026 from the registry's own manifest: amd64, 14 layers, 243.9 MB over the wire (the limit is 450 MB). 'Compose uses pinned tags' moved to P3-27 the same day.",
+  "at": "2026-11-07T21:07:13Z",
   "by": "Claude (Sonnet 5.5)"
  }
 }
