@@ -212,6 +212,20 @@ void main() {
     expect(url.path, '/encore/stream/$id');
   });
 
+  test(
+      'the next songs of the queue are named to the server so it can make them ready, and it says how many it took (P1-04)',
+      () async {
+    final a = server.addRef('A', 'X');
+    final b = server.addRef('B', 'Y');
+
+    final taken = (await api.prepare([a, b, 'sr_nobody'])).getOrThrow();
+
+    expect(server.prepareAsked, [
+      [a, b, 'sr_nobody']
+    ]);
+    expect(taken, 2);
+  });
+
   test('the address of a song says when it stops working', () async {
     final id = server.addRef('A', 'X');
 

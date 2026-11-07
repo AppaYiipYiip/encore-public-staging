@@ -91,7 +91,9 @@ class PlaybackEngine implements PlaybackFacade {
     this.catalogueLookupBudget = const Duration(seconds: 4),
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
-  })  : _moreComing = moreComing ?? (() => false),
+    Future<void> Function(List<QueueItem> upcoming)? prepareAhead,
+  })  : _prepareAhead = prepareAhead,
+        _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
         _networkPresent = networkPresent ?? (() => false),
         _internetFound = internetFound ?? (() => true),
@@ -119,6 +121,13 @@ class PlaybackEngine implements PlaybackFacade {
 
   final AudioBackend _backend;
   final SourceResolver _resolver;
+
+  /// Told which songs come next once the current one is audible, so the server can make them ready before Next is pressed (P1-04, audit B-107:
+  /// the player itself only asks for a song when it is wanted, and the platform player loads its next source as late as possible). Best effort.
+  final Future<void> Function(List<QueueItem> upcoming)? _prepareAhead;
+
+  /// The queue entry the next songs were last handed over for: once for each song that plays, not at every tick.
+  int? _preparedAheadFor;
   final PlaybackStateStore _store;
   final Future<Map<String, TrackRow>> Function(List<String> ids) _lookupTracks;
   final Future<TrackRow?> Function(String artist, String title, String? album)?
@@ -1465,6 +1474,24 @@ class PlaybackEngine implements PlaybackFacade {
     await _loadCurrent(autoplay: true);
   }
 
+  /// The song is really playing: the next two of the queue are handed to [_prepareAhead], once for this entry. Nothing when the song repeats
+  /// itself or the sleep timer ends the music after it (there is no next song to wait for).
+  void _handOverTheNextSongs() {
+    final hand = _prepareAhead;
+    final current = _queue.current;
+    if (hand == null || current == null || _preparedAheadFor == current.uid) {
+      return;
+    }
+    _preparedAheadFor = current.uid;
+    if (_loopOne || _sleepAtEnd) return;
+    final next = _queue.upNext.take(2).toList();
+    if (next.isEmpty) return;
+    _trace('hand the next ${next.length} song(s) to the server to prepare');
+    unawaited(hand(next).onError<Object>((error, _) {
+      Log.debug('playback', 'preparing the next songs failed: $error');
+    }));
+  }
+
   void _onPosition(Duration position) {
     _lastPosition = position;
     // What the person waits for ends when the music is really moving: the position has passed 200 ms while the player plays (P1-06; the span
@@ -1476,6 +1503,10 @@ class PlaybackEngine implements PlaybackFacade {
           detail: _audibleBySkip
               ? 'skip id=${_queue.current?.id}'
               : 'source=$_sourceKind id=${_queue.current?.id}');
+    }
+    if (position > const Duration(milliseconds: 200) &&
+        _backend.state.playing) {
+      _handOverTheNextSongs();
     }
     if (!_positions.isClosed) _positions.add(position);
     final last = _lastPersist;

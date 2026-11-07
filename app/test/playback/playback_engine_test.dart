@@ -116,6 +116,12 @@ class Harness {
   /// While set, the server does not answer the engine's look at all (it hangs: a network without data).
   Completer<void>? serverGate;
 
+  /// What the engine handed over to be made ready, one entry per hand-over (P1-04).
+  final List<List<String>> prepared = [];
+
+  /// Makes the hand-over fail, to see that a failure is nobody's business.
+  bool prepareFails = false;
+
   static Future<Harness> start({
     int tracks = 5,
     MemoryPlaybackStateStore? store,
@@ -160,6 +166,10 @@ class Harness {
       serverRetryDelays: const [Duration(milliseconds: 15)],
       findByName: findByName,
       catalogueLookupBudget: lookupBudget,
+      prepareAhead: (upcoming) async {
+        h.prepared.add([for (final i in upcoming) i.id]);
+        if (h.prepareFails) throw StateError('the server did not answer');
+      },
       clock: h.clock,
       random: Random(1),
       periodicTimer: (period, callback) {
@@ -274,6 +284,76 @@ void main() {
       await h.engine.pause();
       await skip;
       expect(PerfMonitor.instance.isOpen('play.audible'), isFalse);
+      await h.dispose();
+    });
+
+    test(
+        'P1-04: once the song is audible the next two of the queue are handed over to be made ready, once for each song',
+        () async {
+      final h = await Harness.start(tracks: 6);
+      PerfMonitor.instance.logToConsole = false;
+      await h.engine.playTracks(h.tracks);
+      expect(h.prepared, isEmpty,
+          reason: 'nothing is handed over before there is sound');
+
+      h.backend.emitPosition(const Duration(milliseconds: 120));
+      expect(h.prepared, isEmpty);
+      h.backend.emitPosition(const Duration(milliseconds: 420));
+      h.backend.emitPosition(const Duration(milliseconds: 900));
+      expect(
+          h.prepared,
+          [
+            ['t2', 't3']
+          ],
+          reason: 'the next two, once, however many ticks follow');
+
+      await h.engine.skipNext();
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      expect(
+          h.prepared,
+          [
+            ['t2', 't3'],
+            ['t3', 't4']
+          ],
+          reason: 'the song after it plays, so its next two follow');
+      await h.dispose();
+    });
+
+    test(
+        'P1-04: a song that repeats itself, or the last songs, hand over what there is',
+        () async {
+      final h = await Harness.start(tracks: 3);
+      PerfMonitor.instance.logToConsole = false;
+      await h.engine.playTracks(h.tracks, startIndex: 1);
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      expect(
+          h.prepared,
+          [
+            ['t3']
+          ],
+          reason: 'only one song is left');
+
+      await h.engine.skipNext();
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      expect(h.prepared.length, 1,
+          reason: 'the last song has nothing after it');
+      await h.dispose();
+    });
+
+    test('P1-04: a hand-over that fails changes nothing for the music',
+        () async {
+      final h = await Harness.start(tracks: 4);
+      PerfMonitor.instance.logToConsole = false;
+      h.prepareFails = true;
+      await h.engine.playTracks(h.tracks);
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      await h.settle();
+
+      expect(h.prepared, [
+        ['t2', 't3']
+      ]);
+      expect(h.backend.state.playing, isTrue);
+      expect(h.currentId, 't1');
       await h.dispose();
     });
 

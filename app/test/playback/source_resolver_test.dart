@@ -84,4 +84,37 @@ void main() {
     spec = await r.resolve(item());
     expect(spec.uri.queryParameters['maxBitRate'], '48');
   });
+
+  group('which coming songs the server is asked to make ready (P1-04)', () {
+    QueueItem song(String id, {Uri? direct}) =>
+        QueueItem(uid: 1, id: id, title: id, directUri: direct);
+
+    test('a song that will be streamed is named, a downloaded one is not',
+        () async {
+      final ids = await idsToPrepare(
+        [song('streamed'), song('downloaded')],
+        (id) async => id == 'downloaded' ? '/data/d.opus' : null,
+        fileExists: (_) => true,
+      );
+      expect(ids, ['streamed']);
+    });
+
+    test('a download whose file is gone counts as not downloaded', () async {
+      final ids = await idsToPrepare(
+        [song('lost')],
+        (id) async => '/data/gone.opus',
+        fileExists: (_) => false,
+      );
+      expect(ids, ['lost']);
+    });
+
+    test('a song played from a plain address needs nothing from the server',
+        () async {
+      final ids = await idsToPrepare(
+        [song('plain', direct: Uri.parse('https://a.example/x.mp3'))],
+        (id) async => null,
+      );
+      expect(ids, isEmpty);
+    });
+  });
 }

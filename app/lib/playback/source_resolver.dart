@@ -21,6 +21,25 @@ class ServerNotAnswering implements Exception {
 }
 
 typedef LocalPathLookup = Future<String?> Function(String trackId);
+
+/// Which of the coming songs the server should make ready before Next is pressed (P1-04): the ones that will be streamed, that is, not downloaded and
+/// not played from a plain address. A downloaded song plays from the phone and needs nothing from the server.
+Future<List<String>> idsToPrepare(
+  List<QueueItem> upcoming,
+  LocalPathLookup localPath, {
+  bool Function(String path)? fileExists,
+}) async {
+  final exists = fileExists ?? ((p) => File(p).existsSync());
+  final ids = <String>[];
+  for (final item in upcoming) {
+    if (item.directUri != null) continue;
+    final local = await localPath(item.id);
+    if (local != null && exists(local)) continue;
+    ids.add(item.id);
+  }
+  return ids;
+}
+
 typedef StreamUrlBuilder = Future<Uri> Function(
   String trackId, {
   int? maxBitRate,

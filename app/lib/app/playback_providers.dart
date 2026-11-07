@@ -151,6 +151,15 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     // Next on the last song while an album's songs are still being fetched
     // waits for the next one instead of stopping the music.
     moreComing: () => ref.read(instantControllerProvider.notifier).fetchingMore,
+    // The next songs of the queue are made ready on the server while this one plays, so Next finds them at once (P1-04): only on an Encore
+    // server, only for songs that will be streamed. Best effort; the engine swallows a failure.
+    prepareAhead: (upcoming) async {
+      final s = session();
+      if (s == null || !s.encoreMode) return;
+      final ids = await idsToPrepare(upcoming, downloads.localPathFor);
+      if (ids.isEmpty) return;
+      await s.encore.prepare(ids);
+    },
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
     canReachServer: () => canReachServerNow(
         ref.read(networkKindProvider).value, session()?.endpoints),

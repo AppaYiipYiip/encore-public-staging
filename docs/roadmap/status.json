@@ -144,5 +144,11 @@
   "evidence": "7 Nov 2026: first slice built in #216: the output row (read from AudioManager, live), Encore's Devices sheet with 'This phone' and Android's own list one tap away, and a line saying other devices are not built yet (goes with P4-07). Not walked: with a Bluetooth or wired output on the A35; the Kotlin is compiled by build 132.",
   "at": "2026-11-07T05:16:39Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-04": {
+  "state": "built",
+  "evidence": "built 7 Nov 2026: server POST /refs/prepare (#226: prepare.py, paced by the background pacer, rest-aware, 40 songs an hour, a song that asks YouTube nothing costs no slot; tests test_prepare.py and test_stream.py) and the app half (this PR: PlaybackEngine hands the next 2 queue songs to prepareAhead once a song is audible; idsToPrepare; EncoreApi.prepare; engine, resolver and API tests). Premise proved on a device (audit B-107: the next song was not looked up during play; a Next to unseen songs read 2424 and 2784 ms). NOT walked: the acceptance (a catalogue album, each Next under 1 s by the app's own skip span at a normal pace, with a clean before) waits for the pair walk.",
+  "at": "2026-11-07T10:16:34Z",
+  "by": "Claude (Sonnet 5.5)"
  }
 }

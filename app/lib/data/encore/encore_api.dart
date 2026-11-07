@@ -181,6 +181,15 @@ class EncoreApi {
   Future<Result<EncoreRef>> ref(String id) =>
       guard(() async => EncoreRef.fromJson(await _send('GET', '/refs/$id')));
 
+  /// Tells the server which songs come next in the queue, one to three, so it can make them ready (the song's upload and its stream's address, no
+  /// audio) before the person presses Next (`POST /refs/prepare`, P1-04). Best effort: the answer is how many songs the server took, and a song it
+  /// did not prepare is simply looked up when it is played, as before.
+  Future<Result<int>> prepare(List<String> refIds) => guard(() async {
+        final body =
+            await _send('POST', '/refs/prepare', body: {'ids': refIds});
+        return readInt(body['accepted']) ?? 0;
+      });
+
   /// The address to play a song from (signed, valid for hours), and when it stops working. The server picks where the audio comes from: its own
   /// kept file when it has one, YouTube otherwise.
   Future<Result<SignedAddress>> streamAddress(String refId) => guard(() async {

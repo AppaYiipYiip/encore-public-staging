@@ -22,6 +22,11 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/keep/ask'] = _keepAsk;
     _handlers['/encore/api/v1/keep/retry'] = _keepRetry;
     _handlers['/encore/api/v1/refs/resolve'] = _resolve;
+    _handlers['/encore/api/v1/refs/prepare'] = (r) {
+      final ids = ((jsonDecode(r.body) as Map)['ids'] as List).cast<String>();
+      prepareAsked.add(ids);
+      return _ok({'accepted': ids.where(refs.containsKey).length});
+    };
     _handlers['/encore/api/v1/library/changes'] = _changes;
     _handlers['/encore/api/v1/library/files'] = _files;
     _handlers['/encore/api/v1/plays'] = _plays;
@@ -146,6 +151,9 @@ class FakeEncoreServer {
   final List<List<String>> keepAsks = [];
   final List<String> keepRetries = [];
   final List<String?> keepWatchDevices = [];
+
+  /// The songs each `POST /refs/prepare` named, in order (P1-04).
+  final List<List<String>> prepareAsked = [];
 
   /// How many requests of each route were made (`PUT /likes/...` is counted under `PUT likes`).
   final Map<String, int> calls = {};
