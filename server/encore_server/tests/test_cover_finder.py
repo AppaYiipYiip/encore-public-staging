@@ -67,7 +67,11 @@ def test_songs_of_one_album_are_one_question(tmp_path: Path) -> None:
 
     CoverFinder(db, catalogue, sleep=lambda _: None).run_once()
 
-    assert catalogue.asked == ["Nude"]
+    # The finder asks about the songs of an album in the order of their ids, which are random within one millisecond (CI creates the three in
+    # one): 'Reckoner' or 'Videotape' may be asked first and answer nothing. What the album promises is that the question stops at the song
+    # that answered and that every song of the album gets that picture.
+    assert catalogue.asked[-1] == "Nude", "nothing is asked after the song that answered"
+    assert len(catalogue.asked) == len(set(catalogue.asked)), "no song is asked twice"
     assert [cover_of(db, i) for i in ids] == [PICTURE] * 3
 
 
