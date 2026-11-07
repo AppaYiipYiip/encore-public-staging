@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/perf.dart';
 import '../data/catalogue/catalogue_models.dart';
 
 /// Route helpers. Detail routes are declared under every tab branch so the
@@ -48,15 +49,19 @@ abstract final class Nav {
   static void album(BuildContext c, String id) =>
       c.push('/${_branch(c)}/album/${Uri.encodeComponent(id)}');
 
-  static void playlist(BuildContext c, String id) =>
-      _to(c, (b) => '/$b/playlist/${Uri.encodeComponent(id)}');
+  static void playlist(BuildContext c, String id) {
+    PerfMonitor.instance.pageOpening('playlist');
+    _to(c, (b) => '/$b/playlist/${Uri.encodeComponent(id)}');
+  }
 
   /// An imported playlist that may still be arriving: all its songs at once.
   static void importedPlaylist(BuildContext c, String importId) =>
       _to(c, (b) => '/$b/import/${Uri.encodeComponent(importId)}');
 
-  static void artist(BuildContext c, String id) =>
-      c.push('/${_branch(c)}/artist/${Uri.encodeComponent(id)}');
+  static void artist(BuildContext c, String id) {
+    PerfMonitor.instance.pageOpening('artist');
+    c.push('/${_branch(c)}/artist/${Uri.encodeComponent(id)}');
+  }
 
   /// A release from the public catalogue (not in the library). [preloaded]
   /// paints the header at once; without it the page fetches the release.
@@ -72,9 +77,11 @@ abstract final class Nav {
   }
 
   static void catalogueArtist(BuildContext c, String id,
-          {CatalogueArtist? preloaded}) =>
-      c.push('/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}',
-          extra: preloaded);
+      {CatalogueArtist? preloaded}) {
+    PerfMonitor.instance.pageOpening('artist');
+    c.push('/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}',
+        extra: preloaded);
+  }
 
   static void genre(BuildContext c, String name) =>
       c.push('/${_branch(c)}/genre/${Uri.encodeComponent(name)}');
