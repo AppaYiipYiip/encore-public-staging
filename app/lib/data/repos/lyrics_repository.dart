@@ -35,6 +35,14 @@ class LyricsRepository {
   /// not hit the network on every play.
   static const Duration _negativeTtl = Duration(days: 1);
 
+  /// Plain lyrics that are kept are looked at again for a time-synced copy after this long (the owner, 7 Nov 2026: Opeth "Benighted" stayed plain on his
+  /// phone for ever, because the plain record found first was cached and never asked about again). LRCLIB also gains synced records over time. A look
+  /// that finds nothing is remembered, so a plain song costs one extra request an hour, not one a play.
+  static const Duration plainRecheck = Duration(hours: 1);
+
+  /// How long the look for a synced copy may keep the cached plain text waiting: after this the plain text is shown and the look goes on unheard.
+  static const Duration _recheckWait = Duration(seconds: 3);
+
   Future<TrackLyrics?> cached(String trackId) async {
     final row = await (_db.select(_db.lyrics)
           ..where(
@@ -76,7 +84,20 @@ class LyricsRepository {
         .getSingleOrNull();
     final nowMs = _clock.now().millisecondsSinceEpoch;
 
-    if (row != null && row.kind != 'none') return _decode(row);
+    if (row != null && row.kind != 'none') {
+      final cached = _decode(row);
+      final stale = nowMs - row.fetchedAtMs >= plainRecheck.inMilliseconds;
+      if (cached.synced || !allowNetwork || !stale) return cached;
+      return await _recheckPlain(
+            trackId: trackId,
+            cached: cached,
+            title: title,
+            artist: artist,
+            album: album,
+            durationSec: durationSec,
+          ) ??
+          cached;
+    }
     if (row != null &&
         row.kind == 'none' &&
         nowMs - row.fetchedAtMs < _negativeTtl.inMilliseconds) {
@@ -142,6 +163,34 @@ class LyricsRepository {
           Log.debug('lyrics', 'LRCLIB failed: ${failure.message}');
       }
     }
+    return null;
+  }
+
+  /// Cached plain lyrics: a synced copy if LRCLIB has one now (it is stored and returned), else `null` and the time of this look is remembered so the
+  /// next play does not ask again for [plainRecheck]. A slow service never keeps the plain text waiting longer than [_recheckWait].
+  Future<TrackLyrics?> _recheckPlain({
+    required String trackId,
+    required TrackLyrics cached,
+    required String title,
+    String? artist,
+    String? album,
+    int? durationSec,
+  }) async {
+    try {
+      final upgraded = await _syncedFromLrclib(
+              title: title,
+              artist: artist,
+              album: album,
+              durationSec: durationSec)
+          .timeout(_recheckWait);
+      if (upgraded != null) {
+        await _store(trackId, upgraded);
+        return upgraded;
+      }
+    } on Object catch (error) {
+      Log.debug('lyrics', 'no synced copy for $trackId yet: $error');
+    }
+    await _store(trackId, cached);
     return null;
   }
 
