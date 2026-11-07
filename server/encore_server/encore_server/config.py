@@ -14,6 +14,24 @@ def clean_url(text: str) -> str:
     return text if re.fullmatch(r"https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?", text) else ""
 
 
+#: The Host's choice of the pace at YouTube (D-67, owner 7 Nov 2026): 3 to 8 seconds on average between background requests, 4 unless the Host says otherwise.
+#: 3 saves 200 songs in about 10 minutes, 4 in about 13, 8 in about 27. Outside the range the nearest end is used, so a typo cannot switch pacing off.
+MIN_PACE_S = 3.0
+MAX_PACE_S = 8.0
+DEFAULT_PACE_S = 4.0
+
+
+def pace_from(value: str) -> float:
+    """The pace a Host wrote in `ENCORE_YOUTUBE_PACE_S`: nothing or something that is not a number is the default, anything else is held to 3 to 8."""
+    try:
+        wanted = float(value.strip())
+    except ValueError:
+        return DEFAULT_PACE_S
+    if wanted != wanted:  # NaN
+        return DEFAULT_PACE_S
+    return min(MAX_PACE_S, max(MIN_PACE_S, wanted))
+
+
 @dataclass(frozen=True)
 class Settings:
     data_dir: Path = Path("/data")
@@ -35,8 +53,8 @@ class Settings:
     #: The addresses this server tells its phones about (docs/11 ADR-R40): the installer writes the home one, `encore funnel on` the away one. Empty: unknown.
     home_url: str = ""
     away_url: str = ""
-    #: Mean seconds between the background look-ups and downloads at YouTube (0: no pacing, for tests).
-    youtube_pace_s: float = 6.0
+    #: Mean seconds between the background look-ups and downloads at YouTube (D-67): the Host picks 3 to 8 in `.env`, 4 by default; a test may set 0 (no pacing).
+    youtube_pace_s: float = DEFAULT_PACE_S
     fault: str = ""
     #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
     keep: bool = True
@@ -73,7 +91,7 @@ class Settings:
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
             home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
-            youtube_pace_s=float(e.get("ENCORE_YOUTUBE_PACE_S", "6")),
+            youtube_pace_s=pace_from(e.get("ENCORE_YOUTUBE_PACE_S", "")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
