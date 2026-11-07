@@ -167,6 +167,43 @@ void main() {
     expect(find.text('Nude: YouTube is resting.'), findsNothing);
   });
 
+  testWidgets(
+      'Retry never stands alone: while songs are still coming, the failures are told on their own line (the owner could not tell why Retry was there)',
+      (tester) async {
+    await show(
+      tester,
+      line: const DownloadLine(
+          '379 of 684 on this phone · 385 ready on your server',
+          phoneFraction: 0.55,
+          serverFraction: 0.56,
+          failed: 12,
+          canRetry: true,
+          twoStages: true),
+    );
+
+    expect(find.text('12 songs did not come'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets(
+      'one failed song is told as "1 song", and the line is not said twice',
+      (tester) async {
+    await show(
+      tester,
+      line: const DownloadLine('4 of 10 on this phone · 5 ready on your server',
+          failed: 1, canRetry: true, twoStages: true),
+    );
+    expect(find.text('1 song did not come'), findsOneWidget);
+
+    await show(
+      tester,
+      line: const DownloadLine('1 song did not come',
+          failed: 1, canRetry: true, twoStages: true),
+    );
+    expect(find.text('1 song did not come'), findsOneWidget,
+        reason: 'a line that already says it is not repeated');
+  });
+
   testWidgets('Retry has a name for a screen reader', (tester) async {
     await show(tester,
         line: const DownloadLine('3 songs did not come',

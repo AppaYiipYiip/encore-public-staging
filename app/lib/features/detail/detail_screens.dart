@@ -362,6 +362,7 @@ class PlaylistScreen extends ConsumerWidget {
         ),
         // How far the two stages of the download have got (docs/design S-17); nothing when it is not downloaded or finished.
         DownloadStatus(
+            showNames: true,
             target: DownloadTarget.pin(PinTargetType.playlist, playlist.id)),
       ],
       actions: _ActionRow(

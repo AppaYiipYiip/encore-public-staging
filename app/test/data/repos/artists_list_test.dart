@@ -78,4 +78,33 @@ void main() {
 
     expect(await repo.watchArtists().first, isEmpty);
   });
+
+  Future<void> songWithCover(String id, String artistId, String? cover,
+          {int? deletedAtMs}) =>
+      db.into(db.tracks).insert(TracksCompanion.insert(
+            serverId: serverId,
+            id: id,
+            title: 'Song $id',
+            artistId: Value(artistId),
+            coverArt: Value(cover),
+            deletedAtMs: Value(deletedAtMs),
+          ));
+
+  test(
+      'an artist the music server has no picture of borrows the cover of one of their songs: the first by id, never a deleted song or one without a cover',
+      () async {
+    await artist('a1', 'Eminem');
+    await artist('a2', 'Nobody Covers');
+    await songWithCover('s1', 'a1', null); // no cover
+    await songWithCover('s2', 'a1', 'cover-b', deletedAtMs: 5); // deleted
+    await songWithCover('s4', 'a1', 'cover-d');
+    await songWithCover('s3', 'a1', 'cover-c');
+    await songWithCover('s5', 'a2', null);
+
+    final fallbacks = await repo.artistCoverFallbacks();
+
+    expect(fallbacks, {'a1': 'cover-c'},
+        reason:
+            'the first song with a cover that is still there; an artist none of whose songs has a cover stays without one');
+  });
 }

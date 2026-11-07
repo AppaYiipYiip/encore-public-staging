@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/stream_utils.dart';
+import '../../core/throttled_trigger.dart';
 import '../../data/db/app_database.dart';
 import '../../data/downloads/background_downloader_transport.dart';
 import '../../data/downloads/disk_space.dart';
@@ -318,9 +319,15 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
   // The cheap check brought in changes (the server finished keeping songs, with their files): what waited for them starts now, not at the next
   // full pass, ten minutes later (audit B-108).
   final session = await ref.read(sessionProvider.future);
+  // At most every 10 s: a pass reads every pinned song, and a server that keeps 14 songs a minute says so every 4 s.
+  final lookAgain = ThrottledTrigger(
+      const Duration(seconds: 10), () => manager.requestReconcile());
   final probeUpdated =
-      session?.scheduler.probeUpdated.listen((_) => manager.requestReconcile());
-  ref.onDispose(() => unawaited(probeUpdated?.cancel()));
+      session?.scheduler.probeUpdated.listen((_) => lookAgain());
+  ref.onDispose(() {
+    lookAgain.dispose();
+    unawaited(probeUpdated?.cancel());
+  });
   ref.onDispose(() => unawaited(manager.dispose()));
   return manager;
 });

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 
 import '../../core/stream_utils.dart';
 import '../../domain/household.dart';
@@ -136,6 +137,23 @@ class LibraryRepository {
   /// server can keep listing an artist that another person's library once shared
   /// (an album count and nothing under it); to a person who has none of their
   /// music that is a ghost, not a part of their library.
+  /// A picture for each artist that has none of its own: the cover of one of its songs (the first, by id, so it does not change between looks),
+  /// for the Library's Artists list (owner, 7 Nov 2026: "most of the artists have no icon, even famous ones": the music server has a photo of an
+  /// artist only when it found one, and an artist whose songs came from the catalogue has none). Keyed by artist id.
+  Future<Map<String, String>> artistCoverFallbacks() async {
+    final rows = await _db.customSelect(
+      'SELECT t.artist_id AS id, t.cover_art AS cover FROM tracks t '
+      'WHERE t.server_id = ?1 AND t.deleted_at_ms IS NULL AND t.artist_id IS NOT NULL AND t.cover_art IS NOT NULL '
+      'AND t.id = (SELECT MIN(t2.id) FROM tracks t2 WHERE t2.server_id = t.server_id AND t2.artist_id = t.artist_id '
+      'AND t2.deleted_at_ms IS NULL AND t2.cover_art IS NOT NULL)',
+      variables: [Variable.withInt(serverId)],
+      readsFrom: {_db.tracks},
+    ).get();
+    return {
+      for (final r in rows) r.read<String>('id'): r.read<String>('cover')
+    };
+  }
+
   Stream<List<ArtistRow>> watchArtists() => (_db.select(_db.artists)
         ..where((a) =>
             a.serverId.equals(serverId) &
@@ -439,10 +457,15 @@ class LibraryRepository {
           e.playlistId.equals(playlistId) &
           t.deletedAtMs.isNull())
       ..orderBy([OrderingTerm.asc(e.position)]);
-    return query.watch().map((rows) => [
-          for (final r in rows)
-            (position: r.readTable(e).position, track: r.readTable(t)),
-        ]);
+    // The query runs again whenever anything in either table is written (a sync pass or a keep writes songs all the time while the server saves a
+    // playlist), and a page of 2,000 songs rebuilt for a list that did not change is the slowness the owner felt: say nothing when nothing changed.
+    return query
+        .watch()
+        .map((rows) => [
+              for (final r in rows)
+                (position: r.readTable(e).position, track: r.readTable(t)),
+            ])
+        .distinct((a, b) => listEquals(a, b));
   }
 
   /// Distinct album-cover ids of a playlist's tracks, most frequent first -

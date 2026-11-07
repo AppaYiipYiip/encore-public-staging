@@ -107,6 +107,8 @@ class LibraryScreen extends ConsumerWidget {
             ? AlbumSort.recentlyAdded
             : AlbumSort.alphabetical));
     final artists = artistsOrNull ?? const <ArtistRow>[];
+    final artistFallbacks = ref.watch(artistCoverFallbacksProvider).value ??
+        const <String, String>{};
     final albums = albumsOrNull ?? const <AlbumRow>[];
     final liked = ref.watch(likedTracksProvider).value ?? const [];
     final me = ref.watch(accountNameProvider);
@@ -136,7 +138,8 @@ class LibraryScreen extends ConsumerWidget {
               for (final p in _sortPlaylists(playlists, sort))
                 _LibraryEntry.playlist(p, me),
             if (filter == null || filter == LibraryFilter.artists)
-              for (final a in artists) _LibraryEntry.artist(a),
+              for (final a in artists)
+                _LibraryEntry.artist(a, artistFallbacks[a.id]),
             if (filter == null || filter == LibraryFilter.albums)
               for (final a in albums) _LibraryEntry.album(a),
           ];
@@ -349,12 +352,12 @@ class _LibraryEntry {
         count = p.songCount,
         playlist = p;
 
-  _LibraryEntry.artist(ArtistRow a)
+  _LibraryEntry.artist(ArtistRow a, String? fallbackCover)
       : kind = _Kind.artist,
         id = a.id,
         title = a.name,
         subtitle = 'Artist',
-        coverArt = a.coverArt,
+        coverArt = a.coverArt ?? fallbackCover,
         count = a.albumCount,
         playlist = null;
 

@@ -14,6 +14,22 @@ import '../downloads/download_status.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
 
+/// Downloads whose button was pressed and whose answer has not come yet: the button shows "downloading" at once (owner, 7 Nov 2026: "pressing the
+/// download button ... waits a second, then the download starts"; the pin and the first look at the songs take a moment, a press must not).
+final _justPressedProvider =
+    NotifierProvider.family<_JustPressed, bool, String>(_JustPressed.new);
+
+class _JustPressed extends Notifier<bool> {
+  _JustPressed(this.key);
+
+  final String key;
+
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
 /// Spotify-style "Download" toggle for an album / playlist / liked songs.
 ///
 /// States: outline arrow (off) -> progress ring (downloading) -> filled
@@ -58,11 +74,25 @@ class DownloadButton extends ConsumerWidget {
 
   DownloadTarget get _target => target ?? DownloadTarget.pin(type, targetId);
 
+  String get _pressKey => '${type.name}:$targetId';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = stateOverride ??
+    final fromPins = stateOverride ??
         ref.watch(pinStateProvider((type, targetId))).value ??
         PinState.none;
+    final pressed = ref.watch(_justPressedProvider(_pressKey));
+    // A press shows at once what the pin will show in a moment: the ring of a download that is starting.
+    final state = pressed && fromPins.phase == PinPhase.off
+        ? PinState(
+            pinned: true,
+            total: fromPins.total,
+            done: 0,
+            active: fromPins.total,
+            failed: 0,
+            bytes: 0,
+            confirmedEmpty: false)
+        : fromPins;
     final waiting = ref.watch(downloadsWaitProvider);
     final line = ref.watch(downloadLineProvider(_target));
     final c = context.colors;
@@ -175,10 +205,17 @@ class DownloadButton extends ConsumerWidget {
 
     if (state.phase == PinPhase.off) {
       String? problem;
-      if (onPin != null) {
-        problem = await onPin!();
-      } else {
-        await actions.pin(type, targetId);
+      final pressed = ref.read(_justPressedProvider(_pressKey).notifier);
+      pressed.set(true);
+      try {
+        if (onPin != null) {
+          problem = await onPin!();
+        } else {
+          await actions.pin(type, targetId);
+        }
+      } finally {
+        // The pin (or the failure) is what the button shows from here on.
+        pressed.set(false);
       }
       // Counted before the pin and found empty: say so, rather than promise a download that has nothing to fetch (Q1).
       final nothing = onPin == null &&

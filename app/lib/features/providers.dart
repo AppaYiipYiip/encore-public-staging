@@ -361,6 +361,14 @@ final scopedAlbumsProvider =
 });
 
 /// Library artists for the current scope.
+/// The picture to show for an artist that has none of its own (the cover of one of its songs), asked once for the Artists list and again when
+/// the number of artists changes: not at every change of the library (a keep or a sync pass writes the songs again and again).
+final artistCoverFallbacksProvider =
+    FutureProvider.autoDispose<Map<String, String>>((ref) async {
+  ref.watch(artistsProvider.select((a) => a.value?.length));
+  return await _repo(ref)?.artistCoverFallbacks() ?? const <String, String>{};
+});
+
 final scopedArtistsProvider = Provider.autoDispose<List<ArtistRow>?>((ref) {
   final all = ref.watch(artistsProvider).value ?? const <ArtistRow>[];
   if (ref.watch(libraryScopeProvider) == LibraryScope.everything) return all;

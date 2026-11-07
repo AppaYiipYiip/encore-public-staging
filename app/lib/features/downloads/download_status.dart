@@ -142,6 +142,13 @@ class DownloadStatus extends ConsumerWidget {
             DownloadBar(
                 phoneFraction: line.phoneFraction,
                 serverFraction: line.serverFraction),
+            // Retry never stands alone (owner, 7 Nov 2026: "a download that has no failed, or at least I can't tell it failed, why does it have a
+            // Retry button"): while songs are still coming the line speaks of progress only, so the failures are told on their own line, whether or not
+            // the names follow.
+            if (line.failed > 0 && !line.text.contains('did not come'))
+              Text(
+                  '${line.failed == 1 ? '1 song' : '${line.failed} songs'} did not come',
+                  style: style),
             if (line.failed > 0 && line.canRetry)
               Align(
                 alignment: AlignmentDirectional.centerStart,
