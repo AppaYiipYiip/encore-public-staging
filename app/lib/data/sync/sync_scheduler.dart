@@ -127,6 +127,13 @@ class SyncScheduler {
 
   final StreamController<SyncStatus> _statusController =
       StreamController<SyncStatus>.broadcast();
+
+  /// Said whenever a probe brought in changes from the server (on an Encore server: a song it has just finished keeping, with its file). What
+  /// waited for such a file (a download) can start now. Before, only a full pass said anything, so the phone looked again every ten minutes
+  /// (audit B-108: Download pressed right after an import copied 6 songs for 8 minutes, then 95 in one go).
+  final StreamController<void> _probeUpdated =
+      StreamController<void>.broadcast();
+  Stream<void> get probeUpdated => _probeUpdated.stream;
   late final StreamSubscription<SyncProgress> _progressSub;
   SyncStatus _status;
   Timer? _pending;
@@ -281,6 +288,7 @@ class SyncScheduler {
           _quietProbes++;
         case ProbeUpdated():
           _quietProbes = 0;
+          if (!_probeUpdated.isClosed) _probeUpdated.add(null);
         case ProbeNeedsFullPass():
           fullPass = true;
         case ProbeBusy():
@@ -432,5 +440,6 @@ class SyncScheduler {
     _probePending?.cancel();
     await _progressSub.cancel();
     await _statusController.close();
+    await _probeUpdated.close();
   }
 }

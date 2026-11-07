@@ -477,6 +477,32 @@ void main() {
       expect(nextProbe(), const Duration(seconds: 3));
     });
 
+    test(
+        'a probe that brings in a change tells the downloads, a quiet one does not (B-108: they used to look again only after a full pass, ten minutes later)',
+        () async {
+      server.playlists = [
+        FakeSubsonicServer.playlist('p1', 'Mine',
+            songIds: ['s1'], library: server.songs),
+      ];
+      await firstSyncDone();
+      var told = 0;
+      final sub = live.probeUpdated.listen((_) => told++);
+      addTearDown(sub.cancel);
+
+      await fireProbe(); // nothing changed on the server
+      expect(told, 0, reason: 'a quiet probe says nothing');
+
+      server.playlists = [
+        FakeSubsonicServer.playlist('p1', 'Mine',
+            songIds: ['s1', 's2'],
+            changed: '2026-10-16T12:00:00Z',
+            library: server.songs),
+      ];
+      await fireProbe();
+
+      expect(told, 1, reason: 'a probe that found a change tells them once');
+    });
+
     test('a probe that finds a changed library asks for a normal pass',
         () async {
       await firstSyncDone();

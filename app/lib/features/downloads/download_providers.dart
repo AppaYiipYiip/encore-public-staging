@@ -315,6 +315,12 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
     final after = next.value?.lastSuccessAt;
     if (after != null && after != before) manager.requestReconcile();
   });
+  // The cheap check brought in changes (the server finished keeping songs, with their files): what waited for them starts now, not at the next
+  // full pass, ten minutes later (audit B-108).
+  final session = await ref.read(sessionProvider.future);
+  final probeUpdated =
+      session?.scheduler.probeUpdated.listen((_) => manager.requestReconcile());
+  ref.onDispose(() => unawaited(probeUpdated?.cancel()));
   ref.onDispose(() => unawaited(manager.dispose()));
   return manager;
 });
