@@ -66,8 +66,10 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P2-03": {
-  "state": "built",
-  "evidence": "built; the walk record b11 (M0) walks it"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e04 and #e05: playing is not saving: the music server's library did not change after 13 streamed songs (e04) nor after a 13-song catalogue album played to its end with Next 12 times (395 songs before and after, e05); all 13 songs in order, Next enabled throughout, one song of the album already kept by the server played in the same run; a liked streamed song showed in Liked Songs at once and the server kept it (e04). Not walked: the 'played on 2 different days is kept' clock (a unit test, test_keep_triggers.py) and 'two people keeping one song make one file' (unit tests).",
+  "at": "2026-11-07T11:50:41Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P3-01": {
   "state": "built",
@@ -146,9 +148,9 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-04": {
-  "state": "built",
-  "evidence": "built 7 Nov 2026, measured on pair 4 (image ee121c1 + build 136, emulator B only; docs/evidence/README.md#e05): Next to a song the server prepared 641-1003 ms at 14 s of listening and 627-670 ms 4-5 s after a tap (before: 2399 and 2380 ms), a 10-song run 294-1551 ms (median 888, five of nine under 1 s). NOT walked: every change under 1 s on a 10-song album, the real phone (the A35 waits for the owner), the album to its end, rapid skipping (1820 and 4335 ms).",
-  "at": "2026-11-07T11:42:39Z",
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e05: pair 4 (image ee121c1 + build 136 from the same commit). Next to a song the server prepared: median 640 ms on the owner's A35 (9 changes, 373-1148 ms, eight of nine under 1 s) and about 830 ms on emulator B (12-song album 626-1173 ms; a 10-song run median 888 ms); before the fix 2399 and 2380 ms. Seven of 35 changes measured were over 1 s (max 1551 ms), so 'each change under 1 s' is NOT met; the owner saw the numbers and accepted them. Rapid skipping (a Next every 2 s) stays slow for unprepared songs (1820, 4335 ms).",
+  "at": "2026-11-07T11:50:41Z",
   "by": "Claude (Sonnet 5.5)"
  }
 }
