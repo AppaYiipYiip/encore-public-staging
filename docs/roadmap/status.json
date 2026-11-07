@@ -98,10 +98,10 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-15": {
-  "state": "built",
-  "evidence": "Built 5 Nov 2026, built not walked, after the advisor's review: the drawn lasting offline look (S-10, S-14, S-17, S-18) on Home (grey tiles and cards, Not downloaded in words, the Downloaded / Plays offline shelf), Library playlists and albums and the song rows; ONE on-phone source (onPhoneProvider, one query over the same downloads rows as the song test) behind every Not downloaded and the shelf; driven by serverAwayProvider (the real connection state, not the 5 s strip). The strip's words follow Android's own internet check (NET_CAPABILITY_VALIDATED, one 20-line read through app.encore/network; no internet found = You're offline, internet found and a silent server = Can't reach your server; D-45 amended in docs/10) and a tap on a song that is not downloaded says the same two things from the same test. Tests: offline_look_test.dart (8, incl. the R2-F5 regression red without the lasting state, a pin with no file not on the shelf, an album held only through a pinned playlist keeps its colour), connection_banner_test.dart, network_validation_test.dart, playback_engine_test.dart, now_playing_layout_test.dart. Emulator smoke tests, not a walk (docs/evidence/c08): airplane mode, the look to 34 s and gone when back; server stopped while online: Can't reach your server once at 10 s; the native read proven wired by a temporary forced answer. Not built: Search offline (its own item P1-16, not drawn, C and X). Not run: a real network with no internet, a real phone.",
-  "at": "2026-11-05T05:13:18Z",
-  "by": "Claude"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e04: pair 2: server image 586bbba (VM 108) + APK build 132 from the same commit (build 133 from 620cbe8 for the lyrics recheck), emulators B and A and the owner's Samsung A35, emulator B. Airplane: no strip at +2 s, 'You're offline. Downloaded music still plays.' at +7 s, gone by +16 s, rows named 'not downloaded', a tap says 'Not downloaded. Connect to play it.', all gone by themselves after the network came back; stopped server: 'Can't reach your server.' at +2.2 s, a tap says 'Not downloaded. Can't reach your server.', gone 2.1 s after the server was back. The real phone and a network with no internet behind its Wi-Fi were not used.",
+  "at": "2026-11-07T06:05:29Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P2-22": {
   "state": "built",
@@ -110,9 +110,9 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-22": {
-  "state": "built",
-  "evidence": "7 Nov 2026: built in #208 (main 79ca004); a widget test at each of four phone shapes; seen on the owner's A35 on build 131: the cover and controls spread over the full height, the gap under the last control is about one control row. Waits for the walk on profile A and the next pair (docs/evidence/README.md#e03 has the A35 pictures).",
-  "at": "2026-11-07T05:16:37Z",
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e04: pair 2: server image 586bbba (VM 108) + APK build 132 from the same commit (build 133 from 620cbe8 for the lyrics recheck), emulators B and A and the owner's Samsung A35. On the A35 the cover and controls spread over the full height and the seek bar, Play, Share and queue sit at the same rows for a song with and without lyrics; on the small profile-A phone the page scrolls and the bottom row and the card are reachable; widget tests at four phone shapes. The owner's own word on whether it is better is his.",
+  "at": "2026-11-07T06:05:28Z",
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-21": {
@@ -122,15 +122,15 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-27": {
-  "state": "built",
-  "evidence": "7 Nov 2026: built in #214 (main 04c03f4): no 30-second preview anywhere, StreamedTrack, TapPlan full/cannot/plainServer, no_preview_test.dart, 2,333 tests. Not walked: on the next release-candidate pair (a tap and a long-press on Search, album and artist rows play the whole song).",
-  "at": "2026-11-07T05:16:38Z",
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e04: pair 2: server image 586bbba (VM 108) + APK build 132 from the same commit (build 133 from 620cbe8 for the lyrics recheck), emulators B and A and the owner's Samsung A35. A tap and a long-press on a Search row, a tap on an album row and on an artist's popular song each played the whole song (3:22, 2:59, 3:38); no screen said 'Preview'; a streamed song that is not saved showed its lyrics.",
+  "at": "2026-11-07T06:05:28Z",
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-23": {
-  "state": "built",
-  "evidence": "7 Nov 2026: built in #215 (lyrics: prefer a synced record when the exact one is plain, repair of text saved twice in the wrong character set, B-102/B-103) and #216 (the Lyrics card keeps its place and size in every state, with a test that measures it on three phone shapes). Not walked: Opeth 'Benighted' on the owner's A35 on the next pair.",
-  "at": "2026-11-07T05:16:38Z",
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e04: pair 2: server image 586bbba (VM 108) + APK build 132 from the same commit (build 133 from 620cbe8 for the lyrics recheck), emulators B and A and the owner's Samsung A35. The Lyrics card is always there at the same place and size (A35: same pixel rows with and without lyrics); a streamed song that is not saved shows its synced lyrics; Opeth 'Benighted' on the owner's A35 with build 133: 'Lyrics' (synced), a normal apostrophe, and a tap on a line jumped the song to it (1:37).",
+  "at": "2026-11-07T06:05:28Z",
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-24": {
