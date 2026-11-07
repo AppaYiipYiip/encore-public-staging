@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:audio_service/audio_service.dart' show MediaAction;
 import 'package:encore/core/clock.dart';
+import 'package:encore/core/logger.dart';
 import 'package:encore/core/perf.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/player/playback_facade.dart';
@@ -226,6 +227,53 @@ void main() {
           .skip(before)
           .lastWhere((s) => s.name == 'play.audible');
       expect(span.detail, 'source=stream id=t1');
+      await h.dispose();
+    });
+
+    test(
+        'B-106: a Next is timed by the app itself (play.audible, "skip"), from the press to sound, and the engine says why it pauses',
+        () async {
+      final h = await Harness.start();
+      PerfMonitor.instance.logToConsole = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isFalse);
+
+      final before = PerfMonitor.instance.spans.length;
+      await h.engine.skipNext();
+      expect(PerfMonitor.instance.isOpen('play.audible'), isTrue,
+          reason: 'the press began the measurement');
+      h.backend.emitPosition(const Duration(milliseconds: 120));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isTrue,
+          reason: 'not audible before the position passes 200 ms');
+      h.backend.emitPosition(const Duration(milliseconds: 420));
+      expect(PerfMonitor.instance.isOpen('play.audible'), isFalse);
+      final span = PerfMonitor.instance.spans
+          .skip(before)
+          .lastWhere((s) => s.name == 'play.audible');
+      expect(span.detail, 'skip id=t2');
+
+      Log.clear();
+      await h.engine.pause();
+      expect(
+          Log.recent
+              .any((r) => r.message.startsWith('pause: the person paused')),
+          isTrue,
+          reason: 'a pause says who asked for it');
+      await h.dispose();
+    });
+
+    test(
+        'B-106: a Next that a pause overtakes does not leave a measurement open (it would later count the pause as waiting)',
+        () async {
+      final h = await Harness.start();
+      PerfMonitor.instance.logToConsole = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.backend.emitPosition(const Duration(milliseconds: 500));
+      final skip = h.engine.skipNext();
+      await h.engine.pause();
+      await skip;
+      expect(PerfMonitor.instance.isOpen('play.audible'), isFalse);
       await h.dispose();
     });
 

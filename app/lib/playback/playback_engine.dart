@@ -173,6 +173,10 @@ class PlaybackEngine implements PlaybackFacade {
   /// pausing (or starting something else) since cancels the wait. `null` when nothing waits.
   int? _waitingSince;
 
+  /// Whether the open `play.audible` span was begun by a Next/Previous (a skip) and not by a tap: the number is then "from the press to sound", which is what
+  /// J-03 asks of every change (audit B-106: nothing but a tap began it, so a Next could not be timed by the app itself).
+  bool _audibleBySkip = false;
+
   /// Where the song being loaded comes from, for the `play.audible` measurement: a file on this phone or a stream.
   String _sourceKind = 'stream';
 
@@ -424,6 +428,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
     PerfMonitor.instance.begin('play.audible');
+    _audibleBySkip = false;
     final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
@@ -484,6 +489,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (tracks.isEmpty) return Future<void>.value();
     PerfMonitor.instance.begin('play.tap->playing');
     PerfMonitor.instance.begin('play.audible');
+    _audibleBySkip = false;
     final generation = _newGeneration();
     return _run(() async {
       if (generation != _generation) return;
@@ -550,7 +556,7 @@ class PlaybackEngine implements PlaybackFacade {
   Future<void> pause() async {
     if (_disposed) return;
     _intent++;
-    await _backend.pause();
+    await _pause('the person paused');
   }
 
   @override
@@ -565,6 +571,17 @@ class PlaybackEngine implements PlaybackFacade {
   bool get _sounding {
     final state = _backend.state;
     return state.playing && state.processing != BackendProcessing.completed;
+  }
+
+  /// One line of what the engine decided, kept in the Diagnostics log (info level, so it exists in the release build too): the stall of audit B-106 (the player
+  /// ended paused on a song nobody chose, with no word shown) left nothing to read. It says where the engine is, not what the song is called.
+  void _trace(String what) => Log.info('playback',
+      '$what [slot ${_lastIndex ?? '-'}, window ${_window.length}, load $_loadSerial, cursor ${_queue.cursor}]');
+
+  /// Pauses the platform player and says why (see [_trace]).
+  Future<void> _pause(String why) {
+    _trace('pause: $why');
+    return _backend.pause();
   }
 
   /// Whether a finished load or skip may start audio: only when nobody paused
@@ -628,7 +645,7 @@ class PlaybackEngine implements PlaybackFacade {
         _finishItem();
         if (!_queue.skipNext()) {
           // End of the queue: stop on the last track; the next Play starts the list over.
-          await _backend.pause();
+          await _pause('Next on the last song: the list ended');
           if (_loaded) await _backend.seek(Duration.zero);
           _endedQueue = true;
           _emitAll();
@@ -653,7 +670,12 @@ class PlaybackEngine implements PlaybackFacade {
           return;
         }
         _finishItem();
-        if (_queue.skipPrevious()) await _loadCurrent(autoplay: true);
+        if (_queue.skipPrevious()) {
+          _audibleBySkip = true;
+          PerfMonitor.instance.begin('play.audible');
+          _trace('previous: rebuild the window');
+          await _loadCurrent(autoplay: true);
+        }
       });
 
   @override
@@ -860,7 +882,7 @@ class PlaybackEngine implements PlaybackFacade {
 
   Future<void> _expireSleep() async {
     await _run(() async {
-      await _backend.pause();
+      await _pause('the sleep timer ran out');
       await _backend.setVolume(_gainVolume);
       _publishSleep(SleepTimerStatus.off);
     }).catchError((Object _) {});
@@ -1097,7 +1119,7 @@ class PlaybackEngine implements PlaybackFacade {
       // The address of the song could not be made because the server does not answer: wait for it (the song stays, nothing is skipped).
       if (_canReach() &&
           (error is ServerNotAnswering || !await _serverAnswers())) {
-        await _backend.pause();
+        await _pause('the server does not answer (resolving the song)');
         _waitForServer(position: position);
         return;
       }
@@ -1115,7 +1137,7 @@ class PlaybackEngine implements PlaybackFacade {
 
     // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
     if (!results.first.isLocal && !await _canReachNow()) {
-      await _backend.pause();
+      await _pause('no connection and the song is not downloaded');
       _waitForConnection(_notDownloadedWords(),
           isError: false, position: position);
       return;
@@ -1130,7 +1152,7 @@ class PlaybackEngine implements PlaybackFacade {
     _lastIndex = 0;
     // A finished/stopped player keeps its "playing" intent; make sure a
     // load that should not start audio really does not.
-    if (!autoplay) await _backend.pause();
+    if (!autoplay) await _pause('a load that must not start audio');
     await _backend.setLoopOne(_loopOne);
     final load = _backend.setSources(specs, index: 0, position: position);
     final superseded = _loadSuperseded = Completer<void>();
@@ -1177,11 +1199,15 @@ class PlaybackEngine implements PlaybackFacade {
     final item = _queue.current;
     if (item == null) return;
     _endedQueue = false; // the cursor moved by hand
+    // A Next: the app times it itself (`play.audible`, "skip"); a pause meanwhile or a failure cancels it like it cancels a tap's.
+    _audibleBySkip = true;
+    PerfMonitor.instance.begin('play.audible');
     final index = _lastIndex ?? 0;
     final nextIndex = index + 1;
     if (_loaded &&
         nextIndex < _window.length &&
         _window[nextIndex] == item.uid) {
+      _trace('skip: seek to window slot $nextIndex');
       _expectedIndex = nextIndex;
       await _backend.seek(Duration.zero, index: nextIndex);
       if (_mayStartPlaying(autoplay)) await _backend.play();
@@ -1190,6 +1216,7 @@ class PlaybackEngine implements PlaybackFacade {
       _emitAll();
       return;
     }
+    _trace('skip: the next song is not in the window, rebuild it');
     await _loadCurrent(autoplay: autoplay);
   }
 
@@ -1205,6 +1232,7 @@ class PlaybackEngine implements PlaybackFacade {
 
     // Drop everything behind the playing source.
     if (index > 0 && index <= _window.length) {
+      _trace('window: drop the $index source(s) behind the playing one');
       await _backend.removeFirst(index);
       _window = _window.sublist(index);
       _lastIndex = 0;
@@ -1217,12 +1245,14 @@ class PlaybackEngine implements PlaybackFacade {
     if (wantUid == haveUid) return;
 
     if (_window.length > 1) {
+      _trace('window: the second source is not the next song, remove it');
       await _backend.removeAt(1);
       _window = [_window.first];
     }
     if (next != null) {
       final spec = await _resolver.resolve(next);
       if (spec.isLocal || _canReach()) {
+        _trace('window: append the next song');
         await _backend.append(spec);
         _window = [..._window, spec.uid];
       }
@@ -1231,8 +1261,15 @@ class PlaybackEngine implements PlaybackFacade {
 
   // ---------------------------------------------------- backend callbacks
 
+  BackendState? _tracedState;
+
   void _onBackendState(BackendState state) {
     final now = _clock.now();
+    if (_tracedState != state) {
+      _tracedState = state;
+      _trace(
+          'platform player: playing ${state.playing}, ${state.processing.name}');
+    }
     if (state.playing) {
       _playingSince ??= now;
       if (!_nowPlayingSent && _loaded) {
@@ -1272,8 +1309,13 @@ class PlaybackEngine implements PlaybackFacade {
   /// The backend moved to another source of the window.
   void _onBackendIndex(int? index) {
     if (index == null || index == _lastIndex) return;
+    _trace(
+        'platform player moved to slot $index (expected ${_expectedIndex ?? 'none'})');
     // The platform player hopped on by itself while a failure is being judged: hold it now, not when the judging is done.
-    if (_judgingFailure && _loaded) unawaited(_backend.pause());
+    if (_judgingFailure && _loaded) {
+      unawaited(
+          _pause('the platform player hopped on while a failure is judged'));
+    }
     // Nothing of ours is loaded (a restored queue waiting for play, or the
     // platform player starting up): an index event is the player's own, not
     // a gapless advance. Acting on it skipped a song after every restart (J-11).
@@ -1295,6 +1337,7 @@ class PlaybackEngine implements PlaybackFacade {
         _lastIndex = index;
       } else {
         // Gapless auto-advance: finish the old entry, move the model.
+        _trace('the platform player went on by itself: the queue follows');
         _finishItem();
         _lastIndex = index;
         if (!_queue.advanceAuto()) {
@@ -1303,7 +1346,7 @@ class PlaybackEngine implements PlaybackFacade {
         }
         if (_sleepAtEnd) {
           // Should not happen (window has no next), but never play on.
-          await _backend.pause();
+          await _pause('sleep at the end of the song: never play on');
         }
       }
       final item = _queue.current;
@@ -1325,6 +1368,7 @@ class PlaybackEngine implements PlaybackFacade {
     // window's completion once.
     if (!_loaded || serial != _loadSerial || _completedSerial == serial) return;
     _completedSerial = serial;
+    _trace('the window ran out');
     _finishItem();
     if (_sleepAtEnd) {
       _sleepAtEnd = false;
@@ -1338,7 +1382,7 @@ class PlaybackEngine implements PlaybackFacade {
     } else {
       // End of the queue (or nothing ahead can play without a connection): wait on the last track. At a true end the next Play starts
       // the list over; with songs ahead that cannot play now it only plays this one again.
-      await _backend.pause();
+      await _pause('the list ended: nothing ahead can play');
       if (_loaded) await _backend.seek(Duration.zero);
       _endedQueue = !_queue.hasNext;
       _emitAll();
@@ -1368,7 +1412,7 @@ class PlaybackEngine implements PlaybackFacade {
       // 2026-10-31: the next song plays under the title and cover of the previous one, "all covers"). A retry or a skip starts it again.
       final index = _backend.currentIndex;
       if (index != null && last != null && index != last) {
-        await _backend.pause();
+        await _pause('a failure: the platform player had already hopped on');
       }
       _judgingFailure = true;
       try {
@@ -1386,7 +1430,7 @@ class PlaybackEngine implements PlaybackFacade {
   Future<void> _judgeFailure(QueueItem item) async {
     if (!await _playable(item)) {
       // The network is gone, the song is not broken: wait for it, never hop on to the next song.
-      await _backend.pause();
+      await _pause('no connection (a failure is judged)');
       _waitForConnection('Waiting for a connection.',
           isError: false, position: _lastPosition);
       return;
@@ -1394,7 +1438,7 @@ class PlaybackEngine implements PlaybackFacade {
     // The phone has a network. Before judging the song, look once at whether its server answers at all (the stream may have died
     // because the server restarted, or because the line changed): a server that does not answer is waited for, not hopped over.
     if (!await _serverAnswers() && !await _isLocal(item)) {
-      await _backend.pause();
+      await _pause('the server does not answer (a failure is judged)');
       _waitForServer(position: _lastPosition);
       return;
     }
@@ -1407,7 +1451,7 @@ class PlaybackEngine implements PlaybackFacade {
     _consecutiveFailures++;
     _notify(PlaybackNotice("Couldn't play ${item.title}", isError: true));
     if (_consecutiveFailures >= maxConsecutiveFailures || !_queue.skipNext()) {
-      await _backend.pause();
+      await _pause('too many failures, or the end of the queue');
       if (_consecutiveFailures >= maxConsecutiveFailures) {
         _notify(const PlaybackNotice(
             'Playback stopped: several tracks in a row failed. '
@@ -1429,7 +1473,9 @@ class PlaybackEngine implements PlaybackFacade {
         _backend.state.playing &&
         PerfMonitor.instance.isOpen('play.audible')) {
       PerfMonitor.instance.end('play.audible',
-          detail: 'source=$_sourceKind id=${_queue.current?.id}');
+          detail: _audibleBySkip
+              ? 'skip id=${_queue.current?.id}'
+              : 'source=$_sourceKind id=${_queue.current?.id}');
     }
     if (!_positions.isClosed) _positions.add(position);
     final last = _lastPersist;
