@@ -122,12 +122,14 @@ class PlaybackEngine implements PlaybackFacade {
   final AudioBackend _backend;
   final SourceResolver _resolver;
 
-  /// Told which songs come next once the current one is audible, so the server can make them ready before Next is pressed (P1-04, audit B-107:
-  /// the player itself only asks for a song when it is wanted, and the platform player loads its next source as late as possible). Best effort.
+  /// Told which songs come next, as soon as there is a song to play and as soon as a next one is queued, so the server can make them ready before Next
+  /// is pressed (P1-04, audit B-107: the player itself only asks for a song when it is wanted, and the platform player loads its next source as late as
+  /// possible). Best effort.
   final Future<void> Function(List<QueueItem> upcoming)? _prepareAhead;
 
-  /// The queue entry the next songs were last handed over for: once for each song that plays, not at every tick.
-  int? _preparedAheadFor;
+  /// The queue entries already handed over (by uid), so each song is named once however often the queue changes. A catalogue album is queued one song
+  /// at a time behind the first (audit B-83), so the next songs often do not exist yet when the first one starts: they are handed over as they arrive.
+  final Set<int> _handedOver = {};
   final PlaybackStateStore _store;
   final Future<Map<String, TrackRow>> Function(List<String> ids) _lookupTracks;
   final Future<TrackRow?> Function(String artist, String title, String? album)?
@@ -1199,6 +1201,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (_mayStartPlaying(autoplay)) await _backend.play();
     PerfMonitor.instance.note('load ${item.id} resolve=${resolveMs}ms '
         'setSources=${loadMs}ms total=${timer.elapsedMilliseconds}ms');
+    _handOverTheNextSongs();
     _emitAll();
   }
 
@@ -1236,6 +1239,7 @@ class PlaybackEngine implements PlaybackFacade {
     }
     final item = _queue.current;
     if (item == null) return;
+    _handOverTheNextSongs();
     await _backend.setLoopOne(_loopOne);
     final index = _lastIndex ?? 0;
 
@@ -1474,18 +1478,22 @@ class PlaybackEngine implements PlaybackFacade {
     await _loadCurrent(autoplay: true);
   }
 
-  /// The song is really playing: the next two of the queue are handed to [_prepareAhead], once for this entry. Nothing when the song repeats
-  /// itself or the sleep timer ends the music after it (there is no next song to wait for).
+  /// The next two songs of the queue are handed to [_prepareAhead], each song once: when a song is loaded (the tap), when the queue changes (an
+  /// album's next songs are queued one by one behind the first), and as a safety at every position tick once the music is moving (cheap: it looks
+  /// at two entries). Nothing when the song repeats itself or the sleep timer ends the music after it (there is no next song to wait for).
+  /// Owner, 7 Nov 2026: do not wait for the first song to be audible, a person skips (taps the 5th song while the 1st plays) and a little more asking
+  /// is accepted; the server paces it.
   void _handOverTheNextSongs() {
     final hand = _prepareAhead;
-    final current = _queue.current;
-    if (hand == null || current == null || _preparedAheadFor == current.uid) {
-      return;
-    }
-    _preparedAheadFor = current.uid;
+    if (hand == null || _queue.current == null || !_loaded) return;
     if (_loopOne || _sleepAtEnd) return;
-    final next = _queue.upNext.take(2).toList();
+    final next = [
+      for (final item in _queue.peekAhead(2))
+        if (!_handedOver.contains(item.uid)) item,
+    ];
     if (next.isEmpty) return;
+    if (_handedOver.length > 400) _handedOver.clear();
+    _handedOver.addAll(next.map((i) => i.uid));
     _trace('hand the next ${next.length} song(s) to the server to prepare');
     unawaited(hand(next).onError<Object>((error, _) {
       Log.debug('playback', 'preparing the next songs failed: $error');

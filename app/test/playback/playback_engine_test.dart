@@ -288,44 +288,64 @@ void main() {
     });
 
     test(
-        'P1-04: once the song is audible the next two of the queue are handed over to be made ready, once for each song',
+        'P1-04: the next two songs are handed over as soon as the song is loaded, not when it is audible, each song once',
         () async {
       final h = await Harness.start(tracks: 6);
       PerfMonitor.instance.logToConsole = false;
       await h.engine.playTracks(h.tracks);
-      expect(h.prepared, isEmpty,
-          reason: 'nothing is handed over before there is sound');
-
-      h.backend.emitPosition(const Duration(milliseconds: 120));
-      expect(h.prepared, isEmpty);
-      h.backend.emitPosition(const Duration(milliseconds: 420));
-      h.backend.emitPosition(const Duration(milliseconds: 900));
       expect(
           h.prepared,
           [
             ['t2', 't3']
           ],
-          reason: 'the next two, once, however many ticks follow');
+          reason: 'a person skips: the tap is the moment, not the first sound');
+
+      h.backend.emitPosition(const Duration(milliseconds: 420));
+      h.backend.emitPosition(const Duration(milliseconds: 900));
+      expect(h.prepared.length, 1,
+          reason: 'ticks of the position repeat nothing');
 
       await h.engine.skipNext();
-      h.backend.emitPosition(const Duration(milliseconds: 500));
+      await h.settle();
       expect(
           h.prepared,
           [
             ['t2', 't3'],
-            ['t3', 't4']
+            ['t4']
           ],
-          reason: 'the song after it plays, so its next two follow');
+          reason: 'only the song that came into the next two is new');
       await h.dispose();
     });
 
     test(
-        'P1-04: a song that repeats itself, or the last songs, hand over what there is',
+        'P1-04: songs queued later (an album is queued one by one behind the first) are handed over as they arrive',
+        () async {
+      final h = await Harness.start(tracks: 4);
+      PerfMonitor.instance.logToConsole = false;
+      await h.engine.playTracks([h.tracks[0]]);
+      expect(h.prepared, isEmpty, reason: 'nothing follows the first song yet');
+
+      await h.engine.addToQueue(h.tracks[1]);
+      expect(h.prepared, [
+        ['t2']
+      ]);
+      await h.engine.addToQueue(h.tracks[2]);
+      await h.engine.addToQueue(h.tracks[3]);
+      expect(
+          h.prepared,
+          [
+            ['t2'],
+            ['t3'],
+          ],
+          reason: 'the song after the next two waits until the music moves on');
+      await h.dispose();
+    });
+
+    test('P1-04: the last songs hand over what there is, then nothing',
         () async {
       final h = await Harness.start(tracks: 3);
       PerfMonitor.instance.logToConsole = false;
       await h.engine.playTracks(h.tracks, startIndex: 1);
-      h.backend.emitPosition(const Duration(milliseconds: 500));
       expect(
           h.prepared,
           [
@@ -334,7 +354,7 @@ void main() {
           reason: 'only one song is left');
 
       await h.engine.skipNext();
-      h.backend.emitPosition(const Duration(milliseconds: 500));
+      await h.settle();
       expect(h.prepared.length, 1,
           reason: 'the last song has nothing after it');
       await h.dispose();
@@ -346,7 +366,6 @@ void main() {
       PerfMonitor.instance.logToConsole = false;
       h.prepareFails = true;
       await h.engine.playTracks(h.tracks);
-      h.backend.emitPosition(const Duration(milliseconds: 500));
       await h.settle();
 
       expect(h.prepared, [

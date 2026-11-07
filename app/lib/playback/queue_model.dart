@@ -173,6 +173,14 @@ class QueueModel {
         for (var i = _cursor + 1; i < _order.length; i++) _items[_order[i]],
       ];
 
+  /// The next [count] entries after [current] (without wrapping), without building the list of the whole rest of a long queue.
+  List<QueueItem> peekAhead(int count) => [
+        for (var i = _cursor + 1;
+            i < _order.length && i <= _cursor + count;
+            i++)
+          _items[_order[i]],
+      ];
+
   QueueItem? get peekNext {
     if (_order.isEmpty) return null;
     if (_cursor + 1 < _order.length) return _items[_order[_cursor + 1]];
