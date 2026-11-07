@@ -267,7 +267,7 @@ def test_the_host_is_told_the_cause_and_a_member_the_plain_fact_in_the_same_push
 
     host_reason = only(host.next_progress()["groups"])["failures"][0]["reason"]  # type: ignore[index]
     member_reason = only(member.next_progress()["groups"])["failures"][0]["reason"]  # type: ignore[index]
-    assert host_reason == "The only copy on YouTube needs an age check, which this server cannot pass."
+    assert host_reason.startswith("The only copy on YouTube needs an age check, which this server cannot pass.")
     assert member_reason == "Needs an age check."
 
 

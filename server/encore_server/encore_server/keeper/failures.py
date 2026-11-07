@@ -32,8 +32,16 @@ class Failure:
 #: A keeper error code (a key of `GIVE_UP`) -> (what a member reads, what the Host reads). Every code must be here: a test fails when one is missing.
 _BY_CODE = {
     "not_found": ("Not found.", "No upload of this song was found on YouTube."),
-    "unavailable": ("Not available.", "YouTube has no copy of this song that can be fetched."),
-    "age_restricted": ("Needs an age check.", "The only copy on YouTube needs an age check, which this server cannot pass."),
+    "unavailable": (
+        "Not available.",
+        "YouTube has no copy of this song that can be fetched (it was removed, or it is blocked where this server is). Asking again will not change that.",
+    ),
+    # The Host is told what would fix it, because Retry cannot (owner, 7 Nov 2026: "if it cannot be downloaded even if we try we should not show the
+    # Retry button, just let the admin know that they need a Google sign-in to fix the issue"). The sign-in is an option that is not built (D-67).
+    "age_restricted": (
+        "Needs an age check.",
+        "The only copy on YouTube needs an age check, which this server cannot pass. Only a YouTube account signed in on the server could (not built yet); asking again will not.",
+    ),
     "too_big": ("Too big to keep.", "The file is bigger than this server's limit for keeping a song."),
 }
 _TOO_LONG = ("Too long to keep.", "Longer than this server's limit for keeping a song, so it can be played but is not kept.")

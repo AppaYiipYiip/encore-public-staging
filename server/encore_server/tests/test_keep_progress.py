@@ -275,7 +275,10 @@ def test_the_host_reads_the_cause_and_a_member_reads_the_plain_fact(rig: Rig) ->
     host = only(rig.ask("marwa", {"kind": "liked", "id": "liked"}))["failures"][0]["reason"]
     member = only(rig.ask("nina", {"kind": "liked", "id": "liked"}))["failures"][0]["reason"]
 
-    assert host == "The only copy on YouTube needs an age check, which this server cannot pass."
+    assert host.startswith("The only copy on YouTube needs an age check, which this server cannot pass.")
+    assert "signed in on the server" in host and "asking again will not" in host, (
+        "the Host is told what would fix it, and that Retry will not"
+    )
     assert member == "Needs an age check."
     assert "server" not in member.lower(), "a member can do nothing about the server, so is not told about it"
 
