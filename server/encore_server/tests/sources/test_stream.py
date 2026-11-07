@@ -132,6 +132,37 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(up.headers["Content-Length"], str(len(self.data)))
         self.assertEqual(self.read(up), self.data)
 
+    def test_a_prepared_song_needs_no_look_up_when_it_is_played(self):
+        """P1-04 / audit B-107: the next song of a queue is made ready (its upload and its stream's address, no bytes) before the person presses Next."""
+        youtube = FakeYouTube(self.data)
+        proxy = self.proxy(youtube)
+        self.assertFalse(proxy.has_address("aaaaaaaaaaa"))
+
+        self.assertTrue(proxy.prepare(Request("A", "B")))
+
+        self.assertEqual(self.extracted, ["aaaaaaaaaaa"], "the address was asked for once")
+        self.assertEqual(youtube.requests, [], "nothing of the song itself was fetched")
+        self.assertTrue(proxy.has_address("aaaaaaaaaaa"))
+        up = proxy.open(Request("A", "B"), None)
+        self.assertEqual(self.extracted, ["aaaaaaaaaaa"], "the play did not ask for the address again")
+        self.assertEqual(self.read(up), self.data)
+
+    def test_a_prepared_address_that_is_too_old_is_not_counted_as_kept(self):
+        proxy = self.proxy(FakeYouTube(self.data), ttl=100.0)
+        proxy.prepare(Request("A", "B"))
+        self.now += 200.0
+        self.assertFalse(proxy.has_address("aaaaaaaaaaa"))
+
+    def test_nothing_is_prepared_when_no_upload_is_found(self):
+        proxy = self.proxy(FakeYouTube(self.data), candidates=lambda request: [])
+        self.assertFalse(proxy.prepare(Request("A", "B")))
+        self.assertEqual(self.extracted, [])
+
+    def test_nothing_is_prepared_while_the_fault_says_youtube_refuses(self):
+        proxy = self.proxy(FakeYouTube(self.data), fault="youtube_refuse")
+        self.assertFalse(proxy.prepare(Request("A", "B")))
+        self.assertEqual(self.extracted, [])
+
     def test_a_player_that_jumps_gets_the_range_it_asked_for(self):
         youtube = FakeYouTube(self.data)
         start = len(self.data) - 5000

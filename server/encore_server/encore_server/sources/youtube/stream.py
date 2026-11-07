@@ -176,6 +176,27 @@ class StreamProxy:
                     raise last from error
         raise last or StreamError("not_found")
 
+    def has_address(self, video_id: str) -> bool:
+        """Whether the stream's address of this upload is already kept (a tap on it needs no look-up at YouTube)."""
+        known = self._infos.get(video_id)
+        return known is not None and self._clock() - known.at < self._ttl
+
+    def prepare(self, request: Any, *, timeout_s: float = 30.0) -> bool:
+        """Everything a play does before the first byte, and not the byte: the upload of the song and its stream's address, kept for most of an hour.
+
+        A tap that comes after finds both at once: the first bytes then arrive after 0.1 s instead of 2.0 to 2.3 s (audit B-107: nothing asked for the
+        next song of a queue before the person pressed Next). Returns whether an upload was found; the errors are the ones a play has."""
+        if self._fault in ("no_results", "youtube_refuse"):
+            return False
+        began = self._clock()
+        found = self._candidates(request)
+        if not found:
+            return False
+        video_id = found[0][0]
+        self._info(video_id, began + timeout_s)
+        log.info("stream %s: prepared in %.1f s%s", video_id, self._clock() - began, self._lookups_said())
+        return True
+
     # ------------------------------------------------------------------ keeping: the whole file
 
     def download(self, request: Any, stem: Path, *, max_bytes: int, timeout_s: float = 120.0) -> Path:

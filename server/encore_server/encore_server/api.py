@@ -64,6 +64,7 @@ from .migration import SubsonicUser, migrate_from_navidrome
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
 from .notifications import DEFAULT_PAGE, MAX_PAGE, Notifications
+from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
 from .scanner import LibraryLinker
 from .scheduler import PROMOTE_MANY, Scheduler
@@ -645,6 +646,28 @@ def resolve_refs(
         raise ApiError("validation", "Send between 1 and 500 songs.")
     with services(request).db.tx() as conn:
         return _ok({"items": [refs.resolve(conn, item) for item in items]})
+
+
+@router.post("/refs/prepare")
+def prepare_refs(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """The player says which songs are next in its queue; the server makes them ready (the song's upload and its stream's address, no bytes) so that a
+    Next finds them at once (P1-04, audit B-107). Background work: it answers at once with how many songs it took, the asking is paced, and a server
+    that cannot fetch songs from YouTube takes none."""
+    ids = body.get("ids")
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 3 or not all(isinstance(i, str) for i in ids):
+        raise ApiError("validation", "Send between 1 and 3 songs.")
+    svc = services(request)
+    if svc.scheduler is None or not svc.scheduler.handles("prepare"):
+        return _ok({"accepted": 0})
+    accepted = 0
+    with svc.db.tx() as conn:
+        for ref_id in dict.fromkeys(ids):
+            if refs.ref_exists(conn, ref_id):
+                svc.scheduler.submit("prepare", ref_id, p.person_id, conn=conn)
+                accepted += 1
+    return _ok({"accepted": accepted})
 
 
 @router.get("/refs/{ref_id}")
@@ -1411,6 +1434,7 @@ def _background(
     imports = ImportService(database, hub, youtube, notifications=notifications)
     if youtube is not None:
         handlers["match"] = imports.match
+        handlers["prepare"] = Preparer(database, youtube).handle
     scheduler = Scheduler(database, handlers, workers={"interactive": 1, "background": 2}) if handlers else None
     imports.use(scheduler)
     return scheduler, keeper, imports

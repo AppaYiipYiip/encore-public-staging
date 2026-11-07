@@ -81,6 +81,22 @@ class YoutubeSource:
     def open(self, wanted: Wanted, range_header: str | None) -> Upstream:
         return self._proxy.open(wanted, range_header)
 
+    def is_ready(self, wanted: Wanted) -> bool:
+        """Whether a tap on this song needs no look-up at YouTube (its upload is known and its stream's address is kept)."""
+        return bool(wanted.video_id) and self._proxy.has_address(str(wanted.video_id))
+
+    def prepare(self, wanted: Wanted) -> bool:
+        """Makes the song ready for a tap that has not come yet (its upload and its stream's address; no bytes): the next songs of somebody's queue.
+        Background work: it waits its turn like every other request that nobody is waiting for, and it asks nothing while YouTube is being given a rest.
+        Nothing is asked when the address is already kept."""
+        if self.is_ready(wanted):
+            return True
+        if self.rest.remaining() > 0:
+            raise DownloadError("blocked", "YouTube is being given a rest")
+        if self._pace is not None:
+            self._pace.wait_turn()
+        return self._proxy.prepare(wanted)
+
     @property
     def lookups(self) -> Lookups:
         """The count of today's look-ups at YouTube (the updater's check is one of them)."""
