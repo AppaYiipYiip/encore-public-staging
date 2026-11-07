@@ -67,6 +67,11 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
      (X-6: try `bufferForPlaybackMs` 1,000).
 * **Acceptance.** J-02 on TYPICAL: p50 ≤ 2.5 s, p95 ≤ 4 s, max ≤ 10 s (12 songs, measured by P1-06); J-10 (2-hour recitation):
   audible ≤ 4 s, seek to 2:00:00 audible ≤ 2 s; with `youtube_refuse` a tap fails in ≤ 10 s with one sentence and the player stays usable.
+* **How J-10 is met when YouTube offers no recitation of two hours (7 Nov 2026, roadmap grooming; the advisor's call, the owner may overrule).** The longest recitation
+  YouTube offered on 7 Nov was 1 h 57 min 38 s (`evidence` e04, e06), so "seek to 2:00:00" on a real recitation cannot be walked today. This is not loosened: J-10 is met by
+  two things together: (1) a made-up 2 h 10 min file the test server serves and keeps, walked for the seek to 2:00:00, the keep (the server's 150-minute limit) and the
+  resume after a kill, on the A35 and an emulator; (2) the real 1 h 57 min recitation already walked, which covers YouTube's own Range proxying. When a real recitation of two
+  hours or more exists, one run of J-10 on it replaces (1). The pinned note on P1-02 says the same.
 * **Depends on.** P1-01, P1-06. 
 
 ## P1-03 — Two pools, single flight, pacing and back-off (server) — Size M
@@ -115,8 +120,10 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   spans from logcat, and prints p50/p95/max with the setup header. Keep a per-server "used songs" list so songs are never reused.
 * **Acceptance.** The script is used for every number in P1, and it shows a change when the speed changes (a before and an after on the same songs).
   **Changed 7 Nov 2026 (roadmap grooming): the first clause, "reproduces today's ~38 s on build 40 (sanity check)", is gone because it can never be run again:
-  build 40 and the stack it ran on were destroyed on 2 and 3 Nov 2026. Its purpose (does the tool see a real change?) is met by `evidence` e05: the same albums
-  on build 134 and on build 136 read a first tap that fell as the fix of P1-04 landed.**
+  build 40 and the stack it ran on were destroyed on 2 and 3 Nov 2026. Its purpose (does the tool see a real change?) is met by `evidence` e05, read with the
+  committed `tools/journeys/next_timing.py` (the first probe of e04, a scratchpad script that counted the media session's PLAYING at the key press, was
+  withdrawn in #223 and is not part of this item's tools): on build 134 a Next read 2399 and 2380 ms, and on build 136, after the P1-04 fix, 1003, 819 and 641 ms
+  (other fresh albums; the first tap did not get faster: 3089 against 4123 ms, which is its own look-up).**
 
 ## P1-07 — Search: a Top result and one list (app) — Size M
 * **Order.** Needs: none.
@@ -165,7 +172,7 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
   imported songs)"; it cannot pass until an imported song carries YouTube's thumbnail as its fallback, which is P1-26's work. The list had them 100 places apart
   with no link, and the checker could not see it. The same family, found 7 Nov 2026 and walked with this item: a song that is on the phone twice and so shows
   letters (N-11, "Forever"), and artists the music server has no picture for (N-15). The picture *tickets* that refused every picture (audit B-115) are fixed in
-  PR #242.
+  PR #242 (open, not merged: the repository's checks cannot run, P0-16).
 * **Why.** E3 + owner: "the song icon disappeared and got replaced by a letter in offline mode; we need to download the icons as well".
 * **Context.** `lib/app/providers.dart` `CoverArtResolver` builds `coverArtUrl(coverArtId, size: size)` **per widget size**, so each
   size is a separate cache entry (offline: album page had the cover, mini-player showed a letter for the same album, `a14`).

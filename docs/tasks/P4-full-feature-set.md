@@ -9,7 +9,7 @@ and activity).
 ---
 
 ## P4-01 — A listening profile and recommendations per person — Size L
-* **Order.** Needs: P2-12 [i], P4-20 [d], P4-23 [p]. Why: P4-20 chooses how suggestions are made (a ready-made engine or our own) before any of this is built; the candidate sources (similar artists via Deezer, MusicBrainz and ListenBrainz) are server-side lookups, and outside services go through the server (ADR-R38)..
+* **Order.** Needs: P2-12 [i], P4-20 [d], P4-23 [p]. Why: smart shuffle changes the queue and the engine, so crossfade (P4-23, audit B-8) is done first (a rule of the plan, not a hard need); P4-20 chooses how suggestions are made (a ready-made engine or our own) before any of this is built; the candidate sources (similar artists via Deezer, MusicBrainz and ListenBrainz) are server-side lookups, and outside services go through the server (ADR-R38)..
 * **Where it sits (2026-11-03).** Right after Jam (Discover): it is what makes daily use compelling for every user from the first day, which the cross-server features are not. The suggestions, smart shuffle (about one suggestion in five while shuffling, marked, one tap to keep or skip: `../20`), song radio, "New from artists you love" and "Not for me" are all in this task; following artists and the release notification are P4-18.
 * **Why.** US-60; owner: "each one has his own … recommendation system profile tailored to him".
 * **Context.** The old `encore-recs` built nightly lists from a copy of Navidrome's database plus MusicBrainz/ListenBrainz/Deezer
@@ -26,7 +26,7 @@ and activity).
   two people with different tastes on two emulators get different rows; the owner rates his own Home after a week. Smart shuffle marks about one song in five as a suggestion with a one-tap keep or skip; song radio plays; "Not for me" on a suggested song or band removes it from that person's rows only.
 
 ## P4-02 — Jam on the live channel — Size L
-* **Order.** Needs: P2-08 [d], P2-09 [d], P3-18 [p], P3-28 [d], P4-23 [p]. Why: D-61 (replaces D-53): the invitation comes AFTER Jam, so Jam can no longer wait for the first friend. It is walked through the owner's real address (the setup is gate 2, P3-18).
+* **Order.** Needs: P2-08 [d], P2-09 [d], P3-18 [p], P3-28 [d], P4-23 [p]. Why: crossfade (P4-23, audit B-8) changes the engine that a Jam also drives, so it is done first (a rule of the plan, not a hard need); D-61 (replaces D-53): the invitation comes AFTER Jam, so Jam can no longer wait for the first friend. It is walked through the owner's real address (the setup is gate 2, P3-18).
 * **D-53 is replaced by D-61 (`10`, owner 2026-11-05): the setup pages and a button installer come BEFORE Jam and before any friend. The Order line below still shows the old order until the three-gates draft is applied (PR #151, after its hidden needs are added); do not plan from the old order.**
 * **Order (D-61, owner 2026-11-05, replaces D-53).** The setup pages (P3-06) come BEFORE Jam, and Jam comes before the invitation (gate 3, P3-24). **First step: check ADR-083's recorded Tailscale Funnel limits against two listeners at the bitrate used for a Jam** (an owner on a PC browser and a friend on a phone, each on its own connection); if the limits do not hold, say so on the board before building.
 * **Why.** US-61; finding C8 (today the Jam wraps every play).

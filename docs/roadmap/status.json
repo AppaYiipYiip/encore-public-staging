@@ -27,8 +27,8 @@
  },
  "P1-06": {
   "state": "walked",
-  "evidence": "docs/evidence e03 (play_timing.py reads the app's own [perf] span play.audible on the pair: 13 songs) and e05 (the timing tools before and after the P1-04 fix: build 134 against build 136 on the same albums). The request-id half is P1-19 (audit B-32), still to do; the unrunnable build-40 check was dropped on 7 Nov 2026 with its reason written in the task.",
-  "at": "2026-11-07T21:07:14Z",
+  "evidence": "docs/evidence e03 (tools/journeys/play_timing.py reads the app's own [perf] span play.audible on the release-candidate pair: 13 songs) and e05 (tools/journeys/next_timing.py: on build 134 a Next read 2399 and 2380 ms, on build 136 after the P1-04 fix 1003, 819 and 641 ms, other fresh albums; the first tap did not get faster: 3089 against 4123 ms). The scratchpad probe of e04 that counted the media session's PLAYING was withdrawn in #223 and is not part of this item. The request-id half is P1-19 (audit B-32), still to do; the unrunnable build-40 check was dropped on 7 Nov 2026 with its reason written in the task.",
+  "at": "2026-11-07T21:16:54Z",
   "by": "Claude (Sonnet 5.5)"
  },
  "P1-08": {
