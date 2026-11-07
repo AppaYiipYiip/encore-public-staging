@@ -28,10 +28,14 @@ class FakeYouTube:
     Every address carries a generation (`g=N`, issued by `info_file`); once `only_generation` is set, only that one works (the older
     ones have expired)."""
 
-    def __init__(self, data: bytes, *, refuse_first: int = 0, expired_after: int | None = None):
+    def __init__(
+        self, data: bytes, *, refuse_first: int = 0, expired_after: int | None = None, refuse_nth: frozenset[int] = frozenset()
+    ):
         self.data = data
         self.refuse_first = refuse_first
         self.expired_after = expired_after
+        #: Requests (counted from 1) refused once each with 403: a chunk that fails in the middle of a long file.
+        self.refuse_nth = refuse_nth
         self.only_generation: int | None = None
         self.requests: list[str] = []
 
@@ -44,6 +48,7 @@ class FakeYouTube:
             expired
             or len(self.requests) <= self.refuse_first
             or (self.expired_after is not None and len(self.requests) > self.expired_after)
+            or len(self.requests) in self.refuse_nth
         ):
             raise urllib.error.HTTPError(request.full_url, 403, "Forbidden", {}, io.BytesIO(b""))
         start, end = (int(x) for x in rng.removeprefix("bytes=").split("-"))

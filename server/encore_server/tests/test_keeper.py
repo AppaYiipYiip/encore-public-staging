@@ -326,13 +326,23 @@ def test_a_full_disk_stops_keeping_and_fetches_nothing(rig: Rig) -> None:
     assert rig.source.asked == []
 
 
-def test_a_very_long_song_is_played_but_not_kept(rig: Rig) -> None:
-    ref = rig.make_ref(title="Surat Al-Baqarah", artists=["Reciter"], durationMs=8481 * 1000)
+def test_a_recording_over_two_and_a_half_hours_is_played_but_not_kept(rig: Rig) -> None:
+    """The limit is 150 minutes (owner, 7 Nov 2026; it was 45): above it a song is played from YouTube and never saved."""
+    ref = rig.make_ref(title="A whole audiobook", artists=["Reader"], durationMs=181 * 60 * 1000)
 
     with pytest.raises(GiveUp) as caught:
         rig.keep(ref)
 
-    assert "played but not kept" in caught.value.reason and rig.source.asked == []
+    assert "played but not kept" in caught.value.reason and "150" in caught.value.reason and rig.source.asked == []
+
+
+def test_a_two_hour_recitation_is_kept(rig: Rig) -> None:
+    """The owner's first song, a 2-hour recitation of Surat Al-Baqarah, could not be saved at the old limit of 45 minutes."""
+    ref = rig.make_ref(title="Surat Al-Baqarah", artists=["Reciter"], durationMs=120 * 60 * 1000)
+
+    rig.keep(ref)
+
+    assert rig.source.asked, "the song was fetched, not refused for its length"
 
 
 def test_two_songs_of_one_album_share_its_folder(rig: Rig) -> None:

@@ -159,7 +159,7 @@ def test_the_buckets_agree_with_the_state_of_one_song_asked_alone_in_all_seven_s
 
 def test_a_song_the_real_keeper_gave_up_on_for_length_says_so_and_cannot_be_retried(rig: Rig) -> None:
     """The sentence and the Retry flag are matched against the keeper's own text, so this goes through the keeper, not through a copy of its words."""
-    (ref,) = [str(r["id"]) for r in resolve(rig.client, "marwa", song("Very Long", durationMs=46 * 60_000))]
+    (ref,) = [str(r["id"]) for r in resolve(rig.client, "marwa", song("Very Long", durationMs=151 * 60_000))]
     for user in ("marwa", "nina"):
         rig.client.put(f"{V1}/likes/{ref}", params=creds(user))
 

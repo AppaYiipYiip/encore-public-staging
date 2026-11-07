@@ -64,8 +64,8 @@ class KeepSettings:
     #: Keeping stops when the music folder's disk has less than this free (docs/04: the free-space floor).
     min_free_gb: float = 10.0
     #: Only keeping is limited; playing any song, of any length, is never refused for it.
-    max_file_mb: int = 80
-    max_minutes: int = 45
+    max_file_mb: int = 250
+    max_minutes: int = 150
     #: How long to wait for the music server to find a file it was just given.
     scan_wait_s: float = 45.0
     scan_poll_s: float = 0.5

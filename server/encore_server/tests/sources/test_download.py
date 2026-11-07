@@ -145,3 +145,44 @@ def test_a_refused_chunk_is_logged_with_where_it_happened_and_never_the_signed_a
     assert f"HTTP 403 from rr1.example.googlevideo.com at byte {FIRST_CHUNK + CHUNK}" in said
     assert "on a fresh address, giving up" in said
     assert "videoplayback" not in said and "g=" not in said, "the signed address is never logged"
+
+
+def test_a_chunk_refused_in_the_middle_of_a_long_file_is_asked_for_again_where_it_was(tmp_path: Path) -> None:
+    """Audit B-104 and B-93: about one chunk in eight is refused (403), and a 2-hour recording is about 80 chunks. The file used to be thrown away and fetched
+    again from byte 0 once; now only the refused chunk is asked for again, so the file completes whatever the number of chunks."""
+    youtube = FakeYouTube(DATA, refuse_nth=frozenset({3}))
+    rig = Rig(tmp_path, youtube)
+
+    path = rig.proxy.download(Request("A", "B"), rig.stem, max_bytes=10**9)
+
+    assert path.read_bytes() == DATA
+    asked = [r for r in youtube.requests]
+    assert asked.count(asked[2]) == 2, "the refused chunk was asked for twice, the others once"
+    assert asked[0] == f"bytes=0-{FIRST_CHUNK - 1}"
+    assert rig.extracted == ["aaaaaaaaaaa"], "the same address was tried again first: no new look-up at YouTube"
+    assert rig.slept == [1.0], "a short wait before the second try"
+    assert not path.with_name(path.name + ".part").exists()
+
+
+def test_a_chunk_that_keeps_being_refused_gives_up_after_a_few_tries_and_leaves_nothing(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    youtube = FakeYouTube(DATA, expired_after=2)  # the first two requests are fine, every later one is refused
+    rig = Rig(tmp_path, youtube)
+
+    with caplog.at_level(logging.WARNING), pytest.raises(DownloadError) as caught:
+        rig.proxy.download(Request("A", "B"), rig.stem, max_bytes=10**9)
+
+    assert caught.value.code == "download_failed"
+    # each of the two rounds (the kept address, then a fresh one) makes the first two requests, then asks for the third chunk 1 + 3 times
+    assert len(youtube.requests) <= 2 * (2 + 1 + 3) + 2
+    assert not any(rig.stem.parent.glob("song*")), "no half file is left"
+
+
+def test_the_keep_limits_hold_a_two_and_a_half_hour_recording() -> None:
+    """Owner, 7 Nov 2026: songs up to 2 hours 30 may be saved (his 2-hour recitation could not be): 150 minutes and a size that holds it at 160 kbit/s."""
+    from encore_server.keeper.keeper import KeepSettings
+
+    settings = KeepSettings(music_dir=Path("/music"))
+    assert settings.max_minutes == 150
+    assert settings.max_file_mb * 1024 * 1024 >= 150 * 60 * 160_000 // 8

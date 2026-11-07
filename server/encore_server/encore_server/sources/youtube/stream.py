@@ -31,6 +31,10 @@ log = logging.getLogger("encore_server.sources.youtube.stream")
 
 #: The first request is small so the first bytes (and the player) arrive quickly; the rest are larger to save round trips.
 FIRST_CHUNK = 256 * 1024
+#: How often one refused chunk of a download is asked for again before the download gives up (the first try on the same address, the next on a fresh one).
+CHUNK_RETRIES = 3
+#: How long a renewed address may take.
+RENEW_WITHIN_S = 60.0
 CHUNK = 2 * 1024 * 1024
 
 #: A freshly issued stream address of some YouTube clients answers 403 for a few seconds and then works: the first request is retried
@@ -228,7 +232,13 @@ class StreamProxy:
             if info.size is not None and info.size > max_bytes:
                 raise DownloadError("too_big")
             try:
-                return self._write(info, stem, max_bytes, deadline)
+                return self._write(
+                    info,
+                    stem,
+                    max_bytes,
+                    deadline,
+                    renew=lambda fresh: self._info(video_id, self._clock() + RENEW_WITHIN_S, fresh=fresh),
+                )
             except urllib.error.HTTPError as refused:
                 # The address that was kept has expired (or never opened): ask again, once.
                 if fresh or refused.code not in (403, 404, 410):
@@ -240,12 +250,21 @@ class StreamProxy:
                 raise DownloadError("download_failed", f"{type(error).__name__}: {error}") from error
         raise DownloadError("download_failed")  # unreachable: the second round either returns or raises
 
-    def _write(self, info: _Info, stem: Path, max_bytes: int, deadline: float) -> Path:
+    def _write(
+        self,
+        info: _Info,
+        stem: Path,
+        max_bytes: int,
+        deadline: float,
+        *,
+        renew: Callable[[bool], _Info] | None = None,
+    ) -> Path:
         final = stem.with_name(f"{stem.name}.{info.ext}")
         part = final.with_name(final.name + ".part")
         stem.parent.mkdir(parents=True, exist_ok=True)
         position = 0
         total = info.size
+        retries = 0
         try:
             with part.open("wb") as out:
                 while True:
@@ -267,7 +286,16 @@ class StreamProxy:
                             total if total is not None else "?",
                             last - position + 1,
                         )
+                        # A refused chunk in the middle of a long file used to throw the whole file away and start again from byte 0 (once); at
+                        # about one chunk in eight that cannot work for a file of 80 chunks (a 2-hour recording). The same chunk is asked for again:
+                        # first on the same address after a short wait, then on a fresh one (audit B-104 and B-93, 7 Nov 2026).
+                        if position > 0 and renew is not None and refused.code in (403, 404, 410) and retries < CHUNK_RETRIES:
+                            retries += 1
+                            self._sleep(float(retries))
+                            info = renew(retries >= 2)
+                            continue
                         raise
+                    retries = 0
                     if not data:
                         raise DownloadError("download_failed", "the server sent no bytes")
                     if status == 200 and position > 0:
