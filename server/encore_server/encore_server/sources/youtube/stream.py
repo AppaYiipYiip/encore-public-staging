@@ -18,6 +18,7 @@ import re
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -210,6 +211,9 @@ class StreamProxy:
             except urllib.error.HTTPError as refused:
                 # The address that was kept has expired (or never opened): ask again, once.
                 if fresh or refused.code not in (403, 404, 410):
+                    log.warning(
+                        "keep %s: HTTP %s on %s address, giving up", video_id, refused.code, "a fresh" if fresh else "the kept"
+                    )
                     raise DownloadError("download_failed", f"HTTP {refused.code}") from refused
             except (urllib.error.URLError, OSError) as error:
                 raise DownloadError("download_failed", f"{type(error).__name__}: {error}") from error
@@ -228,7 +232,21 @@ class StreamProxy:
                     last = position + length - 1
                     if total is not None:
                         last = min(last, total - 1)
-                    status, data, content_range = self._get(info, position, last, deadline if position == 0 else None)
+                    try:
+                        status, data, content_range = self._get(info, position, last, deadline if position == 0 else None)
+                    except urllib.error.HTTPError as refused:
+                        # Audit B-104 (7 Nov 2026): about 1 chunk request in 8 of a keep was refused with 403 and one song never got through, and the log
+                        # did not say where. Where it happens decides what the fix is (the first chunk, a later one, a fresh address). The host only:
+                        # the address itself is signed and is never logged.
+                        log.warning(
+                            "keep: HTTP %s from %s at byte %d of %s (a request for %d bytes)",
+                            refused.code,
+                            urllib.parse.urlparse(info.url).hostname,
+                            position,
+                            total if total is not None else "?",
+                            last - position + 1,
+                        )
+                        raise
                     if not data:
                         raise DownloadError("download_failed", "the server sent no bytes")
                     if status == 200 and position > 0:

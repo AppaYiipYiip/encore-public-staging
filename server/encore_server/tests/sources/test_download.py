@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -128,3 +129,19 @@ def test_nothing_found_is_not_found_and_a_block_is_passed_on(tmp_path: Path) -> 
     with pytest.raises(DownloadError) as caught:
         busy.proxy.download(Request("A", "B"), busy.stem, max_bytes=10**9)
     assert caught.value.code == "blocked"
+
+
+def test_a_refused_chunk_is_logged_with_where_it_happened_and_never_the_signed_address(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Audit B-104: 403 on a later chunk, also on the fresh address the retry asks for. The log says the byte and the host, not the address."""
+    rig = Rig(tmp_path, FakeYouTube(DATA, expired_after=2))
+
+    with caplog.at_level(logging.WARNING, logger="encore_server.sources.youtube.stream"), pytest.raises(DownloadError) as error:
+        rig.proxy.download(Request("A", "B"), rig.stem, max_bytes=10**9)
+
+    assert error.value.code == "download_failed"
+    said = " | ".join(r.getMessage() for r in caplog.records)
+    assert f"HTTP 403 from rr1.example.googlevideo.com at byte {FIRST_CHUNK + CHUNK}" in said
+    assert "on a fresh address, giving up" in said
+    assert "videoplayback" not in said and "g=" not in said, "the signed address is never logged"
