@@ -9,7 +9,7 @@ and activity).
 ---
 
 ## P4-01 — A listening profile and recommendations per person — Size L
-* **Order.** Needs: P2-12 [i], P4-20 [d]. Why: P4-20 chooses how suggestions are made (a ready-made engine or our own) before any of this is built; the candidate sources (similar artists via Deezer, MusicBrainz and ListenBrainz) are server-side lookups, and outside services go through the server (ADR-R38)..
+* **Order.** Needs: P2-12 [i], P4-20 [d], P4-23 [p]. Why: P4-20 chooses how suggestions are made (a ready-made engine or our own) before any of this is built; the candidate sources (similar artists via Deezer, MusicBrainz and ListenBrainz) are server-side lookups, and outside services go through the server (ADR-R38)..
 * **Where it sits (2026-11-03).** Right after Jam (Discover): it is what makes daily use compelling for every user from the first day, which the cross-server features are not. The suggestions, smart shuffle (about one suggestion in five while shuffling, marked, one tap to keep or skip: `../20`), song radio, "New from artists you love" and "Not for me" are all in this task; following artists and the release notification are P4-18.
 * **Why.** US-60; owner: "each one has his own … recommendation system profile tailored to him".
 * **Context.** The old `encore-recs` built nightly lists from a copy of Navidrome's database plus MusicBrainz/ListenBrainz/Deezer
@@ -26,7 +26,7 @@ and activity).
   two people with different tastes on two emulators get different rows; the owner rates his own Home after a week. Smart shuffle marks about one song in five as a suggestion with a one-tap keep or skip; song radio plays; "Not for me" on a suggested song or band removes it from that person's rows only.
 
 ## P4-02 — Jam on the live channel — Size L
-* **Order.** Needs: P2-08 [d], P2-09 [d], P3-18 [p], P3-28 [d]. Why: D-61 (replaces D-53): the invitation comes AFTER Jam, so Jam can no longer wait for the first friend. It is walked through the owner's real address (the setup is gate 2, P3-18).
+* **Order.** Needs: P2-08 [d], P2-09 [d], P3-18 [p], P3-28 [d], P4-23 [p]. Why: D-61 (replaces D-53): the invitation comes AFTER Jam, so Jam can no longer wait for the first friend. It is walked through the owner's real address (the setup is gate 2, P3-18).
 * **D-53 is replaced by D-61 (`10`, owner 2026-11-05): the setup pages and a button installer come BEFORE Jam and before any friend. The Order line below still shows the old order until the three-gates draft is applied (PR #151, after its hidden needs are added); do not plan from the old order.**
 * **Order (D-61, owner 2026-11-05, replaces D-53).** The setup pages (P3-06) come BEFORE Jam, and Jam comes before the invitation (gate 3, P3-24). **First step: check ADR-083's recorded Tailscale Funnel limits against two listeners at the bitrate used for a Jam** (an owner on a PC browser and a friend on a phone, each on its own connection); if the limits do not hold, say so on the board before building.
 * **Why.** US-61; finding C8 (today the Jam wraps every play).
@@ -76,7 +76,7 @@ and activity).
 * **Acceptance.** No open S1/S2; the QA report lists what was not run and why.
 
 ## P4-07 — Encore Connect: your devices, handover and remote volume — Size L
-* **Order.** Needs: P2-08 [d], P2-09 [d].
+* **Order.** Needs: P2-08 [d], P2-09 [d], P4-23 [p]. Why: crossfade (P4-23) changes the player's engine, which this item also changes, so it is done first (audit B-8; a rule of the plan, not a hard need).
 * **Why.** Owner: "increase the sound of the music playing on the tablet from my phone, as long as it's the same account … play/pause".
   US-70, US-71; design `../13` §2; risks H1, H5, H6, H10, H15.
 * **Context.** The player's "Devices" button opened Android's output switcher; D-28 took it out on 2026-10-30, so this task adds Encore's own sheet to an empty place (the old call was `AudioOutput.showSwitcher()` in
@@ -130,11 +130,31 @@ and activity).
 * **Do.** Adaptive layout: navigation rail, list + detail panes, player as a side panel in landscape; keyboard and mouse basics.
 * **Acceptance.** Profile E and a landscape tablet emulator: every screen usable in both orientations and split-screen; screenshots in the PR.
 
-## P4-12 — Spotify-class extras: Android Auto, the home-screen widget, crossfade, Data saver — Size L (split into sub-tasks when started)
-* **Order.** Needs: none. Why: U2, U3, U7–U11, U13. Reduced on 2026-11-05 (D-61): the owner asked for these four before his friend is invited; the rest is P4-21.
-* **Do.** Crossfade setting (gapless kept); Android Auto search and `MEDIA_PLAY_FROM_SEARCH`; a home-screen widget; a single "Data saver" switch.
-* **Start from** `../29-spotify-gap-review.md` (owner, 2026-10-22: the artist page was fixed first; "Spotify does other things much better").
-* **Acceptance.** Each sub-task has its own journey; the owner compares side by side with Spotify on his phone and lists gaps.
+## P4-12 — Android Auto: browse your music and play by voice from the car screen — Size S
+* **Order.** Needs: none. Why: U2. **Split 7 Nov 2026 (roadmap grooming, the owner said yes): this item was four unrelated features in one Large task (Android Auto, the home-screen widget, crossfade, the Data saver switch); it keeps Android Auto, the widget is P4-22, crossfade is P4-23, the Data saver switch is P4-24. They differ in size, in risk and in what must be decided first, so each is walked and marked on its own; the friend gate (P3-24) waits for all four.** Reduced on 2026-11-05 (D-61): the owner asked for these before his friend is invited.
+* **What exists (audit, `AUDIT-BUILT-2026-11-05.md` feasibility table).** The browse tree and `playFromSearch` (voice search) are already in `playback/encore_audio_handler.dart`; the car app description is declared in the manifest. Never tried in a car or on the desktop head unit.
+* **Decide first.** (1) D-18 parked car frames; the owner's request of 5 Nov (D-61) asks for Android Auto before the invitation, so write that down in `10` when this is started. (2) **The distribution risk (audit B-26):** Android Auto hides apps that were not installed from the Play Store unless the phone's Android Auto developer setting "Unknown sources" is on, which collides with GitHub-only distribution (D-56): say in the install guide (P5-07) what a person does, or accept that the car screen needs that setting, and write which.
+* **Do.** Walk the browse tree and voice search in Google's desktop head unit (DHU) and, if the owner has a car, in the car; fix what that shows; add what the install guide must say.
+* **Acceptance.** In the desktop head unit: browse Home, Library and Playlists with big touch targets, start a song from the list and by voice ("play Fairuz"), see the cover and title, pause and skip from the car screen, and the same on the owner's car if there is one; the install guide says the Unknown-sources step.
+* **Size.** S for the code, the rest is the two decisions.
+
+## P4-22 — A home-screen widget: what is playing, with play, pause and next — Size M
+* **Order.** Needs: none. Why: U3. Split out of P4-12 on 7 Nov 2026. The audit found no widget code at all (the Kotlin side is `MainActivity.kt`, small channels only), no drawing (D-43: drawn before built), and no conflict with any rule.
+* **Do.** (0) **Drawn first** and approved by the owner: a small widget (cover, title, play and pause) and a wide one (cover, title, artist, previous, play and pause, next), in the app's look (`16`); what the widget shows when nothing is playing, when the phone is offline and when the app has never been opened. (1) An `AppWidgetProvider`, the layout and a plugin such as `home_widget`; (2) the current song, cover and state come from the audio handler (it runs in the app's own process, so the state is readable); the buttons send media commands and open the app on a tap on the cover.
+* **Acceptance.** On the A35: add the widget to the home screen; start a song; the widget shows its title and cover within 2 s and its button pauses and resumes the song with the app closed; next skips; a tap on the cover opens the player; after the app is force-stopped the widget shows its empty state in words, not a blank box.
+* **Size.** M.
+
+## P4-23 — Crossfade between songs, with gapless kept — Size L
+* **Order.** Needs: none. Why: U7. Split out of P4-12 on 7 Nov 2026. **The riskiest of the four (audit B-8):** the player is one `just_audio` player on one gapless `ConcatenatingAudioSource`, and the engine's window and index logic (`_expectedIndex`, the next-song preparation of P1-04) assume exactly that. A crossfade needs a second player overlapped with the first, which changes how the next song is prepared and how skip, seek and the end of a list behave: a real risk to "the player never gets stuck" (P1-08). **Do it before the features that add more engine behaviour (Jam P4-02, Connect P4-07, smart shuffle P4-01), not after: those three carry a policy need on this item.**
+* **Do.** A setting "Crossfade" (off, or 1 to 12 seconds; off by default; gapless between the songs of one album stays gapless, as in Spotify); decide with a one-page comparison first (a second player against a fade at the audio-focus level) and write the choice in the PR; the sleep timer's existing 10-second fade is reused for the curve.
+* **Acceptance.** On the A35 and an emulator: two songs with a 6 s crossfade: the audio track is sampled and the outgoing volume falls while the incoming rises, without a gap or a jump; Next, Previous, seek, pause and a lost network during the fade leave the player in a state it says (J-07 and the rapid-Next run still pass; no PLAYING-while-silent); off means the same gapless behaviour as today (a test pins it); the song list's end and repeat-one do not crossfade a song into itself.
+* **Size.** L, with real risk.
+
+## P4-24 — One Data saver switch for slow or metered connections — Size S
+* **Order.** Needs: none. Why: U9. Split out of P4-12 on 7 Nov 2026. **Decide first what the switch means:** "Data saver" is already one of the quality levels (Opus 48 kbps, `domain/audio_quality.dart`, chosen in Settings > Playback), so the planned single switch may only duplicate it. Proposed meaning: one switch that, when on and only while the phone is on mobile data, caps streaming and new downloads at the Data saver level, stops preparing the songs after the next one on the phone's side, loads small pictures, and syncs less often (P1-14 "Less syncing" holds the sync half; do them together or say which half is which).
+* **Do.** The switch in Settings (one line, with the plain words of what it does); the four effects above behind it; nothing changes while it is off or while the phone is on Wi-Fi.
+* **Acceptance.** Measured with the phone's own per-app data counter on mobile data: with the switch on, a four-minute song streams in about 1.5 MB or less (48 kbps), a Home page of pictures loads in less than half the bytes, and the idle sync moves less than before; with it off, or on Wi-Fi, the numbers equal today's.
+* **Size.** S.
 
 ## P4-13 — Problem reports and battery-saver guidance — Size M
 * **Order.** Needs: none.

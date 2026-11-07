@@ -376,8 +376,8 @@
  },
  "P4-12": {
   "kind": "feature",
-  "title": "Android Auto, a home-screen widget, crossfade and a Data saver switch",
-  "note": ""
+  "title": "Android Auto: browse your music and play by voice from the car screen",
+  "note": "Mostly built, never tried in a car. Android Auto hides apps that did not come from the Play Store unless a setting is on: the install guide has to say so."
  },
  "P4-13": {
   "kind": "feature",
@@ -882,5 +882,20 @@
   "proposal": true,
   "size": "S",
   "needs": []
+ },
+ "P4-22": {
+  "kind": "feature",
+  "title": "A home-screen widget: what is playing, with play, pause and next",
+  "note": "Split out of the four extras. Drawn first and approved by you; no widget code exists yet."
+ },
+ "P4-23": {
+  "kind": "feature",
+  "title": "Crossfade between songs, with gapless kept",
+  "note": "Split out of the four extras. The riskiest one: it changes the player's engine, so it comes before Jam and the other engine work."
+ },
+ "P4-24": {
+  "kind": "feature",
+  "title": "One Data saver switch for slow or metered connections",
+  "note": "Split out of the four extras. A Data saver quality level already exists; the first step is deciding what one switch should do."
  }
 }
