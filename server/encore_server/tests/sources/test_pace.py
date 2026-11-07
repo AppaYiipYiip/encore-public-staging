@@ -47,6 +47,30 @@ def test_a_quiet_spell_resets_the_wait() -> None:
     assert p.wait_turn() == 0.0
 
 
+def test_the_default_pace_is_six_seconds_on_average_and_the_host_can_change_it() -> None:
+    """7 Nov 2026, the owner: "12 s between songs is too much, make the default 6 s". About 600 requests an hour at most; a 200-song import in about 20 minutes."""
+    from encore_server.config import Settings
+
+    assert Settings.from_env({}).youtube_pace_s == 6.0
+    assert Settings.from_env({"ENCORE_YOUTUBE_PACE_S": "20"}).youtube_pace_s == 20.0
+    seen: list[tuple[float, float]] = []
+    clock = Clock()
+
+    def uniform(low: float, high: float) -> float:
+        seen.append((low, high))
+        return low
+
+    Pacer(clock=clock, sleep=clock.sleep, uniform=uniform).wait_turn()  # no mean given: the class default
+
+    assert seen == [(3.0, 9.0)]
+
+
+def test_the_compose_file_passes_the_pace_through_so_a_host_can_set_it_in_dot_env() -> None:
+    compose = (Path(__file__).resolve().parents[2] / "deploy" / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "ENCORE_YOUTUBE_PACE_S: ${ENCORE_YOUTUBE_PACE_S:-6}" in compose
+
+
 def test_the_gaps_are_random_between_half_and_one_and_a_half_times_the_mean() -> None:
     clock = Clock()
     seen: list[tuple[float, float]] = []

@@ -141,7 +141,7 @@ Encore will run on residential lines, CGNAT addresses shared with strangers, VPS
 where YouTube is slow or blocked. The source module must protect the Host's address and degrade honestly.
 
 * **No bursts.** Interactive look-ups are always allowed at a human pace; background look-ups take turns and are **spaced a random few seconds
-  apart** (built: `sources/youtube/pace.py`, a gap of 6 to 18 s, 12 s on average, so about 300 an hour at most; the average is `ENCORE_YOUTUBE_PACE_S`).
+  apart** (built: `sources/youtube/pace.py`, a gap of 3 to 9 s, 6 s on average since 7 Nov 2026 (the owner's word; it was 6 to 18 s, 12 on average, after the refusal of 22 Oct), so about 600 an hour at most; the average is `ENCORE_YOUTUBE_PACE_S`).
   **Planned, not built in the new server:** an hourly cap (**≤ 120 per hour**) and the setting in Advanced (the older fetch service has an hourly import
   budget, `IMPORT_MAX_PER_HOUR`, default 120; the new server has none). The rest after a refusal is built (`rest.py`: 30 minutes, doubling up to a day).
   (One burst on 2026-10-21 passed without refusal; that is one sample on one address and not a basis for defaults.)

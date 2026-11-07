@@ -4,6 +4,10 @@ An import of a hundred songs is a hundred look-ups and a hundred downloads from 
 no person makes, and a burst is what gets a home address refused for hours (2026-10-22: refused after about 35 look-ups in a few minutes). So
 the matching and the keeping take turns: every background request reserves the next slot, a random few seconds after the previous one, and
 waits for it. A person's tap is never paced: they asked, and one song is not a burst.
+
+The gap is 3 to 9 s (6 s on average) since 7 Nov 2026, when the owner asked for 6 instead of 12 (it was 6 to 18 s, 12 on average, after the refusal of 22 Oct): about 600 requests an hour at most,
+so a 200-song import saves in about 20 minutes. `ENCORE_YOUTUBE_PACE_S` changes the average (0 switches pacing off). The risk is the owner's to carry: the refusal of 22 Oct came after about
+35 look-ups in a few minutes, which is what 6 s apart looks like; if YouTube refuses the address again, the pacer's rest (`rest.py`) already stops background work and a larger average is the way back.
 """
 
 from __future__ import annotations
@@ -17,7 +21,7 @@ from collections.abc import Callable
 class Pacer:
     def __init__(
         self,
-        mean_s: float = 12.0,
+        mean_s: float = 6.0,
         *,
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,

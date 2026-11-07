@@ -36,7 +36,7 @@ class Settings:
     home_url: str = ""
     away_url: str = ""
     #: Mean seconds between the background look-ups and downloads at YouTube (0: no pacing, for tests).
-    youtube_pace_s: float = 12.0
+    youtube_pace_s: float = 6.0
     fault: str = ""
     #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
     keep: bool = True
@@ -73,7 +73,7 @@ class Settings:
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
             home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
-            youtube_pace_s=float(e.get("ENCORE_YOUTUBE_PACE_S", "12")),
+            youtube_pace_s=float(e.get("ENCORE_YOUTUBE_PACE_S", "6")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
