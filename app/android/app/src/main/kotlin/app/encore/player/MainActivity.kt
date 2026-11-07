@@ -2,6 +2,9 @@ package app.encore.player
 
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.media.MediaRouter2
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -41,12 +44,62 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     private var shareChannel: MethodChannel? = null
 
+    private var outputChannel: MethodChannel? = null
+    private var outputCallback: AudioDeviceCallback? = null
+
     /** Text shared to the app that Dart has not picked up yet. */
     private var pendingShared: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingShared = sharedTextFrom(intent)
+    }
+
+    override fun onDestroy() {
+        outputCallback?.let { (getSystemService(AUDIO_SERVICE) as AudioManager).unregisterAudioDeviceCallback(it) }
+        outputCallback = null
+        super.onDestroy()
+    }
+
+    /**
+     * Where the phone's sound goes now: a Bluetooth device, then a wired or USB one, else the phone's own speaker. Android sends media to the
+     * most recently connected external output, so the first of these in that order is what the person hears. `name` is what the person sees:
+     * a Bluetooth device's own name, "Headphones" for a wired one, "This phone" for the speaker (Dart writes that one itself).
+     */
+    private fun currentOutput(): Map<String, String> {
+        return try {
+            val manager = getSystemService(AUDIO_SERVICE) as AudioManager
+            val outputs = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            // 8 A2DP, 23 hearing aid, 26 BLE headset, 27 BLE speaker, 30 BLE broadcast (the BLE ones are API 31 constants: numbers keep this compiling on API 24).
+            val bluetooth = outputs.firstOrNull { it.type in intArrayOf(8, 23, 26, 27, 30) }
+            // 3 wired headset, 4 wired headphones, 22 USB headset, 11 USB device, 5 and 6 line out.
+            val wired = outputs.firstOrNull { it.type in intArrayOf(3, 4, 22, 11, 5, 6) }
+            when {
+                bluetooth != null -> mapOf("kind" to "bluetooth", "name" to deviceName(bluetooth))
+                wired != null -> mapOf("kind" to "wired", "name" to "Headphones")
+                else -> mapOf("kind" to "speaker", "name" to "This phone")
+            }
+        } catch (e: Exception) {
+            mapOf("kind" to "speaker", "name" to "This phone")
+        }
+    }
+
+    private fun deviceName(device: AudioDeviceInfo): String =
+        device.productName?.toString()?.trim().orEmpty().ifEmpty { "Bluetooth" }
+
+    /** Tells Dart whenever an output appears or goes (a headset plugged in, a Bluetooth device switched off). */
+    private fun watchOutputDevices() {
+        if (outputCallback != null) return
+        val manager = getSystemService(AUDIO_SERVICE) as AudioManager
+        val callback = object : AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) = push()
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) = push()
+            private fun push() {
+                runOnUiThread { outputChannel?.invokeMethod("outputChanged", currentOutput()) }
+            }
+        }
+        manager.registerAudioDeviceCallback(callback, null)
+        outputCallback = callback
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -170,9 +223,13 @@ class MainActivity : AudioServiceFragmentActivity() {
         // System audio output chooser (speaker / headset / Bluetooth /
         // Audio Sharing). MediaRouter2 shows the platform sheet on API 34+;
         // older versions open the Bluetooth settings page.
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, OUTPUT_CHANNEL)
+        outputChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, OUTPUT_CHANNEL)
+        watchOutputDevices()
+        outputChannel!!
             .setMethodCallHandler { call, result ->
-                if (call.method != "showOutputSwitcher") {
+                if (call.method == "currentOutput") {
+                    result.success(currentOutput())
+                } else if (call.method != "showOutputSwitcher") {
                     result.notImplemented()
                 } else {
                     try {

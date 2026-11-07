@@ -315,6 +315,7 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
         album: t.albumTitle,
         imageUrl: t.coverUrl,
         duration: t.duration,
+        videoId: t.videoId,
       );
 
   /// In a Jam the song that was tapped plays in the Jam, by name, at once: it is

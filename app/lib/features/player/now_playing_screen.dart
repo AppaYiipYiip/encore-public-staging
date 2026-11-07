@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,9 +8,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/connection.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../app/share_out.dart';
 import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
 import '../../domain/artwork_color.dart';
+import '../../domain/lyrics.dart';
 import '../common/artwork_color.dart';
 import '../common/connection_banner.dart';
 import '../common/cover_art.dart';
@@ -17,10 +21,12 @@ import '../common/track_menu.dart';
 import '../common/widgets.dart';
 import '../providers.dart';
 import 'lyrics_screen.dart';
+import 'output_row.dart';
 import 'pending_likes.dart';
 import 'playback_facade.dart';
 import 'queue_sheet.dart';
 import 'scrubber.dart';
+import 'share_text.dart';
 import 'sleep_timer_sheet.dart';
 import 'streamed_song.dart';
 
@@ -125,9 +131,9 @@ class NowPlayingScreen extends ConsumerWidget {
                       const SizedBox(height: Space.xs),
                       _Transport(snapshot: snapshot, facade: facade),
                       const SizedBox(height: Space.md),
-                      const _BottomRow(),
+                      _BottomRow(track: track),
                       const SizedBox(height: Space.lg),
-                      _LyricsPreview(trackId: track.id),
+                      _LyricsPreview(track: track),
                       const SizedBox(height: Space.xl),
                     ];
                     const side = EdgeInsets.symmetric(horizontal: Space.xl);
@@ -484,18 +490,25 @@ class _Transport extends StatelessWidget {
   }
 }
 
-/// Spotify's last row of the player: the device icon on the left, the queue on the right. Everything else it used to carry (the speed, the sleep timer,
-/// private listening) is in the "..." menu, and the quality label is in the track menu's header (docs/design/03 row 9).
-class _BottomRow extends StatelessWidget {
-  const _BottomRow();
+/// Spotify's last row of the player (D-63, D-66): where the sound goes on the left (a tap opens Encore's own Devices sheet), Share and the queue on
+/// the right. Everything else it used to carry (the speed, the sleep timer, private listening) is in the "..." menu, and the quality label is in the
+/// track menu's header (docs/design/03 row 9).
+class _BottomRow extends ConsumerWidget {
+  const _BottomRow({required this.track});
+
+  final NowPlayingTrack track;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
-        // D-28 (AUDIT F45): no device icon. It opened Android's system-wide output chooser, so choosing there moved every app's sound. Encore's
-        // own Devices sheet comes with P4-07.
-        const Spacer(),
+        const Expanded(
+            child: Align(alignment: Alignment.centerLeft, child: OutputChip())),
+        IconButton(
+          tooltip: 'Share',
+          icon: const Icon(Icons.ios_share_rounded),
+          onPressed: () => unawaited(_share(context, ref, shareTextFor(track))),
+        ),
         IconButton(
           tooltip: 'Queue',
           icon: const Icon(Icons.queue_music_rounded),
@@ -504,6 +517,15 @@ class _BottomRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Hands [text] to the phone's own share sheet; says so when there is none.
+Future<void> _share(BuildContext context, WidgetRef ref, String text) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final opened = await ref.read(shareOutProvider).text(text);
+  if (opened || !context.mounted) return;
+  messenger?.showSnackBar(
+      const SnackBar(content: Text('This phone could not open sharing.')));
 }
 
 /// What the "..." menu of the player adds to a track's own menu.
@@ -520,67 +542,128 @@ List<MenuAction> _playerActions(BuildContext context, WidgetRef ref) {
   ];
 }
 
-/// Spotify-style preview card: a few lines around the current one; tap opens
-/// the full-screen lyrics. Hidden while loading and when there are no lyrics.
-class _LyricsPreview extends ConsumerWidget {
-  const _LyricsPreview({required this.trackId});
+/// The height of the Lyrics card, the same in every state (P1-23, the owner, 7 Nov 2026: going from a song without lyrics to one with lyrics must not
+/// make the screen jump). It peeks under the bottom row; on a short phone the page scrolls up to it.
+const double kLyricsCardHeight = 188;
 
-  final String trackId;
+/// Spotify-style Lyrics card: a few lines around the current one; tap opens the full-screen lyrics. It is always there, in the same place and the same
+/// size: the lyrics, "Looking for lyrics..." while they load, "No lyrics for this song" when there are none.
+class _LyricsPreview extends ConsumerWidget {
+  const _LyricsPreview({required this.track});
+
+  final NowPlayingTrack track;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lyrics = ref.watch(currentLyricsProvider(trackId)).value;
-    if (lyrics == null || lyrics.isEmpty) return const SizedBox.shrink();
-
-    final active = lyrics.synced
-        ? ref.watch(playbackPositionProvider
-            .select((p) => lyrics.activeIndex(p.value?.inMilliseconds ?? 0)))
-        : -1;
-    final start = lyrics.synced ? (active < 0 ? 0 : active) : 0;
-    final shown =
-        lyrics.lines.skip(start).where((l) => !l.isBlank).take(4).toList();
+    final async = ref.watch(currentLyricsProvider(track.id));
+    final lyrics = async.value;
     final c = context.colors;
+    final has = lyrics != null && !lyrics.isEmpty;
+
+    var shown = const <LyricLine>[];
+    if (has) {
+      final active = lyrics.synced
+          ? ref.watch(playbackPositionProvider
+              .select((p) => lyrics.activeIndex(p.value?.inMilliseconds ?? 0)))
+          : -1;
+      final start = lyrics.synced ? (active < 0 ? 0 : active) : 0;
+      shown =
+          lyrics.lines.skip(start).where((l) => !l.isBlank).take(4).toList();
+    }
+
+    final Widget body;
+    if (has) {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < shown.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                shown[i].text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: i == 0 && lyrics.synced
+                      ? c.onBg
+                      : c.onBg.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
+        ],
+      );
+    } else {
+      body = Text(
+        async.isLoading ? 'Looking for lyrics...' : 'No lyrics for this song',
+        style: context.text.titleMedium?.copyWith(color: c.onBgMuted),
+      );
+    }
 
     return Semantics(
-      button: true,
-      label: 'Lyrics preview. Open full screen lyrics',
+      button: has,
+      label: has ? 'Lyrics preview. Open full screen lyrics' : 'Lyrics',
       child: Material(
         color: c.onBg.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(Radii.card),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => Nav.lyrics(context),
-          child: Padding(
-            padding: const EdgeInsets.all(Space.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('Lyrics', style: context.text.titleSmall),
+          onTap: has ? () => Nav.lyrics(context) : null,
+          child: SizedBox(
+            height: kLyricsCardHeight,
+            child: Padding(
+              padding: const EdgeInsets.all(Space.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height:
+                        28, // the same in every state: the buttons of a card with lyrics must not push its title down
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            has && !lyrics.synced
+                                ? 'Lyrics (not synced)'
+                                : 'Lyrics',
+                            style: context.text.titleSmall,
+                          ),
+                        ),
+                        if (has) ...[
+                          InkResponse(
+                            onTap: () => unawaited(_share(
+                                context,
+                                ref,
+                                shareLyricsTextFor(
+                                    track, [for (final l in shown) l.text]))),
+                            radius: 20,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(Icons.ios_share_rounded,
+                                  size: 18,
+                                  color: c.onBgMuted,
+                                  semanticLabel: 'Share these lyrics'),
+                            ),
+                          ),
+                          const SizedBox(width: Space.xs),
+                          Icon(Icons.open_in_full_rounded,
+                              size: 18, color: c.onBgMuted),
+                        ],
+                      ],
                     ),
-                    Icon(Icons.open_in_full_rounded,
-                        size: 18, color: c.onBgMuted),
-                  ],
-                ),
-                const SizedBox(height: Space.sm),
-                for (var i = 0; i < shown.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      shown[i].text,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: i == 0 && lyrics.synced
-                            ? c.onBg
-                            : c.onBg.withValues(alpha: 0.65),
+                  ),
+                  const SizedBox(height: Space.sm),
+                  // What does not fit is cut off, never an overflow stripe: the card keeps its size.
+                  Expanded(
+                    child: ClipRect(
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: body,
                       ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -439,7 +439,7 @@ void main() {
     );
 
     expect(find.byType(NowPlayingScreen), findsOneWidget);
-    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.textContaining('Lyrics'), findsOneWidget);
     expect(find.text('First line of the song'), findsOneWidget);
     await closeApp(tester, app.db);
   });
@@ -453,7 +453,7 @@ void main() {
       lyrics: _lyrics,
     );
 
-    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.textContaining('Lyrics'), findsOneWidget);
     expect(find.text('First line of the song'), findsOneWidget);
     await closeApp(tester, app.db);
   });

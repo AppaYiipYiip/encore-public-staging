@@ -21,6 +21,7 @@ class NowPlayingTrack {
     this.suffix,
     this.bitRate,
     this.imageUrl,
+    this.videoId,
   });
 
   factory NowPlayingTrack.fromRow(TrackRow t) => NowPlayingTrack(
@@ -55,6 +56,9 @@ class NowPlayingTrack {
   /// Direct artwork URL (catalogue items without a server cover id).
   final String? imageUrl;
 
+  /// The YouTube video of a streamed song, when the app knows it (see `QueueItem.videoId`): what the Share button links to.
+  final String? videoId;
+
   @override
   bool operator ==(Object other) => other is NowPlayingTrack && other.id == id;
 
@@ -77,6 +81,7 @@ class StreamedTrack {
     this.album,
     this.imageUrl,
     this.duration,
+    this.videoId,
   });
 
   final String id;
@@ -89,6 +94,9 @@ class StreamedTrack {
   final String? album;
   final String? imageUrl;
   final Duration? duration;
+
+  /// The YouTube video this song is, when the app knows it.
+  final String? videoId;
 }
 
 @immutable

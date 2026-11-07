@@ -209,7 +209,7 @@ void main() {
     await settle(tester);
 
     expect(find.byType(NowPlayingScreen), findsOneWidget);
-    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.textContaining('Lyrics'), findsOneWidget);
     expect(find.text('Spiral out, keep going'), findsOneWidget);
     await closeApp(tester, app.db);
   });

@@ -503,6 +503,7 @@ class PlaybackEngine implements PlaybackFacade {
             album: t.album,
             imageUrl: t.imageUrl,
             durationSec: t.duration?.inSeconds,
+            videoId: t.videoId,
           ),
       ], startIndex: start, shuffle: false);
       _consecutiveFailures = 0;
@@ -724,6 +725,7 @@ class PlaybackEngine implements PlaybackFacade {
           album: track.album,
           imageUrl: track.imageUrl,
           durationSec: track.duration?.inSeconds,
+          videoId: track.videoId,
         ));
         if (wasEmpty) {
           await _loadCurrent(autoplay: true);
@@ -1524,6 +1526,7 @@ class PlaybackEngine implements PlaybackFacade {
               suffix: item.suffix,
               bitRate: item.bitRate,
               imageUrl: item.imageUrl,
+              videoId: item.videoId,
             ),
       isPlaying:
           state.playing && state.processing != BackendProcessing.completed,

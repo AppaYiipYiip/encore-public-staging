@@ -21,18 +21,21 @@ void main() {
   }
 
   testWidgets(
-      'the player has the queue on the right and no device icon (D-28), '
-      'no lyrics button, no speed or sleep buttons', (tester) async {
+      'the last row has where the sound goes on the left, Share and the queue on the right (D-63, D-66); the lyrics are a card, not a button; '
+      'no speed or sleep buttons', (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying());
     await openPlayer(tester);
 
     expect(find.byTooltip('Close player'), findsOneWidget);
     expect(find.byTooltip('More options'), findsOneWidget);
-    // D-28 (AUDIT F45): the icon opened Android's system-wide output chooser, so it moved every app's sound. It is gone.
-    expect(find.byTooltip('Choose where to play'), findsNothing);
+    // D-28 (AUDIT F45) took the device icon out because it opened Android's system-wide output chooser; D-66 (7 Nov 2026) put the row back, and a tap
+    // opens Encore's own Devices sheet, not that chooser.
+    expect(find.text('This phone'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.byTooltip('Queue'), findsOneWidget);
-    expect(find.text('Lyrics'), findsNothing,
-        reason: 'lyrics are a card further down, not a button');
+    expect(find.text('Lyrics'), findsOneWidget,
+        reason:
+            'the lyrics are a card that is always there (P1-23), not a button');
     expect(find.text('Speed'), findsNothing);
     expect(find.text('Sleep timer'), findsNothing);
     expect(find.text('Private'), findsNothing);
@@ -138,12 +141,15 @@ void main() {
           playing: samplePlaying(), size: const Size(411, 914));
       await openPlayer(tester);
 
-      final queue = await queueButton(tester);
-      // The page has no lyrics here (a song without them shows no card), so the
-      // queue row is the last thing: at most one control row and the page's
-      // own margin may stand below it. Before, about 230 logical pixels did.
-      expect(914 - queue.bottom, lessThan(110),
-          reason: 'what is left under the queue icon');
+      // The Lyrics card is always there (P1-23), also for a song without lyrics, so it is what stands under the queue row: it fills the room that was a
+      // dead area before (about 230 logical pixels), and no more than one control row may be left under it.
+      final card = tester.getRect(find
+          .ancestor(of: find.text('Lyrics'), matching: find.byType(InkWell))
+          .first);
+      expect(914 - card.bottom, lessThan(110),
+          reason: 'what is left under the Lyrics card');
+      expect(card.top, lessThan(914 - 80),
+          reason: 'the card peeks into the first screen');
       // The cover is above the title, not squeezed against the top bar.
       final cover = tester.getRect(find.byType(CoverArt).first);
       final title = tester.getTopLeft(find.text('Opening The'));

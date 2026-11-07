@@ -30,6 +30,7 @@ class QueueItem {
     this.starred = false,
     this.directUri,
     this.imageUrl,
+    this.videoId,
   });
 
   /// A whole song streamed from the catalogue that is not in the library yet (D-64: there is no 30-second clip).
@@ -43,6 +44,7 @@ class QueueItem {
     String? album,
     String? imageUrl,
     int? durationSec,
+    String? videoId,
   }) =>
       QueueItem(
         uid: uid,
@@ -54,6 +56,7 @@ class QueueItem {
         durationSec: durationSec,
         directUri: uri,
         imageUrl: imageUrl,
+        videoId: videoId,
       );
 
   factory QueueItem.fromTrack(TrackRow t, {required int uid}) => QueueItem(
@@ -103,6 +106,10 @@ class QueueItem {
 
   /// Artwork URL for items that have no server cover id.
   final String? imageUrl;
+
+  /// The YouTube video this streamed song is, when the app knows it (an imported playlist's songs): the public address a Share can carry.
+  /// Never a server or signed stream address.
+  final String? videoId;
 
   bool get isLibraryTrack => directUri == null;
 
