@@ -1,0 +1,12 @@
+{
+ "id": "20261107T001917Z-agent-6786",
+ "item": "P1-25",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T00:19:17Z",
+ "type": "note",
+ "body": "Owner 7 Nov 2026 (D-66): the output button opens Encore's own Devices sheet; its section 'This phone' (speaker, wired, Bluetooth, the system switcher as one entry) is this item; 'Your other devices' (the account's other phone, a browser) is P4-07 in the same sheet. Test with the A35 and an emulator on one account.",
+ "to": [
+  "owner"
+ ]
+}

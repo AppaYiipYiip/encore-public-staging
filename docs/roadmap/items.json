@@ -794,5 +794,10 @@
   "kind": "feature",
   "title": "One notification for the whole download while the server is still saving",
   "note": "You allowed notifications and saw none: today only the copy to the phone has one, not the long part."
+ },
+ "P1-27": {
+  "kind": "feature",
+  "title": "Songs always play in full: the 30-second preview is removed",
+  "note": "You said 30-second previews caused many problems: load the full song every time."
  }
 }

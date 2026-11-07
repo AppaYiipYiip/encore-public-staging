@@ -90,6 +90,7 @@ and activity).
   reports changes (buttons, system panel). "Always ready to play" setting with a persistent notification. Spike first: H10 (setting
   volume from the background on Android 15/16).
 * **Acceptance.** J-16, J-17 on two emulators (phone profile A, tablet profile E) at home and through the public address.
+* **Owner, 7 Nov 2026 (D-66):** "pick where to play this music: a Bluetooth device, headphones, the phone speaker, a browser, or another phone (both connected to the same account, you can test it with the real phone and the emulator)". The first two sections of the Devices sheet are split: **This phone** is `P1-25`, **Your other devices** is this task, in the same sheet. A first test needs only two apps on one account (the A35 and an emulator); a browser device needs the web client, which is not planned in Now. The owner may want this nearer the top of the list than position 76: his to move on the board.
 
 ## P4-08 — Home-server relay: the app only talks to its own server — Size M
 * **Order.** Needs: P4-09 [i]. Why: the relay is the layer through which the home server calls the other server, and its acceptance is a capture of a cross-server Jam, which needs P4-09 and P4-10..

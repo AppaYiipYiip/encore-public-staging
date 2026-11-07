@@ -1,0 +1,12 @@
+{
+ "id": "20261107T001917Z-agent-10d2",
+ "item": "P4-07",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T00:19:17Z",
+ "type": "note",
+ "body": "Owner 7 Nov 2026 (D-66): wants to pick where to play (another phone on the same account, a browser) from the player, tested with the real phone and an emulator. It is at position 76 of Now and needs P2-08 and P2-09 (positions 65, 66; playback state and one device at a time). It is a multi-day piece (size L). A browser device needs the web client, which is not planned in Now. Moving it up the list is yours to do on the board.",
+ "to": [
+  "owner"
+ ]
+}

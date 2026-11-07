@@ -1,0 +1,12 @@
+{
+ "id": "20261107T001916Z-agent-57f2",
+ "item": "P1-27",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T00:19:16Z",
+ "type": "note",
+ "body": "Owner 7 Nov 2026 (D-64): 'using a 30 second preview is really a bad idea, it has caused so many issues previously, do not do that, just take the hit and run and load the full song.' Decided: previews are removed at the source (long-press, plain-server preview, the clip guesses); a song that cannot be played says so in words. Built after the proof pass's first runs; walked on the next release-candidate pair.",
+ "to": [
+  "owner"
+ ]
+}

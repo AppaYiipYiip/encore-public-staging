@@ -1,0 +1,12 @@
+{
+ "id": "20261107T000710Z-agent-27c7",
+ "item": "P1-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T00:07:10Z",
+ "type": "note",
+ "body": "Owner 7 Nov 2026: he has seen three different player screens (old build 40 with speed/sleep/private icons; today's with the lyrics card at the bottom; today's with an empty bottom). PROVEN on his A35 (build 130, 7 Nov 00:10): a real kept song (In Da Club, 50 Cent) shows the lyrics card at the bottom (cut off by the bottom edge: the page scrolls); a test song with no lyrics (Walk Three) shows an empty bottom. So the Spotify-like and the empty screens are ONE screen: the card (_LyricsPreview) is hidden when no lyrics load. Build 40 is the old icon row removed on 30 Oct (699fa56). OPEN QUESTION, decide after #208 is on the A35: does a song without lyrics still look empty at the bottom once the page fills the screen (P1-22)? The task says 'no card and no gap' (as Spotify). If a gap remains, change the acceptance (a quiet 'No lyrics for this song' in the card's place); if not, keep it. My first guess 'no song ever shows lyrics' was WRONG for library songs. STILL OPEN: do songs that are only streamed (not kept) get lyrics? suspect lyrics_prefetch.dart:42 and lyrics_screen.dart:37 treat a song with an imageUrl and no fullSong as a 30-second clip; the owner (7 Nov) says previews are a bad idea, so the clip concept goes (D-64), which removes that guess at the source.",
+ "to": [
+  "owner"
+ ]
+}
