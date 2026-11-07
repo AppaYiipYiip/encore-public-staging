@@ -1,0 +1,9 @@
+{
+ "id": "20261107T202246Z-agent-077f",
+ "item": "P0-14",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:22:46Z",
+ "type": "note",
+ "body": "7 Nov 2026 evening: the owner started Gate 1 EARLY, on his own phone, for a week of daily use, and will report next session. What he was given: build 144 (version 0.1.0, commit 7ffd235), arm64, installed by hand from a file; an invitation of role owner (one person, valid 7 days) to VM 108 (test server, image ghcr.io/appayiipyiip/encore-server:main, up 23 h, disk 64% used, 11 GB free), reachable only on his home Wi-Fi (192.168.50.123, a DHCP address; no remote address exists yet). CAVEATS to read his feedback by: build 144 is a local merge of PRs #241 to #246 (not on main, not a release-candidate pair); the gate's own needs are NOT met (P1-10 todo, P1-16 todo, P0-13 not done); the server image does not yet tag each artist (PR #245, so new songs by several artists still link to a combined artist, which the app now handles); checks are blocked (P0-16), so none of it can be merged yet. Nothing is marked: the gate is not passed until he has used the app and what he reported is on the board."
+}
