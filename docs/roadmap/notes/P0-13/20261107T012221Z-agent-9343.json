@@ -1,0 +1,12 @@
+{
+ "id": "20261107T012221Z-agent-9343",
+ "item": "P0-13",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T01:22:21Z",
+ "type": "note",
+ "body": "7 Nov 2026 01:20: the test account qaowner's password (throwaway account of the test VM 108, home network only) was printed once into my session by a screen dump of the sign-in form. Not rotated yet: rotating signs out every other device, including the owner's A35 that he is using. To rotate when he is not using it, or at the end of the pass (steps in handoff NEXT.md). No other secret was exposed.",
+ "to": [
+  "owner"
+ ]
+}

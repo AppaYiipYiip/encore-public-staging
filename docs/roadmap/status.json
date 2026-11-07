@@ -36,16 +36,20 @@
   "evidence": "round 2 on build 125 against VM 108 (3 Nov 2026): a downloaded song plays offline, a row that is not downloaded says so (ROUND2-LOG)"
  },
  "P1-11": {
-  "state": "built",
-  "evidence": "built; a 22 Oct screenshot on the old build (evidence/2026-10-22-e6); b11 walks it again"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: pair: server image 579dfea (VM 108; updated from the clean install of 9c09a7a) + APK build 131 from the same commit, emulators B and A and the owner's Samsung A35. Force-stop then reopen: an owned song (paused at 2:34, playing at 2:42, seek while playing 0:55) and a streamed catalogue song (1:31) came back paused at the same second; after a full emulator reboot 0:54 came back as 0:54; on the real A35 a seek to 2:19 came back paused at 2:19. The reboot and the lock-screen widget were not done on the A35 (PIN, unlocked phone).",
+  "at": "2026-11-07T05:16:20Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P2-01": {
   "state": "walked",
   "evidence": "installed by the guide on a bare VM (evidence/c06); signed in, invited and imported against it in round 2 on build 125 (3 Nov 2026)"
  },
  "P2-02": {
-  "state": "built",
-  "evidence": "built; walked on the dev VM before the pair; its flows ran in round 2 on build 125 but b11 walks it to the end state"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: pair: server image 579dfea (VM 108; updated from the clean install of 9c09a7a) + APK build 131 from the same commit, emulators B and A and the owner's Samsung A35. A like made on one emulator showed on the other, same account, in 1.29 s (unlike and like again; the figure includes the poll). The upgrade: build 40 over its own database on the A35, then 130, then 131: the playlist 'Upgrade test' with its song and the liked songs are still there on the A35 and the emulators.",
+  "at": "2026-11-07T05:16:20Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P2-04": {
   "state": "walked",
@@ -56,8 +60,10 @@
   "evidence": "evidence/c06: the installer by the guide on a bare VM with the published image (3 Nov 2026); c01 and c03 earlier"
  },
  "P1-05": {
-  "state": "built",
-  "evidence": "built; the walk record b11 (M0) walks it"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: pair: server image 579dfea (VM 108; updated from the clean install of 9c09a7a) + APK build 131 from the same commit, emulators B and A and the owner's Samsung A35. All 154 per-song search jobs date from the first import (before #210); the second import (189 songs) created none; an imported song that is not saved ('Roc The Mic') was audible in 2.24 s with the server saying 'the song found in 0.0 s' and one look-up.",
+  "at": "2026-11-07T05:16:19Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P2-03": {
   "state": "built",
@@ -68,8 +74,10 @@
   "evidence": "built; one server program since P2-01"
  },
  "P3-04": {
-  "state": "built",
-  "evidence": "built; the installer's compose has no Docker socket and no Firefox"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: on the running VM: two containers, one published port (4533 on the Encore container), no docker.sock in the compose file or any mount, no browser in the image.",
+  "at": "2026-11-07T05:16:19Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P0-07": {
   "state": "walked",
@@ -78,16 +86,16 @@
   "by": "Claude (Sonnet 5.5)"
  },
  "P0-11": {
-  "state": "built",
-  "evidence": "PR A (#141, e425865): GitHub annotations on 6 runs went from Node.js 20 + ubuntu-latest notices to none (before/after tables in that PR); Dependabot's first run on main succeeded (run 41940763972); main protected (gh api rules: pull_request, required_status_checks, deletion, non_fast_forward; ruleset 'protect main' active, 5 Nov). PR B (#142): Gradle 9.3.1 / AGP 9.1.0 / Kotlin 2.4.0, built-in Kotlin on, wakelock_plus 1.8.2; CI: verify passed, the Android job started by hand built the APK on the first try with no annotations and none of Flutter's three 'will soon be dropped' lines (run 41947967979), the Goldens workflow started by hand passed with no annotations and nothing committed (run 41952031831). Smoke test on emulator-5554 (x86_64), NOT a walk: b126 x64 release installed fresh, signed in to test VM 108, library song played with no YouTube, paused and resumed from the notification; an in-place 'adb install -r' of b126 over build 125 kept the signing and the session, Home loaded, a song played, no FATAL in the log. Built, not walked: the arm64 release build was built but not run; no real phone.",
-  "at": "2026-11-05T02:00:03Z",
-  "by": "Claude"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: the newest completed run of App, Hygiene, Server image, Server and Server legacy on main has 0 annotations; today's Goldens run (after the upgrade) 0; Dependabot Updates carries only GitHub's own ubuntu-latest notice; main is protected; both release APKs (x64, arm64) build on the upgraded toolchain. The Kotlin plugin warning is P0-15.",
+  "at": "2026-11-07T05:16:18Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P0-12": {
-  "state": "built",
-  "evidence": "Re-verified on main 3b2eb74 (not copied from the audit): A-1 docs/17 section 1 Auth row already marks the target (#128, 473a3b1) while app/lib/data/encore/encore_api.dart _uri (lines 36-48) still sends u/t/s in the URL; A-6 CHANGELOG (12 lines from #128, each spot-checked against main's code) plus two new lines (#136, fad1b45); A-15 docs/guides/install-test.md states 2 GB/6 GB as deploy/install.sh lines 135-140 enforce, and now what a stranger sees below them; A-16 docs/04 (picture, multi-arch image claim, wizard, admin page: target, not built; CLI built, deploy/encore), docs/26 section 6 SMART (no SMART reading in the server or installer), docs 26 sections 2-3 and 06 section 1 already marked. Templates reworded as an intake form for the board (D-60 amended). Docs only: no code changed.",
-  "at": "2026-11-05T02:57:39Z",
-  "by": "Claude"
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: the install guide followed on the clean VM (image 9c09a7a): exit 0 in 11 min 12 s, the questions in the order of the guide's table; the line that promised more than it did was reworded in #205 (read in install.sh, not re-run).",
+  "at": "2026-11-07T05:16:18Z",
+  "by": "Claude (Sonnet 5.5)"
  },
  "P1-15": {
   "state": "built",
@@ -103,8 +111,38 @@
  },
  "P1-22": {
   "state": "built",
-  "evidence": "Built 6 Nov 2026, NOT walked: now_playing_screen.dart fills the screen (CustomScrollView + SliverFillRemaining, spare height between the sections) and goes side by side on a wide or sideways screen; four widget tests (tall 411x914, short 411x731 at text 1.3, foldable 920x1104, sideways 914x411): against the OLD screen three fail (217 px of dead space under the controls on the tall one, limit 110). Windows golden updated; the Linux set is drawn by the Goldens workflow. Waits for the owner's eyes on the emulator and his A35.",
-  "at": "2026-11-06T21:08:00Z",
+  "evidence": "7 Nov 2026: built in #208 (main 79ca004); a widget test at each of four phone shapes; seen on the owner's A35 on build 131: the cover and controls spread over the full height, the gap under the last control is about one control row. Waits for the walk on profile A and the next pair (docs/evidence/README.md#e03 has the A35 pictures).",
+  "at": "2026-11-07T05:16:37Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-21": {
+  "state": "walked",
+  "evidence": "7 Nov 2026, docs/evidence/README.md#e03: pair: server image 579dfea (VM 108; updated from the clean install of 9c09a7a) + APK build 131 from the same commit, emulators B and A and the owner's Samsung A35. On the A35 all five ways of pressing Play after a finished list (page Play, Shuffle, mini player, full player, media key) restarted the list and played it to its end; 162 of 164 PLAYING samples had real audio, the other 2 are in the last second of a list. Lock-screen widget not re-walked on build 131 (phone must stay unlocked).",
+  "at": "2026-11-07T05:16:19Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-27": {
+  "state": "built",
+  "evidence": "7 Nov 2026: built in #214 (main 04c03f4): no 30-second preview anywhere, StreamedTrack, TapPlan full/cannot/plainServer, no_preview_test.dart, 2,333 tests. Not walked: on the next release-candidate pair (a tap and a long-press on Search, album and artist rows play the whole song).",
+  "at": "2026-11-07T05:16:38Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-23": {
+  "state": "built",
+  "evidence": "7 Nov 2026: built in #215 (lyrics: prefer a synced record when the exact one is plain, repair of text saved twice in the wrong character set, B-102/B-103) and #216 (the Lyrics card keeps its place and size in every state, with a test that measures it on three phone shapes). Not walked: Opeth 'Benighted' on the owner's A35 on the next pair.",
+  "at": "2026-11-07T05:16:38Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-24": {
+  "state": "built",
+  "evidence": "7 Nov 2026: built in #216 (main c9a26a4): a Share button in the player's bottom row and on the Lyrics card, the text carries the YouTube link only when the app knows the video, never a server address (tests). Not walked: the system share sheet on the A35 on the next pair.",
+  "at": "2026-11-07T05:16:39Z",
+  "by": "Claude (Sonnet 5.5)"
+ },
+ "P1-25": {
+  "state": "built",
+  "evidence": "7 Nov 2026: first slice built in #216: the output row (read from AudioManager, live), Encore's Devices sheet with 'This phone' and Android's own list one tap away, and a line saying other devices are not built yet (goes with P4-07). Not walked: with a Bluetooth or wired output on the A35; the Kotlin is compiled by build 132.",
+  "at": "2026-11-07T05:16:39Z",
   "by": "Claude (Sonnet 5.5)"
  }
 }
