@@ -178,6 +178,7 @@ class Keeper:
         tags = Tags(
             title=ref["title"],
             artist=", ".join(ref["artists"]),
+            artists=tuple(ref["artists"]),
             album=ref.get("album"),
             album_artist=ref.get("albumArtist") or ref["artists"][0],
             track=ref.get("trackNo"),
