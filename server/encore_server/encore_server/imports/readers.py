@@ -31,9 +31,11 @@ from typing import Any
 
 log = logging.getLogger("encore_server.imports.readers")
 
-#: A playlist longer than this is cut (and says so). A person's first import can be a whole "liked" list (the owner's has
-#: more than 500); the import queue (imports.py) works through it at the line's pace, so the cap is only a sanity limit.
-MAX_TRACKS = 2000
+#: A playlist longer than this is cut (and says so). A person's first import can be a whole "liked" list; the import queue (imports.py) works
+#: through it at the Host's pace, so the cap is only a sanity limit. It was 2000 until 7 Nov 2026, when the owner's playlist of more than 2,500
+#: songs was cut at 2000 without a word on its page (the screen that says so belongs to the old preview step); 10,000 is about 100 requests to
+#: YouTube Music, a little over two minutes to read.
+MAX_TRACKS = 10_000
 
 #: Spotify's public embed page lists at most this many songs of a playlist, whatever its length, and does not say how
 #: long the playlist really is. A playlist that fills it may be longer: the app says so and points to the file import.

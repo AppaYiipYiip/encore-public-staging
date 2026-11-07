@@ -28,7 +28,7 @@ from .readers import Playlist, PlaylistError, Track, read_playlist, ytdlp_reader
 log = logging.getLogger("encore_server.imports")
 
 #: A file of songs the app parsed is cut here (a person's whole history can be long; the link readers have their own limit).
-MAX_SONGS = 5000
+MAX_SONGS = 10_000
 _SOURCES = ("youtube", "spotify", "file")
 _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
 
