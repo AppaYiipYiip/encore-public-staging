@@ -1,0 +1,9 @@
+{
+ "id": "20261107T200739Z-agent-8ad8",
+ "item": "P1-10",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:07:39Z",
+ "type": "note",
+ "body": "7 Nov 2026: the reason most artists and new albums showed letters is found and fixed in PR #242 (audit B-115): the app wrote the picture ticket's end time from the PHONE's clock while the server signs its own, so one second of difference made the server refuse every picture (408 of 408 requests from the owner's A35, captured on the VM; the signature was valid for e+1). Seen working on the A35 and on an emulator whose clock is 60 s off (docs/evidence e07). NOT marked: this item also asks for pictures offline (airplane mode was not tried), the renewal after a refusal is covered by tests only, and the build is a local merge, not the release-candidate pair. Also found: the music server has no picture for 91 of 817 artists (Bob Marley): proposal N-15; and a song that is on the phone twice (one entry from the file's tags, one from the catalogue) can show no cover at all (\"Forever\"): proposal N-11."
+}

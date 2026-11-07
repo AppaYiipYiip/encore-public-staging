@@ -799,5 +799,58 @@
   "kind": "feature",
   "title": "Songs always play in full: the 30-second preview is removed",
   "note": "You said 30-second previews caused many problems: load the full song every time."
+ },
+ "P0-16": {
+  "kind": "owner",
+  "title": "Make GitHub's checks run again (the allowance is used up, so nothing can be merged)",
+  "note": "Only you can change the billing of your GitHub account. The exact clicks are pinned on the item."
+ },
+ "N-10": {
+  "kind": "feature",
+  "title": "Songs by several artists are saved with each artist on its own",
+  "note": "Found today: the server writes the artists as one tag, so your music server makes an artist named \"Post Malone, Swae Lee\" that no phone can open. The fix is written (PR #245); it needs a server image.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-11": {
+  "kind": "feature",
+  "title": "One song is one entry on your phone, not two (fixes missing covers and artist lists)",
+  "note": "Found today: \"Forever\" is on your phone twice; the player had the entry with no cover and one joined artist name.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-12": {
+  "kind": "feature",
+  "title": "\"Go to artist\" in a song's menu offers every artist of the song",
+  "note": "The player already opens each artist on its own; the song's menu still offers one.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-13": {
+  "kind": "feature",
+  "title": "Search marks the songs your server cannot find, and the server remembers it",
+  "note": "\"Lofi For Focus\" was the top result, took 9 seconds and failed: nothing matches it on YouTube.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-14": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: find why an artist page sometimes waits two seconds",
+  "note": "Found today with the app's own timer: sometimes 1.5 to 2 seconds before the page draws; cause not found yet.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-15": {
+  "kind": "feature",
+  "title": "Artists the music server has no picture for get one",
+  "note": "Bob Marley has no picture on your server (91 of 817 artists have none); why is not known yet.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
  }
 }

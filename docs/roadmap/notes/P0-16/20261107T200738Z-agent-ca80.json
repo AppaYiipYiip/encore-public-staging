@@ -1,0 +1,12 @@
+{
+ "id": "20261107T200738Z-agent-ca80",
+ "item": "P0-16",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:07:38Z",
+ "type": "detail",
+ "body": "WHAT TO DO (the menu names are from memory, not checked): on github.com click your picture (top right), then Settings, then Billing and plans, then Plans and usage (or \"Spending limits\"), then Actions: raise the spending limit above $0, or add a payment method that works. GitHub says the jobs are \"not started because recent account payments have failed or your spending limit needs to be increased\" (your Actions minutes: 3,000 of 3,000 used). If you prefer to wait, the allowance comes back at the start of the next billing month, but nothing below can be merged until then.\nWHAT IT UNBLOCKS: six pull requests wait for green checks and nothing may be merged without them (never with --admin): #241 (artist pages remember what the catalogue said; page-open timing), #242 (the pictures: the phone's picture ticket was refused by the server, so artists and new albums stayed letters), #243 (a song your server cannot find no longer spins for ever), #244 (the artist page of a song by several artists no longer spins), #245 (SERVER: songs by several artists are tagged with each artist; needs a server image, which CI builds), #246 (every artist of a song is pressable). Tell me when it is done and I re-run the checks and merge each one that passes.",
+ "to": [
+  "owner"
+ ]
+}
