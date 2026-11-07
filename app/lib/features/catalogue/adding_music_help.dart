@@ -60,11 +60,6 @@ class _AddingMusicHelp extends StatelessWidget {
           ]
         : const [
             (
-              Icons.play_circle_outline_rounded,
-              'Preview',
-              'Tap a song to hear 30 seconds of it.',
-            ),
-            (
               Icons.add_rounded,
               'Request',
               'Asks your music server to get the whole album. It can take '

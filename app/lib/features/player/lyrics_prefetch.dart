@@ -38,10 +38,7 @@ final lyricsPrefetchProvider = Provider<void>((ref) {
   ref.listen(playbackSnapshotProvider, (previous, next) {
     final track = next.value?.track;
     if (track == null) return;
-    // Library tracks only: a catalogue preview has no server id.
-    if (track.id.isEmpty || track.coverArt == null && track.imageUrl != null) {
-      return;
-    }
+    if (track.id.isEmpty) return;
     unawaited(fetch(
       id: track.id,
       title: track.title,

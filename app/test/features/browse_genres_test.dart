@@ -1,5 +1,6 @@
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/features/instant/tap_play.dart' show kPlainServerLine;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,7 +23,6 @@ void main() {
         artistName: 'Coldplay',
         artistId: '7',
         albumTitle: 'Parachutes',
-        previewUrl: 'https://cdns-preview/sparks.mp3',
       ),
     ],
     artists: [CatalogueArtist(id: '7', name: 'Coldplay', fans: 9000000)],
@@ -100,7 +100,9 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('a song of a genre plays when tapped', (tester) async {
+  testWidgets(
+      'a song of a genre says so when the server only plays what it has',
+      (tester) async {
     final app = await open(tester, emptyLibrary: true);
     await tester.tap(find.text('Rock'));
     await settle(tester);
@@ -108,8 +110,10 @@ void main() {
     await tester.tap(find.text('Sparks'));
     await settle(tester);
 
-    expect(app.facade.calls.any((c) => c.startsWith('preview')), isTrue,
-        reason: 'the sample plays (no instant-play service in this test)');
+    expect(find.text(kPlainServerLine), findsOneWidget,
+        reason:
+            'no instant-play service in this test: the sentence, no snippet');
+    expect(app.facade.calls.where((c) => c.startsWith('streamed')), isEmpty);
     await closeApp(tester, app.db);
   });
 

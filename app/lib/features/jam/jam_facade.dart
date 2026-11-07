@@ -147,8 +147,6 @@ class JamPlaybackFacade implements PlaybackFacade {
             catalogueArtistId: entry.artistRef,
             imageUrl: entry.imageUrl,
             duration: entry.durationSec == null ? null : duration,
-            // Everything in a Jam is a whole song, whatever its cover.
-            fullSong: true,
           ),
       isPlaying: s.playing,
       isLoading: _link.iPlay && (engine.isLoading || _link.loading),
@@ -250,7 +248,7 @@ class JamPlaybackFacade implements PlaybackFacade {
         durationSec: t.durationSec,
       );
 
-  Add _addPreview(PreviewTrack t, AddAt at) => Add(
+  Add _addStreamed(StreamedTrack t, AddAt at) => Add(
         'cat:${t.id}',
         at: at,
         title: t.title,
@@ -286,53 +284,19 @@ class JamPlaybackFacade implements PlaybackFacade {
   }
 
   @override
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  }) =>
-      _jam
-          ? _send(_addPreview(
-              PreviewTrack(
-                id: id,
-                title: title,
-                uri: uri,
-                artist: artist,
-                catalogueArtistId: catalogueArtistId,
-                album: album,
-                imageUrl: imageUrl,
-                duration: duration,
-              ),
-              AddAt.now))
-          : _engine.playPreview(
-              id: id,
-              title: title,
-              uri: uri,
-              artist: artist,
-              catalogueArtistId: catalogueArtistId,
-              album: album,
-              imageUrl: imageUrl,
-              duration: duration);
-
-  @override
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
   }) {
     if (!_jam) {
-      return _engine.playPreviews(tracks,
+      return _engine.playStreamed(tracks,
           startIndex: startIndex, sourceName: sourceName, sourceId: sourceId);
     }
     if (tracks.isEmpty) return Future<void>.value();
-    return _send(
-        _addPreview(tracks[startIndex.clamp(0, tracks.length - 1)], AddAt.now));
+    return _send(_addStreamed(
+        tracks[startIndex.clamp(0, tracks.length - 1)], AddAt.now));
   }
 
   @override
@@ -344,8 +308,8 @@ class JamPlaybackFacade implements PlaybackFacade {
       _jam ? _send(_addTrack(track, AddAt.next)) : _engine.playNext(track);
 
   @override
-  Future<void> addStreamToQueue(PreviewTrack track) => _jam
-      ? _send(_addPreview(track, AddAt.end))
+  Future<void> addStreamToQueue(StreamedTrack track) => _jam
+      ? _send(_addStreamed(track, AddAt.end))
       : _engine.addStreamToQueue(track);
 
   // ---------------------------------------------------------------- queue
@@ -357,7 +321,7 @@ class JamPlaybackFacade implements PlaybackFacade {
     return QueueSnapshot(
       items: [
         for (final e in s.queue)
-          QueueItem.preview(
+          QueueItem.streamed(
             uid: e.uid,
             id: e.trackId,
             title: e.title ?? 'A song',

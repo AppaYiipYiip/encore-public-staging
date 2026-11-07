@@ -218,7 +218,7 @@ void main() {
   group('the queue shown in the car (B16)', () {
     List<QueueItem> songs(int n) => [
           for (var i = 0; i < n; i++)
-            QueueItem.preview(
+            QueueItem.streamed(
                 uid: i,
                 id: 's$i',
                 title: 'Song $i',

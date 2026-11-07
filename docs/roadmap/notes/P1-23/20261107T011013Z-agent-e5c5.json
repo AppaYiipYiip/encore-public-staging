@@ -1,0 +1,12 @@
+{
+ "id": "20261107T011013Z-agent-e5c5",
+ "item": "P1-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T01:10:13Z",
+ "type": "note",
+ "body": "CORRECTION to my note of 00:50 (proved 01:10, owner's Opeth report): the garbled 'Â´' is NOT in the owner's file tags. The app's own request to LRCLIB (title 'Benighted (Remastered)', album 'Still Life (Remastered)', 300 s) returns record 1918075, a plain-only record whose text itself contains 'Â´'. And it is not tappable because LrcLibClient.find returns an exact plain record at once and never looks for the 8 synced records of the same song (same 300 s). Fix inside P1-23: prefer a synced record when the exact one is plain; repair double-encoded text at the door; log which record decided (audit B-102, B-103 corrected).",
+ "to": [
+  "owner"
+ ]
+}

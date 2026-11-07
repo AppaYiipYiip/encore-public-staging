@@ -278,9 +278,7 @@ class AlbumScreen extends ConsumerWidget {
 /// (B39), each one a tap away - the song is fetched into the library and
 /// plays, as on a catalogue page.
 List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
-  final facade = ref.watch(playbackFacadeProvider);
   final snapshot = ref.watch(playbackSnapshotProvider).value;
-  final instant = ref.watch(instantAvailableProvider);
   final sourceId = 'album-missing:${album.id}';
   return [
     const SliverToBoxAdapter(
@@ -293,25 +291,16 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
         final playingId = snapshot?.track?.id;
         final current = playingId == t.id ||
             (status?.track != null && playingId == status!.track!.id);
-        void preview() => unawaited(playExplicitPreview(
-              facade,
-              gap.missing,
-              index: i,
-              sourceName: albumDisplayName(album.name),
-              sourceId: sourceId,
-            ));
-        return PreviewTrackTile(
+        return CatalogueTrackTile(
           track: t,
           number: t.trackNumber ?? i + 1,
           isCurrent: current,
           isPlaying: current && (snapshot?.isPlaying ?? false),
-          instant: instant,
           status: status,
           onTap: () => unawaited(tapPlayRun(ref, gap.missing,
               startIndex: i,
               sourceName: albumDisplayName(album.name),
               sourceId: sourceId)),
-          onLongPress: instant && t.previewUrl != null ? preview : null,
         );
       },
     ),

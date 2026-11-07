@@ -179,7 +179,7 @@ class ImportedPlaylistScreen extends ConsumerWidget {
             final track = tracks[i];
             if (track == null) {
               // Not to be had: said in one line, not hidden.
-              return PreviewTrackTile(
+              return CatalogueTrackTile(
                 key: Key('imported-song-$i'),
                 track: CatalogueTrack(
                   id: 'import:${job.id}:$i',
@@ -189,7 +189,6 @@ class ImportedPlaylistScreen extends ConsumerWidget {
                 number: i + 1,
                 isCurrent: false,
                 isPlaying: false,
-                instant: true,
                 status: InstantStatus.failed(
                     song.message ?? 'This song could not be found.'),
               );
@@ -198,13 +197,12 @@ class ImportedPlaylistScreen extends ConsumerWidget {
             final playingId = snapshot?.track?.id;
             final current = playingId == track.id ||
                 (status?.track != null && playingId == status!.track!.id);
-            return PreviewTrackTile(
+            return CatalogueTrackTile(
               key: Key('imported-song-$i'),
               track: track,
               number: i + 1,
               isCurrent: current,
               isPlaying: current && (snapshot?.isPlaying ?? false),
-              instant: true,
               status: status,
               onTap: () => playFrom(i),
               onLongPress: () => unawaited(_songMenu(context, ref, job, i)),

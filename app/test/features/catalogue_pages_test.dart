@@ -5,6 +5,7 @@ import 'package:encore/data/requests/portal_client.dart';
 import 'package:encore/features/catalogue/catalogue_providers.dart';
 import 'package:encore/features/catalogue/catalogue_widgets.dart';
 import 'package:encore/features/instant/instant_controller.dart';
+import 'package:encore/features/instant/tap_play.dart' show kPlainServerLine;
 import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
@@ -49,9 +50,7 @@ const _swift = CatalogueArtist(
   albumCount: 12,
 );
 
-CatalogueTrack _track(String id, String title,
-        {String? preview = 'https://cdn/p.mp3'}) =>
-    CatalogueTrack(
+CatalogueTrack _track(String id, String title) => CatalogueTrack(
       id: id,
       title: title,
       artistName: 'Taylor Swift',
@@ -59,7 +58,6 @@ CatalogueTrack _track(String id, String title,
       albumTitle: 'Folklore',
       albumId: '10',
       duration: const Duration(minutes: 3, seconds: 59),
-      previewUrl: preview,
     );
 
 FakeCatalogue _catalogue() {
@@ -72,7 +70,7 @@ FakeCatalogue _catalogue() {
   c.tracksByAlbum['10'] = [
     _track('t1', 'the 1'),
     _track('t2', 'cardigan'),
-    _track('t3', 'the last great american dynasty', preview: null),
+    _track('t3', 'the last great american dynasty'),
   ];
   c.topTracksByArtist['1'] = [
     _track('t2', 'cardigan'),
@@ -124,7 +122,8 @@ void main() {
   }
 
   group('album page', () {
-    testWidgets('opens from search, lists songs, plays a run of previews',
+    testWidgets(
+        'opens from search and lists songs; on a server that only plays what it has, a tap says so and plays nothing (D-64: no preview)',
         (tester) async {
       final app = await pumpApp(tester, overrides: [
         catalogueClientProvider.overrideWithValue(_catalogue()),
@@ -139,31 +138,15 @@ void main() {
       expect(find.text('2020 • 3 songs • Album'), findsOneWidget);
       expect(find.text('the 1'), findsOneWidget);
       expect(find.text('cardigan'), findsOneWidget);
-      expect(find.textContaining('30 seconds'), findsOneWidget);
+      expect(find.textContaining('only plays songs it already has'),
+          findsOneWidget);
 
       await tester.tap(find.text('cardigan'));
       await settle(tester);
 
-      // Index 1 of the playable run; the song without a sample is skipped
-      // from the queue but still listed.
-      expect(app.facade.calls, contains('previews(t1,t2, start=1)'));
-      await closeApp(tester, app.db);
-    });
-
-    testWidgets('a song without a sample is shown but does nothing',
-        (tester) async {
-      final app = await pumpApp(tester, overrides: [
-        catalogueClientProvider.overrideWithValue(_catalogue()),
-        requestBackendProvider.overrideWith((ref) async => _Portal()),
-      ]);
-
-      await search(tester, 'Taylor Swift');
-      await tester.tap(find.text('Folklore'));
-      await settle(tester);
-
-      await tester.tap(find.text('the last great american dynasty'));
-      await settle(tester);
-      expect(app.facade.calls.where((c) => c.startsWith('previews')), isEmpty);
+      expect(find.text(kPlainServerLine), findsOneWidget);
+      expect(app.facade.calls.where((c) => c.startsWith('streamed')), isEmpty,
+          reason: 'nothing plays, not even a snippet');
       await closeApp(tester, app.db);
     });
 
@@ -202,7 +185,6 @@ void main() {
         albumTitle: 'Stranger in the Alps',
         albumId: '70',
         duration: const Duration(minutes: 3, seconds: 49),
-        previewUrl: 'https://cdn/p7.mp3',
       );
       final c = FakeCatalogue(
           CatalogueResults(artists: const [phoebe, julien], tracks: [song]))
@@ -341,7 +323,8 @@ void main() {
 
       await tester.tap(find.text('Anti-Hero'));
       await settle(tester);
-      expect(app.facade.calls, contains('previews(t2,t9, start=1)'));
+      expect(find.text(kPlainServerLine), findsOneWidget);
+      expect(app.facade.calls.where((c) => c.startsWith('streamed')), isEmpty);
       await closeApp(tester, app.db);
     });
 
@@ -422,14 +405,6 @@ void main() {
       expect(formatFans(12345), '12K fans');
       expect(formatFans(1234567), '1.2M fans');
       expect(formatFans(25000000), '25M fans');
-    });
-
-    test('previewOf needs a playable URL', () {
-      expect(previewOf(_track('a', 'x', preview: null)), isNull);
-      expect(previewOf(_track('a', 'x', preview: 'not a url')), isNull);
-      final p = previewOf(_track('a', 'x'))!;
-      expect(p.uri.host, 'cdn');
-      expect(p.duration, kPreviewLength);
     });
 
     test('recordTypeLabel maps the catalogue vocabulary', () {

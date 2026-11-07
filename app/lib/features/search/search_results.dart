@@ -260,7 +260,7 @@ void _play(WidgetRef ref, SongHit hit, {List<SongHit> songs = const []}) {
     return;
   }
   final track = hit.catalogue!;
-  // The full song; the tap waits for the backend instead of starting a 30-second preview (D-24, AUDIT F33).
+  // The full song; the tap waits for the backend and, if there is none, says so (D-24, D-64).
   unawaited(tapPlayOne(ref, track));
 }
 
@@ -323,14 +323,12 @@ class _CatalogueSongRow extends ConsumerWidget {
     final c = context.colors;
     final facade = ref.watch(playbackFacadeProvider);
     final playing = ref.watch(playbackSnapshotProvider).value;
-    final instant = ref.watch(instantAvailableProvider);
     final portal = ref.watch(requestPortalOfferedProvider);
     final status = ref.watch(instantStatusProvider(track.id));
     final isThis = playing?.track?.id == track.id ||
         (status?.track != null && playing?.track?.id == status!.track!.id);
     final working = status?.isWorking ?? false;
     final failed = status?.isFailed ?? false;
-    final playable = instant || track.previewUrl != null;
 
     final subtitle = working
         ? status!.label
@@ -339,19 +337,16 @@ class _CatalogueSongRow extends ConsumerWidget {
             : [
                 track.artistName,
                 if (track.albumTitle != null) track.albumTitle!,
-                if (!instant && track.previewUrl != null) '(preview)',
               ].join(' • ');
 
     return InkWell(
-      onTap: !playable
-          ? null
-          : () {
-              if (isThis) {
-                unawaited(facade.togglePlayPause());
-              } else if (!working) {
-                onTap();
-              }
-            },
+      onTap: () {
+        if (isThis) {
+          unawaited(facade.togglePlayPause());
+        } else if (!working) {
+          onTap();
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(
             horizontal: Space.gutter, vertical: Space.xs),

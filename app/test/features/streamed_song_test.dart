@@ -428,18 +428,19 @@ void main() {
   });
 
   testWidgets(
-      'a 30-second sample shows no lyrics: they belong to the whole song, '
-      'not to the clip (owner, B34)', (tester) async {
+      'a streamed song whose fetch state is gone shows its lyrics card too: '
+      'every song that plays is the whole song (D-64; there is no clip)',
+      (tester) async {
     final app = await openPlayer(
       tester,
       resolver: _Resolver(const {}),
-      status: null, // not fetched by the service: a catalogue sample
-      lyrics: _lyrics, // even if some were at hand, the clip does not show them
+      status: null, // the fetch state is gone (the app restarted, a Jam's song)
+      lyrics: _lyrics,
     );
 
     expect(find.byType(NowPlayingScreen), findsOneWidget);
-    expect(find.text('Lyrics'), findsNothing);
-    expect(find.text('First line of the song'), findsNothing);
+    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.text('First line of the song'), findsOneWidget);
     await closeApp(tester, app.db);
   });
 
@@ -547,12 +548,13 @@ void main() {
   });
 
   testWidgets(
-      'a 30-second sample cannot be liked and its menu has only the '
-      'player\'s own lines', (tester) async {
+      'a streamed song with no library row yet has only the player\'s own '
+      'menu lines, and its heart is there for when the song is listed',
+      (tester) async {
     final app = await openPlayer(
       tester,
       resolver: _Resolver(const {}),
-      status: null, // not fetched by the service: a catalogue sample
+      status: null, // the fetch state is gone: looked up by name, not found yet
     );
 
     await tester.tap(find.byTooltip('More options'));
@@ -560,12 +562,13 @@ void main() {
     expect(find.text('Sleep timer'), findsOneWidget);
     expect(find.text('Add to playlist'), findsNothing);
     expect(find.textContaining('Still being added'), findsNothing,
-        reason: 'a sample is not on its way to the library');
+        reason: 'with no fetch state there is nothing to say is on its way');
     await tester.tapAt(const Offset(10, 10));
     await settle(tester);
     final heart = tester.widget<IconButton>(
         find.widgetWithIcon(IconButton, Icons.favorite_border_rounded));
-    expect(heart.onPressed, isNull);
+    expect(heart.onPressed, isNotNull,
+        reason: 'a press waits for the song to be listed, as for any song');
     await closeApp(tester, app.db);
   });
 }

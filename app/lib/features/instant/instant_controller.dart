@@ -95,8 +95,8 @@ final fetchProbeRetryProvider = Provider<Duration Function(int)>(
 /// answer is remembered so later starts do not ask again (ADR-057).
 ///
 /// A look that fails is not an answer. The service may be busy (an import is running), the line may be changing from Wi-Fi to mobile, the
-/// phone may have just woken up: with one failed look remembered for the whole session every song fell back to its 30-second preview
-/// ("only a snippet plays", owner, 2026-10-22). So a service that was found once is assumed to be still there when a look fails, and a
+/// phone may have just woken up: with one failed look remembered for the whole session every song fell back to a 30-second snippet
+/// ("only a snippet plays", owner, 2026-10-22; snippets no longer exist, D-64). So a service that was found once is assumed to be still there when a look fails, and a
 /// service never found is looked for again, with growing pauses, for as long as the app runs.
 final fetchServiceProvider = FutureProvider<Uri?>((ref) async {
   final settings = ref.watch(settingsProvider);
@@ -306,7 +306,7 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
 
   /// A queue item for a song that has no library row (it plays from the
   /// service's stream).
-  static PreviewTrack _streamItem(CatalogueTrack t, Uri uri) => PreviewTrack(
+  static StreamedTrack _streamItem(CatalogueTrack t, Uri uri) => StreamedTrack(
         id: t.id,
         title: t.title,
         uri: uri,
@@ -315,7 +315,6 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
         album: t.albumTitle,
         imageUrl: t.coverUrl,
         duration: t.duration,
-        fullSong: true,
       );
 
   /// In a Jam the song that was tapped plays in the Jam, by name, at once: it is
@@ -323,7 +322,7 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
   /// music server already has it for the next person). `false` outside a Jam.
   Future<bool> _intoTheJam(PlaybackFacade facade, CatalogueTrack t) async {
     if (!ref.read(jamControllerProvider).inJam) return false;
-    await facade.playPreviews([_streamItem(t, Uri.parse('jam:${t.id}'))]);
+    await facade.playStreamed([_streamItem(t, Uri.parse('jam:${t.id}'))]);
     return true;
   }
 
@@ -348,7 +347,7 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
     if (row != null) {
       await facade.playTracks([row], sourceName: name, sourceId: id);
     } else if (status.streamUri != null) {
-      await facade.playPreviews(
+      await facade.playStreamed(
         [_streamItem(track, status.streamUri!)],
         sourceName: name,
         sourceId: id,
@@ -426,7 +425,7 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
             await facade
                 .playTracks([row], sourceName: sourceName, sourceId: sourceId);
           } else {
-            await facade.playPreviews(
+            await facade.playStreamed(
               [_streamItem(order[index], stream!)],
               sourceName: sourceName,
               sourceId: sourceId,

@@ -11,8 +11,6 @@ import '../../data/people/activity_publisher.dart';
 import '../../data/people/people_client.dart';
 import '../../data/people/people_join_client.dart';
 import '../instant/instant_controller.dart' show jsonDecodeEndpoints;
-import '../player/playback_facade.dart';
-import '../player/streamed_song.dart';
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 import 'listening.dart';
@@ -209,14 +207,9 @@ final activityPublisherProvider = Provider<ActivityPublisher?>((ref) {
   if (api == null) return null;
   final facade = ref.watch(playbackFacadeProvider);
 
-  ListeningState? listeningNow(PlaybackSnapshot snapshot) => listeningFrom(
-        snapshot,
-        isFetchedSong: (track) => ref.read(isServiceSongProvider(track)),
-      );
-
   Stream<ListeningState?> listening() async* {
-    yield listeningNow(facade.snapshot);
-    yield* facade.snapshots.map(listeningNow);
+    yield listeningFrom(facade.snapshot);
+    yield* facade.snapshots.map(listeningFrom);
   }
 
   bool sharing() =>

@@ -199,8 +199,8 @@ class _InstantPlaySection extends ConsumerWidget {
         return const ListTile(
           leading: Icon(Icons.pause_circle_outline_rounded),
           title: Text('Switched off'),
-          subtitle: Text('Songs your server does not have only offer a '
-              '30-second preview.'),
+          subtitle: Text('Songs your server does not have yet will not play '
+              'until this is switched on.'),
         );
       }
       return service.when(
@@ -248,7 +248,7 @@ class _InstantPlaySection extends ConsumerWidget {
       leading: Icon(Icons.cloud_off_outlined, color: context.colors.onBgMuted),
       title: const Text('Not found'),
       subtitle: const Text('No instant-play service answers next to your '
-          'music server. Previews still work.'),
+          'music server. Songs your server already has still play.'),
       trailing: Wrap(
         children: [
           TextButton(

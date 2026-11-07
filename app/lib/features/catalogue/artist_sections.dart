@@ -62,9 +62,7 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
   Widget build(BuildContext context) {
     final artist = widget.artist;
     final top = ref.watch(catalogueArtistTopProvider(artist.id));
-    final facade = ref.watch(playbackFacadeProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
-    final instant = ref.watch(instantAvailableProvider);
     final all = top.value ?? const <CatalogueTrack>[];
     final collapsible = all.length > widget.collapsedCount;
 
@@ -106,25 +104,16 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
                 final playingId = snapshot?.track?.id;
                 final current = playingId == t.id ||
                     (status?.track != null && playingId == status!.track!.id);
-                void preview() => unawaited(playExplicitPreview(
-                      facade,
-                      items,
-                      index: i,
-                      sourceName: artist.name,
-                      sourceId: widget.sourceId,
-                    ));
-                return PreviewTrackTile(
+                return CatalogueTrackTile(
                   track: t,
                   showCover: true,
                   isCurrent: current,
                   isPlaying: current && (snapshot?.isPlaying ?? false),
-                  instant: instant,
                   status: status,
                   onTap: () => unawaited(tapPlayRun(ref, items,
                       startIndex: i,
                       sourceName: artist.name,
                       sourceId: widget.sourceId)),
-                  onLongPress: instant && t.previewUrl != null ? preview : null,
                 );
               },
             );

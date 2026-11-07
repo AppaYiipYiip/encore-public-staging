@@ -6,53 +6,7 @@ import '../../design/tokens.dart';
 import '../common/cover_art.dart';
 import '../common/format.dart';
 import '../instant/instant_play.dart';
-import '../player/playback_facade.dart';
 import 'catalogue_providers.dart' show ArtistRelease;
-
-/// Length of every catalogue sample.
-const Duration kPreviewLength = Duration(seconds: 30);
-
-/// The playable sample of [t], `null` when the catalogue has none for it.
-PreviewTrack? previewOf(CatalogueTrack t) {
-  final url = t.previewUrl;
-  final uri = url == null ? null : Uri.tryParse(url);
-  if (uri == null || !uri.hasScheme) return null;
-  return PreviewTrack(
-    id: t.id,
-    title: t.title,
-    uri: uri,
-    artist: t.artistName,
-    catalogueArtistId: t.artistId,
-    album: t.albumTitle,
-    imageUrl: t.coverUrl,
-    duration: kPreviewLength,
-  );
-}
-
-/// Queues the samples of [tracks] (those that have one) and starts at the
-/// row [index] of the *full* list.
-Future<void> playPreviewRun(
-  PlaybackFacade facade,
-  List<CatalogueTrack> tracks, {
-  required int index,
-  required String sourceName,
-  required String sourceId,
-}) {
-  final playable = <PreviewTrack>[];
-  var start = 0;
-  for (var i = 0; i < tracks.length; i++) {
-    final preview = previewOf(tracks[i]);
-    if (preview == null) continue;
-    if (i == index) start = playable.length;
-    playable.add(preview);
-  }
-  return facade.playPreviews(
-    playable,
-    startIndex: start,
-    sourceName: sourceName,
-    sourceId: sourceId,
-  );
-}
 
 /// `1.2M fans`, `850K fans`, `12,345 fans` -> short form.
 String formatFans(int fans) {
@@ -141,14 +95,10 @@ class ReleaseTile extends StatelessWidget {
 
 /// One row of a catalogue track list (album page, artist "Popular").
 ///
-/// Without an instant-play service tapping plays the 30 s sample, and a track
-/// the catalogue has no sample for is shown dimmed and does nothing, rather
-/// than hiding it, so the list matches the real release. With the service
-/// ([instant]) every row plays the whole song: the server gets it, adds it to
-/// the library, and it starts (ADR-057); [onLongPress] keeps the sample one
-/// press away.
-class PreviewTrackTile extends StatelessWidget {
-  const PreviewTrackTile({
+/// Every row plays the whole song: the server gets it, adds it to the library, and it starts (ADR-057). A tap while the server cannot do that
+/// says why in words (`tap_play.dart`); there is no 30-second preview (D-64). [onLongPress] is the row's own menu, where a screen has one.
+class CatalogueTrackTile extends StatelessWidget {
+  const CatalogueTrackTile({
     super.key,
     required this.track,
     required this.isCurrent,
@@ -156,7 +106,6 @@ class PreviewTrackTile extends StatelessWidget {
     this.number,
     this.showCover = false,
     this.onTap,
-    this.instant = false,
     this.status,
     this.onLongPress,
   });
@@ -170,9 +119,6 @@ class PreviewTrackTile extends StatelessWidget {
   final bool showCover;
   final VoidCallback? onTap;
 
-  /// Tapping fetches and plays the full song.
-  final bool instant;
-
   /// Progress of that fetch for this row, if one was started.
   final InstantStatus? status;
   final VoidCallback? onLongPress;
@@ -180,7 +126,6 @@ class PreviewTrackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final playable = instant || track.previewUrl != null;
     final working = status?.isWorking ?? false;
     final subtitle = working
         ? status!.label
@@ -229,15 +174,14 @@ class PreviewTrackTile extends StatelessWidget {
           );
 
     return Semantics(
-      button: playable,
-      label: '${track.title}, ${track.artistName}, '
-          '${instant ? 'play now' : (playable ? '30 second preview' : 'no preview available')}'
+      button: true,
+      label: '${track.title}, ${track.artistName}, play'
           '${working ? ', ${status!.label}' : ''}',
       excludeSemantics: true,
       child: Opacity(
-        opacity: playable ? 1 : 0.45,
+        opacity: 1,
         child: InkWell(
-          onTap: playable && !working ? onTap : null,
+          onTap: working ? null : onTap,
           onLongPress: onLongPress,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 56),

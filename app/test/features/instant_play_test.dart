@@ -140,7 +140,6 @@ CatalogueTrack _t(String id, String title, {int? no}) => CatalogueTrack(
       albumTitle: 'Damnation',
       albumId: '5',
       duration: const Duration(minutes: 4),
-      previewUrl: 'https://cdn/p.mp3',
       trackNumber: no,
     );
 
@@ -516,7 +515,7 @@ void main() {
         await tester.runAsync(() => s.controller.play(_t('1', 'Windowpane')));
 
         expect(backend.started, isEmpty, reason: 'no fetch on this phone');
-        expect(s.facade.calls, ['previews(1, start=0)'],
+        expect(s.facade.calls, ['streamed(1, start=0)'],
             reason: 'handed to the player, which in a Jam is the Jam player');
         await closeApp(tester, s.db);
       });
@@ -536,7 +535,7 @@ void main() {
             sourceName: 'Jam', sourceId: 'jam', onThisPhone: true));
 
         expect(backend.started, isNotEmpty, reason: 'fetched for this phone');
-        expect(s.facade.calls.where((c) => c.startsWith('previews')), isEmpty,
+        expect(s.facade.calls.where((c) => c.startsWith('streamed')), isEmpty,
             reason: 'nothing is sent to the Jam');
         await closeApp(tester, s.db);
       });
@@ -552,7 +551,7 @@ void main() {
             startIndex: 1, sourceName: 'Damnation', sourceId: 'catalogue:5'));
 
         expect(backend.started, isEmpty);
-        expect(s.facade.calls, ['previews(2, start=0)']);
+        expect(s.facade.calls, ['streamed(2, start=0)']);
         await closeApp(tester, s.db);
       });
     });
@@ -759,7 +758,7 @@ void main() {
       final s = await open(
           tester, _FakeBackend(songIdFor: (_) => null, streams: true));
       await tester.runAsync(() => s.controller.play(_t('1', 'Windowpane')));
-      expect(s.facade.calls, ['previews(1, start=0)']);
+      expect(s.facade.calls, ['streamed(1, start=0)']);
       await closeApp(tester, s.db);
     });
 
@@ -770,7 +769,7 @@ void main() {
       final tracks = [_t('1', 'One', no: 1), _t('2', 'Two', no: 2)];
       await tester.runAsync(() => s.controller.playRun(tracks,
           startIndex: 0, sourceName: 'Damnation', sourceId: 'catalogue:5'));
-      expect(s.facade.calls, ['previews(1, start=0)', 'queueStream(2)']);
+      expect(s.facade.calls, ['streamed(1, start=0)', 'queueStream(2)']);
       await closeApp(tester, s.db);
     });
 

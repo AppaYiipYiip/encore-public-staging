@@ -38,12 +38,11 @@ void main() {
         theme:
             buildEncoreTheme(EncoreColors.dark(), brightness: Brightness.dark),
         home: Scaffold(
-          body: PreviewTrackTile(
+          body: CatalogueTrackTile(
             track: track,
             isCurrent: false,
             isPlaying: false,
             number: 1,
-            instant: true,
             status: status,
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/requests/portal_client.dart';
+import 'package:encore/features/instant/tap_play.dart' show kPlainServerLine;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,7 +46,6 @@ const _swift = CatalogueResults(
       title: 'Cardigan',
       artistName: 'Taylor Swift',
       albumTitle: 'Folklore',
-      previewUrl: 'https://cdns-preview/cardigan.mp3',
     ),
   ],
 );
@@ -104,7 +104,9 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('tapping a song plays its preview', (tester) async {
+  testWidgets(
+      'on a server that only plays what it has, tapping a song says so and plays nothing',
+      (tester) async {
     final app = await pumpApp(tester, overrides: [
       catalogueClientProvider.overrideWithValue(FakeCatalogue(_swift)),
       requestBackendProvider.overrideWith((ref) async => FakePortal()),
@@ -114,7 +116,8 @@ void main() {
     await tester.tap(find.text('Cardigan'));
     await settle(tester);
 
-    expect(app.facade.calls, contains('preview(100)'));
+    expect(find.text(kPlainServerLine), findsOneWidget);
+    expect(app.facade.calls.where((c) => c.startsWith('streamed')), isEmpty);
     await closeApp(tester, app.db);
   });
 
@@ -241,7 +244,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('top-result')));
     await settle(tester);
-    expect(app.facade.calls, contains('preview(100)'));
+    expect(find.text(kPlainServerLine), findsOneWidget);
     await closeApp(tester, app.db);
   });
 

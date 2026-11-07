@@ -1,0 +1,12 @@
+{
+ "id": "20261107T005010Z-agent-3aad",
+ "item": "P1-23",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T00:50:10Z",
+ "type": "note",
+ "body": "Owner 7 Nov 2026, Opeth 'Benighted': in his build the first lines read 'Come into this night / Here weÂ´ll be gone' (garbled apostrophe) and he cannot tap a line to jump there. Cause (audit B-102, B-103): the text came from the music server's own file tags (double-encoded character, and plain not synced), not from LRCLIB, which has this song synced with a normal apostrophe (checked 7 Nov: 8 synced results). The app trusts the server text, and swaps in LRCLIB's synced version only when its length is within 6 s of the file's. Fix planned inside P1-23: repair double-encoded text at the door; log the lengths; when only the length differs, offer the synced version with the existing timing nudge; say 'not synced' on a plain card. Not proved against his library (his server, not the test VM).",
+ "to": [
+  "owner"
+ ]
+}

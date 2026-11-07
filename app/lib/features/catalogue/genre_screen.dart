@@ -25,7 +25,6 @@ class CatalogueGenreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chart = ref.watch(catalogueGenreChartProvider(genreId));
-    final instant = ref.watch(instantAvailableProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final sourceId = 'catalogue-genre:$genreId';
     final title = name ?? 'Genre';
@@ -55,12 +54,11 @@ class CatalogueGenreScreen extends ConsumerWidget {
                     final current = snapshot?.track?.id == t.id ||
                         (status?.track != null &&
                             snapshot?.track?.id == status!.track!.id);
-                    return PreviewTrackTile(
+                    return CatalogueTrackTile(
                       track: t,
                       showCover: true,
                       isCurrent: current,
                       isPlaying: current && (snapshot?.isPlaying ?? false),
-                      instant: instant,
                       status: status,
                       onTap: () => unawaited(tapPlayRun(ref, c.tracks,
                           startIndex: i,

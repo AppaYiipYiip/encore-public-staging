@@ -70,7 +70,6 @@ void main() {
     expect(r.albums.single.title, 'Discovery');
     expect(r.albums.single.year, 2001);
     expect(r.albums.single.artistName, 'Daft Punk');
-    expect(r.tracks.single.previewUrl, 'https://cdns-preview/abc.mp3');
     expect(r.tracks.single.duration, const Duration(seconds: 224));
     expect(r.tracks.single.coverUrl, 'https://img/disc.jpg');
   });

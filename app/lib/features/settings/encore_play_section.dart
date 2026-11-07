@@ -40,8 +40,8 @@ class EncorePlaySection extends ConsumerWidget {
         return const ListTile(
           leading: Icon(Icons.pause_circle_outline_rounded),
           title: Text('Switched off'),
-          subtitle: Text('Songs your server does not have only offer a '
-              '30-second preview.'),
+          subtitle: Text('Songs your server does not have yet will not play '
+              'until this is switched on.'),
         );
       }
       return info.when(

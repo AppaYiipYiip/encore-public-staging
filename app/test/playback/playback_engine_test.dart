@@ -1012,7 +1012,7 @@ void main() {
     });
 
     test(
-        'a seek past the end of what is loaded stops at its end (a 29 s sample '
+        'a seek past the end of what is loaded stops at its end (a 29 s file '
         'is never "at 2:51")', () async {
       final h = await Harness.start();
       await h.engine.playTracks(h.tracks);
@@ -1075,14 +1075,13 @@ void main() {
         'a whole song played from the service stream is a play too, '
         'filed by what it is (it used to count for nothing)', () async {
       final h = await Harness.start();
-      await h.engine.playPreviews([
-        PreviewTrack(
+      await h.engine.playStreamed([
+        StreamedTrack(
           id: 'cat-9',
           title: 'Creep',
           uri: Uri.parse('http://svc/api/play/abc/audio'),
           artist: 'Radiohead',
           duration: const Duration(minutes: 4),
-          fullSong: true,
         ),
       ]);
       h.backend.emitState(const BackendState(
@@ -1123,13 +1122,12 @@ void main() {
   group(
       'Next while the next song of an instant-play run is still being fetched',
       () {
-    PreviewTrack streamed(String id) => PreviewTrack(
+    StreamedTrack streamed(String id) => StreamedTrack(
           id: id,
           title: 'Song $id',
           uri: Uri.parse('http://svc/api/play/$id/audio'),
           artist: 'Pause',
           duration: const Duration(minutes: 3),
-          fullSong: true,
         );
 
     // Found on the phone (J-05, 2026-10-17): the person tapped song 3 of an
@@ -1140,7 +1138,7 @@ void main() {
         () async {
       final h = await Harness.start();
       h.moreComing = true;
-      await h.engine.playPreviews([streamed('a')]);
+      await h.engine.playStreamed([streamed('a')]);
       h.backend.emitState(const BackendState(
           playing: true, processing: BackendProcessing.ready));
       h.backend.calls.clear();
@@ -1162,7 +1160,7 @@ void main() {
         () async {
       final h = await Harness.start();
       h.moreComing = false;
-      await h.engine.playPreviews([streamed('a')]);
+      await h.engine.playStreamed([streamed('a')]);
       h.backend.emitState(const BackendState(
           playing: true, processing: BackendProcessing.ready));
       h.backend.calls.clear();
@@ -1176,7 +1174,7 @@ void main() {
     test('a song added later by the person does not start by itself', () async {
       final h = await Harness.start();
       h.moreComing = true;
-      await h.engine.playPreviews([streamed('a')]);
+      await h.engine.playStreamed([streamed('a')]);
       h.backend.emitState(const BackendState(
           playing: true, processing: BackendProcessing.ready));
       await h.engine.skipNext(); // waiting for the next song of the run
@@ -1192,7 +1190,7 @@ void main() {
     test('pausing cancels the wait', () async {
       final h = await Harness.start();
       h.moreComing = true;
-      await h.engine.playPreviews([streamed('a')]);
+      await h.engine.playStreamed([streamed('a')]);
       h.backend.emitState(const BackendState(
           playing: true, processing: BackendProcessing.ready));
       await h.engine.skipNext();
@@ -1207,9 +1205,9 @@ void main() {
   });
 
   group('catalogue previews', () {
-    List<PreviewTrack> previews(int n) => [
+    List<StreamedTrack> streamedRun(int n) => [
           for (var i = 1; i <= n; i++)
-            PreviewTrack(
+            StreamedTrack(
               id: 'p$i',
               title: 'Sample $i',
               uri: Uri.parse('https://cdn/p$i.mp3'),
@@ -1220,9 +1218,10 @@ void main() {
             ),
         ];
 
-    test('a run of samples plays in order from the chosen one', () async {
+    test('a run of streamed songs plays in order from the chosen one',
+        () async {
       final h = await Harness.start();
-      await h.engine.playPreviews(previews(4),
+      await h.engine.playStreamed(streamedRun(4),
           startIndex: 1, sourceName: 'Album', sourceId: 'catalogue-album:9');
 
       expect(h.currentId, 'p2');
@@ -1238,52 +1237,38 @@ void main() {
       await h.dispose();
     });
 
-    test('samples are never scrobbled or recorded as listening history',
-        () async {
-      final h = await Harness.start();
-      await h.engine.playPreviews(previews(2));
-      h.backend.emitState(const BackendState(
-          playing: true, processing: BackendProcessing.ready));
-      h.clock.advance(const Duration(seconds: 29));
-      h.backend.finishCurrent();
-      await h.settle();
-
-      expect(h.currentId, 'p2');
-      expect(h.recorder.nowPlayingIds, isEmpty);
-      expect(h.recorder.plays, isEmpty);
-      await h.dispose();
-    });
-
     test('an out-of-range start index is clamped, an empty run is ignored',
         () async {
       final h = await Harness.start();
-      await h.engine.playPreviews(previews(3), startIndex: 99);
+      await h.engine.playStreamed(streamedRun(3), startIndex: 99);
       expect(h.currentId, 'p3');
 
-      await h.engine.playPreviews(const []);
+      await h.engine.playStreamed(const []);
       expect(h.currentId, 'p3', reason: 'nothing replaced the queue');
       await h.dispose();
     });
 
-    test('the single-sample helper still replaces the queue with one item',
+    test('playing one streamed song replaces the queue with that song',
         () async {
       final h = await Harness.start();
       await h.engine.playTracks(h.tracks);
-      await h.engine.playPreview(
-        id: 'solo',
-        title: 'Solo',
-        uri: Uri.parse('https://cdn/solo.mp3'),
-      );
+      await h.engine.playStreamed([
+        StreamedTrack(
+          id: 'solo',
+          title: 'Solo',
+          uri: Uri.parse('https://cdn/solo.mp3'),
+        ),
+      ]);
       expect(h.currentId, 'solo');
       expect(h.engine.snapshot.queueLength, 1);
-      expect(h.engine.snapshot.sourceId, 'preview:solo');
+      expect(h.engine.snapshot.sourceId, 'stream:solo');
       await h.dispose();
     });
 
-    test('a restart does not bring a sample queue back', () async {
+    test('a restart does not bring a streamed queue back', () async {
       final store = MemoryPlaybackStateStore();
       final h = await Harness.start(store: store);
-      await h.engine.playPreviews(previews(3));
+      await h.engine.playStreamed(streamedRun(3));
       await h.engine.pause();
       await h.settle();
 
@@ -2291,8 +2276,8 @@ void main() {
         () async {
       final store = MemoryPlaybackStateStore();
       final h = await Harness.start(store: store);
-      await h.engine.playPreviews([
-        PreviewTrack(
+      await h.engine.playStreamed([
+        StreamedTrack(
             id: 'deezer:42',
             title: 'Weird Fishes',
             uri: stream,
@@ -2353,8 +2338,8 @@ void main() {
       final store = MemoryPlaybackStateStore();
       final h = await Harness.start(store: store);
       await h.engine.playTracks(h.tracks.sublist(0, 2));
-      await h.engine.playPreviews([
-        PreviewTrack(id: 'deezer:9', title: 'T', uri: stream, artist: 'A'),
+      await h.engine.playStreamed([
+        StreamedTrack(id: 'deezer:9', title: 'T', uri: stream, artist: 'A'),
       ]);
       await h.engine.pause();
       await h.settle();
@@ -2395,8 +2380,8 @@ void main() {
       await h.settle();
       expect(store.value!.queue['named'], isEmpty);
 
-      await h.engine.playPreviews([
-        PreviewTrack(id: 'deezer:1', title: 'T', uri: stream, artist: 'A'),
+      await h.engine.playStreamed([
+        StreamedTrack(id: 'deezer:1', title: 'T', uri: stream, artist: 'A'),
       ]);
       await h.engine.pause();
       await h.settle();

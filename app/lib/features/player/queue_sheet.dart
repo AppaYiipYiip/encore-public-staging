@@ -143,7 +143,7 @@ class _QueueSheet extends ConsumerWidget {
   }
 }
 
-/// "Save" in the queue sheet: the whole queue (previews excluded) becomes a
+/// "Save" in the queue sheet: the whole queue (songs that are not in the library yet are left out) becomes a
 /// playlist, named after what was playing from.
 Future<void> _saveAsPlaylist(
   BuildContext context,

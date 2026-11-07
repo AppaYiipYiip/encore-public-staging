@@ -123,41 +123,29 @@ class FakePlaybackFacade implements PlaybackFacade {
   Future<void> playNext(TrackRow track) async => calls.add('next(${track.id})');
 
   @override
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  }) async =>
-      calls.add('preview($id)');
-  @override
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
   }) async {
-    calls.add('previews(${tracks.map((t) => t.id).join(',')}, '
+    calls.add('streamed(${tracks.map((t) => t.id).join(',')}, '
         'start=$startIndex)');
     _simulate(
       (_) => [
         for (final t in tracks)
-          QueueItem.preview(uid: ++_uid, id: t.id, title: t.title, uri: t.uri),
+          QueueItem.streamed(uid: ++_uid, id: t.id, title: t.title, uri: t.uri),
       ],
       current: startIndex,
     );
   }
 
   @override
-  Future<void> addStreamToQueue(PreviewTrack track) async {
+  Future<void> addStreamToQueue(StreamedTrack track) async {
     calls.add('queueStream(${track.id})');
     _simulate((items) => [
           ...items,
-          QueueItem.preview(
+          QueueItem.streamed(
               uid: ++_uid, id: track.id, title: track.title, uri: track.uri),
         ]);
   }

@@ -5,23 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../data/catalogue/catalogue_models.dart';
-import '../catalogue/catalogue_widgets.dart' show playPreviewRun;
-import '../player/playback_facade.dart';
-import '../providers.dart';
 import 'instant_controller.dart';
 
-/// What a tap on a catalogue song does (D-24, AUDIT F33). The owner's phone played 30 seconds of every song: the instant-play backend was
-/// not ready (the first minutes of a fresh sign-in, or still loading), and a tap silently started a 30-second preview.
+/// What a tap on a catalogue song does (D-24, AUDIT F33; D-64, 7 Nov 2026). A tap means the FULL song, always: there is no 30-second preview
+/// anywhere in the app (the owner: "just take the hit and run and load the full song").
 ///
-/// A tap means the FULL song. When the backend is not ready yet the tap **waits** for it. A preview is never the answer on an Encore server;
-/// it comes only from a long-press ([playExplicitPreview]), or, on a plain music server where it is all there is, from a tap on rows that say
-/// "preview". An Encore server that really cannot get the song says so in words, and so does a server that is not known yet (no address
-/// answered, too slow): a preview is only for a server KNOWN to be a plain music server.
-enum TapPlan { full, preview, cannot }
+/// When the instant-play backend is not ready yet (the first minutes of a fresh sign-in, or still loading) the tap **waits** for it. A server that
+/// really cannot get the song says so in words, and so does a server that is not known yet (no address answered, too slow); a server KNOWN to
+/// be a plain music server (no Encore on it) says that it only plays what it already has.
+enum TapPlan { full, cannot, plainServer }
 
 /// What to say when an Encore server cannot play a song that is not on it yet.
 const String kCannotPlayLine =
     "Your server can't get this song right now. Songs it already has still play. Try again in a moment.";
+
+/// What to say on a music server that has no Encore on it: it can only play what is already in its library.
+const String kPlainServerLine =
+    "This music server only plays songs it already has. Songs that are not in your library need an Encore server.";
 
 /// The decision, with the world injected so it can be tested: waits (polling) while the backend [mayStillCome], up to [timeout].
 Future<TapPlan> planTap({
@@ -39,7 +39,7 @@ Future<TapPlan> planTap({
     await delay(poll);
     waited += poll;
   }
-  return knownPlain() ? TapPlan.preview : TapPlan.cannot;
+  return knownPlain() ? TapPlan.plainServer : TapPlan.cannot;
 }
 
 Future<void> _realDelay(Duration d) => Future<void>.delayed(d);
@@ -90,15 +90,16 @@ Future<void> tapPlayRun(
     case TapPlan.full:
       await container.read(instantControllerProvider.notifier).playRun(items,
           startIndex: startIndex, sourceName: sourceName, sourceId: sourceId);
-    case TapPlan.preview:
-      await playPreviewRun(container.read(playbackFacadeProvider), items,
-          index: startIndex, sourceName: sourceName, sourceId: sourceId);
     case TapPlan.cannot:
-      messenger
-        ?..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(kCannotPlayLine)));
+      _say(messenger, kCannotPlayLine);
+    case TapPlan.plainServer:
+      _say(messenger, kPlainServerLine);
   }
 }
+
+void _say(ScaffoldMessengerState? messenger, String line) => messenger
+  ?..hideCurrentSnackBar()
+  ..showSnackBar(SnackBar(content: Text(line)));
 
 /// A tap on one song of a search (no list behind it).
 Future<void> tapPlayOne(WidgetRef ref, CatalogueTrack track) async {
@@ -107,33 +108,9 @@ Future<void> tapPlayOne(WidgetRef ref, CatalogueTrack track) async {
   switch (await _planFor(container, messenger)) {
     case TapPlan.full:
       await container.read(instantControllerProvider.notifier).play(track);
-    case TapPlan.preview:
-      final preview = track.previewUrl;
-      if (preview == null) return;
-      await container.read(playbackFacadeProvider).playPreview(
-            id: track.id,
-            title: track.title,
-            uri: Uri.parse(preview),
-            artist: track.artistName,
-            catalogueArtistId: track.artistId,
-            album: track.albumTitle,
-            imageUrl: track.coverUrl,
-            duration: const Duration(seconds: 30),
-          );
     case TapPlan.cannot:
-      messenger
-        ?..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(kCannotPlayLine)));
+      _say(messenger, kCannotPlayLine);
+    case TapPlan.plainServer:
+      _say(messenger, kPlainServerLine);
   }
 }
-
-/// A long-press: the 30-second sample of row [index], chosen on purpose. The only other way to a preview run.
-Future<void> playExplicitPreview(
-  PlaybackFacade facade,
-  List<CatalogueTrack> items, {
-  required int index,
-  required String sourceName,
-  required String sourceId,
-}) =>
-    playPreviewRun(facade, items,
-        index: index, sourceName: sourceName, sourceId: sourceId);

@@ -21,7 +21,6 @@ class NowPlayingTrack {
     this.suffix,
     this.bitRate,
     this.imageUrl,
-    this.fullSong = false,
   });
 
   factory NowPlayingTrack.fromRow(TrackRow t) => NowPlayingTrack(
@@ -46,7 +45,7 @@ class NowPlayingTrack {
   final String? artistId;
 
   /// The catalogue's id of the artist, for a song that is not in the library
-  /// (a sample or a song the service plays): the artist page to open.
+  /// (a song the service plays): the artist page to open.
   final String? catalogueArtistId;
   final String? coverArt;
   final Duration? duration;
@@ -55,11 +54,6 @@ class NowPlayingTrack {
 
   /// Direct artwork URL (catalogue items without a server cover id).
   final String? imageUrl;
-
-  /// A whole song although it has a catalogue cover: a Jam's song, or one the
-  /// service streams. Without it a song with only a cover address is taken for
-  /// the 30-second clip of the catalogue (no lyrics, no like).
-  final bool fullSong;
 
   @override
   bool operator ==(Object other) => other is NowPlayingTrack && other.id == id;
@@ -70,10 +64,11 @@ class NowPlayingTrack {
 
 enum RepeatKind { off, all, one }
 
-/// A catalogue sample (30 s) that can be queued without being in the library.
+/// A whole song streamed from the catalogue (the server finds it and plays it), queued without being in the library yet.
+/// There is no 30-second clip anywhere in the app (D-64): every item that plays is the full song.
 @immutable
-class PreviewTrack {
-  const PreviewTrack({
+class StreamedTrack {
+  const StreamedTrack({
     required this.id,
     required this.title,
     required this.uri,
@@ -82,17 +77,12 @@ class PreviewTrack {
     this.album,
     this.imageUrl,
     this.duration,
-    this.fullSong = false,
   });
 
   final String id;
   final String title;
   final Uri uri;
   final String? artist;
-
-  /// The whole song, played from the instant-play service (not a 30-second
-  /// sample): heard to the end it counts as a play, as any song does.
-  final bool fullSong;
 
   /// The catalogue's id of [artist] (see [NowPlayingTrack.catalogueArtistId]).
   final String? catalogueArtistId;
@@ -266,22 +256,10 @@ abstract interface class PlaybackFacade {
   Future<void> addToQueue(TrackRow track);
   Future<void> playNext(TrackRow track);
 
-  /// Plays a catalogue sample that is not in the library.
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  });
-
-  /// Plays a run of catalogue samples one after the other, starting at
+  /// Plays a run of songs streamed from the catalogue one after the other, starting at
   /// [startIndex] (an album or an artist's top songs).
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
@@ -289,7 +267,7 @@ abstract interface class PlaybackFacade {
 
   /// Adds a song that has a stream address but no library row (a song just
   /// fetched by the instant-play service) to the end of the queue.
-  Future<void> addStreamToQueue(PreviewTrack track);
+  Future<void> addStreamToQueue(StreamedTrack track);
 
   // ---- queue ------------------------------------------------------------
 
@@ -359,25 +337,14 @@ class NoopPlaybackFacade implements PlaybackFacade {
   @override
   Future<void> playNext(TrackRow track) async {}
   @override
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  }) async {}
-  @override
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
   }) async {}
   @override
-  Future<void> addStreamToQueue(PreviewTrack track) async {}
+  Future<void> addStreamToQueue(StreamedTrack track) async {}
   @override
   QueueSnapshot get queue => QueueSnapshot.empty;
   @override

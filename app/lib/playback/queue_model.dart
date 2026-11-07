@@ -30,11 +30,10 @@ class QueueItem {
     this.starred = false,
     this.directUri,
     this.imageUrl,
-    this.fullSong = false,
   });
 
-  /// A catalogue sample that is not in the library (30 s preview).
-  factory QueueItem.preview({
+  /// A whole song streamed from the catalogue that is not in the library yet (D-64: there is no 30-second clip).
+  factory QueueItem.streamed({
     required int uid,
     required String id,
     required String title,
@@ -44,14 +43,12 @@ class QueueItem {
     String? album,
     String? imageUrl,
     int? durationSec,
-    bool fullSong = false,
   }) =>
       QueueItem(
         uid: uid,
         id: id,
         title: title,
         artist: artist,
-        fullSong: fullSong,
         catalogueArtistId: catalogueArtistId,
         album: album,
         durationSec: durationSec,
@@ -87,7 +84,7 @@ class QueueItem {
   final String? albumId;
   final String? artistId;
 
-  /// The catalogue's id of [artist] (a sample or a stream-only song).
+  /// The catalogue's id of [artist] (a stream-only song).
   final String? catalogueArtistId;
   final String? coverArt;
   final int? durationSec;
@@ -100,16 +97,12 @@ class QueueItem {
   final double? rgAlbumPeak;
   final bool starred;
 
-  /// Play exactly this URL (catalogue previews); library tracks leave it null
+  /// Play exactly this URL (a song streamed from the catalogue); library tracks leave it null
   /// and are resolved through the server / downloads.
   final Uri? directUri;
 
   /// Artwork URL for items that have no server cover id.
   final String? imageUrl;
-
-  /// The whole song from the instant-play service, not a sample (it has no
-  /// library id yet, but it is listening that counts).
-  final bool fullSong;
 
   bool get isLibraryTrack => directUri == null;
 

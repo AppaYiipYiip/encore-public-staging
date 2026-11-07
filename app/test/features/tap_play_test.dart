@@ -83,16 +83,16 @@ void main() {
   });
 
   test(
-      'a server KNOWN to be a plain music server has no instant play: the preview is all there is (and the rows say so)',
+      'a server KNOWN to be a plain music server has no instant play: it says that it only plays what it has (there is no preview, D-64)',
       () async {
     final result = await plan(
         instant: (_) => false, mayStillCome: (_) => false, knownPlain: true);
 
-    expect(result, TapPlan.preview);
+    expect(result, TapPlan.plainServer);
   });
 
   test(
-      'a plain server that answered while the tap waited is a plain server: the preview, after the wait ended early',
+      'a plain server that answered while the tap waited is a plain server: the sentence, after the wait ended early',
       () async {
     // Still being checked for 3 polls, then the answer comes: not Encore.
     final result = await plan(
@@ -101,7 +101,7 @@ void main() {
       knownPlain: true,
     );
 
-    expect(result, TapPlan.preview);
+    expect(result, TapPlan.plainServer);
     expect(ticks, 3);
   });
 }

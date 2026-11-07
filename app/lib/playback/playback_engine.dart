@@ -475,36 +475,8 @@ class PlaybackEngine implements PlaybackFacade {
   }
 
   @override
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  }) =>
-      playPreviews(
-        [
-          PreviewTrack(
-            id: id,
-            title: title,
-            uri: uri,
-            artist: artist,
-            catalogueArtistId: catalogueArtistId,
-            album: album,
-            imageUrl: imageUrl,
-            duration: duration,
-          ),
-        ],
-        sourceName: 'Preview',
-        sourceId: 'preview:$id',
-      );
-
-  @override
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
@@ -517,11 +489,11 @@ class PlaybackEngine implements PlaybackFacade {
       if (generation != _generation) return;
       _finishItem();
       final start = startIndex.clamp(0, tracks.length - 1);
-      _sourceName = sourceName ?? 'Previews';
-      _sourceId = sourceId ?? 'preview:${tracks[start].id}';
+      _sourceName = sourceName ?? 'Streaming';
+      _sourceId = sourceId ?? 'stream:${tracks[start].id}';
       _queue.replace([
         for (final t in tracks)
-          QueueItem.preview(
+          QueueItem.streamed(
             uid: _queue.newUid(),
             id: t.id,
             title: t.title,
@@ -531,15 +503,14 @@ class PlaybackEngine implements PlaybackFacade {
             album: t.album,
             imageUrl: t.imageUrl,
             durationSec: t.duration?.inSeconds,
-            fullSong: t.fullSong,
           ),
       ], startIndex: start, shuffle: false);
       _consecutiveFailures = 0;
       _retried.clear();
       await _loadCurrent(autoplay: true, generation: generation);
       _emitAll();
-      // Samples are not worth restoring after a restart: the saved ids do
-      // not exist in the library, so a restore drops them.
+      // Songs streamed from the catalogue are not restored after a restart: the saved ids
+      // do not exist in the library, so a restore drops them.
       _schedulePersist();
     });
   }
@@ -617,9 +588,8 @@ class PlaybackEngine implements PlaybackFacade {
           return;
         }
         // Never ask for a position the player does not have. What is loaded can
-        // be shorter than anybody else claims: a 30-second sample of a
-        // three-minute song, a lyric line stamped 2:51, a stale saved position
-        // (docs/23, B34).
+        // be shorter than anybody else claims: a lyric line stamped 2:51, a stale
+        // saved position (docs/23, B34).
         final length = _backend.duration;
         if (length != null && target > length) target = length;
         await _backend.seek(target);
@@ -742,9 +712,9 @@ class PlaybackEngine implements PlaybackFacade {
       });
 
   @override
-  Future<void> addStreamToQueue(PreviewTrack track) => _run(() async {
+  Future<void> addStreamToQueue(StreamedTrack track) => _run(() async {
         final wasEmpty = _queue.isEmpty;
-        _queue.addToEnd(QueueItem.preview(
+        _queue.addToEnd(QueueItem.streamed(
           uid: _queue.newUid(),
           id: track.id,
           title: track.title,
@@ -754,7 +724,6 @@ class PlaybackEngine implements PlaybackFacade {
           album: track.album,
           imageUrl: track.imageUrl,
           durationSec: track.duration?.inSeconds,
-          fullSong: track.fullSong,
         ));
         if (wasEmpty) {
           await _loadCurrent(autoplay: true);
@@ -1483,11 +1452,7 @@ class PlaybackEngine implements PlaybackFacade {
     }
     final listened = _listened;
     _listened = Duration.zero;
-    if (item == null ||
-        _recorder == null ||
-        !(item.isLibraryTrack || item.fullSong)) {
-      return; // a 30-second sample is not listening
-    }
+    if (item == null || _recorder == null) return;
     final length = item.duration;
     final threshold = length == null
         ? const Duration(seconds: 30)
@@ -1559,7 +1524,6 @@ class PlaybackEngine implements PlaybackFacade {
               suffix: item.suffix,
               bitRate: item.bitRate,
               imageUrl: item.imageUrl,
-              fullSong: item.fullSong,
             ),
       isPlaying:
           state.playing && state.processing != BackendProcessing.completed,

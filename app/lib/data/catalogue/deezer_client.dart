@@ -5,7 +5,7 @@ import 'catalogue_models.dart';
 
 /// Catalogue lookup on Deezer's public API (ADR-015/ADR-016).
 ///
-/// No account or key is needed for search and 30 s previews, responses are
+/// No account or key is needed for search, responses are
 /// small and fast (~300 ms), and covers are 1000 px. Failures never throw to
 /// the UI: an unreachable catalogue just means "no extra results".
 class DeezerClient implements CatalogueClient {
@@ -224,7 +224,6 @@ class DeezerClient implements CatalogueClient {
               : null) ??
           fallbackCover,
       duration: seconds == null ? null : Duration(seconds: seconds),
-      previewUrl: _str(j['preview']),
       isrc: _str(j['isrc']),
       trackNumber: (j['track_position'] as num?)?.toInt(),
       discNumber: (j['disk_number'] as num?)?.toInt(),

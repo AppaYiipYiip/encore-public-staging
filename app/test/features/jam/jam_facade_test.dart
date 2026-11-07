@@ -337,16 +337,18 @@ void main() {
     test(
         'a song from the catalogue goes in by what it is, with its cover and artist',
         () async {
-      await facade.playPreview(
-        id: 'dz-77',
-        title: 'Sommaire',
-        uri: Uri.parse('https://cdn/p.mp3'),
-        artist: 'Raid',
-        catalogueArtistId: '4242',
-        album: 'Lmorphine',
-        imageUrl: 'https://cdn/cover.jpg',
-        duration: const Duration(minutes: 3, seconds: 20),
-      );
+      await facade.playStreamed([
+        StreamedTrack(
+          id: 'dz-77',
+          title: 'Sommaire',
+          uri: Uri.parse('https://cdn/p.mp3'),
+          artist: 'Raid',
+          catalogueArtistId: '4242',
+          album: 'Lmorphine',
+          imageUrl: 'https://cdn/cover.jpg',
+          duration: const Duration(minutes: 3, seconds: 20),
+        ),
+      ]);
 
       final add = link.sent.single as Add;
       expect(add.at, AddAt.now);
@@ -363,12 +365,11 @@ void main() {
     });
 
     test('a song the service just fetched goes to the end by name', () async {
-      await facade.addStreamToQueue(PreviewTrack(
+      await facade.addStreamToQueue(StreamedTrack(
         id: 'dz-5',
         title: 'Creep',
         uri: Uri.parse('http://svc/a'),
         artist: 'Radiohead',
-        fullSong: true,
       ));
 
       final add = link.sent.single as Add;

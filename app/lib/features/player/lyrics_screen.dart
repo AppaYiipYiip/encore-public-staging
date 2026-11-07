@@ -14,7 +14,6 @@ import '../../domain/artwork_color.dart';
 import '../../domain/lyrics.dart';
 import '../common/artwork_color.dart';
 import '../common/widgets.dart';
-import '../instant/instant_controller.dart';
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 import 'scrubber.dart';
@@ -31,13 +30,7 @@ final currentLyricsProvider = FutureProvider.autoDispose
   final snapshot = ref.read(playbackSnapshotProvider).value;
   final track = snapshot?.track;
   if (repo == null || track == null || track.id != trackId) return null;
-  // A 30-second catalogue clip has no lyrics of its own: the whole song's
-  // would not match what is heard, and nothing should be fetched for it
-  // (docs/23, B34). A song the service is fetching is a real song.
-  final isClip = track.imageUrl != null &&
-      !track.fullSong &&
-      ref.read(instantStatusProvider(trackId)) == null;
-  if (isClip) return null;
+  // Every song that plays is the whole song (D-64: there is no 30-second clip), so every song asks for its lyrics.
   return repo
       .load(
         trackId: trackId,

@@ -3,7 +3,7 @@ import 'package:encore/features/player/playback_facade.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// What the player is doing, as a friend may be told about it (docs/35,
-/// section 3): a real song, never a 30-second clip, never a library cover.
+/// section 3): the song that is playing, never a library cover. There is no 30-second clip any more (D-64).
 void main() {
   PlaybackSnapshot snapshot({
     String? imageUrl,
@@ -24,12 +24,9 @@ void main() {
         isPlaying: playing,
       );
 
-  bool never(NowPlayingTrack _) => false;
-  bool always(NowPlayingTrack _) => true;
-
   test('a library song is shared with its title, artist and album, no cover',
       () {
-    final state = listeningFrom(snapshot(), isFetchedSong: never)!;
+    final state = listeningFrom(snapshot())!;
 
     expect(state.title, 'Dogs');
     expect(state.artist, 'Pink Floyd');
@@ -40,33 +37,26 @@ void main() {
   });
 
   test('paused is paused', () {
-    expect(
-        listeningFrom(snapshot(playing: false), isFetchedSong: never)!.playing,
-        isFalse);
+    expect(listeningFrom(snapshot(playing: false))!.playing, isFalse);
   });
 
   test('nothing playing is nothing to share', () {
-    expect(listeningFrom(PlaybackSnapshot.idle, isFetchedSong: never), isNull);
-    expect(listeningFrom(snapshot(withTrack: false), isFetchedSong: never),
-        isNull);
+    expect(listeningFrom(PlaybackSnapshot.idle), isNull);
+    expect(listeningFrom(snapshot(withTrack: false)), isNull);
   });
 
-  test('a 30-second sample is not what the person is listening to', () {
-    final sample = snapshot(imageUrl: 'https://cdn.example/s.jpg');
+  test(
+      'a streamed song is what the person is listening to, with its public picture',
+      () {
+    final streamed = snapshot(imageUrl: 'https://cdn.example/s.jpg');
 
-    expect(listeningFrom(sample, isFetchedSong: never), isNull);
-  });
-
-  test('a song fetched for the person shares its public picture', () {
-    final fetched = snapshot(imageUrl: 'https://cdn.example/s.jpg');
-
-    final state = listeningFrom(fetched, isFetchedSong: always)!;
+    final state = listeningFrom(streamed)!;
 
     expect(state.coverUrl, 'https://cdn.example/s.jpg');
     expect(state.title, 'Dogs');
   });
 
   test('the song id only tells songs apart on this phone', () {
-    expect(listeningFrom(snapshot(), isFetchedSong: never)!.id, 'song-1');
+    expect(listeningFrom(snapshot())!.id, 'song-1');
   });
 }

@@ -6,6 +6,7 @@ import 'package:encore/data/fetch/fetch_client.dart';
 import 'package:encore/data/requests/portal_client.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/instant_play.dart';
+import 'package:encore/features/instant/tap_play.dart' show kPlainServerLine;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,7 +81,6 @@ CatalogueTrack _t(String id, String title, int no) => CatalogueTrack(
       albumTitle: 'Damnation',
       albumId: '10',
       duration: const Duration(minutes: 4),
-      previewUrl: 'https://cdn/p.mp3',
       trackNumber: no,
     );
 
@@ -366,17 +366,20 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  testWidgets('without the service the page keeps previews only',
+  testWidgets(
+      'without the service the page says that the server only plays what it has',
       (tester) async {
     final app = await open(tester, instant: false);
     await openAlbum(tester);
 
-    expect(find.textContaining('30 seconds'), findsOneWidget);
+    expect(
+        find.textContaining('only plays songs it already has'), findsOneWidget);
     expect(find.text('Add to library'), findsNothing);
 
     await tester.tap(find.text('Windowpane'));
     await settle(tester);
-    expect(app.facade.calls, contains('previews(t1,t2,t3, start=0)'));
+    expect(find.text(kPlainServerLine), findsOneWidget);
+    expect(app.facade.calls.where((c) => c.startsWith('streamed')), isEmpty);
     expect(backend.asked, isEmpty);
     await closeApp(tester, app.db);
   });

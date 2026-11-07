@@ -79,13 +79,12 @@ void main() {
     // The song a friend asked for with "play any song": it plays from the
     // service at once and has no id on the music server yet. Heard to the end,
     // it must count in the person's history (Year in Music, Most played).
-    final streamed = QueueItem.preview(
+    final streamed = QueueItem.streamed(
       uid: 2,
       id: 'cat-9',
       title: 'Opening Kodama',
       uri: Uri.parse('http://svc/api/play/abc/audio'),
       artist: 'Alcest',
-      fullSong: true,
     );
 
     test('is recorded under the library id of that song', () async {

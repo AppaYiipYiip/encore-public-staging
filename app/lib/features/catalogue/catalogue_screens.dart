@@ -284,7 +284,7 @@ class _Unavailable extends StatelessWidget {
 
 // ------------------------------------------------------------------- album
 
-/// A release that is not in the library: songs to preview, one Request.
+/// A release that is not in the library: songs to play, one Request.
 class CatalogueAlbumScreen extends ConsumerWidget {
   const CatalogueAlbumScreen({
     super.key,
@@ -325,8 +325,6 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     final savedSongs = saves?.phase == ReleasePhase.saved
         ? saves!.refIds.toSet()
         : const <String>{};
-    final firstPlayable =
-        list.indexWhere((t) => instant || t.previewUrl != null);
 
     final meta = [
       if (album.year != null) '${album.year}',
@@ -383,12 +381,12 @@ class CatalogueAlbumScreen extends ConsumerWidget {
           PlayButton(
             isPlaying: isPlaying,
             size: 56,
-            onPressed: firstPlayable < 0
+            onPressed: list.isEmpty
                 ? null
                 : () => isCurrent
                     ? facade.togglePlayPause()
                     : unawaited(tapPlayRun(ref, list,
-                        startIndex: firstPlayable,
+                        startIndex: 0,
                         sourceName: album.title,
                         sourceId: sourceId)),
           ),
@@ -402,8 +400,8 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                   ? kEncorePlayLine
                   : 'Tap a song to play it. It is added to your library '
                       'first, which takes a few seconds.')
-              : 'Previews are 30 seconds. Request the album and it is added '
-                  'to your library in full.',
+              : 'This server only plays songs it already has. Request the '
+                  'album and it is added to your library.',
           instant: instant,
         ),
         tracks.when(
@@ -428,26 +426,16 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                             !savedSongs.contains(live!.track?.id)
                         ? null
                         : live;
-                    void preview() => unawaited(playExplicitPreview(
-                          facade,
-                          items,
-                          index: i,
-                          sourceName: album.title,
-                          sourceId: sourceId,
-                        ));
-                    return PreviewTrackTile(
+                    return CatalogueTrackTile(
                       track: t,
                       number: i + 1,
                       isCurrent: current,
                       isPlaying: current && (snapshot?.isPlaying ?? false),
-                      instant: instant,
                       status: status,
                       onTap: () => unawaited(tapPlayRun(ref, items,
                           startIndex: i,
                           sourceName: album.title,
                           sourceId: sourceId)),
-                      onLongPress:
-                          instant && t.previewUrl != null ? preview : null,
                     );
                   },
                 ),
@@ -510,8 +498,6 @@ class CatalogueArtistScreen extends ConsumerWidget {
     final instant = ref.watch(instantAvailableProvider);
     final portal = ref.watch(requestPortalOfferedProvider);
     final encore = ref.watch(onEncoreServerProvider).value ?? false;
-    final firstPlayable =
-        topList.indexWhere((t) => instant || t.previewUrl != null);
 
     return CollectionScaffold(
       title: artist.name,
@@ -535,12 +521,12 @@ class CatalogueArtistScreen extends ConsumerWidget {
           PlayButton(
             isPlaying: isPlaying,
             size: 56,
-            onPressed: firstPlayable < 0
+            onPressed: topList.isEmpty
                 ? null
                 : () => isCurrent
                     ? facade.togglePlayPause()
                     : unawaited(tapPlayRun(ref, topList,
-                        startIndex: firstPlayable,
+                        startIndex: 0,
                         sourceName: artist.name,
                         sourceId: sourceId)),
           ),
@@ -554,8 +540,8 @@ class CatalogueArtistScreen extends ConsumerWidget {
                   ? kEncorePlayLine
                   : 'Tap a song to play it. It is added to your library '
                       'first, which takes a few seconds.')
-              : 'Previews are 30 seconds. Request an artist and their music '
-                  'is added to your library in full.',
+              : 'This server only plays songs it already has. Request an '
+                  'artist and their music is added to your library.',
           instant: instant,
         ),
         ArtistPopularSection(artist: artist, sourceId: sourceId),

@@ -66,7 +66,6 @@ class NowPlayingScreen extends ConsumerWidget {
     final fromService = ref.watch(isServiceSongProvider(track));
     final waiting = fromService && libraryRow == null;
     final serverAway = ref.watch(connectionProblemProvider).serverIsAway;
-    final sample = track.imageUrl != null && !track.fullSong && !fromService;
 
     return GestureDetector(
       onVerticalDragEnd: (d) {
@@ -109,9 +108,8 @@ class NowPlayingScreen extends ConsumerWidget {
                         roomAboveControls < coverSide * 0.8;
                     final topBar = _TopBar(
                       source: snapshot!.sourceName,
-                      // A 30-second sample has no library entry to act
-                      // on; a song on its way into the library has one
-                      // in a moment.
+                      // A song on its way into the library has a library entry
+                      // to act on in a moment.
                       row: libraryRow,
                       waiting: waiting,
                     );
@@ -121,7 +119,6 @@ class NowPlayingScreen extends ConsumerWidget {
                         track: track,
                         row: libraryRow,
                         waiting: waiting,
-                        sample: sample,
                       ),
                       const SizedBox(height: Space.sm),
                       Scrubber(waiting: serverAway && !snapshot.isPlaying),
@@ -130,9 +127,7 @@ class NowPlayingScreen extends ConsumerWidget {
                       const SizedBox(height: Space.md),
                       const _BottomRow(),
                       const SizedBox(height: Space.lg),
-                      // The lyrics belong to the whole song, not to a
-                      // 30-second clip of it (docs/23, B34).
-                      if (!sample) _LyricsPreview(trackId: track.id),
+                      _LyricsPreview(trackId: track.id),
                       const SizedBox(height: Space.xl),
                     ];
                     const side = EdgeInsets.symmetric(horizontal: Space.xl);
@@ -256,7 +251,7 @@ class _TopBar extends ConsumerWidget {
             final extra = _playerActions(context, ref);
             final found = row;
             if (found == null) {
-              // A sample, or a song still being added: no library row to act on, but the player's own options are there.
+              // A song still being added: no library row to act on, but the player's own options are there.
               await showActionsMenu(context, extra,
                   note: waiting ? kWaitingForLibrary : null);
               return;
@@ -309,7 +304,6 @@ class _TitleRow extends ConsumerWidget {
     required this.track,
     required this.row,
     this.waiting = false,
-    this.sample = false,
   });
 
   final NowPlayingTrack track;
@@ -319,9 +313,6 @@ class _TitleRow extends ConsumerWidget {
 
   /// A song the service is still adding to the library.
   final bool waiting;
-
-  /// A 30-second sample: nothing to like.
-  final bool sample;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -347,7 +338,7 @@ class _TitleRow extends ConsumerWidget {
               ),
               InkWell(
                 // A library song opens its library artist; a song that only the
-                // catalogue knows (a sample, a song the service plays) opens the
+                // catalogue knows (a song the service plays) opens the
                 // catalogue's page of the artist.
                 onTap: track.artistId != null
                     ? () {
@@ -382,21 +373,13 @@ class _TitleRow extends ConsumerWidget {
           ),
         ),
         IconButton(
-          tooltip: sample
-              ? 'Add the song to your library to like it'
-              : liked
-                  ? 'Remove from Liked Songs'
-                  : 'Add to Liked Songs',
+          tooltip: liked ? 'Remove from Liked Songs' : 'Add to Liked Songs',
           iconSize: 28,
           icon: Icon(
             liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: sample
-                ? c.onBgMuted
-                : liked
-                    ? c.accent
-                    : c.onBg,
+            color: liked ? c.accent : c.onBg,
           ),
-          onPressed: session == null || sample
+          onPressed: session == null
               ? null
               : () {
                   final target = row;

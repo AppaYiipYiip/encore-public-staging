@@ -170,37 +170,16 @@ class DeferredPlaybackFacade implements PlaybackFacade {
   @override
   Future<void> playNext(TrackRow track) async => (await _ready).playNext(track);
   @override
-  Future<void> playPreview({
-    required String id,
-    required String title,
-    required Uri uri,
-    String? artist,
-    String? catalogueArtistId,
-    String? album,
-    String? imageUrl,
-    Duration? duration,
-  }) async =>
-      (await _ready).playPreview(
-        id: id,
-        title: title,
-        uri: uri,
-        artist: artist,
-        catalogueArtistId: catalogueArtistId,
-        album: album,
-        imageUrl: imageUrl,
-        duration: duration,
-      );
-  @override
-  Future<void> playPreviews(
-    List<PreviewTrack> tracks, {
+  Future<void> playStreamed(
+    List<StreamedTrack> tracks, {
     int startIndex = 0,
     String? sourceName,
     String? sourceId,
   }) async =>
-      (await _ready).playPreviews(tracks,
+      (await _ready).playStreamed(tracks,
           startIndex: startIndex, sourceName: sourceName, sourceId: sourceId);
   @override
-  Future<void> addStreamToQueue(PreviewTrack track) async =>
+  Future<void> addStreamToQueue(StreamedTrack track) async =>
       (await _ready).addStreamToQueue(track);
   @override
   Future<void> jumpToQueueIndex(int index) async =>

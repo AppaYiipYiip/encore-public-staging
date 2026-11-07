@@ -75,7 +75,6 @@ class CatalogueTrack {
     this.albumId,
     this.coverUrl,
     this.duration,
-    this.previewUrl,
     this.isrc,
     this.trackNumber,
     this.discNumber,
@@ -91,9 +90,6 @@ class CatalogueTrack {
   final String? albumId;
   final String? coverUrl;
   final Duration? duration;
-
-  /// 30-second MP3 sample (always available, no account needed).
-  final String? previewUrl;
   final String? isrc;
 
   /// Position on its release (`track_position` / `disk_number`).

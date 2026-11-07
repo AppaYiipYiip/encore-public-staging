@@ -42,8 +42,7 @@ final resolvedLibraryIdsProvider =
         ResolvedLibraryIds.new);
 
 /// Is the playing item a catalogue song that the instant-play service is
-/// fetching (or has fetched)? A 30-second sample is not: it never becomes a
-/// library song.
+/// fetching (or has fetched)?
 final isServiceSongProvider =
     Provider.autoDispose.family<bool, NowPlayingTrack>(
   (ref, track) =>
@@ -60,8 +59,9 @@ final isServiceSongProvider =
 /// * A library song is its own id.
 /// * A song the service fetched has none *yet*: this looks again every few
 ///   seconds until the music server lists it (then like, playlists and
-///   downloads work), and gives up after a few minutes.
-/// * A 30-second sample never has one.
+///   downloads work), and gives up after a few minutes. A streamed song the
+///   fetch state of which is gone (the app was restarted, or a Jam's song) is
+///   looked up the same way, by name.
 final playingLibraryIdProvider =
     StreamProvider.autoDispose.family<String?, NowPlayingTrack>(
   (ref, track) async* {
@@ -75,17 +75,13 @@ final playingLibraryIdProvider =
       return;
     }
     final status = ref.watch(instantStatusProvider(track.id));
-    if (status == null) {
-      yield null; // a sample
-      return;
-    }
     final known =
         ref.watch(resolvedLibraryIdsProvider.select((m) => m[track.id]));
     if (known != null) {
       yield known;
       return;
     }
-    final fromStatus = status.track;
+    final fromStatus = status?.track;
     if (fromStatus != null) {
       yield fromStatus.id;
       return;

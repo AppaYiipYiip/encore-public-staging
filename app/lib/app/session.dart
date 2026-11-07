@@ -494,7 +494,7 @@ class ServerSession {
   /// Where moving this phone onto an Encore server stands.
   /// `true` from the moment a plain session is built until the phone KNOWS what the server is: a definite "not an Encore server" answer, or
   /// a move onto Encore that failed. It stays on while the server cannot be reached, and on the way to Encore mode (the session is replaced
-  /// then). A tap on a catalogue song waits for it instead of starting a 30-second preview (D-24, AUDIT F33).
+  /// then). A tap on a catalogue song waits for it instead of giving up (D-24, AUDIT F33; D-64: there is no preview).
   late final ValueNotifier<bool> detecting = ValueNotifier<bool>(!encoreMode);
 
   void _detected() {
