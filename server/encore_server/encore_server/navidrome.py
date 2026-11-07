@@ -8,6 +8,7 @@ the installer made; its password is in the server's environment and nowhere else
 from __future__ import annotations
 
 import logging
+import re
 import secrets
 from collections.abc import Iterator
 from typing import Any
@@ -178,6 +179,19 @@ def _as_list(value: object) -> list[dict[str, Any]]:
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
 
 
+# Where the music server joins the artists of a song into one string ("Beanie Sigel, Freeway"; "Ludacris, Missy "Misdemeanor" Elliott"), and the words
+# people join them with in a title or a tag.
+_ARTIST_SEPARATORS = re.compile(r"\s*(?:,|;|/|&|\bfeat\.?|\bft\.?|\bfeaturing\b|\band\b|\bwith\b|\bx\b)\s*", re.IGNORECASE)
+
+
+def artist_names(joined: str) -> list[str]:
+    """The artist string as it is, then each name in it: "Fat Joe, Lil Wayne" is that, "Fat Joe" and "Lil Wayne". More names only ever add ways to
+    match; the title (and its version) must still be the same."""
+    names = [joined]
+    names.extend(part for part in _ARTIST_SEPARATORS.split(joined) if part.strip() and part != joined)
+    return names
+
+
 def pick_song(
     songs: list[dict[str, Any]],
     *,
@@ -188,7 +202,11 @@ def pick_song(
     size: int | None = None,
 ) -> str | None:
     """The song among [songs] that is the one asked for: by its path when the path is known, else the same title, the same version
-    ("(Live)", "(Remix)" are other recordings), a close artist, and the album as a tie-break."""
+    ("(Live)", "(Remix)" are other recordings), a close artist, and the album as a tie-break.
+
+    **The very file that was just kept is the strongest answer (audit B-105, 7 Nov 2026):** the same title and version at exactly the same number of
+    bytes. The artist is then not asked to be close: the music server lists a song with several artists as one joined string ("Beanie Sigel,
+    Freeway"), which is nothing like the first artist alone, and 9 of 189 songs of an imported playlist were saved and never found for that reason."""
     if relative_path:
         want = relative_path.replace("\\", "/").lower()
         for s in songs:
@@ -201,15 +219,14 @@ def pick_song(
         found_title = str(s.get("title") or "")
         if norm_title(found_title) != wanted_title or version_signature(found_title) != wanted_version:
             continue
-        closeness = max(
-            ratio(wanted_artist, norm_artist(str(s.get("artist") or ""))),
-            ratio(wanted_artist, norm_artist(str(s.get("albumArtist") or ""))),
-        )
-        if closeness < 0.8:
+        listed_artists = [*artist_names(str(s.get("artist") or "")), *artist_names(str(s.get("albumArtist") or ""))]
+        closeness = max((ratio(wanted_artist, norm_artist(name)) for name in listed_artists), default=0.0)
+        same_file = size is not None and s.get("size") == size  # the same number of bytes: the very file that was just kept
+        if closeness < 0.8 and not same_file:
             continue
         score = closeness + (0.2 if album and norm_title(str(s.get("album") or "")) == norm_title(album) else 0.0)
-        if size is not None and s.get("size") == size:
-            score += 1.0  # the same number of bytes: the very file that was just kept
+        if same_file:
+            score += 1.0
         if best is None or score > best[0]:
             best = (score, str(s.get("id")))
     return best[1] if best else None
