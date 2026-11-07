@@ -358,7 +358,11 @@ String importSummary(EncoreImport job) {
     case 'failed':
       return 'Could not finish. $songs';
     default:
-      return '$songs, ${job.kept} saved on your server$notFound';
+      // A list longer than the server reads is cut, and the person must be told: nothing else on the screen says the list is longer than it shows.
+      final cut = job.truncated
+          ? '. The list is longer: only these $songs were read.'
+          : '';
+      return '$songs, ${job.kept} saved on your server$notFound$cut';
   }
 }
 

@@ -138,5 +138,20 @@ void main() {
     expect(importSummary(running), 'Finding songs: 5 of 10, 1 not found');
     expect(
         importSummary(done), '10 songs, 7 saved on your server, 1 not found');
+
+    // A list longer than the server reads is cut: the person is told (the owner's playlist had 2,500 songs and showed 2000 with nothing said).
+    const cut = EncoreImport(
+        id: 'im_2',
+        name: 'Long',
+        source: 'youtube',
+        state: 'done',
+        total: 2000,
+        matched: 2000,
+        unmatched: 0,
+        pending: 0,
+        kept: 5,
+        truncated: true);
+    expect(importSummary(cut),
+        '2000 songs, 5 saved on your server. The list is longer: only these 2000 songs were read.');
   });
 }

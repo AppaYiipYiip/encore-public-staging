@@ -51,13 +51,16 @@ class EncoreApi {
       Options(headers: {if (deviceId != null) 'X-Encore-Device': deviceId});
 
   Future<Map<String, dynamic>> _send(String method, String path,
-      {Map<String, Object?> query = const {}, Object? body}) async {
+      {Map<String, Object?> query = const {},
+      Object? body,
+      Duration? receiveTimeout}) async {
     try {
       final response = await _dio.requestUri<Object?>(
         _uri(path, query),
         data: body,
         options: _options.copyWith(
             method: method,
+            receiveTimeout: receiveTimeout,
             contentType: body == null ? null : Headers.jsonContentType),
       );
       final parsed = readMap(response.data);
@@ -416,6 +419,9 @@ class EncoreApi {
       guard(() async => EncoreImportMade.fromJson(await _send(
             'POST',
             '/imports',
+            // The server reads the whole list before it answers (a playlist of 2,500 songs is 25 requests to YouTube Music, about 40 s): the usual 30 s
+            // would give up on exactly the long playlists.
+            receiveTimeout: const Duration(minutes: 4),
             body: {
               'id': id,
               if (url != null) 'url': url,
