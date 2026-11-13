@@ -58,9 +58,11 @@ abstract final class Nav {
   static void importedPlaylist(BuildContext c, String importId) =>
       _to(c, (b) => '/$b/import/${Uri.encodeComponent(importId)}');
 
-  static void artist(BuildContext c, String id) {
+  /// [replace]: the page being left is not worth going back to (an artist page that stood in for another one), so it is replaced.
+  static void artist(BuildContext c, String id, {bool replace = false}) {
     PerfMonitor.instance.pageOpening('artist');
-    c.push('/${_branch(c)}/artist/${Uri.encodeComponent(id)}');
+    final location = '/${_branch(c)}/artist/${Uri.encodeComponent(id)}';
+    replace ? c.pushReplacement(location) : c.push(location);
   }
 
   /// A release from the public catalogue (not in the library). [preloaded]
@@ -77,10 +79,13 @@ abstract final class Nav {
   }
 
   static void catalogueArtist(BuildContext c, String id,
-      {CatalogueArtist? preloaded}) {
+      {CatalogueArtist? preloaded, bool replace = false}) {
     PerfMonitor.instance.pageOpening('artist');
-    c.push('/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}',
-        extra: preloaded);
+    final location =
+        '/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}';
+    replace
+        ? c.pushReplacement(location, extra: preloaded)
+        : c.push(location, extra: preloaded);
   }
 
   static void genre(BuildContext c, String name) =>

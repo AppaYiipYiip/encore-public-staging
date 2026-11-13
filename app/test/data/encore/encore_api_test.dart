@@ -36,9 +36,88 @@ class _Portal implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// A stream address answered with a canned reply, remembering what it was asked.
+class _Canned implements HttpClientAdapter {
+  _Canned(this.status, this.body, {this.throwing = false});
+
+  final int status;
+  final String body;
+  final bool throwing;
+  final List<RequestOptions> asked = [];
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options,
+      Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
+    asked.add(options);
+    if (throwing) {
+      throw DioException.connectionError(
+          requestOptions: options, reason: 'unreachable');
+    }
+    return ResponseBody.fromString(body, status, headers: {
+      Headers.contentTypeHeader: ['application/json'],
+    });
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   late FakeEncoreServer server;
   late EncoreApi api;
+
+  group('why the server will not play a song', () {
+    final address =
+        Uri.parse('http://home.test:4540/encore/stream/sr_1?p=p&e=9&sig=s');
+
+    EncoreApi over(_Canned canned) => EncoreApi(
+          dio: Dio()..httpClientAdapter = canned,
+          baseUrl: () => Uri.parse('http://home.test:4540'),
+          auth: () => {'u': 'tester', 't': 'tok', 's': 'salt'},
+        );
+
+    test('a song the server cannot find is a permanent refusal, in its words',
+        () async {
+      final canned = _Canned(
+          404,
+          '{"error":{"code":"song_unavailable","message":"Nothing matching that song was found.",'
+          '"retryable":false,"retryAfterMs":null,"details":{"reason":"not_found"}}}');
+
+      final why = await over(canned).streamRefusal(address);
+
+      expect(why!.permanent, isTrue);
+      expect(why.message, 'Nothing matching that song was found.');
+      expect(why.reason, 'not_found');
+      expect(canned.asked.single.headers['Range'], 'bytes=0-0',
+          reason: 'only the first byte is asked for');
+    });
+
+    test('a resting source is a refusal that may pass', () async {
+      final why = await over(_Canned(
+              503,
+              '{"error":{"code":"source_busy","message":"YouTube is resting.",'
+              '"retryable":true,"retryAfterMs":60000,"details":{}}}'))
+          .streamRefusal(address);
+
+      expect(why!.permanent, isFalse);
+      expect(why.message, 'YouTube is resting.');
+    });
+
+    test('a stream that answers is no refusal', () async {
+      expect(await over(_Canned(206, 'x')).streamRefusal(address), isNull);
+      expect(await over(_Canned(200, 'x')).streamRefusal(address), isNull);
+    });
+
+    test(
+        'an answer that is not the server\'s error shape, and a server that '
+        'cannot be reached, say nothing about the song', () async {
+      expect(
+          await over(_Canned(404, '<html>nope</html>')).streamRefusal(address),
+          isNull);
+      expect(await over(_Canned(0, '', throwing: true)).streamRefusal(address),
+          isNull);
+    });
+  });
 
   group(
       'a Wi-Fi sign-in page answering instead of the server (field test 2026-10-31)',
@@ -259,6 +338,8 @@ void main() {
 
     expect(pass.person, 'pn_x');
     expect(pass.signature, 'coversig');
+    expect(pass.expires, 9999999999,
+        reason: 'the end exactly as the server signed it (audit B-115)');
     expect(
         pass.expiresAt.isAfter(DateTime.now().add(const Duration(days: 365))),
         isTrue);

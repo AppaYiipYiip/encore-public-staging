@@ -1,0 +1,9 @@
+{
+ "id": "20261107T205636Z-agent-02e3",
+ "item": "P3-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:56:36Z",
+ "type": "note",
+ "body": "7 Nov 2026 night: the owner confirmed on 4G that the away-from-home address works (\"it worked!\", his own phone, build 144, via the Funnel address). So the guide's step 5 (`encore funnel on`) is now proved on a real phone on mobile data, not only on the PC. The earlier note's open question is closed; what stays open is only the non-interactive flag (the command needs a terminal for its install question) and the measured run (see the note on P3-28)."
+}

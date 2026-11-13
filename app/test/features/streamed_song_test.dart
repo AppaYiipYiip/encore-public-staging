@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:encore/app/providers.dart';
 import 'package:encore/app/session.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
@@ -8,6 +9,7 @@ import 'package:encore/data/fetch/fetch_client.dart';
 import 'package:encore/domain/lyrics.dart';
 import 'package:encore/features/catalogue/catalogue_screens.dart'
     show CatalogueArtistScreen;
+import 'package:encore/features/common/artist_line.dart';
 import 'package:encore/features/detail/detail_screens.dart' show ArtistScreen;
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/instant_play.dart';
@@ -19,6 +21,7 @@ import 'package:encore/features/player/playback_facade.dart';
 import 'package:encore/features/player/streamed_song.dart';
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -106,6 +109,7 @@ void main() {
     String artist = 'Alcest',
     FakeCatalogue? catalogue,
     TrackLyrics? lyrics,
+    Future<void> Function(AppDatabase db, int serverId)? seed,
   }) async {
     final app = await pumpApp(
       tester,
@@ -115,6 +119,7 @@ void main() {
       session: (ref) async {
         final db = ref.read(databaseProvider);
         final server = (await db.select(db.servers).get()).first;
+        await seed?.call(db, server.id);
         final session = await ServerSession.create(
           verifyAddresses: false,
           db: db,
@@ -506,6 +511,62 @@ void main() {
       // artists only: one request, not the three of the full search (owner, 7 Nov 2026: the artist took about 3 seconds)
       expect(catalogue.artistSearches, ['Dizzy DROS']);
       expect(catalogue.queries, isEmpty);
+      expect(find.byType(NowPlayingScreen), findsNothing,
+          reason: 'the player closes and the artist opens');
+      expect(find.byType(CatalogueArtistScreen), findsOneWidget);
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
+        'every artist of a song by several is a tap of its own (owner, 7 Nov 2026: "only one artist clickable")',
+        (tester) async {
+      final catalogue = FakeCatalogue(const CatalogueResults(artists: [
+        CatalogueArtist(id: '55', name: 'Kanye West', fans: 9000000),
+      ]))
+        ..artistsByName['kanye west'] = [
+          const CatalogueArtist(id: '55', name: 'Kanye West', fans: 9000000),
+        ]
+        ..artistsById['55'] =
+            const CatalogueArtist(id: '55', name: 'Kanye West', fans: 9000000);
+      final app = await openPlayer(
+        tester,
+        resolver: _Resolver(const {}, after: 1000),
+        status: ready,
+        id: 'sr_joined',
+        artist: 'Drake, Kanye West, Lil Wayne, Eminem',
+        catalogue: catalogue,
+        // the song is on the phone twice: made from the file's tags (one joined string) and the catalogue's (the list)
+        seed: (db, serverId) async {
+          Future<void> entry(String id, String json) =>
+              db.into(db.tracks).insert(TracksCompanion.insert(
+                    serverId: serverId,
+                    id: id,
+                    title: 'Forever',
+                    artistsJson: Value(json),
+                    fileId: const Value('f1'),
+                  ));
+          await entry('sr_joined', '["Drake, Kanye West, Lil Wayne, Eminem"]');
+          await entry(
+              'sr_catalogue', '["Drake","Kanye West","Lil Wayne","Eminem"]');
+        },
+      );
+      await wait(tester);
+      await settle(tester);
+
+      final line = find.byType(ArtistLine);
+      expect(line, findsOneWidget);
+      final render = tester.renderObject<RenderParagraph>(
+          find.descendant(of: line, matching: find.byType(RichText)).first);
+      const text = 'Drake, Kanye West, Lil Wayne, Eminem';
+      final start = text.indexOf('Kanye West');
+      final boxes = render.getBoxesForSelection(
+          TextSelection(baseOffset: start, extentOffset: start + 10));
+      await tester.tapAt(render.localToGlobal(boxes.first.toRect().center));
+      await settle(tester);
+
+      expect(
+          [...catalogue.queries, ...catalogue.artistSearches], ['Kanye West'],
+          reason: 'that artist is looked for by name, not the first one');
       expect(find.byType(NowPlayingScreen), findsNothing,
           reason: 'the player closes and the artist opens');
       expect(find.byType(CatalogueArtistScreen), findsOneWidget);

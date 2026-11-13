@@ -22,6 +22,7 @@ import '../common/collection_menu.dart';
 import '../common/cover_art.dart';
 import '../common/download_button.dart';
 import '../common/format.dart';
+import '../common/open_artist.dart';
 import '../common/playability.dart';
 import '../common/playlist_actions.dart';
 import '../common/track_menu.dart';
@@ -201,13 +202,14 @@ class AlbumScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final album = ref.watch(albumProvider(albumId)).value;
+    final albumAsync = ref.watch(albumProvider(albumId));
+    final album = albumAsync.value;
     final tracks = ref.watch(albumTracksProvider(albumId)).value ?? const [];
     // What the catalogue says the album still lacks (B39): looked up in the
     // background, never waited for.
     final gap = ref.watch(albumGapProvider(albumId)).value;
     if (album == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return DetailPlaceholder(what: 'album', missing: albumAsync.hasValue);
     }
     final total = tracks.fold<int>(0, (s, t) => s + (t.durationSec ?? 0));
     final swatch = ref
@@ -317,7 +319,8 @@ class PlaylistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playlist = ref.watch(playlistProvider(playlistId)).value;
+    final playlistAsync = ref.watch(playlistProvider(playlistId));
+    final playlist = playlistAsync.value;
     final entries =
         ref.watch(playlistEntriesProvider(playlistId)).value ?? const [];
     final tracks = [for (final e in entries) e.track];
@@ -329,7 +332,8 @@ class PlaylistScreen extends ConsumerWidget {
         ref.watch(playlistCoverIdsProvider(playlistId)).value ?? const [];
     final ensure = ref.watch(ensurePlaylistProvider(playlistId));
     if (playlist == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return DetailPlaceholder(
+          what: 'playlist', missing: playlistAsync.hasValue);
     }
     PerfMonitor.instance.pageShell('playlist');
     if (entries.isNotEmpty) {
@@ -440,10 +444,15 @@ class ArtistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final artist = ref.watch(artistProvider(artistId)).value;
+    final artistAsync = ref.watch(artistProvider(artistId));
+    final artist = artistAsync.value;
     final albums = ref.watch(artistAlbumsProvider(artistId)).value ?? const [];
     if (artist == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      // Looked at and not there: the artist of a song tagged "A, B" is an artist of that whole name that the phone never receives; its page is
+      // the page of the artist of its albums (or, failing that, of the artist of that name), not a spinner for ever.
+      return artistAsync.hasValue
+          ? _ArtistNotOnThisPhone(artistId: artistId)
+          : const DetailPlaceholder(what: 'artist');
     }
     final facade = ref.watch(playbackFacadeProvider);
     final c = context.colors;
@@ -590,6 +599,51 @@ class ArtistScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// The page of an artist the phone has no row for: it finds the artist that stands for it and opens that page in its place, or says the artist is
+/// not here (with the way back).
+class _ArtistNotOnThisPhone extends ConsumerStatefulWidget {
+  const _ArtistNotOnThisPhone({required this.artistId});
+
+  final String artistId;
+
+  @override
+  ConsumerState<_ArtistNotOnThisPhone> createState() =>
+      _ArtistNotOnThisPhoneState();
+}
+
+class _ArtistNotOnThisPhoneState extends ConsumerState<_ArtistNotOnThisPhone> {
+  bool _missing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_resolve()));
+  }
+
+  Future<void> _resolve() async {
+    final repo = ref.read(libraryRepositoryProvider);
+    final standIn = await repo?.artistStandIn(widget.artistId);
+    if (!mounted) return;
+    if (standIn != null) {
+      Nav.artist(context, standIn, replace: true);
+      return;
+    }
+    // No album artist to stand in: the name the songs carry, whole and exact, in the library and then in the public catalogue.
+    final name = await repo?.artistNameOf(widget.artistId);
+    if (!mounted) return;
+    if (name != null &&
+        await openArtistByName(context, ref, name,
+            replace: true, quiet: true)) {
+      return;
+    }
+    if (mounted) setState(() => _missing = true);
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      DetailPlaceholder(what: 'artist', missing: _missing);
 }
 
 // ------------------------------------------------------------------- liked

@@ -34,17 +34,19 @@ void main() {
   });
 
   testWidgets(
-      'the picture is built again when the ticket arrives, and not at every '
+      'the picture is built again when the ticket arrives and again when it is '
+      'renewed (a refused picture must not stay a letter), and not at every '
       'rebuild', (tester) async {
-    final ready = NotifierProvider<_Flag, bool>(_Flag.new);
+    final ready = NotifierProvider<_Flag, int>(_Flag.new);
     var builds = 0;
     await tester.pumpWidget(ProviderScope(
       overrides: [
         coverArtResolverProvider.overrideWith((ref) {
           builds++;
-          return ref.watch(ready)
-              ? _Ready(serverId: 1)
-              : const CoverArtResolver(serverId: 1);
+          final ticket = ref.watch(ready);
+          return ticket == 0
+              ? const CoverArtResolver(serverId: 1)
+              : _Ready(serverId: 1, signature: 'sig$ticket');
         }),
       ],
       child: MaterialApp(
@@ -63,30 +65,43 @@ void main() {
     await tester.pump();
     final second =
         tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).key;
+    container.read(ready.notifier).raise(); // the ticket is renewed
+    await tester.pump();
+    final third =
+        tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).key;
+    await tester.pump(); // a rebuild with the same ticket changes nothing
+    final again =
+        tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).key;
 
-    expect(first, const ValueKey<bool>(false));
-    expect(second, const ValueKey<bool>(true));
-    expect(builds, 2);
+    expect(first, isNot(second), reason: 'the ticket arrived');
+    expect(second, isNot(third), reason: 'the ticket was renewed');
+    expect(third, again);
+    expect(second.toString(), contains('sig1'));
+    expect(third.toString(), contains('sig2'));
+    expect(builds, 3);
   });
 }
 
-/// "The ticket has arrived", as a provider the test can turn on.
-class _Flag extends Notifier<bool> {
+/// "A ticket has arrived" (0: none yet; 1, 2: the first and the renewed one), as a provider the test can raise.
+class _Flag extends Notifier<int> {
   @override
-  bool build() => false;
+  int build() => 0;
 
-  void raise() => state = true;
+  void raise() => state = state + 1;
 }
 
-/// A resolver whose ticket is there: the address is the real one.
+/// A resolver whose ticket is there: the address is the real one, written with the ticket's signature.
 class _Ready extends CoverArtResolver {
-  _Ready({required super.serverId});
+  _Ready({required super.serverId, required this.signature});
+
+  final String signature;
 
   @override
   ({Uri url, String cacheKey, bool ready}) resolve(String coverArtId, int px) {
     final base = super.resolve(coverArtId, px);
     return (
-      url: Uri.parse('http://home.test/encore/cover/$coverArtId?sig=x'),
+      url:
+          Uri.parse('http://home.test/encore/cover/$coverArtId?sig=$signature'),
       cacheKey: base.cacheKey,
       ready: true,
     );

@@ -8,8 +8,19 @@ import '../core/cover_sizes.dart';
 import '../core/logger.dart';
 import '../data/covers/cover_prefetcher.dart';
 import '../features/common/cover_art.dart'
-    show coverCacheManager, retireOldCoverCache;
+    show coverCacheManager, coverFileService, retireOldCoverCache;
 import 'providers.dart';
+
+/// A picture the server refuses as not valid (401) makes the app renew its cover ticket (`CoverPassHolder.refused`), so a ticket that stopped
+/// being good (the server was reinstalled, its signing secret changed) heals itself instead of leaving every picture a letter for a week.
+/// Watched once by the app widget.
+final coverRefusalProvider = Provider<void>((ref) {
+  final session = ref.watch(sessionProvider).value;
+  coverFileService.onUnauthorized = session == null
+      ? null
+      : (url) => session.covers.refused(url.queryParameters['sig']);
+  ref.onDispose(() => coverFileService.onUnauthorized = null);
+});
 
 /// The covers of the signed-in server's library, fetched into the disk cache in the background (null before sign-in).
 final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {

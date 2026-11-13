@@ -13,12 +13,15 @@ import '../requests/request_providers.dart' show catalogueClientProvider;
 /// ("i still cant press the artist name", docs/39 F11), whatever the song came
 /// from. Returns `true` when a page opened; says so when nobody was found.
 ///
-/// [beforeOpen] runs just before the page opens (the player closes itself).
+/// [beforeOpen] runs just before the page opens (the player closes itself). [replace]: the page that is open is replaced by the artist's, and
+/// [quiet]: nobody found is not said in a snack bar (the caller says it on its own page).
 Future<bool> openArtistByName(
   BuildContext context,
   WidgetRef ref,
   String name, {
   VoidCallback? beforeOpen,
+  bool replace = false,
+  bool quiet = false,
 }) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final wanted = name.trim();
@@ -27,7 +30,7 @@ Future<bool> openArtistByName(
   if (!context.mounted) return false;
   if (mine != null) {
     beforeOpen?.call();
-    Nav.artist(context, mine.id);
+    Nav.artist(context, mine.id, replace: replace);
     return true;
   }
 
@@ -43,12 +46,14 @@ Future<bool> openArtistByName(
   }
   if (!context.mounted) return false;
   if (found == null) {
-    messenger
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Could not find $wanted.')));
+    if (!quiet) {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Could not find $wanted.')));
+    }
     return false;
   }
   beforeOpen?.call();
-  Nav.catalogueArtist(context, found.id, preloaded: found);
+  Nav.catalogueArtist(context, found.id, preloaded: found, replace: replace);
   return true;
 }

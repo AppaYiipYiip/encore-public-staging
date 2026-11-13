@@ -1,0 +1,9 @@
+{
+ "id": "20261113T191008Z-agent-1d36",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T19:10:08Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, first measurement on the A35 (build 144, airplane mode, volume 0): pressing Play on the half-downloaded '00s Hip Hop playlist started the downloaded song 'In Da Club' (source=file) with resolve=19 ms, setSources=112 ms, span play.tap->playing 161 ms and play.audible 362 ms. So from the playlist Play button the offline start is NOT about a second. The owner's 'about 1 s' is another path: measure a tap on a song row, a tap from Search, from the Downloaded shelf, and the first start after the app was opened (cold) with the same spans (adb logcat -s flutter, lines '[perf] span play.tap->playing'). One sample is not a measurement: repeat each path 5 times."
+}
