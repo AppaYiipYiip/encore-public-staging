@@ -106,6 +106,7 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `PRIVACY.md` | policy | The privacy statement | keep |
 | `README.md` | entry | What Encore is, in one screen | keep |
 | `SECURITY.md` | policy | How to report a vulnerability | keep |
+| `THIRD_PARTY_NOTICES.md` | policy | The licences of what Encore ships or runs beside, in short | keep |
 | `docs/01-what-is-wrong.md` | history | The diagnosis of the old project (history; cited by number) | read-only; not instructions |
 | `docs/02-questioning-the-premises.md` | history | Each premise of the old project questioned (history; cited by number) | read-only; not instructions |
 | `docs/03-product.md` | truth | Who it is for, positioning vs Spotify/Plexamp/free YouTube clients, promises with numbers, v1 scope, principles | keep |

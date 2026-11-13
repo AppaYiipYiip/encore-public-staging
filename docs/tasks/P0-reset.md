@@ -80,7 +80,7 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Size.** S.
 
 ## P0-13 — Release candidate 1 walked (the walk record b11) — Size M
-* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d], P1-18 [d], P1-19 [d], P2-25 [d], P2-26 [d], P1-21 [d], P3-35 [d], P2-28 [d].
+* **Order.** Needs: P1-01 [d], P1-02 [d], P1-05 [d], P1-06 [d], P1-08 [d], P1-11 [d], P2-02 [d], P2-03 [d], P3-01 [d], P3-04 [d], P1-15 [d], P1-16 [d], P2-22 [d], P5-01 [d], P1-18 [d], P1-19 [d], P2-25 [d], P2-26 [d], P1-21 [d], P3-35 [d], P2-28 [d], N-16 [d].
 * **Why.** This was the first gate of the old, phased plan (D-57 removed the phases, so it is a task now). The owner's definition of pass: nothing is "walked" until it is walked as a person on the release-candidate pair (the published image plus the app built from the same commit, signed with the release key) on a clean machine, to the end state; and nothing goes to the owner as ready until the walk record exists and the advisor and the critic have read it.
 * **Do.** Rounds 2 and 3 of the walk (`RELEASE-CANDIDATE.md` section 3), written up as `b11`; the advisor reads it, then the critic; every built item it covers is marked walked (or reopened) with `python tools/roadmap.py mark`; the open round-2 findings are fixed or triaged "later" in `history/README.md#audit`.
 * **Acceptance.** `b11` exists on the final pair; the advisor and the critic have read it; the built items it covers are marked walked with their proof, or reopened.
@@ -99,3 +99,9 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Trigger to do it.** Any one of: a Flutter release whose notes say KGP plugins fail to build; a `workmanager_android` release that supports Built-in Kotlin; the pull request that moves the alert check to the server (P2-12), which removes the need anyway. **Reminder:** `flutter build apk` prints the warning every time, so it is seen by every build until this is done.
 * **Acceptance.** `flutter build apk --release` prints no KGP-plugin warning; background alerts still arrive (or the job is gone with P2-12 and nothing needs them).
 * **Size.** S.
+
+## P0-16 — The repository's checks can run again (owner) — Size S
+* **Order.** Needs: none. Why: found 7 Nov 2026 (the owner: "Actions minutes 3,000 of 3,000 used"): GitHub's jobs end in one second with "The job was not started because recent account payments have failed or your spending limit needs to be increased". No pull request can go green, so **nothing can be merged** (the rule: merge only when every check passed on the head, never with `--admin`) and **no server image can be built** (CI builds it): six pull requests (#241 to #246) wait, among them the fixes of today (pictures, the artist page, the player that spun, the artists of a song).
+* **Owner's step.** Only he can change the account's billing. **What he does** (the menu names are from memory, not checked): on github.com, his picture, Settings, Billing and plans, Plans and usage (or Spending limits), Actions: raise the spending limit above 0 (or add a payment method that works), or wait for the monthly reset. He tells Claude when it is done; Claude re-runs the checks of the six pull requests and merges each one whose checks passed.
+* **Acceptance.** A check of a pull request starts and finishes (green or red) instead of ending in a second.
+* **Size.** S (his time, not counted in the estimate).

@@ -92,7 +92,7 @@
  "P1-10": {
   "kind": "feature",
   "title": "Covers show everywhere, also when you are offline",
-  "note": ""
+  "note": "Imported songs get YouTube's picture as a fallback (its own item). The song that shows letters because it is on your phone twice, and artists without a picture, are checked with it."
  },
  "P1-11": {
   "kind": "feature",
@@ -171,8 +171,8 @@
  },
  "P2-11": {
   "kind": "plumbing",
-  "title": "Behind the scenes: move over installs from the old version (probably not needed: proposed to close)",
-  "note": "The old installs were destroyed on 2026-11-03."
+  "title": "Behind the scenes: migrate old installs (closed: none exist)",
+  "note": "Closed on 7 Nov 2026: the old installs were destroyed on 2026-11-03 and nothing needs this. It stays in Later, costs nothing, and the code that exists stays."
  },
  "P2-12": {
   "kind": "feature",
@@ -228,7 +228,7 @@
  "P2-22": {
   "kind": "feature",
   "title": "A download shows where it is: progress, a notification, and why if it stops",
-  "note": "Found by the owner on 2026-11-03."
+  "note": "Found by the owner on 2026-11-03. The notification while the server is still saving is its own item and comes first."
  },
  "P2-23": {
   "kind": "plumbing",
@@ -243,7 +243,7 @@
  "P3-02": {
   "kind": "plumbing",
   "title": "Behind the scenes: the server packaged for Intel and AMD computers",
-  "note": "Only Intel/AMD is built today."
+  "note": "Done on 7 Nov 2026: the image is published for Intel and AMD (244 MB to download). Pinning the version moved to the release-channel item."
  },
  "P3-03": {
   "kind": "plumbing",
@@ -376,8 +376,8 @@
  },
  "P4-12": {
   "kind": "feature",
-  "title": "Android Auto, a home-screen widget, crossfade and a Data saver switch",
-  "note": ""
+  "title": "Android Auto: browse your music and play by voice from the car screen",
+  "note": "Mostly built, never tried in a car. Android Auto hides apps that did not come from the Play Store unless a setting is on: the install guide has to say so."
  },
  "P4-13": {
   "kind": "feature",
@@ -612,7 +612,7 @@
  "P0-14": {
   "kind": "owner",
   "title": "Gate 1: you try the app on your own phone",
-  "note": "You only tap. Claude gives you the app with one short instruction and provides the server. Which server is decided with you when it is close."
+  "note": "You only tap. Claude gives you the app and provides the server: your test server with its public address, which works from 4G (you confirmed it on 7 Nov). You started this gate early, on 7 Nov, with build 144; it counts as passed only when the items it needs are done and your week of feedback is on the board."
  },
  "P0-15": {
   "kind": "plumbing",
@@ -692,8 +692,8 @@
  },
  "P3-28": {
   "kind": "process",
-  "title": "Behind the scenes: prove the away-from-home address with real music from a phone on mobile data",
-  "note": "Every friend and the Jam depend on it, and it has never carried music. If it needs a sign-in from you it arrives as its own step."
+  "title": "Behind the scenes: measure the away-from-home address with real music (it already works on your phone)",
+  "note": "You confirmed on 7 Nov that the app works on 4G through it. What is left is one measured run: three songs, 30 minutes, then two listeners, written down so the Jam can rely on it."
  },
  "P3-29": {
   "kind": "plumbing",
@@ -799,5 +799,173 @@
   "kind": "feature",
   "title": "Songs always play in full: the 30-second preview is removed",
   "note": "You said 30-second previews caused many problems: load the full song every time."
+ },
+ "P0-16": {
+  "kind": "owner",
+  "title": "Make GitHub's checks run again (the allowance is used up, so nothing can be merged)",
+  "note": "Only you can change the billing of your GitHub account. The exact clicks are pinned on the item."
+ },
+ "N-10": {
+  "kind": "feature",
+  "title": "Songs by several artists are saved with each artist on its own",
+  "note": "Found today: the server writes the artists as one tag, so your music server makes an artist named \"Post Malone, Swae Lee\" that no phone can open. The fix is written (PR #245); it needs a server image.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-11": {
+  "kind": "feature",
+  "title": "One song is one entry on your phone, not two (fixes missing covers and artist lists)",
+  "note": "Found today: \"Forever\" is on your phone twice; the player had the entry with no cover and one joined artist name.",
+  "proposal": true,
+  "size": "M",
+  "needs": []
+ },
+ "N-12": {
+  "kind": "feature",
+  "title": "\"Go to artist\" in a song's menu offers every artist of the song",
+  "note": "The player already opens each artist on its own; the song's menu still offers one.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-13": {
+  "kind": "feature",
+  "title": "Search marks the songs your server cannot find, and the server remembers it",
+  "note": "\"Lofi For Focus\" was the top result, took 9 seconds and failed: nothing matches it on YouTube.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-14": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: find why an artist page sometimes waits two seconds",
+  "note": "Found today with the app's own timer: sometimes 1.5 to 2 seconds before the page draws; cause not found yet.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-15": {
+  "kind": "feature",
+  "title": "Artists the music server has no picture for get one",
+  "note": "Bob Marley has no picture on your server (91 of 817 artists have none); why is not known yet.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-16": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: 40 real searches prove the right song is picked",
+  "note": "Split off from \"Songs you do not own start playing in about 2 seconds\": the timing is measured, this accuracy check was never made. Arabic and Japanese lines need the fix of the empty names first.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "why": "The Arabic, Russian, Korean and Japanese titles of the set cannot pass while their names normalise to nothing (audit B-37, P2-25)."
+ },
+ "N-17": {
+  "kind": "feature",
+  "title": "After \"Rebuild library\" your music shows again at once, and \"Last sync\" tells the truth",
+  "note": "Seen once on a test phone: right after Rebuild library, \"Only your music\" was empty and the settings said \"Last sync: Not yet\". Not reproduced yet.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "N-18": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: turning on the away-from-home address also works over a plain ssh session",
+  "note": "Found while turning it on for you: the command asks a question on a terminal that an ssh session does not have, so it stopped.",
+  "proposal": true,
+  "size": "S",
+  "needs": []
+ },
+ "P4-22": {
+  "kind": "feature",
+  "title": "A home-screen widget: what is playing, with play, pause and next",
+  "note": "Split out of the four extras. Drawn first and approved by you; no widget code exists yet."
+ },
+ "P4-23": {
+  "kind": "feature",
+  "title": "Crossfade between songs, with gapless kept",
+  "note": "Split out of the four extras. The riskiest one: it changes the player's engine, so it comes before Jam and the other engine work."
+ },
+ "P4-24": {
+  "kind": "feature",
+  "title": "One Data saver switch for slow or metered connections",
+  "note": "Split out of the four extras. A Data saver quality level already exists; the first step is deciding what one switch should do."
+ },
+ "N-19": {
+  "kind": "feature",
+  "title": "Pausing a downloaded song while offline no longer says there is no connection",
+  "note": "Owner report, 13 Nov 2026: with no network, pausing a song that is already downloaded shows a 'no connection' error. Nothing about a downloaded song should need the network.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-20": {
+  "kind": "feature",
+  "title": "A downloaded song starts playing the moment you tap it, also offline",
+  "note": "Owner report, 13 Nov 2026: offline, tapping a downloaded song takes about a second before sound starts. Measure first (tap to first sound, on the phone), then find what waits: a look-up, a server check or the player set-up.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-21": {
+  "kind": "feature",
+  "title": "The top search result has the same three buttons as every other song",
+  "note": "Owner report, 13 Nov 2026: the best match at the top of search (a song) has no button to add it to the queue or play it next; the songs below have them. One song row, the same buttons everywhere a song is listed.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-22": {
+  "kind": "feature",
+  "title": "Tapping the open tab again returns to that tab's first page (Home, Search, Your Library)",
+  "note": "Owner report, 13 Nov 2026: after a search, tapping Search again should show the first search page as if nothing had been searched. The same for Home and the other main tabs.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-23": {
+  "kind": "feature",
+  "title": "Search finds the band even when a letter or two is wrong",
+  "note": "Owner report, 13 Nov 2026: playing Landmvrks took many tries because a letter or two were mistyped. Search should guess, or still show the result, when a letter or two is wrong (songs, albums and artists). Needs a plain measure of close enough.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-24": {
+  "kind": "feature",
+  "title": "Listen to one artist without picking albums: Play all and Shuffle on an artist",
+  "note": "Owner, 13 Nov 2026: search an artist and press one button to play all their songs (or an 'all songs' list for each artist), instead of choosing songs from albums and adding them to the queue. The aim: look up an artist and just listen.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-25": {
+  "kind": "feature",
+  "title": "Search inside a playlist",
+  "note": "Owner report, 13 Nov 2026: a playlist has no search button, so in a long playlist you cannot find one song.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
  }
 }

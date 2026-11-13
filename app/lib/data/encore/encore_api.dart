@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
+import '../../core/logger.dart';
 import '../../core/result.dart';
 import '../api/opensubsonic/json_read.dart';
 import 'encore_models.dart';
 import 'signed_addresses.dart';
+import 'stream_refusal.dart';
 
 /// The Encore server's own API (docs/17): song refs, the person's library, playlists, plays.
 ///
@@ -248,6 +252,40 @@ class EncoreApi {
 
   Future<Result<Uri>> streamUrl(String refId) =>
       streamAddress(refId).then((r) => r.map((a) => a.url));
+
+  /// Why the server will not play a song: the first byte of its stream is asked for and the server's own answer read. `null` when the stream
+  /// answers, when the answer is not the server's error shape, or when the server cannot be reached at all (that is the connection's business,
+  /// not the song's). The player asks this once a stream has failed, instead of trying the same address again blindly: a song the server cannot
+  /// find would otherwise be looked for at YouTube twice more.
+  Future<StreamRefusal?> streamRefusal(Uri address) async {
+    try {
+      final response = await _dio.getUri<List<int>>(
+        address,
+        options: Options(
+          headers: const {'Range': 'bytes=0-0'},
+          responseType: ResponseType.bytes,
+          validateStatus: (_) => true,
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+      if ((response.statusCode ?? 0) < 400) return null;
+      final decoded = jsonDecode(
+          utf8.decode(response.data ?? const <int>[], allowMalformed: true));
+      final error = readMap(readMap(decoded)?['error']);
+      final code = readString(error?['code']);
+      final message = readString(error?['message']);
+      if (error == null || code == null || message == null) return null;
+      return StreamRefusal(
+        code: code,
+        message: message,
+        retryable: error['retryable'] != false,
+        reason: readString(readMap(error['details'])?['reason']),
+      );
+    } on Object catch (error) {
+      Log.debug('encore', 'could not read why a stream failed: $error');
+      return null;
+    }
+  }
 
   /// One ticket for every picture of the server, valid for days (`GET /covers/pass`).
   Future<Result<CoverPass>> coverPass() => guard(() async {

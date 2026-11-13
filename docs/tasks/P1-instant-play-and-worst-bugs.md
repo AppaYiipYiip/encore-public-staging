@@ -39,10 +39,14 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 * **Don't.** Spawn a process per look-up (a unit test must fail if `subprocess.run` is called on the lean path). Remove the scoring
   rules (version words, Topic preference, length check). Run more than 10 live look-ups per test run (`../06` §8).
 * **Acceptance.** On TYPICAL, 12 never-resolved songs from the pool (`../07` §8): search p95 ≤ 1.5 s, extract p95 ≤ 3 s, total
-  p50 ≤ 2.5 s. A labelled set of 40 real queries (artist + title as people type them, incl. Arabic/French/Japanese titles, covers,
-  live versions) picks the right recording ≥ 38/40 using **recorded** YouTube Music responses (fixtures), not live calls.
+  p50 ≤ 2.5 s.
+* **Split 7 Nov 2026 (roadmap grooming).** The second half of this acceptance, *a labelled set of 40 real queries (artist + title as people type them, incl.
+  Arabic/French/Japanese titles, covers, live versions) picks the right recording ≥ 38/40 using **recorded** YouTube Music responses (fixtures), not live
+  calls*, is now **N-16**, word for word. Why: it is a different piece of work (writing 40 labelled queries and recording the answers), the Arabic and
+  Japanese lines cannot pass before P2-25, and it was the only part not met after the timing half was walked (`evidence` e03: 13 songs, median 2.14 s,
+  p95 and slowest 2.60 s, three look-ups a song; the matcher's unit tests and 17 recorded answers exist). Nothing was dropped: P0-13 now needs N-16.
 * **Tests.** Unit (scoring on YTM-shaped candidates), fixture-based resolver tests, one live canary test marked `live` (≤ 3 look-ups).
-* **Evidence.** Stage-time table for the 12 songs; the 40-query result table.
+* **Evidence.** Stage-time table for the 12 songs (`evidence` e03); the 40-query result table is N-16's.
 
 ## P1-02 — Stream first; length limits only for keeping; fault flags (server + app) — Size M
 * **Order.** Needs: none.
@@ -63,6 +67,11 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
      (X-6: try `bufferForPlaybackMs` 1,000).
 * **Acceptance.** J-02 on TYPICAL: p50 ≤ 2.5 s, p95 ≤ 4 s, max ≤ 10 s (12 songs, measured by P1-06); J-10 (2-hour recitation):
   audible ≤ 4 s, seek to 2:00:00 audible ≤ 2 s; with `youtube_refuse` a tap fails in ≤ 10 s with one sentence and the player stays usable.
+* **How J-10 is met when YouTube offers no recitation of two hours (7 Nov 2026, roadmap grooming; the advisor's call, the owner may overrule).** The longest recitation
+  YouTube offered on 7 Nov was 1 h 57 min 38 s (`evidence` e04, e06), so "seek to 2:00:00" on a real recitation cannot be walked today. This is not loosened: J-10 is met by
+  two things together: (1) a made-up 2 h 10 min file the test server serves and keeps, walked for the seek to 2:00:00, the keep (the server's 150-minute limit) and the
+  resume after a kill, on the A35 and an emulator; (2) the real 1 h 57 min recitation already walked, which covers YouTube's own Range proxying. When a real recitation of two
+  hours or more exists, one run of J-10 on it replaces (1). The pinned note on P1-02 says the same.
 * **Depends on.** P1-01, P1-06. 
 
 ## P1-03 — Two pools, single flight, pacing and back-off (server) — Size M
@@ -104,11 +113,17 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 ## P1-06 — Measure what a person experiences (app + tools) — Size S
 * **Order.** Needs: none.
 * **Why.** `../07` §3: the media session said PLAYING while nothing played; numbers were best cases.
-* **Do.** Request ids and the app's log ring buffer as in `../24` §1 (`X-Request-Id`, `X-Device-Id`, structured server logs).
+* **Do.** (The request ids and the structured server log of `../24` §1, `X-Request-Id` and `X-Device-Id`, are **P1-19's** since 6 Nov 2026, audit B-32: they
+  were never built under this item and P1-19 holds them with their own acceptance.)
   App: a perf span `play.audible` = tap → player position first > 200 ms (log `[perf] play.audible ms=… source=file|stream|download id=…`).
   `tools/journeys/play_timing.py`: drives the emulator (search → type → tap Top result) for N songs from a pool file, reads the
   spans from logcat, and prints p50/p95/max with the setup header. Keep a per-server "used songs" list so songs are never reused.
-* **Acceptance.** The script reproduces today's ~38 s on build 40 (sanity check) and is used for every number in P1.
+* **Acceptance.** The script is used for every number in P1, and it shows a change when the speed changes (a before and an after on the same songs).
+  **Changed 7 Nov 2026 (roadmap grooming): the first clause, "reproduces today's ~38 s on build 40 (sanity check)", is gone because it can never be run again:
+  build 40 and the stack it ran on were destroyed on 2 and 3 Nov 2026. Its purpose (does the tool see a real change?) is met by `evidence` e05, read with the
+  committed `tools/journeys/next_timing.py` (the first probe of e04, a scratchpad script that counted the media session's PLAYING at the key press, was
+  withdrawn in #223 and is not part of this item's tools): on build 134 a Next read 2399 and 2380 ms, and on build 136, after the P1-04 fix, 1003, 819 and 641 ms
+  (other fresh albums; the first tap did not get faster: 3089 against 4123 ms, which is its own look-up).**
 
 ## P1-07 — Search: a Top result and one list (app) — Size M
 * **Order.** Needs: none.
@@ -152,7 +167,12 @@ P1-10, P1-12). P1-04 and P1-06 connect them.
 * **Acceptance.** J-06 and J-07 pass on profiles A and B; airplane-toggle charter: no duplicate plays, no skipping.
 
 ## P1-10 — Covers everywhere, offline too (app + server) — Size M
-* **Order.** Needs: none.
+* **Order.** Needs: P1-26 [d].
+* **Order note (7 Nov 2026, roadmap grooming).** The acceptance below says "online: no letter tile for any song that has a cover in Deezer or YouTube (check 30
+  imported songs)"; it cannot pass until an imported song carries YouTube's thumbnail as its fallback, which is P1-26's work. The list had them 100 places apart
+  with no link, and the checker could not see it. The same family, found 7 Nov 2026 and walked with this item: a song that is on the phone twice and so shows
+  letters (N-11, "Forever"), and artists the music server has no picture for (N-15). The picture *tickets* that refused every picture (audit B-115) are fixed in
+  PR #242 (open, not merged: the repository's checks cannot run, P0-16).
 * **Why.** E3 + owner: "the song icon disappeared and got replaced by a letter in offline mode; we need to download the icons as well".
 * **Context.** `lib/app/providers.dart` `CoverArtResolver` builds `coverArtUrl(coverArtId, size: size)` **per widget size**, so each
   size is a separate cache entry (offline: album page had the cover, mini-player showed a letter for the same album, `a14`).
