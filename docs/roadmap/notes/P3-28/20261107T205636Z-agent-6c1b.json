@@ -1,0 +1,9 @@
+{
+ "id": "20261107T205636Z-agent-6c1b",
+ "item": "P3-28",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:56:36Z",
+ "type": "detail",
+ "body": "7 Nov 2026 night: FIRST REAL PROOF, by the owner's word. After `encore funnel on` on VM 108 (his own Tailscale sign-in; address https://encore-vm108.tail5678.ts.net), he used Encore on his own phone (Samsung, build 144, signed in with his owner invitation) on 4G, away from his home Wi-Fi, and wrote: \"it worked!\". What this proves: the public address is reachable from a mobile network, the phone learned it from the server (he did not type it) and signs in and plays through it. What it does NOT prove, so this item stays open: no numbers were taken (throughput, first-byte time, how many songs), the 30-minute live connection was not held, two listeners at the Jam bitrate were not tried, and the phone ran build 144 (a local merge of #241 to #246), not a release-candidate pair. What is left to finish this item: one measured run (three songs, 30 minutes, then two listeners), written into docs/evidence, and ADR-083 changed from \"written, not yet proven\" to what was found. The owner will keep using it for a week; his report is the long run."
+}

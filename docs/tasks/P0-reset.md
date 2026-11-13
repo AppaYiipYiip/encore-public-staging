@@ -99,3 +99,9 @@ Goal: a clean, safe, honest repository and process. Read `../05` first (where it
 * **Trigger to do it.** Any one of: a Flutter release whose notes say KGP plugins fail to build; a `workmanager_android` release that supports Built-in Kotlin; the pull request that moves the alert check to the server (P2-12), which removes the need anyway. **Reminder:** `flutter build apk` prints the warning every time, so it is seen by every build until this is done.
 * **Acceptance.** `flutter build apk --release` prints no KGP-plugin warning; background alerts still arrive (or the job is gone with P2-12 and nothing needs them).
 * **Size.** S.
+
+## P0-16 — The repository's checks can run again (owner) — Size S
+* **Order.** Needs: none. Why: found 7 Nov 2026 (the owner: "Actions minutes 3,000 of 3,000 used"): GitHub's jobs end in one second with "The job was not started because recent account payments have failed or your spending limit needs to be increased". No pull request can go green, so **nothing can be merged** (the rule: merge only when every check passed on the head, never with `--admin`) and **no server image can be built** (CI builds it): six pull requests (#241 to #246) wait, among them the fixes of today (pictures, the artist page, the player that spun, the artists of a song).
+* **Owner's step.** Only he can change the account's billing. **What he does** (the menu names are from memory, not checked): on github.com, his picture, Settings, Billing and plans, Plans and usage (or Spending limits), Actions: raise the spending limit above 0 (or add a payment method that works), or wait for the monthly reset. He tells Claude when it is done; Claude re-runs the checks of the six pull requests and merges each one whose checks passed.
+* **Acceptance.** A check of a pull request starts and finishes (green or red) instead of ending in a second.
+* **Size.** S (his time, not counted in the estimate).
