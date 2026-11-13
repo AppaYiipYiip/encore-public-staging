@@ -1,0 +1,9 @@
+{
+ "id": "20261113T203050Z-agent-3bf3",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T20:30:50Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening: state after the first batch. MERGED today (all built, none walked): #3 pictures (B-115), #4 unplayable song (B-117), #5 artist link (B-118), #6 tag each artist (B-119), #7 each artist tappable (B-120), #2 artist page speed (B-114), #12 N-21 top result menu, #14 N-22 re-tap a tab, #15 N-20 downloaded song starts at once (the engine asked the server before asking whether the song is a file: 2.0 to 2.4 s measured on the A35), #16 P1-07 band before songs (when merged). OPEN: N-19 not reproduced (see its notes: the owner's exact path is needed), N-11 not started (leads in its note), N-23 typo tolerance (server-side per the thin-client rule: matching is the server's, ADR-R42, B-46), N-24 Play all and Shuffle on an artist, N-25 search in a playlist. A pause pressed 0.3 to 1 s after a tap, while the look at the server runs, did not stick on the A35 (4 of 4) although the engine test says it should: unexplained, on the N-19 note. THE RELEASE-CANDIDATE WALK (needs one App run on main to finish so android-debug-build produces the APK, and the image :main from the same commit: server-image publishes from this repo): emulator + VM 108, never the owner's phone (different signature = his downloads lost). Walk list: N-20 (tap a downloaded song with the server off and Wi-Fi on: starts in about 0.2 s), N-21 (search a library song: the Top result has the three-dot menu, long press and swipes), N-22 (type in Search, tap Search again: first page), P1-07 (search 'jinjer' against the owner's library: band on top, else record the song and artist row), B-114 to B-120. Measured offline-start spans: adb logcat -s flutter, lines '[perf] span play.tap->playing'."
+}
