@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../app/tab_reselect.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../data/repos/library_repository.dart';
@@ -41,6 +42,12 @@ class LibraryFilterNotifier extends Notifier<LibraryFilter?> {
   void select(LibraryFilter? value, {bool byPerson = true}) {
     if (byPerson) chosenByPerson = true;
     state = value;
+  }
+
+  /// Back to how the Library opens (a second tap on its tab, N-22): everything, or the songs on the phone again when there is no connection.
+  void reset() {
+    chosenByPerson = false;
+    state = null;
   }
 }
 
@@ -80,6 +87,11 @@ class LibraryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A second tap on the Your Library tab (N-22): the Library as it opens, from the top.
+    ref.onTabReselected(MainTab.library, () {
+      ref.read(libraryFilterProvider.notifier).reset();
+      scrollPageToTop(context);
+    });
     final filter = ref.watch(libraryFilterProvider);
     // Without a connection only what is on the phone can be played: the Library opens on that, once, unless the person already chose.
     final offline = ref

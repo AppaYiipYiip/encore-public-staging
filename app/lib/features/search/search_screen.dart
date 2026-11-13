@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/navigation.dart';
 import '../../app/providers.dart' show NetworkKind, networkKindProvider;
+import '../../app/tab_reselect.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
 import '../common/widgets.dart';
@@ -96,8 +97,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(recentSearchesProvider.notifier).add(text);
   }
 
+  /// A second tap on the Search tab (N-22): the first search page, as if nothing had been searched.
+  void _backToFirstPage() {
+    _debounce?.cancel();
+    _controller.clear();
+    _focus.unfocus();
+    if (_query.isNotEmpty) setState(() => _query = '');
+    scrollPageToTop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.onTabReselected(MainTab.search, _backToFirstPage);
     return SafeArea(
       bottom: false,
       child: Column(

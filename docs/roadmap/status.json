@@ -169,10 +169,16 @@
   "at": "2026-11-13T19:02:54Z",
   "by": "Claude"
  },
+ "N-22": {
+  "state": "built",
+  "evidence": "Widget tests app/test/features/tab_reselect_test.dart (5, run through the whole app: router, shell and screens): 3 failed on the old code (Search kept the typed words after a second tap on its tab, Home and Your Library kept the chosen chip) and pass now; 2 guards pass before and after (a second tap while a genre page is open returns to the first page; going to another tab and back keeps the typed words). The rest of the app tests (1388: features, app, core, domain, design, architecture) pass; dart analyze --fatal-infos is clean. The scroll-to-top of Home and Your Library is covered for Home only. NOT walked on a phone.",
+  "at": "2026-11-13T20:02:01Z",
+  "by": "Claude"
+ },
  "N-20": {
   "state": "built",
   "evidence": "Measured on the A35 (build 144) before the fix: a downloaded song (source=file) took 2433, 2019 and 2399 ms to start on 3 of 5 taps while Wi-Fi was on and the server not answering (about 110 ms on the others and in airplane mode). Engine tests app/test/playback/playback_engine_test.dart: the tap, Next and Play-on-a-list tests (the look to the server made to hang) fail with TimeoutException on the old engine and pass now; a guard keeps the single look for a song that is not downloaded and asserts no address is made for it; a pause pressed during the look keeps the song from starting; all of test/playback and test/app pass, dart analyze --fatal-infos is clean. NOT walked: the fix has not run on a phone (a new build is not installed over the owner's A35). Play on a list whose first song is not downloaded still pays one look.",
-  "at": "2026-11-13T20:02:32Z",
+  "at": "2026-11-13T20:16:16Z",
   "by": "Claude"
  }
 }
