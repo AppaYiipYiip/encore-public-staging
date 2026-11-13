@@ -1,0 +1,9 @@
+{
+ "id": "20261113T195150Z-agent-ee69",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T19:51:50Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, correction of the first version of the fix after the advisor's read: asking _resolver.resolve for 'is it a file?' is NOT cheap for a song that is not a file (the real resolver waits for the session up to 8 s, probes the server's addresses and, in Encore mode, asks the server to sign an address: real server work). So the fix adds SourceResolver.isOnPhone(item), answered from the phone alone (a database lookup and a file check), and _playable() asks that before the look at the server: no address is ever made for a song that is not going to play. The test of the guard now also asserts resolveCount == 0 for a song that is not downloaded; a fourth test covers Play on a list whose first song is downloaded (the old line 467 made it wait for the hanging look: TimeoutException, proven by putting the old line back)."
+}

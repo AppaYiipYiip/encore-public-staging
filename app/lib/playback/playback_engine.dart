@@ -970,8 +970,21 @@ class PlaybackEngine implements PlaybackFacade {
   /// is not a file.
   Future<bool> _playable(QueueItem item) async {
     if (_canReach()) return true;
-    if (await _isLocal(item)) return true;
+    if (await _onPhone(item)) return true;
     return _canReachNow();
+  }
+
+  /// Whether the song is a file on the phone, from the phone alone (no address is made: that would wait for the session and ask the server).
+  Future<bool> _onPhone(QueueItem item) async {
+    try {
+      return await _resolver.isOnPhone(item);
+    } on Object catch (error) {
+      Log.warn(
+          'playback',
+          'could not tell whether ${item.id} can play without a connection',
+          error);
+      return false;
+    }
   }
 
   /// Moves the queue forward with [step] (Next, or the song ended) and, while the song it landed on cannot play for lack of a

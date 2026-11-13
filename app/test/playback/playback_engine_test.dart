@@ -27,6 +27,10 @@ class FakeResolver implements SourceResolver {
   bool serverAway = false;
 
   @override
+  Future<bool> isOnPhone(QueueItem item) async =>
+      item.directUri == null && local.contains(item.id);
+
+  @override
   Future<AudioSourceSpec> resolve(QueueItem item) async {
     resolveCount++;
     final direct = item.directUri;
@@ -2277,6 +2281,30 @@ void main() {
       expect(h.serverAsked, 1);
       expect(h.notices, hasLength(1));
       expect(h.backend.setSourcesCount, 0);
+      expect(h.resolver.resolveCount, 0,
+          reason:
+              'no address is made for a song that will not play (the real resolver would wait for the session and ask the server)');
+      await h.dispose();
+    });
+
+    test(
+        'Play on a list whose first song is downloaded starts at once when the phone has a network and the server does not answer (N-20)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = false;
+      h.serverGate = Completer<void>();
+      h.resolver.local.add('t1');
+
+      await h.engine
+          .playTracks(h.tracks.sublist(0, 3), skipUnavailable: true)
+          .timeout(const Duration(seconds: 2));
+
+      expect(h.serverAsked, 0);
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      h.serverGate!.complete();
       await h.dispose();
     });
 
