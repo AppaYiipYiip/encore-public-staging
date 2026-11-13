@@ -162,5 +162,11 @@
   "evidence": "docs/evidence c01 (installer on a clean VM, the image pulled from the registry, five runs), c03, c06 (the guide on a bare VM, image :main), e03 (VM 108 updated with encore update on the release-candidate pair: 4.2 MB of code layers); measured 7 Nov 2026 from the registry's own manifest: amd64, 14 layers, 243.9 MB over the wire (the limit is 450 MB). 'Compose uses pinned tags' moved to P3-27 the same day.",
   "at": "2026-11-07T21:07:13Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "N-21": {
+  "state": "built",
+  "evidence": "PR #12: the Top result of a Search for a song of the library is drawn through the same _SongActions as every row (swipe right = queue, swipe left = like, the three-dot menu, long press). Widget tests app/test/features/search_top_result_actions_test.dart (8; 6 failed on the old code), all of app/test/features (937) and the Windows goldens pass; CI is the judge for Linux goldens. SCOPE: songs of the library only; a catalogue-only song has no menu anywhere in Search (its rows below the Top result neither), so the Top result has what every other row has; giving catalogue songs the menu is player/queue work, noted on N-21. NOT walked on a phone.",
+  "at": "2026-11-13T19:02:54Z",
+  "by": "Claude"
  }
 }
