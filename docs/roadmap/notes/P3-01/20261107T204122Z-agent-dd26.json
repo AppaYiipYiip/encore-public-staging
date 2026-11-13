@@ -1,0 +1,9 @@
+{
+ "id": "20261107T204122Z-agent-dd26",
+ "item": "P3-01",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:41:22Z",
+ "type": "note",
+ "body": "7 Nov 2026 evening: Funnel was turned on for real on VM 108, at the owner's request (he could not use the app on 4G, at work or driving) and with his own Tailscale sign-in: `encore funnel on` gave https://encore-vm108.tail5678.ts.net (the guide's step 5: the first time it ran on a server the owner actually uses). Checked from the PC through the public address: /info 200 in 0.4 s, a song's first 64 KB 206 audio/ogg in 0.5 s, the server announces its home and away addresses. NOT tried: a phone on mobile data (the A35 was not connected; the owner's own phone is the first test: close and reopen Encore once at home so it learns the away address, then switch Wi-Fi off). The guide's wording is accurate; one thing it did not say: `encore funnel on` needs a terminal for its install question (/dev/tty), so over ssh without one it stops (\"nothing was changed\"): install Tailscale first, then run it (a real finding: worth a non-interactive flag)."
+}

@@ -5,7 +5,8 @@ import collections
 import os
 import re
 
-ROOT = r"C:\Users\you\Desktop\encore-workspace\encore\app\lib\features"
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # the repository root, wherever it is checked out
+ROOT = os.path.join(REPO, "app", "lib", "features")
 CONTROL = re.compile(
     r"(ListTile|SwitchListTile|RadioListTile|CheckboxListTile|FilledButton(?:\.tonal|\.icon)?|OutlinedButton(?:\.icon)?|TextButton(?:\.icon)?|IconButton|"
     r"PopupMenuItem|MenuAction|FloatingActionButton|InkWell|Chip|ActionChip|FilterChip|ChoiceChip|Switch)\(")
@@ -102,7 +103,7 @@ for area, items in areas.items():
         lab = label.replace("|", "\\|").replace("\n", " ")[:70]
         h = (key + " " + body).replace("|", "\\|")[:80] if key != "-" else "-"
         out.append(f"| `{rel}:{line}` | {kind} | {lab} | {h} | {' '.join(f)} | |")
-open(r"C:\Users\you\Desktop\encore-workspace\encore\docs\tasks\UX-REVIEW.md", "w", encoding="utf-8", newline="\n").write("\n".join(out) + "\n")
+open(os.path.join(REPO, "docs", "tasks", "UX-REVIEW.md"), "w", encoding="utf-8", newline="\n").write("\n".join(out) + "\n")
 print(len(rows), "controls,", len(areas), "areas,", len(dups), "duplicate labels")
 for k in sorted(dups)[:40]:
     print("  DUP:", k, "->", sorted(by_label[k]))

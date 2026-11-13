@@ -1,0 +1,20 @@
+# Secret scanning (CI job "secrets", docs.yml). Keeps gitleaks' own default rules and allows a few known fakes BY PATH AND RULE,
+# not by commit hash: a hash list stops matching whenever history is rewritten, a path list does not.
+title = "Encore"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake keys in a redaction unit test (012345..., hunter2, tskey-auth-kAbCdEf...)"
+targetRules = ["generic-api-key"]
+paths = ['''server/legacy/encore-admin/tests/test_components\.py''']
+
+[[allowlists]]
+description = "A server's id is made from its PUBLIC key and is printed on /info for anybody; early tests held one as a constant named `key`"
+targetRules = ["generic-api-key"]
+paths = [
+  '''app/test/data/encore/encore_people_test\.dart''',
+  '''app/test/features/join_invitation_test\.dart''',
+  '''app/test/domain/invite_link_test\.dart''',
+]
