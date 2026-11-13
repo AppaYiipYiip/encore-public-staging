@@ -141,7 +141,31 @@ class LibraryWriter {
     ];
     if (rows.isEmpty) return;
     await _db.batch((b) => b.insertAllOnConflictUpdate(_db.tracks, rows));
+    await linkSongsToListedArtists(serverId);
   }
+
+  /// A song whose artist the music server does not list is linked to the artist of its album instead; returns how many songs were changed.
+  ///
+  /// A file tagged "Post Malone, Swae Lee" (the keeper writes the artists of a song joined into one tag) belongs, for the music server, to an artist
+  /// of that whole name. That artist has no album of its own and is not in the server's artist index, so the phone never receives it, and every
+  /// screen that follows the song's artist link (the player's artist name, "Go to artist", the artist's own songs, what is played most) met a link to
+  /// nothing: the page spun for ever (owner, 7 Nov 2026). On a freshly signed-in phone 382 of 4,719 songs (145 such artists) were in that state, 159 of
+  /// them showing a single artist ("Busta Rhymes", "Drake"); every one has an album whose artist the phone does have. A song with no such album keeps
+  /// its link (the artist page then finds the artist by name).
+  Future<int> linkSongsToListedArtists(int serverId) => _db.customUpdate(
+        'UPDATE tracks SET artist_id = ('
+        'SELECT a.artist_id FROM albums a '
+        'JOIN artists r ON r.server_id = a.server_id AND r.id = a.artist_id AND r.deleted_at_ms IS NULL '
+        'WHERE a.server_id = tracks.server_id AND a.id = tracks.album_id AND a.deleted_at_ms IS NULL) '
+        'WHERE server_id = ?1 AND deleted_at_ms IS NULL AND artist_id IS NOT NULL '
+        'AND NOT EXISTS (SELECT 1 FROM artists r WHERE r.server_id = tracks.server_id AND r.id = tracks.artist_id AND r.deleted_at_ms IS NULL) '
+        'AND EXISTS (SELECT 1 FROM albums a '
+        'JOIN artists r ON r.server_id = a.server_id AND r.id = a.artist_id AND r.deleted_at_ms IS NULL '
+        'WHERE a.server_id = tracks.server_id AND a.id = tracks.album_id AND a.deleted_at_ms IS NULL)',
+        variables: [Variable.withInt(serverId)],
+        updates: {_db.tracks},
+        updateKind: UpdateKind.update,
+      );
 
   /// Marks rows not seen by run [runId] as removed, for the tables whose flag
   /// is set. Returns how many rows were tombstoned per table. Must only be
