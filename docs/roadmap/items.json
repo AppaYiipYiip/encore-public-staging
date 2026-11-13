@@ -897,5 +897,75 @@
   "kind": "feature",
   "title": "One Data saver switch for slow or metered connections",
   "note": "Split out of the four extras. A Data saver quality level already exists; the first step is deciding what one switch should do."
+ },
+ "N-19": {
+  "kind": "feature",
+  "title": "Pausing a downloaded song while offline no longer says there is no connection",
+  "note": "Owner report, 13 Nov 2026: with no network, pausing a song that is already downloaded shows a 'no connection' error. Nothing about a downloaded song should need the network.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-20": {
+  "kind": "feature",
+  "title": "A downloaded song starts playing the moment you tap it, also offline",
+  "note": "Owner report, 13 Nov 2026: offline, tapping a downloaded song takes about a second before sound starts. Measure first (tap to first sound, on the phone), then find what waits: a look-up, a server check or the player set-up.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-21": {
+  "kind": "feature",
+  "title": "The top search result has the same three buttons as every other song",
+  "note": "Owner report, 13 Nov 2026: the best match at the top of search (a song) has no button to add it to the queue or play it next; the songs below have them. One song row, the same buttons everywhere a song is listed.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-22": {
+  "kind": "feature",
+  "title": "Tapping the open tab again returns to that tab's first page (Home, Search, Your Library)",
+  "note": "Owner report, 13 Nov 2026: after a search, tapping Search again should show the first search page as if nothing had been searched. The same for Home and the other main tabs.",
+  "proposal": true,
+  "pending": true,
+  "size": "S",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-23": {
+  "kind": "feature",
+  "title": "Search finds the band even when a letter or two is wrong",
+  "note": "Owner report, 13 Nov 2026: playing Landmvrks took many tries because a letter or two were mistyped. Search should guess, or still show the result, when a letter or two is wrong (songs, albums and artists). Needs a plain measure of close enough.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-24": {
+  "kind": "feature",
+  "title": "Listen to one artist without picking albums: Play all and Shuffle on an artist",
+  "note": "Owner, 13 Nov 2026: search an artist and press one button to play all their songs (or an 'all songs' list for each artist), instead of choosing songs from albums and adding them to the queue. The aim: look up an artist and just listen.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
+ },
+ "N-25": {
+  "kind": "feature",
+  "title": "Search inside a playlist",
+  "note": "Owner report, 13 Nov 2026: a playlist has no search button, so in a long playlist you cannot find one song.",
+  "proposal": true,
+  "pending": true,
+  "size": "M",
+  "needs": [],
+  "from": "owner"
  }
 }
