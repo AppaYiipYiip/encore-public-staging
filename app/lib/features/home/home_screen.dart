@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../app/tab_reselect.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart' show PinTargetType;
 import '../../data/repos/library_repository.dart' show OnPhone;
@@ -42,6 +43,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // A second tap on the Home tab (N-22): everything again, from the top.
+    ref.onTabReselected(MainTab.home, () {
+      if (_chip != null) setState(() => _chip = null);
+      scrollPageToTop(context);
+    });
     // The music server's catch-all "[Unknown Album]" is a bucket of songs, not a release: no shelf of releases shows it.
     final recent = withoutCatchAllAlbums<AlbumRow>(
         ref.watch(serverAlbumListProvider('server.recent')).value ?? const [],
