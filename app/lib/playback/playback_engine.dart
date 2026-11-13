@@ -464,7 +464,7 @@ class PlaybackEngine implements PlaybackFacade {
           : startIndex;
       // Play and Shuffle on a list ask for the list, not for one song: without a connection they pass over what is not downloaded (field
       // test 2026-10-31: one missing song and nothing played). A tapped row still asks for that song.
-      if (skipUnavailable && !await _canReachNow()) {
+      if (skipUnavailable && !_canReach()) {
         final order = [for (var i = 0; i < items.length; i++) i];
         if (shuffle && startIndex == 0) {
           order.shuffle(_random);
@@ -484,7 +484,7 @@ class PlaybackEngine implements PlaybackFacade {
       // stays as it was, and nothing starts by itself when the network returns - the person asked for a song that was not there, and
       // minutes later a different one starting would be a surprise (Q30, D-42). Losing the network in the middle of a song is another
       // case: that one waits ([_waitForConnection]) and carries on.
-      if (!await _canReachNow() && !await _playable(items[start])) {
+      if (!await _playable(items[start])) {
         PerfMonitor.instance.cancel('play.tap->playing');
         PerfMonitor.instance.cancel('play.audible');
         _notify(PlaybackNotice(_notDownloadedWords(), isError: false));
@@ -658,8 +658,9 @@ class PlaybackEngine implements PlaybackFacade {
           return;
         }
         final hadNext = _queue.hasNext;
-        if (hadNext && !await _canReachNow()) {
-          // Without a connection only downloaded songs can play: Next goes to the next one of those, or does nothing at all.
+        if (hadNext && !_canReach()) {
+          // Without a connection only downloaded songs can play: Next goes to the next one of those, or does nothing at all. A downloaded song
+          // is taken before the server is looked at (N-20: [_playable]).
           if (!await _stepToPlayable(_queue.skipNext)) {
             _notify(const PlaybackNotice(
                 'The next songs are not downloaded. Connect to play them.'));
@@ -963,10 +964,20 @@ class PlaybackEngine implements PlaybackFacade {
   late final ReachLook _reach =
       ReachLook(look: () => _serverAnswers(), clock: _clock);
 
+  /// A file on this phone needs nobody, so it is asked BEFORE the server is looked at (N-20, owner, 13 Nov 2026: a downloaded song "has a delay"
+  /// offline). Measured on the A35 with Wi-Fi on and the server not answering: the look took 2.0 to 2.4 s, and every tap that came after the
+  /// 5 s the look remembers paid for it again, although the song was a file (`source=file`) that starts in about 0.1 s. The look is only for what
+  /// is not a file.
   Future<bool> _playable(QueueItem item) async {
-    if (await _canReachNow()) return true;
+    if (_canReach()) return true;
+    if (await _onPhone(item)) return true;
+    return _canReachNow();
+  }
+
+  /// Whether the song is a file on the phone, from the phone alone (no address is made: that would wait for the session and ask the server).
+  Future<bool> _onPhone(QueueItem item) async {
     try {
-      return (await _resolver.resolve(item)).isLocal;
+      return await _resolver.isOnPhone(item);
     } on Object catch (error) {
       Log.warn(
           'playback',

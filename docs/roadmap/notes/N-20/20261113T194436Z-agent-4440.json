@@ -1,0 +1,9 @@
+{
+ "id": "20261113T194436Z-agent-4440",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T19:44:36Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening: ROOT CAUSE PROVEN, fixed in the PR of branch task/N-20-downloaded-song-starts-without-asking-server. The delay is the engine asking the SERVER before asking whether the song is a FILE on the phone. A35, build 144, volume 0. (1) Airplane mode on: a downloaded song starts in 94 to 224 ms (tap to playing) and is audible after 295 to 624 ms, from a playlist row (6 taps), from the Search top result (5 taps) and after a cold app start (load 160 to 175 ms): no delay. (2) Wi-Fi on, the server not answering (the test VM is stopped): the SAME downloaded song (source=file) took 2433, 2019 and 2399 ms to start on 3 of 5 taps and ~110 ms on the other 2: the look at the server takes about 2 s and a look that found nobody is remembered for 5 s (ReachLook), so every tap after the 5 s pays again. Cause: playTracks asked _canReachNow() (the look) at playback_engine.dart:487 before _playable() asked whether the song is local; Next (:661) and Play/Shuffle on a list (:467) did the same. Fix at the source: _playable() answers known-reachable, then local file, and only then looks; the three call sites no longer look first. The look stays where it is needed (a song that is not a file). Tests (app/test/playback/playback_engine_test.dart, group of the offline tests): the tap and Next tests made the look hang for ever and failed with a TimeoutException on the old engine, pass now; a third test keeps the one look for a song that is not downloaded. NOT walked on a phone (the owner's A35 has build 144 signed differently: a new build is never installed over it). Still open from the owner's wording: Play on a LIST whose first song is not downloaded still pays one look (inherent: the first song's reachability decides where to start); that is a possible follow-up."
+}

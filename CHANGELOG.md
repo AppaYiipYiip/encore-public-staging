@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* A downloaded song starts the moment you tap it also when your phone has a network but your server does not answer (at home with the server off, on a Wi-Fi with no internet): the app used to ask your server first, which took about two seconds, before playing a file it already had. The same for Next. Songs that are not downloaded are still checked once and say so.
 * Tapping the tab you are already on takes you back to its first page: Search is empty again as if nothing had been searched (the typed words are gone and the keyboard closes), Home and Your Library go back to showing everything and scroll to the top, and Your Library opens on the downloaded songs again when you have no connection. Going to another tab and coming back still keeps what you had typed.
 
 * The song at the top of a search now has the same buttons as every song below it: the three dots (play next, add to queue, add to a playlist, like, download), a long press for the same menu, and a swipe to the right to add it to the queue or to the left to like it. A song that is not on your server yet still has no three dots anywhere in Search, the same as the songs below it (N-21).
