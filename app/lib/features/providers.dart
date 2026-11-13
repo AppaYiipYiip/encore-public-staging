@@ -369,6 +369,11 @@ final artistCoverFallbacksProvider =
   return await _repo(ref)?.artistCoverFallbacks() ?? const <String, String>{};
 });
 
+/// The artists of a song, each on its own (empty when the phone knows only the one string a song shows): what the player makes tappable.
+final songArtistsProvider = FutureProvider.autoDispose
+    .family<List<String>, String>((ref, trackId) async =>
+        await _repo(ref)?.songArtists(trackId) ?? const <String>[]);
+
 final scopedArtistsProvider = Provider.autoDispose<List<ArtistRow>?>((ref) {
   final all = ref.watch(artistsProvider).value ?? const <ArtistRow>[];
   if (ref.watch(libraryScopeProvider) == LibraryScope.everything) return all;
