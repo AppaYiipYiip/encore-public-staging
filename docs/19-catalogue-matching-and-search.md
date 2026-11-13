@@ -53,7 +53,12 @@ person's setting (`21` §5).
   YouTube Music results (regional, independent, long content) when they arrive (≤ 1.5 s). The app shows fast results and merges the
   full ones without the list jumping under the finger (new items appear below, the Top result only changes if nothing was tapped yet).
 * **Ranking:** a Top result (exact normalised artist + title, else best match of the query's intent: an artist, an album), then Songs
-  (match quality, then owned/kept first, then popularity), Artists, Albums, Playlists, like Spotify.
+  (match quality, then owned/kept first, then popularity), Artists, Albums, Playlists, like Spotify. **An answer that is only partial
+  never ranks as high as an exact one** (P1-07, `app/lib/domain/search_rank.dart`, which holds the scale): an artist whose name is exactly
+  what was typed is the Top result over every song or album that merely starts with or contains the words (typing "jinjer" gives the
+  band, not a song titled "Jinjer - Pisces"); a song or an album that is itself exactly the typed words takes that place only when the
+  artist is barely known (not in the library and under 50,000 fans: typing "Hotel California" means the song). Popularity only settles
+  that tie. The server's one ranked list (P2-12) keeps this rule.
 * **Typing:** the search screen waits 90 ms after the last key before it asks (`search_screen.dart`; this page said 250 ms), minimum 2 characters, cache per normalised query (24 h), prepare the Top result (P1-04). **OPEN (needs owner/advisor):** `03` N7 wants catalogue results at most 300 ms after the last key, but the server's fast phase is allowed about 400 ms (P2-12 acceptance: p50 at most 400 ms) and nothing measures the total, so N7 cannot hold as written: relax N7 (to about 500 ms) or cut the phase's target.
 * **Transliteration:** the query is also matched against artist aliases (MusicBrainz) so "fairouz", "fairuz" and "فيروز" find
   the same artist; Arabic queries are normalised with §2.

@@ -84,7 +84,9 @@ class AssembledSearch {
       top == null && songs.isEmpty && artists.isEmpty && albums.isEmpty;
 }
 
-/// An artist this many fans or more is "well known": an exact name match with a song's exact title goes to the artist only then.
+/// An artist this many fans or more (or one the library has) is "well known": an exact name match with a song's or an album's exact
+/// title goes to the artist only then. It decides nothing else: an artist named exactly as typed is above every partial song or album
+/// whatever its fans ([pickTop], P1-07).
 const wellKnownFans = 50000;
 
 /// Most rows of each kind below the Top result.

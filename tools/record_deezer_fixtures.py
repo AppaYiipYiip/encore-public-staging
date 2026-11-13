@@ -16,6 +16,8 @@ QUERIES = [
     "beach house space song", "mazzy star fade into you", "blinding lights", "the weeknd blinding lights", "taylor swift cardigan",
     "kendrick lamar humble", "drake gods plan", "tame impala let it happen", "cairokee", "oum kalthoum enta omri",
     "pink floyd comfortably numb", "billie eilish", "hotel california", "bohemian rhapsody", "ed sheeran shape of you",
+    # added 13 Nov 2026 (P1-07): an artist typed alone, spelled right, who is popular (the band comes before every song)
+    "jinjer",
 ]
 KEEP = {
     "artist": ("id", "name", "picture_xl", "nb_fan", "nb_album"),
