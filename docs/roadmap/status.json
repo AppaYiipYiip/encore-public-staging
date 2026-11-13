@@ -162,5 +162,11 @@
   "evidence": "docs/evidence c01 (installer on a clean VM, the image pulled from the registry, five runs), c03, c06 (the guide on a bare VM, image :main), e03 (VM 108 updated with encore update on the release-candidate pair: 4.2 MB of code layers); measured 7 Nov 2026 from the registry's own manifest: amd64, 14 layers, 243.9 MB over the wire (the limit is 450 MB). 'Compose uses pinned tags' moved to P3-27 the same day.",
   "at": "2026-11-07T21:07:13Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "N-22": {
+  "state": "built",
+  "evidence": "Widget tests app/test/features/tab_reselect_test.dart (5, run through the whole app: router, shell and screens): 3 failed on the old code (Search kept the typed words after a second tap on its tab, Home and Your Library kept the chosen chip) and pass now; 2 guards pass before and after (a second tap while a genre page is open returns to the first page; going to another tab and back keeps the typed words). The rest of the app tests (1388: features, app, core, domain, design, architecture) pass; dart analyze --fatal-infos is clean. The scroll-to-top of Home and Your Library is covered for Home only. NOT walked on a phone.",
+  "at": "2026-11-13T19:35:24Z",
+  "by": "Claude"
  }
 }
