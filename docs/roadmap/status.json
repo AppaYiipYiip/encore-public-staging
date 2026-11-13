@@ -162,5 +162,11 @@
   "evidence": "docs/evidence c01 (installer on a clean VM, the image pulled from the registry, five runs), c03, c06 (the guide on a bare VM, image :main), e03 (VM 108 updated with encore update on the release-candidate pair: 4.2 MB of code layers); measured 7 Nov 2026 from the registry's own manifest: amd64, 14 layers, 243.9 MB over the wire (the limit is 450 MB). 'Compose uses pinned tags' moved to P3-27 the same day.",
   "at": "2026-11-07T21:07:13Z",
   "by": "Claude (Sonnet 5.5)"
+ },
+ "N-20": {
+  "state": "built",
+  "evidence": "Measured on the A35 (build 144) before the fix: a downloaded song (source=file) took 2433, 2019 and 2399 ms to start on 3 of 5 taps while Wi-Fi was on and the server not answering (about 110 ms on the others and in airplane mode). Engine tests app/test/playback/playback_engine_test.dart: the tap and Next tests (the look to the server made to hang) failed with TimeoutException on the old engine and pass now; a guard test keeps the single look for a song that is not downloaded; all of test/playback and test/app (342) pass, dart analyze --fatal-infos is clean. NOT walked: the fix has not run on a phone (a new build is not installed over the owner's A35). Play on a list whose first song is not downloaded still pays one look.",
+  "at": "2026-11-13T19:44:37Z",
+  "by": "Claude"
  }
 }

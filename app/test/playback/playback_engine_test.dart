@@ -2217,6 +2217,69 @@ void main() {
       await h.dispose();
     });
 
+    // N-20 (owner, 13 Nov 2026: a downloaded song "has a delay" offline). Measured on the A35 (Wi-Fi on, the server not answering, the song a
+    // file on the phone): the tap took 2.0 to 2.4 s to start on 3 taps in 5 and ~110 ms on the others (a look that found nobody is
+    // remembered for 5 s). The engine asked the server whether it could be reached BEFORE asking whether the song is a file on the phone,
+    // and a file needs nobody. These tests make the look hang for ever: a downloaded song must start without it.
+    test(
+        'a tap on a downloaded song starts at once when the phone has a network and the server does not answer (N-20)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = false;
+      h.serverGate = Completer<void>();
+      h.resolver.local.add('t1');
+
+      await h.engine
+          .playTracks(h.tracks.sublist(0, 3))
+          .timeout(const Duration(seconds: 2));
+
+      expect(h.serverAsked, 0,
+          reason: 'a file on the phone needs nobody: the server is not asked');
+      expect(h.currentId, 't1');
+      expect(h.backend.state.playing, isTrue);
+      expect(h.notices, isEmpty);
+      h.serverGate!.complete();
+      await h.dispose();
+    });
+
+    test(
+        'Next onto a downloaded song starts at once when the phone has a network and the server does not answer (N-20)',
+        () async {
+      final h = await Harness.start();
+      h.resolver.local.addAll(['t1', 't2']);
+      h.reachable = false;
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+      h.network = true;
+      h.serverUp = false;
+      h.serverGate = Completer<void>();
+
+      await h.engine.skipNext().timeout(const Duration(seconds: 2));
+
+      expect(h.serverAsked, 0);
+      expect(h.currentId, 't2');
+      expect(h.backend.state.playing, isTrue);
+      h.serverGate!.complete();
+      await h.dispose();
+    });
+
+    test(
+        'a tap on a song that is not downloaded still asks the server once, and says so when it does not answer (N-20 keeps the look where it is needed)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.serverAsked, 1);
+      expect(h.notices, hasLength(1));
+      expect(h.backend.setSourcesCount, 0);
+      await h.dispose();
+    });
+
     test('offline, Next skips songs that are not downloaded', () async {
       final h = await Harness.start();
       h.resolver.local.addAll(['t1', 't3']);

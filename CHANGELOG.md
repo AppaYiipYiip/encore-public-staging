@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* A downloaded song starts the moment you tap it also when your phone has a network but your server does not answer (at home with the server off, on a Wi-Fi with no internet): the app used to ask your server first, which took about two seconds, before playing a file it already had. The same for Next. Songs that are not downloaded are still checked once and say so.
+
 * On a song by several artists, every artist is a tap of its own in the player (it was one tap for the whole line, which opened the first artist): "Forever" by Drake, Kanye West, Lil Wayne and Eminem opens Kanye West's page when you press Kanye West. The line of artists is always one line high and scrolls sideways when there are many, so the player does not move from one song to the next.
 * Songs by several artists are saved with each artist on its own (an `ARTISTS` tag), so your music server links the song to every one of its artists instead of to an artist named "Post Malone, Swae Lee" that nobody can open. Songs already saved keep the old tag until they are re-tagged.
 * Pressing an artist's name in the player (and an artist, an album or a playlist the phone does not have) no longer leaves a spinner for ever: a song saved with several artists ("Post Malone, Swae Lee") belonged, for your music server, to an artist that the phone never receives; the phone now links such a song to the artist of its album, the page opens the real artist, and a page that cannot be filled says so and keeps its Back button.
