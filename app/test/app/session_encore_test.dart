@@ -137,6 +137,8 @@ void main() {
     expect(url.host, 'home.test');
     expect(url.path, '/encore/cover/al-1');
     expect(url.queryParameters['sig'], 'coversig');
+    expect(url.queryParameters['e'], '9999999999',
+        reason: "the server's own end, not one counted by the phone");
     for (final login in ['u', 't', 's', 'p_']) {
       expect(url.queryParameters.containsKey(login), isFalse, reason: login);
     }

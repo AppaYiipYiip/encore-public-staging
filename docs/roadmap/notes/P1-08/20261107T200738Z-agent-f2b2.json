@@ -1,0 +1,9 @@
+{
+ "id": "20261107T200738Z-agent-f2b2",
+ "item": "P1-08",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:07:38Z",
+ "type": "note",
+ "body": "7 Nov 2026, found on the owner's A35 and fixed in open PRs (not merged: checks blocked, P0-16): (1) a song the server cannot find (\"Lofi For Focus\") left the Play button spinning for ever after \"Couldn't play\" and never said why: the engine gave up without stopping the platform player, and the server's reason (404 song_unavailable) never reached the app (audit B-117, PR #243, docs/33 PB-25/PB-F11); (2) pressing an artist name opened a page that was a bare spinner with no Back, for 8% of songs (those tagged \"A, B\": audit B-118, PR #244); (3) only one artist of a song by several could be pressed (B-120, PR #246). This item stays \"built\": the fixes are not merged and not walked on the release-candidate pair."
+}

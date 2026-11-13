@@ -1,0 +1,9 @@
+{
+ "id": "20261107T200739Z-agent-0ccf",
+ "item": "P1-06",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:07:39Z",
+ "type": "note",
+ "body": "7 Nov 2026: PR #241 adds permanent page-open timers to the app: `[perf] span open.playlist.shell / .full` and `open.artist.shell / .full` (logcat, and the Diagnostics screen). Measured with them on the owner's A35 (build 139): a playlist of 2,251 songs draws in 17-32 ms and shows its songs in 150-163 ms; an artist page the second time 72 ms (the catalogue answers are now remembered 30 minutes), the first time 2.8-4.8 s; on 2 of 5 artist opens the first frame waited 1.5-2.1 s on the local database (cause not found: proposal N-14). Screenshot polling and uiautomator timing of a Flutter app lag by seconds; the app's own spans are the measure."
+}

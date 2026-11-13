@@ -50,6 +50,8 @@ Each has one plain message, owned by the server (`server/encore_server/encore_se
 | federation (server-to-server, signed) | — | `/encore/federation/v1/…`: `well-known`, friend requests, Jam join/relay, Jam stream grants, shares (`13` §4–5, P4-09) |
 | outside `/api/v1` | `GET /encore/join/{code}` (the page an invitation link opens) · `GET /encore/stream/{sr}` and `GET /encore/cover/{id}` (signed addresses) · websocket `/encore/live` | — |
 
+**Signed addresses (`/encore/stream/{sr}`, `/encore/cover/{id}`).** The query values the server gives (`p`, `e`, `sig`) are written into an address **exactly as given**. The signature covers `e` (whole seconds of the **server's** clock), so a client never works it out again from its own clock: a phone one second out had every picture refused (audit B-115). The phone's clock decides only when to ask for a new ticket, and a `401` on a signed address means "ask for a new ticket" (the picture ticket is replaced once, never in a loop). Covered by `signed_addresses_test.dart` (a skew table).
+
 ## 4. The live channel (`/encore/live`, websocket)
 
 * One connection per running app; authenticated by the device token in the first message; the server sends `hello {serverTime,

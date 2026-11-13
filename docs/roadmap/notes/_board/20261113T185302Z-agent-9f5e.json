@@ -1,0 +1,9 @@
+{
+ "id": "20261113T185302Z-agent-9f5e",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T18:53:02Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, decided with the advisor, relayed for the next agent. (1) THE SERVER IMAGE PACKAGE: ghcr.io/appayiipyiip/encore-server is PRIVATE and linked to the OLD private repo (231 versions built from the unscrubbed source). The public repo's server-image workflow gets 403 until the owner adds encore-public-staging with the Write role under Package settings > Manage Actions access. DO NOT make the package public: visibility is for the whole package, so all 231 old versions would be pullable by anyone. Trigger to revisit: before the first item that needs a stranger to pull the image (install by clicking): then either scan every unique layer/config/attestation of the old versions (same substring families + gitleaks) or the owner deletes the pre-13-Nov versions (irreversible, his click), and only then flip to public. (2) The old private repo's Actions were disabled by the owner on 13 Nov (its weekly rebuild could have overwritten :main from the old source). (3) Without write access for the public repo there is no new release-candidate image, so nothing merged now can be marked walked until that click is done. (4) Agents: the lead plus at most ONE helper at a time (one phone, one VM, overlapping player code); a helper works only in a worktree of encore-live, no adb, never merges; a second helper only after the first one's PR landed cleanly."
+}
