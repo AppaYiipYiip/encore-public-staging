@@ -141,6 +141,8 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 
 ## P2-11 — Migrate today's installs without losing anything (server) — Size L
 * **Order.** Needs: none.
+* **CLOSED 7 Nov 2026 (roadmap grooming, in Later so it costs nothing).** No old install exists to migrate (below), and nothing in the plan needs this. Reopen it only
+  if a real old install turns up; the migration endpoint and `docs/18` §4 stay as they are.
 * **Proposed: close (2026-11-03), the owner decides.** The installs this migrates (CT 104 and the legacy services) were destroyed at his word on 2026-11-03 and nobody else has one; the migration endpoint stays built. Reopen only if a real old install turns up.
 * **Why.** `../18` §3–4: the owner's server (CT 104) and phones hold real likes, playlists, plays and kept files.
 * **Do.** The migration of `../18` §4 (backup → people → files to refs, duplicates merged → likes/playlists/plays via the gateway header or
@@ -263,7 +265,10 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** Written when it is drawn.
 
 ## P2-22 — A download shows where it is: the server stage, the phone stage, and why it waits (server + app) — Size M
-* **Order.** Needs: P1-17 [d].
+* **Order.** Needs: P1-17 [d], P2-29 [d].
+* **Order note (7 Nov 2026, roadmap grooming).** P2-29 (one notification while the server is still saving) is the part of this item's own title and acceptance
+  that the owner found missing on 6 Nov 2026 (audit B-100); it sat last in the list with no link, so the checker let P2-22 be walked without it. This item is
+  not walked before P2-29 is built.
 * **Why.** Round 2, found by the owner on 2026-11-03 (`AUDIT` R2-F2): he pressed Download on two playlists (217 and 4 songs) and could not tell
   what was happening: no notification, only "N of M" on the phone and "Waiting for a connection". D-29 puts "download a song, album or playlist"
   in RC1 and forbids silent failures. Measured the same evening on the test server: the *server* needed about **46 minutes** to fetch a 217-song
