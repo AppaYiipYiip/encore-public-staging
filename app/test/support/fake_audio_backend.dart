@@ -201,6 +201,14 @@ class FakeAudioBackend implements AudioBackend {
     _errors$.add(BackendError(message, index: _index));
   }
 
+  /// The platform player reports a failure for the current source and, like just_audio on Android, stays "loading": the source never became
+  /// ready and nothing ever says it is idle (the owner's "Lofi For Focus" on his A35 spun for ever after "Couldn't play").
+  void failCurrentStaysLoading([String message = 'Source error']) {
+    _errors$.add(BackendError(message, index: _index));
+    _setState(BackendState(
+        playing: _state.playing, processing: BackendProcessing.loading));
+  }
+
   /// The platform player reports a failure for the current source and then moves on to the next source of the window by itself (just_audio
   /// on Android does: seekTo(next), prepare, play), as seen on a phone with the server stopped mid-song (docs/evidence b04).
   void failCurrentAndHop([String message = 'Source error']) {

@@ -1250,3 +1250,22 @@ Total on `main`: **S1 to S5 print 22 PASS and 16 FAIL**, every FAIL a register r
 ![The Devices sheet on the A35: the speaker ticked (build 136)](2026-11-07-e06-devices-sheet-bluetooth-a35-build136.png)
 
 **What this entry does NOT cover, so the board keeps these at "built":** **P2-22** (the notification of the download, audit B-100, was not looked at; the 2253-song download was still running when this was written and was not seen to its end), **P1-02** (the 2-hour recitation was neither saved nor played to its end on the phone), **P1-24** (the shared link on a device). Not seen on a phone yet: the 4-minute import request and the "the list is longer" note (#237), the 150-minute limit on a real 2-hour file.
+
+
+<a id="e07"></a>
+## e07 · Why the artists had no pictures, and the fix seen on the A35 and an emulator (7 Nov 2026; `w` = seen on a real phone, but on build 140 = a local merge of #242 and #241, NOT a release-candidate pair)
+
+**The setup.** The owner's Samsung A35 (arm64) and emulator A (x86_64), both signed in as test accounts on VM 108; the phone's clock is 1 s behind the server's, emulator A's 60 s behind (`date +%s` on each, same minute). The owner had said AC/DC, 2Pac and Alice in Chains had no icon and most artists were letters.
+
+| Item and check | What was run | What it showed |
+|---|---|---|
+| **The cause** (audit **B-115**, `w`, A35, build 139) | `tcpdump` on VM 108 for 55 s while the phone opened the Artists list; the captured address replayed on the server; the signature checked inside the server container | **408 picture requests from the owner's phone, 408 answered `401 This picture address has expired`.** The signature in them is not valid for the `e` the phone sent and **is valid for `e + 1`**: the app wrote the ticket's end from the phone's clock and the server signs its own. A fresh ticket for the same account gave 200 at both sizes the app uses, in 0.01 to 0.1 s, for the very artists that showed letters |
+| **Why some showed** | the picture cache database of a freshly signed-in debug build (`run-as`) | 635 cached pictures = the top 100 artists by album count (both sizes) and 402 albums: fetched in the first minutes, before the phone knew the server was an Encore server (it then asks with the music server's own login). Everything later was only ever asked for with the ticket |
+| **The fix on the wire** (`w`, A35, build 140) | the same capture, 50 s, the Artists list opened and scrolled | **102 picture requests, 196 answers, every one `200`, no `401`** |
+| **The fix on screen** (`w`, A35, build 140) | Your Library > Artists, scrolled from *NSYNC to Alice in Chains | real photos for *NSYNC, 2CELLOS, 2Pac, 3 Doors Down, 5 Seconds of Summer, 50 Cent, 504 Boyz, A Perfect Circle, Aber Sabeel, AC/DC, Agalloch, AJR, Akon, Alcest, Alice Cooper, **Alice in Chains**, Alicia Keys, Alien Ant Farm. Letters remain only for artists the music server has no photo of (2SICH, 7sloth, Abc Soundtracks, alexrainbirdMusic: 91 of 817 have none) |
+| **A phone 60 s out** (`w`, emulator A, build 140) | the same list | the photos show (*NSYNC, 2CELLOS, 2Pac, 3 Doors Down) |
+
+![Your Library > Artists on the A35 with build 140](2026-11-07-e07-artists-pictures-a35-build140.png)
+![The same list on emulator A, whose clock is 60 s behind the server](2026-11-07-e07-artists-pictures-emulator-build140.png)
+
+**What this entry does NOT cover, so the board keeps P1-10 ("Covers show everywhere, also when you are offline") at "todo":** the offline case (airplane mode) was not looked at; the renewal after a refusal (the second layer) is covered by unit and widget tests only, not seen on a phone (no ticket was refused in this run); build 140 is a merge of two open pull requests, not main, and the release-candidate pair has not been walked.

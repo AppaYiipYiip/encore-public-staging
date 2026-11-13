@@ -1,0 +1,9 @@
+{
+ "id": "20261113T005709Z-agent-2d37",
+ "item": "N-11",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-13T00:57:09Z",
+ "type": "note",
+ "body": "Owner report, 13 Nov 2026 (relayed from chat): some songs of an artist show under '[unknown album]' and are downloaded twice, once under the unknown album and once under the right one. Example: Landmvrks, 'Creature' and 'Requiem' belong to 'The Darkest Place I've Ever Lived' but also show under [unknown album]. Expected: one song, one entry, one download."
+}

@@ -55,6 +55,8 @@ class EncoreApp extends ConsumerWidget {
     ref.watch(lyricsForDownloadsProvider);
     // The covers of what the person is likely to see are fetched in the background: offline shows covers, not letters.
     ref.watch(coverPrefetchProvider);
+    // A picture the server refuses makes the app renew its picture ticket.
+    ref.watch(coverRefusalProvider);
     // Keeps pinned music in step with the server (starts after start-up).
     ref.watch(downloadManagerProvider);
     // Tells the server what the phone's downloads are waiting for and listens for how it goes (P2-22). `listen`, not `watch`: every push of

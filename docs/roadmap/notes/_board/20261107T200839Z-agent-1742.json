@@ -1,0 +1,9 @@
+{
+ "id": "20261107T200839Z-agent-1742",
+ "item": "_board",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:08:39Z",
+ "type": "note",
+ "body": "7 Nov 2026, the day in short. MARKED today (in already merged PRs; the proof of each is in docs/evidence): walked P0-11, P0-12, P1-05, P1-11, P1-21, P2-02, P3-04 (pair 1: image 579dfea + build 131, e03); P1-15, P1-22, P1-23, P1-27 (pair 2: image 586bbba + build 132, e04); P1-04 and P2-03 (pair 4: image ee121c1 + build 136, e05); P1-25 (with the owner's Bluetooth speaker, e06); built P1-24. NOT marked after that: nothing of the fixes below is merged (the checks cannot run, P0-16) and none is walked on a release-candidate pair, so every one of them is \"built\" at most. FOUND today and written up in the audit (B-106 to B-120): the pictures refused by the server for one second of clock difference (B-115, the biggest one: artists and new albums stayed letters; PR #242); a song of several artists points at an artist nobody can open (B-118, PR #244, source in the server's tagging B-119, PR #245); only one artist of a song could be pressed (B-120, PR #246); a song the server cannot find spun for ever (B-117, PR #243); the same file on the phone twice (B-110 and B-120, proposal N-11); a playlist of more than 2,000 songs was cut (B-109, fixed and merged); downloads did not follow the server (B-108, fixed and merged); the artist page waits 1.5 to 2 s on the database during a download (B-114, N-14). ADDED to the board: P0-16 (owner: make GitHub's checks run again) and proposals N-10 to N-15. Open pull requests: #241 to #246; build 144 on the owner's A35 is a local merge of them. The owner's rules of the day: do not jump from one problem to another, and find causes, not symptoms."
+}

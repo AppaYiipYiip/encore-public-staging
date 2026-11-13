@@ -1,0 +1,9 @@
+{
+ "id": "20261113T005710Z-agent-2094",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-13T00:57:10Z",
+ "type": "note",
+ "body": "Owner report, 13 Nov 2026 (relayed), brought to the front at his request: (1) a setting for downloads over Wi-Fi only, or also over mobile data (his choice); (2) a setting that limits how much the app talks to the server on mobile data while keeping the full connection on Wi-Fi (his choice). Test both cases, Wi-Fi and mobile data."
+}
