@@ -190,6 +190,37 @@ class LibraryRepository {
     }
   }
 
+  /// The artist whose page stands for [artistId] when the phone has no row for that id: the artist of the albums its songs are on.
+  ///
+  /// A song tagged "Post Malone, Swae Lee" points at an artist of that whole name; the music server lists such an artist for the song but not in
+  /// its artist index, and it has no album of its own, so the phone never receives it (owner, 7 Nov 2026: tapping the artist of "Sunflower" showed a
+  /// spinner for ever; 382 of 4,719 songs and 145 artist ids on a freshly signed-in phone, and every one of them has an album whose artist the
+  /// phone does have). The most used album artist wins. `null` when no song of it is on an album of a known artist.
+  Future<String?> artistStandIn(String artistId) async {
+    final rows = await _db.customSelect(
+      'SELECT a.artist_id AS id FROM tracks t '
+      'JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id AND a.deleted_at_ms IS NULL '
+      'JOIN artists r ON r.server_id = a.server_id AND r.id = a.artist_id AND r.deleted_at_ms IS NULL '
+      'WHERE t.server_id = ?1 AND t.artist_id = ?2 AND t.deleted_at_ms IS NULL '
+      'GROUP BY a.artist_id ORDER BY COUNT(*) DESC, r.name LIMIT 1',
+      variables: [Variable.withInt(serverId), Variable.withString(artistId)],
+      readsFrom: {_db.tracks, _db.albums, _db.artists},
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('id');
+  }
+
+  /// The name the songs of [artistId] carry for it (the one used most), for an artist the phone has no row for. `null` when no song has it.
+  Future<String?> artistNameOf(String artistId) async {
+    final rows = await _db.customSelect(
+      'SELECT artist AS name FROM tracks '
+      'WHERE server_id = ?1 AND artist_id = ?2 AND deleted_at_ms IS NULL AND artist IS NOT NULL AND artist != \'\' '
+      'GROUP BY artist ORDER BY COUNT(*) DESC LIMIT 1',
+      variables: [Variable.withInt(serverId), Variable.withString(artistId)],
+      readsFrom: {_db.tracks},
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('name');
+  }
+
   Stream<List<ArtistRow>> watchArtists() => (_db.select(_db.artists)
         ..where((a) =>
             a.serverId.equals(serverId) &

@@ -175,6 +175,17 @@ def test_a_kept_song_lands_in_the_shared_folder_tagged_found_and_attached(rig: R
     )
 
 
+def test_a_song_by_several_artists_is_tagged_with_each_of_them_on_its_own(rig: Rig) -> None:
+    ref = rig.make_ref(artists=["Post Malone", "Swae Lee"], title="Sunflower")
+
+    rig.keep(ref)
+
+    tags = rig.tagged[0][1]
+    assert tags.artist == "Post Malone, Swae Lee", "what is shown stays the joined string"
+    assert tags.artists == ("Post Malone", "Swae Lee")
+    assert tags.album_artist == "Post Malone"
+
+
 def test_a_song_that_came_without_a_picture_gets_the_catalogues_in_its_file_and_on_its_ref(rig: Rig) -> None:
     rig.cover_found = "https://cdn.dzcdn.net/found.jpg"
     ref = rig.make_ref()

@@ -22,6 +22,10 @@ installer and a browser wizard that a person who never used Docker can follow. R
 * **Do.** `server/Dockerfile` (slim Python, ffmpeg, Deno pinned per arch, yt-dlp pinned and updated by the daily check), built in CI for
   amd64 (Intel and AMD), pushed to `ghcr.io/<owner>/encore-server:<version>`; compose uses pinned tags; image size target ≤ 450 MB.
 * **Acceptance.** `docker compose pull && up -d` on a clean amd64 VM; no local build.
+* **DONE and walked, 7 Nov 2026 (roadmap grooming).** CI builds the image for amd64 and pushes it to `ghcr.io/appayiipyiip/encore-server`; every install since 22 Oct
+  pulled it with no local build (`evidence` c01, c03, c06 on bare machines; e03: VM 108 updated with `encore update` on the pair). Measured 7 Nov 2026 from the
+  registry's own manifest: **243.9 MB over the wire** (14 layers; 937 MB on disk), under the 450 MB target. **"Compose uses pinned tags" moved to P3-27**, which
+  owns the release channel (today every server follows `main`, audit B-2). ARM stays P3-17 (Later).
 
 ## P3-03 — Device tokens; the gateway signs requests to Navidrome; the one-way mirror — Size M
 * **Order.** Needs: none.
@@ -243,7 +247,7 @@ installer and a browser wizard that a person who never used Docker can follow. R
 * **Size.** L.
 
 ## P3-24 — Gate 3: you invite your friend and jam with him (owner) — Size S
-* **Order.** Needs: P3-18 [d], P5-07 [d], P4-02 [d], P6-02 [d], P2-10 [d], P2-19 [d], P3-10 [d], P2-08 [d], P2-09 [d], P4-12 [d], P4-04 [d], P4-01 [d], P2-14 [d], P4-05 [d], P4-07 [d], P3-15 [d], P3-19 [d], P3-26 [d], P3-28 [d], P2-24 [d], P3-29 [d], P3-30 [d], P3-32 [d], P0-10 [d], P2-18 [d], P3-13 [d]. Why: the third of the owner's three thresholds (D-61). He will share the app only when his friend gets the whole thing: the Jam, the browser version for his PC, Android Auto, the home-screen widget, crossfade, CD-quality sound, suggestions, lyrics, his Year in Music, control from another device, the install guide for the friend, and the security checks. He said yes to every line on 5 Nov 2026.
+* **Order.** Needs: P3-18 [d], P5-07 [d], P4-02 [d], P6-02 [d], P2-10 [d], P2-19 [d], P3-10 [d], P2-08 [d], P2-09 [d], P4-12 [d], P4-22 [d], P4-23 [d], P4-24 [d], P4-04 [d], P4-01 [d], P2-14 [d], P4-05 [d], P4-07 [d], P3-15 [d], P3-19 [d], P3-26 [d], P3-28 [d], P2-24 [d], P3-29 [d], P3-30 [d], P3-32 [d], P0-10 [d], P2-18 [d], P3-13 [d]. Why: the third of the owner's three thresholds (D-61). He will share the app only when his friend gets the whole thing: the Jam, the browser version for his PC, Android Auto, the home-screen widget, crossfade, CD-quality sound, suggestions, lyrics, his Year in Music, control from another device, the install guide for the friend, and the security checks. He said yes to every line on 5 Nov 2026.
 * **Owner's step.** He sends one link. His friend, in another city, taps it on his phone (or opens it in a browser), signs up with the invitation without typing an address, and the two start a Jam: the owner in the browser on his PC, the friend on his phone. **Claude prepares everything and walks him through it.**
 * **Acceptance.** The Jam runs for a whole session between the owner's PC browser and his friend's phone, each on its own internet connection, through the away-from-home address; the friend can come back tomorrow and find his things.
 * **Size.** S (his time, not counted in the estimate).
@@ -264,12 +268,16 @@ installer and a browser wizard that a person who never used Docker can follow. R
 * **Order.** Needs: P5-01 [d]. Why: audit B-2: every installed server follows the tag `main`, which every merged pull request republishes (three server pull requests on 5 Nov alone). `encore update` and the Update button (P3-14) would pull whatever was merged last, so the walked release-candidate pair cannot hold.
 * **Do.** A `stable` tag that only a script moves, after the walk; `v*` tags made by the release pipeline (P5-01); the installer, the compose file and the Update button pin `stable` (or an exact version); `main` stays for developers and CI only. A CI check fails if the compose default is `main`.
 * **Acceptance.** Merging a pull request changes nothing on an installed server; `encore update` moves to the newest `stable` and says which version it is.
+* **Moved here 7 Nov 2026 from P3-02:** "compose uses pinned tags": the compose file the installer writes names `stable` or an exact version, never `main`.
 * **Size.** M.
 
 ## P3-28 — Prove the away-from-home address with real music, from a phone on mobile data — Size S
 * **Order.** Needs: none. Why: audit B-3: every friend and the Jam from another city depend on Tailscale Funnel, which is a beta service with a non-configurable bandwidth limit and has never run for real with music and a live connection (ADR-083 "written, not yet proven end to end"; `evidence/c05` proved only the command).
 * **Do.** With the owner's Tailscale sign-in (his step arrives as its own pink item when it is needed: D-59), from a phone on mobile data: play three songs, keep the live connection open for 30 minutes, and measure the throughput with two listeners at the Jam bitrate. Record the limits that were found. Write down the alternatives that stay open (an own domain behind a small proxy, a tunnel service) so that a failure is a choice and not a rewrite.
 * **Acceptance.** The numbers are in `evidence`; ADR-083 says "proven" or names the limit; P3-21 (the away-from-home page) and P4-02 (Jam) read it.
+* **State 7 Nov 2026 night.** The first real run happened and worked: with the owner's own Tailscale sign-in `encore funnel on` gave the public address, and he used the
+  app on 4G from his own phone (build 144): "it worked!" (board note on this item). What is NOT done is everything this item asks for in numbers: three songs timed,
+  30 minutes of live connection, two listeners at the Jam bitrate, the limits written down. The sign-in this item waited for is done.
 * **Size.** S.
 
 ## P3-29 — Server hygiene, so one slow request cannot freeze everyone — Size L

@@ -1,0 +1,9 @@
+{
+ "id": "20261107T210518Z-agent-2215",
+ "item": "P5-06",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T21:05:18Z",
+ "type": "detail",
+ "body": "SCRUB LIST before the code goes public (added 7 Nov 2026): the Funnel address of the owner's test server (a name ending in `.ts.net`, which names his tailnet) is written in two board notes (docs/roadmap/notes/P3-01/20261107T204122Z-agent-dd26.json and docs/roadmap/notes/P3-28/20261107T205636Z-agent-6c1b.json) and in docs/tasks/AUDIT-BUILT-2026-11-05.md. Find every place with `grep -rl tail5678 docs`. Notes are never edited: replace each with a new note (`--replaces`) that leaves the address out, and decide with the owner whether the old files must also leave the history. Run the same grep for the address of any later test server."
+}

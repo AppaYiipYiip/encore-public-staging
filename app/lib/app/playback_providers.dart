@@ -160,6 +160,16 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
       if (ids.isEmpty) return;
       await s.encore.prepare(ids);
     },
+    // A stream that failed is asked about once: the server says why (no matching upload, removed, age check), and a song it cannot have is
+    // not tried a second time. Only on an Encore server, which writes that answer.
+    songRefusal: (address) async {
+      final s = session();
+      if (s == null || !s.encoreMode) return null;
+      final why = await s.encore.streamRefusal(address);
+      return why == null
+          ? null
+          : (message: why.message, permanent: why.permanent);
+    },
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
     canReachServer: () => canReachServerNow(
         ref.read(networkKindProvider).value, session()?.endpoints),

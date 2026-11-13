@@ -122,6 +122,10 @@ class Harness {
   /// Makes the hand-over fail, to see that a failure is nobody's business.
   bool prepareFails = false;
 
+  /// What the server says when the engine asks why a stream failed (null: it cannot say), and what it was asked about.
+  SongRefusal? refusal;
+  final List<Uri> refusalAsked = [];
+
   static Future<Harness> start({
     int tracks = 5,
     MemoryPlaybackStateStore? store,
@@ -169,6 +173,10 @@ class Harness {
       prepareAhead: (upcoming) async {
         h.prepared.add([for (final i in upcoming) i.id]);
         if (h.prepareFails) throw StateError('the server did not answer');
+      },
+      songRefusal: (address) async {
+        h.refusalAsked.add(address);
+        return h.refusal;
       },
       clock: h.clock,
       random: Random(1),
@@ -975,6 +983,126 @@ void main() {
       expect(h.notices.any((n) => n.message.contains('stopped')), isTrue);
       expect(h.currentId, isNot('t10'), reason: 'did not run to the end');
       await h.dispose();
+    });
+
+    group(
+        'a song the server will not play (owner, 7 Nov 2026: "Lofi For Focus")',
+        () {
+      const notFound =
+          (message: 'Nothing matching that song was found.', permanent: true);
+
+      test(
+          'is not tried a second time, says why in the server\'s words, and the '
+          'player stops spinning', () async {
+        final h = await Harness.start(tracks: 1);
+        h.refusal = notFound;
+        await h.engine.playTracks(h.tracks);
+
+        h.backend.failCurrentStaysLoading();
+        await h.settle();
+
+        expect(h.backend.setSourcesCount, 1,
+            reason: 'a second try is a second look-up at YouTube');
+        expect(h.notices.single.isError, isTrue);
+        expect(h.notices.single.message,
+            "Couldn't play Song t1: Nothing matching that song was found.");
+        expect(h.engine.snapshot.isLoading, isFalse,
+            reason: 'the Play button must not spin after the message');
+        expect(h.engine.snapshot.isPlaying, isFalse);
+        expect(h.backend.state.processing, BackendProcessing.idle);
+        expect(h.backend.calls, contains('stop'));
+        expect(h.refusalAsked.single.toString(), contains('t1'),
+            reason: 'the server is asked about the address that failed');
+        await h.dispose();
+      });
+
+      test('with songs behind it the next one plays, and the reason is said',
+          () async {
+        final h = await Harness.start(tracks: 3);
+        h.refusal = notFound;
+        await h.engine.playTracks(h.tracks);
+
+        h.backend.failCurrentStaysLoading();
+        await h.settle();
+        h.refusal = null;
+
+        expect(h.currentId, 't2');
+        expect(h.backend.setSourcesCount, 2, reason: 't1 once, then t2');
+        expect(h.notices.single.message, contains('Nothing matching'));
+        await h.dispose();
+      });
+
+      test(
+          'a refusal that may pass (the source is busy) gets the quiet retry as before',
+          () async {
+        final h = await Harness.start(tracks: 1);
+        h.refusal = (message: 'YouTube is resting.', permanent: false);
+        await h.engine.playTracks(h.tracks);
+
+        h.backend.failCurrent();
+        await h.settle();
+
+        expect(h.backend.setSourcesCount, 2);
+        expect(h.notices, isEmpty);
+        await h.dispose();
+      });
+
+      test('a file on the phone is never asked about at the server', () async {
+        final h = await Harness.start(tracks: 1);
+        h.resolver.local.add('t1');
+        h.refusal = notFound;
+        await h.engine.playTracks(h.tracks);
+
+        h.backend.failCurrent();
+        await h.settle();
+
+        expect(h.refusalAsked, isEmpty);
+        expect(h.backend.setSourcesCount, 2, reason: 'the quiet retry');
+        await h.dispose();
+      });
+
+      test(
+          'Play after the engine gave up asks again, once, and a second '
+          'refusal gives up again', () async {
+        final h = await Harness.start(tracks: 1);
+        h.refusal = notFound;
+        await h.engine.playTracks(h.tracks);
+        h.backend.failCurrentStaysLoading();
+        await h.settle();
+
+        await h.engine.play();
+        await h.settle();
+
+        expect(h.backend.setSourcesCount, 2, reason: 'one fresh try');
+        expect(h.engine.snapshot.isLoading, isFalse);
+
+        h.backend.failCurrentStaysLoading();
+        await h.settle();
+
+        expect(h.backend.setSourcesCount, 2, reason: 'not a third');
+        expect(h.notices.length, 2);
+        expect(h.engine.snapshot.isLoading, isFalse);
+        await h.dispose();
+      });
+
+      test(
+          'a song that failed twice with no reason to be had also leaves the '
+          'player idle, not spinning', () async {
+        final h = await Harness.start(tracks: 1);
+        await h.engine.playTracks(h.tracks);
+
+        h.backend.failCurrent(); // the quiet retry
+        await h.settle();
+        // the retry fails too, and the platform player stays "loading" (a source that never became ready)
+        h.backend.failCurrentStaysLoading();
+        await h.settle();
+
+        expect(h.backend.setSourcesCount, 2, reason: 'the quiet retry');
+        expect(h.notices.single.message, "Couldn't play Song t1");
+        expect(h.engine.snapshot.isLoading, isFalse);
+        expect(h.backend.state.processing, BackendProcessing.idle);
+        await h.dispose();
+      });
     });
 
     test('a track that plays resets the failure budget', () async {

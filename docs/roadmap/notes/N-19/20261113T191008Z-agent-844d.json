@@ -1,0 +1,9 @@
+{
+ "id": "20261113T191008Z-agent-844d",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T19:10:08Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, NOT reproduced yet (nothing changed in code). A35, app build 144 (7 Nov), airplane mode on (verified: no network, status-bar airplane icon), media volume 0. Pause of a downloaded song gave NO notice and the media session went PLAYING -> PAUSED, in four ways: the full player's button on a song of 'Songs without an album' (Repeat one, Shuffle on); the mini-player button; a media key (what a headset or the lock screen sends); and the mini-player after pressing Play on the half-downloaded '00s Hip Hop playlist (189 songs, 'Waiting for a connection to download'). Screenshots and UI dumps showed no 'no connection' text at the moment of pause or 20 s later. The engine's pause path (playback_engine.dart:583) never touches the network; the only offline wordings are raised by a load, a failed backend error (:1460) or a Next. The scenario that triggers it must differ: needed from the owner, in one line: which screen he paused from, which song or list, and whether the song had just started or had been playing a while. Candidates still to try: pause while the song is still loading (tap and pause within a second), pause of a song whose NEXT song is not downloaded (preload error), pause after the app was restarted offline (restored queue, nothing loaded yet), pause on a build newer than 144 (on an emulator, never over the owner's phone: a debug APK would not match his signature and would cost him his downloads)."
+}

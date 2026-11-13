@@ -83,7 +83,7 @@ Write-Host 'AllowDevelopmentWithoutDevLicense = 1'
 # ------------------------------------------------------------------ defender
 if ($ExcludeFromDefender) {
   Write-Step 'Defender real-time scan exclusions (opt-in)'
-  $paths = @('C:\dev', 'C:\Users\you\Desktop\encore-workspace')
+  $paths = @('C:\dev', (Resolve-Path "$PSScriptRoot\..").Path)   # the dev folder and this repository
   foreach ($path in $paths) {
     Add-MpPreference -ExclusionPath $path
     Write-Host "excluded: $path"

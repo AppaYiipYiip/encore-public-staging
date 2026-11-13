@@ -117,10 +117,18 @@ void main() {
     late Uri base;
     late CoverPassHolder pass;
 
+    /// How far the server's clock is ahead of this phone's (negative: behind). The server writes the end of the ticket by its own clock and
+    /// signs that number; the phone only ever counts what is left by its own.
+    late Duration serverAhead;
+
+    int serverExpiry() =>
+        now.add(serverAhead).add(lives).millisecondsSinceEpoch ~/ 1000;
+
     setUp(() {
       now = DateTime.utc(2026, 10, 25, 12);
       fetches = 0;
       lives = const Duration(days: 7);
+      serverAhead = Duration.zero;
       base = Uri.parse('http://home.test:4540');
       pass = CoverPassHolder(
         clock: clock,
@@ -129,6 +137,7 @@ void main() {
           fetches++;
           return Result.ok(CoverPass(
               person: 'pn_marwa',
+              expires: serverExpiry(),
               expiresAt: now.add(lives),
               signature: 'sig$fetches'));
         },
@@ -148,11 +157,35 @@ void main() {
       expect(url.queryParameters['size'], '300');
       expect(url.queryParameters['p'], 'pn_marwa');
       expect(url.queryParameters['sig'], 'sig1');
-      expect(url.queryParameters['e'],
-          '${now.add(lives).millisecondsSinceEpoch ~/ 1000}');
+      expect(url.queryParameters['e'], '${serverExpiry()}');
       expect(pass.urlFor('al-2', 64)!.path, '/encore/cover/al-2');
       expect(fetches, 1, reason: 'one ticket for all of them');
     });
+
+    // Audit B-115 (7 Nov 2026): the address carried an end worked out from the phone's clock, the server had signed its own, and a phone
+    // one second out had every picture refused (408 of 408 on the owner's A35). The address carries the server's number, whatever the clock.
+    for (final skew in const [
+      Duration(seconds: 1),
+      Duration(seconds: -1),
+      Duration(seconds: 57),
+      Duration(seconds: -57),
+      Duration(hours: 3),
+      Duration(hours: -3),
+    ]) {
+      test(
+          'the address carries the end the server signed, with the server '
+          '${skew.inSeconds} s ahead of the phone', () async {
+        serverAhead = skew;
+
+        await pass.ensure();
+
+        final url = pass.urlFor('al-1', 64)!;
+        expect(url.queryParameters['e'], '${serverExpiry()}');
+        expect(url.queryParameters['e'],
+            isNot('${now.add(lives).millisecondsSinceEpoch ~/ 1000}'),
+            reason: 'not the phone\'s own count');
+      });
+    }
 
     test('carries no login of the music server', () async {
       await pass.ensure();
@@ -215,6 +248,76 @@ void main() {
       await pass.ensure();
       expect(fetches, 2);
       expect(pass.urlFor('al-1', 64), isNotNull);
+    });
+
+    group('a refused address', () {
+      test(
+          'throws the ticket it was written with away and gets a new one, once '
+          'the ticket is no longer new', () async {
+        await pass.ensure();
+        now = now.add(const Duration(minutes: 5));
+
+        pass.refused('sig1');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(fetches, 2);
+        expect(pass.urlFor('al-1', 64)!.queryParameters['sig'], 'sig2');
+      });
+
+      test(
+          'does not throw the new ticket away because a request made with the '
+          'old one comes back refused', () async {
+        await pass.ensure();
+        now = now.add(const Duration(minutes: 5));
+        pass.refused('sig1');
+        await Future<void>.delayed(Duration.zero);
+        now = now.add(const Duration(minutes: 5));
+
+        // the other requests that were under way with sig1 are refused now
+        for (var i = 0; i < 20; i++) {
+          pass.refused('sig1');
+        }
+        await Future<void>.delayed(Duration.zero);
+
+        expect(fetches, 2, reason: 'one renewal, not twenty');
+        expect(pass.urlFor('al-1', 64)!.queryParameters['sig'], 'sig2');
+      });
+
+      test(
+          'leaves a ticket that is itself new: a server that refuses fresh '
+          'tickets must not be asked for them in a loop', () async {
+        await pass.ensure();
+
+        pass.refused('sig1');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(fetches, 1);
+        expect(pass.urlFor('al-1', 64), isNotNull);
+      });
+
+      test('an address with no signature in it changes nothing', () async {
+        await pass.ensure();
+        now = now.add(const Duration(minutes: 5));
+
+        pass.refused(null);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(fetches, 1);
+      });
+
+      test('tells those who show pictures that the ticket is a new one',
+          () async {
+        final seen = <int>[];
+        final sub = pass.changes.listen(seen.add);
+        await pass.ensure();
+        now = now.add(const Duration(minutes: 5));
+
+        pass.refused('sig1');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(seen, [1, 2]);
+        await sub.cancel();
+      });
     });
 
     test('tells those who show pictures when a ticket arrives', () async {

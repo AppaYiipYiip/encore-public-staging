@@ -307,6 +307,19 @@ class SyncEngine {
     }
   }
 
+  /// Songs written before the writer linked them to a listed artist (or by another path) may still point at an artist the phone does not have;
+  /// every run puts that right first (one statement, nothing to do when nothing is wrong).
+  Future<void> _repairSongArtistLinks() async {
+    try {
+      final changed = await _writer.linkSongsToListedArtists(serverId);
+      if (changed > 0) {
+        Log.info('sync', 'linked $changed songs to the artist of their album');
+      }
+    } on Object catch (error) {
+      Log.warn('sync', 'could not link songs to their artists', error);
+    }
+  }
+
   Future<SyncOutcome> _runLeased(
     SyncReason reason,
     bool force,
@@ -315,6 +328,7 @@ class SyncEngine {
     Log.info('sync', 'run start (${reason.name}, force=$force)');
     try {
       _emit(const SyncProgress(SyncPhase.probing));
+      await _repairSongArtistLinks();
 
       // Push local intent first so the server's view includes it (and so the
       // star reconciliation below never fights a pending mutation).

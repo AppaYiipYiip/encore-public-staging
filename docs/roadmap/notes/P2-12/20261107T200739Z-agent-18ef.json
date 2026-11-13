@@ -1,0 +1,9 @@
+{
+ "id": "20261107T200739Z-agent-18ef",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "Claude (Sonnet 5.5)",
+ "at": "2026-11-07T20:07:39Z",
+ "type": "note",
+ "body": "7 Nov 2026: the phone still asks Deezer itself for artist pages, search and album pages (the thin-client debt of ADR-R38). PR #241 puts a 30-minute memory (CachedCatalogueClient) in front of whichever client answers, so it stays correct when the server's own catalogue module replaces Deezer; it does not remove the debt. The artist page of an artist the phone has no row for now opens the artist found by the album, then by exact name, then says so (PR #244)."
+}
