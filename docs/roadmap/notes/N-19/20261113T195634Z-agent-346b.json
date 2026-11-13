@@ -1,0 +1,9 @@
+{
+ "id": "20261113T195634Z-agent-346b",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T19:56:34Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, second look, in the state that really reproduced N-20 (Wi-Fi on, the server not answering, A35 build 144, volume 0 confirmed on the speaker): still NO 'no connection' notice anywhere: pausing a playing downloaded song (screens read at 0.5 s, 3 s and 8 s) shows nothing. The connection strip 'Can't reach your server' is a different thing (a strip on Home while the server is away), it is not caused by pausing. NEW FINDING, not yet explained: a pause pressed while a tap is still waiting for the look at the server (the 2 to 2.5 s window, only when the last look is older than 5 s) did NOT stick on the phone in 4 of 4 tries: the song was PLAYING 4 s later (2 by media key at +0.5 s, 2 by the mini-player button at +0.3 and +1.0 s; the mini-player button is a toggle and may have shown the old state, the media key is an explicit pause). The engine itself is right: a new test (a pause while the look hangs, then the look answers: nothing starts) passes, so the intent logic of docs/23 B8 holds and the loss is above it (the media-session layer or the UI), or the pause is queued behind something. The N-20 fix removes the window for downloaded songs (it stays for songs that are not downloaded). To settle: read the Diagnostics log line 'pause: the person paused' after such a press (the Diagnostics screen shows its text cut at '== Se' in a UI dump: use Copy report and read it, or add the playback lines to adb logcat), and try the same press with the app's own full-player button."
+}

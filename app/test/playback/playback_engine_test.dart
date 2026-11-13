@@ -2287,6 +2287,29 @@ void main() {
       await h.dispose();
     });
 
+    // The same window, from the person's side (docs/23, B8): a pause pressed while the engine is still looking at the server must beat the
+    // load that follows it, whatever the look finds.
+    test(
+        'a pause pressed while the look at the server is still running keeps the song from starting (B8, N-20)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = true;
+      h.serverGate = Completer<void>();
+
+      final play = h.engine.playTracks(h.tracks.sublist(0, 3));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(h.serverAsked, 1, reason: 'the look is running');
+      await h.engine.pause();
+      h.serverGate!.complete();
+      await play.timeout(const Duration(seconds: 2));
+
+      expect(h.backend.state.playing, isFalse,
+          reason: 'the person paused after the tap: nothing may start');
+      await h.dispose();
+    });
+
     test(
         'Play on a list whose first song is downloaded starts at once when the phone has a network and the server does not answer (N-20)',
         () async {
