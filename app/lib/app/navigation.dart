@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/perf.dart';
 import '../data/catalogue/catalogue_models.dart';
 
 /// Route helpers. Detail routes are declared under every tab branch so the
@@ -48,8 +49,10 @@ abstract final class Nav {
   static void album(BuildContext c, String id) =>
       c.push('/${_branch(c)}/album/${Uri.encodeComponent(id)}');
 
-  static void playlist(BuildContext c, String id) =>
-      _to(c, (b) => '/$b/playlist/${Uri.encodeComponent(id)}');
+  static void playlist(BuildContext c, String id) {
+    PerfMonitor.instance.pageOpening('playlist');
+    _to(c, (b) => '/$b/playlist/${Uri.encodeComponent(id)}');
+  }
 
   /// An imported playlist that may still be arriving: all its songs at once.
   static void importedPlaylist(BuildContext c, String importId) =>
@@ -57,6 +60,7 @@ abstract final class Nav {
 
   /// [replace]: the page being left is not worth going back to (an artist page that stood in for another one), so it is replaced.
   static void artist(BuildContext c, String id, {bool replace = false}) {
+    PerfMonitor.instance.pageOpening('artist');
     final location = '/${_branch(c)}/artist/${Uri.encodeComponent(id)}';
     replace ? c.pushReplacement(location) : c.push(location);
   }
@@ -76,6 +80,7 @@ abstract final class Nav {
 
   static void catalogueArtist(BuildContext c, String id,
       {CatalogueArtist? preloaded, bool replace = false}) {
+    PerfMonitor.instance.pageOpening('artist');
     final location =
         '/${_branch(c)}/catalogue/artist/${Uri.encodeComponent(id)}';
     replace

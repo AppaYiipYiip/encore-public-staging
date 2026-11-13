@@ -176,6 +176,23 @@ class PerfMonitor {
 
   bool isOpen(String name) => _open.containsKey(name);
 
+  // ------------------------------------------------------------- page opens
+
+  /// A page was just asked for (a tap on a playlist, an artist, an album). Two spans run from here: `open.<page>.shell`, until the page
+  /// draws its frame, and `open.<page>.full`, until it shows what it is for (the songs, the releases). The owner's "it loads" is the
+  /// second one; the Diagnostics screen and `adb logcat -s flutter | grep "span open"` show both on a real phone.
+  void pageOpening(String page) {
+    begin('open.$page.shell');
+    begin('open.$page.full');
+  }
+
+  /// The page has drawn its frame (no-op when no open is being timed, as on every later rebuild).
+  void pageShell(String page) => end('open.$page.shell');
+
+  /// The page shows what it is for (no-op when no open is being timed).
+  void pageFull(String page, {String? detail}) =>
+      end('open.$page.full', detail: detail);
+
   /// Drops an open span without recording it (the action was cancelled).
   void cancel(String name) => _open.remove(name);
 

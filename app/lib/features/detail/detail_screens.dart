@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../core/perf.dart';
 import '../../data/catalogue/catalogue_models.dart' show CatalogueTrack;
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
@@ -334,6 +335,11 @@ class PlaylistScreen extends ConsumerWidget {
       return DetailPlaceholder(
           what: 'playlist', missing: playlistAsync.hasValue);
     }
+    PerfMonitor.instance.pageShell('playlist');
+    if (entries.isNotEmpty) {
+      PerfMonitor.instance
+          .pageFull('playlist', detail: '${entries.length} songs');
+    }
     final total = tracks.fold<int>(0, (s, t) => s + (t.durationSec ?? 0));
     // The header takes the colour of the first song's album.
     final first = tracks.firstOrNull;
@@ -467,6 +473,11 @@ class ArtistScreen extends ConsumerWidget {
         : ref.watch(catalogueArtistReleasesProvider(
             (catalogueArtist.id, catalogueArtist.name)));
     final releases = releasesAsync?.value;
+    PerfMonitor.instance.pageShell('artist');
+    if (releases != null) {
+      PerfMonitor.instance
+          .pageFull('artist', detail: '${releases.length} releases');
+    }
     final instant = ref.watch(instantAvailableProvider);
     final popular = catalogueArtist == null
         ? const <CatalogueTrack>[]

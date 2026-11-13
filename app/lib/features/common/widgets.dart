@@ -164,6 +164,23 @@ class MediaShelf extends StatelessWidget {
   }
 }
 
+/// The "..." button of a song: it opens the song's menu (`showTrackMenu`). One widget for every place a song is drawn (a row, the Top
+/// result of a search), so no song has a different button.
+class TrackMoreButton extends StatelessWidget {
+  const TrackMoreButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'More options',
+      icon: Icon(Icons.more_vert_rounded, color: context.colors.onBgMuted),
+      onPressed: onPressed,
+    );
+  }
+}
+
 /// One track row (list of an album, playlist, search results, queue).
 class TrackTile extends StatelessWidget {
   const TrackTile({
@@ -279,12 +296,7 @@ class TrackTile extends StatelessWidget {
             padding: const EdgeInsets.only(right: Space.xs),
             child: Icon(Icons.cloud_off_rounded, size: 18, color: c.onBgFaint),
           ),
-        if (onMore != null)
-          IconButton(
-            tooltip: 'More options',
-            icon: Icon(Icons.more_vert_rounded, color: c.onBgMuted),
-            onPressed: onMore,
-          ),
+        if (onMore != null) TrackMoreButton(onPressed: onMore!),
       ],
     );
 

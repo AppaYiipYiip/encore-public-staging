@@ -1,0 +1,12 @@
+{
+ "id": "20261113T185707Z-agent-095d",
+ "item": "N-21",
+ "role": "agent",
+ "by": "helper-n21 (Claude Sonnet 5.5)",
+ "at": "2026-11-13T18:57:07Z",
+ "type": "note",
+ "body": "N-21 built for songs of the library (the owner's 'three buttons' read as the three dots menu plus the two swipes; long press too). NOT covered: a song that is only in the catalogue (not on the server yet) has no three dots and no swipe anywhere in Search, in the rows below the Top result either (_CatalogueSongRow in search_results.dart), nor on album and artist pages (CatalogueTrackTile). Giving it Play next and Add to queue means getting the song into the library first and then queueing it: queue/player work, bigger than S, left for the lead to place. If the owner's top song was not on his server, this change does not alter what he saw.",
+ "to": [
+  "agent"
+ ]
+}

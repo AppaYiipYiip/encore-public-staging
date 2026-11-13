@@ -162,10 +162,11 @@ final libraryArtistCatalogueProvider = FutureProvider.autoDispose
   final albums = await ref.watch(artistAlbumsProvider(artistId).future);
   final client = ref.watch(catalogueClientProvider);
 
-  final found = await client.search(artist.name, limit: 8);
+  // Only the artists are wanted: the full search also asks for albums and songs (three requests where one is enough).
+  final found = await client.searchArtists(artist.name, limit: 8);
   final want = normalizeForMatch(artist.name);
   final same = [
-    for (final a in found.artists)
+    for (final a in found)
       if (normalizeForMatch(a.name) == want && (a.albumCount ?? 1) > 0) a,
   ];
   if (same.isEmpty) return null;
@@ -175,11 +176,17 @@ final libraryArtistCatalogueProvider = FutureProvider.autoDispose
   final mine = {for (final a in albums) normalizeForMatch(a.name)};
   CatalogueArtist? best;
   var bestOverlap = -1;
-  for (final candidate in same.take(3)) {
-    final theirs = await client.artistAlbums(candidate.id,
-        artistName: candidate.name, limit: 50);
-    final overlap =
-        theirs.where((t) => mine.contains(normalizeForMatch(t.title))).length;
+  final candidates = same.take(3).toList();
+  // The namesakes' releases are asked together, not one after the other.
+  final releases = await Future.wait([
+    for (final c in candidates)
+      client.artistAlbums(c.id, artistName: c.name, limit: 50),
+  ]);
+  for (var i = 0; i < candidates.length; i++) {
+    final candidate = candidates[i];
+    final overlap = releases[i]
+        .where((t) => mine.contains(normalizeForMatch(t.title)))
+        .length;
     if (overlap > bestOverlap) {
       best = candidate;
       bestOverlap = overlap;
@@ -195,11 +202,16 @@ final catalogueArtistReleasesProvider = FutureProvider.autoDispose
       .watch(catalogueClientProvider)
       .artistAlbums(key.$1, artistName: key.$2);
   final matcher = ref.watch(libraryMatcherProvider);
-  final out = <ArtistRelease>[];
-  for (final album in foldReleases(raw)) {
-    final owned = await matcher?.findAlbum(album.artistName, album.title);
-    out.add(ArtistRelease(album,
-        libraryAlbumId: owned?.id, libraryCoverArt: owned?.coverArt));
-  }
-  return out;
+  final albums = foldReleases(raw);
+  // One look-up per release, asked together (an artist with 150 releases made 150 round trips to the database one after the other).
+  final owned = await Future.wait([
+    for (final album in albums)
+      matcher?.findAlbum(album.artistName, album.title) ??
+          Future<AlbumRow?>.value(),
+  ]);
+  return [
+    for (var i = 0; i < albums.length; i++)
+      ArtistRelease(albums[i],
+          libraryAlbumId: owned[i]?.id, libraryCoverArt: owned[i]?.coverArt),
+  ];
 });
