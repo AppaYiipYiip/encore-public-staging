@@ -4,7 +4,7 @@ Encore has no central service run by this project. Your music, playlists, likes 
 (the "Host" is whoever runs it). The app is built to talk to your own server; two small features are still asked from the phone directly
 (see below), and that is listed here instead of hidden.
 
-This page is written from the code (`git grep` for the hosts below finds every place). If a change adds an outside host, this page must name it.
+The tables below are written from Encore's own server and app code (`git grep` for the hosts finds every place); if a change adds an outside host, this page must name it. Programs that run beside Encore behave on their own and are listed in the section after the tables.
 
 ## What leaves your server
 
@@ -25,6 +25,12 @@ Today the **app itself** calls two public catalogues directly, so each sees the 
 * **LRCLIB** (`lrclib.net`): the song title, artist, album and length, to fetch lyrics.
 
 Moving both to the server (so the phone only ever talks to your own server) is planned and tracked in the roadmap.
+
+## Programs that run beside Encore
+
+The stack runs **Navidrome** as the music library. Encore's `compose.yaml` turns Navidrome's usage statistics off (`ND_ENABLEINSIGHTSCOLLECTOR=false`) and sets nothing else about its outside calls. By Navidrome's own defaults it also looks up artist information and pictures at **Deezer** and **ListenBrainz** (artist names are sent; Last.fm only if the Host adds a Last.fm key), and its login screen fetches a background picture from **Unsplash**. The Host can switch all of this off with `ND_ENABLEEXTERNALSERVICES=false` (see Navidrome's documentation); Encore does not set it today.
+
+Add-ons a Host chooses to run beside Encore (for example the Soulseek and Lidarr add-ons) contact their own networks; they are not part of the default stack.
 
 ## Friends on other Encore servers
 

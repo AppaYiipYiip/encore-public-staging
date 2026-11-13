@@ -38,7 +38,7 @@ which lists the full licence text of every Dart package. A notice file generated
 |---------|----------|--------------------------------------------|---------------|
 | YouTube / YouTube Music | finding and streaming songs not on the server | the Terms of Service do not allow downloading except through YouTube's own features | contained source, off switch, honest notice, no accounts, paced (`02` Q1, `04` §5, `09` §5) |
 | Deezer API | metadata, ISRC, covers, related artists, charts | free public API; quotas per address; terms forbid some commercial uses | non-commercial project; cache; credit "Metadata from Deezer" in About |
-| MusicBrainz / ListenBrainz | identifiers, aliases, similar artists | data under open licences (core data CC0); 1 request/second, a real User-Agent required | not called by any code today (the identifiers are only stored as tags); if it is added: cache 30 days, honest User-Agent (the old recs service was refused with a made-up one) |
+| MusicBrainz / ListenBrainz | identifiers, aliases, similar artists | data under open licences (core data CC0); 1 request/second, a real User-Agent required | Encore's own code does not call it (the identifiers are only stored as tags); Navidrome's default settings do (ListenBrainz, for artist information), see `PRIVACY.md`. If Encore adds it: cache 30 days, honest User-Agent (the old recs service was refused with a made-up one) |
 | LRCLIB | lyrics | free community service | cache per song; credit |
 | Spotify embed pages and data exports | reading a person's own playlists for import | scraping is outside Spotify's developer terms; the data export is the person's own data | link import ≤ 100 songs; the export file is preferred; no Spotify developer app (ADR-R12) |
 | Tailscale | the public address | free plan; Funnel has usage limits | the Host's own account; documented limits (`09`) |
@@ -59,6 +59,8 @@ normalised) of the earlier player's `lib/` were compared with those of `app/lib`
   (`crossAxisAlignment: CrossAxisAlignment.start,`), standard library calls (`SharedPreferences.getInstance()`, `ScaffoldMessenger.of(context)`,
   `WidgetsBinding.instance.addPostFrameCallback`), HTTP client timeouts, the three-line audio-session set-up from that package's own
   documentation, and Android Auto content-style constants that Android fixes.
+* The same comparison over every version of every Dart file ever published (1,115 versions, deleted files included) against every version of the
+  earlier player's Dart files (3,003): 106 distinct lines in common, never more than two in a row, all of the same kind.
 * The only app file at the same path (`app/lib/main.dart`) has no line in common.
 
 So no third-party notice is due for the app's own code beyond the packages it uses (`THIRD_PARTY_NOTICES.md`). The comparison is a line-by-line
