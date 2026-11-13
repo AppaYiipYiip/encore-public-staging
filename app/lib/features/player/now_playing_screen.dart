@@ -13,6 +13,7 @@ import '../../data/db/app_database.dart';
 import '../../design/tokens.dart';
 import '../../domain/artwork_color.dart';
 import '../../domain/lyrics.dart';
+import '../common/artist_line.dart';
 import '../common/artwork_color.dart';
 import '../common/connection_banner.dart';
 import '../common/cover_art.dart';
@@ -329,6 +330,8 @@ class _TitleRow extends ConsumerWidget {
     final liked = row?.starredAtMs != null || waitingLike;
     final session = ref.watch(sessionProvider).value;
     final c = context.colors;
+    // The artists of the song, each on its own, when the phone knows them (a song by several artists): each name is a tap of its own.
+    final artists = ref.watch(songArtistsProvider(track.id)).value ?? const [];
 
     return Row(
       children: [
@@ -342,39 +345,48 @@ class _TitleRow extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: context.text.headlineSmall,
               ),
-              InkWell(
-                // A library song opens its library artist; a song that only the
-                // catalogue knows (a song the service plays) opens the
-                // catalogue's page of the artist.
-                onTap: track.artistId != null
-                    ? () {
-                        context.pop();
-                        Nav.artist(context, track.artistId!);
-                      }
-                    : track.catalogueArtistId != null
-                        ? () {
-                            context.pop();
-                            Nav.catalogueArtist(
-                                context, track.catalogueArtistId!);
-                          }
-                        // A song with no id to open: the name is looked up, so
-                        // every artist can be tapped.
-                        : (track.artist ?? '').trim().isEmpty
-                            ? null
-                            : () => openArtistByName(
-                                  context,
-                                  ref,
-                                  track.artist!,
-                                  beforeOpen: context.pop,
-                                ),
-                child: Text(
-                  track.artist ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              if (artists.length > 1)
+                ArtistLine(
+                  names: artists,
                   style: context.text.bodyLarge?.copyWith(
                       color: c.onBgMuted, fontWeight: FontWeight.w400),
+                  onTap: (name) => openArtistByName(context, ref, name,
+                      beforeOpen: context.pop),
+                )
+              else
+                InkWell(
+                  // A library song opens its library artist; a song that only the
+                  // catalogue knows (a song the service plays) opens the
+                  // catalogue's page of the artist.
+                  onTap: track.artistId != null
+                      ? () {
+                          context.pop();
+                          Nav.artist(context, track.artistId!);
+                        }
+                      : track.catalogueArtistId != null
+                          ? () {
+                              context.pop();
+                              Nav.catalogueArtist(
+                                  context, track.catalogueArtistId!);
+                            }
+                          // A song with no id to open: the name is looked up, so
+                          // every artist can be tapped.
+                          : (track.artist ?? '').trim().isEmpty
+                              ? null
+                              : () => openArtistByName(
+                                    context,
+                                    ref,
+                                    track.artist!,
+                                    beforeOpen: context.pop,
+                                  ),
+                  child: Text(
+                    track.artist ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.text.bodyLarge?.copyWith(
+                        color: c.onBgMuted, fontWeight: FontWeight.w400),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

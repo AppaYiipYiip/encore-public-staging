@@ -154,6 +154,73 @@ class LibraryRepository {
     };
   }
 
+  /// The artists of a song, each on its own, in order; empty when nothing is known.
+  ///
+  /// One file can be on the phone as two entries: one made from the file's own tags, which carries the artists as ONE joined string
+  /// (`["Drake, Kanye West, Lil Wayne, Eminem"]`), and the catalogue's, which carries the real list (`["Drake","Kanye West","Lil Wayne","Eminem"]`).
+  /// A song the person plays can be either, so the entries of the same file are read together and the longest list wins: names are never guessed by
+  /// cutting a joined string at its commas ("Tyler, The Creator" is one artist). On a freshly signed-in phone 165 entries carried a joined string, and 160
+  /// of them had the catalogue's entry beside them.
+  Future<List<String>> songArtists(String trackId) async {
+    final rows = await _db.customSelect(
+      'SELECT artists_json FROM tracks WHERE server_id = ?1 AND deleted_at_ms IS NULL AND artists_json IS NOT NULL '
+      'AND (id = ?2 OR file_id = ?2 OR (file_id IS NOT NULL AND file_id = '
+      '(SELECT file_id FROM tracks WHERE server_id = ?1 AND id = ?2)))',
+      variables: [Variable.withInt(serverId), Variable.withString(trackId)],
+      readsFrom: {_db.tracks},
+    ).get();
+    var best = const <String>[];
+    for (final row in rows) {
+      final names = _namesIn(row.read<String>('artists_json'));
+      if (names.length > best.length) best = names;
+    }
+    return best;
+  }
+
+  static List<String> _namesIn(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! List) return const [];
+      return [
+        for (final name in decoded)
+          if (name is String && name.trim().isNotEmpty) name.trim(),
+      ];
+    } on FormatException {
+      return const [];
+    }
+  }
+
+  /// The artist whose page stands for [artistId] when the phone has no row for that id: the artist of the albums its songs are on.
+  ///
+  /// A song tagged "Post Malone, Swae Lee" points at an artist of that whole name; the music server lists such an artist for the song but not in
+  /// its artist index, and it has no album of its own, so the phone never receives it (owner, 7 Nov 2026: tapping the artist of "Sunflower" showed a
+  /// spinner for ever; 382 of 4,719 songs and 145 artist ids on a freshly signed-in phone, and every one of them has an album whose artist the
+  /// phone does have). The most used album artist wins. `null` when no song of it is on an album of a known artist.
+  Future<String?> artistStandIn(String artistId) async {
+    final rows = await _db.customSelect(
+      'SELECT a.artist_id AS id FROM tracks t '
+      'JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id AND a.deleted_at_ms IS NULL '
+      'JOIN artists r ON r.server_id = a.server_id AND r.id = a.artist_id AND r.deleted_at_ms IS NULL '
+      'WHERE t.server_id = ?1 AND t.artist_id = ?2 AND t.deleted_at_ms IS NULL '
+      'GROUP BY a.artist_id ORDER BY COUNT(*) DESC, r.name LIMIT 1',
+      variables: [Variable.withInt(serverId), Variable.withString(artistId)],
+      readsFrom: {_db.tracks, _db.albums, _db.artists},
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('id');
+  }
+
+  /// The name the songs of [artistId] carry for it (the one used most), for an artist the phone has no row for. `null` when no song has it.
+  Future<String?> artistNameOf(String artistId) async {
+    final rows = await _db.customSelect(
+      'SELECT artist AS name FROM tracks '
+      'WHERE server_id = ?1 AND artist_id = ?2 AND deleted_at_ms IS NULL AND artist IS NOT NULL AND artist != \'\' '
+      'GROUP BY artist ORDER BY COUNT(*) DESC LIMIT 1',
+      variables: [Variable.withInt(serverId), Variable.withString(artistId)],
+      readsFrom: {_db.tracks},
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('name');
+  }
+
   Stream<List<ArtistRow>> watchArtists() => (_db.select(_db.artists)
         ..where((a) =>
             a.serverId.equals(serverId) &

@@ -377,6 +377,88 @@ class PlayButton extends StatelessWidget {
   }
 }
 
+/// The body of a page of one thing (an album, a playlist, an artist) while the phone has no row for it: a spinner, with a way back, and
+/// once [missing] has been true for [patience] (a row can be a moment behind a sync) words instead, with the way back still there. Never a
+/// bare spinner for ever (owner, 7 Nov 2026: the artist of "Sunflower" spun until the app was left).
+class DetailPlaceholder extends StatefulWidget {
+  const DetailPlaceholder({
+    super.key,
+    required this.what,
+    this.missing = false,
+    this.patience = const Duration(seconds: 4),
+  });
+
+  /// What the page is of, in words: `artist`, `album`, `playlist`.
+  final String what;
+
+  /// The phone has looked and the row is not there.
+  final bool missing;
+  final Duration patience;
+
+  @override
+  State<DetailPlaceholder> createState() => _DetailPlaceholderState();
+}
+
+class _DetailPlaceholderState extends State<DetailPlaceholder> {
+  Timer? _timer;
+  bool _patient = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _watch();
+  }
+
+  @override
+  void didUpdateWidget(DetailPlaceholder old) {
+    super.didUpdateWidget(old);
+    if (old.missing != widget.missing) _watch();
+  }
+
+  void _watch() {
+    _timer?.cancel();
+    if (!widget.missing) {
+      _patient = false;
+      return;
+    }
+    if (widget.patience <= Duration.zero) {
+      _patient = true;
+      return;
+    }
+    _timer = Timer(widget.patience, () {
+      if (mounted) setState(() => _patient = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final words = widget.missing && _patient;
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: const BackButton(),
+      ),
+      body: words
+          ? EmptyState(
+              icon: Icons.search_off_rounded,
+              title: 'This ${widget.what} is not on this phone',
+              message:
+                  'It may have been removed from your server, or the phone has not received it yet. '
+                  'Settings > Library & sync can look again.',
+            )
+          : const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 /// Friendly empty state: one sentence and (optionally) the one next action.
 class EmptyState extends StatelessWidget {
   const EmptyState({

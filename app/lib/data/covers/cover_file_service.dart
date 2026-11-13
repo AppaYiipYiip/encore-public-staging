@@ -11,9 +11,14 @@ import '../../core/logger.dart';
 /// added later (the id does not change) kept showing it. The music server marks it `Cache-Control: no-store`; here that makes the fetch fail,
 /// so the screen shows its own fallback (the catalogue's cover, a collage, the monogram) and nothing is stored.
 class CoverFileService extends FileService {
-  CoverFileService({http.Client? client}) : _client = client ?? http.Client();
+  CoverFileService({http.Client? client, this.onUnauthorized})
+      : _client = client ?? http.Client();
 
   final http.Client _client;
+
+  /// Told the address when the server refuses it as expired or not valid (401): whoever holds the ticket it was written with renews it.
+  /// Every picture of the app comes through here, the background fetch and the ones on screen alike.
+  void Function(Uri url)? onUnauthorized;
 
   /// Whether these response headers are the music server's "no picture" marker.
   static bool isPlaceholder(Map<String, String> headers) =>
@@ -28,6 +33,7 @@ class CoverFileService extends FileService {
     final request = http.Request('GET', Uri.parse(url));
     if (headers != null) request.headers.addAll(headers);
     final response = await _client.send(request);
+    if (response.statusCode == 401) onUnauthorized?.call(request.url);
     if (isPlaceholder(response.headers)) {
       // Nobody reads this body: let it go.
       unawaited(response.stream.drain<void>().then<void>((_) {},

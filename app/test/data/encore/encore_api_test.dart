@@ -338,6 +338,8 @@ void main() {
 
     expect(pass.person, 'pn_x');
     expect(pass.signature, 'coversig');
+    expect(pass.expires, 9999999999,
+        reason: 'the end exactly as the server signed it (audit B-115)');
     expect(
         pass.expiresAt.isAfter(DateTime.now().add(const Duration(days: 365))),
         isTrue);

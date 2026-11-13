@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/logger.dart';
 import '../../core/result.dart';
+import '../../data/catalogue/cached_catalogue_client.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/catalogue/deezer_client.dart';
 import '../../data/db/app_database.dart';
@@ -22,7 +23,7 @@ const String kPortalPasswordKey = 'request-portal.password';
 
 /// Public catalogue lookup (overridden in tests).
 final catalogueClientProvider =
-    Provider<CatalogueClient>((ref) => DeezerClient());
+    Provider<CatalogueClient>((ref) => CachedCatalogueClient(DeezerClient()));
 
 /// Catalogue artwork for albums the server has no cover for.
 final coverFallbackRepositoryProvider =

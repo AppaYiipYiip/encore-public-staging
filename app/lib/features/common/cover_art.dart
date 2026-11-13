@@ -25,9 +25,12 @@ final CacheManager coverCacheManager = CacheManager(
     'encoreCovers2',
     stalePeriod: const Duration(days: 365),
     maxNrOfCacheObjects: 8000,
-    fileService: CoverFileService(),
+    fileService: coverFileService,
   ),
 );
+
+/// The file service of [coverCacheManager]; the signed-in session hooks its refused-ticket renewal into it (`coverRefusalProvider`).
+final CoverFileService coverFileService = CoverFileService();
 
 bool _oldCoverCacheRetired = false;
 
@@ -141,8 +144,9 @@ class CoverArt extends ConsumerWidget {
 
         final r = resolver.resolve(id, px);
         return CachedNetworkImage(
-          // The cache key stays the same when the cover ticket arrives; the key of the widget says "now there is a real address".
-          key: ValueKey(r.ready),
+          // The cache key stays the same when the cover ticket arrives or is renewed (a refused one is replaced); the key of the widget is the
+          // address, which changes with the ticket, and says "ask again": a picture that was refused must not stay a letter for good.
+          key: ValueKey(r.url.toString()),
           imageUrl: r.url.toString(),
           cacheKey: r.cacheKey,
           cacheManager: coverCacheManager,

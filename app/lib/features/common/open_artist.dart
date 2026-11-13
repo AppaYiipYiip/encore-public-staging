@@ -13,12 +13,15 @@ import '../requests/request_providers.dart' show catalogueClientProvider;
 /// ("i still cant press the artist name", docs/39 F11), whatever the song came
 /// from. Returns `true` when a page opened; says so when nobody was found.
 ///
-/// [beforeOpen] runs just before the page opens (the player closes itself).
+/// [beforeOpen] runs just before the page opens (the player closes itself). [replace]: the page that is open is replaced by the artist's, and
+/// [quiet]: nobody found is not said in a snack bar (the caller says it on its own page).
 Future<bool> openArtistByName(
   BuildContext context,
   WidgetRef ref,
   String name, {
   VoidCallback? beforeOpen,
+  bool replace = false,
+  bool quiet = false,
 }) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final wanted = name.trim();
@@ -27,26 +30,30 @@ Future<bool> openArtistByName(
   if (!context.mounted) return false;
   if (mine != null) {
     beforeOpen?.call();
-    Nav.artist(context, mine.id);
+    Nav.artist(context, mine.id, replace: replace);
     return true;
   }
 
   CatalogueArtist? found;
   try {
-    final results = await ref.read(catalogueClientProvider).search(wanted);
-    final ranked = rankNamesakes(wanted, results.artists);
+    // Artists only: the full search also asks for albums and songs, three requests where one is enough.
+    final artists =
+        await ref.read(catalogueClientProvider).searchArtists(wanted, limit: 8);
+    final ranked = rankNamesakes(wanted, artists);
     found = ranked.isEmpty ? null : ranked.first;
   } on Object catch (error) {
     Log.warn('artist', 'lookup by name failed', error);
   }
   if (!context.mounted) return false;
   if (found == null) {
-    messenger
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Could not find $wanted.')));
+    if (!quiet) {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Could not find $wanted.')));
+    }
     return false;
   }
   beforeOpen?.call();
-  Nav.catalogueArtist(context, found.id, preloaded: found);
+  Nav.catalogueArtist(context, found.id, preloaded: found, replace: replace);
   return true;
 }

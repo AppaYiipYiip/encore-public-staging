@@ -28,6 +28,11 @@ class Tags:
     artist: str
     album: str | None = None
     album_artist: str | None = None
+    #: Each artist of the song on its own, in order. Written as the `ARTISTS` tag when there is more than one. Without it the music server reads the
+    #: joined `artist` string ("Post Malone, Swae Lee") as ONE artist of that whole name, which has no album and is not in the artist index it gives
+    #: to the apps: the song points at an artist nobody can open (audit B-118/B-119). With it the song is linked to every one of its artists (the
+    #: first becomes the song's artist) and the joined string stays what is shown.
+    artists: tuple[str, ...] = ()
     track: int | None = None
     disc: int | None = None
     year: int | None = None
@@ -63,6 +68,8 @@ def _with_mutagen(path: Path, tags: Tags, cover: bytes | None) -> bool:
             audio["title"] = [tags.title]
             audio["artist"] = [tags.artist]
             audio["albumartist"] = [tags.album_artist or tags.artist]
+            if len(tags.artists) > 1:
+                audio["artists"] = list(tags.artists)
             if tags.album:
                 audio["album"] = [tags.album]
             if tags.track:
@@ -81,6 +88,8 @@ def _with_mutagen(path: Path, tags: Tags, cover: bytes | None) -> bool:
             audio["\xa9nam"] = [tags.title]
             audio["\xa9ART"] = [tags.artist]
             audio["aART"] = [tags.album_artist or tags.artist]
+            if len(tags.artists) > 1:
+                audio["----:com.apple.iTunes:ARTISTS"] = [name.encode() for name in tags.artists]
             if tags.album:
                 audio["\xa9alb"] = [tags.album]
             if tags.track:
@@ -106,7 +115,11 @@ def _with_mutagen(path: Path, tags: Tags, cover: bytes | None) -> bool:
 
 
 def ffmpeg_args(src: Path, dst: Path, tags: Tags) -> list[str]:
-    """`ffmpeg` arguments that copy the audio and replace the global tags."""
+    """`ffmpeg` arguments that copy the audio and replace the global tags.
+
+    `ffmpeg -metadata` cannot write one tag twice, so this fallback cannot write `ARTISTS` (see [Tags.artists]): a song tagged this way is read by the
+    music server as before, as one artist of the joined name.
+    """
     meta: list[tuple[str, str]] = [
         ("title", tags.title),
         ("artist", tags.artist),
