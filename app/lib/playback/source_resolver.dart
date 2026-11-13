@@ -9,6 +9,11 @@ import 'queue_model.dart';
 /// for the current network (ADR-036).
 abstract interface class SourceResolver {
   Future<AudioSourceSpec> resolve(QueueItem item);
+
+  /// Whether the song is a file on this phone, answered from the phone alone: no address is made and the server is not asked. [resolve] cannot
+  /// say this cheaply: for a song that is not a file it may wait for the session, look at the server's addresses and ask the server to sign one,
+  /// which is real work (N-20: the player must be able to ask "is it a file?" before it looks at the server, for every song it considers).
+  Future<bool> isOnPhone(QueueItem item);
 }
 
 /// The address of a song could not be made because the music server does not answer (no address of it has proved itself). The song is not
@@ -66,12 +71,23 @@ class DefaultSourceResolver implements SourceResolver {
   /// equal* bit rate only adds generation loss and server CPU.
   static const _lossy = {'mp3', 'opus', 'ogg', 'aac', 'm4a'};
 
+  /// The downloaded file of the song, when it is there; `null` for a song that is played from an address or not downloaded.
+  Future<String?> _downloadedFile(QueueItem item) async {
+    if (item.directUri != null) return null;
+    final local = await _localPath(item.id);
+    return local != null && _fileExists(local) ? local : null;
+  }
+
+  @override
+  Future<bool> isOnPhone(QueueItem item) async =>
+      await _downloadedFile(item) != null;
+
   @override
   Future<AudioSourceSpec> resolve(QueueItem item) async {
     final direct = item.directUri;
     if (direct != null) return AudioSourceSpec(uid: item.uid, uri: direct);
-    final local = await _localPath(item.id);
-    if (local != null && _fileExists(local)) {
+    final local = await _downloadedFile(item);
+    if (local != null) {
       return AudioSourceSpec(
           uid: item.uid, uri: Uri.file(local), isLocal: true);
     }
