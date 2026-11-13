@@ -1,0 +1,9 @@
+{
+ "id": "20261113T231508Z-agent-7b4f",
+ "item": "N-25",
+ "role": "agent",
+ "by": "helper-n25 (Claude Sonnet 5.5)",
+ "at": "2026-11-13T23:15:08Z",
+ "type": "note",
+ "body": "Drawing in PR #19 (S-17 Find in a playlist, C and X: field at rest, tapped, typing, nothing matches, offline in part). No code yet: the code step is next. Decisions to confirm before it: a tap on a result plays from its place in the playlist; matching = Search's matcher restricted to the playlist (ADR-R42); no sort, no count, no highlight; not on an empty playlist or while editing."
+}
