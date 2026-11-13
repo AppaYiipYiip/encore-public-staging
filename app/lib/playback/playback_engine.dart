@@ -15,6 +15,10 @@ import 'reach_look.dart';
 import 'replay_gain.dart';
 import 'source_resolver.dart';
 
+/// What the server said when asked why a song would not play: its own sentence, and whether trying again can help. `permanent`: the song cannot
+/// be had however often it is asked for (no matching upload, removed, age check), so the player does not try the same address again.
+typedef SongRefusal = ({String message, bool permanent});
+
 /// Receives listening events (scrobble + local history).
 abstract interface class PlayRecorder {
   /// Playback of [item] has started (Navidrome's "now playing").
@@ -92,7 +96,9 @@ class PlaybackEngine implements PlaybackFacade {
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
     Future<void> Function(List<QueueItem> upcoming)? prepareAhead,
+    Future<SongRefusal?> Function(Uri address)? songRefusal,
   })  : _prepareAhead = prepareAhead,
+        _songRefusal = songRefusal,
         _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
         _networkPresent = networkPresent ?? (() => false),
@@ -121,6 +127,13 @@ class PlaybackEngine implements PlaybackFacade {
 
   final AudioBackend _backend;
   final SourceResolver _resolver;
+
+  /// Asked when a streamed song failed, with the address that failed: why the server will not play it (see [SongRefusal]). `null` when this
+  /// server cannot say (a plain music server), when the stream answers, or when the server cannot be reached.
+  final Future<SongRefusal?> Function(Uri address)? _songRefusal;
+
+  /// What was handed to the platform player for the current song (its address is what [_songRefusal] is asked about).
+  AudioSourceSpec? _currentSpec;
 
   /// Told which songs come next, as soon as there is a song to play and as soon as a next one is queued, so the server can make them ready before Next
   /// is pressed (P1-04, audit B-107: the player itself only asks for a song when it is wanted, and the platform player loads its next source as late as
@@ -537,6 +550,9 @@ class PlaybackEngine implements PlaybackFacade {
   Future<void> play() => _run(() async {
         if (_queue.current == null) return;
         if (!_loaded) {
+          // A person pressing Play after the engine gave up asks again: the song gets its retry back.
+          _consecutiveFailures = 0;
+          _retried.remove(_queue.current!.uid);
           await _loadCurrent(autoplay: true, position: _resumePosition);
         } else if (_endedQueue) {
           // The list is over and the player waits on its last song. Play starts it again from the first song, same source and same shuffle
@@ -1145,6 +1161,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (generation != null && generation != _generation) return;
     final resolveMs = timer.elapsedMilliseconds;
     _sourceKind = results.first.isLocal ? 'file' : 'stream';
+    _currentSpec = results.first;
 
     // Without a connection a song that is not downloaded cannot play: say so at once, instead of trying and hopping on.
     if (!results.first.isLocal && !await _canReachNow()) {
@@ -1455,16 +1472,51 @@ class PlaybackEngine implements PlaybackFacade {
       _waitForServer(position: _lastPosition);
       return;
     }
+    // Ask the server why before trying the same address again: a song it cannot find is not found the second time either, and the second
+    // try costs a second look-up at YouTube (owner, 7 Nov 2026: "Lofi For Focus" spun, said it could not play, and kept spinning).
+    final refusal = await _refusalFor(item);
+    if (refusal != null && refusal.permanent) {
+      _trace('the server will not play this song: ${refusal.message}');
+      await _failed(item, why: refusal.message);
+      return;
+    }
     if (_retried.add(item.uid)) {
       // One quiet retry: the endpoint may have just switched networks, or
       // the platform player hit a transient start-up failure.
       await _loadCurrent(autoplay: true, position: _lastPosition);
       return;
     }
+    await _failed(item);
+  }
+
+  /// What the server says about the stream of [item], when it is a stream that failed and the server can say.
+  Future<SongRefusal?> _refusalFor(QueueItem item) async {
+    final ask = _songRefusal;
+    final spec = _currentSpec;
+    if (ask == null || spec == null || spec.uid != item.uid || spec.isLocal) {
+      return null;
+    }
+    try {
+      return await ask(spec.uri)
+          .timeout(const Duration(seconds: 12), onTimeout: () => null);
+    } on Object catch (error) {
+      Log.debug('playback',
+          'asking the server why a song failed did not work: $error');
+      return null;
+    }
+  }
+
+  /// The song failed for good (or its retry did): say so, with the reason when there is one, and go on to the next song, or give up when there is
+  /// none or several have failed in a row.
+  Future<void> _failed(QueueItem item, {String? why}) async {
     _consecutiveFailures++;
-    _notify(PlaybackNotice("Couldn't play ${item.title}", isError: true));
+    _notify(PlaybackNotice(
+        why == null
+            ? "Couldn't play ${item.title}"
+            : "Couldn't play ${item.title}: $why",
+        isError: true));
     if (_consecutiveFailures >= maxConsecutiveFailures || !_queue.skipNext()) {
-      await _pause('too many failures, or the end of the queue');
+      await _giveUp('too many failures, or the end of the queue');
       if (_consecutiveFailures >= maxConsecutiveFailures) {
         _notify(const PlaybackNotice(
             'Playback stopped: several tracks in a row failed. '
@@ -1476,6 +1528,22 @@ class PlaybackEngine implements PlaybackFacade {
     }
 
     await _loadCurrent(autoplay: true);
+  }
+
+  /// The engine has given up on the current song: the platform player is stopped, what was loaded is forgotten, and Play starts a fresh try.
+  /// A source that failed stays "loading" in the platform player for ever, and the snapshot reported it, so the Play button spun (and the lock
+  /// screen and the notification with it) after the message "Couldn't play ..." (owner, 7 Nov 2026).
+  Future<void> _giveUp(String why) async {
+    await _pause(why);
+    await _backend
+        .stop()
+        .timeout(const Duration(seconds: 2), onTimeout: () {})
+        .onError((_, __) {});
+    _window = const [];
+    _loaded = false;
+    _resumePosition = Duration.zero;
+    PerfMonitor.instance.cancel('play.tap->playing');
+    PerfMonitor.instance.cancel('play.audible');
   }
 
   /// The next two songs of the queue are handed to [_prepareAhead], each song once: when a song is loaded (the tap), when the queue changes (an
