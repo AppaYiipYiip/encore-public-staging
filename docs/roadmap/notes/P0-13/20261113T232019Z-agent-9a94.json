@@ -1,0 +1,9 @@
+{
+ "id": "20261113T232019Z-agent-9a94",
+ "item": "P0-13",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T23:20:19Z",
+ "type": "note",
+ "body": "13 Nov 2026 night, PINK STEP FOR THE OWNER (decided by the advisor: record once, here; do not raise it in chat). A real walk of the release-candidate pair needs the server image INSTALLED BY THE GUIDE on a CLEAN machine, and while the image package is private that install needs a GitHub sign-in approved by the owner (no agent may copy a token to a machine: the classifier refuses it, correctly). The exact clicks, when the owner is at his computer: (1) Tell Claude 'do the clean install walk'. Claude rolls the test VM 108 back to its 'clean' snapshot and runs the guide's step 1 on it, which prints a one-time code such as ABCD-1234. (2) On any computer or phone, open https://github.com/login/device , sign in as AppaYiipYiip if asked, type the code and press Continue, then Authorize. The code is valid for 15 minutes; if it expired Claude restarts the command for a new one. (3) Say 'approved'. Nothing else is needed from him; Claude removes the sign-in from the VM at the end. Until then every item stays 'built, not walked' and the engineering checks run on VM 108 as it is (no rollback, because its existing pull credential is the only one the bench has)."
+}
