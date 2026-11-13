@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../core/perf.dart';
-import '../../data/catalogue/catalogue_models.dart' show CatalogueTrack;
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
@@ -93,24 +92,17 @@ class _ActionRow extends ConsumerWidget {
                   ),
         ),
         const Spacer(),
-        IconButton(
-          tooltip: shuffle ? 'Shuffle on' : 'Shuffle',
-          icon: const Icon(Icons.shuffle_rounded),
-          color: shuffle ? c.accent : c.onBgMuted,
-          iconSize: 28,
-          onPressed: tracks.isEmpty
+        ShufflePlayButtons(
+          isPlaying: isPlaying,
+          shuffleOn: shuffle,
+          onShuffle: tracks.isEmpty
               ? null
               : () => facade.playTracks(tracks,
                   sourceName: sourceName,
                   sourceId: sourceId,
                   shuffle: true,
                   skipUnavailable: true),
-        ),
-        const SizedBox(width: Space.sm),
-        PlayButton(
-          isPlaying: isPlaying,
-          size: 56,
-          onPressed: tracks.isEmpty
+          onPlay: tracks.isEmpty
               ? null
               : () => isCurrent
                   ? facade.togglePlayPause()
@@ -447,6 +439,8 @@ class ArtistScreen extends ConsumerWidget {
     final artistAsync = ref.watch(artistProvider(artistId));
     final artist = artistAsync.value;
     final albums = ref.watch(artistAlbumsProvider(artistId)).value ?? const [];
+    // Every song of the artist the library holds: what Play and Shuffle play (N-24).
+    final tracks = ref.watch(artistTracksProvider(artistId)).value ?? const [];
     if (artist == null) {
       // Looked at and not there: the artist of a song tagged "A, B" is an artist of that whole name that the phone never receives; its page is
       // the page of the artist of its albums (or, failing that, of the artist of that name), not a spinner for ever.
@@ -454,7 +448,6 @@ class ArtistScreen extends ConsumerWidget {
           ? _ArtistNotOnThisPhone(artistId: artistId)
           : const DetailPlaceholder(what: 'artist');
     }
-    final facade = ref.watch(playbackFacadeProvider);
     final c = context.colors;
     final firstAlbum = albums.firstOrNull;
     final swatch = ref
@@ -478,11 +471,6 @@ class ArtistScreen extends ConsumerWidget {
       PerfMonitor.instance
           .pageFull('artist', detail: '${releases.length} releases');
     }
-    final instant = ref.watch(instantAvailableProvider);
-    final popular = catalogueArtist == null
-        ? const <CatalogueTrack>[]
-        : ref.watch(catalogueArtistTopProvider(catalogueArtist.id)).value ??
-            const <CatalogueTrack>[];
     final popularSource = 'catalogue-artist:${catalogueArtist?.id}';
 
     // "2 of 5 albums on your server": what the artist has made, next to what
@@ -553,34 +541,12 @@ class ArtistScreen extends ConsumerWidget {
           ].join(' - '),
         ),
       ],
-      actions: Row(
-        children: [
-          const Spacer(),
-          PlayButton(
-            isPlaying: false,
-            onPressed: albums.isEmpty && popular.isEmpty
-                ? null
-                : () async {
-                    // With the popular songs on the page, play is those (as everywhere else); otherwise what the library holds.
-                    if (instant && popular.isNotEmpty) {
-                      unawaited(ref
-                          .read(instantControllerProvider.notifier)
-                          .playRun(popular,
-                              startIndex: 0,
-                              sourceName: artist.name,
-                              sourceId: popularSource));
-                      return;
-                    }
-                    // Gone if the person signed out while this page was open.
-                    final repo = ref.read(libraryRepositoryProvider);
-                    if (repo == null) return;
-                    final tracks = await repo.artistTracks(artistId);
-                    await facade.playTracks(tracks,
-                        sourceName: artist.name,
-                        sourceId: 'artist:${artist.id}');
-                  },
-          ),
-        ],
+      // Play and Shuffle are every song of the artist that the server holds, as an album's are its songs (N-24). What the catalogue lists
+      // beyond that (the Popular rows, releases the server does not have) is one tap away on the page, where a tap fetches the song first.
+      actions: _ActionRow(
+        tracks: tracks,
+        sourceName: artist.name,
+        sourceId: 'artist:${artist.id}',
       ),
       tint: swatch == null ? c.surfaceHigh : backdropFor(swatch),
       circularArt: true,

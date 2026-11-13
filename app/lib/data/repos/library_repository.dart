@@ -474,19 +474,28 @@ class LibraryRepository {
       .map((r) => _db.tracks.map(r.data))
       .get();
 
+  /// Every song the library holds that is linked to [artistId], album order then track order: what "all of this artist" means for the
+  /// artist page's Play and Shuffle ([watchArtistTracks]) and for Android Auto's `artist:ID` ([artistTracks]); one query, so they agree.
+  SimpleSelectStatement<$TracksTable, TrackRow> _artistTracksQuery(
+          String artistId) =>
+      _db.select(_db.tracks)
+        ..where((t) =>
+            t.serverId.equals(serverId) &
+            t.artistId.equals(artistId) &
+            t.deletedAtMs.isNull())
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.album),
+          (t) => OrderingTerm.asc(t.discNo),
+          (t) => OrderingTerm.asc(t.trackNo),
+        ]);
+
   /// Tracks of every album of [artistId], album order then track order.
   Future<List<TrackRow>> artistTracks(String artistId) =>
-      (_db.select(_db.tracks)
-            ..where((t) =>
-                t.serverId.equals(serverId) &
-                t.artistId.equals(artistId) &
-                t.deletedAtMs.isNull())
-            ..orderBy([
-              (t) => OrderingTerm.asc(t.album),
-              (t) => OrderingTerm.asc(t.discNo),
-              (t) => OrderingTerm.asc(t.trackNo),
-            ]))
-          .get();
+      _artistTracksQuery(artistId).get();
+
+  /// [artistTracks], kept up to date (a sync adds songs while the page is open).
+  Stream<List<TrackRow>> watchArtistTracks(String artistId) =>
+      _artistTracksQuery(artistId).watch();
 
   // ------------------------------------------------------------- playlists
 

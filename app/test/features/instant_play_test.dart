@@ -1,3 +1,5 @@
+import 'dart:math' show Random;
+
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/db/app_database.dart';
@@ -582,6 +584,38 @@ void main() {
         'queue(song-Three)',
         'queue(song-One)',
       ]);
+      await closeApp(tester, s.db);
+    });
+
+    testWidgets(
+        'a shuffled run (the Shuffle button of a page) puts the whole list in '
+        'random order before the first song is asked for, and ignores where '
+        'it was told to start', (tester) async {
+      final s = await open(tester, _FakeBackend());
+      final tracks = [
+        for (var i = 1; i <= 8; i++) _t('$i', 'Song $i', no: i),
+      ];
+      final expected = [...tracks]..shuffle(Random(4));
+      expect([for (final t in expected) t.title],
+          isNot([for (final t in tracks) t.title]),
+          reason: 'precondition: this seed does move the songs');
+
+      await tester.runAsync(() => s.controller.playRun(tracks,
+          startIndex: 3,
+          sourceName: 'Damnation',
+          sourceId: 'catalogue:5',
+          shuffle: true,
+          random: Random(4)));
+
+      expect([for (final r in s.backend.started) r.title],
+          [for (final t in expected) t.title]);
+      expect(s.facade.calls.first,
+          'playTracks(1, start=0, source=Damnation, shuffle=false)',
+          reason: 'the player gets the run one song at a time: its own '
+              'shuffle mode stays as it was');
+      expect(
+          tracks.map((t) => t.title), [for (var i = 1; i <= 8; i++) 'Song $i'],
+          reason: 'the list the page holds is not reordered');
       await closeApp(tester, s.db);
     });
 

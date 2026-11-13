@@ -377,6 +377,46 @@ class PlayButton extends StatelessWidget {
   }
 }
 
+/// Shuffle and the big Play button side by side, the way a page that plays a list draws them (S-19 and the album and playlist pages). The
+/// page decides what each does: a library list plays through `playTracks`, a catalogue list through a run of fetched songs. A null
+/// callback switches that button off (there is nothing to play): Shuffle greys out and Play dims.
+class ShufflePlayButtons extends StatelessWidget {
+  const ShufflePlayButtons({
+    super.key,
+    required this.isPlaying,
+    required this.shuffleOn,
+    required this.onShuffle,
+    required this.onPlay,
+  });
+
+  /// This list is what plays and it is running: Play shows pause.
+  final bool isPlaying;
+
+  /// The player's own shuffle mode is on for this list (never drawn lit because Shuffle was pressed: only what the player reports).
+  final bool shuffleOn;
+  final VoidCallback? onShuffle;
+  final VoidCallback? onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: shuffleOn ? 'Shuffle on' : 'Shuffle',
+          icon: const Icon(Icons.shuffle_rounded),
+          color: shuffleOn ? c.accent : c.onBgMuted,
+          iconSize: 28,
+          onPressed: onShuffle,
+        ),
+        const SizedBox(width: Space.sm),
+        PlayButton(isPlaying: isPlaying, size: 56, onPressed: onPlay),
+      ],
+    );
+  }
+}
+
 /// The body of a page of one thing (an album, a playlist, an artist) while the phone has no row for it: a spinner, with a way back, and
 /// once [missing] has been true for [patience] (a row can be a moment behind a sync) words instead, with the way back still there. Never a
 /// bare spinner for ever (owner, 7 Nov 2026: the artist of "Sunflower" spun until the app was left).
