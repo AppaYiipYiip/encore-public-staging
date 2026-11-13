@@ -1,0 +1,12 @@
+{
+ "id": "20261113T185707Z-agent-71c4",
+ "item": "N-21",
+ "role": "agent",
+ "by": "helper-n21 (Claude Sonnet 5.5)",
+ "at": "2026-11-13T18:57:07Z",
+ "type": "note",
+ "body": "Found on the way, not fixed (outside N-21): the three dots button of every song row (TrackTile in widgets.dart) sits inside Semantics(excludeSemantics: true), so TalkBack cannot reach it (measured: find.bySemanticsLabel('More options') finds 0 inside a row, the tooltip finds 1). AGENTS.md says every tappable widget has a semantics label; accessibility_test's labeled-target guideline does not see it because the node is not in the tree. The Top result card has the same wrapper, so it is no worse than the rows. Proper fix is in TrackTile (keep the row's label and expose the button), not a copy.",
+ "to": [
+  "agent"
+ ]
+}

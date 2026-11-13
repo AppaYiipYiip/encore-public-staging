@@ -154,6 +154,42 @@ class LibraryRepository {
     };
   }
 
+  /// The artists of a song, each on its own, in order; empty when nothing is known.
+  ///
+  /// One file can be on the phone as two entries: one made from the file's own tags, which carries the artists as ONE joined string
+  /// (`["Drake, Kanye West, Lil Wayne, Eminem"]`), and the catalogue's, which carries the real list (`["Drake","Kanye West","Lil Wayne","Eminem"]`).
+  /// A song the person plays can be either, so the entries of the same file are read together and the longest list wins: names are never guessed by
+  /// cutting a joined string at its commas ("Tyler, The Creator" is one artist). On a freshly signed-in phone 165 entries carried a joined string, and 160
+  /// of them had the catalogue's entry beside them.
+  Future<List<String>> songArtists(String trackId) async {
+    final rows = await _db.customSelect(
+      'SELECT artists_json FROM tracks WHERE server_id = ?1 AND deleted_at_ms IS NULL AND artists_json IS NOT NULL '
+      'AND (id = ?2 OR file_id = ?2 OR (file_id IS NOT NULL AND file_id = '
+      '(SELECT file_id FROM tracks WHERE server_id = ?1 AND id = ?2)))',
+      variables: [Variable.withInt(serverId), Variable.withString(trackId)],
+      readsFrom: {_db.tracks},
+    ).get();
+    var best = const <String>[];
+    for (final row in rows) {
+      final names = _namesIn(row.read<String>('artists_json'));
+      if (names.length > best.length) best = names;
+    }
+    return best;
+  }
+
+  static List<String> _namesIn(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! List) return const [];
+      return [
+        for (final name in decoded)
+          if (name is String && name.trim().isNotEmpty) name.trim(),
+      ];
+    } on FormatException {
+      return const [];
+    }
+  }
+
   /// The artist whose page stands for [artistId] when the phone has no row for that id: the artist of the albums its songs are on.
   ///
   /// A song tagged "Post Malone, Swae Lee" points at an artist of that whole name; the music server lists such an artist for the song but not in

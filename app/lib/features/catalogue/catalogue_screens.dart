@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/navigation.dart';
+import '../../core/perf.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
@@ -489,6 +490,11 @@ class CatalogueArtistScreen extends ConsumerWidget {
     final top = ref.watch(catalogueArtistTopProvider(artistId));
     ref.watch(artistWarmupProvider(artistId));
     final releases = ref.watch(catalogueArtistReleasesProvider(releasesKey));
+    PerfMonitor.instance.pageShell('artist');
+    if (releases.hasValue) {
+      PerfMonitor.instance
+          .pageFull('artist', detail: '${releases.value!.length} releases');
+    }
     final facade = ref.watch(playbackFacadeProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final sourceId = 'catalogue-artist:$artistId';

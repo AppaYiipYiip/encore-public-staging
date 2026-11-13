@@ -89,4 +89,34 @@ void main() {
     expect(s.workP90, Duration.zero);
     expect(s.lateStartP90, Duration.zero);
   });
+  group('opening a page', () {
+    final monitor = PerfMonitor.instance;
+    setUp(() => monitor.logToConsole = false);
+
+    test(
+        'times the frame and the content of a page that was asked for, once, and a later rebuild adds nothing',
+        () {
+      final before = monitor.spans.length;
+      monitor.pageOpening('playlist');
+      monitor.pageShell('playlist');
+      monitor.pageFull('playlist', detail: '2251 songs');
+      // the screen builds again and again: nothing more is recorded
+      monitor.pageShell('playlist');
+      monitor.pageFull('playlist', detail: '2251 songs');
+
+      final added = monitor.spans.sublist(before);
+      expect([for (final s in added) s.name],
+          ['open.playlist.shell', 'open.playlist.full']);
+      expect(added.last.detail, '2251 songs');
+    });
+
+    test(
+        'a page that nobody asked for through the app (a link, a restore) records nothing',
+        () {
+      final before = monitor.spans.length;
+      monitor.pageShell('artist');
+      monitor.pageFull('artist');
+      expect(monitor.spans.length, before);
+    });
+  });
 }

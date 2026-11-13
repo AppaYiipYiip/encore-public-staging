@@ -163,10 +163,16 @@
   "at": "2026-11-07T21:07:13Z",
   "by": "Claude (Sonnet 5.5)"
  },
+ "N-21": {
+  "state": "built",
+  "evidence": "PR #12: the Top result of a Search for a song of the library is drawn through the same _SongActions as every row (swipe right = queue, swipe left = like, the three-dot menu, long press). Widget tests app/test/features/search_top_result_actions_test.dart (8; 6 failed on the old code), all of app/test/features (937) and the Windows goldens pass; CI is the judge for Linux goldens. SCOPE: songs of the library only; a catalogue-only song has no menu anywhere in Search (its rows below the Top result neither), so the Top result has what every other row has; giving catalogue songs the menu is player/queue work, noted on N-21. NOT walked on a phone.",
+  "at": "2026-11-13T19:02:54Z",
+  "by": "Claude"
+ },
  "N-22": {
   "state": "built",
   "evidence": "Widget tests app/test/features/tab_reselect_test.dart (5, run through the whole app: router, shell and screens): 3 failed on the old code (Search kept the typed words after a second tap on its tab, Home and Your Library kept the chosen chip) and pass now; 2 guards pass before and after (a second tap while a genre page is open returns to the first page; going to another tab and back keeps the typed words). The rest of the app tests (1388: features, app, core, domain, design, architecture) pass; dart analyze --fatal-infos is clean. The scroll-to-top of Home and Your Library is covered for Home only. NOT walked on a phone.",
-  "at": "2026-11-13T19:35:24Z",
+  "at": "2026-11-13T20:02:01Z",
   "by": "Claude"
  }
 }
