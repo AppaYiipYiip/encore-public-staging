@@ -1,0 +1,9 @@
+{
+ "id": "20261113T231252Z-agent-a542",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T23:12:52Z",
+ "type": "note",
+ "body": "13 Nov 2026 night, FOUND AND FIXED (PR of branch task/lost-pause-toggle): the pause that did not stick on the A35 right after tapping a song. Proof in the harness: a play/pause toggle while the look at the server is running HANGS on the old engine (it becomes play(), queued behind the command that waits for the look), and the snapshot says isLoading false from the tap to the start of the load. Cause: the mini-player draws its button from the backend's state and shows a spinner (no button) only while the backend loads; during the look the backend had not begun, so the button said Play and the press, like a headset's or the lock screen's toggle, asked for play. Fix at the source: a tap on a song (playTracks, playStreamed) is 'about to play' from the moment it is made (_aboutToPlay): the snapshot says isLoading from the tap (no Play button to press), and togglePlayPause means pause. Three tests (two failed on the old engine). STILL OPEN, N-19 itself (the 'no connection' notice) has never been seen: not on the A35 in airplane mode or with the server away, not with any of four ways of pausing. Open question for the walk on an emulator: does Android deliver KEYCODE_MEDIA_PAUSE while the session says PAUSED during the look (my two media-key tries were lost too; the engine test of an explicit pause passes)? With this fix the session reports BUFFERING from the tap."
+}

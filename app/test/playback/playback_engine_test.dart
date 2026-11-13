@@ -2310,6 +2310,69 @@ void main() {
       await h.dispose();
     });
 
+    // N-19, the lost pause (A35, 13 Nov 2026, four tries in four): a pause pressed 0.3 to 1 s after tapping a song, while the engine was still
+    // looking at the server, left the song PLAYING. The mini-player draws its button from the backend's state and shows a spinner only while
+    // the backend loads; during the look the backend had not begun, so the button said Play, and the press (and a headset's or the lock
+    // screen's play/pause toggle) asked for play. A tap on a song is "about to play" from the moment it is made.
+    test(
+        'from the tap on a song the player says it is loading, also while the look at the server is still running (N-19)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = true;
+      h.serverGate = Completer<void>();
+
+      final play = h.engine.playTracks(h.tracks.sublist(0, 3));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(h.serverAsked, 1, reason: 'the look is running');
+      expect(h.engine.snapshot.isLoading, isTrue,
+          reason:
+              'the button must not offer Play for a song that was just tapped');
+      h.serverGate!.complete();
+      await play.timeout(const Duration(seconds: 2));
+
+      expect(h.engine.snapshot.isLoading, isFalse);
+      expect(h.backend.state.playing, isTrue);
+      await h.dispose();
+    });
+
+    test(
+        'a play/pause toggle while the look at the server is still running pauses: nothing starts (N-19)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = true;
+      h.serverGate = Completer<void>();
+
+      final play = h.engine.playTracks(h.tracks.sublist(0, 3));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await h.engine.togglePlayPause();
+      h.serverGate!.complete();
+      await play.timeout(const Duration(seconds: 2));
+
+      expect(h.backend.state.playing, isFalse,
+          reason: 'the person pressed pause for the song they had just tapped');
+      expect(h.engine.snapshot.isLoading, isFalse);
+      await h.dispose();
+    });
+
+    test(
+        'a tap that is refused (not downloaded, no server) is not left looking like a load (N-19)',
+        () async {
+      final h = await Harness.start();
+      h.network = true;
+      h.reachable = false;
+      h.serverUp = false;
+
+      await h.engine.playTracks(h.tracks.sublist(0, 3));
+
+      expect(h.engine.snapshot.isLoading, isFalse);
+      expect(h.notices, hasLength(1));
+      await h.dispose();
+    });
+
     test(
         'Play on a list whose first song is downloaded starts at once when the phone has a network and the server does not answer (N-20)',
         () async {
