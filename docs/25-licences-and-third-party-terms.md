@@ -28,10 +28,9 @@ P5-06 and this table corrected.
 | Soularr | *verify* | optional container | as its licence requires |
 | NewPipeExtractor (only if X-3 is adopted) | GPL-3.0 | would be linked into the app | fine with GPL-3.0; impossible under the old CC BY-NC-SA licence |
 | Illustrations | in-house or CC0 (`16` §2) | app and admin | licence file next to each |
-| Test music in the repository | Creative Commons (*per album*) | test assets (`24` §2) | credit per licence (CC-BY needs attribution; avoid NC/ND for anything redistributed) |
 
-The server image gets a `THIRD_PARTY_NOTICES` file generated in CI; the app's About → "Open-source licences" shows Flutter's page plus
-a short list of the server-side parts.
+`THIRD_PARTY_NOTICES.md` at the repository root summarises the components. The app's settings open Flutter's open-source licences page,
+which lists the full licence text of every Dart package. A notice file generated in CI for the server image is still open (P0-10).
 
 ## 2. Outside services Encore talks to
 
@@ -39,7 +38,7 @@ a short list of the server-side parts.
 |---------|----------|--------------------------------------------|---------------|
 | YouTube / YouTube Music | finding and streaming songs not on the server | the Terms of Service do not allow downloading except through YouTube's own features | contained source, off switch, honest notice, no accounts, paced (`02` Q1, `04` §5, `09` §5) |
 | Deezer API | metadata, ISRC, covers, related artists, charts | free public API; quotas per address; terms forbid some commercial uses | non-commercial project; cache; credit "Metadata from Deezer" in About |
-| MusicBrainz / ListenBrainz | identifiers, aliases, similar artists | data under open licences (core data CC0); 1 request/second, a real User-Agent required | cache 30 days; honest User-Agent (the old recs service was refused with a made-up one) |
+| MusicBrainz / ListenBrainz | identifiers, aliases, similar artists | data under open licences (core data CC0); 1 request/second, a real User-Agent required | not called by any code today (the identifiers are only stored as tags); if it is added: cache 30 days, honest User-Agent (the old recs service was refused with a made-up one) |
 | LRCLIB | lyrics | free community service | cache per song; credit |
 | Spotify embed pages and data exports | reading a person's own playlists for import | scraping is outside Spotify's developer terms; the data export is the person's own data | link import ≤ 100 songs; the export file is preferred; no Spotify developer app (ADR-R12) |
 | Tailscale | the public address | free plan; Funnel has usage limits | the Host's own account; documented limits (`09`) |
@@ -49,13 +48,18 @@ a short list of the server-side parts.
 "Encore" is a working name (D-5, not now). Before the public release: a trademark and app-name search, and no use of other brands'
 logos (Spotify, YouTube) beyond plain words like "Import from Spotify".
 
-## Provenance of the app code (checked 2026-10-22)
+## Provenance of the app code
 
-The app began as a fork of another player and was rewritten; its licence (CC BY-NC-SA 4.0) is not a software licence and is why Encore is
-GPL-3.0 (D-1). Facts, measured against the original project's `lib/` in the archived history (`releases-archive/`, not in this repository):
+The app's earliest history comes from an earlier open-source player, and almost all of that code has since been rewritten. To check that
+nothing of it is still carried over, the lines of 40 or more characters (comments and `import`/`export`/`part` lines left out, white space
+normalised) of the earlier player's `lib/` were compared with those of `app/lib`:
 
-* The only app file at the same path is `app/lib/main.dart` (every Flutter app has one): 4 lines here, 762 there, no line in common.
-* Lines of 40 or more characters (comments and imports left out): 14,915 in `app/lib`, of which 200 (1.3%) also appear in the original,
-  spread over many files at one to eight lines each (the most in a single file: 8 of 138).
-* This says nothing about ideas or structure, and a line-by-line match is not a legal test. Whether credit or a licence notice is still due
-  for those lines is the owner's decision; if it is, it goes in `THIRD_PARTY_NOTICES` (P0-10).
+* 217 of the 11,074 such lines in `app/lib` also occur in the earlier player, one to eight per file, never more than three in a row.
+* Every one of them is ordinary Flutter or Dart idiom that any app written against the same libraries contains: widget arguments
+  (`crossAxisAlignment: CrossAxisAlignment.start,`), standard library calls (`SharedPreferences.getInstance()`, `ScaffoldMessenger.of(context)`,
+  `WidgetsBinding.instance.addPostFrameCallback`), HTTP client timeouts, the three-line audio-session set-up from that package's own
+  documentation, and Android Auto content-style constants that Android fixes.
+* The only app file at the same path (`app/lib/main.dart`) has no line in common.
+
+So no third-party notice is due for the app's own code beyond the packages it uses (`THIRD_PARTY_NOTICES.md`). The comparison is a line-by-line
+measure: it says nothing about ideas or structure and is not a legal opinion. It is reproduced by listing the matching lines and reading them.
