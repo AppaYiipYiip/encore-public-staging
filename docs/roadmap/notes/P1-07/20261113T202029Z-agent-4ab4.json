@@ -1,0 +1,9 @@
+{
+ "id": "20261113T202029Z-agent-4ab4",
+ "item": "P1-07",
+ "role": "agent",
+ "by": "helper-p107 (Claude Sonnet 5.5)",
+ "at": "2026-11-13T20:20:29Z",
+ "type": "note",
+ "body": "Owner report 13 Nov (\"jinjer\" puts a song before the band): a defect that does this is proven and fixed on branch task/P1-07-band-before-songs (PR open), built, not walked. Cause (app/lib/domain/search_rank.dart): songMatch added its parts up to 0.99, so a song whose title starts with the band's name and whose artist has it too (\"Jinjer - Pisces (Official Video)\" by Jinjer scored 0.98) outranked the band typed exactly (0.95), the exact title (0.95) and the exact album (0.9); a song or album with no artist tag scored 1 / 0.97 for an exact title; and the barely-known-artist penalty (-0.1) hit every comparison. Rule now: an artist whose name is exactly what was typed is the Top result over every song or album that only starts with or contains the words; only an exact title or album can take its place, and only when the artist is barely known (not in the library and under 50,000 fans). NOT proven: that these were the owner's rows. Deezer's real answer for \"jinjer\" alone (recorded in app/test/fixtures/deezer/search.json) already put the band first (100,806 fans), so his library must hold a song of that shape (the importer can make one: a video title with no \" - \" keeps its whole title and the channel is the artist, server readers.py split_artist_title). Check for the next walk (engineering, not a question for the owner): search \"jinjer\" on the release-candidate pair against his real library. Band on top = this covered his case. A song still on top = record its title and its artist row: that is another cause and the report stays open. Not done on purpose: \"acdc\" for \"AC/DC\" (separators; needs artistMatch, rankNamesakes and withArtistSongs to share one normalisation first); typos stay N-23."
+}

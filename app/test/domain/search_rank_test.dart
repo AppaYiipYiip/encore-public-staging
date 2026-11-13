@@ -112,6 +112,91 @@ void main() {
     });
   });
 
+  // P1-07, owner 13 Nov 2026: "jinjer", spelled right, put a song before the band. The scores of the three kinds are compared with each
+  // other to pick the Top result, so an answer that is only partial must never be worth as much as an exact one.
+  group('a partial answer is never worth as much as an exact one', () {
+    test('a title that only starts with the typed word is not the exact title',
+        () {
+      final exact = songMatch('creature', artist: 'Someone', title: 'Creature');
+      final starts = songMatch('creature',
+          artist: 'Creature Feature', title: 'Creature Comforts');
+      expect(starts, lessThan(exact),
+          reason: 'a song that starts with the word, by an artist that also '
+              'starts with it, used to score above the song that is exactly it');
+    });
+
+    test('a song of the band named like the query is not better than the band',
+        () {
+      // How an import from a video list can name a song: the artist is in the title too.
+      for (final title in [
+        'Jinjer - Pisces',
+        'Jinjer - Pisces (Official Video)',
+        'Jinjer Live',
+      ]) {
+        expect(songMatch('jinjer', artist: 'Jinjer', title: title),
+            lessThan(artistMatch('jinjer', 'Jinjer')),
+            reason: title);
+      }
+    });
+
+    test('an exact title with no artist tag is still just an exact title', () {
+      expect(songMatch('jinjer', artist: null, title: 'Jinjer'), 0.95);
+      expect(songMatch('jinjer', artist: '', title: 'Jinjer'), 0.95);
+      expect(albumMatch('jinjer', title: 'Jinjer', artist: null), 0.9);
+      expect(albumMatch('jinjer', title: 'Jinjer', artist: ''), 0.9);
+    });
+
+    test('with an artist tag, "artist title" typed in full is still the best',
+        () {
+      expect(songMatch('jinjer pisces', artist: 'Jinjer', title: 'Pisces'), 1);
+      expect(
+          albumMatch('jinjer macro', artist: 'Jinjer', title: 'Macro'), 0.97);
+    });
+
+    test(
+        'the best a partial song can score stays below a barely known artist named exactly as typed',
+        () {
+      // Shapes that add up the most: the title starts with the words, the artist has them too, a word typed twice.
+      const shapes = [
+        ('jinjer', 'Jinjer', 'Jinjer Live'),
+        ('jinjer', 'Jinjer', 'Jinjer - Pisces'),
+        ('creature', 'Creature Feature', 'Creature Comforts'),
+        ('jin jinj', 'Someone', 'Jinjer Jinjers'),
+        ('echoes', 'Echoes Band', 'Echoes Of Spring'),
+      ];
+      for (final (q, artist, title) in shapes) {
+        final song = songMatch(q, artist: artist, title: title);
+        expect(song, lessThan(partialSongCeiling),
+            reason: '$q: $artist - $title');
+        expect(song, greaterThanOrEqualTo(0.5),
+            reason:
+                'all the words found: still a candidate for the Top result');
+        expect(song, lessThan(artistMatch(q, q) - barelyKnownArtistPenalty),
+            reason: '$q: $artist - $title');
+      }
+      // The clean "artist title" reading is above them and still below an exact title.
+      expect(songMatch('a a a a', artist: 'A', title: 'A B'), lessThan(0.95));
+      // The doc's scale.
+      expect(partialSongCeiling, lessThan(0.95 - barelyKnownArtistPenalty));
+    });
+
+    test('the order among partial answers is kept', () {
+      const q = 'instant crush';
+      final plain =
+          songMatch(q, artist: 'Daft Punk', title: 'Instant Crush (Edit)');
+      final starts = songMatch(q,
+          artist: 'Daft Punk', title: 'Instant Crush (Live at Wembley 1999)');
+      final contains =
+          songMatch(q, artist: 'Daft Punk', title: 'My Instant Crush');
+      expect(plain, greaterThan(starts));
+      expect(starts, greaterThan(contains),
+          reason: 'a title that starts with the words comes before one that '
+              'merely has them');
+      expect(contains, greaterThanOrEqualTo(0.5),
+          reason: 'every word found is still good enough for the Top result');
+    });
+  });
+
   group('an artist and an album', () {
     test('the exact name is best, a start of it next', () {
       expect(artistMatch('cairokee', 'Cairokee'), 0.95);
@@ -170,6 +255,27 @@ void main() {
         () {
       expect(pickTop(song: 0.95, artist: 0.95, artistWellKnown: false)!.kind,
           HitKind.song);
+    });
+
+    test(
+        'an artist named exactly as typed beats a song or an album that only starts with it, known or not',
+        () {
+      final song = songMatch('jinjer',
+          artist: 'Jinjer', title: 'Jinjer - Pisces (Official Video)');
+      final album =
+          albumMatch('jinjer', title: 'Jinjer Live', artist: 'Jinjer');
+      for (final wellKnown in [true, false]) {
+        expect(
+            pickTop(
+                    song: song,
+                    album: album,
+                    artist: artistMatch('jinjer', 'Jinjer'),
+                    artistWellKnown: wellKnown)!
+                .kind,
+            HitKind.artist,
+            reason:
+                wellKnown ? 'a well known artist' : 'a barely known artist');
+      }
     });
 
     test('loose matches have no obvious answer, so nothing is on top', () {

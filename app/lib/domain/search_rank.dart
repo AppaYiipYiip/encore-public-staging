@@ -28,14 +28,36 @@ String _plainTitle(String? text) => normalizeForMatch(
 bool _covers(List<String> query, List<String> words) =>
     query.isNotEmpty && query.every((q) => words.any((w) => w.startsWith(q)));
 
+/// The scale. The scores of songs, artists and albums are compared with each other to pick the Top result ([pickTop]), so what a kind of
+/// answer is worth is fixed here and nowhere else:
+///
+/// * 1: the artist and the song typed in full ([songMatch]); 0.97 the same for an album.
+/// * 0.95: the title or the name typed exactly; 0.9 for an album.
+/// * 0.8 to 0.94: a song that is "artist title" in the words typed (the first ones the artist's, the rest the song's).
+/// * [partialSongCeiling] (0.8) and below: a song that merely has the words, or starts with them, down to 0.5.
+/// * below 0.4: only some of the words.
+///
+/// The rule behind it (P1-07, owner 13 Nov 2026: searching "jinjer", spelled right, put a song before the band): **an answer that is
+/// only partial is never worth as much as an exact one**, whatever its parts add up to, so an artist whose name is exactly what was
+/// typed comes before every song and album that only starts with or contains the words. Only an exact title or an exact album can
+/// take that place, and only when the artist is barely known ([barelyKnownArtistPenalty]).
+const double partialSongCeiling = 0.8;
+
+/// What an artist that is barely known (not in the library and below the fan count of `wellKnownFans`) loses when the Top result is
+/// picked: enough to go below an exact title (0.95) and an exact album (0.9) that are named like it ("Hotel California" is the song,
+/// not the artist with 7,812 fans), not enough to go below a song that is only partial ([partialSongCeiling], at most 0.8).
+const double barelyKnownArtistPenalty = 0.1;
+
 /// 0 to 1: how well "[artist] [title]" answers [query]. 1 is exactly artist and title (in either order), 0.95 exactly the
-/// title, then every typed word found (shorter songs first), and below 0.4 only some of the words.
+/// title, then "artist title" (0.8 to 0.94), then every typed word found (shorter songs first, never above [partialSongCeiling]), and
+/// below 0.4 only some of the words. The whole scale is explained at [partialSongCeiling].
 double songMatch(String query, {String? artist, required String title}) {
   final q = _plain(query);
   if (q.isEmpty) return 0;
   final t = _plainTitle(title);
   final a = _plain(artist);
-  if (q == '$a $t'.trim() || q == '$t $a'.trim()) return 1;
+  // "artist title" is only said of a song that has an artist: with none, the title alone is all there is to match (0.95).
+  if (a.isNotEmpty && (q == '$a $t'.trim() || q == '$t $a'.trim())) return 1;
   if (q == t) return 0.95;
 
   final typed = q.split(' ');
@@ -45,20 +67,27 @@ double songMatch(String query, {String? artist, required String title}) {
   final found = typed.where((w) => all.any((x) => x.startsWith(w))).length;
   if (found < typed.length) return 0.4 * found / typed.length;
 
+  // How much of the song's words were typed (1 at most: a word typed twice does not make a song better).
+  final tight = (typed.length / all.length.clamp(1, 1000)).clamp(0.0, 1.0);
+
   // "artist title" (or "title artist"): the first typed words are the artist's, the rest the song's. That is a clean answer, and
   // it ranks above a cover or a tribute that merely has all the words in its title ("Fade Into You (Cover Mazzy Star)").
   if (_splitsIntoArtistAndTitle(typed, artistWords, titleWords)) {
-    return (0.8 + 0.15 * typed.length / all.length.clamp(1, 1000))
-        .clamp(0.0, 0.99);
+    return 0.8 + 0.14 * tight;
   }
 
+  // The words are all there, but the song is not what was typed: 0.5 to just under [partialSongCeiling] (0.79). That is below an
+  // exact title, an exact album and an exact artist, whatever the parts add up to: a song of Jinjer named "Jinjer - Pisces" has the
+  // band's name twice and is still not the band.
   var score = 0.5;
-  if (t.startsWith(q)) score += 0.25;
-  if (_covers(typed, titleWords)) score += 0.15;
-  if (_covers(typed, artistWords)) score += 0.05;
+  if (t.startsWith(q)) score += 0.13;
+  if (_covers(typed, titleWords)) score += 0.09;
+  if (_covers(typed, artistWords)) score += 0.03;
   // The tighter the match, the higher: "Instant Crush" before "Instant Crush (Live at Wembley)".
-  score += 0.09 * (typed.length / all.length.clamp(1, 1000));
-  return score.clamp(0.0, 0.99);
+  score += 0.04 * tight;
+  assert(score < partialSongCeiling,
+      'a partial answer must stay below an exact one');
+  return score;
 }
 
 /// Whether [typed] is some of the artist's words then some of the song's, or the other way round.
@@ -111,7 +140,8 @@ double albumMatch(String query, {required String title, String? artist}) {
   final t = _plainTitle(title);
   final a = _plain(artist);
   if (q.isEmpty || t.isEmpty) return 0;
-  if (q == '$a $t'.trim() || q == '$t $a'.trim()) return 0.97;
+  // As for a song: with no artist the title alone is all there is to match.
+  if (a.isNotEmpty && (q == '$a $t'.trim() || q == '$t $a'.trim())) return 0.97;
   if (q == t) return 0.9;
   if (t.startsWith(q)) return 0.6;
   final typed = q.split(' ');
@@ -149,6 +179,10 @@ List<Ranked<T>> rankHits<T>(Iterable<Ranked<T>> hits) {
 /// The best of the best song, artist and album: the "Top result". Below [minimum] nothing is on top (a list of loose matches has
 /// no obvious answer). An exact tie goes to the artist, then the album, then the song, like Spotify, unless the artist is barely
 /// known ([artistWellKnown] false): typing "Hotel California" means the song, not an artist of 7,000 fans who has that name.
+///
+/// So **popularity only settles a tie between exact answers**: the artist who was typed exactly is on top of every song or album that
+/// is only partial, known or not ([barelyKnownArtistPenalty] is smaller than the gap to [partialSongCeiling]); a well known artist
+/// is also on top of a song or an album that is exactly the same words; a barely known one is not.
 ({HitKind kind, double score})? pickTop({
   double? song,
   double? artist,
@@ -158,7 +192,10 @@ List<Ranked<T>> rankHits<T>(Iterable<Ranked<T>> hits) {
 }) {
   final candidates = <({HitKind kind, double score})>[
     if (artist != null)
-      (kind: HitKind.artist, score: artistWellKnown ? artist : artist - 0.1),
+      (
+        kind: HitKind.artist,
+        score: artistWellKnown ? artist : artist - barelyKnownArtistPenalty
+      ),
     if (album != null) (kind: HitKind.album, score: album),
     if (song != null) (kind: HitKind.song, score: song),
   ];

@@ -4749,5 +4749,293 @@
     "explicit_lyrics": false
    }
   ]
+ },
+ "jinjer": {
+  "artist": [
+   {
+    "id": 2544561,
+    "name": "Jinjer",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/dfe01d1aa96e28f11d579df505f7987e/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 100806,
+    "nb_album": 29
+   },
+   {
+    "id": 468,
+    "name": "Jenifer",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d90f07669dacc0b0cb56258bdae5e265/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 867173,
+    "nb_album": 22
+   },
+   {
+    "id": 2039,
+    "name": "Joan Jett and the Blackhearts",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/133dccaa3f01c5c24db887342d7b8425/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 300051,
+    "nb_album": 1
+   },
+   {
+    "id": 8713,
+    "name": "Gilbert Montagné",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/b59123032926976fb85302eb1d327499/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 191263,
+    "nb_album": 14
+   },
+   {
+    "id": 3925,
+    "name": "Jean Ferrat",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/f7e12ebe03160163335995ddfdb61a81/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 402757,
+    "nb_album": 16
+   },
+   {
+    "id": 13268171,
+    "name": "Kimberose",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e7b2571c93e0d6f7fad5781390d57bd4/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 111135,
+    "nb_album": 14
+   },
+   {
+    "id": 5762,
+    "name": "Hinder",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/623c58518356d12810a8fd759db82346/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 110556,
+    "nb_album": 19
+   },
+   {
+    "id": 1134514,
+    "name": "Kiefer",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d6f5f5e4cd71a3a417b9801a68f63f81/1000x1000-000000-80-0-0.jpg",
+    "nb_fan": 2541,
+    "nb_album": 26
+   }
+  ],
+  "album": [
+   {
+    "id": 106823402,
+    "title": "Macro",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/57c56dcaec2f4f1879d2382104d71cad/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 9,
+    "record_type": "album",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 14790723,
+    "title": "King of Everything",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/520c1a35c8344edc283884a7feca98d2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 52863032,
+    "title": "Cloud Factory (Re-Issue)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/816842f3933b04debeefa77d0ee37618/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 10,
+    "record_type": "album",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 705894611,
+    "title": "Duél",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/912835919d07c6d966984af60d29e3b2/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 11,
+    "record_type": "album",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 77820902,
+    "title": "Micro",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/29c43265133eed328ac5cdea1d934f8e/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 5,
+    "record_type": "ep",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 233590682,
+    "title": "Wallflowers",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b7400f9a67f7e335a684d3651d6fc3af/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 11,
+    "record_type": "album",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   },
+   {
+    "id": 391831627,
+    "title": "Hello Death",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6f6a4d8652322146fe35c26623af94af/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 5600,
+     "name": "Decapitated"
+    }
+   },
+   {
+    "id": 15748528,
+    "title": "Pisces (Live Session)",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9cc792d91168129595af0a2121e11d7c/1000x1000-000000-80-0-0.jpg",
+    "nb_tracks": 1,
+    "record_type": "single",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    }
+   }
+  ],
+  "track": [
+   {
+    "id": 137811203,
+    "title": "Pisces",
+    "duration": 305,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/b/f/4/0/bf4af4755736f945ba294209c1d6a8f7.mp3?hdnea=exp=1794601286~acl=/api/1/1/b/f/4/0/bf4af4755736f945ba294209c1d6a8f7.mp3*~data=user_id=0,application_id=42~hmac=acc13933693bb957ae783e054341e965659c508c44ae462e650a06c5b10a2ff5",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 14790723,
+     "title": "King of Everything",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/520c1a35c8344edc283884a7feca98d2/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 565799,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 2494946931,
+    "title": "AFRAID TO DIE",
+    "duration": 184,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/1/c/0/81cb78bc8c28a9df64792d45574ecf4e.mp3?hdnea=exp=1794601286~acl=/api/1/1/8/1/c/0/81cb78bc8c28a9df64792d45574ecf4e.mp3*~data=user_id=0,application_id=42~hmac=46ff3a7138310b1b92bc7f0627e550ec8bdb10a699273a75f17b012cc12ae3a1",
+    "artist": {
+     "id": 1443214,
+     "name": "P.O.D"
+    },
+    "album": {
+     "id": 499128791,
+     "title": "AFRAID TO DIE",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/3031952d0a00927e1cdaca0779e7ef3d/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 517176,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 728476272,
+    "title": "Judgement (& Punishment)",
+    "duration": 259,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/0/8/a/0/08ad68a2aa9fb214894fccf216fe184e.mp3?hdnea=exp=1794601286~acl=/api/1/1/0/8/a/0/08ad68a2aa9fb214894fccf216fe184e.mp3*~data=user_id=0,application_id=42~hmac=a0082e50f145c97ee590094d4aaba5de17ee3c46723adeec96de26b0e3bb1fe5",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 106823402,
+     "title": "Macro",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/57c56dcaec2f4f1879d2382104d71cad/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 447700,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 437147032,
+    "title": "Outlander",
+    "duration": 236,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/8/6/0/e86959b153f0b1806ad040d08d9cf346.mp3?hdnea=exp=1794601286~acl=/api/1/1/e/8/6/0/e86959b153f0b1806ad040d08d9cf346.mp3*~data=user_id=0,application_id=42~hmac=fb4308e94287892a8b99947febf268e8e0a1dbfe42cf6dee21252ed397f957e1",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 52863032,
+     "title": "Cloud Factory (Re-Issue)",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/816842f3933b04debeefa77d0ee37618/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 444824,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 580977562,
+    "title": "Teacher, Teacher!",
+    "duration": 351,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/3/c/1/0/3c1d6079a6b91da61e6545115754dbc2.mp3?hdnea=exp=1794601286~acl=/api/1/1/3/c/1/0/3c1d6079a6b91da61e6545115754dbc2.mp3*~data=user_id=0,application_id=42~hmac=d6c8a01a30d3bcb07ea617f7dd6e6efae99058547d4bd9969c68bda986298687",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 77820902,
+     "title": "Micro",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/29c43265133eed328ac5cdea1d934f8e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 441350,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 580977572,
+    "title": "Perennial",
+    "duration": 277,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/4/2/0/c42ef830ed5840d359c219aace929ac9.mp3?hdnea=exp=1794601286~acl=/api/1/1/c/4/2/0/c42ef830ed5840d359c219aace929ac9.mp3*~data=user_id=0,application_id=42~hmac=7195ab9eef664713ad2b8f7909831e8175c46f6dbde6fee1ea7d06b7ee346b0a",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 77820902,
+     "title": "Micro",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/29c43265133eed328ac5cdea1d934f8e/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 429052,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 137811195,
+    "title": "I Speak Astronomy",
+    "duration": 353,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/a/3/0/aa35a499fbe51f11d2f43bcf6bca3c45.mp3?hdnea=exp=1794601286~acl=/api/1/1/a/a/3/0/aa35a499fbe51f11d2f43bcf6bca3c45.mp3*~data=user_id=0,application_id=42~hmac=9442c05a8a9b5efeb25a1c912b42adfa5012731be73e3524631da06f477dd164",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 14790723,
+     "title": "King of Everything",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/520c1a35c8344edc283884a7feca98d2/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 386127,
+    "explicit_lyrics": false
+   },
+   {
+    "id": 728476252,
+    "title": "On the Top",
+    "duration": 328,
+    "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/4/4/0/44497573bf54f10b585a278e9d0596ce.mp3?hdnea=exp=1794601286~acl=/api/1/1/4/4/4/0/44497573bf54f10b585a278e9d0596ce.mp3*~data=user_id=0,application_id=42~hmac=9d3adebed37b66e5efbdd8bb55cd74c7cd8e835122bc58b2e4b0993f67691db3",
+    "artist": {
+     "id": 2544561,
+     "name": "Jinjer"
+    },
+    "album": {
+     "id": 106823402,
+     "title": "Macro",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/57c56dcaec2f4f1879d2382104d71cad/1000x1000-000000-80-0-0.jpg"
+    },
+    "rank": 386800,
+    "explicit_lyrics": false
+   }
+  ]
  }
 }
