@@ -1,0 +1,9 @@
+{
+ "id": "20261113T203050Z-agent-5e94",
+ "item": "N-11",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-13T20:30:50Z",
+ "type": "note",
+ "body": "13 Nov 2026 evening, NOT started in code; leads from reading, for whoever takes it (it is unblocked: #5, #6, #7 are merged). In Encore mode a song is ONE row, the ref (id sr_..., file_id = the music server's song id, app/lib/data/encore/encore_writer.dart: 'the file is only a column'). Two entries for one file therefore come from rows that are NOT refs: the music-server writer's rows (id = the music server's song id: tags only, one joined artist string, '[Unknown Album]') living beside the ref. Two facts already in the code: (1) library_repository.dart songArtists says '165 entries carried a joined string and 160 of them had the catalogue's entry beside them' on a FRESHLY signed-in phone, so it is not only an upgrade leftover; (2) encore_upgrade.dart _rekey uses UPDATE OR IGNORE, which silently leaves an old row when the new id already exists. NEXT STEP (proof first): on an emulator signed in to VM 108 (debug build, adb run-as) run SELECT file_id, count(*) FROM tracks WHERE deleted_at_ms IS NULL GROUP BY file_id HAVING count(*) > 1 and look at both rows of one pair (is_ref, id, album, artists_json, cover_art); then find which writer produced the non-ref row and why it is still written/kept; fix at the writer (one song = one row), then make downloads key on the file so one file is downloaded once. The owner's example: Landmvrks 'Creature' and 'Requiem' (album 'The Darkest Place I've Ever Lived') also under [unknown album], downloaded twice."
+}
