@@ -258,8 +258,28 @@ class PlaybackEngine implements PlaybackFacade {
   int _opIntent = 0;
 
   /// Loads in progress that will start playing: the play/pause button must
-  /// pause these rather than queue another play.
+  /// pause these rather than queue another play. A tap on a song counts from the moment it is made ([_aboutToPlay]), not from the moment the
+  /// engine gets to load it.
   int _loadingToPlay = 0;
+
+  /// A tap on a song is "about to play" from the moment it is made. Until the engine starts loading (it may first wait for an earlier
+  /// command, or look at whether the server answers) the backend still shows the previous song's state: the mini-player drew a Play button
+  /// and the press, like the toggle of a headset or the lock screen, asked for play (N-19, A35, 13 Nov 2026: a pause 0.3 to 1 s after the tap
+  /// left the song playing, four tries in four). From the tap the player says it is loading (no button to press, a toggle means pause).
+  Future<T> _aboutToPlay<T>(Future<T> Function() command) {
+    _loadingToPlay++;
+    _tapsPending++;
+    _emitAll();
+    return command().whenComplete(() {
+      _loadingToPlay--;
+      _tapsPending--;
+      if (!_disposed) _emitAll();
+    });
+  }
+
+  /// Taps on a song that the engine has not finished with ([_aboutToPlay]): what the snapshot's `isLoading` says besides the backend's own state.
+  /// Its own counter, because [_loadingToPlay] also moves inside [_loadCurrent], which does not publish a snapshot when it drops.
+  int _tapsPending = 0;
 
   /// Increments every time the backend window is replaced; lets the
   /// completion handler ignore repeated/stale `completed` events.
@@ -454,53 +474,54 @@ class PlaybackEngine implements PlaybackFacade {
     PerfMonitor.instance.begin('play.audible');
     _audibleBySkip = false;
     final generation = _newGeneration();
-    return _run(() async {
-      if (generation != _generation) return;
-      final items = [for (final t in tracks) _queue.itemFor(t)];
-      // "Shuffle" on a collection starts anywhere, like Spotify; tapping a
-      // specific row (shuffle false) keeps that track as the start.
-      var start = shuffle && startIndex == 0
-          ? _random.nextInt(items.length)
-          : startIndex;
-      // Play and Shuffle on a list ask for the list, not for one song: without a connection they pass over what is not downloaded (field
-      // test 2026-10-31: one missing song and nothing played). A tapped row still asks for that song.
-      if (skipUnavailable && !_canReach()) {
-        final order = [for (var i = 0; i < items.length; i++) i];
-        if (shuffle && startIndex == 0) {
-          order.shuffle(_random);
-        } else {
-          order.removeRange(0, startIndex.clamp(0, items.length));
-          order.addAll(
-              [for (var i = 0; i < startIndex.clamp(0, items.length); i++) i]);
-        }
-        for (final i in order) {
-          if (await _playable(items[i])) {
-            start = i;
-            break;
+    return _aboutToPlay(() => _run(() async {
+          if (generation != _generation) return;
+          final items = [for (final t in tracks) _queue.itemFor(t)];
+          // "Shuffle" on a collection starts anywhere, like Spotify; tapping a
+          // specific row (shuffle false) keeps that track as the start.
+          var start = shuffle && startIndex == 0
+              ? _random.nextInt(items.length)
+              : startIndex;
+          // Play and Shuffle on a list ask for the list, not for one song: without a connection they pass over what is not downloaded (field
+          // test 2026-10-31: one missing song and nothing played). A tapped row still asks for that song.
+          if (skipUnavailable && !_canReach()) {
+            final order = [for (var i = 0; i < items.length; i++) i];
+            if (shuffle && startIndex == 0) {
+              order.shuffle(_random);
+            } else {
+              order.removeRange(0, startIndex.clamp(0, items.length));
+              order.addAll([
+                for (var i = 0; i < startIndex.clamp(0, items.length); i++) i
+              ]);
+            }
+            for (final i in order) {
+              if (await _playable(items[i])) {
+                start = i;
+                break;
+              }
+            }
           }
-        }
-      }
-      // Without a connection a song that is not downloaded cannot play: say so and change nothing. What is playing goes on, the queue
-      // stays as it was, and nothing starts by itself when the network returns - the person asked for a song that was not there, and
-      // minutes later a different one starting would be a surprise (Q30, D-42). Losing the network in the middle of a song is another
-      // case: that one waits ([_waitForConnection]) and carries on.
-      if (!await _playable(items[start])) {
-        PerfMonitor.instance.cancel('play.tap->playing');
-        PerfMonitor.instance.cancel('play.audible');
-        _notify(PlaybackNotice(_notDownloadedWords(), isError: false));
-        return;
-      }
-      _finishItem();
-      _sourceName = sourceName;
-      _sourceId = sourceId;
-      _queue.replace(items,
-          startIndex: start, shuffle: shuffle || _queue.shuffle);
-      _consecutiveFailures = 0;
-      _retried.clear();
-      await _loadCurrent(autoplay: true, generation: generation);
-      _emitAll();
-      _schedulePersist(immediate: true);
-    });
+          // Without a connection a song that is not downloaded cannot play: say so and change nothing. What is playing goes on, the queue
+          // stays as it was, and nothing starts by itself when the network returns - the person asked for a song that was not there, and
+          // minutes later a different one starting would be a surprise (Q30, D-42). Losing the network in the middle of a song is another
+          // case: that one waits ([_waitForConnection]) and carries on.
+          if (!await _playable(items[start])) {
+            PerfMonitor.instance.cancel('play.tap->playing');
+            PerfMonitor.instance.cancel('play.audible');
+            _notify(PlaybackNotice(_notDownloadedWords(), isError: false));
+            return;
+          }
+          _finishItem();
+          _sourceName = sourceName;
+          _sourceId = sourceId;
+          _queue.replace(items,
+              startIndex: start, shuffle: shuffle || _queue.shuffle);
+          _consecutiveFailures = 0;
+          _retried.clear();
+          await _loadCurrent(autoplay: true, generation: generation);
+          _emitAll();
+          _schedulePersist(immediate: true);
+        }));
   }
 
   @override
@@ -515,35 +536,35 @@ class PlaybackEngine implements PlaybackFacade {
     PerfMonitor.instance.begin('play.audible');
     _audibleBySkip = false;
     final generation = _newGeneration();
-    return _run(() async {
-      if (generation != _generation) return;
-      _finishItem();
-      final start = startIndex.clamp(0, tracks.length - 1);
-      _sourceName = sourceName ?? 'Streaming';
-      _sourceId = sourceId ?? 'stream:${tracks[start].id}';
-      _queue.replace([
-        for (final t in tracks)
-          QueueItem.streamed(
-            uid: _queue.newUid(),
-            id: t.id,
-            title: t.title,
-            uri: t.uri,
-            artist: t.artist,
-            catalogueArtistId: t.catalogueArtistId,
-            album: t.album,
-            imageUrl: t.imageUrl,
-            durationSec: t.duration?.inSeconds,
-            videoId: t.videoId,
-          ),
-      ], startIndex: start, shuffle: false);
-      _consecutiveFailures = 0;
-      _retried.clear();
-      await _loadCurrent(autoplay: true, generation: generation);
-      _emitAll();
-      // Songs streamed from the catalogue are not restored after a restart: the saved ids
-      // do not exist in the library, so a restore drops them.
-      _schedulePersist();
-    });
+    return _aboutToPlay(() => _run(() async {
+          if (generation != _generation) return;
+          _finishItem();
+          final start = startIndex.clamp(0, tracks.length - 1);
+          _sourceName = sourceName ?? 'Streaming';
+          _sourceId = sourceId ?? 'stream:${tracks[start].id}';
+          _queue.replace([
+            for (final t in tracks)
+              QueueItem.streamed(
+                uid: _queue.newUid(),
+                id: t.id,
+                title: t.title,
+                uri: t.uri,
+                artist: t.artist,
+                catalogueArtistId: t.catalogueArtistId,
+                album: t.album,
+                imageUrl: t.imageUrl,
+                durationSec: t.duration?.inSeconds,
+                videoId: t.videoId,
+              ),
+          ], startIndex: start, shuffle: false);
+          _consecutiveFailures = 0;
+          _retried.clear();
+          await _loadCurrent(autoplay: true, generation: generation);
+          _emitAll();
+          // Songs streamed from the catalogue are not restored after a restart: the saved ids
+          // do not exist in the library, so a restore drops them.
+          _schedulePersist();
+        }));
   }
 
   @override
@@ -1695,7 +1716,8 @@ class PlaybackEngine implements PlaybackFacade {
       isPlaying:
           state.playing && state.processing != BackendProcessing.completed,
       isLoading: state.processing == BackendProcessing.loading ||
-          state.processing == BackendProcessing.buffering,
+          state.processing == BackendProcessing.buffering ||
+          _tapsPending > 0,
       position: _loaded ? _backend.position : _resumePosition,
       duration: duration,
       queueIndex: _queue.cursor,
