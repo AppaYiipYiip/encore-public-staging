@@ -58,7 +58,8 @@ person's setting (`21` §5).
   what was typed is the Top result over every song or album that merely starts with or contains the words (typing "jinjer" gives the
   band, not a song titled "Jinjer - Pisces"); a song or an album that is itself exactly the typed words takes that place only when the
   artist is barely known (not in the library and under 50,000 fans: typing "Hotel California" means the song). Popularity only settles
-  that tie. The server's one ranked list (P2-12) keeps this rule.
+  that tie (one exception: a row with no releases at all, a collaboration or a namesake, is ranked after the real artist and, when it is
+  also barely known, can fall below a partial song). The server's one ranked list (P2-12) keeps this rule.
 * **Typing:** the search screen waits 90 ms after the last key before it asks (`search_screen.dart`; this page said 250 ms), minimum 2 characters, cache per normalised query (24 h), prepare the Top result (P1-04). **OPEN (needs owner/advisor):** `03` N7 wants catalogue results at most 300 ms after the last key, but the server's fast phase is allowed about 400 ms (P2-12 acceptance: p50 at most 400 ms) and nothing measures the total, so N7 cannot hold as written: relax N7 (to about 500 ms) or cut the phase's target.
 * **Transliteration:** the query is also matched against artist aliases (MusicBrainz) so "fairouz", "fairuz" and "فيروز" find
   the same artist; Arabic queries are normalised with §2.
