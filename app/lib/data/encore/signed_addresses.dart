@@ -88,11 +88,19 @@ Uri withQuality(
 class CoverPass {
   const CoverPass({
     required this.person,
+    required this.expires,
     required this.expiresAt,
     required this.signature,
   });
 
   final String person;
+
+  /// The end of the ticket as the server wrote it: whole seconds of the server's own clock. The signature is made over exactly this number,
+  /// so an address carries it as it is, however far this phone's clock is from the server's (a phone one second out had every picture
+  /// refused, audit B-115). Never worked out from [expiresAt].
+  final int expires;
+
+  /// The same moment counted by this phone's clock: only for deciding whether the ticket is still good and when to renew it.
   final DateTime expiresAt;
   final String signature;
 }
@@ -105,6 +113,7 @@ class CoverPassHolder {
     required Uri Function() baseUrl,
     DateTime Function() clock = DateTime.now,
     this.renewBefore = const Duration(days: 1),
+    this.refusedGrace = const Duration(seconds: 30),
   })  : _fetch = fetch,
         _baseUrl = baseUrl,
         _clock = clock;
@@ -114,7 +123,12 @@ class CoverPassHolder {
   final DateTime Function() _clock;
   final Duration renewBefore;
 
+  /// A ticket younger than this is not thrown away because a picture was refused: a new one would be refused the same way (the server's
+  /// own trouble, not an old ticket), and the app must not ask for tickets in a loop.
+  final Duration refusedGrace;
+
   CoverPass? _pass;
+  DateTime? _issuedAt;
   Future<void>? _asking;
   int _generation = 0;
   final StreamController<int> _changes = StreamController<int>.broadcast();
@@ -140,7 +154,7 @@ class CoverPassHolder {
       queryParameters: {
         'size': '$size',
         'p': pass.person,
-        'e': '${pass.expiresAt.millisecondsSinceEpoch ~/ 1000}',
+        'e': '${pass.expires}',
         'sig': pass.signature,
       },
     );
@@ -160,12 +174,27 @@ class CoverPassHolder {
     final got = (await _fetch()).valueOrNull;
     if (got == null) return;
     _pass = got;
+    _issuedAt = _clock();
     _generation++;
     if (!_changes.isClosed) _changes.add(_generation);
   }
 
   /// The server refused a picture's address: forget the ticket, the next [ensure] gets a new one.
   void expire() => _pass = null;
+
+  /// The server refused (401) an address written with the ticket whose signature is [signature]. That ticket is forgotten and a new one is
+  /// asked for, but only when it is the ticket held now: requests that were already under way with an older ticket are refused too, and must
+  /// not throw away the new one. A ticket that is itself new (under [refusedGrace]) stays: asking again would get the same.
+  void refused(String? signature) {
+    final pass = _pass;
+    if (pass == null || signature == null || pass.signature != signature) {
+      return;
+    }
+    final issued = _issuedAt;
+    if (issued != null && _clock().difference(issued) < refusedGrace) return;
+    _pass = null;
+    unawaited(ensure());
+  }
 
   Future<void> dispose() => _changes.close();
 }
