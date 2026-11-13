@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/navigation.dart';
 import '../../data/catalogue/catalogue_models.dart';
+import '../../data/db/app_database.dart' show TrackRow;
 import '../../design/tokens.dart';
 import '../catalogue/catalogue_widgets.dart' show formatFans;
 import '../common/cover_art.dart';
@@ -128,6 +129,29 @@ class _TopResult extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final h = hit;
+    // A song of the library has what every song has: the swipes and the "..." menu (N-21), from the one place that gives them.
+    final local = h is SongHit ? h.local : null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          Space.gutter, Space.sm, Space.gutter, Space.sm),
+      // The swipe's colour shows only inside the card's rounded corners.
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: local == null
+            ? _card(context, ref, onMore: null)
+            : _SongActions(
+                track: local,
+                index: -1,
+                builder: (onMore) => _card(context, ref, onMore: onMore),
+              ),
+      ),
+    );
+  }
+
+  /// [onMore] is the song's menu, also opened by a long press (D-26); an artist, an album or a song of the catalogue has none.
+  Widget _card(BuildContext context, WidgetRef ref,
+      {required VoidCallback? onMore}) {
     final c = context.colors;
     final playable = ref.watch(playabilityProvider);
     final h = hit;
@@ -162,61 +186,86 @@ class _TopResult extends ConsumerWidget {
           fallbackArtist: h.artist,
         ),
     };
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          Space.gutter, Space.sm, Space.gutter, Space.sm),
-      child: Semantics(
-        button: true,
-        label: 'Top result: $kind, $title${artist == null ? '' : ', $artist'}',
-        excludeSemantics: true,
-        child: Material(
-          color: c.surfaceHigh,
-          borderRadius: BorderRadius.circular(Radii.card),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            key: const Key('top-result'),
-            onTap: () => _open(context, ref, hit, onOpen),
-            child: Padding(
-              padding: const EdgeInsets.all(Space.md),
-              child: Row(
-                children: [
-                  SizedBox.square(dimension: 92, child: art),
-                  const SizedBox(width: Space.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Top result',
-                            style: context.text.labelLarge
-                                ?.copyWith(color: c.accent)),
-                        const SizedBox(height: Space.xs),
-                        Text(title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.text.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w800)),
-                        Text(
-                          [kind, if (artist != null) artist].join(' • '),
-                          maxLines: 1,
+    return Semantics(
+      button: true,
+      label: 'Top result: $kind, $title${artist == null ? '' : ', $artist'}',
+      excludeSemantics: true,
+      child: Material(
+        color: c.surfaceHigh,
+        child: InkWell(
+          key: const Key('top-result'),
+          onTap: () => _open(context, ref, hit, onOpen),
+          onLongPress: onMore,
+          child: Padding(
+            padding: const EdgeInsets.all(Space.md),
+            child: Row(
+              children: [
+                SizedBox.square(dimension: 92, child: art),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Top result',
+                          style: context.text.labelLarge
+                              ?.copyWith(color: c.accent)),
+                      const SizedBox(height: Space.xs),
+                      Text(title,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: context.text.bodyMedium
-                              ?.copyWith(color: c.onBgMuted),
-                        ),
-                      ],
-                    ),
+                          style: context.text.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        [kind, if (artist != null) artist].join(' • '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.bodyMedium
+                            ?.copyWith(color: c.onBgMuted),
+                      ),
+                    ],
                   ),
-                  if (hit is SongHit)
-                    unavailable
-                        ? Icon(Icons.cloud_off_rounded,
-                            size: 28, color: c.onBgFaint)
-                        : Icon(Icons.play_circle_fill_rounded,
-                            size: 44, color: c.accent),
-                ],
-              ),
+                ),
+                if (hit is SongHit)
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onMore != null) TrackMoreButton(onPressed: onMore),
+                      unavailable
+                          ? Icon(Icons.cloud_off_rounded,
+                              size: 28, color: c.onBgFaint)
+                          : Icon(Icons.play_circle_fill_rounded,
+                              size: 44, color: c.accent),
+                    ],
+                  ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What a song of the library can do besides playing, wherever the results draw it (a row, the Top result): swipe right adds it to the
+/// queue, swipe left likes it ([TrackSwipe]), and its "..." menu ([showTrackMenu]) opens from the button or a long press. [builder] draws
+/// the song and puts the button where it belongs.
+class _SongActions extends StatelessWidget {
+  const _SongActions({
+    required this.track,
+    required this.index,
+    required this.builder,
+  });
+
+  final TrackRow track;
+  final int index;
+  final Widget Function(VoidCallback onMore) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return TrackSwipe(
+      track: track,
+      index: index,
+      child: builder(() => showTrackMenu(context, track)),
     );
   }
 }
@@ -285,10 +334,10 @@ class _SongRow extends ConsumerWidget {
     final playable = ref.watch(playabilityProvider);
     final local = hit.local;
     if (local != null) {
-      return TrackSwipe(
+      return _SongActions(
         track: local,
         index: index,
-        child: TrackTile(
+        builder: (onMore) => TrackTile(
           track: local,
           showAlbum: true,
           available: playable(local.id),
@@ -298,7 +347,7 @@ class _SongRow extends ConsumerWidget {
             onOpen();
             _play(ref, hit, songs: songs);
           },
-          onMore: () => showTrackMenu(context, local),
+          onMore: onMore,
         ),
       );
     }
