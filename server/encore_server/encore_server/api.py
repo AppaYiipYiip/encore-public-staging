@@ -808,9 +808,8 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
     headers can use it, and valid for as long as a listen can last."""
     svc = services(request)
     with svc.db.read() as conn:
-        ref_id = refs.canonical(
-            conn, ref_id
-        )  # signed for the survivor of a song merged into another (N-11): the address a player gets is the live one
+        # Signed for the survivor of a song merged into another (N-11): the address a player gets is the live one.
+        ref_id = refs.canonical(conn, ref_id)
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
     expires = int(time.time()) + STREAM_URL_TTL_S
