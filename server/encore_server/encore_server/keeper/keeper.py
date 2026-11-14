@@ -37,7 +37,7 @@ GIVE_UP = {
     "age_restricted": "the only copy needs an age check",
     "too_big": "the file is bigger than the limit for keeping",
 }
-_REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
+_REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0, "search_failed": 300.0}
 
 #: The other reasons a keep ends with, named so that `failures.py` (the sentences a person reads, and whether Retry can work) matches the SAME text:
 #: a reworded message here changes there too, and a test drives the real keeper through the too-long path.

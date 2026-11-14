@@ -234,9 +234,15 @@ class FailureHandlingTest(unittest.TestCase):
         self.assertEqual(len(fb.asked), 1)
 
     def test_without_a_fallback_the_failure_is_an_honest_error_not_not_found(self):
+        """A search that could not be made says so (`search_failed`, a thing that may pass). It is neither `not_found` (the search answered with nothing)
+        nor `unavailable` (the upload is gone): both are about the SONG and are final, and a failed search tells nothing about the song (B-122)."""
         with self.assertRaises(DownloadError) as caught:
             self.resolver(self.Broken()).resolve(Want("A", "B"))
-        self.assertEqual(caught.exception.code, "unavailable")
+        self.assertEqual(caught.exception.code, "search_failed")
+
+    def test_a_search_that_answered_with_nothing_is_an_empty_list_not_an_error(self):
+        """The other half of the same line: an answer of no acceptable upload is NOT an error (the caller turns it into `not_found`)."""
+        self.assertEqual(self.resolver(RecordedSearcher()).resolve_ranked(Want("Nobody Atall", "Nothing Recorded Here")), [])
 
     def test_a_hanging_service_is_given_up_on_in_time(self):
         hanging = self.Hanging()

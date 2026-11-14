@@ -7,7 +7,8 @@ FORMAT = "bestaudio[acodec=opus]/bestaudio"
 
 
 class DownloadError(Exception):
-    """`code` is one of: not_found, unavailable, age_restricted, blocked, too_big, timeout, download_failed, disk_full, no_library."""
+    """`code` is one of: not_found (the search ANSWERED and nothing acceptable matched), unavailable, age_restricted (the upload is gone, or needs an age check),
+    search_failed (the search itself could not be made: says nothing about the song), blocked, too_big, timeout, download_failed, disk_full, no_library."""
 
     def __init__(self, code: str, message: str = "", account: str | None = None) -> None:
         super().__init__(message or code)

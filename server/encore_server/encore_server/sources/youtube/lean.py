@@ -224,7 +224,10 @@ class LeanResolver:
             if self._fallback is not None:
                 found = self._fallback.resolve(want)
                 return [found] if found is not None else []
-            raise DownloadError("unavailable", "the song search is not answering") from error
+            # `search_failed`, not `unavailable` (B-122): `unavailable` says the UPLOAD of this song is gone and is final (the route answers it as a
+            # permanent 404, the app does not retry it, the keeper gives the song up, an import calls it missing). A search that could not be made says
+            # nothing about the song; it is a thing that passes, answered as a retryable 502 and waited out by the keeper and the imports.
+            raise DownloadError("search_failed", "the song search is not answering") from error
 
     def _resolve(self, want: Want) -> list[Scored]:
         queries = queries_for(want)
