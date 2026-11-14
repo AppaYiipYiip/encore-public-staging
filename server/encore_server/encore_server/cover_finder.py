@@ -1,8 +1,9 @@
 """Pictures for songs that have none: a song that came from a plain music library, or from a list that carried no artwork.
 
 The app shows a song's picture from its ref (`coverUrl`), so a picture found here reaches every phone through the ordinary feeds. The
-look-up is the catalogue's public search (Deezer), a few songs a second, once per album where the album is known; a song nothing is
-found for is not asked about again for a week.
+look-up is the catalogue's public search (Deezer), a few songs a second, once per album where the album is known; a song the catalogue
+knows nothing for is not asked about again for a week. A catalogue that could not be asked (down, throttled) is not "knows nothing": the pass
+stops and nothing is remembered (audit B-124).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import httpx
 
 from . import library, refs
 from .db import Database
+from .deezer import LookupUnavailable, search_tracks
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
@@ -28,40 +30,25 @@ from .textnorm import norm_artist, norm_title
 
 log = logging.getLogger("encore_server.cover_finder")
 
-SEARCH_URL = "https://api.deezer.com/search"
 #: How long a song nothing was found for is left alone.
 RETRY_AFTER_MS = 7 * 24 * 3600 * 1000
 
 
 class Lookup(Protocol):
-    def __call__(self, artist: str, title: str, album: str | None) -> str | None: ...
+    def __call__(self, artist: str, title: str, album: str | None) -> str | None:
+        """The picture's address, or `None` (the catalogue knows no such song). Raises [LookupUnavailable] when it could not be asked."""
+        ...
 
 
 def deezer_lookup(artist: str, title: str, album: str | None, *, client: httpx.Client | None = None) -> str | None:
     """The picture of the album this recording is on, from the catalogue; `None` when it is not sure which song it is.
 
     A plain search (the catalogue's field search finds nothing for many real songs), and then only a hit whose artist and title are the
-    ones asked for counts."""
-    own = client is None
-    http = client or httpx.Client(timeout=8.0, headers={"User-Agent": "encore-server/1"})
-    try:
-        response = http.get(SEARCH_URL, params={"q": f"{artist} {title}", "limit": 8})
-        if response.status_code != 200:
-            return None
-        body = response.json()
-        found = body.get("data") if isinstance(body, dict) else None
-    except (httpx.HTTPError, ValueError):
-        return None
-    finally:
-        if own:
-            http.close()
-    if not isinstance(found, list):
-        return None
+    ones asked for counts. Raises [LookupUnavailable] when the catalogue could not be asked (so nothing is remembered about the song)."""
+    found = search_tracks(artist, title, client=client)
     want_artist, want_title = norm_artist(artist), norm_title(title)
     best: tuple[int, str] | None = None
     for hit in found:
-        if not isinstance(hit, dict):
-            continue
         hit_artist = norm_artist(str((hit.get("artist") or {}).get("name", "")))
         hit_title = norm_title(str(hit.get("title", "")))
         if hit_artist != want_artist or hit_title != want_title:
@@ -155,7 +142,14 @@ class CoverFinder:
             url = by_album.get(key) if key is not None else None
             if url is None:
                 report.looked += 1
-                url = self._lookup(artists[0], row["title"], album)
+                try:
+                    url = self._lookup(artists[0], row["title"], album)
+                except LookupUnavailable as error:
+                    # Not "no picture": the catalogue did not answer. Nothing is stored for this song or the rest, and the next pass asks again.
+                    log.info("the catalogue could not be asked (%s); the pass stops", error)
+                    report.looked -= 1
+                    report.complete = False
+                    break
                 if key is not None and url:
                     by_album[key] = url
                 self._sleep(self._pause)
