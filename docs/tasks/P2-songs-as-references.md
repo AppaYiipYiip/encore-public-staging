@@ -135,7 +135,11 @@ An unknown `videoType` is an upload on purpose: the safe default never trusts th
 1. **A title with a dash (hyphen, en dash, em dash, with spaces, outside brackets) is `Artist - Song`.** The channel only breaks the tie the other way: when it
    is a *whole name* of an artist the RIGHT side lists ("BELLAKEO (Video Oficial) - Peso Pluma, Anitta" on the channel Peso Pluma) the title is `Song - Artist`.
    "Whole name" = Unicode-folded (NFKC, case-folded, letters and digits of any script), with the channel's own decoration ("Official", "VEVO", "- Topic")
-   removed, equal to the side, or to one name of a credit list (`,` `&` `x` `feat.`). **Never a substring.** `basis = title`.
+   removed, equal to the side, or to one name of a credit list (`,` `&` `x` `feat.`). **Never a substring.** `basis = title`, **except** when the artist is
+   reached only because the whole right side equals the uploader and names nobody else ("Sepultura, live at ... – ARTE Concert"): then `basis = channel`. The
+   title agrees with the uploader only by repeating its name, and a broadcaster and a performer look the same here. Kept as `title`: the LEFT side is the
+   channel ("Arcangel - FN8" on Arcangel) and a right side that is a credit list naming someone else ("... - Peso Pluma, Anitta"). **Cost, written down:** a
+   performer's own "Song - Artist" upload is weak too; slice 2's rule (a name with one `declared` or `title` song is an artist) absorbs it.
 2. **No dash: the uploader, `basis = channel`** (a VEVO channel is the artist's own: its name without "VEVO", still `channel`, because "TaylorSwiftVEVO" has
    no space). This is the one stop-gap and it is named below.
 3. **Brackets never decide who the artist is.** A bracket that names a venue, a show or a label ("(Live on KEXP)", "(Live at Wembley)", "[A COLORS SHOW]")
@@ -191,12 +195,13 @@ add that to `RELEASE-CANDIDATE.md` as a gate. **Trigger to build slice 5:** any 
 
 **5. Tests** (the repo's style: recorded real answers, never a network call).
 * Slice 1 step 0, once: record the real `get_playlist` answers of the playlists the owner imported (their ids are in the test server's `import` table; one
-  look-up per playlist, at most ten, spaced, from the development PC and not the owner's home line) into `tests/fixtures/ytm/`, trimmed to the entries that matter
+  look-up per playlist, at most ten in all and spaced: the repository's own rule for YouTube; `tools/record_ytm_fixtures.py` records search answers today and gets a playlist case) into `tests/fixtures/ytm/`, trimmed to the entries that matter
   (the three audit videos, an OMV from a label channel, a UGC of a performer's own channel). Until then a test says in its comment that the JSON around the real
   title and channel is constructed from the recorded OMV entry. Check there what `videoType` and `artists[].id` really hold for an upload.
 * `tests/test_import_upload_reading.py`, a table (title, channel, `videoType`) -> (artist, song, basis): the audit's three strings; every case of
   `SplitArtistTitleTest`; the performer's own channel on the same titles; `Song - Artist` with the channel in a credit list; a channel that is a substring of the
-  other side ("KEXP" in "(Live on KEXP)", "Queen" in "Queen Official"); an en and an em dash; an Arabic `Artist - Song` on the artist's own channel and an
+  other side ("KEXP" in "(Live on KEXP)", "Queen" in "Queen Official"); the right side equal to the channel alone (`channel`) against a credit list
+  (`title`); an en and an em dash; an Arabic `Artist - Song` on the artist's own channel and an
   Arabic channel that equals nothing; an unknown `videoType`; no dash. **Each guard is mutation-checked** (revert the gate, revert the whole-name test: the
   named case must fail).
 * The invariance test (blocks slice 1): all 149 entries of `playlist_community.json` and 10 of `playlist_album.json` give exactly the artists they give today
@@ -215,7 +220,7 @@ add that to `RELEASE-CANDIDATE.md` as a gate. **Trigger to build slice 5:** any 
 
 | # | What | Size | A person notices | Waits for |
 |-|-|-|-|-|
-| 1 | `read_upload` (the one door, in its own module): the `videoType` gate, the whole-name Unicode channel test, all dash kinds; both readers use it; `Track` carries `artist_basis` and `uploader` in memory; fixtures and tests of section 5 | M | A new import files "Tinariwen - Full Performance (Live on KEXP)" under Tinariwen; no performer's song is filed under a broadcaster or label whose title names the performer after a dash | step 0 (recorded answers) |
+| 1 | `read_upload` (the one door, in its own module): the `videoType` gate, the whole-name Unicode channel test, all dash kinds; both readers use it; `Track` carries `artist_basis` and `uploader` in memory; fixtures and tests of section 5 | M | A new import files "Tinariwen - Full Performance (Live on KEXP)" under Tinariwen, and a performer named before a dash is no longer filed under the broadcaster or label that uploaded it. The ARTE Concert and Crunchyroll titles stay under their channels until slice 4 | step 0 (recorded answers) |
 | 2 | Keep the facts: migration (`artist_basis`, `uploader`), `refs.resolve` keyword arguments, `_enrich`, `artist_finder` skips all-`channel` names, `docs/18` | S | Nothing at once (fewer catalogue look-ups from the Host's address) | slice 1 |
 | 3 | A `channel` song never makes an artist page: first a **proof** on the real music server in CI (does a song whose `ARTIST` is X and whose `ALBUMARTIST` is not X list X in `getArtists`? N-15 saw that artists with no album are not listed); then the keeper's tags | S to M | the Artists list holds performers, not channels | slice 2 and the proof |
 | 4 | The shapes of context (live session, concert channel credit, anime opening) with their negative corpus | S | the other two audit titles come out right | slice 1; a corpus of recorded titles |
