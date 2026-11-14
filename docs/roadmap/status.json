@@ -246,5 +246,11 @@
   "evidence": "Four new tests in app/test/data/encore/encore_sync_test.dart (a waiting rename keeps the name and another device's song still arrives; delivered then renamed elsewhere takes the server's name; a waiting delete keeps the playlist gone and a parked one does not hold it; a waiting removal does not put the song back), seen failing before the fix; test/data/encore all 205 pass. Not walked on a phone.",
   "at": "2026-11-14T11:09:32Z",
   "by": "Claude"
+ },
+ "P2-26": {
+  "state": "built",
+  "evidence": "PR #45 (audit B-122, the fix of B-38): a failed search is search_failed, a retryable 502 on a tap and a 300 s wait in the keeper and the imports, not a permanent 'removed'; 4 tests seen failing first; on main the probe 'python -X utf8 docs/evidence/scripts/audit_probes.py transient' ends 'wanted: a Retry, not a GiveUp -> PASS' (14 Nov 2026). The stored-upload re-search is N-13 (PR #53). Not walked.",
+  "at": "2026-11-14T11:57:06Z",
+  "by": "Claude"
  }
 }
