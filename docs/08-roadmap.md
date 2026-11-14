@@ -91,9 +91,9 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 25 | N-12 | "Go to artist" in a song's menu offers every artist of the song | S | built | none | 7 to 13 |
 | 26 | N-15 | Artists the music server has no picture for get one | S | built | none | 7 to 13 |
 | 27 | P2-25 | Behind the scenes: songs in Arabic, Russian, Korean and Japanese are told apart and found | M | todo | none | 8 to 15 |
-| 28 | P2-12 | Search and artist pages come from your own server | L | todo | none | 10 to 19 |
-| 29 | P2-15 | Your server checks for new releases; the news shows in the app | S | todo | P2-12 | 10 to 20 |
-| 30 | P4-18 | Follow artists, and get told when one releases something | S | todo | P2-15 | 10 to 20 |
+| 28 | P2-12 | Search and artist pages come from your own server | L | todo | P2-25 | 10 to 19 |
+| 29 | P2-15 | Your server checks for new releases; the news shows in the app | S | todo | P2-12 | 11 to 20 |
+| 30 | P4-18 | Follow artists, and get told when one releases something | S | todo | P2-15 | 12 to 20 |
 | 31 | P2-26 | Behind the scenes: a short YouTube hiccup no longer fails a song for good | S | built | none | 10 to 21 |
 | 32 | N-16 | Behind the scenes: 40 real searches prove the right song is picked | M | todo | P2-25 | 11 to 22 |
 | 33 | P2-29 | One notification for the whole download while the server is still saving | M | todo | none | 12 to 24 |
