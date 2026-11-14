@@ -1,5 +1,5 @@
 """`python -m encore_server`: runs the server (the container's command); `python -m encore_server setup` does the first-install steps;
-`python -m encore_server backup` copies the databases (`encore backup` uses it)."""
+`python -m encore_server backup` copies the databases (`encore backup` uses it); any other word prints the commands and exits (B-57)."""
 
 from __future__ import annotations
 
@@ -21,8 +21,24 @@ def configure_logging(level: str) -> None:
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
+USAGE = """usage: python -m encore_server [command]
+
+  (no command)   run the server (what the container does)
+  setup          the first-install steps (reads its details from standard input)
+  backup         copy the databases (`encore backup` uses it)
+"""
+
+
 def main(argv: list[str] | None = None) -> None:
     args = sys.argv[1:] if argv is None else argv
+    # Only NO word runs the server. A word this program does not know (`--help`, `restore`, a typo) used to fall through to it: typed in the
+    # container of a live install it ran the migrations and the scheduler on the live database before failing to bind the port (AUDIT B-57).
+    if args[:1] in (["--help"], ["-h"], ["help"]):
+        sys.stdout.write(USAGE)
+        raise SystemExit(0)
+    if args and args[0] not in ("setup", "backup"):
+        sys.stderr.write(f"encore_server: do not understand {args[0]!r}\n\n{USAGE}")
+        raise SystemExit(2)
     if args[:1] == ["setup"]:
         from .setup import command
 
