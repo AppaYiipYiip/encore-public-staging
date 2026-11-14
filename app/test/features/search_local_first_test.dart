@@ -162,7 +162,7 @@ void main() {
     await closeApp(tester, app.db);
   });
 
-  group('while the library is being written to (a sync, a download)', () {
+  group('while the library is being written to (a sync)', () {
     /// One page of a sync, written the way the sync engine writes it ([LibraryWriter]).
     Future<void> write(AppDatabase db, int serverId, int i, _Write what) async {
       switch (what) {
@@ -286,7 +286,7 @@ void main() {
   });
 }
 
-/// What a sync or a download writes, one page every 100 ms.
+/// What a sync writes, one page every 100 ms (and, for [serverRow], the server's own row).
 enum _Write { song, songOfNewArtist, serverRow, nothing }
 
 /// A phone that is busy: once [delay] is set, every read of the database takes that long (in the test's own time). Writes are not slowed.

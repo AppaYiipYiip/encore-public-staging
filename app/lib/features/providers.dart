@@ -434,7 +434,7 @@ final artistTypoIndexProvider =
 /// The library's own full-text search of [query]: the one answer that must come at once (< 30 ms budget, offline).
 ///
 /// **It watches nothing that a write can change**: only the id of the server (which emits when the id changes, not when the server's row is
-/// updated) and the database. A search that watched the list of artists, or the server's row, started over every time a sync or a download
+/// updated) and the database. A search that watched the list of artists, or the server's row, started over every time a sync
 /// wrote a song; on a phone that is busy a run takes longer than the pause between two writes, so the first answer of a new query was
 /// abandoned again and again and the page stayed empty until the writing stopped (14 Nov 2026, `search_local_first_test.dart`: 30 starts in
 /// 3 s, 30 abandoned). What the list of artists adds is added after this answer, by [searchResultsProvider].
