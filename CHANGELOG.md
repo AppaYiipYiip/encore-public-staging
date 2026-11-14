@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Stopping or updating the server no longer takes ten seconds and ends with the server being killed when a phone is connected: the server now notices at once that a phone's live connection is closing, and a stop is bounded.
 * Artist pictures found for artists the music server has none for are now written at the first start, not an hour later: the pass waits for a library scan that is running (up to a minute) instead of skipping its turn.
 * `python -m encore_server --help` (or a word it does not know, like `restore` or a typo) now prints the commands and stops; before, it started a second server on your live data. Only no word runs the server.
 * An edit you made while your server was away (a like, a playlist change) is now sent as soon as the server answers again, and a failed delivery is tried again by itself when its wait ends; before, it could sit for ten minutes until something else woke the app.
