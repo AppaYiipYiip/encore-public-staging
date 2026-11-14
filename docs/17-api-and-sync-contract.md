@@ -25,6 +25,7 @@ by the server and checked by a server test (`11` ADR-R41 T5). Today there is no 
 `unauthorized`, `forbidden`, `not_found`, `conflict` (stale revision), `validation`, `rate_limited`, `song_unavailable`
 (`details.reason`: `not_found` | `region_blocked` | `age_restricted` | `removed`), `source_busy` (YouTube pushing back; retryable),
 `source_unreachable`, `storage_full`, `server_busy`, `upstream_timeout`, `federation_disabled`, `peer_unreachable`, `internal`.
+`server_busy` is also the answer (503, retryable, "The music server is not answering just now") when the music server gives no answer to a login check (it is down, restarting or sent an error page): never `unauthorized`, never counted as a wrong guess, nobody is signed out (AUDIT B-41). Only a refusal by the music server itself (Subsonic error 40 to 44) is `unauthorized`.
 Each has one plain message, owned by the server (`server/encore_server/encore_server/errors.py`; English only today), so all clients say the same thing.
 
 ## 3. Endpoint inventory (v1): what is built and what is planned
