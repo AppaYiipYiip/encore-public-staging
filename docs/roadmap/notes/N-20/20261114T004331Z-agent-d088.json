@@ -1,0 +1,9 @@
+{
+ "id": "20261114T004331Z-agent-d088",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T00:43:31Z",
+ "type": "note",
+ "body": "14 Nov 2026: NOT verifiable on the emulator: it needs a DOWNLOADED song and the advisor ruled out downloads from the emulator, because it is signed in as the same account as the owner's phone. To check the fix (and the lost-pause fix: a pause pressed right after a tap while the look runs) a separate test MEMBER account on VM 108 is needed (created by the owner account, a write on the test server only), with a few songs downloaded from it; then: stop the server container, Wi-Fi on, tap a downloaded song (should start in about 0.2 s, not 2 s) and press the media key pause 0.3 to 1 s after the tap."
+}

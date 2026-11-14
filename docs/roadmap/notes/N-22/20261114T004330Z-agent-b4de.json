@@ -1,0 +1,9 @@
+{
+ "id": "20261114T004330Z-agent-b4de",
+ "item": "N-22",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T00:43:30Z",
+ "type": "note",
+ "body": "14 Nov 2026: verified on an emulator against VM 108 updated to sha-7c7fa60 (engineering check, not the release-candidate pair; app debug build 150 of main dbe63d0, versionCode 150, emulator encore_a07 x86_64, Private listening on, no likes/edits/downloads from it): typed 'hateme' in Search, tapped the Search tab again: the field is empty and the first page (Browse all) is shown. Not walked."
+}

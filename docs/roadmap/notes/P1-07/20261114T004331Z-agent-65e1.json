@@ -1,0 +1,9 @@
+{
+ "id": "20261114T004331Z-agent-65e1",
+ "item": "P1-07",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T00:43:31Z",
+ "type": "note",
+ "body": "14 Nov 2026: emulator against VM 108 (engineering check, build 150): 'eminem' gives 'Top result: Artist, Eminem, 19M fans' with the songs below (the artist before its songs). The owner's own 'jinjer' library is not on VM 108, so his exact case is still to be checked on his library. Observed on the emulator, which was heavily loaded by parallel builds: the results of a search appeared only about 35 s after typing (the local full-text index was populated, 3,414 songs and 48 matches for 'eminem'); the same screen was instant on the A35 offline. Worth a look: do the local results wait for the catalogue answer (Deezer) before anything is drawn? Not proven."
+}
