@@ -1,0 +1,9 @@
+{
+ "id": "20261114T174619Z-agent-78a1",
+ "item": "N-13",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T17:46:19Z",
+ "type": "note",
+ "body": "14 Nov (advisor ruling on #59): the B-128 drawing is approved. Scope checked against the inventory: S-18 Album, S-19 Artist, S-16 Downloaded and the S-14 lists show only songs the server holds a FILE of, so a refused ref never appears there and nothing needs greying. NOT drawn, named follow-ups so nobody assumes them covered: S-33 Queue / Up next (a song already queued when the server's verdict arrives; the player's own refusal and skip behaviour stays as built) and S-23 Recently played (a refused tap is a play attempt). The B-128 code PR (helper-b128) marks Search library rows, the playlist, Liked Songs and the song menu, sets the mark at once when a tap is refused for good, and deals with the 10-minute trust; it will not mark the queue or Recently played. If the owner sees one of those two in use, they need a drawing first."
+}
