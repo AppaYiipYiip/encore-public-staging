@@ -20,10 +20,12 @@ enum ServerKind {
 
 /// The kind of the signed-in server, from the session (`ServerSession.encoreMode` is the session's own construction fact: it decides which
 /// clients the session builds, and code that already holds the session and needs `session.encore` may read it; everything else reads this).
-/// A session that failed to build is not known either. Tests replace it with `serverKindProvider.overrideWithValue(ServerKind.encore)`.
+/// A session that has never been built, or failed to build, is not known. **While the session is being REBUILT (the addresses were edited, the phone
+/// was just moved onto an Encore server) the kind of the session it holds is kept**: the words of Home, the catalogue and Your server must not
+/// flicker to "not an Encore server" for the moment of a reload. Tests replace it with `serverKindProvider.overrideWithValue(ServerKind.encore)`.
 final serverKindProvider = Provider<ServerKind>((ref) {
   final async = ref.watch(sessionProvider);
-  if (async.isLoading || async.hasError) return ServerKind.detecting;
+  if (!async.hasValue) return ServerKind.detecting;
   final session = async.value;
   if (session == null) return ServerKind.plain;
   if (session.encoreMode) return ServerKind.encore;

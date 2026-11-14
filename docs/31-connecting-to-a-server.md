@@ -53,7 +53,7 @@ The second question every screen asks, answered once: `serverKindProvider` (`app
 | `plain` | no server, or the phone KNOWS this is not an Encore server: the server answered "not found" or a web page of its own to `GET /info` (B-78: a 503, a 429, a refused login or no answer is NOT such an answer) | the old way; the request portal is offered where there is no instant-play service | same, `request_portal_offered_test.dart` |
 | `encore` | the phone has been moved onto an Encore server | songs are references the server plays itself; playing does not save | same |
 
-`instantAvailableProvider` is NOT a kind: it is the "Play songs your server does not have" switch plus a service found, a capability that stays. `requestPortalOfferedProvider` is a rule over the two (`plain` and no instant-play service) and goes with the portal (P2-07). `ServerSession.encoreMode` is the session's own construction fact (it decides which clients the session builds); code that already holds the session and needs `session.encore` may read it, everything else reads the kind.
+`instantAvailableProvider` is NOT a kind: it is the "Play songs your server does not have" switch plus a service found, a capability that stays. `requestPortalOfferedProvider` is a rule over the two (`plain` and no instant-play service) and goes with the portal (P2-07). `ServerSession.encoreMode` is the session's own construction fact (it decides which clients the session builds); code that already holds the session and needs `session.encore` still reads it today (keep, news, people, import, release save, downloads, the player's address builder: an open decision, AUDIT B-17), everything else reads the kind.
 
 ## 3. One address of one server (question 2): the states of a single candidate
 

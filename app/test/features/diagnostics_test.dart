@@ -1,3 +1,4 @@
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/features/settings/diagnostics_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,32 +22,24 @@ void main() {
 
   group('F53: which kind of server the session is talking to', () {
     test('an Encore server is said so', () {
-      expect(
-          describeSessionMode(
-              signedIn: true, encoreMode: true, detecting: false),
+      expect(describeSessionMode(signedIn: true, kind: ServerKind.encore),
           'Encore server');
     });
 
     test(
         'a plain music server that is still being looked at says it is still looking',
         () {
-      expect(
-          describeSessionMode(
-              signedIn: true, encoreMode: false, detecting: true),
+      expect(describeSessionMode(signedIn: true, kind: ServerKind.detecting),
           'plain music server, still looking for an Encore server');
     });
 
     test('a plain music server that answered as one is only plain', () {
-      expect(
-          describeSessionMode(
-              signedIn: true, encoreMode: false, detecting: false),
+      expect(describeSessionMode(signedIn: true, kind: ServerKind.plain),
           'plain music server');
     });
 
     test('nobody signed in has no session to describe', () {
-      expect(
-          describeSessionMode(
-              signedIn: false, encoreMode: false, detecting: false),
+      expect(describeSessionMode(signedIn: false, kind: ServerKind.plain),
           'none (nobody is signed in, or it is still starting)');
     });
   });

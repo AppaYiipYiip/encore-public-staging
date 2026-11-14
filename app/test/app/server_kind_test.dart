@@ -97,4 +97,27 @@ void main() {
 
     expect(c.read(serverKindProvider), ServerKind.plain);
   });
+
+  test(
+      'while the session is REBUILT (the addresses were edited, the phone was just moved onto an Encore server) the kind of the session it holds is kept: no flicker to "not an Encore server"',
+      () async {
+    final s = await build(capabilities: {'encore': true});
+    var builds = 0;
+    final second = Completer<ServerSession?>();
+    final c = open(() {
+      builds++;
+      return builds == 1 ? Future.value(s) : second.future;
+    });
+    await pumpEventQueue();
+    expect(c.read(serverKindProvider), ServerKind.encore);
+
+    c.invalidate(sessionProvider);
+    await pumpEventQueue();
+
+    expect(c.read(sessionProvider).isLoading, isTrue,
+        reason: 'the session is being rebuilt');
+    expect(c.read(serverKindProvider), ServerKind.encore,
+        reason:
+            'what the screens say does not flip for the moment of a reload');
+  });
 }
