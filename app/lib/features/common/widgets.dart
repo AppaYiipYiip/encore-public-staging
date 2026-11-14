@@ -241,19 +241,17 @@ class TrackTile extends StatelessWidget {
                 if (showAlbum && album != null) album,
               ].join(' • ');
 
+    final cover = CoverArt(
+      coverArtId: track.coverArt,
+      fallbackLabel: album ?? track.title,
+      fallbackArtist: album == null ? null : track.artist,
+    );
     final row = Row(
       children: [
         if (showArt)
           SizedBox.square(
             dimension: 48,
-            child: Opacity(
-              opacity: marked ? .6 : 1,
-              child: CoverArt(
-                coverArtId: track.coverArt,
-                fallbackLabel: album ?? track.title,
-                fallbackArtist: album == null ? null : track.artist,
-              ),
-            ),
+            child: marked ? Opacity(opacity: .6, child: cover) : cover,
           )
         else
           SizedBox(

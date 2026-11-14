@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/encore/encore_api.dart' show EncoreApi;
+
 /// How many songs the server has refused **for good** during this session: a stream answered `song_unavailable` (the player asks the server why a
 /// stream failed), or a tap found that the server already knew it could not get the song (N-13, B-128).
 ///
@@ -16,4 +18,19 @@ class SongRefusals extends Notifier<int> {
 
   /// The server refused a song for good.
   void refused() => state = state + 1;
+}
+
+/// Asks the server why a stream failed (`null` for a server that is not an Encore server) and, when it refuses the song **for good**, says so through
+/// [onRefusedForGood] (the marks ask the server again, B-128). Answers the player what it needs: the server's sentence and whether to give up on the song.
+/// A failure that may pass (YouTube resting, a timeout) is not reported: the song may well be playable in a minute.
+Future<({String message, bool permanent})?> askSongRefusal(
+  EncoreApi? encore,
+  Uri address, {
+  required void Function() onRefusedForGood,
+}) async {
+  if (encore == null) return null;
+  final why = await encore.streamRefusal(address);
+  if (why == null) return null;
+  if (why.permanent) onRefusedForGood();
+  return (message: why.message, permanent: why.permanent);
 }

@@ -52,7 +52,7 @@ extension LibraryMarkOfTrack on TrackRow {
 /// map:** a row with a file of the server, a row of a plain music server and a song downloaded on the phone are never marked, whatever the map holds
 /// (a file may arrive inside the server's window; the server clears its memory then, the phone learns it at its next question).
 final libraryMarkProvider =
-    Provider.family<EncoreUnavailable?, LibraryMarkKey>((ref, row) {
+    Provider.autoDispose.family<EncoreUnavailable?, LibraryMarkKey>((ref, row) {
   if (row.hasFile) return null;
   final downloaded = ref.watch(downloadedIdsProvider
       .select((ids) => ids.value?.contains(row.id) ?? false));

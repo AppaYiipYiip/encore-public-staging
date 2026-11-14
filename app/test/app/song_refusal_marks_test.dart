@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:encore/app/playback_providers.dart';
 import 'package:encore/data/encore/encore_api.dart';
+import 'package:encore/features/instant/song_refusals.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// B-128: what the player does when a stream fails and it asks the server why. A song the server refuses **for good** (`song_unavailable`, not
