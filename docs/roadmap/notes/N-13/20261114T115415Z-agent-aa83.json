@@ -1,0 +1,9 @@
+{
+ "id": "20261114T115415Z-agent-aa83",
+ "item": "N-13",
+ "role": "agent",
+ "by": "helper-n13 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T11:54:15Z",
+ "type": "note",
+ "body": "Renumbered to 0013 because #51 takes 0012: the N-13 migration is now 0013_ref_missing.sql (SQL unchanged; docs/18 and the status evidence follow). Earlier notes that say 0012 mean this file."
+}

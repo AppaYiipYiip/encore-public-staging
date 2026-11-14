@@ -53,6 +53,14 @@ def _existing_child(parent: Path, wanted: str) -> Path | None:
     return None
 
 
+def artist_folder(kept_root: Path, artist: str) -> Path | None:
+    """The folder under [kept_root] (the server's own `Encore/` folder) that the keeper puts [artist]'s albums in, if it exists yet: the very one
+    [plan_placement] chooses, so what finds an artist's folder and what makes it can never disagree."""
+    name = safe_path_part(artist, "Unknown Artist")
+    folder = _existing_child(kept_root, name) or (kept_root / name)
+    return folder if folder.is_dir() else None
+
+
 def track_filename(title: str, *, track: int | None, disc: int | None, total_discs: int | None, suffix: str) -> str:
     name = safe_path_part(title, "Track")
     if track is not None and track > 0:

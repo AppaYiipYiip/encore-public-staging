@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import 'instant_controller.dart';
+import 'song_marks.dart';
 
 /// What a tap on a catalogue song does (D-24, AUDIT F33; D-64, 7 Nov 2026). A tap means the FULL song, always: there is no 30-second preview
 /// anywhere in the app (the owner: "just take the hit and run and load the full song").
@@ -78,6 +79,10 @@ Future<TapPlan> _planFor(
 
 /// A tap on row [startIndex] of [items]: the full song, with the rest of the list behind it. With [shuffle] (a page's Shuffle button) the
 /// list is played in random order from its first song instead.
+///
+/// **Songs the server already knows it cannot get (N-13) are never tried.** A tap on one says why at once (the server's own sentence), nothing spins and
+/// the server is not asked; a whole-list Play or Shuffle leaves them out of the queue, with no failed try and no notice (a list of only such songs says
+/// the first one's sentence).
 Future<void> tapPlayRun(
   WidgetRef ref,
   List<CatalogueTrack> items, {
@@ -88,6 +93,35 @@ Future<void> tapPlayRun(
 }) async {
   final container = ProviderScope.containerOf(ref.context);
   final messenger = ScaffoldMessenger.maybeOf(ref.context);
+  if (items.isNotEmpty) {
+    final marks = {
+      for (final t in items) t.id: container.read(songMarkProvider(t.id)),
+    };
+    final tapped = !shuffle && startIndex >= 0 && startIndex < items.length
+        ? items[startIndex]
+        : null;
+    if (tapped != null && marks[tapped.id] != null) {
+      _say(messenger, marks[tapped.id]!.sentence);
+      return;
+    }
+    final playable = [
+      for (final t in items)
+        if (marks[t.id] == null) t,
+    ];
+    if (playable.isEmpty) {
+      _say(messenger, marks[items.first.id]!.sentence);
+      return;
+    }
+    if (playable.length != items.length) {
+      return tapPlayRun(ref, playable,
+          startIndex: tapped == null
+              ? 0
+              : playable.indexWhere((t) => t.id == tapped.id),
+          sourceName: sourceName,
+          sourceId: sourceId,
+          shuffle: shuffle);
+    }
+  }
   switch (await _planFor(container, messenger)) {
     case TapPlan.full:
       await container.read(instantControllerProvider.notifier).playRun(items,
@@ -110,6 +144,12 @@ void _say(ScaffoldMessengerState? messenger, String line) => messenger
 Future<void> tapPlayOne(WidgetRef ref, CatalogueTrack track) async {
   final container = ProviderScope.containerOf(ref.context);
   final messenger = ScaffoldMessenger.maybeOf(ref.context);
+  final mark = container.read(songMarkProvider(track.id));
+  if (mark != null) {
+    // The server already knows it cannot get this song (N-13): nothing spins, the server is not asked, and the row's tap says why.
+    _say(messenger, mark.sentence);
+    return;
+  }
   switch (await _planFor(container, messenger)) {
     case TapPlan.full:
       await container.read(instantControllerProvider.notifier).play(track);
