@@ -214,7 +214,7 @@ void main() {
     await until(() => !session.detecting.value);
 
     expect(session.detecting.value, isFalse);
-    expect(session.encoreMode, isFalse);
+    expect(session.encoreApi, isNull);
   });
 
   test(

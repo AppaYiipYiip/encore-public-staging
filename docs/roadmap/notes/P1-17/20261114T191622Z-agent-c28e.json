@@ -1,0 +1,12 @@
+{
+ "id": "20261114T191622Z-agent-c28e",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p117 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T19:16:22Z",
+ "type": "note",
+ "body": "P1-17 PRs OPEN (helper-p117, 14 Nov evening, main 80c5017). #66 slice 2 (base main): the one reachability state, resolver finding, strip presenter, readers, deleted notions; CI verify GREEN (checks, secrets, verify pass), whole suite 2874 locally. #67 slice 3 (base task/P1-17-reach-state = #66): the engine's one read, one recheckServer, one listener; whole suite 2874 locally; CI pending when this was written. #68 slice 4 (base task/P1-17-player-reach = #67): serverKindProvider, onEncoreServerProvider deleted; 2880 locally; CI pending. #69 slice 5 (base task/P1-17-server-kind = #68): option (b), ServerSession.encoreApi, encoreMode private, one behaviour fix (the line under a download says \"a connection\" for noInternet), B-17 closed in the audit, `mark P1-17 built` run in this PR; 2881 locally; CI starting. MERGE ORDER: #66, then retarget #67 to main (merge main into it first; it conflicts only in docs/tasks/AUDIT-BUILT... and CHANGELOG, keep both), then #68, then #69. B-128's code (song_marks.dart, the library marks) is already moved onto the state in #66. Linux goldens run is the check for the goldens in every PR; none regenerated.",
+ "to": [
+  "agent"
+ ]
+}

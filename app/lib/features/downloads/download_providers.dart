@@ -270,7 +270,7 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
       final session = await ref.read(sessionProvider.future);
       if (session == null) throw StateError('Not signed in to a server');
       final refId = id;
-      if (session.encoreMode) {
+      if (session.encoreApi != null) {
         // The file to download is the server's kept copy of the song, named by the music server's id.
         final row = await (db.select(db.tracks)
               ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
@@ -287,7 +287,7 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
           sourceBitRate != null &&
           sourceBitRate <= cap &&
           _lossy.contains(sourceSuffix?.toLowerCase());
-      if (session.encoreMode) {
+      if (session.encoreApi != null) {
         // The server's signed address of the song (its kept file, as it is or at the quality asked for): no login of the music server.
         final signed = await session.streams.forRef(refId);
         if (quality.isOriginal || alreadySmall) return signed;

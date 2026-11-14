@@ -80,6 +80,9 @@ void main() {
     await pumpEventQueue();
 
     expect(c.read(serverKindProvider), ServerKind.encore);
+    expect(s.encoreApi, isNotNull,
+        reason:
+            'the kind and the session Encore API are one fact: code that talks to the Encore server asks the session for the API, and gets one exactly when the kind is encore');
   });
 
   test(
@@ -90,6 +93,7 @@ void main() {
     await pumpEventQueue();
     expect(c.read(serverKindProvider), ServerKind.detecting,
         reason: 'the first minutes after a sign-in: the old way meanwhile');
+    expect(s.encoreApi, isNull, reason: 'a plain session has no Encore API');
 
     s.detecting.value =
         false; // the server answered "not found": a plain music server

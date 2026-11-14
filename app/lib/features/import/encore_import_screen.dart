@@ -22,9 +22,10 @@ import '../settings/settings_page.dart';
 final encoreImportsProvider =
     StreamProvider.autoDispose<List<EncoreImport>>((ref) async* {
   final session = await ref.watch(sessionProvider.future);
-  if (session == null || !session.encoreMode) return;
+  final api = session?.encoreApi;
+  if (api == null) return;
   while (true) {
-    final list = (await session.encore.imports()).valueOrNull;
+    final list = (await api.imports()).valueOrNull;
     if (list != null) yield list;
     final running = list?.any((i) => i.isRunning) ?? false;
     await Future<void>.delayed(Duration(seconds: running ? 3 : 20));

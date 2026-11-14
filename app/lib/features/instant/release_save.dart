@@ -180,8 +180,8 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
       ...state,
       releaseId: ReleaseState(ReleasePhase.saving, download: download)
     };
-    final session = await ref.read(sessionProvider.future);
-    if (session == null || !session.encoreMode) {
+    final api = (await ref.read(sessionProvider.future))?.encoreApi;
+    if (api == null) {
       state = {...state}..remove(releaseId);
       return 'This needs an Encore server.';
     }
@@ -194,7 +194,7 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
         final status = await controller.fetch(byId[id]!, bulk: true);
         return status != null && status.isReady ? status.track?.id : null;
       },
-      save: session.encore.saveRelease,
+      save: api.saveRelease,
       pin: (refId) => actions.pin(PinTargetType.track, refId),
       // Written down before the first pin: what the phone keeps after a restart is the phone's own record of this release (D-35).
       onSaved: store == null

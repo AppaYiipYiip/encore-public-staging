@@ -143,7 +143,9 @@ void main() {
     final liked = encore.addRef('Streamed', 'Artist');
     encore.otherDeviceLikes(liked);
 
-    expect(session.encoreMode, isTrue);
+    expect(session.encoreApi, same(session.encore),
+        reason:
+            'the one way outside code asks "is this an Encore server" and talks to it');
     expect(session.playlists, isA<EncorePlaylistEditor>());
     final outcome = await session.sync.run();
 
@@ -244,7 +246,7 @@ void main() {
     await session.start();
     await until(() => music.adapter.count('search3') > 0);
 
-    expect(session.encoreMode, isFalse);
+    expect(session.encoreApi, isNull);
     expect(session.playlists, isA<PlaylistMutations>());
     expect(music.adapter.count('search3'), greaterThan(0));
     expect(encore.migrations, 0);

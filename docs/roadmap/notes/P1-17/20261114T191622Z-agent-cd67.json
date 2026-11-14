@@ -1,0 +1,12 @@
+{
+ "id": "20261114T191622Z-agent-cd67",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p117 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T19:16:22Z",
+ "type": "note",
+ "body": "FINAL NOTE (replaces the earlier hand-off notes), helper-p117, 14 Nov night. WHAT IS IN: B-77 and B-78 (#60 merged), the one state of \"can I reach my server\" (#66), the player's one read and one fresh look (#67), the one answer to \"which kind of server\" (#68), and the Encore API accessor that makes encoreMode private (#69, which marks P1-17 built and closes B-17 in the audit). Decisions taken and the alternatives: D1 a change of network sets the finding to unknown (alternative: keep it and reset the player's memo; cost: rows look normal 5 to 8 s after a network change during an outage), D2 the blink filter reaches the player (alternative: an immediate judgement for the player; cost: a tap in the 4 s after the server goes silent is tried and waits), D3 the B-58 listener reads the raw finding, offline split in two (noNetwork certain and at once, noInternet judged after the filter), Android asked after the state is set (an unmocked MethodChannel hangs in widget tests), the strip keeps its own hold for a blink of the radio, serverKindProvider keeps the kind while the session is rebuilt, encoreApi as the one session accessor. TRAPS MET: in a PowerShell script a git hook message on stderr makes the whole command fail (run git and flutter in separate commands); the notes tool refuses text over 4000 characters; CHANGELOG.md and the B-17 audit row conflict on every merge of a stacked slice (take the stacked branch's line and replace the PR numbers). NOT PROVEN: anything on a phone, Android's real internet answer, D1 and D2 (accepted trade-offs, pinned by tests, never seen), the Linux goldens beyond CI. STILL OPEN: B-130 (stop-gap of B-77: the browse failure is only a log line; removal trigger P2-20 or a Your-server line), the question whether the server should tell its Host that the music server refuses the app's login (answered in a note, not built), and the raw networkKindProvider readers that ask only \"is there a network at all\" (they equal the state's noNetwork on purpose).",
+ "to": [
+  "agent"
+ ]
+}
