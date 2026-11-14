@@ -6,6 +6,7 @@ import '../db/app_database.dart';
 import '../repos/release_store.dart';
 import '../sync/fingerprint.dart';
 import '../sync/pending_intent.dart';
+import 'encore_merge.dart';
 import 'encore_models.dart';
 
 /// Writes what the Encore server says into the local database (docs/18 section 2).
@@ -17,10 +18,15 @@ import 'encore_models.dart';
 /// Same rules as the music-server writer (ADR-006): upsert only, one transaction per page, a re-seen tombstone comes back, and a like or
 /// unlike still waiting in the outbox is never overwritten by what the server last knew.
 class EncoreWriter {
-  EncoreWriter(this._db, this.serverId, {required this.ownerName});
+  EncoreWriter(this._db, this.serverId,
+      {required this.ownerName, MergedFiles files = const DiskFiles()})
+      : _merger = RefMerger(_db, serverId),
+        _files = files;
 
   final AppDatabase _db;
   final int serverId;
+  final RefMerger _merger;
+  final MergedFiles _files;
 
   /// The account's name on the server: playlists of this phone's person carry it as owner, so "mine" is decided the same way as before.
   final String ownerName;
@@ -83,6 +89,18 @@ class EncoreWriter {
     await _db.batch((b) => b.insertAllOnConflictUpdate(
         _db.tracks, [for (final r in list) _companion(serverId, r)]));
   }
+
+  /// Songs the server merged into another (N-11 part B): everything the phone has under the old id moves to the survivor, and the old row goes
+  /// (see [RefMerger]). Call it in the transaction of the files page, BEFORE [upsertRefs], then [settleMerges]; after the commit, [finishMerges].
+  Future<MergeOutcome> applyMerges(List<EncoreMerge> merges) =>
+      _merger.apply(merges);
+
+  /// In the same transaction, after the refs were written: the moved downloads take the survivor's audio key (so they are not downloaded again).
+  Future<void> settleMerges(MergeOutcome outcome) => _merger.settle(outcome);
+
+  /// After the commit: renames the moved files to the survivor's name and deletes the copies that were not kept. Never throws.
+  Future<void> finishMerges(MergeOutcome outcome) =>
+      _merger.finish(outcome, _files);
 
   /// Retires the rows of songs that have no file on the server and that nothing of the person's points at (no like, no playlist entry, no
   /// download): the browse index lists only what the server has and what the person uses. Called after likes and entries were applied.

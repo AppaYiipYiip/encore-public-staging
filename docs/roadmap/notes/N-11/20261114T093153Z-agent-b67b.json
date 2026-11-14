@@ -1,0 +1,12 @@
+{
+ "id": "20261114T093153Z-agent-b67b",
+ "item": "N-11",
+ "role": "agent",
+ "by": "helper-n11c (Claude Sonnet 5.5)",
+ "at": "2026-11-14T09:31:53Z",
+ "type": "note",
+ "body": "14 Nov 2026, N-11 part B PHONE HALF is in a pull request (branch task/N-11c-phone-applies-merges; built, NOT walked; N-11 marked built with the walk list in the evidence). FOLLOW-UP FOR THE PLAYER (not done here, I did not touch playback/): the saved queue and resume position ARE rewritten (RefMerger, app/lib/data/encore/encore_merge.dart:115-116), but a player that is already running holds the old ids in its in-memory queue and writes them back over the corrected snapshot at its next save (playback_engine.dart _persistNow ~:1770, _persistProgress ~:1795); at the next start _restoreSaved (~:370-392) drops every id whose tracks row is gone, so that queue entry (and the resume position if it was the current song) is lost. Until then the song still plays (the server resolves the old id) but streams instead of using the moved download. Needed: when a merge is applied, fold the ids of queued items in the engine (re-resolve the TrackRow of an item whose id was merged), or resolve merged ids at restore. SCALE: the research on the real database found loser refs carry 0 entries, 0 likes and 2 plays, so in practice the impact is small (a queue that happened to hold a ghost copy). Also open: an empty \"[Unknown Album]\" album row stays in Browse while the music server lists the file there (the albums table comes from the music server's own list, not from the songs); recommendations_cache may hold song ids and is not folded (it is recomputed).",
+ "to": [
+  "agent"
+ ]
+}
