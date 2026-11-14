@@ -207,7 +207,7 @@ def test_a_folder_that_has_a_picture_already_and_songs_outside_the_servers_folde
 def test_a_song_that_has_only_a_thumbnail_is_still_looked_for_and_the_found_cover_wins(tmp_path: Path) -> None:
     """P1-26: the thumbnail is a fallback shown while no real cover exists; it must not stop the finder from looking."""
     db = database(tmp_path)
-    thumb = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+    thumb = "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
     with db.tx() as conn:
         ref = refs.resolve(conn, {"title": "Nude", "artists": ["Radiohead"], "album": "In Rainbows", "thumbnailUrl": thumb})
         library.set_item(conn, "pn_1", "like", ref["id"])
@@ -217,3 +217,50 @@ def test_a_song_that_has_only_a_thumbnail_is_still_looked_for_and_the_found_cove
 
     assert (report.looked, report.found) == (1, 1), "the thumbnail did not hide the song from the finder"
     assert cover_of(db, str(ref["id"])) == PICTURE, "a real cover replaces the thumbnail"
+
+
+def test_a_song_that_has_only_a_video_is_still_looked_for_and_the_found_cover_wins(tmp_path: Path) -> None:
+    """P1-26: the video's own thumbnail is derived when the ref is served, so the finder (cover_url IS NULL) still sees the song."""
+    db = database(tmp_path)
+    with db.tx() as conn:
+        ref = refs.resolve(conn, {"title": "Nude", "artists": ["Radiohead"], "album": "In Rainbows", "videoId": "abcdefghijk"})
+        library.set_item(conn, "pn_1", "like", ref["id"])
+    assert cover_of(db, str(ref["id"])) == "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
+
+    report = CoverFinder(db, Catalogue({"Nude": PICTURE}), sleep=lambda _: None).run_once()
+
+    assert (report.looked, report.found) == (1, 1)
+    assert cover_of(db, str(ref["id"])) == PICTURE
+
+
+def test_songs_that_gain_the_derived_cover_are_announced_once_to_the_phones_that_already_have_them(tmp_path: Path) -> None:
+    """P1-26: a ref's cover is computed when it is served; a phone that synced the ref earlier only hears about it if the feed says so."""
+    db = database(tmp_path)
+    with db.tx() as conn:
+        with_video = refs.resolve(conn, {"title": "Nude", "artists": ["Radiohead"], "videoId": "abcdefghijk"})
+        library.set_item(conn, "pn_1", "like", with_video["id"])
+    with db.read() as conn:
+        before = library.latest_cursor(conn, "pn_1")
+
+    CoverFinder(db, Catalogue({}), sleep=lambda _: None).run_once()
+    with db.read() as conn:
+        after_first = library.latest_cursor(conn, "pn_1")
+    CoverFinder(db, Catalogue({}), sleep=lambda _: None).run_once()
+    with db.read() as conn:
+        after_second = library.latest_cursor(conn, "pn_1")
+
+    assert after_first > before, "the person's apps pull the song again: it now has a picture"
+    assert after_second == after_first, "told once, not at every start"
+
+
+def test_a_song_without_a_video_is_not_announced(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    ref = liked(db, "Nude")
+    with db.read() as conn:
+        before = library.latest_cursor(conn, "pn_1")
+
+    CoverFinder(db, Catalogue({}), sleep=lambda _: None).run_once()
+
+    with db.read() as conn:
+        assert library.latest_cursor(conn, "pn_1") == before
+    assert cover_of(db, ref) is None

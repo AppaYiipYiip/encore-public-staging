@@ -123,14 +123,15 @@ def test_the_playlist_exists_at_once_with_every_song_in_order(rig: Rig) -> None:
 
 def test_a_song_of_the_playlist_shows_the_thumbnail_of_its_video_until_a_real_cover_is_found(rig: Rig) -> None:
     """P1-26: a song no catalogue has a cover for is not a letter tile: the thumbnail its source gave it stands in."""
-    thumb = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+    thumb = "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
     rig.playlist = Playlist(
         "Mix",
         "youtube",
         "playlist",
         (
             Track("With picture", "Artist", video_id="abcdefghijk", thumbnail=thumb),
-            Track("Without picture", "Artist", video_id="bcdefghijkl"),
+            Track("Without thumbnail", "Artist", video_id="bcdefghijkl"),
+            Track("Without anything", "Artist"),
         ),
         False,
     )
@@ -138,7 +139,11 @@ def test_a_song_of_the_playlist_shows_the_thumbnail_of_its_video_until_a_real_co
     made = rig.imported()
 
     covers = {r["title"]: r["coverUrl"] for r in made["refs"]}
-    assert covers == {"With picture": thumb, "Without picture": None}
+    assert covers == {
+        "With picture": thumb,
+        "Without thumbnail": "https://i.ytimg.com/vi/bcdefghijkl/mqdefault.jpg",  # the video's own, the last resort
+        "Without anything": None,
+    }
 
 
 def test_a_song_the_playlist_names_as_the_original_upload_is_not_searched_for(rig: Rig) -> None:

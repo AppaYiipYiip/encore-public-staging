@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Songs that came from YouTube and have no picture anywhere else now show their video's thumbnail instead of a letter, also the ones you imported before: your phone is told about them once the next time your server looks for pictures, with no need to import the playlist again. Any real cover that is found later still replaces it.
+
 * Search no longer stays empty while your phone is busy taking in music: while the library syncs (the first sync of a new phone, above all) on a slow phone, typing in Search could show nothing at all until the music stopped arriving, because every song that arrived made the search start over before it had finished. Search now shows what your library holds as soon as it has found it and never starts over for that; the guess for a band typed with a letter wrong is added to it when the list of bands is ready.
 * An imported song that no catalogue has a picture for no longer shows a plain letter: it shows the thumbnail of its YouTube video, and a real cover still replaces it as soon as one is found (the server keeps the two apart, so it keeps looking for a better one).
 
