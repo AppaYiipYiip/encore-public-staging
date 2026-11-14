@@ -1,0 +1,12 @@
+{
+ "id": "20261114T220958Z-agent-a073",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:09:58Z",
+ "type": "note",
+ "body": "D-51 HOLD ON P2-12, RECORDED 14 Nov 2026 (about 22:00 UTC; the owner's own words in chat, after the PC restart: \"D-51 holds P2-12 until b11. Only P2-12 slices 1 and 4 may merge now, and the rest stay drafts\"; the advisor agreed and added two review conditions).\n\nWHAT MAY MERGE BEFORE b11: slice 1 (the server's Deezer gate, its cache file, the /encore/api/v1/catalogue/* routes, the cover and artist finders moved onto the gate) and slice 4 (a DRAWING, no code). WHAT STAYS A DRAFT until b11 exists and the lead says so: slices 2, 3, 5, 6, 7, 8 (they are not opened as PRs). No helper opens or merges them; \"b11 does not exist\" is how D-51 reads today (RELEASE-CANDIDATE.md B5/B6 not started).\n\nTHE TWO REVIEW CONDITIONS FOR THE SLICE 1 PR (the advisor): (1) its description must be HONEST: slice 1 does change live behaviour (the cover and artist finders now go through the gate), only the new routes are additive (no phone calls them yet), so the PR must not say \"nothing calls it\"; (2) the B-124 test (an outage is never stored as \"no picture\") and the B-127 test (the artist pass waits for a running scan, #58) must pass UNCHANGED: they are the guard.\n\nWHY D-51 NOW READS AS A GENERAL HOLD ON P2-12 and not only on its code: the row of docs/10 says \"nothing of either merges before the release-candidate walk record b11\"; a reader finding slice 1 merged would think the rule was broken. docs/10 D-51 carries one line saying so, pointing here. Related: the P2-14 server half (draft PR #1) is held for the same reason.",
+ "to": [
+  "agent"
+ ]
+}
