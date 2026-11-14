@@ -6,10 +6,12 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import pytest
 
 from encore_server import library, refs
 from encore_server.cover_finder import CoverFinder, deezer_lookup
 from encore_server.db import Database
+from encore_server.deezer import LookupUnavailable
 
 PICTURE = "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.jpg"
 
@@ -141,10 +143,37 @@ def test_the_lookup_is_not_fooled_by_another_artist_or_another_picture_host() ->
     assert deezer_lookup("Radiohead", "Nude", None, client=client_for(wrong_host)) is None
 
 
-def test_the_lookup_gives_nothing_when_the_catalogue_is_down_or_answers_nonsense() -> None:
-    assert deezer_lookup("A", "B", None, client=client_for({}, status=503)) is None
-    assert deezer_lookup("A", "B", None, client=client_for({"data": "nope"})) is None
-    assert deezer_lookup("A", "B", None, client=client_for([])) is None
+def test_the_lookup_says_it_could_not_ask_when_the_catalogue_is_down_throttled_or_answers_nonsense() -> None:
+    """Audit B-124: these used to read as "nothing found", and the song was then left alone for a week because of an outage."""
+    throttled = {"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}}
+    for payload, status in (({}, 503), ({}, 429), (throttled, 200), ({"data": "nope"}, 200), ([], 200)):
+        with pytest.raises(LookupUnavailable):
+            deezer_lookup("A", "B", None, client=client_for(payload, status))
+
+
+def test_the_lookup_gives_nothing_when_the_catalogue_knows_no_such_recording() -> None:
+    assert deezer_lookup("A", "B", None, client=client_for({"data": [], "total": 0})) is None
+
+
+def test_a_catalogue_that_could_not_be_asked_leaves_the_song_to_be_asked_about_again_at_once(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    first, second = liked(db, "Nude"), liked(db, "Reckoner", album="Other")
+    asked: list[str] = []
+
+    def lookup(artist: str, title: str, album: str | None) -> str | None:
+        asked.append(title)
+        raise LookupUnavailable("HTTP 429")
+
+    report = CoverFinder(db, lookup, sleep=lambda _: None).run_once()
+
+    assert len(asked) == 1, "once the catalogue has said it cannot be asked, the pass stops: no hammering"
+    assert report.complete is False
+    with db.read() as conn:
+        tried = conn.execute("SELECT COUNT(*) FROM song_ref WHERE cover_tried_at IS NOT NULL").fetchone()[0]
+    assert tried == 0, "an outage is not a miss: no song is marked as looked for"
+    assert cover_of(db, first) is None and cover_of(db, second) is None
+    found = CoverFinder(db, Catalogue({"Nude": PICTURE, "Reckoner": PICTURE}), sleep=lambda _: None).run_once()
+    assert found.found == 2, "the next pass asks again and finds them"
 
 
 # ------------------------------------------------------------------------------------------------ the album folder

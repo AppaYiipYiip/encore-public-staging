@@ -14,7 +14,7 @@ import pytest
 from encore_server.ids import new_id
 from encore_server.navidrome import NavidromeClient
 from encore_server.scanner import link_library
-from tests.integration.conftest import MUSIC, Rig, make_audio, scan_and_wait
+from tests.integration.conftest import MUSIC, V1, Rig, make_audio, scan_and_wait
 
 pytestmark = pytest.mark.integration
 
@@ -239,6 +239,25 @@ def test_a_kept_song_plays_through_the_single_address_with_range_and_covers_and_
     assert whole.status_code == 200 and len(whole.content) > 1000
     assert jump.status_code == 206 and jump.content == whole.content[100:200]
     assert wrong.json()["subsonic-response"]["status"] == "failed", "Navidrome still judges its own logins"
+
+
+def test_the_real_music_server_refuses_a_wrong_login_in_the_way_the_guard_expects(rig: Rig) -> None:
+    """AUDIT B-41: only a REFUSAL (Subsonic error 40 to 44) is a wrong password; any other answer is "the music server is not answering" (503, not
+    counted). This holds the assumption against the real thing: Navidrome answers a wrong password AND an unknown name with the same refusal, so the
+    sign-in neither counts an honest person as a guesser nor tells a stranger which names exist."""
+    person, password = rig.accounts["person"], rig.accounts["person_pw"]
+
+    right = rig.client.post(f"{V1}/auth/login", json={"username": person, "password": password})
+    wrong = rig.client.post(f"{V1}/auth/login", json={"username": person, "password": password + "-x"})
+    nobody = rig.client.post(f"{V1}/auth/login", json={"username": unique("nobody"), "password": password})
+
+    assert right.status_code == 200, right.text
+    assert wrong.status_code == 401, wrong.text
+    assert nobody.status_code == 401, nobody.text
+    assert wrong.json()["error"]["code"] == nobody.json()["error"]["code"] == "unauthorized"
+    assert wrong.json()["error"]["message"] == nobody.json()["error"]["message"], (
+        "an unknown name is not told apart from a wrong password"
+    )
 
 
 def test_an_invited_person_gets_a_real_account_with_the_library_and_can_reset_and_be_removed(

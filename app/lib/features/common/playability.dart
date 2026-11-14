@@ -76,3 +76,7 @@ final notDownloadedNowProvider =
 
 /// The words under a thing that cannot be played now (S-10, S-14, S-17, S-18).
 const String kNotDownloadedWords = 'Not downloaded';
+
+/// The words under a catalogue song the server already knows it cannot get (N-13, S-12, S-18, S-19): the same grey as [kNotDownloadedWords], other
+/// words, because the cause is not the connection. Offline always wins: while the server is away the row says [kNotDownloadedWords] or nothing.
+const String kNotAvailableWords = 'Not available on your server';

@@ -22,6 +22,7 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/keep/ask'] = _keepAsk;
     _handlers['/encore/api/v1/keep/retry'] = _keepRetry;
     _handlers['/encore/api/v1/refs/resolve'] = _resolve;
+    _handlers['/encore/api/v1/refs/unavailable'] = _unavailable;
     _handlers['/encore/api/v1/refs/prepare'] = (r) {
       final ids = ((jsonDecode(r.body) as Map)['ids'] as List).cast<String>();
       prepareAsked.add(ids);
@@ -166,6 +167,49 @@ class FakeEncoreServer {
 
   /// The songs each `POST /refs/prepare` named, in order (P1-04).
   final List<List<String>> prepareAsked = [];
+
+  /// N-13: the songs this server "cannot get" (by lower-cased title) and why; what `POST /refs/unavailable` and a resolved ref say about them.
+  /// [unavailableAsked] is each question's titles, in order. [unavailableStatus] set to 405 or 404 makes the server an older one that has no such
+  /// question (FastAPI answers 405 where `GET refs/{id}` matches the path).
+  final Map<String, ({String reason, Duration retryIn})> cannotGet = {};
+  final List<List<String>> unavailableAsked = [];
+  int? unavailableStatus;
+  bool unavailableOnRefs = true;
+
+  Map<String, Object?>? _unavailableOf(String title) {
+    final entry = cannotGet[title.toLowerCase()];
+    if (entry == null) return null;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return {
+      'reason': entry.reason,
+      'message': switch (entry.reason) {
+        'removed' => 'YouTube has no copy of that song that can be played.',
+        'age_restricted' =>
+          'That song needs an age check, so it cannot be played here.',
+        _ => 'Nothing matching that song was found.',
+      },
+      'since': now - 1000,
+      'retryAfter': now + entry.retryIn.inMilliseconds,
+    };
+  }
+
+  FakeResponse _unavailable(RecordedRequest r) {
+    final songs = ((jsonDecode(r.body) as Map)['songs'] as List)
+        .cast<Map<String, Object?>>();
+    unavailableAsked.add([for (final s in songs) '${s['title']}']);
+    if (unavailableStatus == 405) {
+      return FakeResponse.json({'detail': 'Method Not Allowed'}, status: 405);
+    }
+    if (unavailableStatus == 404) {
+      return FakeResponse.json({'detail': 'Not Found'}, status: 404);
+    }
+    if ((unavailableStatus ?? 0) >= 500) {
+      return _error(unavailableStatus!, 'internal');
+    }
+    return _ok({
+      'items': [for (final s in songs) _unavailableOf('${s['title']}')]
+    });
+  }
 
   /// How many requests of each route were made (`PUT /likes/...` is counted under `PUT likes`).
   final Map<String, int> calls = {};
@@ -607,7 +651,8 @@ class FakeEncoreServer {
             (duration == null || d == null || (duration - d).abs() <= 3000);
       }).firstOrNull;
       if (found != null) {
-        items.add(found);
+        final mark = unavailableOnRefs ? _unavailableOf(title) : null;
+        items.add(mark == null ? found : {...found, 'unavailable': mark});
       } else {
         final id = addRef(title, artist,
             album: s['album'] as String?,

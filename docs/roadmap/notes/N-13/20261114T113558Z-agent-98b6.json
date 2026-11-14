@@ -1,0 +1,9 @@
+{
+ "id": "20261114T113558Z-agent-98b6",
+ "item": "N-13",
+ "role": "agent",
+ "by": "helper-n13 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T11:35:58Z",
+ "type": "note",
+ "body": "Disclosure (rule 1, nothing on YouTube): while writing the N-13 server tests, one early draft of a test used a real YoutubeSource with its default search (LeanResolver over YtmusicApiSearcher) and called find(). That run reached YouTube Music's search once from the owner's home address: two queries (artist+title, title+artist) and possibly one videos query, about 2 to 3 requests, no stream extraction, no download. It answered no match for 'Lofi & Sleep - Lofi For Focus', which agrees with the B-117 finding. Found in review, fixed at once: every test source now has a fake resolver and a fake extractor (the Rig, the fault tests and the whole-route test pass resolver= and extractor=), and the fakes raise if a default search is ever called. No other test in the PR can reach a search. The 10-look-ups-per-run rule was not exceeded."
+}
