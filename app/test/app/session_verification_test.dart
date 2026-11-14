@@ -29,6 +29,10 @@ class _Door implements HttpClientAdapter {
   /// What `GET /encore/api/v1/server` answers (signed in); `null`: not found.
   Map<String, Object?>? serverAnswer;
 
+  /// A gateway in front of the server (a reverse proxy, a tunnel such as Tailscale Funnel) and the status it answers with while the server behind
+  /// it is stopped; `null`: no gateway is in the way and the server answers (B-132).
+  int? gatewayStatus;
+
   final List<RequestOptions> seen = [];
 
   List<RequestOptions> toHome() =>
@@ -46,6 +50,10 @@ class _Door implements HttpClientAdapter {
     if (options.uri.host.endsWith('.invalid')) {
       throw DioException.connectionError(
           requestOptions: options, reason: 'no such host');
+    }
+    final gateway = gatewayStatus;
+    if (gateway != null && options.uri.host == 'home.test') {
+      return ResponseBody.fromString('', gateway);
     }
     final path = options.uri.path;
     if (path == '/encore/api/v1/info') {
@@ -202,6 +210,32 @@ void main() {
 
     expect(session.endpoints.finding, ServerFinding.silent);
     expect(session.endpoints.anotherServerAt, isNull);
+  });
+
+  test(
+      'B-132: a gateway that answers for a stopped server is not another server: the address is silent, the state is "server away", nothing is named',
+      () async {
+    await start(pinned: await real.id(), signer: real);
+    door.gatewayStatus =
+        502; // the Encore container is stopped; the tunnel in front of it still answers
+
+    await session.endpoints.resolve();
+
+    expect(session.endpoints.anotherServerAt, isNull);
+    expect(session.endpoints.finding, ServerFinding.silent);
+    expect(
+        reachabilityOf(
+            hasNetwork: true,
+            finding: session.endpoints.finding,
+            internetFound: true),
+        ServerReachability.serverAway,
+        reason:
+            'the strip says it cannot reach the server, never "Another server answers"');
+
+    door.gatewayStatus = null; // the server is back
+    await session.endpoints.resolve();
+
+    expect(session.endpoints.finding, ServerFinding.answering);
   });
 
   test(

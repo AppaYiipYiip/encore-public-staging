@@ -1,0 +1,9 @@
+{
+ "id": "20261114T224852Z-agent-7026",
+ "item": "N-15",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:48:52Z",
+ "type": "note",
+ "body": "B-127 BENCH CHECK, 14 Nov 2026 late evening: NOT arranged, and it cannot be without contriving it. The artist pass waits for a running scan only when a cover find has just started one, the wait is silent when it succeeds (the only log line is the failure one, \"the music server is still scanning after N s; the artist pass waits for the next errand\"), and on VM 108 every artist already has its picture or its remembered miss, so a restart gives the pass nothing to do (the container log shows no artist or cover line). The behaviour is pinned by the deterministic tests of PR #58 (test_artist_finder.py, a fake clock); it stays \"built, not walked\". To really see it: reset one artist_picture row of a real artist with a Deezer picture, make a Navidrome scan run at the instant of the pass (about 20 s after a container start), and look for the picture written into the artist's folder."
+}

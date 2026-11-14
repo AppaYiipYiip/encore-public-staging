@@ -1,0 +1,9 @@
+{
+ "id": "20261114T225727Z-agent-2e49",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:57:27Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of the B-132 FIX, 14 Nov 2026 22:57 UTC (A35, the owner's secondary test phone, APK build 154 = commit ad0cd30 of branch task/B-132-gateway-answer-is-not-another-server, arm64, installed in place over 153 with adb install -r, archived as releases-archive/build-154-ad0cd30/; VM 108 at sha-6a93f44; NOT the release-candidate pair; nothing marked walked). The Encore container was stopped with the phone on Wi-Fi (docker stop 0.4 s): at +10 s after the stop (the first failed look plus the 4 s blink filter) the strip said \"Can't reach your server.\" (the serverAway sentence, docs/31 CN-4b), once, as designed; \"Another server answers\" NEVER appeared in 14 samples over 40 s. The phone's log now shows, for the tunnel address, \"[identity] https://encore-vm108.tail34c57b.ts.net answered 502 and is no server (a gateway, a router, a page): not the pinned server, and not another one either\" (the new debug line; before the fix this path was silent) and \"[endpoint] no endpoint reachable\". Starting the container again: no strip in 6 samples over 22 s, the public address answers 200. THIS CLOSES THE OWED CHECK \"the strip's sentence for Wi-Fi on, server away\" (it was wrong behind a tunnel, B-132; right now). The A35 is on build 154 from a branch commit, NOT a main build: the next main build replaces it."
+}

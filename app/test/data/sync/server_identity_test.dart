@@ -270,6 +270,90 @@ void main() {
       expect(proof.verdict, EndpointVerdict.unreachable);
     });
 
+    test(
+        'B-132: what answers at the address of a server whose key I have pinned is judged by WHAT answered, not by the missing key',
+        () async {
+      // A reverse proxy, a tunnel, a captive portal: each answers at the address, none is "another server". The phone used to say
+      // "Another server answers at <your address>" for every one of them whenever the real server was stopped or restarting.
+      final answers = <String, FakeResponse>{
+        'a gateway 502 with nothing in it':
+            const FakeResponse.json('', status: 502),
+        'a gateway 503 page': const FakeResponse.json(
+            '<html>Service Unavailable</html>',
+            status: 503,
+            headers: {'content-type': 'text/html'}),
+        'a gateway 504 page': const FakeResponse.json(
+            '<html>Gateway Time-out</html>',
+            status: 504,
+            headers: {'content-type': 'text/html'}),
+        "a router's 404 page": const FakeResponse.json(
+            '<html>404 page not found</html>',
+            status: 404,
+            headers: {'content-type': 'text/html'}),
+        "a captive portal's 200 page": const FakeResponse.json(
+            '<html>Sign in to the Wi-Fi</html>',
+            headers: {'content-type': 'text/html'}),
+        'a redirect that is not followed': const FakeResponse.json('',
+            status: 302, headers: {'location': 'http://portal.test/login'}),
+        "Encore's own error answer while it cannot answer":
+            const FakeResponse.json({
+          'error': {'code': 'server_busy', 'message': 'Try again in a moment.'}
+        }, status: 503),
+      };
+      for (final entry in answers.entries) {
+        final adapter = FakeHttpAdapter(routes: {
+          '/encore/api/v1/info': (r) => entry.value,
+        });
+
+        final proof = await _probe(adapter)
+            .check(Uri.parse('http://home.test:4540'), expectedId: _serverId);
+
+        expect(proof.verdict, EndpointVerdict.unreachable, reason: entry.key);
+        expect(proof.usable, isFalse, reason: entry.key);
+      }
+    });
+
+    test(
+        "B-132: a pinned server is not asked the music server's question, so a music server where mine was reads as unreachable, never as mine",
+        () async {
+      final adapter = FakeHttpAdapter(routes: {
+        '/encore/api/v1/info': (r) =>
+            const FakeResponse.json({'message': 'not found'}, status: 404),
+        'ping.view': (r) => const FakeResponse.json({
+              'subsonic-response': {
+                'status': 'failed',
+                'error': {'code': 10, 'message': "missing parameter: 'u'"}
+              }
+            }),
+      });
+
+      final proof = await _probe(adapter)
+          .check(Uri.parse('http://home.test:4533'), expectedId: _serverId);
+
+      expect(proof.verdict, EndpointVerdict.unreachable);
+      expect(adapter.requests.map((r) => r.uri.path), ['/encore/api/v1/info'],
+          reason:
+              "the Encore server serves /rest too (it passes it on), so the music server's question proves nothing about a pinned server");
+    });
+
+    test(
+        'B-132: only an Encore-shaped answer with no key is the downgrade; every other no-key answer is not a server',
+        () async {
+      for (final body in <Object>[
+        {'apiVersion': '1.0', 'name': 'Looks fine'},
+        {'apiVersion': 1, 'features': <String>[]},
+      ]) {
+        final adapter = FakeHttpAdapter(routes: {
+          '/encore/api/v1/info': (r) => FakeResponse.json(body),
+        });
+
+        final proof = await _probe(adapter)
+            .check(Uri.parse('http://home.test:4540'), expectedId: _serverId);
+
+        expect(proof.verdict, EndpointVerdict.wrongKey, reason: '$body');
+      }
+    });
+
     test('nothing answering is unreachable', () async {
       final adapter = FakeHttpAdapter(routes: {
         '/encore/api/v1/info': (r) => const FakeResponse.connectionError(),
