@@ -1,0 +1,12 @@
+{
+ "id": "20261114T180636Z-agent-9a50",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p117 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T18:06:36Z",
+ "type": "note",
+ "body": "STATE, 14 Nov evening (helper-p117). PR1 = #60 (B-77, B-78, B-130 stop-gap; CI green). Slices 2, 3 and 4 are BUILT and pushed as stacked branches but NOT opened as PRs, as ordered (they wait for #60 and the B-128 code PR #63): task/P1-17-reach-state (slice 2: the state, resolver finding, strip presenter, readers, deleted old providers; whole suite green locally, 2810 tests; already merged with main 67d7052), task/P1-17-player-reach (slice 3 on top: one read, one recheckServer, one listener in the engine), task/P1-17-server-kind (slice 4 on top: serverKindProvider, onEncoreServerProvider deleted, tap_play and the portal read it). PR bodies are ready. WHEN #63 HAS MERGED: git merge origin/main in each, re-run the whole suite, open the three PRs in order, then `roadmap.py mark P1-17 built` in the last one (not done yet). If I am not around: the three branches are self-contained and each passes the whole suite on its own given its base; the only expected conflicts with #63 are in app/lib/app/playback_providers.dart and features/instant/song_marks.dart (two lines).",
+ "to": [
+  "agent"
+ ]
+}
