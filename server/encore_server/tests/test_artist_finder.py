@@ -533,6 +533,23 @@ def test_an_artist_with_no_songs_of_its_own_is_not_asked_about(tmp_path: Path) -
     assert catalogue.asked == []
 
 
+@pytest.mark.parametrize("name", ["Unknown Artist", "[Unknown Artist]"])
+def test_the_placeholder_for_nobody_is_never_asked_about_at_the_catalogue(tmp_path: Path, name: str) -> None:
+    """N-26: a song nobody names is kept under "Unknown Artist"; the music server lists that as an artist with no picture, and "Unknown Artist" + a
+    title would go to the catalogue from the Host's address. Nothing is asked and nothing is remembered."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Unknown Artist", "Intro")
+    catalogue = Catalogue({"Unknown Artist": PICTURE, "[Unknown Artist]": PICTURE})
+    the = finder(db, music, [("ar-1", name)], catalogue, clock)
+
+    report = the.run_once()
+
+    assert catalogue.asked == []
+    assert (report.looked, report.found) == (0, 0)
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM artist_picture").fetchone()[0] == 0
+
+
 # ------------------------------------------------------------------------------------------------ the app runs it
 
 

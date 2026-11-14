@@ -128,6 +128,19 @@ def norm_artist(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", t).strip()
 
 
+#: What a song nobody names is filed under: the folder the keeper makes for an artist it cannot name, and the artist the importer gives a song whose
+#: source lists none (N-26). **It is a placeholder, not a name**: see [is_unknown_artist].
+UNKNOWN_ARTIST = "Unknown Artist"
+
+
+def is_unknown_artist(name: str) -> bool:
+    """Whether [name] says "nobody": the placeholder in any case, with or without the brackets the music server puts around it (`[Unknown Artist]`).
+    **A name that cannot be told from "nobody" identifies nothing** (artist + title + length of two different nameless songs is the same string), so a
+    ref whose artist is this is found by its ids and never by its name (`refs.find`), and no catalogue is asked about it (`artist_finder`). That
+    includes a real artist who is literally called "Unknown Artist": the one corner this costs (written down in `docs/19` section 3 and tested)."""
+    return norm_artist(name) == norm_artist(UNKNOWN_ARTIST)
+
+
 #: Where a combined artist string ("Daft Punk feat. Pharrell Williams", "Fat Joe, Lil Wayne") is cut into names. The YouTube matcher and the music server's
 #: matcher use this one definition.
 ARTIST_SPLIT = re.compile(r"\s*(?:,|&|\+|\bfeat\.?\s|\bft\.?\s|\bfeaturing\b|\bx\b|\bwith\b)\s*", re.IGNORECASE)

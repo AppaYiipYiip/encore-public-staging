@@ -199,6 +199,67 @@ def test_a_song_the_playlist_points_at_plays_from_that_video_whatever_the_upload
         assert conn.execute("SELECT COUNT(*) AS n FROM work_item WHERE kind = 'match'").fetchone()["n"] == 0
 
 
+def test_a_song_with_no_artist_at_all_is_imported_under_a_placeholder_and_does_not_fail_the_import(rig: Rig) -> None:
+    """N-26: the recorded official video `Akudama` (YouTube Music, 14 Nov 2026) has an EMPTY `artists` and no separator in its title: nothing names an
+    artist. A ref needs one, and the whole import used to be refused ("A song needs a title and an artist") for the one song. It is kept, under the
+    placeholder the keeper's folders already use, and plays from its own video."""
+    rig.playlist = Playlist(
+        "Mix",
+        "youtube",
+        "playlist",
+        (Track("Akudama", "", video_id="3ENMe1rlA0M"), Track("Song", "Artist", artists=("Artist",), video_id="abcdefghijk")),
+        False,
+    )
+
+    made = rig.imported()
+
+    assert [(r["title"], r["artists"], r["videoId"]) for r in made["refs"]] == [
+        ("Akudama", ["Unknown Artist"], "3ENMe1rlA0M"),
+        ("Song", ["Artist"], "abcdefghijk"),
+    ]
+    assert made["import"]["total"] == 2
+
+
+def test_two_songs_nobody_names_with_one_title_and_one_length_stay_two_refs_and_each_plays_its_own_video(rig: Rig) -> None:
+    """N-26 review: "Unknown Artist" is a placeholder, not a name. Two different videos with no artist, the same title ("Intro") and lengths a second
+    apart used to share one `norm_key`: `refs.find` returned the first ref for the second video, and the second song's entry, like and keep landed on the
+    first song's audio for good. A description that has only the placeholder is found by its ids and by nothing else."""
+    rig.playlist = Playlist(
+        "Mix",
+        "youtube",
+        "playlist",
+        (
+            Track("Intro", "", duration_s=100, video_id="aaaaaaaaaaa"),
+            Track("Intro", "", duration_s=101, video_id="bbbbbbbbbbb"),
+            Track("Intro", "", duration_s=102, video_id="ccccccccccc"),
+        ),
+        False,
+    )
+
+    made = rig.imported()
+
+    assert [r["videoId"] for r in made["refs"]] == ["aaaaaaaaaaa", "bbbbbbbbbbb", "ccccccccccc"]
+    assert len({r["id"] for r in made["refs"]}) == 3
+    assert all(r["artists"] == ["Unknown Artist"] for r in made["refs"])
+
+
+def test_importing_the_same_nameless_songs_again_finds_each_by_its_own_video(rig: Rig) -> None:
+    """The placeholder carries no identity, but the video id does: the same link imported twice (or a second person's) finds the same refs."""
+    rig.playlist = Playlist(
+        "Mix",
+        "youtube",
+        "playlist",
+        (Track("Intro", "", duration_s=100, video_id="aaaaaaaaaaa"), Track("Intro", "", duration_s=101, video_id="bbbbbbbbbbb")),
+        False,
+    )
+
+    first = rig.imported()
+    again = rig.imported()
+
+    assert [r["id"] for r in again["refs"]] == [r["id"] for r in first["refs"]]
+    assert len({r["id"] for r in first["refs"]}) == 2
+
+
 def test_a_playlist_without_videos_is_still_matched_by_name(rig: Rig) -> None:
     """A list that came from Spotify (or a file) has no video to use: those songs are looked up with the strict match, as before."""
     made = rig.imported()  # the default five tracks have no video id

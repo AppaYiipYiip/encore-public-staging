@@ -17,7 +17,7 @@ from . import missing
 from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
-from .textnorm import norm_artist, norm_title, version_signature
+from .textnorm import is_unknown_artist, norm_artist, norm_title, version_signature
 
 #: Two recordings with the same normalised name are the same song when their lengths differ by no more than this.
 DURATION_TOLERANCE_MS = 3000
@@ -223,7 +223,10 @@ def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
 
     A ref that was merged into another (N-11) is still found, as the survivor: the same song described the way the deleted ref was (the music server's
     tags list the artists as one string and the length a few seconds off) must not make the duplicate again. The order is the strength of the
-    evidence: the ids of live refs, the ids of merged ones, then the artist + title + length of live refs, then of merged ones."""
+    evidence: the ids of live refs, the ids of merged ones, then the artist + title + length of live refs, then of merged ones.
+
+    **A song whose artist is the placeholder for "nobody" ("Unknown Artist", N-26) is found by its ids and by nothing else**: the name of two different
+    nameless songs is the same string, so matching it would put the second song on the first one's ref, with the first one's audio, for good."""
     ids = (("isrc", item["isrc"]), ("deezer_id", item["deezer_id"]), ("ytm_video_id", item["ytm_video_id"]))
     for column, value in ids:
         if value:
@@ -235,6 +238,8 @@ def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
             merged = _find_merged(conn, column, value)
             if merged is not None:
                 return merged
+    if is_unknown_artist(item["artists"][0]):
+        return None  # no name to go by (the live refs and the tombstones below are both read by name)
     key = norm_key(item["artists"][0], item["title"])
     for row in conn.execute("SELECT * FROM song_ref WHERE norm_key = ? ORDER BY created_at", (key,)):
         if _compatible(row, item["duration_ms"]):
