@@ -11,6 +11,7 @@ import uvicorn
 from .api import create_app
 from .config import Settings
 from .sources.youtube.tools import ToolStore, activate
+from .stopping import UVICORN_GRACE_S
 
 
 def configure_logging(level: str) -> None:
@@ -57,6 +58,11 @@ def main(argv: list[str] | None = None) -> None:
         port=settings.port,
         log_level=settings.log_level.lower(),
         access_log=False,
+        # `docker stop` (so `encore update` and `encore stop`) kills the container ten seconds after SIGTERM. Uvicorn waits for every running request
+        # on a stop and, with no limit of its own, was killed in the middle of its shutdown (exit code 137, AUDIT B-129). The live connections end at
+        # once now (api.live); this is the bound for whatever else holds a stop, such as a long stream. The whole stop is bounded by stopping.py:
+        # this grace + the lifespan's one shared budget, worst case 8.8 s of Docker's 10.
+        timeout_graceful_shutdown=int(UVICORN_GRACE_S),
     )
 
 

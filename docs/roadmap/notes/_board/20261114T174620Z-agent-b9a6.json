@@ -1,0 +1,9 @@
+{
+ "id": "20261114T174620Z-agent-b9a6",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T17:46:20Z",
+ "type": "note",
+ "body": "OWNER'S WORDS, 14 Nov 2026 afternoon: (1) the rule of at most 10 real YouTube look-ups per test run is NOT a concern any more: a normal user exceeds it within minutes of real use; do not count or cap look-ups in walks (still no scripted floods, and tests of code still use fakes). The '<= 7 of 10' in the walk notes of 14 Nov is therefore only a record. (2) The debug phone on USB is the owner's SECONDARY phone for testing, not his real phone: it may be used for testing like the emulator once the bench is up again. Merged since the walk: #58 (B-127) and #61 (B-129: a stop no longer waits for a phone's live connection; the whole stop is bounded at 8.8 s of Docker's 10 by stopping.py). Owed when the bench is up: B-127 (restart the Encore container right after a cover is found, look for the artist pass in the log) and B-129 (time docker stop with the emulator connected: about a second, exit code 0, not 137). In flight: helper-p117 (P1-17 slices, #60 first) and helper-b128 (#59 drawing merging, then the code PR)."
+}

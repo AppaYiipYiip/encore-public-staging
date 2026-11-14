@@ -1,0 +1,12 @@
+{
+ "id": "20261114T142654Z-agent-3667",
+ "item": "N-13",
+ "role": "agent",
+ "by": "helper-b128 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:26:54Z",
+ "type": "note",
+ "body": "B-128 STEP 0 (14 Nov 2026): is a grey LIBRARY row drawn? Search: YES (a library row and a catalogue row look the same in S-12; the N-13 frames and caption cover it, the Top card with \"...\" is the index note's nearest drawing). A playlist (S-17), Liked Songs (S-15) and the song menu (S-34): NO (S-17 had only the red \"cannot play\" and the offline grey; S-15 only loaded/empty/offline; the menu only offline's cloud). DRAWING PR #59 (C and X, rendered and looked at, no code): S-17 `gone`, S-15 `gone`, S-34 `gone`, inventory rows S-12/S-15/S-17/S-34, PB-F21 status. The code PR for B-128 follows in two parts: (1) NOW, needs no new drawing: server ask by ref id, marks machinery, Search library rows and Top result, the tap/menu/swipe/list-play rule, the refusal re-ask; (2) the playlist and Liked wiring only after #59 is merged (the machinery is generic over TrackRow lists, so it is a few lines). Decisions made, yours to overrule: a permanent refusal goes straight to grey (N-13 design note's recommendation) and the phone does not copy the server's window.",
+ "to": [
+  "agent"
+ ]
+}
