@@ -20,6 +20,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
+from . import refs
 from .db import Database
 from .errors import ApiError
 from .keeper.failures import describe_failure, file_lost, not_fetched
@@ -100,11 +101,13 @@ def members(conn: sqlite3.Connection, person: str, group: Group) -> list[str] | 
     if stored:
         return [r["ref"] for r in stored]
     # Saved before the server stored a release's songs: the phone says which they are; only songs this server knows count.
+    # A song merged into another (N-11) counts as the survivor.
+    named = list(dict.fromkeys(refs.canonical_many(conn, group.refs).values()))
     known: set[str] = set()
-    for chunk in _chunks(list(group.refs)):
+    for chunk in _chunks(named):
         marks = ",".join("?" for _ in chunk)
         known.update(r["id"] for r in conn.execute(f"SELECT id FROM song_ref WHERE id IN ({marks})", chunk))  # noqa: S608 - placeholders only
-    return [r for r in group.refs if r in known]
+    return [r for r in named if r in known]
 
 
 def _linked(conn: sqlite3.Connection, ref_ids: list[str]) -> set[str]:

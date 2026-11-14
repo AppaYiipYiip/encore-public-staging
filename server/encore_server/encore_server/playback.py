@@ -11,6 +11,7 @@ import json
 import sqlite3
 from typing import Any
 
+from . import refs
 from .errors import ApiError
 from .ids import is_id, now_ms
 
@@ -83,6 +84,11 @@ def put_state(
         or repeat not in _REPEAT
     ):
         raise ApiError("validation", "The position, the index or the repeat mode is not valid.")
+    # A device that still names a song merged into another (N-11) writes the survivor: the queue keeps its length and its places (the index of the
+    # song playing must not shift), and the saved state never holds an id that is gone.
+    canon = refs.canonical_many(conn, [*queue, *([ref] if ref is not None else [])])
+    queue = [canon[item] for item in queue]
+    ref = canon[ref] if ref is not None else None
     playing = bool(body.get("playing", False))
     context = body.get("context")
     if context is not None and (not isinstance(context, str) or len(context) > 200):
