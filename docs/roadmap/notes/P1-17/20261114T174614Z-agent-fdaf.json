@@ -1,0 +1,10 @@
+{
+ "id": "20261114T174614Z-agent-fdaf",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T17:46:14Z",
+ "type": "note",
+ "body": "The lead's note of 14 Nov 12:12 UTC said the B-58 listener in ServerSession.start must read the derived state when the one state is built. THAT IS RETRACTED (advisor, 14 Nov): the right design is helper-p117's D3, the listener reads the resolver's RAW finding edge (silent or anotherServer to answering), because the session sits below Riverpod and the background job has none; a blink shorter than the state's 4 s filter would never turn the state away, so a state-based retry would not fire. Also decided on 14 Nov after the review of the plan (#60): D1, D2, D4 and D6 accepted (D1 and D2 each with their pinning test and their docs/31 or docs/33 row in the slice that introduces them; the removed Jam strip line gets a CHANGELOG line); D5 (a failed browse pass is a browse failure, lastError stays empty) is accepted ONLY as a recorded stop-gap: warning-level log, an audit row and a note naming its removal trigger (P2-20, or the first screen that shows a browse failure), and an answer to whether the server can tell its Host that its own music server refuses the app's login. MERGE ORDER: #60 (slice 1), then the B-128 code PR, then P1-17 PR2 (both edit playback_providers.dart); the lead tells helper-p117 by a note here when PR2 may be opened.",
+ "replaces": "20261114T121258Z-agent-2b84"
+}
