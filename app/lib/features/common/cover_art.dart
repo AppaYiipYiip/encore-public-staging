@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../app/providers.dart';
 import '../../core/logger.dart';
 import '../../data/covers/cover_file_service.dart';
+import '../../data/covers/pinning_cache.dart';
 import '../../design/tokens.dart';
 import '../../domain/mosaic_layout.dart';
 import '../requests/request_providers.dart';
@@ -20,14 +21,34 @@ import '../requests/request_providers.dart';
 ///
 /// Its name says which kind of cover it holds: `encoreCovers` held the music server's blank record for every album without art (see
 /// [CoverFileService]); that cache is thrown away ([retireOldCoverCache]) and this one never stores it.
-final CacheManager coverCacheManager = CacheManager(
+///
+/// It is also the PINNED store ([PinningCacheManager], P1-10): the pictures the downloaded songs need are copied into the app's own directory,
+/// which neither the least-recently-used cleaning of this cache nor Android's "Clear cache" can take, and are found first by every reader.
+final PinningCacheManager coverCacheManager = PinningCacheManager(
   Config(
     'encoreCovers2',
     stalePeriod: const Duration(days: 365),
     maxNrOfCacheObjects: 8000,
     fileService: coverFileService,
   ),
+  pinned: CacheManager(
+    Config(
+      'encorePinnedCovers',
+      stalePeriod: const Duration(days: 3650),
+      maxNrOfCacheObjects: 100000,
+      repo: JsonCacheInfoRepository(databaseName: 'encorePinnedCovers'),
+      fileSystem: DirectoryFileSystem(_pinnedDirectory),
+    ),
+  ),
+  registry: FilePinRegistry(
+      () async => File('${(await _pinnedDirectory()).path}/pins.json')),
 );
+
+/// The app's own directory for pinned pictures (not the cache directory: the system may clear that one).
+Future<Directory> _pinnedDirectory() async {
+  final base = await getApplicationSupportDirectory();
+  return Directory('${base.path}/pinnedCovers');
+}
 
 /// The file service of [coverCacheManager]; the signed-in session hooks its refused-ticket renewal into it (`coverRefusalProvider`).
 final CoverFileService coverFileService = CoverFileService();

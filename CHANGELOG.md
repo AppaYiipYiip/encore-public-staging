@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* The pictures of your downloaded songs now stay on your phone with them: their covers and the pictures of their artists are kept once each (five songs of one album by one artist are one cover and one picture), in a place that neither the app's own tidying of old pictures nor Android's "Clear cache" empties, and they are let go only when no downloaded song needs them any more. So offline, a downloaded song never turns into a letter.
+
 * Songs that came from YouTube and have no picture anywhere else now show their video's thumbnail instead of a letter, also the ones you imported before: your phone is told about them once the next time your server looks for pictures, with no need to import the playlist again. Any real cover that is found later still replaces it.
 
 * Search no longer stays empty while your phone is busy taking in music: while the library syncs (the first sync of a new phone, above all) on a slow phone, typing in Search could show nothing at all until the music stopped arriving, because every song that arrived made the search start over before it had finished. Search now shows what your library holds as soon as it has found it and never starts over for that; the guess for a band typed with a letter wrong is added to it when the list of bands is ready.
