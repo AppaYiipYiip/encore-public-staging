@@ -201,8 +201,8 @@
  },
  "P4-24": {
   "state": "built",
-  "evidence": "PR code: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers; tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at record, upgrade on Wi-Fi, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart (prepare window 1), core/cover_sizes_test.dart + playback/media_art_test.dart (small pictures), features/data_saver_settings_test.dart + download_policy_test.dart, migration v7 to v8. 2615 tests green in test/features test/domain test/app test/playback test/data test/core. Built, NOT walked: the byte-count acceptance (phone's per-app data counter on mobile data) is for a real walk.",
-  "at": "2026-11-14T08:41:27Z",
+  "evidence": "Code PR #36: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers (streaming quality, new downloads with made-at record and Wi-Fi upgrade, small pictures via CoverBudget, prepare-ahead window 1); tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at, upgrade, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart, core/cover_sizes_test.dart, playback/media_art_test.dart, features/data_saver_settings_test.dart, download_policy_test.dart, migration v7 to v8; 2620 tests green. Built, NOT walked: the byte-count acceptance (the phone's per-app data counter on mobile data) is for a real walk.",
+  "at": "2026-11-14T08:51:12Z",
   "by": "Claude"
  }
 }

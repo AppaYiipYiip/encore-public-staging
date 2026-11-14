@@ -208,7 +208,7 @@ def test_a_picture_address_is_kept_only_from_the_hosts_the_server_itself_would_f
         assert resolve(db, title=f"Song for {good}", coverUrl=good)["coverUrl"] == good, good
 
 
-THUMB = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+THUMB = "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
 COVER = "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.jpg"
 
 
@@ -235,3 +235,17 @@ def test_a_thumbnail_that_arrives_later_fills_a_song_that_has_no_picture(db: Dat
 
 def test_a_thumbnail_on_a_host_the_picture_rules_do_not_allow_is_dropped(db: Database) -> None:
     assert resolve(db, thumbnailUrl="https://evil.example/a.jpg")["coverUrl"] is None
+
+
+def test_a_song_with_a_video_and_no_picture_at_all_shows_the_thumbnail_of_its_video(db: Database) -> None:
+    """P1-26: the last resort, so a song YouTube knows is never a letter tile, with no re-import needed."""
+    ref = resolve(db, videoId="abcdefghijk")
+    assert ref["coverUrl"] == "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
+
+
+def test_the_order_of_pictures_is_the_cover_then_the_sources_thumbnail_then_the_videos_own(db: Database) -> None:
+    both = resolve(db, title="Both", videoId="abcdefghijk", coverUrl=COVER, thumbnailUrl=THUMB)
+    thumb_only = resolve(db, title="Thumb only", videoId="bcdefghijkl", thumbnailUrl=THUMB)
+    assert both["coverUrl"] == COVER
+    assert thumb_only["coverUrl"] == THUMB
+    assert resolve(db, title="No video")["coverUrl"] is None, "no video, no thumbnail"

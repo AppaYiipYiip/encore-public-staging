@@ -391,7 +391,7 @@ become one file each in `docs/adr/`; that was not done and the log stays in this
   | 30-second previews: the phone plays Deezer's file | `PreviewTrack.uri` in `features/catalogue/catalogue_widgets.dart` | P2-12 (a signed preview address from the server) |
   | New-release alerts in the background (Deezer) | `app/background_sync.dart` → `AlertsService` | P2-12, then the alert check on the server (`23` §4, notifications without push: P2-15) |
   | Lyrics (LRCLIB) | `app/lib/data/api/lrclib_client.dart` | P2-14 (lyrics on the server) |
-  | Cover pictures by an outside address (Deezer covers, an import's source picture) | `CachedNetworkImage` in `features/common/cover_art.dart` | Covers served by the server (the cover finder already stores `cover.jpg`); **whether Flutter web can load outside pictures is unchecked: check when the web client starts** |
+  | Cover pictures by an outside address (Deezer covers, an import's source picture, and since P1-26 YouTube's own thumbnail of a song's video, `i.ytimg.com`, which the server serves as the cover of a song that has no other; the phone loads these addresses itself, so every phone shows its address to those hosts) | `CachedNetworkImage` in `features/common/cover_art.dart` | Covers served by the server (the cover finder already stores `cover.jpg`); **whether Flutter web can load outside pictures is unchecked: check when the web client starts** |
 
 * **Consequences.** P6 "Web/desktop client" now lists these as prerequisites. The audio path needs no change for a browser (the server streams with Range support and signed
   addresses). Platform parts of the app (files, the phone's database, secure storage, background work) will need web versions behind interfaces: not examined yet. An
