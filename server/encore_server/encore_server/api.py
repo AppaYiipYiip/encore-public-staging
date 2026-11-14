@@ -25,7 +25,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
-from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refs
+from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refmerge, refs
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
 from .auth import (
@@ -663,7 +663,8 @@ def prepare_refs(
         return _ok({"accepted": 0})
     accepted = 0
     with svc.db.tx() as conn:
-        for ref_id in dict.fromkeys(ids):
+        # Songs merged into another (N-11) are prepared as the survivor, once.
+        for ref_id in dict.fromkeys(refs.canonical_many(conn, ids).values()):
             if refs.ref_exists(conn, ref_id):
                 svc.scheduler.submit("prepare", ref_id, p.person_id, conn=conn)
                 accepted += 1
@@ -701,6 +702,7 @@ def keep_now(ref_id: str, request: Request, p: Principal = Depends(get_principal
     """Somebody asked for this song to be on the server now (a download of a song the server does not keep yet): it is kept first in line."""
     svc = services(request)
     with svc.db.tx() as conn:
+        ref_id = refs.canonical(conn, ref_id)  # an old id of a song merged into another (N-11) asks for the survivor
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
         if _keep_state(svc, conn, ref_id)["state"] in ("none", "failed"):
@@ -794,6 +796,7 @@ def keep_watch(
 def keep_state(ref_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
     svc = services(request)
     with svc.db.read() as conn:
+        ref_id = refs.canonical(conn, ref_id)
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
         return _ok(_keep_state(svc, conn, ref_id, host=p.role == "owner"))
@@ -805,6 +808,9 @@ def stream_url(ref_id: str, request: Request, p: Principal = Depends(get_princip
     headers can use it, and valid for as long as a listen can last."""
     svc = services(request)
     with svc.db.read() as conn:
+        ref_id = refs.canonical(
+            conn, ref_id
+        )  # signed for the survivor of a song merged into another (N-11): the address a player gets is the live one
         if not refs.ref_exists(conn, ref_id):
             raise ApiError("not_found", "That song is not known to this server.")
     expires = int(time.time()) + STREAM_URL_TTL_S
@@ -1009,14 +1015,22 @@ def library_changes(request: Request, since: str = "0", p: Principal = Depends(g
 
 
 @router.get("/library/files")
-def library_files(request: Request, since: str = "0", limit: int = 500, p: Principal = Depends(get_principal)) -> JSONResponse:
-    """The songs this server keeps, as they change: the app's browse index of the server's files (docs/18 section 2)."""
+def library_files(
+    request: Request,
+    since: str = "0",
+    limit: int = 500,
+    merges_since: str | None = Query(None, alias="mergesSince"),
+    p: Principal = Depends(get_principal),
+) -> JSONResponse:
+    """The songs this server keeps, as they change: the app's browse index of the server's files (docs/18 section 2). With `mergesSince` (a cursor of
+    its own) the answer also lists the songs that were merged into another since then, `merges: [{from, into, seq}]` (N-11, docs/17)."""
     try:
         cursor = max(0, int(since))
+        merges_cursor = None if merges_since is None else max(0, int(merges_since))
     except ValueError:
         raise ApiError("validation", "The cursor is a number, as the server gave it.") from None
     with services(request).db.read() as conn:
-        return _ok(library.files_since(conn, cursor, max(1, min(limit, library.FILES_PAGE))))
+        return _ok(library.files_since(conn, cursor, max(1, min(limit, library.FILES_PAGE)), merges_cursor))
 
 
 def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:
@@ -1028,6 +1042,10 @@ def _item_route(
 ) -> JSONResponse:
     svc = services(request)
     with svc.db.tx() as conn:
+        if kind == "like":
+            target = refs.canonical(
+                conn, target
+            )  # a song merged into another (N-11): the like, its feed row and the keep are the survivor's
         changed = (
             library.set_item(conn, p.person_id, kind, target, at=(body or {}).get("at"))
             if add
@@ -1076,6 +1094,8 @@ def save_album(
     ref_ids = _release_refs(body)
     svc = services(request)
     with svc.db.tx() as conn:
+        # Songs merged into another (N-11) count as the survivor, once.
+        ref_ids = list(dict.fromkeys(refs.canonical_many(conn, ref_ids).values()))
         for ref_id in ref_ids:
             if not refs.ref_exists(conn, ref_id):
                 raise ApiError("not_found", "That song is not known to this server.", details={"ref": ref_id})
@@ -1179,7 +1199,9 @@ def add_entries(
 
     def add(conn: sqlite3.Connection) -> Any:
         made = library.add_entries(conn, p.person_id, playlist_id, songs, after=after if isinstance(after, str) else None)
-        want_kept(svc, conn, p.person_id, [str(s.get("ref")) for s in songs])
+        # The songs to keep are the survivors of any that were merged into another (N-11).
+        wanted = refs.canonical_many(conn, [str(s.get("ref")) for s in songs])
+        want_kept(svc, conn, p.person_id, list(wanted.values()))
         return made
 
     added, cursor = _write_playlist(request, p, add)
@@ -1211,11 +1233,12 @@ def reorder_playlist(
 @router.post("/plays")
 def post_play(request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)) -> JSONResponse:
     with services(request).db.tx() as conn:
+        ref_id = refs.canonical(conn, str(body.get("ref", "")))  # a song merged into another (N-11) is played as the survivor
         stored = library.record_play(
             conn,
             p.person_id,
             play_id=body.get("id"),
-            ref=str(body.get("ref", "")),
+            ref=ref_id,
             at=body.get("at"),
             ms_played=body.get("msPlayed"),
             device=p.device_id,
@@ -1223,10 +1246,9 @@ def post_play(request: Request, body: dict[str, Any] = Depends(json_body), p: Pr
         )
         svc = services(request)
         listened = body.get("msPlayed")
-        if stored and svc.scheduler is not None and isinstance(listened, int) and listened >= library.MIN_COUNTED_PLAY_MS:
-            ref_id = str(body.get("ref", ""))
-            if library.played_on_days(conn, ref_id) >= svc.settings.keep_after_play_days:
-                want_kept(svc, conn, p.person_id, [ref_id])
+        counted = stored and svc.scheduler is not None and isinstance(listened, int) and listened >= library.MIN_COUNTED_PLAY_MS
+        if counted and library.played_on_days(conn, ref_id) >= svc.settings.keep_after_play_days:
+            want_kept(svc, conn, p.person_id, [ref_id])
     return _ok({"stored": stored}, 201 if stored else 200)
 
 
@@ -1454,6 +1476,9 @@ def create_app(
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
+    # Right after the migrations and before anything else runs (no thread has started, no request can come): the songs the old library scan made
+    # twice are merged (N-11). It has its own backup, runs as one transaction, and never stops the server from starting.
+    refmerge.repair(database)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
     hub = Hub()

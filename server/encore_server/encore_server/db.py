@@ -116,7 +116,7 @@ class Database:
         pending = [m for m in pending_source if m[0] not in done]
         if not pending:
             return []
-        backup = self._backup(version) if self.path.exists() and self.path.stat().st_size > 0 and done else None
+        backup = self.backup(version) if self.path.exists() and self.path.stat().st_size > 0 and done else None
         applied: list[int] = []
         for number, name, sql in pending:
             conn = self.connect()
@@ -141,9 +141,19 @@ class Database:
         log.info("database migrated: %s", applied)
         return applied
 
-    def _backup(self, version: str) -> Path:
+    def backup(self, label: str) -> Path:
+        """A whole copy of the database in the backups folder (`encore-<label>-<time>.db`), made with `VACUUM INTO` (a consistent copy taken under a read lock).
+        Returns where it is. It is kept: nothing here deletes it. A migration takes one named after the version; the repair of merged refs takes
+        its own, named for what it is about to do (`refmerge.py`)."""
         self.backups.mkdir(parents=True, exist_ok=True)
-        target = self.backups / f"encore-{version}-{time.strftime('%Y%m%d-%H%M%S')}.db"
+        stem = f"encore-{label}-{time.strftime('%Y%m%d-%H%M%S')}"
+        target = self.backups / f"{stem}.db"
+        for again in range(
+            2, 100
+        ):  # two copies in one second (a restart loop) never overwrite or refuse each other: VACUUM INTO will not write over a file
+            if not target.exists():
+                break
+            target = self.backups / f"{stem}-{again}.db"
         source = self.connect()
         try:
             source.execute("VACUUM INTO ?", (str(target),))
