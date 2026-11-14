@@ -1,0 +1,9 @@
+{
+ "id": "20261114T213001Z-agent-802f",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T21:30:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 night (verified on the owner's secondary test phone, a Samsung A35, build 153 from main cb37c62, against VM 108 at sha-004ea8c; NOT the release-candidate pair; nothing marked walked). NOT REPRODUCED ON REAL HARDWARE EITHER. On the A35, a downloaded song (Liked Songs, downloaded on the phone): (1) airplane mode on, tapped the song, it played at once; paused with the on-screen button: the session went PAUSED, no notice on screen in 7 s of samples every 0.7 s, the player log says only \"pause: the person paused\"; (2) resumed it offline: PLAYING, no notice; (3) network back, the Encore server container stopped (the phone on Wi-Fi, the server away), paused: PAUSED, no notice, the same log line. (An adb PLAY_PAUSE key event does not toggle this player: use the on-screen button when testing.) So the notice of the original report is not produced by a pause of a downloaded song in any of the three states; it stays todo with the question for the owner: what exactly was playing and what did the screen say (a streamed song that lost its network, the strip's own sentence, or the queue's next song that could not load)? The player log does show a different honest line when the queue's NEXT song is not downloaded and cannot load offline: \"pause: no connection (a failure is judged)\"."
+}

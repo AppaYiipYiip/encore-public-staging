@@ -1,0 +1,9 @@
+{
+ "id": "20261114T210715Z-agent-8149",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T21:07:15Z",
+ "type": "note",
+ "body": "SLICE 1 DONE (built, not walked): the source of B-126. EncoreInstantBackend.prepare (the one place both Search's 'prepare the likely top result' and the warm-up of an opened list end up on an Encore server) now does nothing: it used to POST refs/resolve, which made a song row on the server for every pause between two letters and every opened list, and what it saved was one round trip before a tap that must look the song up at YouTube anyway. The player's own prepare of the next queue songs (POST refs/prepare, P1-04) is a different path and unchanged. Test first: 'a prepare makes no row on the server' (seen failing: a row and a resolve; now none, and a tap still makes its ref). SLICE 2 (B-131, still to do, needs a short design first): retire the rows that already exist or that a real tap leaves behind (a ref with no file, like, playlist entry or play, older than N days, keeping an N-13 verdict for its window) on the server, and the phone's library row (is_ref, no file) that nothing points at. Question for the design: what 'nobody points at' means for a ref another person may point at."
+}

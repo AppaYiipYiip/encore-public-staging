@@ -1,0 +1,9 @@
+{
+ "id": "20261114T213001Z-agent-9466",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T21:30:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 night (verified on the owner's secondary test phone, a Samsung A35, build 153 from main cb37c62, against VM 108 at sha-004ea8c; NOT the release-candidate pair; nothing marked walked). THE STRIP'S SENTENCE CAUGHT ON THE A35: with airplane mode on, about 4 s later (the filter) the strip said \"You're offline. Downloaded music still plays.\" for about 2 to 3 s (two samples of 0.4 s steps), as docs/31 CN-1 says. The emulator samples of the afternoon had missed it. The sentence for \"server away with Wi-Fi\" was not sampled."
+}
