@@ -1,0 +1,9 @@
+{
+ "id": "20261114T121258Z-agent-2b84",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T12:12:58Z",
+ "type": "note",
+ "body": "14 Nov 2026: the B-58 slice of this item is merged (PR #49): OutboxProcessor schedules its own wake for the head item's backoff (injectable timer factory), retryNow() ends the wait of items that only failed on the NETWORK (serverErrors == 0) when the server answers again, and ServerSession.start calls it on every endpoints.reachability true; a test with the real ServerSession proves it (and fails without the listener). WHEN THE ONE STATE IS BUILT, that listener in ServerSession.start must read the derived state instead of endpoints.reachability. Traps met: the session's teardown must cancel the listener WITHOUT an extra await (one more event-loop turn left the scheduler's 30 s retry timer pending when a widget test ended: streamed_song_test failed on CI while the commit gate, which runs a subset, passed). The rest of P1-17 is not started; it touches the player, playability and search, so do it after N-13's app half (PR #53) has merged and been walked."
+}
