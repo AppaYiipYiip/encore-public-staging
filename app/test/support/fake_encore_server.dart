@@ -127,6 +127,18 @@ class FakeEncoreServer {
   final List<({int seq, String ref})> _fileLog = [];
   int _seq = 0;
   int _fileSeq = 0;
+
+  /// The songs the server folded into another (N-11, docs/17 "Songs merged into another"), oldest first: what `mergesSince` pages over.
+  final List<({int seq, String from, String into})> mergeLog = [];
+
+  /// The server knows about merges (false = one from before them: it sends no `merges` at all).
+  bool hasMerges = true;
+
+  /// When set, `GET library/files` answers exactly this (a real response saved as a fixture), whatever the phone asked.
+  Map<String, Object?>? filesAnswer;
+
+  /// The `mergesSince` of each `GET library/files` (null = the app did not send one), in order.
+  final List<String?> mergesSinceSeen = [];
   int clockMs = 1790000000000;
   bool online = true;
 
@@ -208,6 +220,12 @@ class FakeEncoreServer {
     };
     if (fileId != null) attachFile(id, fileId, meta: meta);
     return id;
+  }
+
+  /// The server folded [from] into [into] (the repair at its start): [from] no longer exists, and every merge gets the next `seq`.
+  void mergeRefs(String from, String into) {
+    refs.remove(from);
+    mergeLog.add((seq: mergeLog.length + 1, from: from, into: into));
   }
 
   /// A playlist the server already holds for the person (what bringing it over from the music server leaves): its songs, in order.
@@ -651,6 +669,11 @@ class FakeEncoreServer {
   }
 
   FakeResponse _files(RecordedRequest r) {
+    final fixed = filesAnswer;
+    if (fixed != null) {
+      mergesSinceSeen.add(r.param('mergesSince'));
+      return _ok(fixed);
+    }
     final since = int.parse(r.param('since') ?? '0');
     final limit = int.parse(r.param('limit') ?? '500');
     final latest = <String, int>{};
@@ -661,10 +684,28 @@ class FakeEncoreServer {
       ..sort((a, b) => a.value.compareTo(b.value));
     final page = ordered.take(limit).toList();
     final cursor = page.isEmpty ? since : page.last.value;
+    final mergesSince = r.param('mergesSince');
+    mergesSinceSeen.add(mergesSince);
+    final after = mergesSince == null
+        ? const <({int seq, String from, String into})>[]
+        : mergeLog.where((m) => m.seq > int.parse(mergesSince)).toList();
+    final mergePage = after.take(limit).toList();
     return _ok({
-      'refs': [for (final e in page) refs[e.key]!],
+      'refs': [
+        for (final e in page)
+          if (refs.containsKey(e.key)) refs[e.key]!
+      ],
       'cursor': '$cursor',
       'more': ordered.length > page.length,
+      if (hasMerges) ...{
+        'merges': [
+          for (final m in mergePage)
+            {'from': m.from, 'into': m.into, 'seq': m.seq}
+        ],
+        'mergesCursor':
+            '${mergePage.isEmpty ? int.parse(mergesSince ?? '0') : mergePage.last.seq}',
+        'mergesMore': after.length > mergePage.length,
+      },
     });
   }
 

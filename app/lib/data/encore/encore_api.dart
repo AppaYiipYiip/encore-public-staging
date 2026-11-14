@@ -328,10 +328,16 @@ class EncoreApi {
       guard(() async => EncoreChanges.fromJson(
           await _send('GET', '/library/changes', query: {'since': since})));
 
-  Future<Result<EncoreFiles>> files({required String since, int limit = 500}) =>
-      guard(() async => EncoreFiles.fromJson(await _send(
-          'GET', '/library/files',
-          query: {'since': since, 'limit': limit})));
+  /// The songs whose file changed after [since]; with [mergesSince], also the songs the server merged into another after that cursor of their
+  /// own (without it a server sends none: docs/17 "Songs merged into another").
+  Future<Result<EncoreFiles>> files(
+          {required String since, int limit = 500, String? mergesSince}) =>
+      guard(() async =>
+          EncoreFiles.fromJson(await _send('GET', '/library/files', query: {
+            'since': since,
+            'limit': limit,
+            if (mergesSince != null) 'mergesSince': mergesSince,
+          })));
 
   Future<Result<void>> like(String refId, {int? atMs}) => guard(() async =>
       _send('PUT', '/likes/$refId', body: {if (atMs != null) 'at': atMs}));
