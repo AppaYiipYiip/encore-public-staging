@@ -567,4 +567,281 @@ void main() {
       expect(transport.deleted, contains('/app/downloads/$serverId/t4.flac'));
     });
   });
+
+  group(
+      'Wi-Fi only (owner, 13 Nov 2026: downloads over Wi-Fi only, or also over mobile data)',
+      () {
+    test(
+        'on: a download waits on mobile data and is not handed to the transfer layer',
+        () async {
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+      await repo.pin(PinTargetType.album, 'al1');
+      await manager.reconcile();
+      expect(transport.started, isEmpty);
+      expect((await row('t1')).state, DownloadState.queued,
+          reason: 'it waits, it is not failed');
+    });
+
+    test(
+        'off: the same download goes on mobile data, and the transfer layer is told it may',
+        () async {
+      policy = const DownloadPolicy(wifiOnly: false, onWifi: false);
+      await repo.pin(PinTargetType.album, 'al1');
+      await manager.reconcile();
+      expect(transport.started.length, 4);
+      expect(transport.requestFor('t1').requiresWifi, isFalse);
+      expect((await row('t1')).state, DownloadState.downloading);
+    });
+
+    test(
+        'on, and the phone reaches Wi-Fi: what waited goes, and keeps requiring Wi-Fi',
+        () async {
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+      await repo.pin(PinTargetType.album, 'al1');
+      await manager.reconcile();
+      expect(transport.started, isEmpty);
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: true);
+      await manager.reconcile();
+      expect(transport.started.length, 4);
+      expect(transport.requestFor('t1').requiresWifi, isTrue);
+    });
+  });
+
+  group('P4-24 Data saver: new downloads on mobile data', () {
+    // Data saver in force means the phone is on mobile data with the switch on; the person allowed downloads there.
+    const underCap =
+        DownloadPolicy(wifiOnly: false, onWifi: false, dataSaver: true);
+    const wifiPolicy = DownloadPolicy(wifiOnly: true, onWifi: true);
+
+    test('an Original pin is downloaded at Data saver quality', () async {
+      policy = underCap;
+      await repo.pin(PinTargetType.album, 'al1',
+          quality: AudioQuality.original);
+      await manager.reconcile();
+
+      final req = transport.requestFor('t1');
+      expect(req.url.queryParameters['q'], 'opus48');
+      expect(req.relativePath, 'downloads/$serverId/t1.opus',
+          reason: 'the copy is an Opus file, not the FLAC the pin asks for');
+      expect((await row('t1')).quality, 'opus48',
+          reason: 'the row says what the copy is made at, from the start');
+    });
+
+    test(
+        'the made-at quality is recorded and the pin keeps the person\'s own choice',
+        () async {
+      policy = underCap;
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.quality, 'opus48');
+      expect((await repo.pins()).single.quality, 'opus160',
+          reason: 'the cap never overwrites what the person chose');
+      expect((await repo.desired())['t1']!.quality, 'opus160');
+    });
+
+    test(
+        'a capped Original is not judged as a truncated FLAC: it is a small Opus file and is kept',
+        () async {
+      policy = underCap;
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(size: Value(30 * 1024 * 1024)));
+      await repo.pin(PinTargetType.album, 'al1',
+          quality: AudioQuality.original);
+      await manager.reconcile();
+      transport.complete('t1', size: 3 * 1024 * 1024);
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.done, reason: r.lastError ?? '');
+      expect(r.quality, 'opus48');
+      expect(r.bytes, 3 * 1024 * 1024);
+      expect(transport.deleted, isEmpty);
+    });
+
+    test('the storage guard counts the capped size, not the FLAC it replaces',
+        () async {
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1'))).write(
+          const TracksCompanion(
+              size: Value(40 * 1024 * 1024), durationSec: Value(240)));
+      // 40 MB of FLAC would not fit in 10 MB; 240 s at 48 kbps (1.44 MB) does.
+      policy = const DownloadPolicy(
+          wifiOnly: false,
+          onWifi: false,
+          dataSaver: true,
+          limitBytes: 10 * 1024 * 1024);
+      await repo.pin(PinTargetType.track, 't1', quality: AudioQuality.original);
+      await manager.reconcile();
+      expect(transport.started.length, 1);
+      expect(manager.verdict, StorageVerdict.ok);
+    });
+
+    test('Compatible (MP3) is never turned into Opus by the cap', () async {
+      policy = underCap;
+      await repo.pin(PinTargetType.album, 'al1',
+          quality: AudioQuality.compatible);
+      await manager.reconcile();
+      expect(transport.requestFor('t1').url.queryParameters['q'], 'mp3_192');
+      expect(transport.requestFor('t1').relativePath, endsWith('.mp3'));
+    });
+
+    test('with the cap not in force a download is exactly what it is today',
+        () async {
+      policy = const DownloadPolicy(wifiOnly: false, onWifi: false);
+      await repo.pin(PinTargetType.album, 'al1',
+          quality: AudioQuality.original);
+      await manager.reconcile();
+      expect(transport.requestFor('t1').url.queryParameters['q'], 'original');
+      expect((await row('t1')).quality, 'original');
+    });
+
+    group('the upgrade: made again at the person\'s own quality on Wi-Fi', () {
+      Future<void> madeUnderCap() async {
+        policy = underCap;
+        await repo.pin(PinTargetType.album, 'al1',
+            quality: AudioQuality.original);
+        await manager.reconcile();
+        transport.complete('t1', size: 5000);
+        await manager.settled();
+        expect((await row('t1')).quality, 'opus48');
+      }
+
+      test(
+          'the copy stays at 48 kbps while the phone is on mobile data, even with the switch off and downloads allowed there',
+          () async {
+        await madeUnderCap();
+        final before = transport.started.length;
+
+        policy = const DownloadPolicy(wifiOnly: false, onWifi: false);
+        await manager.reconcile();
+
+        expect(transport.started.length, before,
+            reason:
+                'an upgrade is a Wi-Fi job, never a surprise on a data plan');
+        expect((await row('t1')).quality, 'opus48');
+      });
+
+      test(
+          'on Wi-Fi it is fetched again next to the old copy, which is replaced only when the new one is complete',
+          () async {
+        await madeUnderCap();
+        final oldPath = (await row('t1')).localPath!;
+
+        policy = wifiPolicy;
+        await manager.reconcile();
+
+        final req = transport.requestFor('t1');
+        expect(req.url.queryParameters['q'], 'original');
+        expect(req.relativePath, 'downloads/$serverId/t1.flac.new');
+        final mid = await row('t1');
+        expect(mid.localPath, oldPath,
+            reason: 'the old copy is the playable one');
+        expect(mid.quality, 'opus48',
+            reason: 'the copy on the phone is still the 48 kbps one');
+        expect(mid.refreshQuality, 'original');
+        expect(transport.deleted, isNot(contains(oldPath)));
+
+        transport.complete('t1', size: 30 * 1024 * 1024);
+        await manager.settled();
+
+        final r = await row('t1');
+        expect(r.state, DownloadState.done, reason: r.lastError ?? '');
+        expect(r.quality, 'original');
+        expect(r.refreshQuality, isNull);
+        expect(r.localPath, '/app/downloads/$serverId/t1.flac');
+        expect(transport.deleted, contains(oldPath),
+            reason: 'gone only now that the new one is in');
+      });
+
+      test(
+          'a queued upgrade waits for Wi-Fi and does not hold up a first download behind it',
+          () async {
+        policy = underCap;
+        await repo.pin(PinTargetType.track, 't1',
+            quality: AudioQuality.original);
+        await manager.reconcile();
+        transport.complete('t1', size: 5000);
+        await manager.settled();
+        // Wi-Fi, but no free slot: the upgrade is planned and stays queued.
+        policy =
+            const DownloadPolicy(wifiOnly: false, onWifi: true, maxInFlight: 0);
+        await manager.reconcile();
+        expect((await row('t1')).state, DownloadState.queued);
+        expect((await row('t1')).refreshQuality, 'original');
+        final startedBefore = transport.started.length;
+
+        // Back on mobile data with Data saver on, and a new song is pinned: it starts, the upgrade does not.
+        policy = const DownloadPolicy(
+            wifiOnly: false, onWifi: false, dataSaver: true, maxInFlight: 1);
+        await repo.pin(PinTargetType.track, 't2',
+            quality: AudioQuality.original);
+        await manager.reconcile();
+
+        expect(transport.started.length, startedBefore + 1);
+        expect(transport.requestFor('t2').url.queryParameters['q'], 'opus48');
+        expect((await row('t1')).state, DownloadState.queued,
+            reason: 'an upgrade is a Wi-Fi job');
+      });
+
+      test(
+          'the upgrade transfer requires Wi-Fi whatever the Wi-Fi-only setting says',
+          () async {
+        await madeUnderCap();
+        policy = const DownloadPolicy(wifiOnly: false, onWifi: true);
+        await manager.reconcile();
+        expect(transport.requestFor('t1').relativePath, endsWith('.flac.new'));
+        expect(transport.requestFor('t1').requiresWifi, isTrue,
+            reason:
+                'if the link changes mid-way it must not go on over mobile data');
+      });
+
+      test('an upgrade that fails leaves the 48 kbps copy playable and says so',
+          () async {
+        await madeUnderCap();
+        final oldPath = (await row('t1')).localPath!;
+        policy = wifiPolicy;
+        await manager.reconcile();
+        transport.fail('t1');
+        await manager.settled();
+
+        final r = await row('t1');
+        expect(r.state, DownloadState.done);
+        expect(r.localPath, oldPath);
+        expect(r.quality, 'opus48');
+        expect(r.refreshQuality, isNull);
+        expect(r.attempts, 1);
+      });
+
+      test(
+          'a file that finishes after the app was killed still records what it was made at',
+          () async {
+        await madeUnderCap();
+        policy = wifiPolicy;
+        await manager.reconcile();
+        // The app dies and starts again: a new manager over the same database; the task finished meanwhile.
+        await manager.dispose();
+        manager = DownloadManager(
+          db: db,
+          serverId: serverId,
+          repository: repo,
+          transport: transport,
+          clock: clock,
+          policy: () => policy,
+          urlBuilder: _url,
+          diskSpace: disk,
+        );
+        await manager.start();
+        transport.complete('t1', size: 30 * 1024 * 1024);
+        await manager.settled();
+
+        final r = await row('t1');
+        expect(r.quality, 'original');
+        expect(r.refreshQuality, isNull);
+      });
+    });
+  });
 }

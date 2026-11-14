@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../../domain/audio_quality.dart';
 import '../db/app_database.dart';
 
 /// What a pin asks for one track.
@@ -75,6 +76,11 @@ abstract final class DownloadState {
 /// space back immediately. Server-side changes (a smart playlist was
 /// regenerated) use a grace period so churn does not delete and re-download
 /// the same files.
+///
+/// [upgradeCapped] (P4-24): the phone is on Wi-Fi and Data saver is not in force, so a copy that Data saver made smaller than the person's own
+/// choice is made again at that choice (in [DownloadPlan.toRefresh], which keeps the old copy until the new one is complete). It is
+/// deliberately narrow: only a copy that is exactly what the cap makes of the wanted quality is touched, so copies that differ for any other
+/// reason (a second pin asked for more) stay as they are today. A refresh that failed waits the back-off of a failed download.
 DownloadPlan planDownloads({
   required Map<String, DesiredDownload> desired,
   required Map<String, DownloadRow> existing,
@@ -82,12 +88,17 @@ DownloadPlan planDownloads({
   int graceMs = 24 * 60 * 60 * 1000,
   int retryBaseMs = 5 * 60 * 1000,
   int retryMaxMs = 6 * 60 * 60 * 1000,
+  bool upgradeCapped = false,
 }) {
   final toQueue = <String>[];
   final toRefresh = <String>[];
   final toOrphan = <String>[];
   final toRescue = <String>[];
   final toDelete = <String>[];
+
+  // Exponential back-off: 5 min, 10, 20, ... capped at 6 h.
+  int backoffMs(int attempts) =>
+      min(retryMaxMs, retryBaseMs * pow(2, min(attempts, 10)).toInt());
 
   for (final entry in desired.entries) {
     final id = entry.key;
@@ -105,12 +116,15 @@ DownloadPlan planDownloads({
             (want.audioKey.isNotEmpty &&
                 row.sourceAudioKey.isNotEmpty &&
                 row.sourceAudioKey != want.audioKey);
-        if (changed) toRefresh.add(id);
+        // A refresh that did not arrive leaves the copy playable and counts an attempt: the next try waits the back-off of a failed download,
+        // so a refresh that keeps failing is not started again at every network change, sync or pin edit.
+        final mayTry = row.attempts == 0 ||
+            nowMs - row.updatedAtMs >= backoffMs(row.attempts);
+        final upgrade = upgradeCapped &&
+            wasLoweredByDataSaver(madeAt: row.quality, wanted: want.quality);
+        if ((changed || upgrade) && mayTry) toRefresh.add(id);
       case DownloadState.failed:
-        // Exponential back-off: 5 min, 10, 20, ... capped at 6 h.
-        final wait = min(
-            retryMaxMs, retryBaseMs * pow(2, min(row.attempts, 10)).toInt());
-        if (nowMs - row.updatedAtMs >= wait) toQueue.add(id);
+        if (nowMs - row.updatedAtMs >= backoffMs(row.attempts)) toQueue.add(id);
       case DownloadState.queued:
       case DownloadState.downloading:
         break;
@@ -137,4 +151,12 @@ DownloadPlan planDownloads({
     toRescue: toRescue,
     toDelete: toDelete,
   );
+}
+
+/// Whether a copy made at [madeAt] is what Data saver makes of [wanted] and [wanted] is a quality the cap lowers: the copy was (as far as the
+/// row can tell) made under the cap and is now worth making again at the quality the person asked for.
+bool wasLoweredByDataSaver({required String madeAt, required String wanted}) {
+  final want = AudioQuality.byId(wanted);
+  return want.isLoweredByDataSaver &&
+      AudioQuality.byId(madeAt) == want.cappedForDataSaver();
 }

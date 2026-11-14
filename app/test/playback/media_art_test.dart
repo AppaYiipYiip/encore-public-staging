@@ -131,4 +131,61 @@ void main() {
       expect(uri.toString(), isNot(contains('salt')));
     }
   });
+
+  group('P4-24: Data saver in force asks for the small picture only', () {
+    test(
+        'a cover that is not cached is fetched at the small size, not the large',
+        () async {
+      final sizesAsked = <int>[];
+      final small = MediaArtResolver(
+        serverId: 1,
+        cachedFile: (key) async => cache[key],
+        download: (url, key) => download(url, key),
+        urlFor: (id, size) {
+          sizesAsked.add(size);
+          return credentialed.replaceFirst('al1', id);
+        },
+        smallOnly: () => true,
+      );
+
+      final uri = await small.resolve('al1');
+
+      expect(uri!.scheme, 'file');
+      expect(sizesAsked, [256]);
+      expect(cache, contains('cover:1:al1:256'));
+      expect(cache, isNot(contains('cover:1:al1:768')));
+    });
+
+    test('a large cover that is already on the phone still stands in: no bytes',
+        () async {
+      cache['cover:1:al1:768'] = File('/cache/al1-large.jpg');
+      final small = MediaArtResolver(
+        serverId: 1,
+        cachedFile: (key) async => cache[key],
+        download: (url, key) => download(url, key),
+        urlFor: (id, size) => credentialed,
+        smallOnly: () => true,
+      );
+
+      expect(await small.resolve('al1'), Uri.file('/cache/al1-large.jpg'));
+      expect(downloads, isEmpty);
+    });
+
+    test('not in force (the default): the large size, as before', () async {
+      final sizesAsked = <int>[];
+      final normal = MediaArtResolver(
+        serverId: 1,
+        cachedFile: (key) async => cache[key],
+        download: (url, key) => download(url, key),
+        urlFor: (id, size) {
+          sizesAsked.add(size);
+          return credentialed;
+        },
+        smallOnly: () => false,
+      );
+
+      await normal.resolve('al1');
+      expect(sizesAsked, [768]);
+    });
+  });
 }

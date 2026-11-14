@@ -126,6 +126,9 @@ class Harness {
   /// Makes the hand-over fail, to see that a failure is nobody's business.
   bool prepareFails = false;
 
+  /// How many coming songs the engine hands over at a time (2; 1 while Data saver is in force, P4-24).
+  int prepareWindow = 2;
+
   /// What the server says when the engine asks why a stream failed (null: it cannot say), and what it was asked about.
   SongRefusal? refusal;
   final List<Uri> refusalAsked = [];
@@ -174,6 +177,7 @@ class Harness {
       serverRetryDelays: const [Duration(milliseconds: 15)],
       findByName: findByName,
       catalogueLookupBudget: lookupBudget,
+      prepareAheadCount: () => h.prepareWindow,
       prepareAhead: (upcoming) async {
         h.prepared.add([for (final i in upcoming) i.id]);
         if (h.prepareFails) throw StateError('the server did not answer');
@@ -326,6 +330,56 @@ void main() {
             ['t4']
           ],
           reason: 'only the song that came into the next two is new');
+      await h.dispose();
+    });
+
+    test(
+        'P4-24: with Data saver in force only the next song is handed over, and the one after it follows as the music moves on',
+        () async {
+      final h = await Harness.start(tracks: 6);
+      PerfMonitor.instance.logToConsole = false;
+      h.prepareWindow = 1;
+      await h.engine.playTracks(h.tracks);
+      expect(
+          h.prepared,
+          [
+            ['t2']
+          ],
+          reason: 'not the song after the next');
+
+      h.backend.emitPosition(const Duration(milliseconds: 900));
+      expect(h.prepared.length, 1,
+          reason: 'ticks of the position repeat nothing');
+
+      await h.engine.skipNext();
+      await h.settle();
+      expect(
+          h.prepared,
+          [
+            ['t2'],
+            ['t3']
+          ],
+          reason: 'one at a time');
+      await h.dispose();
+    });
+
+    test(
+        'P4-24: when Data saver stops being in force, the song that was held back is handed over at the next tick',
+        () async {
+      final h = await Harness.start(tracks: 6);
+      PerfMonitor.instance.logToConsole = false;
+      h.prepareWindow = 1;
+      await h.engine.playTracks(h.tracks);
+      expect(h.prepared, [
+        ['t2']
+      ]);
+
+      h.prepareWindow = 2; // the phone reached Wi-Fi
+      h.backend.emitPosition(const Duration(milliseconds: 900));
+      expect(h.prepared, [
+        ['t2'],
+        ['t3']
+      ]);
       await h.dispose();
     });
 
