@@ -18,6 +18,7 @@ import '../downloads/download_status.dart';
 import '../instant/instant_controller.dart';
 import '../instant/instant_warmup.dart';
 import '../instant/release_save.dart';
+import '../instant/song_marks.dart';
 import '../instant/tap_play.dart';
 import '../providers.dart';
 import '../requests/request_ui.dart';
@@ -318,6 +319,13 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     final isCurrent = snapshot?.sourceId == sourceId;
     final isPlaying = isCurrent && (snapshot?.isPlaying ?? false);
     final list = tracks.value ?? const <CatalogueTrack>[];
+    // The songs the server already knows it cannot get are marked (N-13): one question for the whole album, and the Download button counts only the
+    // songs that can be had.
+    ref.watch(songMarksCheckProvider(TrackList(list)));
+    final canBeHad = [
+      for (final t in list)
+        if (ref.watch(songMarkProvider(t.id)) == null) t,
+    ];
     final instant = ref.watch(instantAvailableProvider);
     final portal = ref.watch(requestPortalOfferedProvider);
     final encore = ref.watch(onEncoreServerProvider).value ?? false;
@@ -372,7 +380,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
             const SizedBox(width: Space.xs),
             _CatalogueDownloadButton(
                 album: album,
-                tracks: list,
+                tracks: canBeHad,
                 releaseId: 'cat:$albumId',
                 encore: encore),
             CatalogueMoreMenu(artist: album.artistName, album: album.title),
@@ -433,6 +441,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
                       isCurrent: current,
                       isPlaying: current && (snapshot?.isPlaying ?? false),
                       status: status,
+                      mark: ref.watch(songMarkProvider(t.id)),
                       onTap: () => unawaited(tapPlayRun(ref, items,
                           startIndex: i,
                           sourceName: album.title,

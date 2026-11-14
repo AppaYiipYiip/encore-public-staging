@@ -48,6 +48,55 @@ class EncoreFile {
   Map<String, dynamic>? get replayGain => readMap(meta['replayGain']);
 }
 
+/// What the server already knows about a song it cannot get (N-13, docs/17 "Songs the server cannot get"): a "no" the source answered, remembered for a
+/// window. It comes on a ref (`unavailable`) and from `POST refs/unavailable`. Optional everywhere: an older server never sends it, and then nothing is
+/// marked.
+@immutable
+class EncoreUnavailable {
+  const EncoreUnavailable({
+    required this.reason,
+    required this.message,
+    required this.retryAfter,
+  });
+
+  /// `null` when the object is not a memory of a refusal (a missing or odd value), never an exception.
+  static EncoreUnavailable? fromJson(Object? raw) {
+    final json = readMap(raw);
+    if (json == null) return null;
+    final reason = readString(json['reason']);
+    final retryAfterMs = readInt(json['retryAfter']);
+    if (reason == null || retryAfterMs == null) return null;
+    return EncoreUnavailable(
+      reason: reason,
+      message: readString(json['message']) ?? _fallbackMessage(reason),
+      retryAfter: DateTime.fromMillisecondsSinceEpoch(retryAfterMs),
+    );
+  }
+
+  /// `not_found` (the search answered and nothing matched), `removed` (the upload is gone) or `age_restricted`; a newer server may say more.
+  final String reason;
+
+  /// The server's own sentence for the reason (the one the stream answers with).
+  final String message;
+
+  /// When the server stops believing it (its clock): from then on a tap tries for real.
+  final DateTime retryAfter;
+
+  /// Whether it still holds. A phone whose clock is far off marks a song too long or too short; it cannot do worse than that.
+  bool liveAt(DateTime now) => now.isBefore(retryAfter);
+
+  /// What a tap on the marked song says: the server's sentence and, for "not found", when to try again (the memory goes by itself).
+  String get sentence =>
+      reason == 'not_found' ? '$message Try again in a few days.' : message;
+
+  static String _fallbackMessage(String reason) => switch (reason) {
+        'removed' => 'YouTube has no copy of that song that can be played.',
+        'age_restricted' =>
+          'That song needs an age check, so it cannot be played here.',
+        _ => 'Nothing matching that song was found.',
+      };
+}
+
 /// One recording (docs/04 section 3): the identity used for likes, playlists, queues and history, owned or not.
 @immutable
 class EncoreRef {
@@ -68,6 +117,7 @@ class EncoreRef {
     this.coverUrl,
     this.explicit = false,
     this.file,
+    this.unavailable,
   });
 
   factory EncoreRef.fromJson(Map<String, dynamic> json) {
@@ -93,6 +143,7 @@ class EncoreRef {
       coverUrl: readString(json['coverUrl']),
       explicit: readBool(json['explicit']),
       file: file == null ? null : EncoreFile.fromJson(file),
+      unavailable: EncoreUnavailable.fromJson(json['unavailable']),
     );
   }
 
@@ -112,6 +163,9 @@ class EncoreRef {
   final String? coverUrl;
   final bool explicit;
   final EncoreFile? file;
+
+  /// The server already knows it cannot get this song (N-13); null when it knows nothing, and always null from a server that predates the field.
+  final EncoreUnavailable? unavailable;
 
   String get artist => artists.isEmpty ? '' : artists.first;
   int? get durationSec =>

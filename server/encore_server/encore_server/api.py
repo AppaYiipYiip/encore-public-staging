@@ -28,10 +28,12 @@ from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refmerge, refs
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
+from .artist_finder import ArtistFinder, ArtistLookup
 from .auth import (
     COVER_PASS_SCOPE,
     COVER_PASS_TTL_S,
     STREAM_URL_TTL_S,
+    MusicServerUnavailable,
     NavidromeVerifier,
     Principal,
     Verifier,
@@ -75,6 +77,7 @@ from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
 from .sources.youtube.tools import Active, ToolStore
 from .sources.youtube.updater import Tools, create_tools
+from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
 
@@ -112,6 +115,8 @@ class Services:
     stream_key: bytes = b""
     #: Tells a device how its downloads are going (`PUT keep/watch`, the live event `keep.progress`); `None` when this server does not keep songs.
     keep_watch: KeepWatch | None = None
+    #: Finds pictures for the artists the music server has none for (N-15); one of the background errands, `None` when there is no music-server account.
+    artist_finder: ArtistFinder | None = None
 
 
 def services(request: Request) -> Services:
@@ -669,6 +674,24 @@ def prepare_refs(
                 svc.scheduler.submit("prepare", ref_id, p.person_id, conn=conn)
                 accepted += 1
     return _ok({"accepted": accepted})
+
+
+#: How many songs one `POST refs/unavailable` may ask about (a page of results, an album, an artist's popular songs).
+MAX_UNAVAILABLE_ASKED = 100
+
+
+@router.post("/refs/unavailable")
+def unavailable_refs(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """Which of these songs the server already knows it cannot get (N-13). The songs are described as `POST refs/resolve` takes them and answered in the
+    same order: `null` (no known problem, a song the server has never seen, or one it could not read) or `{reason, message, since, retryAfter}`. A read:
+    it makes no ref and asks YouTube nothing, so a phone can ask about every song of a list it is showing (a Search is all catalogue songs, no ref yet)."""
+    items = body.get("songs")
+    if not isinstance(items, list) or not items or len(items) > MAX_UNAVAILABLE_ASKED:
+        raise ApiError("validation", f"Send between 1 and {MAX_UNAVAILABLE_ASKED} songs.")
+    with services(request).db.read() as conn:
+        return _ok({"items": refs.unavailable_for(conn, items)})
 
 
 @router.get("/refs/{ref_id}")
@@ -1376,9 +1399,9 @@ async def live(websocket: WebSocket) -> None:
 def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | None:
     """The real YouTube source, when its libraries are installed (a server without them still runs: songs it keeps still play)."""
 
-    def remember(ref_id: str, video_id: str) -> None:
+    def remember(ref_id: str, video_id: str, replacing: str | None = None) -> None:
         with database.tx() as conn:
-            refs.remember_video(conn, ref_id, video_id)
+            refs.remember_video(conn, ref_id, video_id, replacing=replacing)
 
     if importlib.util.find_spec("yt_dlp") is None or importlib.util.find_spec("ytmusicapi") is None:
         log.warning("yt-dlp or ytmusicapi is not installed: songs that are not kept cannot be streamed")
@@ -1471,6 +1494,7 @@ def create_app(
     gateway_client: httpx.AsyncClient | None = None,
     navidrome_admin: NavidromeAdmin | None = None,
     tools_active: Active | None = None,
+    artist_lookup: ArtistLookup | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -1480,6 +1504,9 @@ def create_app(
     refmerge.repair(database)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
+    if isinstance(youtube, YoutubeSource) and youtube.verdicts is None:
+        # The memory of the songs the source cannot get (N-13) lives in the database, so any source the application runs is given it here.
+        youtube.verdicts = RefVerdicts(database)
     hub = Hub()
     client = navidrome or NavidromeClient(
         settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
@@ -1510,9 +1537,18 @@ def create_app(
         on_ended=ended,
     )
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
+    artist_finder = (
+        ArtistFinder(database, client, artist_lookup, music_dir=settings.music_dir, after=client.start_scan)
+        if client.configured
+        else None
+    )
 
     def errands() -> None:
-        for errand in (accounts.heal_libraries, finder.run_once):
+        for errand in (
+            accounts.heal_libraries,
+            finder.run_once,
+            *((artist_finder.run_once,) if artist_finder is not None else ()),
+        ):
             try:
                 errand()
             except Exception:  # noqa: BLE001 - one errand failing must not stop the next, nor the library link
@@ -1572,6 +1608,7 @@ def create_app(
         music=client,
         keep_watch=keep_watch,
         stream_key=stream_key,
+        artist_finder=artist_finder,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
@@ -1588,6 +1625,13 @@ def create_app(
     @app.exception_handler(ApiError)
     async def api_error(_: Request, error: ApiError) -> JSONResponse:
         return JSONResponse(error.body(), status_code=error.status)
+
+    @app.exception_handler(MusicServerUnavailable)
+    async def music_server_away(_: Request, error: MusicServerUnavailable) -> JSONResponse:
+        # Not a wrong password and not counted as a guess (the handler runs before anything counts it): a retryable 503 the phone waits out (AUDIT B-41).
+        log.info("the music server could not check a login: %s", error)
+        away = ApiError("server_busy", "The music server is not answering just now. Try again in a moment.")
+        return JSONResponse(away.body(), status_code=away.status)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, error: RequestValidationError) -> JSONResponse:

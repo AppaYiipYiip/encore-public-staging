@@ -28,8 +28,12 @@ class Source:
         self.asked: list[Wanted] = []
         self.found = True
         self.ready = False
+        self.missing = False
         self.resting = 0.0
         self.error: Exception | None = None
+
+    def is_missing(self, wanted: Wanted) -> bool:
+        return self.missing
 
     def is_ready(self, wanted: Wanted) -> bool:
         return self.ready
@@ -59,6 +63,20 @@ def make_ref(db: Database, n: int = 1) -> str:
 
 def item(ref: str) -> WorkItem:
     return WorkItem(id="wk_1", kind="prepare", ref=ref, priority=1, attempts=0, persons=())
+
+
+def test_a_song_the_server_knows_it_cannot_get_is_not_asked_about_and_fails_nothing(db: Database) -> None:
+    """N-13: the memory of refusals says no to this song, so nothing is looked up for it, no slot of the hour is spent, and nothing is raised."""
+    source = Source()
+    source.missing = True
+    preparer = Preparer(db, source, per_hour=1)
+
+    preparer.handle(item(make_ref(db)))
+
+    assert source.asked == []
+    source.missing = False
+    preparer.handle(item(make_ref(db, 2)))
+    assert [w.title for w in source.asked] == ["Song 2"], "the only slot of the hour was not spent on the song that cannot be had"
 
 
 def test_a_song_is_prepared_with_what_the_ref_knows(db: Database) -> None:
@@ -164,6 +182,9 @@ class PreparingSource(StreamSource):
             inner(video_id, path)
 
         super().__init__(tmp, extract=extract)
+
+    def is_missing(self, wanted):  # type: ignore[no-untyped-def]
+        return self.source.is_missing(wanted)
 
     def is_ready(self, wanted):  # type: ignore[no-untyped-def]
         return self.source.is_ready(wanted)

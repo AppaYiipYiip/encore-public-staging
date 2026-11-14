@@ -68,6 +68,11 @@ _NOT_COPIED = frozenset(
         "norm_key",
         "created_at",
         "cover_tried_at",
+        # What the server remembers about a song it cannot get (N-13) is about THAT ref's absence of an upload; the survivor has the file.
+        "missing_reason",
+        "missing_at",
+        "missing_tried_at",
+        "missing_rev",
         "album",
         "explicit",
         "isrc",

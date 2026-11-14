@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../app/navigation.dart';
 import '../../data/catalogue/catalogue_models.dart';
+import '../../data/encore/encore_models.dart' show EncoreUnavailable;
 import '../../design/tokens.dart';
 import '../common/cover_art.dart';
 import '../common/format.dart';
+import '../common/playability.dart' show kNotAvailableWords;
 import '../instant/instant_play.dart';
 import 'catalogue_providers.dart' show ArtistRelease;
 
@@ -108,6 +110,7 @@ class CatalogueTrackTile extends StatelessWidget {
     this.onTap,
     this.status,
     this.onLongPress,
+    this.mark,
   });
 
   final CatalogueTrack track;
@@ -123,6 +126,10 @@ class CatalogueTrackTile extends StatelessWidget {
   final InstantStatus? status;
   final VoidCallback? onLongPress;
 
+  /// The server already knows it cannot get this song (N-13; the screen reads it from `songMarkProvider`): the row is grey and says so in place of
+  /// the artist line, as "Not downloaded" does. A tap still calls [onTap]: the play helpers say why and do not try.
+  final EncoreUnavailable? mark;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -131,10 +138,13 @@ class CatalogueTrackTile extends StatelessWidget {
         ? status!.label
         : (status?.isFailed ?? false)
             ? (status!.message ?? 'Could not get it')
-            : [
-                track.artistName,
-                if (showCover && track.albumTitle != null) track.albumTitle!,
-              ].join(' • ');
+            : mark != null
+                ? kNotAvailableWords
+                : [
+                    track.artistName,
+                    if (showCover && track.albumTitle != null)
+                      track.albumTitle!,
+                  ].join(' • ');
     final Widget? trailingStatus = working
         ? SizedBox.square(
             dimension: 18,
@@ -151,9 +161,12 @@ class CatalogueTrackTile extends StatelessWidget {
     final leading = showCover
         ? SizedBox.square(
             dimension: 48,
-            child: CoverArt(
-              imageUrl: track.coverUrl,
-              fallbackLabel: track.albumTitle ?? track.title,
+            child: Opacity(
+              opacity: mark == null ? 1 : .6,
+              child: CoverArt(
+                imageUrl: track.coverUrl,
+                fallbackLabel: track.albumTitle ?? track.title,
+              ),
             ),
           )
         : SizedBox(
@@ -176,7 +189,8 @@ class CatalogueTrackTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${track.title}, ${track.artistName}, play'
-          '${working ? ', ${status!.label}' : ''}',
+          '${working ? ', ${status!.label}' : ''}'
+          '${mark == null ? '' : ', $kNotAvailableWords'}',
       excludeSemantics: true,
       child: Opacity(
         opacity: 1,
@@ -202,7 +216,11 @@ class CatalogueTrackTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.text.bodyLarge?.copyWith(
-                            color: isCurrent ? c.accent : c.onBg,
+                            color: mark != null
+                                ? c.onBgMuted
+                                : isCurrent
+                                    ? c.accent
+                                    : c.onBg,
                             fontWeight:
                                 isCurrent ? FontWeight.w700 : FontWeight.w500,
                           ),

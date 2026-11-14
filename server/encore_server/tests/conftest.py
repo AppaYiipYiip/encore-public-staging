@@ -91,5 +91,6 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
 
     monkeypatch.setattr("encore_server.cover_finder.deezer_lookup", nobody)
     monkeypatch.setattr("encore_server.api.deezer_lookup", nobody)
+    monkeypatch.setattr("encore_server.artist_finder.deezer_artist_picture", nobody)
     yield
     assert not asked, f"this test asked the real catalogue {len(asked)} time(s): {asked[:2]}"

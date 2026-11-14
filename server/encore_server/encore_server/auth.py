@@ -32,6 +32,15 @@ _SALT = re.compile(r"^[A-Za-z0-9]{4,64}$")
 
 VERIFY_TTL_S = 600.0
 
+#: The Subsonic error codes that mean "that login is no good": wrong username or password (40), token authentication not supported for this
+#: account (41), a mechanism that is not supported (42, 43) and a wrong API key (44). Any other answer says nothing about the login.
+_REFUSED = frozenset({40, 41, 42, 43, 44})
+
+
+class MusicServerUnavailable(Exception):
+    """The music server gave no answer (not there, restarting, an error page, a 5xx). That says nothing about the password: it is neither a yes nor
+    a no, and it is answered as a retryable 503 that is not counted as a guess and signs nobody out (AUDIT B-41)."""
+
 
 @dataclass(frozen=True)
 class Principal:
@@ -64,14 +73,19 @@ class NavidromeVerifier:
         self._clock = clock
         self._ok: dict[tuple[str, str, str], float] = {}
 
-    def _call(self, method: str, user: str, token: str, salt: str, **extra: str) -> dict[str, object] | None:
+    def _call(self, method: str, user: str, token: str, salt: str, **extra: str) -> dict[str, object]:
+        """The music server's answer, or [MusicServerUnavailable] when it gave none a login can be judged by."""
         params = {"u": user, "t": token, "s": salt, "v": "1.16.1", "c": "encore-server", "f": "json", **extra}
         try:
             response = self._client.get(f"{self._base}/rest/{method}", params=params)
+            if response.status_code >= 500:
+                raise MusicServerUnavailable(f"the music server answered {response.status_code}")
             body = response.json().get("subsonic-response")
-        except (httpx.HTTPError, ValueError):
-            return None
-        return body if isinstance(body, dict) else None
+        except (httpx.HTTPError, ValueError, AttributeError) as error:
+            raise MusicServerUnavailable("the music server did not answer") from error
+        if not isinstance(body, dict):
+            raise MusicServerUnavailable("the music server's answer was not understood")
+        return body
 
     def known_good(self, user: str, token: str, salt: str) -> bool:
         """Has the music server already said yes to exactly these credentials, a moment ago? Such a login is never held up by a limit: the limit is
@@ -92,16 +106,21 @@ class NavidromeVerifier:
         if seen is not None and self._clock() - seen < self._ttl:
             return True
         body = self._call("ping", user, token, salt)
-        if body is not None and body.get("status") == "ok":
+        if body.get("status") == "ok":
             self._ok[key] = self._clock()
             if len(self._ok) > 2000:
                 self._ok = {k: v for k, v in self._ok.items() if self._clock() - v < self._ttl}
             return True
-        return False
+        error = body.get("error")
+        code = error.get("code") if isinstance(error, dict) else None
+        if code in _REFUSED:
+            return False
+        # A "failed" with any other code (or none) is not the music server saying the login is wrong: nobody is told so.
+        raise MusicServerUnavailable(f"the music server could not check the login (code {code!r})")
 
     def is_admin(self, user: str, token: str, salt: str) -> bool:
         body = self._call("getUser", user, token, salt, username=user)
-        found = body.get("user") if body else None
+        found = body.get("user")
         return bool(isinstance(found, dict) and found.get("adminRole"))
 
 

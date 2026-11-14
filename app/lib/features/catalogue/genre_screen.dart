@@ -11,6 +11,7 @@ import '../common/cover_art.dart';
 import '../common/playability.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/song_marks.dart';
 import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'catalogue_providers.dart';
@@ -70,6 +71,8 @@ class _GenreChart extends ConsumerWidget {
               onRetry: () =>
                   ref.invalidate(catalogueGenreChartProvider(genreId)));
         }
+        // The songs the server already knows it cannot get are marked (N-13): one question for the whole chart.
+        ref.watch(songMarksCheckProvider(TrackList(c.tracks)));
         return CustomScrollView(
           slivers: [
             if (c.tracks.isNotEmpty) ...[
@@ -89,6 +92,7 @@ class _GenreChart extends ConsumerWidget {
                     isCurrent: current,
                     isPlaying: current && (snapshot?.isPlaying ?? false),
                     status: status,
+                    mark: ref.watch(songMarkProvider(t.id)),
                     onTap: () => unawaited(tapPlayRun(ref, c.tracks,
                         startIndex: i, sourceName: title, sourceId: sourceId)),
                   );
