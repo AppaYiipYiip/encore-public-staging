@@ -9,6 +9,12 @@ typedef CoverIsCached = Future<bool> Function(String cacheKey);
 /// Downloads the cover [coverArtId] at [size] into the disk cache (throws when the network or the server says no).
 typedef CoverFetch = Future<void> Function(String coverArtId, int size);
 
+/// Pins the cached picture under [cacheKey] (a copy the cache cleaning cannot take); `false` when it is not cached to copy (P1-10).
+typedef CoverPin = Future<bool> Function(String cacheKey);
+
+/// Releases every pin that is not in [wantedKeys] (P1-10).
+typedef CoverRetain = Future<void> Function(Set<String> wantedKeys);
+
 /// Puts the covers of what a person is likely to see into the disk cache while the network is there, so that offline the app
 /// shows covers and not letters (E3). It knows nothing of screens: it is given cover ids, in the order they matter, and fetches
 /// what is not cached yet, two at a time, giving up when the network is plainly gone.
@@ -17,14 +23,20 @@ class CoverPrefetcher {
     required this.serverId,
     required CoverIsCached isCached,
     required CoverFetch fetch,
+    CoverPin? pin,
+    CoverRetain? retain,
     this.concurrency = 2,
     this.giveUpAfter = 4,
   })  : _isCached = isCached,
-        _fetch = fetch;
+        _fetch = fetch,
+        _pin = pin,
+        _retain = retain;
 
   final int serverId;
   final CoverIsCached _isCached;
   final CoverFetch _fetch;
+  final CoverPin? _pin;
+  final CoverRetain? _retain;
 
   /// How many covers are downloaded at once: a background job, it never competes with the song that is playing.
   final int concurrency;
@@ -44,6 +56,36 @@ class CoverPrefetcher {
     final run = _turn.then((_) => _run(wanted, sizes));
     _turn = run.then<void>((_) {}, onError: (Object _) {});
     return run;
+  }
+
+  /// Makes sure the pictures [ids] (what the DOWNLOADED songs need: their covers and their artists' pictures, each id once) are fetched and
+  /// PINNED, so offline they are there whatever else the cache holds or the system clears (P1-10, owner 13 Nov 2026). Then releases every
+  /// pin no downloaded song needs any more. The release is by picture, at both sizes, whatever size this run fetched: a run on mobile data
+  /// (small only) never lets go of a large pin. Answers how many pictures are pinned.
+  Future<int> keepPinned(
+    Iterable<String> ids, {
+    List<int> sizes = const [CoverSize.small, CoverSize.large],
+  }) async {
+    final wanted = [
+      for (final id in {...ids})
+        if (id.isNotEmpty) id,
+    ];
+    await prefetch(wanted, sizes: sizes);
+    var pinned = 0;
+    final pin = _pin;
+    if (pin != null) {
+      for (final id in wanted) {
+        for (final size in sizes) {
+          if (await pin(CoverSize.key(serverId, id, size))) pinned++;
+        }
+      }
+    }
+    await _retain?.call({
+      for (final id in wanted)
+        for (final size in const [CoverSize.small, CoverSize.large])
+          CoverSize.key(serverId, id, size),
+    });
+    return pinned;
   }
 
   Future<int> _run(List<String> ids, List<int> sizes) async {

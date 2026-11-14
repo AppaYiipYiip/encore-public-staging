@@ -16,8 +16,8 @@ import 'settings_controller.dart';
 
 /// Empties the cover cache; a provider so tests (which have no platform
 /// folders) can replace it.
-final coverCacheClearerProvider =
-    Provider<Future<void> Function()>((ref) => coverCacheManager.emptyCache);
+final coverCacheClearerProvider = Provider<Future<void> Function()>(
+    (ref) => coverCacheManager.clearEverything);
 
 /// Signs out: this phone forgets the account (ADR-068).
 ///

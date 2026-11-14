@@ -575,6 +575,29 @@ class LibraryRepository {
   /// their first songs), downloaded songs, liked songs, the newest albums, the biggest artists. [limit] bounds the list; the
   /// rest of the library's covers load when they are first shown. The input to the background cover fetch (E3: offline shows
   /// covers, not letters).
+  /// The pictures the DOWNLOADED songs need, each id once and with no limit (P1-10): the song's own cover id, its album's cover and its artist's
+  /// picture. Five songs of one album by one artist are one album cover and one artist picture. These are PINNED, so they stay for as long as
+  /// a song that needs them stays downloaded.
+  Future<List<String>> coverIdsOfDownloads() async {
+    const done = 'd.server_id = ?1 AND d.state = 2 AND t.deleted_at_ms IS NULL';
+    const from = 'FROM downloads d JOIN tracks t '
+        'ON t.server_id = d.server_id AND t.id = d.track_id ';
+    final rows = await _db.customSelect(
+      'SELECT cover FROM ('
+      'SELECT t.cover_art AS cover $from WHERE $done AND t.cover_art IS NOT NULL '
+      'UNION SELECT a.cover_art $from '
+      'JOIN albums a ON a.server_id = t.server_id AND a.id = t.album_id '
+      'WHERE $done AND a.cover_art IS NOT NULL '
+      'UNION SELECT r.cover_art $from '
+      'JOIN artists r ON r.server_id = t.server_id AND r.id = t.artist_id '
+      'WHERE $done AND r.cover_art IS NOT NULL'
+      ') ORDER BY cover',
+      variables: [Variable.withInt(serverId)],
+      readsFrom: {_db.downloads, _db.tracks, _db.albums, _db.artists},
+    ).get();
+    return [for (final row in rows) row.read<String>('cover')];
+  }
+
   Future<List<String>> coverIdsToKeepOffline({int limit = 600}) async {
     const cover = _coverOfSong;
     const live = 't.deleted_at_ms IS NULL AND $cover IS NOT NULL';
