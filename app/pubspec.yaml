@@ -29,6 +29,7 @@ dependencies:
   crypto: ^3.0.3
   path: ^1.9.0
   path_provider: ^2.1.2
+  file: ^7.0.1  # the pinned cover store implements flutter_cache_manager's FileSystem (data/covers/pinning_cache.dart)
   shared_preferences: ^2.2.2
   flutter_secure_storage: ^10.3.1
   connectivity_plus: ^7.0.0
