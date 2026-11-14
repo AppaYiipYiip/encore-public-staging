@@ -16,6 +16,7 @@ from typing import Any, Protocol
 
 from .. import library, refs
 from ..db import Database
+from ..deezer import LookupUnavailable
 from ..navidrome import NavidromeClient, file_meta
 from ..scheduler import GiveUp, Retry, WorkItem
 from ..sources.youtube.errors import DownloadError
@@ -203,6 +204,10 @@ class Keeper:
             return None
         try:
             url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"))
+        except LookupUnavailable as error:
+            # The catalogue is resting, switched off (`ENCORE_CATALOGUE=0`) or did not answer: not a failure, and nothing to dump into the log for every song kept.
+            log.info("no picture was asked for %s: the catalogue could not be asked (%s)", ref["id"], error)
+            return None
         except Exception:  # noqa: BLE001 - a picture is a nicety, never a reason to fail a keep
             log.info("looking for a picture for %s failed", ref["id"], exc_info=True)
             return None
