@@ -57,7 +57,9 @@ class OutboxProcessor {
     DbLease? lease,
     this.busyRetryDelay = const Duration(seconds: 5),
     EncoreApi? encore,
-  })  : _db = db,
+    Timer Function(Duration, void Function()) timerFactory = Timer.new,
+  })  : _timer = timerFactory,
+        _db = db,
         _lease = lease ?? DbLease(db, clock: clock),
         _client = client,
         _encore = encore,
@@ -82,6 +84,9 @@ class OutboxProcessor {
 
   /// When another engine holds the queue, look again after this long.
   final Duration busyRetryDelay;
+
+  /// Where the timers come from (a test records them instead of waiting).
+  final Timer Function(Duration, void Function()) _timer;
 
   Future<int>? _inFlight;
 
@@ -127,6 +132,8 @@ class OutboxProcessor {
     _disposed = true;
     _retryTimer?.cancel();
     _retryTimer = null;
+    _wakeTimer?.cancel();
+    _wakeTimer = null;
     final running = _inFlight;
     if (running != null) {
       await running.then<void>(
@@ -151,7 +158,48 @@ class OutboxProcessor {
       return await _drain();
     } finally {
       await _lease.release(_leaseName);
+      await _wakeWhenDue();
     }
+  }
+
+  Timer? _wakeTimer;
+
+  /// An edit that failed is retried at the end of its backoff, by this outbox itself (AUDIT B-58). Before, nothing woke it but the next queued
+  /// edit or the next sync run, so an edit made while the server was away reached it minutes after the server had answered again. One timer,
+  /// for the head of the queue (strict FIFO: nothing behind it can go first).
+  Future<void> _wakeWhenDue() async {
+    _wakeTimer?.cancel();
+    _wakeTimer = null;
+    if (_disposed) return;
+    final head = await (_db.select(_db.outbox)
+          ..where(
+              (o) => o.serverId.equals(serverId) & o.status.equals('pending'))
+          ..orderBy([(o) => OrderingTerm.asc(o.id)])
+          ..limit(1))
+        .getSingleOrNull();
+    if (head == null) return;
+    final wait = head.nextAttemptAtMs - _clock.now().millisecondsSinceEpoch;
+    // Due now: the pass that just ended stopped for another reason (a lost lease), not for a backoff.
+    if (wait <= 0) return;
+    _wakeTimer = _timer(Duration(milliseconds: wait), () {
+      _wakeTimer = null;
+      if (!_disposed) unawaited(flush());
+    });
+  }
+
+  /// The server answers again (the line came back): the edits that were only waiting out a NETWORK failure are tried now, not when their backoff
+  /// ends (AUDIT B-58: 549 s). An edit the server itself refused with an error keeps its own backoff and its bound (`serverErrors`): a line that
+  /// flaps must not burn the tries a failing server is allowed.
+  Future<int> retryNow() async {
+    if (_disposed) return 0;
+    await (_db.update(_db.outbox)
+          ..where((o) =>
+              o.serverId.equals(serverId) &
+              o.status.equals('pending') &
+              o.serverErrors.equals(0) &
+              o.nextAttemptAtMs.isBiggerThanValue(0)))
+        .write(const OutboxCompanion(nextAttemptAtMs: Value(0)));
+    return flush();
   }
 
   Future<int> _drain() async {
