@@ -240,5 +240,11 @@
   "evidence": "Built 14 Nov 2026, not walked: app/test/features/search_offline_test.dart (26 widget tests, 21 fail on main fc988f0 and pass here) holds S-11, S-12, S-13 offline in both causes (no internet found / only the server silent): the hint, the dimmed genre tiles, the genre page with its way back, the grey rows and the last line, nothing found, the page and the strip agreeing on one screen, the catalogue not asked while the server is away (searches == 0 after 1 s, with a control that asks once), no network counting at once and a silent server after the 4 s grace, and it going by itself when the connection returns; flutter test of features, domain, app, playback, data and the architecture test: 2540 passed, 5 skipped (the B-84 script gaps, test/data/db/search_scripts_gap_test.dart); dart analyze --fatal-infos clean",
   "at": "2026-11-14T10:08:54Z",
   "by": "Claude"
+ },
+ "P2-28": {
+  "state": "built",
+  "evidence": "Four new tests in app/test/data/encore/encore_sync_test.dart (a waiting rename keeps the name and another device's song still arrives; delivered then renamed elsewhere takes the server's name; a waiting delete keeps the playlist gone and a parked one does not hold it; a waiting removal does not put the song back), seen failing before the fix; test/data/encore all 205 pass. Not walked on a phone.",
+  "at": "2026-11-14T11:09:32Z",
+  "by": "Claude"
  }
 }
