@@ -1,14 +1,22 @@
+import 'dart:async';
+
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/domain/text_match.dart';
 
 /// Scriptable catalogue for tests: canned search results plus per-id
 /// artist / album / track lookups, and counters to assert on traffic.
 class FakeCatalogue implements CatalogueClient {
-  FakeCatalogue([this.results = CatalogueResults.empty]);
+  FakeCatalogue([this.results = CatalogueResults.empty]) : _searchGate = null;
 
   /// Search hits made of albums only (cover-fallback tests).
   FakeCatalogue.withAlbums(List<CatalogueAlbum> albums)
-      : results = CatalogueResults(albums: albums);
+      : results = CatalogueResults(albums: albums),
+        _searchGate = null;
+
+  /// A slow line: a catalogue whose [search] is asked but does not answer until [answerSearches] is called (never, if the test never
+  /// calls it). For tests that the screen does not wait for the catalogue.
+  FakeCatalogue.slow([this.results = CatalogueResults.empty])
+      : _searchGate = Completer<void>();
 
   CatalogueResults results;
   final List<String> queries = [];
@@ -27,9 +35,18 @@ class FakeCatalogue implements CatalogueClient {
   set albums(List<CatalogueAlbum> value) =>
       results = CatalogueResults(albums: value);
 
+  final Completer<void>? _searchGate;
+
+  /// The searches that were asked and wait now are answered (with [results] as it is now); later ones answer at once.
+  void answerSearches() {
+    final gate = _searchGate;
+    if (gate != null && !gate.isCompleted) gate.complete();
+  }
+
   @override
   Future<CatalogueResults> search(String query, {int limit = 8}) async {
     queries.add(query);
+    await _searchGate?.future;
     return results;
   }
 
