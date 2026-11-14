@@ -100,6 +100,24 @@ def _channel_key(channel: str) -> str:
     return _name_key(name)
 
 
+def _words(text: str) -> str:
+    """The words of a text in any alphabet, one space between them: case-folded, the accents and vowel marks that decomposition splits off dropped (not
+    turned into a gap: "Mötley" stays one word), every other mark a gap."""
+    kept = []
+    for char in unicodedata.normalize("NFKD", text or ""):
+        if char.isalnum():
+            kept.append(char.casefold())
+        elif not unicodedata.category(char).startswith("M"):
+            kept.append(" ")
+    return " ".join("".join(kept).split())
+
+
+def _mentions(name: str, text: str) -> bool:
+    """Whether [text] says [name] anywhere, as whole words (never inside another word: "kexp" is not in "kexpress")."""
+    words = _words(name)
+    return bool(words) and f" {words} " in f" {_words(text)} "
+
+
 def _names(side: str) -> set[str]:
     """The names a side of a title holds: the whole side, and each name of a credit list ("Peso Pluma, Anitta")."""
     cleaned = clean_title(side)
@@ -200,8 +218,9 @@ def read_upload(raw_title: str, uploader: str) -> Reading:
 def read_official_video(raw_title: str, credited: Sequence[str]) -> Reading:
     """An official music video (`MUSIC_VIDEO_TYPE_OMV`): YouTube Music credits it to the band in almost every case, so the credit is taken, unless the
     title names a DIFFERENT performer before a separator ("Band - Song" under a label's credit: the band is read from the title). A title with no
-    separator keeps the credit (an official video credited to a label with no dash in its title is unknowable from YouTube alone: N-28). A side that only
-    describes the upload ("Song - Official Video") or the version ("Song - Live in Moscow") names a song, not a performer, so the credit stays."""
+    separator keeps the credit (an official video credited to a label with no dash in its title is unknowable from YouTube alone: N-28). A title that says the
+    credited name anywhere ("... | ItsKlyo" on a fan's account typed as an official video) does not name a different performer, so the credit stays. A side
+    that only describes the upload ("Song - Official Video") or the version ("Song - Live in Moscow") names a song, not a performer, so the credit stays."""
     names = tuple(name for name in (plain_name(a) for a in credited) if name)
     if not names:
         return read_upload(raw_title, "")
@@ -209,7 +228,8 @@ def read_official_video(raw_title: str, credited: Sequence[str]) -> Reading:
     if sides is not None:
         left, right = sides
         named = _names(left) | _names(right)
-        if not ({_name_key(name) for name in names} & named) and not mentions_version(right):
+        confirmed = {_name_key(name) for name in names} & named or any(_mentions(name, raw_title) for name in names)
+        if not confirmed and not mentions_version(right):
             return Reading((clean_title(left),), clean_title(right), TITLE)
     return Reading(names, clean_title(raw_title), DECLARED)
 

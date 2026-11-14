@@ -24,6 +24,7 @@ from ..scheduler import Retry, Scheduler, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
 from .readers import Playlist, PlaylistError, Track, read_playlist, ytdlp_reader, ytmusic_reader
+from .uploads import UNKNOWN_ARTIST
 
 log = logging.getLogger("encore_server.imports")
 
@@ -47,7 +48,10 @@ def _song_of(track: Track) -> dict[str, Any]:
     tap on a song not yet matched searched at tap time). Looking for a better upload is a separate matter, done only when a song is kept."""
     return {
         "title": track.title,
-        "artists": list(track.artists) or ([track.artist] if track.artist else []),
+        # A song nobody names (an official video with an empty credit, a Spotify track with no artist) is kept under the placeholder the keeper's folders
+        # already use, and plays from its own video: a ref needs an artist, and one such song must not refuse the whole import ("A song needs a title and
+        # an artist"). The reader still says `artist_basis = "unknown"`; N-26 slice 2 keeps that fact on the ref.
+        "artists": list(track.artists) or ([track.artist] if track.artist else [UNKNOWN_ARTIST]),
         "album": track.album,
         "durationMs": track.duration_s * 1000 if track.duration_s else None,
         "videoId": track.video_id,
