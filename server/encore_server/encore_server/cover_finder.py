@@ -119,7 +119,28 @@ class CoverFinder:
             (now_ms() - RETRY_AFTER_MS, limit),
         ).fetchall()
 
+    #: The `setting` row that says the songs which gained a derived cover (P1-26) were announced to the phones that already had them.
+    _ANNOUNCED = "derived_video_covers_announced"
+
+    def _announce_derived_once(self) -> int:
+        """P1-26: a song with a YouTube video and no other picture is served with the video's own thumbnail (`refs.video_thumbnail`). That is
+        computed when the ref is served, so a phone that synced the song earlier would not see it change: once, tell every holder of such a song
+        (a like, a playlist entry) and the files feed that it changed, the way a found cover does. Later songs are served right the first time."""
+        with self._db.tx() as conn:
+            if conn.execute("SELECT 1 FROM setting WHERE key = ?", (self._ANNOUNCED,)).fetchone() is not None:
+                return 0
+            rows = conn.execute(
+                "SELECT id FROM song_ref WHERE ytm_video_id IS NOT NULL AND cover_url IS NULL AND thumb_url IS NULL"
+            ).fetchall()
+            for row in rows:
+                library.touch_ref_holders(conn, row["id"])
+                if conn.execute("SELECT 1 FROM song_file WHERE ref = ?", (row["id"],)).fetchone() is not None:
+                    refs.touch_file(conn, row["id"])
+            conn.execute("INSERT INTO setting (key, value) VALUES (?, '1')", (self._ANNOUNCED,))
+        return len(rows)
+
     def run_once(self) -> CoverReport:
+        self._announce_derived_once()
         report = CoverReport()
         with self._db.read() as conn:
             rows = self._wanting(conn, self._per_pass + 1)

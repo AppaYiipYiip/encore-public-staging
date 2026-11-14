@@ -1,0 +1,9 @@
+{
+ "id": "20261114T052016Z-agent-7f8d",
+ "item": "P1-26",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T05:20:16Z",
+ "type": "note",
+ "body": "14 Nov 2026, FOLLOW-UP built (PR of branch task/P1-26b-video-thumbnail-last-resort, answers the advisor's three checks): (1) songs that already sit on phones: the cover is derived when the ref is served, so the cover finder (cover_finder.py CoverFinder.run_once) now announces ONCE, at its first pass (a 'setting' row derived_video_covers_announced), every ref with a video id and no cover_url/thumb_url to its holders (library.touch_ref_holders) and the files feed (refs.touch_file), exactly as a found cover does; test: a person who synced earlier sees the cursor move once and not again; a song without a video is not announced. (2) size: refs.video_thumbnail serves mqdefault (320x180, no black bars for ANY kind of upload) instead of hqdefault (480x360, keeps bars on top and bottom of a widescreen video); the app's cover widget uses BoxFit.cover (features/common/cover_art.dart), so the middle square is shown; soft on a big album header. The Topic-share of the 321 songs of the test server could not be measured (the server does not store the video type). (3) ADR-R38's table of debts now names YouTube thumbnails (i.ytimg.com) loaded by the phone itself (docs/11). 321 of the 505 songs without a cover on the test server have a video id; all 43 songs of '00s Hip Hop without a cover do."
+}
