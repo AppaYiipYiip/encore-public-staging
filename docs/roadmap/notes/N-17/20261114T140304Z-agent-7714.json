@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140304Z-agent-7714",
+ "item": "N-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:04Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). Tried \"Rebuild library\" once on the emulator (online): it finished at once, \"Last sync\" showed the time of the tap and the count stayed 3245, including one row the server does not list in its feeds (a song the phone had tapped, which has no file and no like). Not the empty library of the report; try it with the server away, as planned."
+}

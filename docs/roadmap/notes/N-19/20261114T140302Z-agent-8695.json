@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140302Z-agent-8695",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:02Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-19 stays open (todo). Paused a downloaded song offline: no notice on screen, the player log says \"pause: the person paused\". The original notice was not seen in this check either; one different line appeared once, when the queue's NEXT song (not downloaded) could not load offline: \"pause: no connection (a failure is judged)\", which is the honest reason there."
+}

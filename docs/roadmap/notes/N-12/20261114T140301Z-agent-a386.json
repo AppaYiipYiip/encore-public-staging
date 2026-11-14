@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140301Z-agent-a386",
+ "item": "N-12",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-12 PASSES. \"Hate It Or Love It\" (Top result of its search, a library song): its menu offers \"Go to The Game\" and \"Go to 50 Cent\"; \"Go to 50 Cent\" opened his artist page (\"3 of 8 albums on your server\"). Catalogue-only rows still have no menu at all (B-121)."
+}

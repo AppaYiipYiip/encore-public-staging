@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140301Z-agent-2b3d",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). B-58 AND B-77 ON A PHONE. B-58: see the note on P2-28 (an edit waiting for a stopped Encore server reached it within 11 to 16 s of the start instead of 549 s). B-77 SEEN AGAIN: with the MUSIC server stopped (Navidrome) and the Encore server up, the phone's \"Sync now\" ended with \"Last attempt did not finish: Server error (503)\": the whole pass failed on the music server's scan-status call although the Encore server answered. The one reachability state has to keep \"the Encore server answers\" apart from \"the music server answers\" (B-77). B-41 held in the same check: the phone stayed signed in and said nothing about a password (see the note on P3-29). Next for this item: a helper takes it, plan first, with the 6 Nov notes and the B-58 listener in ServerSession.start."
+}

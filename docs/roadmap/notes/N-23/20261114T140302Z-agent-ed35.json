@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140302Z-agent-ed35",
+ "item": "N-23",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:02Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-23a PASSES: the misspelling \"metalica\" finds the band Metallica (8.2M fans) in Artists and its albums (Metallica (Remastered 2021), S&M, Death Magnetic). RANKING, for N-16 and P1-07: the Top result of that search is the song \"MetÃ¡lica\" by Tranzas, not the band. N-23b (the glyph look-alikes) is not built."
+}

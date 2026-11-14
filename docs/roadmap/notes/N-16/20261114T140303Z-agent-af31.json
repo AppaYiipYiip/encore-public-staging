@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140303Z-agent-af31",
+ "item": "N-16",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:03Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). For the 40 real searches: two Top results that are a song instead of the artist the person named: \"busta\" (the song BUSTA by ARXMANE above Busta Rhymes) and the misspelling \"metalica\" (the song \"MetÃ¡lica\" by Tranzas above Metallica). Also seen: typing \"bob marley\" letter by letter made Top results for the prefixes \"bob\" and \"bob marley\" that were other artists' songs (audit B-126)."
+}

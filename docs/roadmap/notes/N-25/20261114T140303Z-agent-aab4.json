@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140303Z-agent-aab4",
+ "item": "N-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:03Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-25 PASSES: a playlist page (200 songs) has \"Find in playlist\"; typing \"love\" filtered it to the songs with that word (Love Ghost, My Chemical Romance...)."
+}

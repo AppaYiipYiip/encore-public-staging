@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140301Z-agent-13ad",
+ "item": "P3-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). B-41 PASSES AGAINST THE REAL NAVIDROME (a stronger check than the CI test of #52). With the music server up: a valid login (`GET me` signed as the app signs, u/t/s) = 200 and a wrong password = 401 \"The music server did not accept that login\". With the music server container STOPPED for about a minute: the valid login = 503 `server_busy` retryable (\"The music server is not answering just now. Try again in a moment.\") and the wrong password = ALSO 503 (not 401, not counted as a guess). The emulator stayed signed in; its \"Sync now\" said \"Server error (503)\" and nothing about a password or signing in again. The music server started again and was healthy within seconds; the valid login was 200 again. (B-77 is visible in the same moment: see the note on P1-17.) One practical trap for testers: a stale saved login file gives the 401 above and COUNTS as a wrong guess (the server only slows them, it never locks)."
+}

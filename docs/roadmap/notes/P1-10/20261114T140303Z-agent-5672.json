@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140303Z-agent-5672",
+ "item": "P1-10",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:03Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). P1-10 PASSES: with the regular image cache emptied (1059 files in `cache/encoreCovers2` removed from the app's cache folder, which is what Android's \"Clear cache\" does), the app force-stopped and started again, and airplane mode on, both downloaded songs (Candy Shop, In Da Club) still drew their covers in \"Downloaded\" (the pinned second store). The artist picture of a downloaded song was not checked."
+}
