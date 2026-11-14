@@ -4,8 +4,8 @@ A tap on a song the server cannot find leaves its ref behind (the tap made it, n
 before slice 1 (`EncoreInstantBackend.prepare` no longer makes a row). Nothing ever removed them. This is the permanent hygiene of the table: it clears
 what exists and what real taps leave behind; the SOURCE of junk was removed in slice 1, so there is no removal trigger.
 
-**The rule** (one sentence): a ref is retired when NOTHING points at it, it has no live verdict (N-13), nothing touched its files in the last 14 days, and
-it is itself older than 14 days. "Nothing points at it" means nobody among ALL the people: another person's like, entry or play keeps the ref for
+**The rule** (one sentence): a ref is retired when NOTHING points at it, it has no live verdict (N-13), it NEVER held a file, and it is itself older than
+14 days. "Nothing points at it" means nobody among ALL the people: another person's like, entry or play keeps the ref for
 everybody. The age keeps a ref a tap has just made safe (resolve, then play within seconds), and a person who searched yesterday and taps today still
 finds the ref.
 
@@ -18,10 +18,17 @@ adding its clause here: the test fails until you do.
 walks every boundary against `standing_of` itself, so there is ONE definition of "live". A ref with a live verdict stays for the length of its window,
 because deleting it would forget what saves a look-up at YouTube for everybody.
 
+**A ref that once held a file is NOT retired, and this is a cost, not a feature.** A phone that was away learns that a song's file is gone only from the
+files feed (`library.files_since`), which lists a ref that STILL EXISTS with `file: null` (and the phone's `dropUnused` then clears the row nobody points
+at). The feed cannot report a ref that is gone, so retiring a ref that once had a file would leave an away phone showing a playable song for ever. Such
+refs are the ones with a `file_log` row (every attach and every prune writes one); junk made by taps and typing never had a file, so the janitor is fully
+effective on what it is for. The cost: refs whose file was removed stay, as they do today, bounded by the number of files ever removed. **Removal trigger:**
+a files-feed tombstone (a feature string, because an old phone parses every `refs` entry as a full ref; the phone reads it) = N-27 slice 2c; until it
+exists the janitor must not touch a ref with a file history, and `file_history` below is what says so.
+
 **How it runs**: one more errand of the hourly library link (`api.create_app`, after the finders), at most `BATCH` refs a pass, the candidates chosen and
-deleted in ONE transaction (so a like that arrives between the two cannot be lost), the `file_log` rows of the retired refs deleted in the same
-transaction (that table has no foreign key, so nothing else would). The batch limit is applied AFTER every exclusion: refs that may not go never use it up.
-It adds no column and no table: it only removes rows.
+deleted in ONE transaction (so a like that arrives between the two cannot be lost). The batch limit is applied AFTER every exclusion: refs that may not go
+never use it up. It adds no column and no table: it only removes rows (finished work goes by its cascade; `change_log` rows stay).
 
 The foreign keys are a second net: a table that is not yet in `POINTERS` and has no cascade makes the delete fail, the whole pass rolls back and the
 errand logs it (the library link carries on, see `LibraryLinker.run_once`); a table WITH a cascade would lose its rows silently, which is why the schema
@@ -41,12 +48,12 @@ from .refmerge import FOREIGN_KEY_COLUMNS
 
 log = logging.getLogger("encore_server.ref_janitor")
 
-#: How old a ref must be before it may go, and how long after the last change of its files.
+#: How old a ref must be before it may go.
 AGE_MS = 14 * 24 * 3600 * 1000
 #: How many refs one pass retires at most (the hourly pass catches up with a long backlog in a few hours and never holds the database for long).
 BATCH = 500
 
-#: Every reason to keep a ref, by name: an `EXISTS` question about one table, `song_ref r` being the ref asked about. `:cutoff` is "now minus the age".
+#: Every reason to keep a ref, by name: an `EXISTS` question about one table, `song_ref r` being the ref asked about.
 #: Tables are not aliased on purpose, so that the query plan names them (a test refuses a scan of any pointer table).
 POINTERS: dict[str, str] = {
     "song_file": "SELECT 1 FROM song_file WHERE song_file.ref = r.id",
@@ -64,8 +71,8 @@ POINTERS: dict[str, str] = {
     "queue": "SELECT 1 FROM playback_state WHERE instr(playback_state.queue, r.id) > 0",
     # A survivor of a merge: clients carry the old ids and resolve them through `ref_merge` to this one.
     "merge_survivor": "SELECT 1 FROM ref_merge WHERE ref_merge.into_id = r.id",
-    # The age counts from the last change of the files too: a library file the music server lost an hour ago is not a song nobody wanted.
-    "recent_file_change": "SELECT 1 FROM file_log WHERE file_log.ref = r.id AND file_log.at >= :cutoff",
+    # A ref that ever held a file stays (see the module's text): only an existing ref can tell a phone that was away "no file". Not age-bounded.
+    "file_history": "SELECT 1 FROM file_log WHERE file_log.ref = r.id",
 }
 
 #: The columns that name a ref through a foreign key (one list with the merge's: `refmerge` re-points exactly these, the janitor reads exactly these).
@@ -77,14 +84,11 @@ TEXT_POINTERS: frozenset[tuple[str, str]] = frozenset(
         ("playback_state", "ref"),
         ("playback_state", "queue"),
         ("ref_merge", "into_id"),
+        ("file_log", "ref"),  # a log of file changes with no foreign key: a row means the ref once held a file (`file_history`)
     }
 )
 #: Columns a name says might hold a ref and that do NOT keep one alive, each with its reason.
 NOT_POINTERS: dict[tuple[str, str], str] = {
-    (
-        "file_log",
-        "ref",
-    ): "A log of file changes, not a pointer: its rows are deleted with the ref; only a change in the last 14 days keeps it (recent_file_change).",
     (
         "change_log",
         "target",
@@ -126,9 +130,13 @@ def query_plan(db: Database) -> list[str]:
         return [str(row["detail"]) for row in rows]
 
 
-def _chunks(items: Sequence[str], size: int = 500) -> Iterator[Sequence[str]]:
-    for start in range(0, len(items), size):
-        yield items[start : start + size]
+#: How many ids one DELETE names (SQLite refuses too many variables in one statement). A test makes it 1 to show that the pass is atomic across statements.
+_DELETE_CHUNK = 500
+
+
+def _chunks(items: Sequence[str]) -> Iterator[Sequence[str]]:
+    for start in range(0, len(items), _DELETE_CHUNK):
+        yield items[start : start + _DELETE_CHUNK]
 
 
 class RefJanitor:
@@ -156,7 +164,6 @@ class RefJanitor:
             ids = [row["id"] for row in conn.execute(sql, params)]
             for chunk in _chunks(ids):
                 marks = ", ".join("?" for _ in chunk)
-                conn.execute(f"DELETE FROM file_log WHERE ref IN ({marks})", tuple(chunk))
                 # work_item (and work_item_person) go by their cascade: the rows left are over, the pointer clause counted only the active ones.
                 conn.execute(f"DELETE FROM song_ref WHERE id IN ({marks})", tuple(chunk))
         if ids:
