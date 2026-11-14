@@ -1,0 +1,9 @@
+{
+ "id": "20261114T143923Z-agent-ac67",
+ "item": "P3-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:39:23Z",
+ "type": "note",
+ "body": "B-129 fixed in #61 (built, not walked). ROOT CAUSE PROVEN: the /encore/live handler waited only on its queue and the 25 s ping and never listened to the socket, so a stop with one phone connected waited for the next ping, past Docker's 10 s grace, and the container was killed (exit 137); a device that had gone also stayed on the hub as listening. Fix: the handler listens to the socket and returns at once; second layer uvicorn timeout_graceful_shutdown=8. Four tests first (a stop with a phone connected, a closed socket leaves the hub, events still in order, the entry point's grace). The real effect (docker stop with a phone connected: about a second, exit 0) needs VM 108 again."
+}
