@@ -6,6 +6,7 @@ import 'package:encore/core/clock.dart';
 import 'package:encore/core/logger.dart';
 import 'package:encore/core/perf.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/domain/server_reachability.dart';
 import 'package:encore/features/player/playback_facade.dart';
 import 'package:encore/playback/audio_backend.dart';
 import 'package:encore/playback/encore_audio_handler.dart';
@@ -120,6 +121,15 @@ class Harness {
   /// While set, the server does not answer the engine's look at all (it hangs: a network without data).
   Completer<void>? serverGate;
 
+  /// The one state the app would derive from the harness's facts.
+  ServerReachability state({bool awayOnly = false}) {
+    if (!network && !reachable) return ServerReachability.noNetwork;
+    if (reachable && !awayOnly) return ServerReachability.ok;
+    return internetFound
+        ? ServerReachability.serverAway
+        : ServerReachability.noInternet;
+  }
+
   /// What the engine handed over to be made ready, one entry per hand-over (P1-04).
   final List<List<String>> prepared = [];
 
@@ -164,15 +174,16 @@ class Harness {
       replayGain: () => h.replayGain,
       moreComing: () => h.moreComing,
       loadTimeout: loadTimeout,
-      canReachServer: () => h.reachable,
-      networkPresent: () => h.network,
-      internetFound: () => h.internetFound,
-      serverAnswers: () async {
+      // The harness keeps its four facts and builds the ONE state from them, the way the app does (docs/31 section 2a).
+      reachability: () => h.state(),
+      recheck: () async {
+        // No network: answered at once, without a look.
+        if (!h.network && !h.reachable) return ServerReachability.noNetwork;
         h.serverAsked++;
         await h.serverGate?.future;
         // Asking is how the phone learns the server is back.
-        if (h.network && h.serverUp) h.reachable = true;
-        return h.serverUp;
+        if (h.serverUp) h.reachable = true;
+        return h.serverUp ? ServerReachability.ok : h.state(awayOnly: true);
       },
       serverRetryDelays: const [Duration(milliseconds: 15)],
       findByName: findByName,
