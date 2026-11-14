@@ -1,0 +1,483 @@
+{
+ "recorded": "2026-11-14",
+ "path": "/artist/{id}/top",
+ "params": {
+  "limit": 10
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 530300631,
+    "readable": true,
+    "title": "Could You Be Loved",
+    "title_short": "Could You Be Loved",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/530300631",
+    "duration": 236,
+    "rank": 616708,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 530300641,
+    "readable": true,
+    "title": "Three Little Birds",
+    "title_short": "Three Little Birds",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/530300641",
+    "duration": 183,
+    "rank": 892997,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2293791,
+    "readable": true,
+    "title": "Is This Love",
+    "title_short": "Is This Love",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/2293791",
+    "duration": 233,
+    "rank": 873346,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 228718,
+     "title": "Kaya",
+     "cover": "https://api.deezer.com/album/228718/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/228718/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1768222537,
+    "readable": true,
+    "title": "One Love / People Get Ready",
+    "title_short": "One Love / People Get Ready",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/1768222537",
+    "duration": 171,
+    "rank": 418883,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 322427657,
+     "title": "Exodus",
+     "cover": "https://api.deezer.com/album/322427657/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/322427657/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 530300651,
+    "readable": true,
+    "title": "Buffalo Soldier",
+    "title_short": "Buffalo Soldier",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/530300651",
+    "duration": 256,
+    "rank": 660430,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2542705,
+    "readable": true,
+    "title": "Redemption Song",
+    "title_short": "Redemption Song",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/2542705",
+    "duration": 227,
+    "rank": 838788,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 249141,
+     "title": "Uprising",
+     "cover": "https://api.deezer.com/album/249141/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/249141/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 530300751,
+    "readable": true,
+    "title": "Jamming",
+    "title_short": "Jamming",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/530300751",
+    "duration": 211,
+    "rank": 815831,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 530300621,
+    "readable": true,
+    "title": "No Woman, No Cry (Live At The Lyceum, London/1975)",
+    "title_short": "No Woman, No Cry",
+    "title_version": "(Live At The Lyceum, London/1975)",
+    "link": "https://www.deezer.com/track/530300621",
+    "duration": 428,
+    "rank": 811742,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 86648035,
+    "readable": true,
+    "title": "Natural Mystic",
+    "title_short": "Natural Mystic",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/86648035",
+    "duration": 206,
+    "rank": 774798,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 8740481,
+     "title": "Natural Mystic",
+     "cover": "https://api.deezer.com/album/8740481/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/8740481/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   },
+   {
+    "id": 530300711,
+    "readable": true,
+    "title": "Waiting In Vain",
+    "title_short": "Waiting In Vain",
+    "title_version": "",
+    "link": "https://www.deezer.com/track/530300711",
+    "duration": 256,
+    "rank": 801263,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "contributors": [
+     {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "link": "https://www.deezer.com/artist/719",
+      "picture": "https://api.deezer.com/artist/719/image",
+      "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+      "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+      "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+      "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+      "radio": true,
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist",
+      "role": "Main"
+     }
+    ],
+    "artist": {
+     "id": 719,
+     "name": "Bob Marley & The Wailers",
+     "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 68685711,
+     "title": "Legend - The Best Of Bob Marley And The Wailers",
+     "cover": "https://api.deezer.com/album/68685711/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/68685711/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 95,
+  "next": "https://api.deezer.com/artist/719/top?limit=10&index=10"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "recorded": "2026-11-14",
+ "path": "/artist/{id}",
+ "params": {},
+ "answer": {
+  "id": 719,
+  "name": "Bob Marley & The Wailers",
+  "link": "https://www.deezer.com/artist/719",
+  "picture": "https://api.deezer.com/artist/719/image",
+  "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+  "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+  "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+  "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+  "nb_album": 83,
+  "nb_fan": 12308836,
+  "radio": true,
+  "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+  "type": "artist"
+ }
+}

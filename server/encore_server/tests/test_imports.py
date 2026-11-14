@@ -107,6 +107,9 @@ def rig(tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch)
         scan_every_min=0,
     )
     monkeypatch.setattr("encore_server.keeper.keeper.run_command", fake_ffmpeg)
+    monkeypatch.setattr(
+        "encore_server.keeper.keeper.fetch_cover", lambda url: None
+    )  # a kept song's picture is not fetched from the real picture host
     source = FakeYoutube()
     with TestClient(create_app(settings, verifier=verifier, youtube=source, navidrome=Configured(music))) as client:  # type: ignore[arg-type]
         yield Rig(client, source)

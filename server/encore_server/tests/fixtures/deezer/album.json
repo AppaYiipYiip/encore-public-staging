@@ -1,0 +1,628 @@
+{
+ "recorded": "2026-11-14",
+ "path": "/album/{id}",
+ "params": {},
+ "answer": {
+  "id": 1059353762,
+  "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+  "upc": "881061054702",
+  "link": "https://www.deezer.com/album/1059353762",
+  "cover": "https://api.deezer.com/album/1059353762/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 144,
+  "genres": {
+   "data": [
+    {
+     "id": 144,
+     "name": "Reggae",
+     "picture": "https://api.deezer.com/genre/144/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Tuff Gong",
+  "nb_tracks": 18,
+  "duration": 5240,
+  "fans": 844,
+  "release_date": "2026-08-28",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 719,
+    "name": "Bob Marley & The Wailers",
+    "link": "https://www.deezer.com/artist/719",
+    "picture": "https://api.deezer.com/artist/719/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 719,
+   "name": "Bob Marley & The Wailers",
+   "picture": "https://api.deezer.com/artist/719/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 4236795152,
+     "readable": true,
+     "title": "Introduction (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Introduction",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795152",
+     "duration": 28,
+     "rank": 76209,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795162,
+     "readable": true,
+     "title": "Trenchtown Rock (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Trenchtown Rock",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795162",
+     "duration": 248,
+     "rank": 383126,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795172,
+     "readable": true,
+     "title": "Burnin' And Lootin' (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Burnin' And Lootin'",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795172",
+     "duration": 271,
+     "rank": 367018,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795182,
+     "readable": true,
+     "title": "Them Belly Full (But We Hungry) (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Them Belly Full (But We Hungry)",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795182",
+     "duration": 197,
+     "rank": 340193,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795192,
+     "readable": true,
+     "title": "Rebel Music (3 O'clock Roadblock) (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Rebel Music (3 O'clock Roadblock)",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795192",
+     "duration": 299,
+     "rank": 356176,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795202,
+     "readable": true,
+     "title": "I Shot The Sheriff (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "I Shot The Sheriff",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795202",
+     "duration": 245,
+     "rank": 347809,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795212,
+     "readable": true,
+     "title": "Crazy Baldhead (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Crazy Baldhead",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795212",
+     "duration": 361,
+     "rank": 335295,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795222,
+     "readable": true,
+     "title": "Bend Down Low (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Bend Down Low",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795222",
+     "duration": 247,
+     "rank": 354712,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795232,
+     "readable": true,
+     "title": "Want More (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Want More",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795232",
+     "duration": 396,
+     "rank": 347595,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795242,
+     "readable": true,
+     "title": "No Woman, No Cry (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "No Woman, No Cry",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795242",
+     "duration": 369,
+     "rank": 297381,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795252,
+     "readable": true,
+     "title": "Lively Up Yourself (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Lively Up Yourself",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795252",
+     "duration": 464,
+     "rank": 324605,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795272,
+     "readable": true,
+     "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Roots, Rock, Reggae",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795272",
+     "duration": 333,
+     "rank": 323064,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795282,
+     "readable": true,
+     "title": "Encore Introduction (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Encore Introduction",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795282",
+     "duration": 30,
+     "rank": 277367,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795292,
+     "readable": true,
+     "title": "Positive Vibration (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Positive Vibration",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795292",
+     "duration": 215,
+     "rank": 315468,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795302,
+     "readable": true,
+     "title": "Rat Race (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Rat Race",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795302",
+     "duration": 405,
+     "rank": 292893,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795312,
+     "readable": true,
+     "title": "War (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "War",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795312",
+     "duration": 256,
+     "rank": 305446,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795322,
+     "readable": true,
+     "title": "No More Trouble (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "No More Trouble",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795322",
+     "duration": 141,
+     "rank": 269522,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4236795332,
+     "readable": true,
+     "title": "Get Up, Stand Up (Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "title_short": "Get Up, Stand Up",
+     "title_version": "(Live At The Hammersmith Odeon, London, UK - June, 1976)",
+     "link": "https://www.deezer.com/track/4236795332",
+     "duration": 735,
+     "rank": 289452,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 719,
+      "name": "Bob Marley & The Wailers",
+      "tracklist": "https://api.deezer.com/artist/719/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1059353762,
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "cover": "https://api.deezer.com/album/1059353762/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1059353762/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

@@ -86,7 +86,7 @@ class Keeper:
         *,
         runner: Runner | None = None,
         write_tags_: Callable[..., bool] = write_tags,
-        fetch_cover_: Callable[[str | None], bytes | None] = fetch_cover,
+        fetch_cover_: Callable[[str | None], bytes | None] | None = None,
         find_cover_: Callable[[str, str, str | None], str | None] | None = None,
         on_changed: Callable[[dict[str, int]], None] | None = None,
         sleep: Callable[[float], None] = time.sleep,
@@ -99,7 +99,9 @@ class Keeper:
         self._work = work_dir
         self._run = runner if runner is not None else run_command
         self._write_tags = write_tags_
-        self._cover = fetch_cover_
+        # Looked up when the keeper is made, not when this module is loaded, so a test can put its own in (B27): a rig that keeps a song with a picture
+        # address otherwise fetched it from the real picture host (found by the network guard of P2-12).
+        self._cover = fetch_cover_ if fetch_cover_ is not None else fetch_cover
         self._find_cover = find_cover_
         self._on_changed = on_changed
         self._sleep = sleep

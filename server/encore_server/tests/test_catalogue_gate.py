@@ -220,7 +220,9 @@ class Upstream:
         return httpx.Response(status, json=body)
 
     def client(self, g: Gate | None = None) -> DeezerClient:
-        return DeezerClient(gate=g or Gate(rate=1000, burst=1000, background_gap_s=0.0), http=httpx.Client(transport=httpx.MockTransport(self)))
+        return DeezerClient(
+            gate=g or Gate(rate=1000, burst=1000, background_gap_s=0.0), http=httpx.Client(transport=httpx.MockTransport(self))
+        )
 
 
 def test_a_good_answer_is_returned_and_asked_with_a_short_limit_and_a_name_for_the_server() -> None:
