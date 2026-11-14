@@ -126,7 +126,7 @@ tap ─► app: song ref has a local download? ── yes ─► play file (≤ 
 **Making it feel instant (N3):** the player asks the server to *prepare* the next 1 to 3 songs of the queue (`POST refs/prepare`, P1-04: the server
 finds the upload and the stream's address ahead, no audio), so a Next to a song the server has not seen does not wait for the look-up. **What is only
 browsed makes no row on an Encore server (B-126, N-27):** the top search result after typing pauses and the first songs of a page that opens used to be
-resolved ahead (a song row on the server), which left a row nobody pointed at for every pause between two letters; the tap now makes its own ref.
+resolved ahead (a song row on the server), which left a row nobody pointed at for every pause between two letters; the tap now makes its own ref. The rows that already exist, and the ones a tap on a song the server cannot find leaves, are retired by the janitor (`ref_janitor.py`, slice 2a: nothing points at it, no live verdict, 14 days; `18` section 1).
 
 **Two pools on the server:** *interactive* (taps and prepares; never waits behind anything) and *background* (imports' matching
 and the keeper). Measured: 6 parallel extractions made each one 9 s instead of 2 s on a 4-vCPU VM under the cap, so background
