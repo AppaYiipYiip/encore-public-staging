@@ -16,7 +16,7 @@
       "mbid": null,
       "deezerId": null,
       "videoId": "TTTTTTTTTT2",
-      "coverUrl": null,
+      "coverUrl": "https://i.ytimg.com/vi/TTTTTTTTTT2/mqdefault.jpg",
       "explicit": false,
       "file": {
         "id": "sf_00000000000100000000000005",
@@ -42,7 +42,7 @@
       "mbid": null,
       "deezerId": null,
       "videoId": "HHHHHHHHHH1",
-      "coverUrl": null,
+      "coverUrl": "https://i.ytimg.com/vi/HHHHHHHHHH1/mqdefault.jpg",
       "explicit": false,
       "file": {
         "id": "sf_00000000000120000000000006",
@@ -68,7 +68,7 @@
       "mbid": null,
       "deezerId": null,
       "videoId": "HHHHHHHHHH2",
-      "coverUrl": null,
+      "coverUrl": "https://i.ytimg.com/vi/HHHHHHHHHH2/mqdefault.jpg",
       "explicit": false,
       "file": {
         "id": "sf_00000000000130000000000006",
@@ -256,7 +256,7 @@
       "mbid": null,
       "deezerId": null,
       "videoId": "TTTTTTTTTT1",
-      "coverUrl": null,
+      "coverUrl": "https://i.ytimg.com/vi/TTTTTTTTTT1/mqdefault.jpg",
       "explicit": false,
       "file": {
         "id": "sf_00000000000090000000000005",
