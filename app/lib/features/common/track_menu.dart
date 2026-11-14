@@ -17,6 +17,7 @@ import '../providers.dart';
 import 'cover_art.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
+import 'open_artist.dart';
 import 'playlist_actions.dart';
 
 /// Opens the action sheet for one track (docs/06-ux-spec.md section 0: an
@@ -106,6 +107,9 @@ class _TrackMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final live = ref.watch(trackProvider(track.id)).value ?? track;
+    // The artists of the song, each on its own, when the phone knows them (a song by several artists): the menu offers each one (N-12).
+    final artists =
+        ref.watch(songArtistsProvider(live.id)).value ?? const <String>[];
     final liked = live.starredAtMs != null;
     final session = ref.watch(sessionProvider).value;
     final facade = ref.watch(playbackFacadeProvider);
@@ -284,7 +288,16 @@ class _TrackMenu extends ConsumerWidget {
                   Nav.album(parent, track.albumId!);
                 },
               ),
-            if (track.artistId != null)
+            if (artists.length > 1)
+              for (final name in artists)
+                _Action(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Go to $name',
+                  // The sheet's own `ref` is gone once it closes, so it closes just before the artist's page opens (as the player does).
+                  onTap: () => unawaited(
+                      openArtistByName(parent, ref, name, beforeOpen: close)),
+                )
+            else if (track.artistId != null)
               _Action(
                 icon: Icons.person_outline_rounded,
                 label: 'Go to artist',

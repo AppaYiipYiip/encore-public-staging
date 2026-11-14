@@ -217,10 +217,22 @@
   "at": "2026-11-14T09:17:15Z",
   "by": "Claude"
  },
+ "P4-24": {
+  "state": "built",
+  "evidence": "Code PR #36: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers (streaming quality, new downloads with made-at record and Wi-Fi upgrade, small pictures via CoverBudget also for the pinned run, prepare-ahead window 1); tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at, upgrade, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart, core/cover_sizes_test.dart, data/covers/cover_prefetcher_test.dart, playback/media_art_test.dart, features/data_saver_settings_test.dart, download_policy_test.dart, migration v7 to v8. Built, NOT walked: the byte-count acceptance (the phone's per-app data counter on mobile data) is for a real walk.",
+  "at": "2026-11-14T09:22:52Z",
+  "by": "Claude"
+ },
+ "N-12": {
+  "state": "built",
+  "evidence": "app/lib/features/common/track_menu.dart: when songArtistsProvider knows several artists of the song the menu shows one 'Go to <name>' line per artist (opened through openArtistByName with beforeOpen: close, because the sheet's own ref dies when it closes), else the single 'Go to artist' line as before. Widget tests in app/test/features/track_menu_test.dart through the whole app: 'a song by several artists offers Go to each of them' failed before (no 'Go to Periphery'), taps the SECOND artist and the artist's page opens; a guard keeps the single line for one artist; track_menu and streamed_song tests pass (30), dart analyze --fatal-infos clean. NOT walked: a song of several artists on a phone (the player already does the same with each name). Songs whose second artist is not in the phone's list open the catalogue page of that name, as in the player.",
+  "at": "2026-11-14T09:37:31Z",
+  "by": "Claude"
+ },
  "P1-16": {
   "state": "built",
-  "evidence": "Built 14 Nov 2026, not walked: app/test/features/search_offline_test.dart (25 widget tests, 20 fail on main fc988f0 and pass here) holds S-11, S-12, S-13 offline in both causes (no internet found / only the server silent): the hint, the dimmed genre tiles, the genre page with its way back, the grey rows and the last line, nothing found, the page and the strip agreeing on one screen, the catalogue not asked while the server is away (searches == 0 after 1 s, with a control that asks once), 4 s grace, and it going by itself when the connection returns; flutter test of features, domain, app, playback, data and the architecture test: 2540 passed, 5 skipped (the B-84 script gaps, test/data/db/search_scripts_gap_test.dart); dart analyze --fatal-infos clean",
-  "at": "2026-11-14T09:49:33Z",
+  "evidence": "Built 14 Nov 2026, not walked: app/test/features/search_offline_test.dart (26 widget tests, 21 fail on main fc988f0 and pass here) holds S-11, S-12, S-13 offline in both causes (no internet found / only the server silent): the hint, the dimmed genre tiles, the genre page with its way back, the grey rows and the last line, nothing found, the page and the strip agreeing on one screen, the catalogue not asked while the server is away (searches == 0 after 1 s, with a control that asks once), no network counting at once and a silent server after the 4 s grace, and it going by itself when the connection returns; flutter test of features, domain, app, playback, data and the architecture test: 2540 passed, 5 skipped (the B-84 script gaps, test/data/db/search_scripts_gap_test.dart); dart analyze --fatal-infos clean",
+  "at": "2026-11-14T09:57:17Z",
   "by": "helper-p116 (Claude Sonnet 5.5)"
  }
 }

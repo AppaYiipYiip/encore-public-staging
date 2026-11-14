@@ -20,9 +20,11 @@ class MediaArtResolver {
     required String? Function(String coverArtId, int size) urlFor,
     this.wait = const Duration(seconds: 3),
     this.size = CoverSize.large,
+    bool Function()? smallOnly,
   })  : _cachedFile = cachedFile,
         _download = download,
-        _urlFor = urlFor;
+        _urlFor = urlFor,
+        _smallOnly = smallOnly;
 
   final int serverId;
 
@@ -31,6 +33,10 @@ class MediaArtResolver {
   final Duration wait;
   final int size;
 
+  /// Whether only the small size is fetched right now (Data saver in force, P4-24). A larger cover that is already on the phone still stands
+  /// in: it costs nothing.
+  final bool Function()? _smallOnly;
+
   final Future<File?> Function(String cacheKey) _cachedFile;
   final Future<File?> Function(String url, String cacheKey) _download;
   final String? Function(String coverArtId, int size) _urlFor;
@@ -38,6 +44,7 @@ class MediaArtResolver {
   /// A `file:` URI for [coverArtId], or `null` (no session, still downloading,
   /// offline). Never a network URL.
   Future<Uri?> resolve(String coverArtId) async {
+    final size = _smallOnly?.call() == true ? CoverSize.small : this.size;
     final key = CoverSize.key(serverId, coverArtId, size);
     final hit = await _cachedFile(key);
     if (hit != null) return Uri.file(hit.path);

@@ -19,6 +19,7 @@ import '../downloads/download_status.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart' show requestPortalOfferedProvider;
 import '../instant/release_save.dart' show releaseSavesProvider;
+import 'data_saver_line.dart' show DataSaverWords;
 import 'diagnostics_screen.dart';
 import 'failed_edits.dart';
 import 'settings_controller.dart';
@@ -75,7 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         'Playback',
         'Quality, equalizer, volume levelling',
         '/settings/playback',
-        'gapless quality stream transcode flac opus replaygain normalise loudness volume equalizer eq sound bass'),
+        'gapless quality stream transcode flac opus replaygain normalise loudness volume equalizer eq sound bass data saver mobile data metered cellular'),
     _Group(
         Icons.download_for_offline_outlined,
         'Downloads & storage',
@@ -521,7 +522,10 @@ class DownloadsSettingsScreen extends ConsumerWidget {
           title: 'Quality',
           value: s.downloadQuality,
           onChanged: ctrl.setDownloadQuality,
-          subtitle: 'Applies to new downloads. ${s.downloadQuality.detail}',
+          // While Data saver is in force the row keeps the person's own choice and says what limits new downloads.
+          subtitle: DataSaverWords.downloadRowLine(s,
+                  inForce: ref.watch(dataSaverInForceProvider)) ??
+              'Applies to new downloads. ${s.downloadQuality.detail}',
         ),
         SwitchListTile(
           title: const Text('Download over Wi-Fi only'),

@@ -1,3 +1,4 @@
+import 'package:encore/app/cover_wiring.dart' show coverBudgetForNetwork;
 import 'package:encore/app/providers.dart';
 import 'package:encore/core/cover_sizes.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,5 +62,51 @@ void main() {
         const CoverArtResolver(serverId: 1).resolve('mf-9', 300).cacheKey;
     expect(key, isNot(contains('http')));
     expect(key, isNot(contains('=')));
+  });
+
+  group('P4-24: one rule for how much of a cover the phone fetches', () {
+    test(
+        'full: both sizes, a widget gets the size it needs, 600 for the background',
+        () {
+      expect(CoverBudget.full.sizes, [CoverSize.small, CoverSize.large]);
+      expect(CoverBudget.full.fetchSize(160 * 3), CoverSize.large);
+      expect(CoverBudget.full.fetchSize(48 * 3), CoverSize.small);
+      expect(CoverBudget.full.backgroundLimit, 600);
+    });
+
+    test(
+        'mobile: the small size only, at most 120 in the background (the rule that was in cover_wiring)',
+        () {
+      expect(CoverBudget.mobile.sizes, [CoverSize.small]);
+      expect(CoverBudget.mobile.fetchSize(360 * 3), CoverSize.small,
+          reason: 'even the player asks for the small one');
+      expect(CoverBudget.mobile.backgroundLimit, 120);
+    });
+
+    test(
+        'the background fetch takes its budget from the link, as it always did',
+        () {
+      expect(coverBudgetForNetwork(NetworkKind.wifi), CoverBudget.full);
+      expect(coverBudgetForNetwork(NetworkKind.mobile), CoverBudget.mobile);
+    });
+
+    test(
+        'the resolver under the mobile budget fetches and caches the small size for every widget',
+        () {
+      const resolver =
+          CoverArtResolver(serverId: 7, budget: CoverBudget.mobile);
+
+      final player = resolver.resolve('al-1', 1000);
+      expect(player.cacheKey, 'cover:7:al-1:${CoverSize.small}');
+      expect(resolver.alternateKey('al-1', 1000),
+          'cover:7:al-1:${CoverSize.large}',
+          reason: 'a large cover already on the phone still stands in offline');
+    });
+
+    test('without a budget the resolver is exactly what it was', () {
+      const resolver = CoverArtResolver(serverId: 7);
+      expect(resolver.resolve('al-1', 1000).cacheKey,
+          'cover:7:al-1:${CoverSize.large}');
+    });
   });
 }

@@ -71,6 +71,25 @@ enum AudioQuality {
 
   bool get isOriginal => format == null;
 
+  /// What Data saver holds this choice to while it is in force (P4-24): the person's own choice is not changed, only held below
+  /// [dataSaver] for as long as the phone is on mobile data with the switch on.
+  ///
+  /// The cap never changes the codec. Original is the untouched file and has no codec of its own, so Data saver is its cap. Any other level
+  /// goes down to the lowest level of its own codec that exists in this list (Opus 160 and 96 go to Opus 48). A codec with nothing below
+  /// the level chosen (Compatible: the only MP3 level is 192 kbps) is not capped at all: a car or an old phone that needs MP3 is never
+  /// handed Opus, and no level is invented here (the Settings line says it).
+  AudioQuality cappedForDataSaver() {
+    if (isOriginal) return dataSaver;
+    var lowest = this;
+    for (final q in values) {
+      if (q.format == format && q.bitRate! < lowest.bitRate!) lowest = q;
+    }
+    return lowest;
+  }
+
+  /// Whether [cappedForDataSaver] changes anything, which is when Settings may say that Data saver is limiting this choice.
+  bool get isLoweredByDataSaver => cappedForDataSaver() != this;
+
   static AudioQuality byId(String? id, {AudioQuality fallback = original}) {
     for (final q in values) {
       if (q.id == id) return q;

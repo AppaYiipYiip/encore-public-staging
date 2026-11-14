@@ -42,9 +42,19 @@ class DownloadPolicy {
     this.orphanGrace = const Duration(hours: 24),
     this.limitBytes,
     this.minFreeBytes = StorageGuard.defaultMinFreeBytes,
+    this.dataSaver = false,
   });
 
   final bool wifiOnly;
+
+  /// Data saver is in force (P4-24): the person's switch is on and the phone is on mobile data. A transfer started now is made at the quality
+  /// the cap leaves of the wanted one ([qualityFor]); nothing else about downloading changes, and nothing at all while this is false.
+  final bool dataSaver;
+
+  /// The quality a transfer is made at: [wanted], held to Data saver quality while [dataSaver] is in force. The pin keeps the person's own
+  /// choice; only the copy is lower.
+  AudioQuality qualityFor(AudioQuality wanted) =>
+      dataSaver ? wanted.cappedForDataSaver() : wanted;
 
   /// The user's cap for offline music (`null` = none).
   final int? limitBytes;
@@ -223,6 +233,8 @@ class DownloadManager {
         existing: existing,
         nowMs: _clock.now().millisecondsSinceEpoch,
         graceMs: immediateRemoval ? 0 : policy.orphanGrace.inMilliseconds,
+        // A copy that Data saver made smaller is made again at the person's own quality, on Wi-Fi only (P4-24).
+        upgradeCapped: policy.onWifi && !policy.dataSaver,
       );
       if (!plan.isEmpty) {
         Log.info('downloads', 'plan: $plan');
@@ -263,10 +275,20 @@ class DownloadManager {
     // Rows already handed to the transport stay `downloading`, so the first
     // `slots` queued rows are always fresh work.
     // Songs waiting for the server are skipped, and do not count against the slots, so the ones behind them still start.
+    // A queued upgrade (a copy Data saver made smaller, made again at the person's own quality) is a Wi-Fi job: off Wi-Fi it stays queued, and
+    // does not take the place of a song that could start.
+    final held = policy.onWifi
+        ? const <String>{}
+        : {
+            for (final row in await _repo.rowsRefreshing())
+              if (_isPendingUpgrade(row)) row.trackId
+          };
     final queued = [
       for (final row in await _repo.rowsInState(DownloadState.queued,
-          limit: slots + _waitingForServer.length))
-        if (!_waitingForServer.contains(row.trackId)) row
+          limit: slots + _waitingForServer.length + held.length))
+        if (!_waitingForServer.contains(row.trackId) &&
+            !held.contains(row.trackId))
+          row
     ].take(slots).toList();
     if (queued.isEmpty) {
       _setVerdict(StorageVerdict.ok);
@@ -290,7 +312,7 @@ class DownloadManager {
       if (_inFlight.length >= policy.maxInFlight) break;
       if (_inFlight.contains(row.trackId)) continue;
 
-      final next = await _estimateFor(row);
+      final next = await _estimateFor(row, policy);
       final verdict = guard.check(
         usedBytes: used,
         inFlightBytes: running,
@@ -318,13 +340,27 @@ class DownloadManager {
     if (_waitingForServer.length > waitingBefore) await _pump();
   }
 
-  Future<int> _estimateFor(DownloadRow row) async {
+  /// The quality a transfer of [row] is asked at, as recorded: a refresh of a copy is asked at `refreshQuality` (the copy keeps its own
+  /// `quality` until the new file is in place); a first download is made at `quality`.
+  AudioQuality _transferQuality(DownloadRow row) =>
+      AudioQuality.byId(row.refreshQuality ?? row.quality);
+
+  bool _isRefresh(DownloadRow row) =>
+      row.localPath != null && row.localPath!.isNotEmpty;
+
+  /// A refresh that would give a copy a higher quality than it has: Data saver's copy made again at the person's own choice.
+  bool _isPendingUpgrade(DownloadRow row) =>
+      _isRefresh(row) &&
+      row.refreshQuality != null &&
+      _transferQuality(row).rank > AudioQuality.byId(row.quality).rank;
+
+  Future<int> _estimateFor(DownloadRow row, DownloadPolicy policy) async {
     final track = await (_db.select(_db.tracks)
           ..where(
               (t) => t.serverId.equals(serverId) & t.id.equals(row.trackId)))
         .getSingleOrNull();
     return estimateDownloadBytes(
-      quality: AudioQuality.byId(row.quality),
+      quality: policy.qualityFor(_transferQuality(row)),
       sourceSize: track?.size,
       durationSec: track?.durationSec,
       sourceBitRate: track?.bitRate,
@@ -340,8 +376,17 @@ class DownloadManager {
       await _repo.markFailed(row.trackId, 'Track is no longer on the server');
       return;
     }
-    final quality = AudioQuality.byId(row.quality);
+    final wanted = _transferQuality(row);
+    // Data saver in force: the copy is made at the capped quality, and the row says so from now on (the completion, a restart and the storage
+    // guard all read it back). The pin keeps the person's own choice.
+    final quality = policy.qualityFor(wanted);
+    final upgrade =
+        _isRefresh(row) && quality.rank > AudioQuality.byId(row.quality).rank;
     try {
+      if (quality != wanted) {
+        await _repo.setTransferQuality(row.trackId,
+            quality: quality.id, refresh: _isRefresh(row));
+      }
       final url = await _urlBuilder(
         row.trackId,
         quality: quality,
@@ -349,7 +394,7 @@ class DownloadManager {
         sourceBitRate: track.bitRate,
       );
       // A refresh downloads next to the old copy and swaps afterwards.
-      final target = _relativeFor(row, track.suffix);
+      final target = _relativeFor(row, track.suffix, quality);
       _plannedPath[row.trackId] = target;
       _inFlight.add(row.trackId);
       await _repo.markDownloading(row.trackId);
@@ -357,7 +402,9 @@ class DownloadManager {
         taskId: _taskId(serverId, row.trackId),
         url: url,
         relativePath: target,
-        requiresWifi: policy.wifiOnly,
+        // An upgrade is only ever fetched on Wi-Fi, whatever the person allowed for downloads: if the link changes mid-way it waits instead of
+        // going on over mobile data at full quality.
+        requiresWifi: policy.wifiOnly || upgrade,
       ));
     } on SongNotKeptYet {
       _inFlight.remove(row.trackId);
@@ -370,12 +417,11 @@ class DownloadManager {
 
   /// Where a download of [row] is written: `downloads/<server>/<track>.<ext>`,
   /// with `.new` appended while a refresh sits next to the copy it replaces.
-  String _relativeFor(DownloadRow row, String? sourceSuffix) {
-    final ext = AudioQuality.byId(row.quality)
-        .fileExtension(sourceSuffix: sourceSuffix);
+  String _relativeFor(
+      DownloadRow row, String? sourceSuffix, AudioQuality quality) {
+    final ext = quality.fileExtension(sourceSuffix: sourceSuffix);
     final base = 'downloads/$serverId/${row.trackId}.$ext';
-    final isRefresh = row.localPath != null && row.localPath!.isNotEmpty;
-    return isRefresh ? '$base.new' : base;
+    return _isRefresh(row) ? '$base.new' : base;
   }
 
   Future<void> _onUpdate(TransferUpdate update) async {
@@ -386,8 +432,20 @@ class DownloadManager {
         await _onComplete(trackId, update.relativePath);
       case TransferStatus.failed:
         _inFlight.remove(trackId);
-        await _repo.markFailed(trackId, update.error ?? 'Download failed');
-        await _pump();
+        final reason = update.error ?? 'Download failed';
+        final rows = await _repo.rowsFor([trackId]);
+        if (rows.isNotEmpty && _isRefresh(rows.first)) {
+          // A refresh that did not arrive (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone playable:
+          // it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
+          final partial = _plannedPath.remove(trackId);
+          if (partial != null) {
+            await _transport.deleteFile(await _transport.absolutePath(partial));
+          }
+          await _giveUp(trackId, true, reason);
+        } else {
+          await _repo.markFailed(trackId, reason);
+          await _pump();
+        }
       case TransferStatus.canceled:
         _inFlight.remove(trackId);
       case TransferStatus.enqueued:
@@ -414,8 +472,9 @@ class DownloadManager {
     }
     final row = rows.first;
     // The task knows where it wrote, even after the app was killed (B21).
+    final made = _transferQuality(row);
     final relative =
-        reportedPath ?? planned ?? _relativeFor(row, track?.suffix);
+        reportedPath ?? planned ?? _relativeFor(row, track?.suffix, made);
     final absolute = await _transport.absolutePath(relative);
     final isRefresh = relative.endsWith('.new');
 
@@ -427,7 +486,7 @@ class DownloadManager {
             size: size,
             head: await _transport.readHead(absolute, 16),
             expectedBytes: track?.size,
-            original: AudioQuality.byId(row.quality).isOriginal,
+            original: made.isOriginal,
           );
     if (size == null || reason != null) {
       await _transport.deleteFile(absolute);
@@ -458,7 +517,8 @@ class DownloadManager {
       localPath: finalPath,
       bytes: size,
       audioKey: track?.audioKey ?? '',
-      quality: row.quality,
+      // What the file is made at: the quality the transfer was asked at (Data saver may have lowered the wanted one), recorded for the upgrade.
+      quality: made.id,
     );
     await _pump();
   }

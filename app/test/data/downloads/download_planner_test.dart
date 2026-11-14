@@ -12,6 +12,7 @@ DownloadRow row(
   int updatedAtMs = 0,
   int? orphanedAtMs,
   int attempts = 0,
+  String quality = 'opus160',
 }) =>
     DownloadRow(
       serverId: 1,
@@ -20,7 +21,7 @@ DownloadRow row(
       localPath: state == DownloadState.done ? '/data/$id.opus' : null,
       bytes: 100,
       expectedBytes: 100,
-      quality: 'opus160',
+      quality: quality,
       sourceAudioKey: sourceAudioKey,
       stale: stale,
       lastError: null,
@@ -29,8 +30,9 @@ DownloadRow row(
       attempts: attempts,
     );
 
-DesiredDownload want(String id, {String audioKey = 'k1'}) =>
-    DesiredDownload(trackId: id, quality: 'opus160', audioKey: audioKey);
+DesiredDownload want(String id,
+        {String audioKey = 'k1', String quality = 'opus160'}) =>
+    DesiredDownload(trackId: id, quality: quality, audioKey: audioKey);
 
 void main() {
   const now = 100 * _hour;
@@ -252,5 +254,133 @@ void main() {
     expect(plan.toOrphan.length, 100, reason: 't800..t899 dropped');
     expect(plan.toDelete, isEmpty, reason: 'grace period protects churn');
     expect(plan.toRefresh, isEmpty);
+  });
+
+  group(
+      "P4-24: a copy made under Data saver is made again at the person's own quality",
+      () {
+    test('on Wi-Fi, with the cap not in force, a capped copy is refreshed', () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'opus160')},
+        existing: {'a': row('a', quality: 'opus48')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.toRefresh, ['a']);
+      expect(plan.toQueue, isEmpty);
+    });
+
+    test('an Original pin whose copy was made at Data saver is refreshed too',
+        () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'original')},
+        existing: {'a': row('a', quality: 'opus48')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.toRefresh, ['a']);
+    });
+
+    test('while the cap is in force or the phone is on mobile data: nothing',
+        () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'opus160')},
+        existing: {'a': row('a', quality: 'opus48')},
+        nowMs: now,
+      );
+      expect(plan.isEmpty, isTrue,
+          reason: 'upgrading is the Wi-Fi job: the default never does it');
+    });
+
+    test('a copy that already is the wanted quality is left alone', () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'opus160')},
+        existing: {'a': row('a', quality: 'opus160')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.isEmpty, isTrue);
+    });
+
+    test('a pin that asks for Data saver itself is never upgraded', () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'opus48')},
+        existing: {'a': row('a', quality: 'opus48')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.isEmpty, isTrue);
+    });
+
+    test(
+        'a copy that differs for another reason (a second pin asked for more) is NOT refreshed: only what the cap lowered is',
+        () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'opus160')},
+        existing: {'a': row('a', quality: 'opus96')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.isEmpty, isTrue,
+          reason: 'switch off must stay exactly what it is today');
+    });
+
+    test('Compatible (MP3) is never replaced by an Opus copy, or the other way',
+        () {
+      final plan = planDownloads(
+        desired: {'a': want('a', quality: 'mp3_192')},
+        existing: {'a': row('a', quality: 'opus96')},
+        nowMs: now,
+        upgradeCapped: true,
+      );
+      expect(plan.isEmpty, isTrue);
+    });
+
+    test('a refresh that failed waits the same back-off as a failed download',
+        () {
+      List<String> due(int sinceMs) => planDownloads(
+            desired: {'a': want('a', quality: 'opus160')},
+            existing: {
+              'a': row('a',
+                  quality: 'opus48', attempts: 2, updatedAtMs: now - sinceMs)
+            },
+            nowMs: now,
+            upgradeCapped: true,
+          ).toRefresh;
+
+      expect(due(1 * _hour ~/ 6), isEmpty, reason: '10 minutes: too soon');
+      expect(due(1 * _hour), ['a'], reason: 'an hour is past 20 minutes');
+    });
+  });
+
+  group('a refresh that did not arrive waits before it is tried again', () {
+    List<String> refreshed(int sinceMs, {int attempts = 1}) => planDownloads(
+          desired: {'a': want('a', audioKey: 'k2')},
+          existing: {
+            'a': row('a',
+                sourceAudioKey: 'k1',
+                attempts: attempts,
+                updatedAtMs: now - sinceMs)
+          },
+          nowMs: now,
+        ).toRefresh;
+
+    test(
+        'a changed song whose refresh failed one minute ago is not started again',
+        () {
+      expect(refreshed(_hour ~/ 60), isEmpty,
+          reason: 'else every network change, sync and pin edit repeats it');
+    });
+
+    test('and is refreshed once the back-off of a failed download has passed',
+        () {
+      expect(refreshed(_hour), ['a'],
+          reason: '10 minutes for the first failure');
+      expect(refreshed(_hour ~/ 6 - 1000), isEmpty);
+    });
+
+    test('a first refresh (no failure yet) starts at once, as before', () {
+      expect(refreshed(0, attempts: 0), ['a']);
+    });
   });
 }
