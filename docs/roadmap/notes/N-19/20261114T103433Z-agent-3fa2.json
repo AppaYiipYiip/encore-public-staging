@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103433Z-agent-3fa2",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:33Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026 (emulator, build 151, VM 108): pausing a downloaded song in airplane mode and again with the network back: paused, stayed paused for 12 s, no 'no connection' notice and no resume. This is the lost-pause fix (#20) again; the N-19 notice itself was still never seen, so N-19 stays open. The real phone: the A35 (build 144) shows 'Sign in again: Your server did not accept the saved password' on Home; its Encore background job refused at 10:24:00 UTC by VM 108 (one refused guess, counted against its address; the server only slows guesses, it never locks). Whether the saved password was already stale during the earlier A35 runs of N-19 is not known: sign the A35 in again (the test account's login file is in local/logins) before the next real-phone try."
+}
