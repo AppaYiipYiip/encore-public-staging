@@ -76,6 +76,15 @@ def parse_item(raw: object) -> dict[str, Any]:
     }
 
 
+def video_thumbnail(video_id: object) -> str | None:
+    """YouTube's thumbnail of a video: `mqdefault` is 320x180 with no black bars for ANY kind of upload (`hqdefault` is 480x360 and keeps bars
+    on top and bottom of a widescreen video), and the app's cover crop (`BoxFit.cover`) keeps the middle square (for a song's own "Topic" upload,
+    the art). Soft on a big album header, but never a bar and never a letter.
+    Served only when a song has no other picture (P1-26): the 321 songs of the test server that have a video and no cover were letter tiles."""
+    vid = _video_id(video_id)
+    return f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg" if vid else None
+
+
 def _video_id(value: object) -> str | None:
     text = _clean(value, 11)
     return text if text is not None and len(text) == 11 and all(c.isalnum() or c in "-_" for c in text) else None
@@ -108,8 +117,9 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         "mbid": row["mbid"],
         "deezerId": row["deezer_id"],
         "videoId": row["ytm_video_id"],
-        # The real cover wins; the source's thumbnail stands in until the cover finder (or a keep) finds one.
-        "coverUrl": row["cover_url"] or row["thumb_url"],
+        # The real cover wins; then the thumbnail the source gave the song; then, as the last resort, YouTube's own thumbnail of the video the song
+        # plays from (derived, never stored: the cover finder still sees a song whose `cover_url` is empty and replaces all of these).
+        "coverUrl": row["cover_url"] or row["thumb_url"] or video_thumbnail(row["ytm_video_id"]),
         "explicit": bool(row["explicit"]),
         "file": None
         if file_row is None

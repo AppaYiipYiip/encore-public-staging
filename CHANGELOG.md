@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Songs that came from YouTube and have no picture anywhere else now show their video's thumbnail instead of a letter, also the ones you imported before: your phone is told about them once the next time your server looks for pictures, with no need to import the playlist again. Any real cover that is found later still replaces it.
+
 * An imported song that no catalogue has a picture for no longer shows a plain letter: it shows the thumbnail of its YouTube video, and a real cover still replaces it as soon as one is found (the server keeps the two apart, so it keeps looking for a better one).
 
 * A song that your server saved is no longer shown twice after the server looks through its music again. The server used to describe a file it had already saved from the file's own tags a second time, and when the tags were poorer than the description it saved the file for (several artists written as one name, a length a few seconds apart, an "[Unknown Album]"), it made a second copy of the song for the same file, so it showed up twice and was downloaded twice. Now a file that already belongs to a song stays with that song and nothing new is made for it. Songs that were doubled before this change stay doubled until they are tidied up separately.
