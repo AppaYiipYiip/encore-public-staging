@@ -292,29 +292,75 @@ def test_an_artist_whose_songs_are_not_in_the_servers_own_folder_costs_no_look_u
     assert not list(music.rglob("artist.*"))
 
 
-@pytest.mark.parametrize(
-    "relative",
-    [
-        "Encore/Could You Be Loved.opus",  # straight in the server's folder: a picture there would become every artist's picture
-        "Encore/../Elsewhere/Uprising/Could You Be Loved.opus",
-        "Encore/./Uprising/Could You Be Loved.opus",
-        "/Encore/Bob Marley/Uprising/Could You Be Loved.opus",
-    ],
-)
-def test_nothing_is_ever_written_where_it_would_become_another_artists_picture(tmp_path: Path, relative: str) -> None:
-    """The music server looks for an artist's picture in its folder and then in every folder above it, up to three levels."""
-    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
-    kept(db, music, "Bob Marley", "Could You Be Loved", relative="Encore/Bob Marley/Uprising/Other.opus")
-    (music / "Encore" / "Bob Marley" / "Uprising" / "Other.opus").unlink()
+def held(db: Database, artist: str, title: str, *, path: str = "Somewhere/Album/Song.opus") -> None:
+    """A song of [artist] the server holds a file of, with a stored path and nothing on disk."""
     with db.tx() as conn:
-        conn.execute("UPDATE song_file SET path = ?", (relative,))
+        ref = refs.resolve(conn, {"title": title, "artists": [artist], "album": "Album", "albumArtist": artist})
+        refs.attach_file(
+            conn, ref["id"], navidrome_song_id=f"nd-{title}", path=path, codec="opus", bitrate_kbps=130, source="library"
+        )
+
+
+@pytest.mark.parametrize("name", ["..", ".", "../Elsewhere", "Bob/../../Elsewhere", "Encore", "/etc"])
+def test_nothing_is_ever_written_where_it_would_become_another_artists_picture(tmp_path: Path, name: str) -> None:
+    """The music server looks for an artist's picture in its folder and then in every folder above it, up to three levels: whatever an artist is
+    called, a picture goes into a folder directly inside `Encore/` or nowhere, never into `Encore/` itself, the music folder or beside it."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    for folder in ("Elsewhere", "Encore/Unknown Artist", "Encore/Somebody"):
+        (music / folder).mkdir(parents=True)
+    held(db, name, "Could You Be Loved")
+    the = finder(db, music, [("ar-1", name)], Catalogue({name: PICTURE}), clock)
+
+    the.run_once()
+
+    written = list(tmp_path.rglob("artist.*"))
+    assert all(file.parent.parent == music / "Encore" for file in written), written
+    assert not list((music / "Elsewhere").rglob("*")) and not (music / "Encore" / "Somebody" / "artist.jpg").exists()
+
+
+@pytest.mark.parametrize("target", ["Encore", ".", "Elsewhere"])
+def test_a_link_in_place_of_an_artists_folder_never_leads_the_picture_out_of_its_place(tmp_path: Path, target: str) -> None:
+    """A Host's tidy-up can leave a symbolic link where an artist's folder was. One that points at `Encore/` itself, at the music folder or outside
+    it would make the picture every artist's picture (or leave the server's folder): the finder refuses it and asks the catalogue nothing."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    (music / "Encore").mkdir(parents=True)
+    (music / "Elsewhere").mkdir()
+    try:
+        (music / "Encore" / "Bob Marley").symlink_to((music / target).resolve(), target_is_directory=True)
+    except OSError:
+        pytest.skip("this machine may not make symbolic links (Windows without the privilege); CI on Linux does")
+    held(db, "Bob Marley", "Could You Be Loved")
     catalogue = Catalogue({"Bob Marley": PICTURE})
     the = finder(db, music, [("ar-1", "Bob Marley")], catalogue, clock)
 
     the.run_once()
 
-    assert catalogue.asked == []
-    assert not list(tmp_path.rglob("artist.*"))
+    assert catalogue.asked == [] and not list(tmp_path.rglob("artist.*"))
+
+
+def test_the_artists_folder_is_the_keepers_own_even_when_the_stored_path_of_its_file_is_made_up(tmp_path: Path) -> None:
+    """A file found by a library scan carries the music server's own `path`, which it builds from the tags (found by the integration test): the
+    folder is the one the keeper would put the artist's albums in, not one read from that path."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    (music / "Encore" / "Bob Marley" / "Uprising").mkdir(parents=True)
+    held(db, "Bob Marley", "Could You Be Loved", path="Bob Marley/Uprising/01 - Could You Be Loved.opus")
+    the = finder(db, music, [("ar-1", "Bob Marley")], Catalogue({"Bob Marley": PICTURE}), clock)
+
+    report = the.run_once()
+
+    assert report.found == 1
+    assert (music / "Encore" / "Bob Marley" / "artist.jpg").read_bytes() == JPEG
+
+
+def test_a_folder_that_differs_only_in_case_or_punctuation_is_the_same_artists_folder(tmp_path: Path) -> None:
+    """The keeper reuses a folder that is the same name apart from case and punctuation; so does the finder (one rule, `artist_folder`)."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    (music / "Encore" / "JAY Z" / "Collision Course").mkdir(parents=True)
+    held(db, "Jay-Z", "Numb / Encore")
+    the = finder(db, music, [("ar-1", "Jay-Z")], Catalogue({"Jay-Z": PICTURE}), clock)
+
+    assert the.run_once().found == 1
+    assert (music / "Encore" / "JAY Z" / "artist.jpg").exists()
 
 
 def test_a_miss_is_remembered_for_a_week_and_asked_again_after_it(tmp_path: Path) -> None:

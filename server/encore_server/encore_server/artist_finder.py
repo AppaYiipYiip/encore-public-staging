@@ -7,7 +7,7 @@ outranks the real artist. About one artist in ten has no picture, famous ones in
 
 **What this does.** An artist is known by one of its own songs, not by its name: the catalogue is asked about a song the server holds ("Bob Marley",
 "Could You Be Loved"), a hit counts only when its title is that song and its artist is the artist (or leads the credit: "Bob Marley & The
-Wailers"), and the picture of *that* artist is written as `artist.jpg` in the artist's own folder inside the server's own `Encore/` folder, which is
+Wailers"), and the picture of *that* artist is written as `artist.jpg` in the artist's own folder (the one the keeper keeps its albums in) inside the server's own `Encore/` folder, which is
 the music server's second source of an artist picture. So a Host's own upload or picture file still wins, every player of the music server sees it, it
 survives a rebuild of the music server's database, and no phone changes: the picture arrives as the artist's `coverArt` through the ordinary
 pictures route. The Host's own music folders are never written to; an artist whose songs live there is left to the music server (not covered, see
@@ -38,7 +38,7 @@ from .deezer import PLACEHOLDER_ARTIST_PICTURE, LookupUnavailable, search_tracks
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
-from .keeper.placement import inside
+from .keeper.placement import artist_folder, inside
 from .textnorm import artist_parts, norm_artist, norm_title
 
 log = logging.getLogger("encore_server.artist_finder")
@@ -233,31 +233,31 @@ class ArtistFinder:
     # ------------------------------------------------------------------ what the server holds of an artist
 
     def _own_songs(self, name: str) -> tuple[Path | None, list[tuple[str, str | None]]]:
-        """The folder of the server's own that is this artist's (`Encore/<artist>`) and a few of the artist's songs kept in it, or no folder.
+        """The folder of the server's own that is this artist's (`Encore/<artist>`) and a few of the artist's songs the server holds, or no folder.
 
-        The folder is read from where the files really are (the keeper's own placement), never built from the name: nothing but a folder at the exact
-        depth `Encore/<artist>/<album>/<file>` counts, so a picture can never land in `Encore/` itself or above it, where the music server would
-        use it for every artist that has none."""
+        The folder is the one the keeper itself puts the artist's albums in ([artist_folder], the keeper's own rule), and it must be a real folder
+        directly inside `Encore/`: a picture can then never land in `Encore/` itself or above it, where the music server would use it for every
+        artist that has none. The paths the server has stored for its files are not used: for a file found by a library scan the music server's own
+        `path` is made up from the tags, not the real one (found by the integration test)."""
         assert self._root is not None
+        kept = self._root / KEPT_FOLDER
+        folder = artist_folder(kept, name)
+        if (
+            folder is None
+            or not inside(kept, folder)
+            or folder.resolve().parent != kept.resolve()
+            or not os.access(folder, os.W_OK)
+        ):
+            return None, []
         with self._db.read() as conn:
-            rows = _own_files(conn, name)
-        folders: dict[str, int] = {}
+            rows = _own_songs(conn, name)
         songs: list[tuple[str, str | None]] = []
         seen: set[str] = set()
         for row in rows:
-            artist_dir = _artist_dir(str(row["path"] or ""))
-            if artist_dir is None:
-                continue
-            folders[artist_dir] = folders.get(artist_dir, 0) + 1
             if row["title"] not in seen and len(songs) < SONGS_PER_ARTIST:
                 seen.add(row["title"])
                 songs.append((str(row["title"]), row["album"]))
-        if not folders:
-            return None, []
-        chosen = self._root / KEPT_FOLDER / max(folders, key=lambda d: folders[d])
-        if not inside(self._root / KEPT_FOLDER, chosen) or not chosen.is_dir() or not os.access(chosen, os.W_OK):
-            return None, []
-        return chosen, songs
+        return (folder, songs) if songs else (None, [])
 
     @staticmethod
     def _has_picture_file(folder: Path) -> bool:
@@ -288,20 +288,13 @@ class ArtistFinder:
         return True
 
 
-def _own_files(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row]:
-    """The files the server holds of songs whose lead artist, or album artist when they say one, is [name]: the songs the music server files
-    under this artist (the keeper tags the album artist, and an artist is listed with albums only as an album artist)."""
+def _own_songs(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row]:
+    """The songs the server holds a file of whose lead artist, or album artist when they say one, is [name]: the songs the music server files under
+    this artist (the keeper tags the album artist, and an artist is listed with albums only as an album artist)."""
     return conn.execute(
-        "SELECT r.title AS title, r.album AS album, f.path AS path FROM song_ref r JOIN song_file f ON f.ref = r.id"
-        " WHERE f.path IS NOT NULL AND COALESCE(NULLIF(r.album_artist, ''), json_extract(r.artists, '$[0]')) = ?"
+        "SELECT r.title AS title, r.album AS album FROM song_ref r"
+        " WHERE EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
+        " AND COALESCE(NULLIF(r.album_artist, ''), json_extract(r.artists, '$[0]')) = ?"
         " ORDER BY r.id",
         (name,),
     ).fetchall()
-
-
-def _artist_dir(relative: str) -> str | None:
-    """`Bob Marley` for `Encore/Bob Marley/Uprising/Could You Be Loved.opus`; `None` for any other shape (a path that is not the keeper's own)."""
-    parts = relative.split("/")
-    if len(parts) < 4 or parts[0] != KEPT_FOLDER or any(part in ("", ".", "..") for part in parts):
-        return None
-    return parts[1]
