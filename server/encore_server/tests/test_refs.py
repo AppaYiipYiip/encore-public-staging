@@ -206,3 +206,32 @@ def test_a_picture_address_is_kept_only_from_the_hosts_the_server_itself_would_f
         "https://i.scdn.co/image/abc",
     ):
         assert resolve(db, title=f"Song for {good}", coverUrl=good)["coverUrl"] == good, good
+
+
+THUMB = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+COVER = "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000-000000-80-0-0.jpg"
+
+
+def test_a_thumbnail_is_the_cover_of_a_song_that_has_none(db: Database) -> None:
+    ref = resolve(db, thumbnailUrl=THUMB)
+    assert ref["coverUrl"] == THUMB, "the app shows a ref's coverUrl: an imported song is not a letter tile (P1-26)"
+
+
+def test_a_real_cover_beats_the_thumbnail_and_the_thumbnail_never_replaces_it(db: Database) -> None:
+    made = resolve(db, coverUrl=COVER, thumbnailUrl=THUMB)
+    assert made["coverUrl"] == COVER
+    # the cover finder later finds a better picture for a song that had only a thumbnail
+    other = resolve(db, title="Another", thumbnailUrl=THUMB)
+    with db.tx() as conn:
+        conn.execute("UPDATE song_ref SET cover_url = ? WHERE id = ?", (COVER, other["id"]))
+    with db.read() as conn:
+        assert refs.get_ref(conn, str(other["id"]))["coverUrl"] == COVER
+
+
+def test_a_thumbnail_that_arrives_later_fills_a_song_that_has_no_picture(db: Database) -> None:
+    assert resolve(db)["coverUrl"] is None
+    assert resolve(db, thumbnailUrl=THUMB)["coverUrl"] == THUMB
+
+
+def test_a_thumbnail_on_a_host_the_picture_rules_do_not_allow_is_dropped(db: Database) -> None:
+    assert resolve(db, thumbnailUrl="https://evil.example/a.jpg")["coverUrl"] is None

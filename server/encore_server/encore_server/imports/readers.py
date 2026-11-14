@@ -71,6 +71,9 @@ class Track:
     #: That video is YouTube's own "Artist - Topic" upload of the song (auto-generated official audio): it *is* the
     #: song, so there is nothing to search for.
     official: bool = False
+    #: The picture the source gives THIS song (YouTube's thumbnail of the video, the largest on an allowed host). It is only a fallback for a
+    #: song no catalogue has a cover for: the server shows it while the song has no real cover (P1-26).
+    thumbnail: str | None = None
 
 
 @dataclass(frozen=True)
@@ -279,6 +282,7 @@ def _youtube_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
                 artists=(artist,) if artist else (),
                 video_id=video_id if _VIDEO_ID.match(video_id) else None,
                 official=official and bool(_VIDEO_ID.match(video_id)),
+                thumbnail=largest_picture(entry.get("thumbnails")) or _cover_ok(entry.get("thumbnail")),
             )
         )
     return name, tracks
@@ -324,6 +328,7 @@ def _ytmusic_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
                 artists=tuple(names),
                 video_id=video_id,
                 official=video_id is not None and entry.get("videoType") in _SONG_TYPES,
+                thumbnail=largest_picture(entry.get("thumbnails")),
             )
         )
     return name, tracks
