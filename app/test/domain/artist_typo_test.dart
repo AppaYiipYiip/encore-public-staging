@@ -178,6 +178,53 @@ void main() {
           reason: 'a later search folds only the typed words, never the names');
     });
 
+    test('a list that arrives again with the same names is not folded again',
+        () {
+      var folded = 0;
+      String count(String s) {
+        folded++;
+        return fold(s);
+      }
+
+      ArtistTypoIndex<(String, int)> build(List<(String, int)> artists,
+              {ArtistTypoIndex<(String, int)>? reusing}) =>
+          ArtistTypoIndex<(String, int)>(artists,
+              nameOf: (a) => a.$1, fold: count, reusing: reusing);
+
+      final first = build([('Landmvrks', 1), ('Jinjer', 1)]);
+      expect(first.find('landmarks'), [('Landmvrks', 1)]);
+      final afterFirst = folded;
+
+      // The same artists, one of them changed in another way (a new count of albums): new rows, the same names.
+      final again = build([('Landmvrks', 2), ('Jinjer', 1)], reusing: first);
+      expect(again.find('landmarks'), [('Landmvrks', 2)],
+          reason: 'the answer is made of the rows of the new list');
+      expect(folded - afterFirst, 1,
+          reason: 'only the typed words were folded, not the names');
+
+      // A name that changed (or a longer list) is folded again.
+      final renamed = build([('Landmvrks', 2), ('Jinjir', 1)], reusing: again);
+      final beforeRenamed = folded;
+      expect(renamed.find('jinjer'), [('Jinjir', 1)]);
+      expect(folded - beforeRenamed, 3, reason: '2 names and the typed words');
+    });
+
+    test('a list is never given the folded names of an index never searched',
+        () {
+      var folded = 0;
+      final unused =
+          ArtistTypoIndex<String>(['Landmvrks'], nameOf: (n) => n, fold: fold);
+      final next = ArtistTypoIndex<String>(['Landmvrks'],
+          nameOf: (n) => n,
+          fold: (s) {
+            folded++;
+            return fold(s);
+          },
+          reusing: unused);
+      expect(next.find('landmarks'), ['Landmvrks']);
+      expect(folded, 2, reason: 'the name and the typed words');
+    });
+
     test('5,000 names are scanned within the 10 ms budget', () {
       final random = Random(7);
       String name() => String.fromCharCodes(
@@ -220,9 +267,17 @@ void main() {
       expect(typoArtistScore, greaterThan(words),
           reason:
               'a word that is not the first of the name is only a loose answer');
-      expect(typoArtistScore, lessThan(partialSongCeiling),
-          reason: 'a song that has the typed words is a better answer than a '
-              'name that is only close');
+      // It sits inside the band of the partial songs (0.5 to [partialSongCeiling]), not above it: a song whose title starts with the
+      // typed word is a better answer than a name that is only close, a song that merely contains the word is not.
+      expect(typoArtistScore, lessThan(partialSongCeiling));
+      expect(
+          songMatch('landmarks', artist: 'Someone', title: 'Landmarks Of Home'),
+          greaterThan(typoArtistScore),
+          reason: 'a title that starts with the typed word is above a typo');
+      expect(
+          songMatch('landmarks', artist: 'Someone', title: 'Home Landmarks Of'),
+          lessThanOrEqualTo(typoArtistScore + 0.02),
+          reason: 'a title that only contains the word is about level with it');
       expect(typoArtistScore, greaterThanOrEqualTo(0.5),
           reason: 'it is still a candidate for the Top result');
     });

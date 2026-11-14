@@ -92,23 +92,45 @@ int? _editsWithin(String a, String b, int most) {
 /// The library's artists, folded once so that a search only scans them: folding 5,000 names takes about 100 ms (debug build), which is
 /// too much to repeat on every key, while comparing them takes a few milliseconds.
 ///
-/// Built from a list; build a new one when the list changes. The names are folded on the first [find], not when it is built.
+/// Built from a list; build a new one when the list changes. The names are folded on the first [find], not when it is built. A list
+/// that arrives again with the same names (the database tells the screen again whenever any song is written, artists or not) is
+/// given the index it replaces as [reusing], and then takes over its folded names instead of folding them again.
 class ArtistTypoIndex<T> {
   ArtistTypoIndex(
     this._items, {
     required String Function(T) nameOf,
     required String Function(String) fold,
-  })  : _nameOf = nameOf,
-        _fold = fold;
+    ArtistTypoIndex<T>? reusing,
+  })  : _fold = fold,
+        _names = [for (final i in _items) nameOf(i)] {
+    if (reusing != null &&
+        identical(reusing._fold, fold) &&
+        _sameNames(reusing._names, _names)) {
+      _folded = reusing._folded;
+    }
+  }
 
   final List<T> _items;
-  final String Function(T) _nameOf;
 
   /// The one folding of names and of the typed words: the same function on both sides, so they cannot disagree.
   final String Function(String) _fold;
+  final List<String> _names;
 
-  late final List<String> _keys = [for (final i in _items) _fold(_nameOf(i))];
-  late final List<int> _lettersOf = [for (final k in _keys) _letters(k)];
+  /// The folded names and their letter counts, once folded.
+  ({List<String> keys, List<int> letters})? _folded;
+
+  static bool _sameNames(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  ({List<String> keys, List<int> letters}) _foldNames() => _folded ??= () {
+        final keys = [for (final n in _names) _fold(n)];
+        return (keys: keys, letters: [for (final k in keys) _letters(k)]);
+      }();
 
   /// The artists whose name is within the rule of [query] ([typoEdits]), the closest first and, among as close ones, in the order of
   /// the list; at most [limit]. Nothing for fewer than [typoMinLetters] letters typed.
@@ -116,11 +138,12 @@ class ArtistTypoIndex<T> {
     final typed = _fold(query);
     final typedLetters = _letters(typed);
     if (typedLetters < typoMinLetters) return const [];
+    final (:keys, :letters) = _foldNames();
     final found = <(int, int)>[];
-    for (var i = 0; i < _keys.length; i++) {
-      final allowed = typoAllowance(math.min(typedLetters, _lettersOf[i]));
+    for (var i = 0; i < keys.length; i++) {
+      final allowed = typoAllowance(math.min(typedLetters, letters[i]));
       if (allowed == 0) continue;
-      final edits = _editsWithin(typed, _keys[i], allowed);
+      final edits = _editsWithin(typed, keys[i], allowed);
       if (edits != null) found.add((edits, i));
     }
     found.sort((x, y) => x.$1 != y.$1 ? x.$1 - y.$1 : x.$2 - y.$2);

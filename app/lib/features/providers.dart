@@ -409,14 +409,25 @@ class SearchResults {
   bool get isEmpty => tracks.isEmpty && albums.isEmpty && artists.isEmpty;
 }
 
+/// The last [ArtistTypoIndex], so that a list of artists that arrives again with the same names takes over its folded names. (The
+/// database tells the list again whenever any song is written, so during a sync with the search open it arrives often; folding 5,000
+/// names takes about 100 ms in a debug build.) Holds nothing until the first search.
+class _TypoIndexMemory {
+  ArtistTypoIndex<ArtistRow>? last;
+}
+
+final _typoIndexMemoryProvider =
+    Provider<_TypoIndexMemory>((ref) => _TypoIndexMemory());
+
 /// The library's artists, folded once for the typo scan of a search (N-23a). A new one when the list of artists changes; its names are
-/// folded on the first scan that needs them (about 100 ms for 5,000 names in a debug build), not here.
+/// folded on the first scan that needs them, not here, and not again while the names stay the same.
 final artistTypoIndexProvider =
     Provider.autoDispose<ArtistTypoIndex<ArtistRow>?>((ref) {
   final artists = ref.watch(artistsProvider).value;
   if (artists == null) return null;
-  return ArtistTypoIndex<ArtistRow>(artists,
-      nameOf: (a) => a.name, fold: searchKey);
+  final memory = ref.read(_typoIndexMemoryProvider);
+  return memory.last = ArtistTypoIndex<ArtistRow>(artists,
+      nameOf: (a) => a.name, fold: searchKey, reusing: memory.last);
 });
 
 /// Instant, offline full-text search (< 30 ms budget).

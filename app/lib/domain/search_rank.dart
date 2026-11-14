@@ -45,7 +45,8 @@ bool _covers(List<String> query, List<String> words) =>
 ///
 /// For an artist ([artistMatch]): 0.95 the name typed exactly, 0.7 the start of the name, [typoArtistScore] (0.6) a name that is one or two
 /// letters off (the one rule of `artist_typo.dart`), 0.55 every typed word begins some word of the name, not the first ("eilish" for "Billie Eilish"). So a typo is below
-/// every exact answer and every start of a name, above a loose one, and below a song that has all the typed words ([partialSongCeiling]).
+/// every exact answer and every start of a name, above a loose one, and inside the band of the partial songs (0.5 to [partialSongCeiling]): a song whose title starts with the typed word
+/// (0.72 and up) is above it, a song that only contains the word, or has it in its artist, is level with it or below (0.5 to about 0.6).
 ///
 /// The rule behind it (P1-07, owner 13 Nov 2026: searching "jinjer", spelled right, put a song before the band): **an answer that is
 /// only partial is never worth as much as an exact one**, whatever its parts add up to, so an artist whose name is exactly what was
