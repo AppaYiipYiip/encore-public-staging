@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103431Z-agent-f965",
+ "item": "N-23",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:31Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151) against VM 108; part A only. Typing \"landmarks\" in Search lists LANDMVRKS under Artists (the library's own artist, marked from the library), after the catalogue's \"The Landmarks\" and \"Landmarks\". Part B (catalogue typo tolerance, N-23b) is still not built; it is on the P2-12 note."
+}

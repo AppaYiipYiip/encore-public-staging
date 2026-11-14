@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105529Z-agent-1093",
+ "item": "P1-07",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:55:29Z",
+ "type": "note",
+ "body": "Observation, 14 Nov 2026 (emulator, build 151, VM 108): searching \"busta\" puts the song BUSTA by ARXMANE as the Top result, ahead of the artist Busta Rhymes (and his songs, listed below). An exact title match beating a famous artist's partial-name match is probably what a stranger does not expect (\"busta\" meaning Busta Rhymes); N-16's 40 real searches should include short artist-name stems like this one and decide the rule."
+}

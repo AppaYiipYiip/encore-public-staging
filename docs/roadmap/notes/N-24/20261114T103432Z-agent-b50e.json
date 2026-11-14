@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103432Z-agent-b50e",
+ "item": "N-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:32Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: emulator, build 151, against VM 108 at sha-35a086e; not the release-candidate pair. 50 Cent's page (3 of 8 albums on the server): Play queues the songs of the artist the library holds, 'Playing from 50 Cent', shuffle off (queue: P.I.M.P., Just A Lil Bit, In Da Club, Candy Shop, ...). Look-ups: the server counts its YouTube look-ups and prints the count in its stream lines ('look-ups today: N'). Since the server restarted at 10:11 UTC the only look-up was ONE, at 10:30:20, for 'Many Men (Wish Death)', a 50 Cent song the server holds no file for; it came 4 minutes after Play, when a long press on a Popular row played from the Popular list (catalogue songs, one of which has no file and is fetched when ahead-loading reaches it). So Play itself made no look-up in its first 4 minutes, but a song with no file is fetched from YouTube when it is reached; whether Play's queue can contain such a song is not proven. Two findings, not walk questions: (1) the ORDER Play uses is album title A to Z, then disc and track (LibraryRepository._artistTracksQuery), which is why it starts at P.I.M.P. and not at the first Popular row (In Da Club); (2) the Popular rows have no menu and a long press plays them: audit row B-121."
+}

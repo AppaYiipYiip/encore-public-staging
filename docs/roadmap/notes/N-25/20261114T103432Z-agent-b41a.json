@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103432Z-agent-b41a",
+ "item": "N-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:32Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151): '00s Hip Hop (189 songs) > Find in playlist: \"hate it\" leaves \"Hate It Or Love It\", \"in da club\" leaves \"In Da Club\"; the long-press menu of the found row works."
+}
