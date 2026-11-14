@@ -216,5 +216,11 @@
   "evidence": "PR #16 (merged 13 Nov 2026): search_rank.dart scale rewritten: an artist whose name is exactly what was typed is the Top result over every song or album that only starts with or contains the words; an exact title or album can take the place only when the artist is barely known (under 50,000 fans, not in the library); tests failed before (search_rank_test, search_band_first_test, 20 recorded Deezer searches unchanged). PR #28 (merged 14 Nov): a sync or download writing no longer keeps a search from answering (regression from #23). Emulator check against VM 108 (build 150, engineering check, not the release-candidate pair): 'eminem' gives 'Top result: Artist, Eminem' with the songs below. NOT walked, and the owner's own case is NOT confirmed: search 'jinjer' on HIS library: band on top means this covered it; a song still on top means another cause (record its title and artist row).",
   "at": "2026-11-14T09:17:15Z",
   "by": "Claude"
+ },
+ "N-12": {
+  "state": "built",
+  "evidence": "app/lib/features/common/track_menu.dart: when songArtistsProvider knows several artists of the song the menu shows one 'Go to <name>' line per artist (opened through openArtistByName with beforeOpen: close, because the sheet's own ref dies when it closes), else the single 'Go to artist' line as before. Widget tests in app/test/features/track_menu_test.dart through the whole app: 'a song by several artists offers Go to each of them' failed before (no 'Go to Periphery'), taps the SECOND artist and the artist's page opens; a guard keeps the single line for one artist; track_menu and streamed_song tests pass (30), dart analyze --fatal-infos clean. NOT walked: a song of several artists on a phone (the player already does the same with each name). Songs whose second artist is not in the phone's list open the catalogue page of that name, as in the player.",
+  "at": "2026-11-14T09:23:46Z",
+  "by": "Claude"
  }
 }

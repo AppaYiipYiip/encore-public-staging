@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* A song's "..." menu now offers "Go to" for every artist of a song by several artists (one line each: "Go to Periphery", "Go to Opeth"), as the player already opens each artist on its own; a song with one artist keeps its single "Go to artist" line.
+
 * The pictures of your downloaded songs now stay on your phone with them: their covers and the pictures of their artists are kept once each (five songs of one album by one artist are one cover and one picture), in a place that neither the app's own tidying of old pictures nor Android's "Clear cache" empties, and they are let go only when no downloaded song needs them any more. So offline, a downloaded song never turns into a letter.
 
 * Songs that came from YouTube and have no picture anywhere else now show their video's thumbnail instead of a letter, also the ones you imported before: your phone is told about them once the next time your server looks for pictures, with no need to import the playlist again. Any real cover that is found later still replaces it.
