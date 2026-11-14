@@ -15,6 +15,7 @@ import '../../data/requests/portal_client.dart';
 import '../../data/requests/portal_discovery.dart';
 import '../../data/requests/request_service.dart';
 import '../../domain/text_match.dart';
+import '../common/playability.dart' show serverAwayProvider;
 import '../search/artist_aware_search.dart';
 import '../settings/settings_controller.dart';
 
@@ -199,20 +200,23 @@ final requestStateProvider = StreamProvider.autoDispose
 /// Catalogue results for [query]. Albums and songs the library already has
 /// are left out (the library's own results show them); **artists are kept**
 /// and marked, because an artist the library only partly has is exactly the
-/// one whose missing releases a person is looking for. Debounced (350 ms) and
-/// silent when offline or unreachable.
+/// one whose missing releases a person is looking for. Debounced (350 ms).
+///
+/// **Not asked while the server is away** ([serverAwayProvider], the lasting state of P1-15 that the strip, the grey rows and the player read):
+/// it answers with nothing at once, no 350 ms and no request, and asks again by itself when the connection is back. Today the catalogue is
+/// Deezer, called straight from the phone, and would still answer on a network whose server is silent; Search's words ("More results need
+/// your server.", P1-16) are only true if the page really stops showing it. Once the catalogue is the server's (D-51) this line is true by
+/// itself and stays right.
 final catalogueSearchProvider = FutureProvider.autoDispose
     .family<CatalogueResults, String>((ref, query) async {
   final q = query.trim();
   if (q.length < 2) return CatalogueResults.empty;
+  if (ref.watch(serverAwayProvider)) return CatalogueResults.empty;
 
   var disposed = false;
   ref.onDispose(() => disposed = true);
   await Future<void>.delayed(const Duration(milliseconds: 350));
   if (disposed) return CatalogueResults.empty;
-
-  final network = ref.read(networkKindProvider).value;
-  if (network == NetworkKind.none) return CatalogueResults.empty;
 
   final client = ref.read(catalogueClientProvider);
   var raw = await client.search(q);

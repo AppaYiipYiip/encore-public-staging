@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/navigation.dart';
-import '../../app/providers.dart' show NetworkKind, networkKindProvider;
 import '../../app/tab_reselect.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
+import '../common/away_words.dart';
+import '../common/playability.dart';
 import '../common/widgets.dart';
 import '../providers.dart';
 import 'search_results.dart';
@@ -62,7 +63,8 @@ final recentSearchesProvider =
     NotifierProvider<RecentSearches, List<String>>(RecentSearches.new);
 
 /// Search (docs/06-ux-spec.md 4.2): instant offline results from the local
-/// FTS index; browse-by-genre when the query is empty.
+/// FTS index; browse-by-genre when the query is empty. While the server is away (P1-16, S-11 offline) the field says what can still be
+/// searched and the genre tiles are dimmed: the page is the same for both causes.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -109,6 +111,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     ref.onTabReselected(MainTab.search, _backToFirstPage);
+    // The lasting state, not the strip's: the hint stays for as long as the outage does (D-45) and leaves by itself.
+    final away = ref.watch(serverAwayProvider);
     return SafeArea(
       bottom: false,
       child: Column(
@@ -129,7 +133,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               textInputAction: TextInputAction.search,
               style: context.text.bodyLarge,
               decoration: InputDecoration(
-                hintText: 'What do you want to listen to?',
+                hintText:
+                    away ? kSearchHintAway : 'What do you want to listen to?',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isEmpty
                     ? null
@@ -194,7 +199,8 @@ class _Browse extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recents = ref.watch(recentSearchesProvider);
     final genres = ref.watch(genresProvider).value ?? const [];
-    final online = ref.watch(networkKindProvider).value != NetworkKind.none;
+    // The catalogue's genres need the server: while it is away their tiles are dimmed, not removed, and a tap says why (S-13 offline).
+    final away = ref.watch(serverAwayProvider);
     return CustomScrollView(
       slivers: [
         if (recents.isNotEmpty) ...[
@@ -227,27 +233,26 @@ class _Browse extends ConsumerWidget {
         ],
         // The catalogue's genres: never an empty page, whatever the library holds
         // (a friend with no songs saw nothing at all).
-        if (online) ...[
-          const SliverToBoxAdapter(child: SectionHeader(title: 'Browse all')),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
-            sliver: SliverGrid.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisExtent: 88,
-                crossAxisSpacing: Space.md,
-                mainAxisSpacing: Space.md,
-              ),
-              itemCount: kCatalogueGenres.length,
-              itemBuilder: (context, i) => _GenreTile(
-                name: kCatalogueGenres[i].name,
-                color: _tileColors[i % _tileColors.length],
-                onTap: () => Nav.catalogueGenre(
-                    context, kCatalogueGenres[i].id, kCatalogueGenres[i].name),
-              ),
+        const SliverToBoxAdapter(child: SectionHeader(title: 'Browse all')),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+          sliver: SliverGrid.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisExtent: 88,
+              crossAxisSpacing: Space.md,
+              mainAxisSpacing: Space.md,
+            ),
+            itemCount: kCatalogueGenres.length,
+            itemBuilder: (context, i) => _GenreTile(
+              name: kCatalogueGenres[i].name,
+              color: _tileColors[i % _tileColors.length],
+              dimmed: away,
+              onTap: () => Nav.catalogueGenre(
+                  context, kCatalogueGenres[i].id, kCatalogueGenres[i].name),
             ),
           ),
-        ],
+        ),
         if (genres.isNotEmpty) ...[
           const SliverToBoxAdapter(
               child: SectionHeader(title: 'In your library')),
@@ -277,15 +282,21 @@ class _Browse extends ConsumerWidget {
 
 class _GenreTile extends StatelessWidget {
   const _GenreTile(
-      {required this.name, required this.color, required this.onTap});
+      {required this.name,
+      required this.color,
+      required this.onTap,
+      this.dimmed = false});
 
   final String name;
   final Color color;
   final VoidCallback onTap;
 
+  /// The tile needs the server and it is away (S-11 offline: 45 %, as every "cannot be played now" look). It stays a button: a tap says why.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
-    return Semantics(
+    final tile = Semantics(
       button: true,
       label: 'Genre $name',
       excludeSemantics: true,
@@ -311,5 +322,6 @@ class _GenreTile extends StatelessWidget {
         ),
       ),
     );
+    return dimmed ? Opacity(opacity: 0.45, child: tile) : tile;
   }
 }
