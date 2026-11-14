@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:encore/app/providers.dart'
     show NetworkKind, networkKindProvider;
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_models.dart';
-import 'package:encore/features/providers.dart'
-    show downloadedIdsProvider, onEncoreServerProvider;
+import 'package:encore/features/providers.dart' show downloadedIdsProvider;
 import 'package:encore/features/settings/encore_play_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,7 +33,8 @@ void main() {
   Future<AppDatabase> openServerPage(WidgetTester tester,
       {required bool encore, EncoreInfo? answer}) async {
     final app = await pumpApp(tester, size: const Size(390, 6000), overrides: [
-      onEncoreServerProvider.overrideWith((ref) async => encore),
+      serverKindProvider
+          .overrideWithValue(encore ? ServerKind.encore : ServerKind.plain),
       encoreServerInfoProvider.overrideWith((ref) async => answer),
     ]);
     final element = tester.element(find.byType(Scaffold).first);
@@ -102,7 +103,7 @@ void main() {
   testWidgets('with songs downloaded the same line says that they still play',
       (tester) async {
     final app = await pumpApp(tester, size: const Size(390, 6000), overrides: [
-      onEncoreServerProvider.overrideWith((ref) async => true),
+      serverKindProvider.overrideWithValue(ServerKind.encore),
       encoreServerInfoProvider.overrideWith((ref) async => null),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
     ]);
@@ -119,7 +120,7 @@ void main() {
       'with no internet the sentence about downloaded songs is said once on the page, not twice (the header says it)',
       (tester) async {
     final app = await pumpApp(tester, size: const Size(390, 6000), overrides: [
-      onEncoreServerProvider.overrideWith((ref) async => true),
+      serverKindProvider.overrideWithValue(ServerKind.encore),
       encoreServerInfoProvider.overrideWith((ref) async => null),
       networkKindProvider.overrideWith((ref) => Stream.value(NetworkKind.none)),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/navigation.dart';
+import '../../app/server_kind.dart';
 import '../../core/perf.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/repos/downloads_repository.dart';
@@ -328,7 +329,7 @@ class CatalogueAlbumScreen extends ConsumerWidget {
     ];
     final instant = ref.watch(instantAvailableProvider);
     final portal = ref.watch(requestPortalOfferedProvider);
-    final encore = ref.watch(onEncoreServerProvider).value ?? false;
+    final encore = ref.watch(serverKindProvider) == ServerKind.encore;
     final saves =
         encore ? ref.watch(releaseStateProvider('cat:$albumId')) : null;
     final savedSongs = saves?.phase == ReleasePhase.saved
@@ -512,7 +513,7 @@ class CatalogueArtistScreen extends ConsumerWidget {
     final topList = top.value ?? const <CatalogueTrack>[];
     final instant = ref.watch(instantAvailableProvider);
     final portal = ref.watch(requestPortalOfferedProvider);
-    final encore = ref.watch(onEncoreServerProvider).value ?? false;
+    final encore = ref.watch(serverKindProvider) == ServerKind.encore;
 
     return CollectionScaffold(
       title: artist.name,

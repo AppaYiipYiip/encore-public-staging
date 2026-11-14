@@ -1,3 +1,4 @@
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/db/app_database.dart';
@@ -6,7 +7,6 @@ import 'package:encore/features/catalogue/catalogue_providers.dart';
 import 'package:encore/features/catalogue/catalogue_widgets.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/tap_play.dart' show kPlainServerLine;
-import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -156,7 +156,7 @@ void main() {
       final app = await pumpApp(tester, overrides: [
         catalogueClientProvider.overrideWithValue(_catalogue()),
         requestBackendProvider.overrideWith((ref) async => _Portal()),
-        onEncoreServerProvider.overrideWith((ref) async => true),
+        serverKindProvider.overrideWithValue(ServerKind.encore),
         instantAvailableProvider.overrideWithValue(false),
       ]);
 
@@ -195,7 +195,7 @@ void main() {
       final app = await pumpApp(tester, overrides: [
         catalogueClientProvider.overrideWithValue(c),
         requestBackendProvider.overrideWith((ref) async => _Portal()),
-        if (encore) onEncoreServerProvider.overrideWith((ref) async => true),
+        if (encore) serverKindProvider.overrideWithValue(ServerKind.encore),
         instantAvailableProvider.overrideWithValue(false),
       ]);
       await search(tester, 'Phoebe');

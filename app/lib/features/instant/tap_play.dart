@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/server_kind.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import 'instant_controller.dart';
 import 'song_marks.dart';
@@ -59,19 +60,13 @@ Future<TapPlan> _planFor(
     instant: instant,
     mayStillCome: () {
       if (container.read(instantBackendProvider).isLoading) return true;
-      final session = container.read(sessionProvider);
-      if (session.isLoading) return true;
-      return session.value?.detecting.value ?? false;
+      // A session that failed to build will not get better by waiting; one still loading, or still finding out, will.
+      if (container.read(sessionProvider).hasError) return false;
+      return container.read(serverKindProvider) == ServerKind.detecting;
     },
     // Known to be plain: no server at all (nothing can play a full song), or a session that has found out the server is not an Encore
-    // server. A session still loading, still finding out, or failed to build is NOT known.
-    knownPlain: () {
-      final async = container.read(sessionProvider);
-      if (async.isLoading || async.hasError) return false;
-      final session = async.value;
-      return session == null ||
-          (!session.encoreMode && !session.detecting.value);
-    },
+    // server. A session still loading, still finding out, or failed to build is NOT known ([ServerKind.detecting]).
+    knownPlain: () => container.read(serverKindProvider) == ServerKind.plain,
   );
   messenger?.hideCurrentSnackBar();
   return plan;

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
+import '../../app/server_kind.dart';
 import '../../app/tab_reselect.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repos/downloads_repository.dart' show PinTargetType;
@@ -589,7 +590,7 @@ class _EmptyLibrary extends ConsumerWidget {
       // song and tap it (it plays at once and becomes theirs), not to "request".
       final instant = ref.watch(fetchServiceProvider).value != null;
       // On an Encore server playing a song does not save it: the words say what really happens.
-      final encore = ref.watch(onEncoreServerProvider).value ?? false;
+      final encore = ref.watch(serverKindProvider) == ServerKind.encore;
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(Space.xxl),
