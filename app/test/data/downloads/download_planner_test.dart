@@ -352,4 +352,35 @@ void main() {
       expect(due(1 * _hour), ['a'], reason: 'an hour is past 20 minutes');
     });
   });
+
+  group('a refresh that did not arrive waits before it is tried again', () {
+    List<String> refreshed(int sinceMs, {int attempts = 1}) => planDownloads(
+          desired: {'a': want('a', audioKey: 'k2')},
+          existing: {
+            'a': row('a',
+                sourceAudioKey: 'k1',
+                attempts: attempts,
+                updatedAtMs: now - sinceMs)
+          },
+          nowMs: now,
+        ).toRefresh;
+
+    test(
+        'a changed song whose refresh failed one minute ago is not started again',
+        () {
+      expect(refreshed(_hour ~/ 60), isEmpty,
+          reason: 'else every network change, sync and pin edit repeats it');
+    });
+
+    test('and is refreshed once the back-off of a failed download has passed',
+        () {
+      expect(refreshed(_hour), ['a'],
+          reason: '10 minutes for the first failure');
+      expect(refreshed(_hour ~/ 6 - 1000), isEmpty);
+    });
+
+    test('a first refresh (no failure yet) starts at once, as before', () {
+      expect(refreshed(0, attempts: 0), ['a']);
+    });
+  });
 }

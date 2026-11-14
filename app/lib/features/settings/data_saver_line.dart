@@ -17,8 +17,13 @@ abstract final class DataSaverWords {
   static bool keeps(AudioQuality q) =>
       q.rank > AudioQuality.dataSaver.rank && !q.isLoweredByDataSaver;
 
+  /// Whether the cap holds the downloads on mobile data at all: only when the person allowed downloads there. With "Download over Wi-Fi only"
+  /// on (the default) nothing downloads on mobile data, so there is nothing to cap and nothing to say about it.
+  static bool _downloadsOnMobile(AppSettings s) => !s.wifiOnlyDownloads;
+
   static bool _keepsSomething(AppSettings s) =>
-      keeps(s.streamQualityMobile) || keeps(s.downloadQuality);
+      keeps(s.streamQualityMobile) ||
+      (_downloadsOnMobile(s) && keeps(s.downloadQuality));
 
   static const _kept =
       'Compatible quality stays as it is: its format cannot go lower.';
@@ -36,7 +41,7 @@ abstract final class DataSaverWords {
 
   /// The second line of the download "Quality" row while the cap is in force, or `null`.
   static String? downloadRowLine(AppSettings s, {required bool inForce}) =>
-      inForce && s.downloadQuality.isLoweredByDataSaver
+      inForce && _downloadsOnMobile(s) && s.downloadQuality.isLoweredByDataSaver
           ? 'Applies to new downloads. Data saver is limiting them to $cap while you are on mobile data.'
           : null;
 
@@ -55,7 +60,8 @@ abstract final class DataSaverWords {
       );
     }
     final streams = s.streamQualityMobile.isLoweredByDataSaver;
-    final downloads = s.downloadQuality.isLoweredByDataSaver;
+    final downloads =
+        _downloadsOnMobile(s) && s.downloadQuality.isLoweredByDataSaver;
     final quality = streams && downloads
         ? 'Music streams and downloads at $cap'
         : streams

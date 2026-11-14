@@ -117,14 +117,31 @@ void main() {
       expect(find.text('Data saver is working.'), findsOneWidget);
       expect(
           find.text(
-              'Music streams and downloads at Opus 48 kbps, pictures are small, and only the next song is loaded ahead.'),
-          findsOneWidget);
+              'Music streams at Opus 48 kbps, pictures are small, and only the next song is loaded ahead.'),
+          findsOneWidget,
+          reason:
+              '"Download over Wi-Fi only" is on by default: nothing downloads on mobile data, so the note does not claim it');
       expect(
           find.text('Data saver is limiting this to Opus 48 kbps right now.'),
           findsOneWidget);
       // The row still names the person's own choice.
       expect(find.text('High'), findsOneWidget);
       expect(containerOf(tester).read(dataSaverInForceProvider), isTrue);
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'with "Download over Wi-Fi only" off the note says downloads are held too',
+        (tester) async {
+      final db = await open(tester, '/settings/playback',
+          settings:
+              const AppSettings(dataSaver: true, wifiOnlyDownloads: false),
+          network: NetworkKind.mobile);
+
+      expect(
+          find.text(
+              'Music streams and downloads at Opus 48 kbps, pictures are small, and only the next song is loaded ahead.'),
+          findsOneWidget);
       await closeApp(tester, db);
     });
 
@@ -168,7 +185,8 @@ void main() {
         'while it is in force the Quality line says it limits new downloads',
         (tester) async {
       final db = await open(tester, '/settings/downloads',
-          settings: const AppSettings(dataSaver: true),
+          settings:
+              const AppSettings(dataSaver: true, wifiOnlyDownloads: false),
           network: NetworkKind.mobile);
 
       expect(
@@ -177,6 +195,19 @@ void main() {
           findsOneWidget);
       expect(find.text('High'), findsOneWidget,
           reason: 'the person\'s own choice is still shown');
+      await closeApp(tester, db);
+    });
+
+    testWidgets(
+        'with "Download over Wi-Fi only" on (the default) nothing downloads on mobile data, so the line says nothing about a cap',
+        (tester) async {
+      final db = await open(tester, '/settings/downloads',
+          settings: const AppSettings(dataSaver: true),
+          network: NetworkKind.mobile);
+
+      expect(find.textContaining('Applies to new downloads. Opus 160'),
+          findsOneWidget);
+      expect(find.textContaining('Data saver is limiting'), findsNothing);
       await closeApp(tester, db);
     });
 

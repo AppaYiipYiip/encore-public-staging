@@ -116,11 +116,13 @@ DownloadPlan planDownloads({
             (want.audioKey.isNotEmpty &&
                 row.sourceAudioKey.isNotEmpty &&
                 row.sourceAudioKey != want.audioKey);
+        // A refresh that did not arrive leaves the copy playable and counts an attempt: the next try waits the back-off of a failed download,
+        // so a refresh that keeps failing is not started again at every network change, sync or pin edit.
+        final mayTry = row.attempts == 0 ||
+            nowMs - row.updatedAtMs >= backoffMs(row.attempts);
         final upgrade = upgradeCapped &&
-            wasLoweredByDataSaver(madeAt: row.quality, wanted: want.quality) &&
-            (row.attempts == 0 ||
-                nowMs - row.updatedAtMs >= backoffMs(row.attempts));
-        if (changed || upgrade) toRefresh.add(id);
+            wasLoweredByDataSaver(madeAt: row.quality, wanted: want.quality);
+        if ((changed || upgrade) && mayTry) toRefresh.add(id);
       case DownloadState.failed:
         if (nowMs - row.updatedAtMs >= backoffMs(row.attempts)) toQueue.add(id);
       case DownloadState.queued:
