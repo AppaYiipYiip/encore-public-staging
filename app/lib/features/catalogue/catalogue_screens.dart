@@ -524,10 +524,19 @@ class CatalogueArtistScreen extends ConsumerWidget {
           else if (portal)
             RequestChip(artist: artist.name),
           const Spacer(),
-          PlayButton(
+          // "All" on this page is the Popular list, the songs it knows of this artist (N-24): each is fetched when its turn comes, one
+          // after the other, so a long list is never asked for at once. Every release's songs would be one fetch each.
+          ShufflePlayButtons(
             isPlaying: isPlaying,
-            size: 56,
-            onPressed: topList.isEmpty
+            shuffleOn: isCurrent && (snapshot?.shuffle ?? false),
+            onShuffle: topList.isEmpty
+                ? null
+                : () => unawaited(tapPlayRun(ref, topList,
+                    startIndex: 0,
+                    sourceName: artist.name,
+                    sourceId: sourceId,
+                    shuffle: true)),
+            onPlay: topList.isEmpty
                 ? null
                 : () => isCurrent
                     ? facade.togglePlayPause()

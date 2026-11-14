@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show Random;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -360,24 +361,31 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
   /// the rest are fetched one after the other, [lookahead] songs ahead of
   /// the one playing, and appended in order as they come in. Stops when the
   /// person starts something else or trims the queue.
+  ///
+  /// With [shuffle] the list is put in random order first, before any song is asked for, and starts from its first song ([startIndex] is
+  /// ignored, as the player's Shuffle on a list starts anywhere). The queue is built one song at a time, so the player's own shuffle mode
+  /// is not switched on: the songs simply come in the random order. [random] is for tests.
   Future<void> playRun(
     List<CatalogueTrack> tracks, {
     required int startIndex,
     required String sourceName,
     required String sourceId,
     int lookahead = kRunLookahead,
+    bool shuffle = false,
+    Random? random,
   }) async {
     if (tracks.isEmpty) return;
+    final list = shuffle ? ([...tracks]..shuffle(random)) : tracks;
+    final start = shuffle ? 0 : startIndex;
     final facade = ref.read(playbackFacadeProvider);
-    if (await _intoTheJam(
-        facade, tracks[startIndex.clamp(0, tracks.length - 1)])) {
+    if (await _intoTheJam(facade, list[start.clamp(0, list.length - 1)])) {
       return;
     }
     final generation = ++_generation;
     _runningGeneration = generation;
     try {
-      await _run(tracks, startIndex, sourceName, sourceId, lookahead, facade,
-          generation);
+      await _run(
+          list, start, sourceName, sourceId, lookahead, facade, generation);
     } finally {
       if (_runningGeneration == generation) _runningGeneration = -1;
     }
