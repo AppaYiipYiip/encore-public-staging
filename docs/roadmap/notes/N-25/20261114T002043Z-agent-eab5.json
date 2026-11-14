@@ -1,0 +1,9 @@
+{
+ "id": "20261114T002043Z-agent-eab5",
+ "item": "N-25",
+ "role": "agent",
+ "by": "helper-n25 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T00:20:43Z",
+ "type": "note",
+ "body": "Code in PR #24: Find in playlist built (not walked). One golden changes (screens_golden_test playlist_mosaic: the field is in the picture). Differences from the frames are on the design page: no-results words are Search's, the strip is the app's, the mini player stays. A query-plan fix found by measuring (34 s to 20 ms) is in the PR text."
+}

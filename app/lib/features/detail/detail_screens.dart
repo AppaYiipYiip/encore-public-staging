@@ -36,6 +36,7 @@ import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'album_gap.dart';
 import 'hero_header.dart';
+import 'playlist_find.dart';
 
 /// Download / more / shuffle / play row under the title.
 class _ActionRow extends ConsumerWidget {
@@ -125,13 +126,19 @@ class _TrackList extends ConsumerWidget {
     this.showAlbum = false,
     this.editablePlaylist,
     this.positions,
+    this.only,
   });
 
+  /// The whole list: what a tap queues, whatever is shown.
   final List<TrackRow> tracks;
   final String sourceName;
   final String sourceId;
   final bool numbered;
   final bool showAlbum;
+
+  /// The places in [tracks] that are shown, in the order shown (a playlist's "Find in playlist", N-25); null shows all of [tracks]. A row
+  /// is still its place in the whole list: it plays from there with the whole list queued, and removes its own entry.
+  final List<int>? only;
 
   /// The playlist this list shows, when the user may remove entries from it;
   /// [positions] are the entries' positions, parallel to [tracks].
@@ -145,9 +152,11 @@ class _TrackList extends ConsumerWidget {
     final downloaded = ref.watch(downloadedIdsProvider).value ?? const {};
     final playable = ref.watch(playabilityProvider);
 
+    final shown = only;
     return SliverList.builder(
-      itemCount: tracks.length,
-      itemBuilder: (context, i) {
+      itemCount: shown?.length ?? tracks.length,
+      itemBuilder: (context, row) {
+        final i = shown == null ? row : shown[row];
         final t = tracks[i];
         final current = snapshot?.track?.id == t.id;
         return TrackSwipe(
@@ -304,13 +313,78 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
 
 // ---------------------------------------------------------------- playlist
 
-class PlaylistScreen extends ConsumerWidget {
+class PlaylistScreen extends ConsumerStatefulWidget {
   const PlaylistScreen({super.key, required this.playlistId});
 
   final String playlistId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlaylistScreen> createState() => _PlaylistScreenState();
+}
+
+class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
+  // "Find in playlist" (N-25, docs/design S-17). Whether the finding page is open, the words typed (settled after Search's own 90 ms wait),
+  // and the positions the last answer named, kept on screen until the next answer arrives so the list never blinks between two letters.
+  bool _finding = false;
+  String _query = '';
+  List<int>? _held;
+  Timer? _debounce;
+  final _controller = TextEditingController();
+  final _focus = FocusNode();
+
+  @override
+  void didUpdateWidget(PlaylistScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The page now shows another playlist: what was typed was about the first.
+    if (oldWidget.playlistId != widget.playlistId) _reset();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    _debounce?.cancel();
+    _controller.clear();
+    _finding = false;
+    _query = '';
+    _held = null;
+  }
+
+  void _openFind() => setState(() => _finding = true);
+
+  /// The arrow and Back: the whole playlist again, as it was, with nothing typed.
+  void _closeFind() {
+    _focus.unfocus();
+    setState(_reset);
+  }
+
+  void _onChanged(String text) {
+    // As in Search: the index is fast enough for every letter; the short wait only joins quick typing.
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 90), () {
+      if (mounted) setState(() => _query = text.trim());
+    });
+  }
+
+  /// Empties the field and shows the whole list; the finding stays open for the next word.
+  void _clear() {
+    _debounce?.cancel();
+    _controller.clear();
+    _focus.requestFocus();
+    setState(() {
+      _query = '';
+      _held = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final playlistId = widget.playlistId;
     final playlistAsync = ref.watch(playlistProvider(playlistId));
     final playlist = playlistAsync.value;
     final entries =
@@ -332,6 +406,9 @@ class PlaylistScreen extends ConsumerWidget {
       PerfMonitor.instance
           .pageFull('playlist', detail: '${entries.length} songs');
     }
+    if (_finding && entries.isNotEmpty) {
+      return _findingPage(playlist, entries, editable);
+    }
     final total = tracks.fold<int>(0, (s, t) => s + (t.durationSec ?? 0));
     // The header takes the colour of the first song's album.
     final first = tracks.firstOrNull;
@@ -345,6 +422,9 @@ class PlaylistScreen extends ConsumerWidget {
     return CollectionScaffold(
       title: playlist.name,
       tint: swatch == null ? null : backdropFor(swatch),
+      // The finding page replaces this one for a moment: the page comes back where it was.
+      scrollKey: PageStorageKey<String>('playlist-${playlist.id}'),
+      find: entries.isEmpty ? null : PlaylistFindField(onTap: _openFind),
       art: CoverArt(
         coverArtId: playlist.coverArt,
         mosaicIds: mosaic,
@@ -423,6 +503,87 @@ class PlaylistScreen extends ConsumerWidget {
             positions: [for (final e in entries) e.position],
           ),
       ],
+    );
+  }
+
+  /// The page while the person is finding a song: the field at the top, and under it the playlist's songs, all of them or the ones the
+  /// words match. A row is still its place in the whole playlist: a tap queues the whole playlist from there (the filter narrows what is
+  /// shown, not what plays), by the entry's place and not by the song, so a song that is in the playlist twice plays from the right one.
+  Widget _findingPage(
+    PlaylistRow playlist,
+    List<({int position, TrackRow track})> entries,
+    PlaylistRow? editable,
+  ) {
+    final query = _query;
+    if (query.isNotEmpty) {
+      final found = ref
+          .watch(playlistFindProvider((playlistId: playlist.id, query: query)));
+      if (found.hasValue) _held = found.requireValue;
+    }
+    // Positions to places in the list, now: an edit can land between two answers.
+    final held = query.isEmpty ? null : _held;
+    List<int>? shown;
+    if (held != null) {
+      final placeOf = {for (final (i, e) in entries.indexed) e.position: i};
+      shown = [
+        for (final position in held)
+          if (placeOf[position] != null) placeOf[position]!,
+      ];
+    }
+    final sourceId = 'playlist:${playlist.id}';
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeFind();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              PlaylistFindBar(
+                controller: _controller,
+                focusNode: _focus,
+                onChanged: _onChanged,
+                onClear: _clear,
+                onClose: _closeFind,
+              ),
+              const SizedBox(height: Space.sm),
+              Expanded(
+                child: CustomScrollView(
+                  // The keyboard goes when the person scrolls, so the rest of the list can be read.
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    if (shown != null && shown.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyState(
+                          icon: Icons.search_off_rounded,
+                          title: 'No results for "$query" in this playlist',
+                          message: 'Check the spelling, or try fewer words.',
+                        ),
+                      )
+                    else
+                      _TrackList(
+                        tracks: [for (final e in entries) e.track],
+                        sourceName: playlist.name,
+                        sourceId: sourceId,
+                        showAlbum: true,
+                        editablePlaylist: editable,
+                        positions: [for (final e in entries) e.position],
+                        only: shown,
+                      ),
+                    const SliverToBoxAdapter(
+                        child: SizedBox(height: Space.xxl)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
