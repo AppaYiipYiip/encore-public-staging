@@ -1,0 +1,12 @@
+{
+ "id": "20261114T044432Z-agent-d891",
+ "item": "P1-14",
+ "role": "agent",
+ "by": "helper-p424 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T04:44:32Z",
+ "type": "note",
+ "body": "Hand-over from P4-24 (Data saver switch, drawn 14 Nov 2026): three of the four planned effects of the switch are P4-24's (stream and new-download quality, small pictures, only the next song prepared). The fourth, \"syncing less on mobile data\", stays with this item and is NOT behind any switch: it is always on. The acceptance clause that P4-24's task text used to carry (\"the idle sync on mobile data moves less than before\", measured with the phone's own per-app data counter, switch on or not) is now this item's to add to its acceptance, next to the B-81 clause (\"a navigation is never a trigger on mobile data\"). P4-24's task text no longer claims it.",
+ "to": [
+  "agent"
+ ]
+}
