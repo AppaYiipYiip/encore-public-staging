@@ -1,0 +1,9 @@
+{
+ "id": "20261114T044431Z-agent-f543",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "helper-p424 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T04:44:31Z",
+ "type": "note",
+ "body": "P4-24, two more open questions for the code step (found after the drawing; the drawing does not decide them).\n\n(1) The quality \"Compatible\" (MP3 192 kbps, domain/audio_quality.dart, rank 70, offered in the \"On mobile data\" picker) is the format for a device or car that cannot play Opus. \"Cap at Data saver (Opus 48)\" would switch such a person to a format their device may not play. Proposed for the advisor: the cap keeps the person's FORMAT family (a Compatible choice is capped to a low-bitrate MP3 of the same family, or Data saver is not applied to it), never the codec chosen by us; this needs the server's transcoder to offer a low-bitrate MP3 (check stream?format=mp3&maxBitRate=). Until decided, the code must not hand Opus to a Compatible listener.\n\n(2) The grey note \"Only used on mobile data. You're on Wi-Fi, so nothing is limited now.\" is drawn for Wi-Fi only. What is shown on Ethernet, on a VPN-only link or with no connection at all is not drawn: the code step should show no note there (or the plain truth), and the derived value \"Data saver is in force\" must be false there (only a mobile link makes it true).\n\nAlso drawn on purpose: the \"Data saver is limiting this\" line (Playback \"On mobile data\" row, Downloads \"Quality\" line) appears only when the person's own choice is above Data saver (rank 40); when it already is Data saver, nothing is limited and nothing is said."
+}
