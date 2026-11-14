@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -126,6 +127,79 @@ void main() {
     expect(await queue(), isEmpty);
     expect(adapter.requests.map((r) => r.apiMethod).toList(),
         ['star', 'star', 'scrobble']);
+  });
+
+  // AUDIT B-58: after a failed delivery nothing woke the outbox but the next queued edit or the next sync run, so an edit made while only the
+  // server was away reached it 549 s after it answered again.
+  test(
+      'a server that answers again gets what waited out a network failure at once, not at the end of the backoff',
+      () async {
+    var online = false;
+    adapter.routes['star'] = (r) => online
+        ? FakeResponse.json(subsonicOk({}))
+        : const FakeResponse.connectionError();
+    await mutations.setTrackStarred('t1', true);
+    expect(await outbox.flush(), 0);
+    online = true;
+    expect(await outbox.flush(), 0, reason: 'the backoff has not run out');
+
+    expect(await outbox.retryNow(), 1,
+        reason: 'the server is back: the wait is over');
+
+    expect(await queue(), isEmpty);
+  });
+
+  test(
+      'a server that ANSWERS with an error is not tried sooner because the line came back (its own backoff and bound stay)',
+      () async {
+    adapter.routes['star'] = (_) =>
+        FakeResponse.json(subsonicError(0, 'Internal error'), status: 500);
+    await mutations.setTrackStarred('t1', true);
+    expect(await outbox.flush(), 0);
+    final waiting = (await queue()).single;
+    expect(waiting.serverErrors, 1);
+
+    expect(await outbox.retryNow(), 0);
+
+    final after = (await queue()).single;
+    expect(after.attempts, waiting.attempts,
+        reason: 'no second try: a flapping line must not burn the bound');
+    expect(after.nextAttemptAtMs, waiting.nextAttemptAtMs);
+  });
+
+  test('a failed delivery schedules its own retry for the end of the backoff',
+      () async {
+    final wakes = <(Duration, void Function())>[];
+    final woken = OutboxProcessor(
+      db: db,
+      client: client,
+      serverId: serverId,
+      clock: clock,
+      timerFactory: (delay, run) {
+        wakes.add((delay, run));
+        return Timer(const Duration(days: 1), () {});
+      },
+    );
+    var online = false;
+    adapter.routes['star'] = (r) => online
+        ? FakeResponse.json(subsonicOk({}))
+        : const FakeResponse.connectionError();
+    await mutations.setTrackStarred('t1', true);
+
+    expect(await woken.flush(), 0);
+
+    expect(wakes, hasLength(1), reason: 'one wake, at the end of the backoff');
+    final due = (await queue()).single.nextAttemptAtMs;
+    expect(wakes.single.$1.inMilliseconds,
+        due - clock.now().millisecondsSinceEpoch);
+
+    online = true;
+    clock.advance(wakes.single.$1);
+    wakes.single.$2();
+    await pumpEventQueue();
+
+    expect(await queue(), isEmpty, reason: 'the wake delivered it');
+    await woken.dispose();
   });
 
   test('a permanently rejected item is parked and does not block the rest',
