@@ -13,6 +13,8 @@ services:
       ND_ENABLEUSEREDITING: "true"
       # The tests sign in many times within seconds; the music server's default limit (a few per 20 s) would answer 429.
       ND_AUTHREQUESTLIMIT: "0"
+      # No outside look-up of artist pictures from a test run (the artist-picture test needs artists the music server has none for).
+      ND_DEEZER_ENABLED: "false"
     volumes:
       - music:/music
     healthcheck:

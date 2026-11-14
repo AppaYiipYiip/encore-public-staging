@@ -28,10 +28,12 @@ from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refmerge, refs
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
+from .artist_finder import ArtistFinder, ArtistLookup
 from .auth import (
     COVER_PASS_SCOPE,
     COVER_PASS_TTL_S,
     STREAM_URL_TTL_S,
+    MusicServerUnavailable,
     NavidromeVerifier,
     Principal,
     Verifier,
@@ -113,6 +115,8 @@ class Services:
     stream_key: bytes = b""
     #: Tells a device how its downloads are going (`PUT keep/watch`, the live event `keep.progress`); `None` when this server does not keep songs.
     keep_watch: KeepWatch | None = None
+    #: Finds pictures for the artists the music server has none for (N-15); one of the background errands, `None` when there is no music-server account.
+    artist_finder: ArtistFinder | None = None
 
 
 def services(request: Request) -> Services:
@@ -1490,6 +1494,7 @@ def create_app(
     gateway_client: httpx.AsyncClient | None = None,
     navidrome_admin: NavidromeAdmin | None = None,
     tools_active: Active | None = None,
+    artist_lookup: ArtistLookup | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -1532,9 +1537,18 @@ def create_app(
         on_ended=ended,
     )
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
+    artist_finder = (
+        ArtistFinder(database, client, artist_lookup, music_dir=settings.music_dir, after=client.start_scan)
+        if client.configured
+        else None
+    )
 
     def errands() -> None:
-        for errand in (accounts.heal_libraries, finder.run_once):
+        for errand in (
+            accounts.heal_libraries,
+            finder.run_once,
+            *((artist_finder.run_once,) if artist_finder is not None else ()),
+        ):
             try:
                 errand()
             except Exception:  # noqa: BLE001 - one errand failing must not stop the next, nor the library link
@@ -1594,6 +1608,7 @@ def create_app(
         music=client,
         keep_watch=keep_watch,
         stream_key=stream_key,
+        artist_finder=artist_finder,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
@@ -1610,6 +1625,13 @@ def create_app(
     @app.exception_handler(ApiError)
     async def api_error(_: Request, error: ApiError) -> JSONResponse:
         return JSONResponse(error.body(), status_code=error.status)
+
+    @app.exception_handler(MusicServerUnavailable)
+    async def music_server_away(_: Request, error: MusicServerUnavailable) -> JSONResponse:
+        # Not a wrong password and not counted as a guess (the handler runs before anything counts it): a retryable 503 the phone waits out (AUDIT B-41).
+        log.info("the music server could not check a login: %s", error)
+        away = ApiError("server_busy", "The music server is not answering just now. Try again in a moment.")
+        return JSONResponse(away.body(), status_code=away.status)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, error: RequestValidationError) -> JSONResponse:
