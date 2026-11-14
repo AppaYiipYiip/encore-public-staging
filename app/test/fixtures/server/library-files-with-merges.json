@@ -1,0 +1,332 @@
+{
+  "refs": [
+    {
+      "id": "sr_00000000000000000000000010",
+      "title": "Triple Echo",
+      "artists": [
+        "Gus Ha"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": "TTTTTTTTTT2",
+      "coverUrl": "https://i.ytimg.com/vi/TTTTTTTTTT2/mqdefault.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000100000000000005",
+        "navidromeSongId": "nd-5",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000012",
+      "title": "Twin Signal",
+      "artists": [
+        "Ivy Jo"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": "HHHHHHHHHH1",
+      "coverUrl": "https://i.ytimg.com/vi/HHHHHHHHHH1/mqdefault.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000120000000000006",
+        "navidromeSongId": "nd-6",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000013",
+      "title": "Twin Signal",
+      "artists": [
+        "Ivy Jo"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": "HHHHHHHHHH2",
+      "coverUrl": "https://i.ytimg.com/vi/HHHHHHHHHH2/mqdefault.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000130000000000006",
+        "navidromeSongId": "nd-6",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000014",
+      "title": "Shared Shelf",
+      "artists": [
+        "Kai Lu"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000140000000000007",
+        "navidromeSongId": "nd-7",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000015",
+      "title": "Shared Shelf",
+      "artists": [
+        "Kai Lu"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000150000000000007",
+        "navidromeSongId": "nd-7",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000001",
+      "title": "Neon Harbor",
+      "artists": [
+        "Ana Vale",
+        "Bo Lin",
+        "Cy Mar"
+      ],
+      "album": "Real Album",
+      "albumArtist": "Ana Vale",
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": 249000,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": "VIDEOAAAAA1",
+      "coverUrl": "https://e-cdns-images.dzcdn.net/images/cover/synthetic/500x500.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000010000000000001",
+        "navidromeSongId": "nd-1",
+        "codec": "opus",
+        "bitrateKbps": 131,
+        "meta": {
+          "albumId": "al-9",
+          "coverArt": "al-1",
+          "size": 222
+        }
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000003",
+      "title": "Quiet Orbit",
+      "artists": [
+        "Dee Roy"
+      ],
+      "album": "Orbit",
+      "albumArtist": "Dee Roy",
+      "trackNo": null,
+      "discNo": null,
+      "year": 2001,
+      "durationMs": 200000,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": "https://e-cdns-images.dzcdn.net/images/cover/synthetic/500x500.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000030000000000002",
+        "navidromeSongId": "nd-2",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000005",
+      "title": "Paper Moon",
+      "artists": [
+        "Eli Ko"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000050000000000003",
+        "navidromeSongId": "nd-3",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000007",
+      "title": "Glass Tide",
+      "artists": [
+        "Fay Gu"
+      ],
+      "album": "Moonlit",
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000070000000000004",
+        "navidromeSongId": "nd-4",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000009",
+      "title": "Triple Echo",
+      "artists": [
+        "Gus Ha"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": "TTTTTTTTTT1",
+      "coverUrl": "https://i.ytimg.com/vi/TTTTTTTTTT1/mqdefault.jpg",
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000090000000000005",
+        "navidromeSongId": "nd-5",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000016",
+      "title": "Late Entry",
+      "artists": [
+        "Lia Mo"
+      ],
+      "album": null,
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": null,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000160000000000008",
+        "navidromeSongId": "nd-8",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {}
+      }
+    }
+  ],
+  "cursor": "23",
+  "more": false,
+  "merges": [
+    {
+      "from": "sr_00000000000000000000000002",
+      "into": "sr_00000000000000000000000001",
+      "seq": 1
+    },
+    {
+      "from": "sr_00000000000000000000000004",
+      "into": "sr_00000000000000000000000003",
+      "seq": 2
+    },
+    {
+      "from": "sr_00000000000000000000000006",
+      "into": "sr_00000000000000000000000005",
+      "seq": 3
+    },
+    {
+      "from": "sr_00000000000000000000000008",
+      "into": "sr_00000000000000000000000007",
+      "seq": 4
+    },
+    {
+      "from": "sr_00000000000000000000000011",
+      "into": "sr_00000000000000000000000009",
+      "seq": 5
+    },
+    {
+      "from": "sr_00000000000000000000000017",
+      "into": "sr_00000000000000000000000016",
+      "seq": 6
+    }
+  ],
+  "mergesCursor": "6",
+  "mergesMore": false
+}

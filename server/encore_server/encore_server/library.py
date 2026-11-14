@@ -73,8 +73,10 @@ def set_item(conn: sqlite3.Connection, person: str, kind: str, target: str, *, a
 
     [at] is when the person did it, when that is earlier than now (a phone bringing over the likes it already had keeps their order, so Liked
     Songs reads the way it did); anything else is now."""
-    if kind == "like" and not refs.ref_exists(conn, target):
-        raise ApiError("not_found", "That song is not known to this server.")
+    if kind == "like":
+        target = refs.canonical(conn, target)  # a song merged into another (N-11): the like is the survivor's
+        if not refs.ref_exists(conn, target):
+            raise ApiError("not_found", "That song is not known to this server.")
     now = now_ms()
     when = at if isinstance(at, int) and not isinstance(at, bool) and 0 < at <= now else now
     cursor = conn.execute(
@@ -95,6 +97,8 @@ def add_album_refs(conn: sqlite3.Connection, person: str, album: str, ref_ids: l
 
 
 def clear_item(conn: sqlite3.Connection, person: str, kind: str, target: str) -> bool:
+    if kind == "like":
+        target = refs.canonical(conn, target)  # the like of a merged song was moved to the survivor: this is how it is taken away
     if kind == "saved_album":
         conn.execute("DELETE FROM saved_album_ref WHERE person = ? AND album = ?", (person, target))
     cursor = conn.execute("DELETE FROM library_item WHERE person = ? AND kind = ? AND target = ?", (person, kind, target))
@@ -180,6 +184,9 @@ def add_entries(
     _own_playlist(conn, person, playlist_id)
     if not items or len(items) > MAX_ENTRIES_PER_CALL:
         raise ApiError("validation", f"Add between 1 and {MAX_ENTRIES_PER_CALL} songs at a time.")
+    # Songs merged into another (N-11) are added as the survivor.
+    canon = refs.canonical_many(conn, [str(item.get("ref", "")) for item in items])
+    items = [{**item, "ref": canon[str(item.get("ref", ""))]} for item in items]
     for item in items:
         if not refs.ref_exists(conn, item.get("ref", "")):
             raise ApiError("not_found", "A song in that list is not known to this server.", details={"ref": item.get("ref")})
@@ -306,6 +313,7 @@ def record_play(
     """One listening, for history, "recently played", Year in Music and recommendations. A retried report (the same id) is one play."""
     if not isinstance(play_id, str) or not play_id or len(play_id) > 64:
         raise ApiError("validation", "A play needs an id of its own.")
+    ref = refs.canonical(conn, ref)  # a play reported with the id of a song merged into another is the survivor's (N-11)
     if not refs.ref_exists(conn, ref):
         raise ApiError("not_found", "That song is not known to this server.")
     played = (
@@ -342,19 +350,39 @@ def played_on_days(conn: sqlite3.Connection, ref_id: str) -> int:
 FILES_PAGE = 500
 
 
-def files_since(conn: sqlite3.Connection, since: int, limit: int = FILES_PAGE) -> dict[str, Any]:
+def files_since(conn: sqlite3.Connection, since: int, limit: int = FILES_PAGE, merges_since: int | None = None) -> dict[str, Any]:
     """The songs whose file changed after cursor [since], as they are now (`file` is null when the server no longer has one). This is the
-    app's browse index of what the server keeps: one first pass, then only what changed."""
+    app's browse index of what the server keeps: one first pass, then only what changed.
+
+    `merges` is the other half of the same answer: the songs that were merged into another (N-11), after cursor [merges_since] of their own (the
+    `seq` of `ref_merge`: not [since], which counts changes of files, whose rows the merge moves). Each is `{from, into, seq}`: the id that no longer
+    exists and the one that took its place. A phone folds its own copy of `from` into `into`. It pages like the songs do (`mergesMore`). An app that
+    does not send [merges_since] (one that predates merges) is sent none."""
     rows = conn.execute(
         "SELECT ref, MAX(seq) AS seq FROM file_log WHERE seq > ? GROUP BY ref ORDER BY seq LIMIT ?", (since, limit)
     ).fetchall()
     cursor = rows[-1]["seq"] if rows else since
     more = len(rows) == limit and conn.execute("SELECT 1 FROM file_log WHERE seq > ?", (cursor,)).fetchone() is not None
+    merges, merges_cursor, merges_more = merges_after(conn, merges_since, limit) if merges_since is not None else ([], 0, False)
     return {
         "refs": [refs.get_ref(conn, row["ref"]) for row in rows if refs.ref_exists(conn, row["ref"])],
         "cursor": str(cursor),
         "more": more,
+        "merges": merges,
+        "mergesCursor": str(merges_cursor),
+        "mergesMore": merges_more,
     }
+
+
+def merges_after(conn: sqlite3.Connection, since: int, limit: int) -> tuple[list[dict[str, Any]], int, bool]:
+    """The merges after cursor [since], oldest first: `(the list, the cursor to ask from next, whether there are more)`. The table is tiny (one row
+    per song ever merged), so a phone that updates months later still gets all of it."""
+    rows = conn.execute(
+        "SELECT seq, old_id, into_id FROM ref_merge WHERE seq > ? ORDER BY seq LIMIT ?", (since, limit)
+    ).fetchall()
+    cursor = int(rows[-1]["seq"]) if rows else since
+    more = len(rows) == limit and conn.execute("SELECT 1 FROM ref_merge WHERE seq > ?", (cursor,)).fetchone() is not None
+    return [{"from": r["old_id"], "into": r["into_id"], "seq": r["seq"]} for r in rows], cursor, more
 
 
 # ----------------------------------------------------------------------------------------------- the change feed

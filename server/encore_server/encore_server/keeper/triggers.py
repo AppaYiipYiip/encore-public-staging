@@ -12,7 +12,8 @@ def want_kept(scheduler: Scheduler | None, conn: sqlite3.Connection, person: str
     """Queues a keep for each of these songs, once, unless the music server already has a file for it."""
     if scheduler is None or not scheduler.handles("keep") or not ref_ids:
         return
-    for ref_id in dict.fromkeys(ref_ids):
+    # Songs merged into another (N-11) are kept as the survivor.
+    for ref_id in dict.fromkeys(refs.canonical_many(conn, ref_ids).values()):
         file = conn.execute(
             "SELECT 1 FROM song_file WHERE ref = ? AND navidrome_song_id IS NOT NULL LIMIT 1", (ref_id,)
         ).fetchone()
