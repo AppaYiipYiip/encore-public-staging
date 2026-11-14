@@ -1,0 +1,9 @@
+{
+ "id": "20261114T221436Z-agent-4da7",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:14:36Z",
+ "type": "note",
+ "body": "SLICE 2a DONE (built, not walked): PR #77, the server's janitor `ref_janitor.py` (B-131 server half, B-126 clean-up). One more hourly errand of the library link, after the finders; 500 refs a pass; a ref goes when nothing of anybody points at it, it has no live N-13 verdict, no file of it changed in 14 days and it is older than 14 days; the file_log rows go in the same transaction; no migration. Decisions beyond the design notes: `instr` instead of LIKE; only QUEUED/RUNNING work counts (finished rows stay in the table and would make every ref immortal); a file change in the last 14 days keeps the ref (a library file the music server lost an hour ago is not unwanted); change_log is not a pointer and its rows stay (the feed says `removed`, tested); the live-verdict test is in SQL built from missing's own constants and walked against standing_of at every boundary. Guards for later: every table that names a ref must be classified in `ref_janitor` (CI fails otherwise); each clause is shown load-bearing; no pointer table is scanned.\nSTILL TO DO: slice 2b (the phone: a library row with is_ref, no file, like, playlist entry, download or play, absent from every feed page, older than 14 days is dropped by the pass that already drops unused rows; never a row the person is looking at; its own age rule, do not widen the feed). One edge to design in 2b: a phone offline for more than 14 days whose outbox holds an edit naming a ref resolved more than 14 days earlier gets 404 not_found for that edit. BENCH CHECK OWED (nothing walked): on VM 108 count song_ref rows before and after one hourly pass with an old junk ref present. Merge order: P2-12 slice 1 also edits errands() in api.py: the second to land merges main by hand and keeps BOTH errands."
+}
