@@ -76,20 +76,25 @@ Future<TapPlan> _planFor(
   return plan;
 }
 
-/// A tap on row [startIndex] of [items]: the full song, with the rest of the list behind it.
+/// A tap on row [startIndex] of [items]: the full song, with the rest of the list behind it. With [shuffle] (a page's Shuffle button) the
+/// list is played in random order from its first song instead.
 Future<void> tapPlayRun(
   WidgetRef ref,
   List<CatalogueTrack> items, {
   required int startIndex,
   required String sourceName,
   required String sourceId,
+  bool shuffle = false,
 }) async {
   final container = ProviderScope.containerOf(ref.context);
   final messenger = ScaffoldMessenger.maybeOf(ref.context);
   switch (await _planFor(container, messenger)) {
     case TapPlan.full:
       await container.read(instantControllerProvider.notifier).playRun(items,
-          startIndex: startIndex, sourceName: sourceName, sourceId: sourceId);
+          startIndex: startIndex,
+          sourceName: sourceName,
+          sourceId: sourceId,
+          shuffle: shuffle);
     case TapPlan.cannot:
       _say(messenger, kCannotPlayLine);
     case TapPlan.plainServer:

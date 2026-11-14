@@ -273,6 +273,12 @@ final artistAlbumsProvider =
   (ref, id) => _repo(ref)?.watchArtistAlbums(id) ?? _none(),
 );
 
+/// Every song the library holds of an artist (what the artist page's Play and Shuffle play).
+final artistTracksProvider =
+    StreamProvider.autoDispose.family<List<TrackRow>, String>(
+  (ref, id) => _repo(ref)?.watchArtistTracks(id) ?? _none(),
+);
+
 final genresProvider =
     StreamProvider.autoDispose<List<({String name, int albums})>>(
   (ref) => _repo(ref)?.watchGenres() ?? _none(),
