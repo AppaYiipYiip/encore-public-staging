@@ -151,30 +151,32 @@ void main() {
     expect(await find('big', 'band'), hasLength(300));
   });
 
-  test(
-      'a word that most songs of a big library match is still answered at once',
+  test('the index is asked once for the whole playlist, never once per entry',
       () async {
-    // The first version joined the index with the playlist's entries and SQLite asked the index again for every entry: 34 s for 2,000
-    // entries, the word "a" and 50,000 songs. The index is asked once now; the limit here is far above what that takes (about 20 ms) and
-    // far below the old plan (many seconds).
-    await db.batch((b) => b.insertAll(db.tracks, [
-          for (var i = 0; i < 20000; i++)
-            TracksCompanion.insert(
-              serverId: serverId,
-              id: 'lib$i',
-              title: 'Song $i',
-              artist: Value('Artist ${i % 311}'),
-              album: const Value('Album a'),
-            ),
-        ]));
-    await playlist('long', [for (var i = 0; i < 2000; i++) 'lib${i * 10}']);
+    // The first version joined the index with the playlist's entries and SQLite asked the index again for every entry: 34 s for 2,000 entries,
+    // the word "a" and 50,000 songs (measured: db_perf_test.dart keeps the time, this keeps the reason). The plan must read the index only
+    // inside the list subquery.
+    await track('a', 'Nude', artist: 'Radiohead');
+    await playlist('mine', ['a']);
 
-    final watch = Stopwatch()..start();
-    final found = await find('long', 'a');
-    watch.stop();
+    final plan = await db.customSelect(
+      'EXPLAIN QUERY PLAN $playlistEntryPositionsSql',
+      variables: [
+        Variable<String>('"a"*'),
+        Variable<int>(serverId),
+        Variable<String>('mine'),
+      ],
+    ).get();
+    final steps = [
+      for (final row in plan)
+        (parent: row.read<int>('parent'), detail: row.read<String>('detail')),
+    ];
+    final shown = steps.map((s) => '${s.parent}: ${s.detail}').join(' | ');
 
-    expect(found, hasLength(2000));
-    expect(watch.elapsedMilliseconds, lessThan(2000),
-        reason: 'asked the index once, not once per entry');
+    expect(steps.any((s) => s.detail.contains('LIST SUBQUERY')), isTrue,
+        reason: 'the index is read into a list first: $shown');
+    expect(steps.where((s) => s.parent == 0 && s.detail.contains('track_fts')),
+        isEmpty,
+        reason: 'and is not searched again for each entry: $shown');
   });
 }
