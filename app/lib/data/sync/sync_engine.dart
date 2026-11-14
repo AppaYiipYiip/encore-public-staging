@@ -120,6 +120,7 @@ class SyncStats {
     this.staleDownloads = 0,
     this.libraryPhaseRan = false,
     this.shrinkGuardTripped = false,
+    this.browseFailure,
   });
 
   final int artists;
@@ -130,6 +131,11 @@ class SyncStats {
   final int staleDownloads;
   final bool libraryPhaseRan;
   final bool shrinkGuardTripped;
+
+  /// On an Encore server: why the browse index (artists and albums, which come from the MUSIC server) could not be refreshed in this pass, when
+  /// that failed while the Encore server itself answered (AUDIT B-77). The pass is still a completed one: the person's own library, playlists and
+  /// likes come from the Encore server and were pulled. `null` when the index was refreshed or was not due.
+  final AppFailure? browseFailure;
 }
 
 sealed class SyncOutcome {
@@ -424,19 +430,24 @@ class SyncEngine {
       SyncReason reason, bool force, bool acceptShrink) async {
     final encore = _encore!;
     _emit(const SyncProgress(SyncPhase.probing));
+    // The music server (Navidrome) is asked for ONE thing here: whether its browse index of artists and albums is due. The Encore server's own
+    // feeds below do not depend on it, so no failure of the music server (restarting during `encore update`, a stale music-server login, a
+    // gateway's 503) may end this pass before they are pulled (AUDIT B-77).
     final scanResult = await _client.getScanStatus();
     final scanFailure = scanResult.failureOrNull;
-    if (scanFailure is NetworkFailure || scanFailure is AuthFailure) {
-      await _state.set(SyncStateStore.lastError, scanFailure!.message);
-      return SyncFailed(scanFailure);
+    if (scanFailure != null) {
+      Log.warn('sync',
+          'the music server did not give its scan status (${scanFailure.message}): the Encore feeds are pulled anyway');
     }
     final scan = scanResult.valueOrNull;
     final nowMs = _clock.now().millisecondsSinceEpoch;
+    // A scan status that could not be read does not say "refresh the index now" (a music server that just failed would fail again): only a forced
+    // pass, a first index and an index that is too old do. A server that cannot say is asked as before (`scan == null` is then not special).
     final needLibrary = force ||
-        scan == null ||
         await _libraryDue(scan, ignoreGap: reason == SyncReason.manual);
 
     var stats = const SyncStats();
+    AppFailure? browseFailure;
     if (needLibrary) {
       final outcome = await _libraryPhase(
           scan: scan, nowMs: nowMs, acceptShrink: acceptShrink, songs: false);
@@ -444,8 +455,10 @@ class SyncEngine {
         case _Cancelled():
           return const SyncCancelled();
         case _Failed(:final failure):
-          await _state.set(SyncStateStore.lastError, failure.message);
-          return SyncFailed(failure);
+          // The index could not be refreshed, and nothing else is the worse for it: it stays due, and is tried again on the next pass.
+          Log.warn('sync',
+              'the browse index could not be refreshed: ${failure.message}');
+          browseFailure = failure;
         case _Done(stats: final s):
           stats = s;
       }
@@ -474,7 +487,8 @@ class SyncEngine {
       tracks: got.files,
       playlistsFetched: got.playlists,
       staleDownloads: stale,
-      libraryPhaseRan: needLibrary,
+      libraryPhaseRan: needLibrary && browseFailure == null,
+      browseFailure: browseFailure,
     ));
   }
 
@@ -650,13 +664,17 @@ class SyncEngine {
       try {
         final scanResult = await _client.getScanStatus();
         final scanFailure = scanResult.failureOrNull;
-        if (scanFailure is NetworkFailure || scanFailure is AuthFailure) {
+        final encore = _encore;
+        // On an Encore server the music server's scan status only says whether the browse index is due; its failure is not the Encore server's
+        // (AUDIT B-77): that question is skipped (a full pass cannot work now, and this check runs every few seconds) and the feeds are pulled.
+        if (encore == null &&
+            (scanFailure is NetworkFailure || scanFailure is AuthFailure)) {
           return ProbeFailed(scanFailure!);
         }
-        if (await _libraryDue(scanResult.valueOrNull)) {
+        if ((encore == null || scanFailure == null) &&
+            await _libraryDue(scanResult.valueOrNull)) {
           return const ProbeNeedsFullPass();
         }
-        final encore = _encore;
         if (encore != null) {
           final pulled = await encore.pullChanges();
           if (pulled case Err(:final failure)) return ProbeFailed(failure);
