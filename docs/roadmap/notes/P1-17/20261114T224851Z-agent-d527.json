@@ -1,0 +1,9 @@
+{
+ "id": "20261114T224851Z-agent-d527",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:48:51Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 late evening (A35, the owner's secondary test phone, build 153, against VM 108 at sha-6a93f44; NOT the release-candidate pair; nothing marked walked): THE STRIP'S SENTENCE FOR \"Wi-Fi ON, THE SERVER AWAY\" was read, and it was WRONG for a server reached through a tunnel: with the Encore container stopped (docker stop 0.42 s) the strip said, about 9 s later (the first failed look, then the 4 s blink filter), \"Another server answers at encore-vm108.tail34c57b.ts.net.\" once and for a few seconds (the calm strip, as designed), then nothing. Reproduced twice with samples every second. Cause PROVED: the address is Tailscale Funnel, which answers 502 with an empty body while the container is down (curl: http=502, size 0; 200 with the server up), and ServerIdentityProbe.check read every answer without a key from a PINNED server as wrongKey (CN-11), so the state was wrongServer, not serverAway. Registered as AUDIT B-132 (MEDIUM) and FIXED in the PR of branch task/B-132-gateway-answer-is-not-another-server (tests first, seen failing on the old code): the probe now judges WHAT answered. Still owed after that PR: the same 1 s sampling on the A35 with an APK built from the fix, expecting the server-away sentence (no new run was made for the fix yet)."
+}

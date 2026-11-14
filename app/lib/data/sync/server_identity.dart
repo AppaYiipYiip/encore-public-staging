@@ -21,10 +21,12 @@ enum EndpointVerdict {
   /// and it is used as before. Never accepted for a server whose key the phone has pinned.
   legacy,
 
-  /// It answered, but it is not the server the phone knows: another id, a signature that does not verify, or no key where one was pinned.
+  /// It answered, but it is not the server the phone knows: another id, a signature that does not verify, or an Encore server's own answer with no
+  /// key where one was pinned.
   wrongKey,
 
-  /// No answer, or an answer that is no server at all.
+  /// No answer, or an answer that is no server at all: a gateway's 502 for a server that is stopped, a router's or a captive portal's page, a
+  /// redirect (B-132). Nothing was learned about WHO is there, so nothing is said about another server.
   unreachable,
 }
 
@@ -163,13 +165,21 @@ class ServerIdentityProbe {
       }
       return EndpointProof(EndpointVerdict.verified, serverId: claimed);
     }
-    // It answered, but with no key. A server whose key is pinned cannot "downgrade" to having none.
+    // It answered, but with no key. Judge WHAT answered (B-132): the downgrade rule is about a SERVER that stops signing, so it needs an answer that is
+    // Encore's own. A reverse proxy or a tunnel in front of a stopped server (Tailscale Funnel answers 502 with nothing in it), a router's page, a
+    // captive portal and Encore's own error answers are not a server saying who it is, and "Another server answers at <your address>" is false for
+    // every one of them.
+    final looksLikeEncore =
+        response.statusCode == 200 && map != null && map['apiVersion'] != null;
     if (expectedId != null) {
-      return const EndpointProof(EndpointVerdict.wrongKey);
+      // A server whose key is pinned cannot "downgrade" to having none. The music server's question is NOT asked: the Encore server passes `/rest` on
+      // to its music server, so an answer to it says nothing about who is at a pinned address.
+      if (looksLikeEncore) return const EndpointProof(EndpointVerdict.wrongKey);
+      Log.debug('identity',
+          '$base answered ${response.statusCode} and is no server (a gateway, a router, a page): not the pinned server, and not another one either');
+      return const EndpointProof(EndpointVerdict.unreachable);
     }
-    if (response.statusCode == 200 &&
-        map != null &&
-        map['apiVersion'] != null) {
+    if (looksLikeEncore) {
       return const EndpointProof(EndpointVerdict
           .legacy); // an Encore server that is too old to have a key
     }

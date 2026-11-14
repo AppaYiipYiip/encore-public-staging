@@ -1,0 +1,9 @@
+{
+ "id": "20261114T224852Z-agent-739c",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:48:52Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of slice 2a on the REAL stack, 14 Nov 2026 22:40 UTC (VM 108 updated to sha-6a93f44, label verified; NOT the release-candidate pair; nothing marked walked). Five labelled synthetic refs were inserted into the test VM's database (old junk; old and liked; fresh junk; old with a live N-13 verdict; old that once held a file), 3364 real refs before and 3369 after. After a container restart the library link's errand logged \"ref janitor: retired 1 song refs nobody points at\" at 22:41:18 UTC and ONLY the old junk went (3368); the liked, fresh, live-verdict and ex-file refs stayed and the 3364 real refs were untouched. The first errand, before the rows existed, logged nothing (retired 0 is silent). All synthetic rows were deleted afterwards (count back to 3364, no leftovers); logged in the homelab log, entry 1s. Not seen: a second pass finding nothing after the batch (covered by a test), the 500 limit."
+}

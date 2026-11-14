@@ -1,0 +1,9 @@
+{
+ "id": "20261114T224851Z-agent-9e4d",
+ "item": "P2-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T22:48:51Z",
+ "type": "note",
+ "body": "14 Nov 2026 (lead): the rule \"no key where one is pinned is the wrong key\" that this item introduced (slice A, a455eb5, server_identity.dart) was too wide: it also caught a reverse proxy or tunnel answering 502 for a stopped server, which the strip then called \"Another server answers at <your address>\" (AUDIT B-132, found on the A35 against VM 108 through Tailscale Funnel, ADR-083's guided way). Fixed in the PR of branch task/B-132-gateway-answer-is-not-another-server: only an Encore-shaped answer (200 with apiVersion) with no key is the downgrade; every other no-key answer is \"no server at all\" (unreachable), and a pinned server is not asked the music server's question because the Encore server passes /rest on. docs/31 CN-11 narrowed, CN-11d added. Cross-reference: P1-17 (the reach state that carries the sentence)."
+}
