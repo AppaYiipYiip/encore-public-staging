@@ -426,6 +426,81 @@ def test_a_music_server_that_is_scanning_or_silent_is_left_alone(tmp_path: Path)
     assert catalogue.asked == []
 
 
+class ScanThatEnds(Music):
+    """A music server that is scanning for the first [polls] questions and then is not (the scan the cover finder asked for a moment before)."""
+
+    def __init__(self, artists: list[tuple[str, str]] | None, *, polls: int) -> None:
+        super().__init__(artists, scanning=True)
+        self.polls = polls
+        self.asked = 0
+
+    def scanning(self) -> bool | None:
+        self.asked += 1
+        return self.asked <= self.polls
+
+
+def test_a_scan_that_is_running_is_waited_for_and_the_pass_goes_on(tmp_path: Path) -> None:
+    """B-127: the cover finder runs just before this pass and asks for a scan when it found a picture; the pass used to see "scanning", return empty and
+    leave every artist alone for an hour (the next hourly errand). A scan of a normal library ends in seconds: the pass waits for it."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Bob Marley", "Could You Be Loved")
+    catalogue = Catalogue({"Bob Marley": PICTURE})
+    slept: list[float] = []
+    the = ArtistFinder(
+        db,
+        ScanThatEnds([("ar-1", "Bob Marley")], polls=3),
+        catalogue,
+        music_dir=music,
+        fetch=lambda url: JPEG,
+        sleep=slept.append,
+        clock=clock,
+        scan_wait_s=60.0,
+        scan_poll_s=2.0,
+    )
+
+    report = the.run_once()
+
+    assert (report.looked, report.found) == (1, 1)
+    assert slept.count(2.0) == 3, "it looked again every poll while the scan ran, and no longer than it needed"
+    assert (music / "Encore" / "Bob Marley" / "artist.jpg").exists()
+
+
+def test_a_scan_that_does_not_end_is_waited_for_a_while_and_then_left_alone(tmp_path: Path) -> None:
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Bob Marley", "Could You Be Loved")
+    catalogue = Catalogue({"Bob Marley": PICTURE})
+    slept: list[float] = []
+    the = ArtistFinder(
+        db,
+        Music([("ar-1", "Bob Marley")], scanning=True),
+        catalogue,
+        music_dir=music,
+        sleep=slept.append,
+        clock=clock,
+        scan_wait_s=10.0,
+        scan_poll_s=2.0,
+    )
+
+    report = the.run_once()
+
+    assert catalogue.asked == [], "a music server that is still scanning is left alone"
+    assert sum(slept) == 10.0, "the wait is bounded: the errand thread also has the library link to run"
+    assert report.looked == 0
+
+
+def test_a_music_server_that_cannot_say_whether_it_scans_is_not_waited_for(tmp_path: Path) -> None:
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Bob Marley", "Could You Be Loved")
+    slept: list[float] = []
+    the = ArtistFinder(
+        db, Music([("ar-1", "Bob Marley")], scanning=None), Catalogue({}), music_dir=music, sleep=slept.append, clock=clock
+    )
+
+    the.run_once()
+
+    assert slept == [], "silent is not busy: nothing to wait for"
+
+
 def test_something_that_is_not_a_picture_is_not_written(tmp_path: Path) -> None:
     db, music, clock = database(tmp_path), tmp_path / "music", Clock()
     kept(db, music, "Bob Marley", "Could You Be Loved")
