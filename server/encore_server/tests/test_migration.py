@@ -154,6 +154,32 @@ def test_a_song_the_scanner_already_linked_is_not_made_again(rig: tuple[TestClie
     assert [r["id"] for r in changes(client)["refs"]] == [ref]
 
 
+def test_a_song_the_keeper_saved_is_the_ref_the_keeper_saved_it_for_whatever_its_tags_say(
+    rig: tuple[TestClient, FakeMusic],
+) -> None:
+    client, music = rig
+    from encore_server import refs
+
+    with client.app.state.services.db.tx() as conn:  # type: ignore[attr-defined]
+        ref = refs.resolve(conn, {"title": "Song 1", "artists": ["Artist", "Guest"], "durationMs": 400000})[
+            "id"
+        ]  # the tags say 181 s
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd-1",
+            path="Encore/Artist/Singles/Song 1.flac",
+            codec="flac",
+            bitrate_kbps=900,
+            source="youtube",
+        )
+    music.starred["song"] = [song(1, starred="2025-03-01T10:00:00Z")]
+
+    migrate(client)
+
+    assert [r["id"] for r in changes(client)["refs"]] == [ref]
+
+
 def test_a_song_without_a_title_is_counted_as_unmatched_not_lost_silently(rig: tuple[TestClient, FakeMusic]) -> None:
     client, music = rig
     music.starred["song"] = [{"id": "nd-9", "title": "", "artist": "A", "starred": "2025-03-01T10:00:00Z"}, song(1)]

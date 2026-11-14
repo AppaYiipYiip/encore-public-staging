@@ -1,10 +1,13 @@
 """The scanner link (docs/04 section 3, P2-01): every song the music server already has gets a ref and a file.
 
 The Host's own collection, the songs the keeper put there, and anything added by hand all become refs the same way, so a person can
-like, queue and add to playlists whatever the server has, and the server's files and the people's choices never share an id. A song
-that already has a ref (matched by ISRC, then by artist, title and length) is *attached* to it, so one recording found in several
-folders is one ref with several files. A file that is gone from the library loses its row; the ref, and every like and playlist
-entry pointing at it, stays.
+like, queue and add to playlists whatever the server has, and the server's files and the people's choices never share an id. A file that
+already has a row (its id in the music server) belongs to the ref of that row, whatever its tags say: the keeper attached it on purpose, to
+the ref an import or the catalogue described properly, and the scan makes nothing for it (N-11: describing it again from its tags made a
+second ref for the same file). A song no ref has a file
+for is described from its tags, and when that description already has a ref (matched by ISRC, then by artist, title and length) it is
+*attached* to it, so one recording found in several folders is one ref with several files. A file that is gone from the library loses
+its row; the ref, and every like and playlist entry pointing at it, stays.
 """
 
 from __future__ import annotations
@@ -83,6 +86,7 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE) -> LinkR
             log.info("the music server did not answer; the library link will try again later")
             return report  # incomplete: nothing is pruned
         with db.tx() as conn:
+            holders = refs.file_holders(conn, [str(song.get("id") or "") for song in songs])
             for song in songs:
                 report.seen += 1
                 item = described(song)
@@ -91,18 +95,24 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE) -> LinkR
                     report.skipped += 1
                     continue
                 seen_ids.add(song_id)
-                try:
-                    known = refs.find(conn, refs.parse_item(item)) is not None
-                    ref = refs.resolve(conn, item)
-                except ApiError:
-                    report.skipped += 1
-                    continue
-                if not known:
-                    report.new_refs += 1
+                owner = holders.get(song_id)
+                if owner is not None:
+                    # The file is already some ref's: that is the ref, whatever the tags say (they are often poorer than the description the keeper
+                    # saved the file for). `attach_file` finds the row by the id and refreshes it; the row keeps its own path and source.
+                    ref_id = str(owner["ref"])
+                else:
+                    try:
+                        known = refs.find(conn, refs.parse_item(item)) is not None
+                        ref_id = str(refs.resolve(conn, item)["id"])
+                    except ApiError:
+                        report.skipped += 1
+                        continue
+                    if not known:
+                        report.new_refs += 1
                 suffix = str(song.get("suffix") or "").lower()
                 refs.attach_file(
                     conn,
-                    ref["id"],
+                    ref_id,
                     navidrome_song_id=song_id,
                     path=str(song.get("path") or "") or None,
                     codec=_CODEC.get(suffix, suffix or None),
