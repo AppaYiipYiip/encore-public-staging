@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import '../../app/providers.dart';
 import '../../data/fetch/fetch_client.dart';
 import '../../data/sync/sync_scheduler.dart';
@@ -34,8 +36,10 @@ class YourServerScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final c = context.colors;
 
-    final online = ref.watch(phoneOnlineProvider);
-    final reachable = online && (session?.endpoints.isReachable ?? false);
+    // The one state (P1-17): no internet is `noNetwork` or `noInternet`, "Working" is `ok`; nothing here asks the resolver or the network itself.
+    final reach = ref.watch(serverReachabilityProvider);
+    final online = !reach.isOffline;
+    final reachable = reach == ServerReachability.ok;
     final extensions = session?.client.extensions ?? const <String>{};
     final serverLyrics = extensions.contains('songLyrics');
     final serviceUrl = settings.requestPortalUrl;

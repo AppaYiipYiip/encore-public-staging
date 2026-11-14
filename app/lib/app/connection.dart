@@ -2,63 +2,32 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../features/jam/jam_providers.dart';
+import '../domain/server_reachability.dart';
 import 'providers.dart';
 
-/// What the person is told about the connection (a slim strip above the
-/// player on every main screen): "a widget to show you lost the internet"
-/// (the owner, 2026-10-17).
-enum ConnectionProblem {
-  none,
+export '../domain/server_reachability.dart';
 
-  /// The phone has no internet: downloaded music still plays.
-  offline,
-
-  /// The phone is online but the music server does not answer.
-  serverUnreachable,
-
-  /// A Jam lost its connection and is listening again.
-  jamReconnecting,
-
-  /// An address answers, but with the key of **another server** (docs/31 CN-11, O-6): nothing is sent to it. Not "offline": the phone is
-  /// online and something is there, only it is not the person's server. D-45's one sentence is for an outage; this is a different thing.
-  anotherServer,
-}
-
-extension ConnectionProblemMeaning on ConnectionProblem {
-  /// The person's music server is away as far as the player is concerned: it does not answer, or somebody else does.
-  bool get serverIsAway =>
-      this == ConnectionProblem.serverUnreachable ||
-      this == ConnectionProblem.anotherServer;
-}
-
-/// How long a problem must last before it is shown: a blink of the network is
-/// not news.
+/// How long a problem must last before it is said: a blink of the network is not news. It is the blink filter of [serverReachabilityProvider]
+/// (entering an away state waits this long, unless there is no network at all), so the strip, the grey rows and the player all see the same
+/// calm state.
 final connectionGraceProvider =
     Provider<Duration>((ref) => const Duration(seconds: 4));
 
-/// Whether the person's music server answers. `true` when there is none (a
-/// person who has not set one up is told nothing about it).
-final serverReachableProvider = StreamProvider<bool>((ref) async* {
+/// RAW FACT: what the last look at the person's server's addresses found (`EndpointResolver.finding`), as it changes. [ServerFinding.unknown]
+/// when there is no server (a person who has not set one up is told nothing about it) and until the first look. It says nothing about the
+/// network, Android's internet check or any screen: read [serverReachabilityProvider] unless you are building it.
+final serverFindingProvider = StreamProvider<ServerFinding>((ref) async* {
   final session = await ref.watch(sessionProvider.future);
   if (session == null) {
-    yield true;
+    yield ServerFinding.unknown;
     return;
   }
-  yield* reachabilityStream(
-      () => session.endpoints.isReachable, session.endpoints.reachability);
+  yield* currentThenChanges<ServerFinding>(
+      () => session.endpoints.finding, session.endpoints.findings);
 });
 
-/// Whether the network the phone uses has internet, as Android itself found out (`true` while that is not known). Asked again whenever the
-/// network changes and whenever the problem shown changes: that is after the grace of [connectionGraceProvider], which also gives Android the
-/// time to finish checking a network the phone has only just joined (its first answer is "not yet").
-final phoneHasInternetProvider = StreamProvider<bool>((ref) async* {
-  ref.watch(networkKindProvider);
-  ref.watch(connectionProblemProvider);
-  yield await ref.read(networkValidationProvider).validated() ?? true;
-});
-
-/// The address that answered with another server's key while none proved itself (docs/31 CN-11), or `null`.
+/// RAW FACT: the address that answered with another server's key while none proved itself (docs/31 CN-11), or `null`. Only the words of the
+/// strip ("Another server answers at ...") read it; whether to say anything is [serverReachabilityProvider]'s.
 final anotherServerAtProvider = StreamProvider<Uri?>((ref) async* {
   final session = await ref.watch(sessionProvider.future);
   if (session == null) {
@@ -78,11 +47,6 @@ final anotherServerAtProvider = StreamProvider<Uri?>((ref) async* {
 /// start from a share, when the answer arrives within milliseconds). Here the
 /// subscription comes first, so nothing announced after it is missed, and the
 /// current value is read after it, so nothing before it is either.
-Stream<bool> reachabilityStream(
-        bool Function() current, Stream<bool> changes) =>
-    currentThenChanges<bool>(current, changes);
-
-/// [reachabilityStream] for any value.
 Stream<T> currentThenChanges<T>(T Function() current, Stream<T> changes) {
   late final StreamController<T> out;
   StreamSubscription<T>? sub;
@@ -99,74 +63,114 @@ Stream<T> currentThenChanges<T>(T Function() current, Stream<T> changes) {
   return out.stream;
 }
 
-/// The problem to show now, or [ConnectionProblem.none]. It appears after
-/// [connectionGraceProvider] and goes away at once.
-class ConnectionProblemNotifier extends Notifier<ConnectionProblem> {
-  Timer? _timer;
+/// THE ONE STATE of "can I reach my server" (P1-17, AUDIT B-17, `docs/31`): every reader asks this and nothing underneath it. It is
+/// [reachabilityOf] of the three raw facts (the link, [serverFindingProvider], and Android's own "internet found", asked fresh at the moment
+/// the state decides and never through a screen), with ONE blink filter: **entering** an away state waits [connectionGraceProvider] (a blink of
+/// the network is not news, and a row must not flicker grey), unless there is no network at all, which is said at once (P1-09); **leaving** an
+/// away state, and changing from one away state to another, is at once. It holds for as long as the outage does.
+///
+/// What it is not: the strip is a presenter over it ([ConnectionStripNotifier]: said once, for a few seconds), and a FRESH look at the server
+/// (the player's `recheck`) is newer than it and may know better for the tap that asked.
+class ServerReachabilityNotifier extends Notifier<ServerReachability> {
+  Timer? _grace;
+
+  /// Counts evaluations: an answer from Android that arrives after a newer evaluation began belongs to a world that is gone.
+  int _round = 0;
 
   @override
-  ConnectionProblem build() {
-    ref.onDispose(() => _timer?.cancel());
-    ref.listen(networkKindProvider, (_, __) => _evaluate());
-    ref.listen(serverReachableProvider, (_, __) => _evaluate());
-    ref.listen(anotherServerAtProvider, (_, __) => _evaluate());
-    ref.listen(jamControllerProvider.select((j) => j.reconnecting && j.inJam),
-        (_, __) => _evaluate());
-    final first = _raw();
-    if (first != ConnectionProblem.none) _later();
-    return ConnectionProblem.none;
-  }
-
-  /// What is wrong this instant, most basic first: no internet is the reason
-  /// for the others.
-  ConnectionProblem _raw() {
-    if (ref.read(networkKindProvider).value == NetworkKind.none) {
-      return ConnectionProblem.offline;
-    }
-    if (ref.read(serverReachableProvider).value == false) {
-      return ref.read(anotherServerAtProvider).value != null
-          ? ConnectionProblem.anotherServer
-          : ConnectionProblem.serverUnreachable;
-    }
-    final jam = ref.read(jamControllerProvider);
-    if (jam.inJam && jam.reconnecting) return ConnectionProblem.jamReconnecting;
-    return ConnectionProblem.none;
-  }
-
-  void _evaluate() {
-    final raw = _raw();
-    if (raw == ConnectionProblem.none) {
-      _timer?.cancel();
-      _timer = null;
-      if (state != ConnectionProblem.none) state = ConnectionProblem.none;
-      return;
-    }
-    if (raw == state) {
-      _timer?.cancel();
-      _timer = null;
-      return;
-    }
-    // Already showing something: the sentence changes at once. Showing
-    // nothing: wait, it may be a blink.
-    if (state != ConnectionProblem.none) {
-      state = raw;
-    } else if (_timer == null) {
+  ServerReachability build() {
+    ref.onDispose(() {
+      _round++;
+      _grace?.cancel();
+    });
+    ref.listen(networkKindProvider, (_, __) => unawaited(_evaluate()));
+    ref.listen(serverFindingProvider, (_, __) => unawaited(_evaluate()));
+    final first = reachabilityOf(
+        hasNetwork: _hasNetwork, finding: _finding, internetFound: null);
+    if (first.isAway && _hasNetwork) {
+      // A silent server at the first look: say it only if it lasts.
       _later();
+      return ServerReachability.unknown;
     }
+    return first;
+  }
+
+  bool get _hasNetwork =>
+      ref.read(networkKindProvider).value != NetworkKind.none;
+
+  ServerFinding get _finding =>
+      ref.read(serverFindingProvider).value ?? ServerFinding.unknown;
+
+  /// Android's last answer to "internet found" (`null`: never asked, or it cannot say: internet is assumed).
+  bool? _internetFound;
+
+  /// The judgement now, with the last answer of Android.
+  ServerReachability _judge() => reachabilityOf(
+      hasNetwork: _hasNetwork,
+      finding: _finding,
+      internetFound: _internetFound);
+
+  /// Asks Android now, when it matters (a network with a silent server), and corrects the state if the answer changes the words: an answer
+  /// that takes long, or never comes (a test, a platform without the channel), must not hold the state back, so the state is set first with
+  /// what was last known and refined when the answer arrives. Never asked while the server answers (a home Wi-Fi with no line out is fine) and
+  /// never through a screen.
+  Future<void> _refine(int round) async {
+    if (!_hasNetwork || _finding != ServerFinding.silent) return;
+    final answer = await ref.read(networkValidationProvider).validated();
+    if (round != _round) return; // a newer evaluation owns the state
+    _internetFound = answer;
+    if (state.isAway) _set(_judge());
+  }
+
+  void _set(ServerReachability next) {
+    if (state != next) state = next;
+  }
+
+  Future<void> _evaluate() async {
+    final round = ++_round;
+    final hasNetwork = _hasNetwork;
+    final finding = _finding;
+    final neutral = hasNetwork &&
+        (finding == ServerFinding.unknown ||
+            finding == ServerFinding.answering);
+    if (!hasNetwork || neutral) {
+      // Nothing to wait for: no network is said at once, and what is fine (or not known) is shown at once.
+      _grace?.cancel();
+      _grace = null;
+      _set(reachabilityOf(
+          hasNetwork: hasNetwork, finding: finding, internetFound: null));
+      return;
+    }
+    if (state.isAway) {
+      // Already saying something: the sentence changes at once (Android decides between "offline" and "your server").
+      _grace?.cancel();
+      _grace = null;
+      _set(_judge());
+      await _refine(round);
+      return;
+    }
+    // Saying nothing: wait, it may be a blink.
+    if (_grace == null) _later();
   }
 
   void _later() {
-    _timer?.cancel();
-    _timer = Timer(ref.read(connectionGraceProvider), () {
-      _timer = null;
-      state = _raw();
+    _grace?.cancel();
+    _grace = Timer(ref.read(connectionGraceProvider), () {
+      _grace = null;
+      unawaited(_enter());
     });
+  }
+
+  Future<void> _enter() async {
+    final round = _round;
+    _set(_judge());
+    await _refine(round);
   }
 }
 
-final connectionProblemProvider =
-    NotifierProvider<ConnectionProblemNotifier, ConnectionProblem>(
-        ConnectionProblemNotifier.new);
+final serverReachabilityProvider =
+    NotifierProvider<ServerReachabilityNotifier, ServerReachability>(
+        ServerReachabilityNotifier.new);
 
 /// How long an outage stays on the strip: it is said once and goes by itself (owner, 2026-10-31: "all day telling me it cannot connect,
 /// sure we get it"). The details stay on Settings > Your server.
@@ -178,32 +182,34 @@ final connectionShownForProvider =
 final connectionRecoveredProvider =
     Provider<Duration>((ref) => const Duration(seconds: 10));
 
-/// What the strip shows. [connectionProblemProvider] is what is wrong (the player reads it to know its server is away); the strip says an
-/// outage once: no internet and a server that does not answer are one outage to the person (the 4G radio is on and there is no data), shown for
-/// a few seconds or until the cross, and not again until everything has worked for a while. A Jam that is reconnecting stays while it lasts.
-class ConnectionStripNotifier extends Notifier<ConnectionProblem> {
+/// What the strip shows: `null` (nothing) or the away state to say. [serverReachabilityProvider] is what is wrong (the player and every grey
+/// row read it); the strip is only a PRESENTER over it and says an outage once: no internet and a server that does not answer are one outage to
+/// the person (the 4G radio is on and there is no data), shown for a few seconds or until the cross, and not again until everything has worked
+/// for a while. The state already waited out a blink of the SERVER; the strip waits out a blink of the radio itself (`noNetwork` is at once for
+/// the rows and the player, but a flash of the strip for a second of lost signal is not news, D-45): the one place a presenter holds back.
+class ConnectionStripNotifier extends Notifier<ServerReachability?> {
   Timer? _hideTimer;
   Timer? _recoveredTimer;
+  Timer? _waitTimer;
   bool _said = false;
 
-  static bool _isOutage(ConnectionProblem p) =>
-      p == ConnectionProblem.offline ||
-      p == ConnectionProblem.serverUnreachable ||
-      p == ConnectionProblem.anotherServer;
-
   @override
-  ConnectionProblem build() {
+  ServerReachability? build() {
     ref.onDispose(() {
       _hideTimer?.cancel();
       _recoveredTimer?.cancel();
+      _waitTimer?.cancel();
     });
-    ref.listen(connectionProblemProvider, (_, now) => _follow(now));
-    return _follow(ref.read(connectionProblemProvider), initial: true);
+    ref.listen(serverReachabilityProvider, (_, now) => _follow(now));
+    return _follow(ref.read(serverReachabilityProvider), initial: true);
   }
 
-  ConnectionProblem _follow(ConnectionProblem problem, {bool initial = false}) {
-    ConnectionProblem shown;
-    if (problem == ConnectionProblem.none) {
+  ServerReachability? _follow(ServerReachability reach,
+      {bool initial = false, bool waited = false}) {
+    ServerReachability? shown;
+    if (!reach.isAway) {
+      _waitTimer?.cancel();
+      _waitTimer = null;
       _hideTimer?.cancel();
       _hideTimer = null;
       if (_said) {
@@ -212,22 +218,30 @@ class ConnectionStripNotifier extends Notifier<ConnectionProblem> {
           _said = false;
         });
       }
-      shown = ConnectionProblem.none;
-    } else if (!_isOutage(problem)) {
-      _hideTimer?.cancel();
-      _hideTimer = null;
-      shown = problem;
+      shown = null;
     } else {
       _recoveredTimer?.cancel();
       _recoveredTimer = null;
       if (_said) {
-        shown = ConnectionProblem.none;
+        shown = null;
+      } else if (reach == ServerReachability.noNetwork &&
+          !waited &&
+          (initial || state == null)) {
+        // Nothing is showing and the radio has just gone: say it only if it lasts.
+        _waitTimer ??= Timer(ref.read(connectionGraceProvider), () {
+          _waitTimer = null;
+          final now = ref.read(serverReachabilityProvider);
+          if (now.isAway) _follow(now, waited: true);
+        });
+        shown = null;
       } else {
-        shown = problem;
+        _waitTimer?.cancel();
+        _waitTimer = null;
+        shown = reach;
         _hideTimer ??= Timer(ref.read(connectionShownForProvider), () {
           _hideTimer = null;
           _said = true;
-          if (_isOutage(state)) state = ConnectionProblem.none;
+          if (state != null) state = null;
         });
       }
     }
@@ -237,14 +251,14 @@ class ConnectionStripNotifier extends Notifier<ConnectionProblem> {
 
   /// The cross on the strip: this outage has been said.
   void dismiss() {
-    if (!_isOutage(state)) return;
+    if (state == null) return;
     _hideTimer?.cancel();
     _hideTimer = null;
     _said = true;
-    state = ConnectionProblem.none;
+    state = null;
   }
 }
 
 final connectionStripProvider =
-    NotifierProvider<ConnectionStripNotifier, ConnectionProblem>(
+    NotifierProvider<ConnectionStripNotifier, ServerReachability?>(
         ConnectionStripNotifier.new);

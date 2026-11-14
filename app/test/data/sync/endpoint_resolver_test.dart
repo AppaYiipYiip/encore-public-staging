@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:encore/data/sync/endpoint_resolver.dart';
+import 'package:encore/domain/server_reachability.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ServerEndpoint _ep(String label, String url) =>
@@ -17,7 +18,8 @@ void main() {
       delay: (_) async {},
     );
     expect(r.current, home);
-    expect(r.isReachable, isFalse);
+    expect(r.finding, ServerFinding.unknown,
+        reason: 'nobody has looked yet: not "down"');
   });
 
   test('says when the server becomes unreachable and when it is back',
@@ -28,8 +30,8 @@ void main() {
       probe: (_) async => up,
       delay: (_) async {},
     );
-    final told = <bool>[];
-    r.reachability.listen(told.add);
+    final told = <ServerFinding>[];
+    r.findings.listen(told.add);
 
     await r.resolve(); // reachable
     up = false;
@@ -39,11 +41,15 @@ void main() {
     await r.resolve();
     await Future<void>.delayed(Duration.zero);
 
-    expect(told, [true, false, true]);
+    expect(told, [
+      ServerFinding.answering,
+      ServerFinding.silent,
+      ServerFinding.answering
+    ]);
   });
 
   test(
-      'it is known to be unreachable only after a look found nothing, not before the first look',
+      'the server is found silent only after a look found nothing, not before the first look',
       () async {
     var up = false;
     final r = EndpointResolver(
@@ -51,27 +57,45 @@ void main() {
       probe: (_) async => up,
       delay: (_) async {},
     );
-    expect(r.isKnownUnreachable, isFalse,
+    expect(r.finding, ServerFinding.unknown,
         reason:
-            'nobody has looked yet: a song tapped in the first second is not refused');
+            'nobody has looked yet: a song tapped in the first second is not refused, and no row is greyed');
 
     await r.resolve();
-    expect(r.isKnownUnreachable, isTrue,
+    expect(r.finding, ServerFinding.silent,
         reason: 'the radio is on, nothing answers (4G without data)');
 
     r.invalidate();
-    expect(r.isKnownUnreachable, isFalse,
-        reason: 'the network changed: what was known is stale');
+    expect(r.finding, ServerFinding.unknown,
+        reason:
+            'the network changed: what was found at the old place says nothing about the new one, for EVERY reader (P1-17, docs/31 CN-4b)');
 
     await r.resolve();
     up = true;
     await r.resolve();
-    expect(r.isKnownUnreachable, isFalse);
+    expect(r.finding, ServerFinding.answering);
 
     up = false;
     await r.resolve();
     r.reportSuccess();
-    expect(r.isKnownUnreachable, isFalse, reason: 'a request that worked');
+    expect(r.finding, ServerFinding.answering, reason: 'a request that worked');
+  });
+
+  test('a change of network is told, so every reader looks again', () async {
+    final r = EndpointResolver(
+      candidates: [home],
+      probe: (_) async => true,
+      delay: (_) async {},
+    );
+    await r.resolve();
+    final told = <ServerFinding>[];
+    r.findings.listen(told.add);
+
+    r.invalidate();
+    r.invalidate(); // nothing new the second time
+    await Future<void>.delayed(Duration.zero);
+
+    expect(told, [ServerFinding.unknown]);
   });
 
   test('a request that works marks the server reachable again', () async {
@@ -80,13 +104,13 @@ void main() {
       probe: (_) async => false,
       delay: (_) async {},
     );
-    final told = <bool>[];
-    r.reachability.listen(told.add);
+    final told = <ServerFinding>[];
+    r.findings.listen(told.add);
 
     r.reportSuccess();
     await Future<void>.delayed(Duration.zero);
 
-    expect(told, [true]);
+    expect(told, [ServerFinding.answering]);
   });
 
   test('at home: LAN answers first and wins', () async {
@@ -96,7 +120,7 @@ void main() {
       delay: (_) async {},
     );
     expect(await r.resolve(), home);
-    expect(r.isReachable, isTrue);
+    expect(r.finding, ServerFinding.answering);
   });
 
   test('away from home: LAN fails, Tailscale wins and becomes current',
@@ -143,7 +167,7 @@ void main() {
     );
     expect(await r.resolve(), isNull);
     expect(r.current, home);
-    expect(r.isReachable, isFalse);
+    expect(r.finding, ServerFinding.silent);
   });
 
   test('a probe that throws counts as failure', () async {
@@ -355,7 +379,7 @@ void main() {
 
       expect(r.anotherServerAt, tail.url);
       expect(told, [tail.url]);
-      expect(r.isReachable, isFalse);
+      expect(r.finding, ServerFinding.anotherServer);
     });
 
     test('nothing is named when the addresses simply did not answer', () async {
@@ -364,7 +388,7 @@ void main() {
       await r.resolve();
 
       expect(r.anotherServerAt, isNull);
-      expect(r.isKnownUnreachable, isTrue);
+      expect(r.finding, ServerFinding.silent);
     });
 
     test(
@@ -377,7 +401,7 @@ void main() {
 
       expect(r.anotherServerAt, isNull,
           reason: 'the server is reachable: there is nothing to warn about');
-      expect(r.isReachable, isTrue);
+      expect(r.finding, ServerFinding.answering);
     });
 
     test('it is told once, not at every look', () async {

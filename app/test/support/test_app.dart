@@ -421,7 +421,6 @@ Future<({AppDatabase db, FakePlaybackFacade facade, int serverId})> pumpApp(
         ),
         // Deterministic visuals: gradients/mosaics instead of network images.
         coverArtResolverProvider.overrideWithValue(null),
-        connectivityProvider.overrideWith((ref) => Stream.value(true)),
         // Background workers that need real platform channels / network.
         downloadManagerProvider.overrideWith((ref) async => null),
         lyricsPrefetchProvider.overrideWith((ref) {}),

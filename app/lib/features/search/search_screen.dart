@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../app/navigation.dart';
 import '../../app/tab_reselect.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
 import '../common/away_words.dart';
-import '../common/playability.dart';
 import '../common/widgets.dart';
 import '../providers.dart';
 import 'search_results.dart';
@@ -112,7 +112,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     ref.onTabReselected(MainTab.search, _backToFirstPage);
     // The lasting state, not the strip's: the hint stays for as long as the outage does (D-45) and leaves by itself.
-    final away = ref.watch(serverAwayProvider);
+    final away = ref.watch(serverReachabilityProvider).isAway;
     return SafeArea(
       bottom: false,
       child: Column(
@@ -200,7 +200,7 @@ class _Browse extends ConsumerWidget {
     final recents = ref.watch(recentSearchesProvider);
     final genres = ref.watch(genresProvider).value ?? const [];
     // The catalogue's genres need the server: while it is away their tiles are dimmed, not removed, and a tap says why (S-13 offline).
-    final away = ref.watch(serverAwayProvider);
+    final away = ref.watch(serverReachabilityProvider).isAway;
     return CustomScrollView(
       slivers: [
         if (recents.isNotEmpty) ...[

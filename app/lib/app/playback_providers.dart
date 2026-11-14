@@ -8,7 +8,6 @@ import '../core/logger.dart';
 import '../data/db/app_database.dart';
 import '../data/encore/signed_addresses.dart' show withQuality;
 import '../data/repos/downloads_repository.dart';
-import '../data/sync/endpoint_resolver.dart' show EndpointResolver;
 import '../data/sync/outbox.dart';
 import '../data/sync/sync_state_store.dart';
 import '../features/common/cover_art.dart' show coverCacheManager;
@@ -26,7 +25,7 @@ import '../playback/playback_engine.dart';
 import '../playback/playback_state_store.dart';
 import '../playback/queue_model.dart';
 import '../playback/source_resolver.dart';
-import 'connection.dart' show phoneHasInternetProvider, serverReachableProvider;
+import 'connection.dart' show ServerReachability, serverReachabilityProvider;
 import 'providers.dart';
 import 'session.dart';
 
@@ -41,12 +40,11 @@ final audioHandlerProvider = Provider<Future<EncoreAudioHandler>>(
   (ref) => throw UnimplementedError('audioHandlerProvider must be overridden'),
 );
 
-/// Whether a song that is not downloaded can be asked for now: the phone has a network AND the server is not known to be out of reach.
-/// A network alone is not enough: with the 4G radio on and no data the player believed it was online, waited for the server on the first
-/// song that was not downloaded and never reached the downloaded ones behind it (field test 2026-10-31). Before anybody has looked
-/// (the first second of the app) and without a session, the network decides alone.
-bool canReachServerNow(NetworkKind? network, EndpointResolver? endpoints) =>
-    network != NetworkKind.none && !(endpoints?.isKnownUnreachable ?? false);
+/// Whether a song that is not downloaded can be asked for now: the one state of reachability (P1-17) is not "away". A network alone is not
+/// enough: with the 4G radio on and no data the player believed it was online, waited for the server on the first song that was not downloaded and
+/// never reached the downloaded ones behind it (field test 2026-10-31): that state is `noInternet`. Before anybody has looked (the first second of the
+/// app, or just after a change of network) and without a session it is `unknown`, which is "may try".
+bool canReachServerNow(ServerReachability reach) => !reach.isAway;
 
 /// How many coming songs the phone has the server make ready while one plays: two, or only the next one while Data saver is in force (P4-24).
 int prepareAheadSongs({required bool dataSaverInForce}) =>
@@ -67,7 +65,7 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
   ServerSession? session() => ref.read(sessionProvider).value;
 
   // Kept alive for as long as the engine is: the first tap must read the answer, not "still loading".
-  ref.listen(phoneHasInternetProvider, (_, __) {});
+  ref.listen(serverReachabilityProvider, (_, __) {});
 
   // A car that starts the app cold asks for the browse tree before the engine
   // has restored its queue. The library only needs the database and the server
@@ -175,12 +173,13 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
           : (message: why.message, permanent: why.permanent);
     },
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
-    canReachServer: () => canReachServerNow(
-        ref.read(networkKindProvider).value, session()?.endpoints),
+    canReachServer: () =>
+        canReachServerNow(ref.read(serverReachabilityProvider)),
+    // Both are the one state (P1-17): `noNetwork` is certain and at once; no internet at all is also what the strip's words say, so a tap on a song
+    // that is not downloaded says what the strip says.
     networkPresent: () =>
-        ref.read(networkKindProvider).value != NetworkKind.none,
-    // The strip's own answer about internet (Android's check): the words of a tap on a song that is not downloaded must say what the strip says.
-    internetFound: () => ref.read(phoneHasInternetProvider).value ?? true,
+        ref.read(serverReachabilityProvider) != ServerReachability.noNetwork,
+    internetFound: () => !ref.read(serverReachabilityProvider).isOffline,
     // One fresh look at the server's addresses: a song that failed with a network but no server is waited for, not skipped (docs/33 G-1).
     serverAnswers: () async {
       final s = session() ??
@@ -205,12 +204,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     (_, next) => unawaited(
         engine.networkChanged(online: next.value != NetworkKind.none)),
   );
-  // ... and so does a song that waited for its server, the moment the server answers again (the engine also asks by itself every few
+  // ... and so does a song that waited for its server, the moment the state leaves "away" (the engine also asks by itself every few
   // seconds, so this only makes it quicker).
   ref.listen(
-    serverReachableProvider,
-    (_, next) {
-      if (next.value == true) unawaited(engine.networkChanged(online: true));
+    serverReachabilityProvider,
+    (previous, next) {
+      if ((previous?.isAway ?? false) && !next.isAway) {
+        unawaited(engine.networkChanged(online: true));
+      }
     },
   );
   // The preferred speed applies to everything, including after a restart.

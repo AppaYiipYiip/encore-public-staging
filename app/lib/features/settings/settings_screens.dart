@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/background_sync.dart';
 import '../../app/branding.dart';
+import '../../app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import '../../app/providers.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../data/sync/sync_scheduler.dart';
@@ -159,8 +161,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               name: server.name,
               username: server.username,
               endpointLabel: session?.endpoints.current.label,
-              reachable: ref.watch(phoneOnlineProvider) &&
-                  (session?.endpoints.isReachable ?? false),
+              reachable: ref.watch(serverReachabilityProvider) ==
+                  ServerReachability.ok,
               lastSync: sync.lastSuccessAt,
               syncing: sync.isSyncing,
             ),

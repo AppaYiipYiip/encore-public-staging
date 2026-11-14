@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/connection.dart' show serverReachableProvider;
+import '../../app/connection.dart'
+    show serverFindingProvider, serverReachabilityProvider;
 import '../../app/providers.dart';
 import '../../data/encore/encore_models.dart';
 import '../../design/tokens.dart';
@@ -13,7 +14,7 @@ import 'settings_controller.dart';
 final encoreServerInfoProvider =
     FutureProvider.autoDispose<EncoreInfo?>((ref) async {
   // Asked again whenever the server is lost or found, so "did not answer" does not outlive the outage (QA round 1, R1-2).
-  ref.watch(serverReachableProvider);
+  ref.watch(serverFindingProvider);
   final session = await ref.watch(sessionProvider.future);
   if (session == null || !session.encoreMode) return null;
   await session.whenAddressKnown();
@@ -31,8 +32,8 @@ class EncorePlaySection extends ConsumerWidget {
         ref.watch(settingsProvider.select((s) => s.instantPlayEnabled));
     final info = ref.watch(encoreServerInfoProvider);
     // With no internet the page's own header already says that downloaded songs play: said once.
-    final hasDownloads =
-        ref.watch(hasDownloadsProvider) && ref.watch(phoneOnlineProvider);
+    final hasDownloads = ref.watch(hasDownloadsProvider) &&
+        !ref.watch(serverReachabilityProvider).isOffline;
     final c = context.colors;
 
     Widget status() {

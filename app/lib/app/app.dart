@@ -305,18 +305,16 @@ class _SessionLifecycleState extends ConsumerState<_SessionLifecycle>
     ref.listen(networkKindProvider, (_, next) {
       final session = ref.read(sessionProvider).value;
       session?.scheduler.setMetered(next.value == NetworkKind.mobile);
+      final online = next.value;
+      if (online != null) {
+        session?.scheduler
+            .onConnectivityChanged(online: online != NetworkKind.none);
+      }
       if (session != null && next.value != NetworkKind.none) {
         // Another network: whatever answered at the old address is not known to be the server any more (a recycled address, a café). No request
         // goes out until the addresses have been asked who they are again.
         session.endpoints.invalidate();
         unawaited(session.endpoints.resolve());
-      }
-    });
-    ref.listen(connectivityProvider, (_, next) {
-      final online = next.value;
-      final session = ref.read(sessionProvider).value;
-      if (online != null && session != null) {
-        session.scheduler.onConnectivityChanged(online: online);
       }
     });
     // The session may already be built by the time this widget builds.

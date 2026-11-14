@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/encore/encore_instant.dart';
 import '../../data/encore/encore_models.dart';
-import '../common/playability.dart' show serverAwayProvider;
 import 'instant_controller.dart';
 import 'instant_play.dart';
 
@@ -48,7 +48,7 @@ class SongMarks extends Notifier<Map<String, EncoreUnavailable>> {
   /// Asks about the songs of a list that were not asked about lately. Never throws; does nothing where nothing can be asked.
   Future<void> check(List<CatalogueTrack> tracks) async {
     if (_unsupported || tracks.isEmpty) return;
-    if (ref.read(serverAwayProvider)) return;
+    if (ref.read(serverReachabilityProvider).isAway) return;
     final now = ref.read(songMarksClockProvider)();
     // A mark the server no longer believes goes now, whether or not the question is asked again.
     final stillLive = {
@@ -113,7 +113,7 @@ class TrackList {
 final songMarksCheckProvider =
     FutureProvider.autoDispose.family<void, TrackList>((ref, list) async {
   // When the phone is no longer away the list is asked about again (the question is not asked while it is).
-  ref.watch(serverAwayProvider);
+  ref.watch(serverReachabilityProvider.select((r) => r.isAway));
   // A provider may not change another while it is being built: let this build finish before the marks are touched.
   await Future<void>.value();
   await ref.read(songMarksProvider.notifier).check(list.tracks);

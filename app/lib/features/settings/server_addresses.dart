@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import '../../app/providers.dart';
 import '../../data/auth/server_setup_service.dart';
 import '../../data/db/app_database.dart';
@@ -65,7 +67,7 @@ class _ServerAddressesSectionState
   Future<void> _test(ServerRow server, List<ServerEndpoint> endpoints,
       {bool quiet = false}) async {
     // With no network at all every address would "not answer": that says nothing about the addresses.
-    if (!ref.read(phoneOnlineProvider)) return;
+    if (ref.read(networkKindProvider).value == NetworkKind.none) return;
     final password =
         await ref.read(credentialStoreProvider).readPassword(server.id);
     if (!mounted) return;
@@ -159,8 +161,10 @@ class _ServerAddressesSectionState
     if (server == null) return const SizedBox.shrink();
     final session = ref.watch(sessionProvider).value;
     final endpoints = _decode(server);
-    final online = ref.watch(phoneOnlineProvider);
-    final inUse = online && session != null && session.endpoints.isReachable
+    // Whether there is a network at all (a raw fact: with none, testing an address says nothing about it) and whether the server answers (the one state).
+    final online = ref.watch(networkKindProvider).value != NetworkKind.none;
+    final inUse = session != null &&
+            ref.watch(serverReachabilityProvider) == ServerReachability.ok
         ? session.endpoints.current.url
         : null;
     final c = context.colors;

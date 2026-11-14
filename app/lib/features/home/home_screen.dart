@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../app/tab_reselect.dart';
@@ -676,7 +677,9 @@ class _PlaysOfflineShelf extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(serverAwayProvider)) return const SizedBox.shrink();
+    if (!ref.watch(serverReachabilityProvider).isAway) {
+      return const SizedBox.shrink();
+    }
     // Only what has a song on the phone: a download that was pressed and has no file yet (a tunnel) is not "Plays offline".
     final held = ref.watch(onPhoneProvider).value ?? OnPhone.none;
     final entries = [

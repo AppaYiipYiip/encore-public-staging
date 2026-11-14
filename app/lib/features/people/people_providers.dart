@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/connection.dart' show serverReachableProvider;
+import '../../app/connection.dart' show ServerFinding, serverFindingProvider;
 import '../../app/providers.dart';
 import '../../core/logger.dart';
 import '../../core/result.dart';
@@ -103,8 +103,10 @@ class PeopleNotifier extends AsyncNotifier<PeopleMe?> {
   @override
   Future<PeopleMe?> build() async {
     // An owner whose first ask found no server loses Invite and People for as long as the app runs; asked again when it answers.
-    ref.listen(serverReachableProvider, (_, now) {
-      if (now.value == true && state.value == null && !state.isLoading) {
+    ref.listen(serverFindingProvider, (_, now) {
+      if (now.value == ServerFinding.answering &&
+          state.value == null &&
+          !state.isLoading) {
         ref.invalidateSelf();
       }
     });

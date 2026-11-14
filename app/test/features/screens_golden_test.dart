@@ -143,7 +143,8 @@ void main() {
       playing: samplePlaying(isPlaying: false),
       overrides: [
         connectionGraceProvider.overrideWithValue(Duration.zero),
-        serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+        serverFindingProvider
+            .overrideWith((ref) => Stream.value(ServerFinding.silent)),
         currentLyricsProvider.overrideWith((ref, id) async => _sampleLyrics),
       ],
     );

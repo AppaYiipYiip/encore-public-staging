@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meta/meta.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../app/providers.dart';
 import '../../data/encore/encore_models.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../domain/download_line.dart';
 import '../../domain/storage_guard.dart' show StorageVerdict;
-import '../common/playability.dart' show serverAwayProvider;
 import '../instant/release_save.dart' show releasePinStateProvider;
 import '../settings/settings_controller.dart';
 import 'download_providers.dart';
@@ -15,15 +15,14 @@ import 'keep_providers.dart';
 /// Why the phone cannot move now, or `null` when it can: one cause for the whole screen (docs/design S-16 "waiting"), the same test the strip uses.
 /// There is no connection; or "Wi-Fi only" is on and the phone is on mobile data; or internet is found but the person's server does not answer.
 ///
-/// The server's silence is read from [serverAwayProvider] and nowhere else: the single lasting "can I reach my server" answer P1-15 built (B-17
-/// counts eleven such notions in the app; this adds none).
+/// The server's silence is read from [serverReachabilityProvider] and nowhere else: the one "can I reach my server" state (P1-17, B-17).
 final phoneWaitProvider = Provider<PhoneWait?>((ref) {
   final network = ref.watch(networkKindProvider).value ?? NetworkKind.wifi;
   if (network == NetworkKind.none) return PhoneWait.connection;
   final wifiOnly =
       ref.watch(settingsProvider.select((s) => s.wifiOnlyDownloads));
   if (wifiOnly && network != NetworkKind.wifi) return PhoneWait.wifi;
-  if (ref.watch(serverAwayProvider)) return PhoneWait.server;
+  if (ref.watch(serverReachabilityProvider).isAway) return PhoneWait.server;
   // The queue is held back by the storage guard (the same verdict the banner in Settings shows).
   return switch (ref.watch(downloadVerdictProvider).value) {
     StorageVerdict.limitReached => PhoneWait.limit,
