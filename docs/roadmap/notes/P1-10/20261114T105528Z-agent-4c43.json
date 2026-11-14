@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105528Z-agent-4c43",
+ "item": "P1-10",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:55:28Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: emulator, build 151, against VM 108 at sha-35a086e; not the release-candidate pair. After downloading two songs (In Da Club, Candy Shop) the second store holds their covers (files/pinnedCovers, registry files/encorePinnedCovers.json, keys cover:<server>:<id>:256 and :768). With the regular image cache EMPTIED (cache/encoreCovers2 and libCachedImageData removed, app stopped) and airplane mode ON, a cold start still drew the downloaded songs' covers (the mini player, and the 50 Cent cover inside the '00s Hip Hop tile) while the not-downloaded entries showed letter tiles or plain mosaics with \"Not downloaded\". So the pin holds without the network and without the regular cache. Two things for a later look: (1) the registry stores each cover's signed address with the account's token and salt (same exposure as the regular cache database, in private storage, allowBackup=false); keying by the cover key alone would be cleaner; (2) only the 256 and 768 sizes are pinned: a screen asking another size offline would show a letter tile. Artist pictures of downloaded songs are N-15's half."
+}

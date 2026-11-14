@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105529Z-agent-d2ca",
+ "item": "N-21",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:55:29Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026 (emulator, build 151): matches the note above. In Search \"busta\" the rows that exist only in the catalogue (album name under the title) have no three-dot menu, and neither has the Top result card when it is one (BUSTA by ARXMANE shows only Play). Library songs keep their menu. New finding: a LONG PRESS on such a catalogue row plays it (the row has a tap and no long press), which made the server look the song up at YouTube (the look-up counter went 1 -> 4, one song added): a mis-press costs a look-up (audit row B-121 now says so)."
+}

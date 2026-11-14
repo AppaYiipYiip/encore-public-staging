@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105529Z-agent-3143",
+ "item": "N-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:55:29Z",
+ "type": "note",
+ "body": "14 Nov 2026, emulator (build 151) against VM 108: Settings > Library & sync > Rebuild library with 3243 songs: the screen kept 3243 songs, \"Last sync\" showed the new time at once (11:52:51), and Your Library > Only your music listed the playlists straight after (nothing empty). The one report (\"Only your music\" empty and \"Last sync: Not yet\" after Rebuild) is still NOT reproduced; what to try next: a rebuild with the server away or slow (airplane mode during the rebuild), which is the most likely way a first read comes back empty. This is a guess to test, not a finding."
+}

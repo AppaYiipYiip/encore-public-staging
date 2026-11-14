@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105529Z-agent-cf28",
+ "item": "N-22",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:55:29Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151): inside '00s Hip Hop, one press on the Your Library tab returns to Your Library; with search results open, one press on the Search tab returns to the empty Search page (Recent searches)."
+}
