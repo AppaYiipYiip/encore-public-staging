@@ -414,6 +414,60 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class SongThumbnailTest(unittest.TestCase):
+    """P1-26: an imported song keeps the thumbnail its source gives it, so a song Deezer does not know shows a picture, not a letter."""
+
+    def _ytm(self, **entry):
+        base = {
+            "videoId": "abcdefghijk",
+            "title": "Song",
+            "isAvailable": True,
+            "artists": [{"name": "Artist"}],
+            "album": None,
+            "duration_seconds": 200,
+            "videoType": "MUSIC_VIDEO_TYPE_ATV",
+        }
+        return {"title": "Mix", "tracks": [{**base, **entry}]}
+
+    def test_a_youtube_music_track_keeps_its_largest_thumbnail(self):
+        data = self._ytm(
+            thumbnails=[
+                {"url": "https://lh3.googleusercontent.com/a=w60-h60", "width": 60, "height": 60},
+                {"url": "https://lh3.googleusercontent.com/a=w120-h120", "width": 120, "height": 120},
+            ]
+        )
+        playlist = read_playlist(LINK, ytmusic=lambda ident: data)
+        self.assertEqual(playlist.tracks[0].thumbnail, "https://lh3.googleusercontent.com/a=w120-h120")
+
+    def test_a_track_without_a_thumbnail_has_none(self):
+        playlist = read_playlist(LINK, ytmusic=lambda ident: self._ytm())
+        self.assertIsNone(playlist.tracks[0].thumbnail)
+
+    def test_a_thumbnail_on_a_host_the_picture_rules_do_not_allow_is_not_kept(self):
+        data = self._ytm(thumbnails=[{"url": "https://evil.example/a.jpg", "width": 544, "height": 544}])
+        playlist = read_playlist(LINK, ytmusic=lambda ident: data)
+        self.assertIsNone(playlist.tracks[0].thumbnail)
+
+    def test_a_yt_dlp_entry_keeps_its_largest_thumbnail(self):
+        listing = {
+            "title": "Mix",
+            "entries": [
+                {
+                    "id": "abcdefghijk",
+                    "title": "Artist - Song",
+                    "channel": "Artist",
+                    "duration": 200,
+                    "thumbnails": [
+                        {"url": "https://i.ytimg.com/vi/abcdefghijk/default.jpg", "width": 120, "height": 90},
+                        {"url": "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg", "width": 480, "height": 360},
+                    ],
+                }
+            ],
+        }
+        playlist = read_playlist(LINK, ytdlp=lambda url: listing)
+        self.assertEqual(playlist.tracks[0].thumbnail, "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg")
+
+
 class PlaylistPictureTest(unittest.TestCase):
     """The picture a playlist has at its source, so the app can show it before any song has been looked at."""
 
