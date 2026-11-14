@@ -1,0 +1,12 @@
+{
+ "id": "20261114T234915Z-agent-93a8",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T23:49:15Z",
+ "type": "note",
+ "body": "FINDING while cleaning up the N-26 check on VM 108, 14 Nov 2026 (design input for slices 2b/2c, not a bug in 2a): the refs of a DELETED playlist and of an import are NEVER retired by the janitor. A playlist deleted through the API leaves tombstone rows (the playlist with deleted_at, its entries with deleted_at) and the janitor counts a removed playlist_entry as a pointer on purpose (the foreign key has no cascade, and a phone that was away learns the removal from those rows), and an import is a history row with its import_entry pointing at every ref (there is no way to delete an import). So the 29 refs of the test import stay for ever although nobody can play or see them. Same class as slice 2c: the only fix that keeps an away phone correct is a \"gone\" signal in the files/changes feed (a tombstone with a feature string), after which tombstoned entries and old imports' pointers can be purged after N days and their refs retired. Add it to the one design note of 2c and 2b together: (a) what the feed says for a removed playlist/entry, (b) when the server purges the tombstone, (c) what an import row keeps (a count, not pointers), (d) the phone's side. Until then these refs are bounded by what people delete.",
+ "to": [
+  "agent"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261114T234911Z-agent-675c",
+ "item": "N-26",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T23:49:11Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of slice 1 on the REAL stack, 14 Nov 2026 ~23:50 UTC (VM 108 at sha-eb66523 = main after #78 and #80, label verified; NOT the release-candidate pair; nothing marked walked). A real public playlist, \"Best KEXP Live Performances\" (PLqh-GLl-LURzdsV9qVaSMRvUMTTBaNdf0, 29 entries, 27 of them uploads credited to the channel KEXP), was imported through the owner test account. RESULT: 27 of 29 are filed under their PERFORMER (\"Neko Case\", \"The National\", \"IDLES\", \"Kiasmos\", \"Ibibio Sound Machine\"... with titles such as \"Rylan (Live on KEXP)\"), and the kept files landed in Encore/<performer>/Singles/<title>.opus (Neko Case, The National, IDLES, ...), NOT under KEXP: slice 1 WORKS on real get_playlist entries. DEFECT FOUND: TWO entries stayed under KEXP (\"Nneka - Heartbeat (Live on KEXP)\", \"Foals - Full Performance (Live on KEXP)\"). Cause, proved from the raw ytmusicapi entries (recorded in handoff-2026-11-03/recordings-14nov/ytm_n26/kexp_removed_uploads.get_playlist.json): they are REMOVED UPLOADS: videoType None, isAvailable False, album None, artists [KEXP], videoId None. readers._read_entry promotes \"no videoType and (isAvailable False OR an album)\" to declared; the isAvailable arm was right for the recorded removed CATALOGUE songs (they also have an album) and wrong for removed uploads. FIX ASSIGNED to helper-n26 as the FIRST commit of its slice 2 PR (red first): an entry with no videoType is the catalogue's own only when it has an ALBUM; a removed entry with no album is read as an upload. It BLOCKS the merge of slice 2 (slice 2 persists the facts: wrong facts would be stored). Test data left on VM 108 (logged in the homelab log, entry 1v): the import im_01M7E7AYQE4S0SB7FB04DMMP5J \"N26 CHECK (delete me)\", its playlist (deleted through the API: a tombstone), 29 refs and about 10 kept songs under Encore/<performer>/Singles/.",
+ "to": [
+  "agent"
+ ]
+}
