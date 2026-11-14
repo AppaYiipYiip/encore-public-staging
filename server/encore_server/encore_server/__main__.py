@@ -29,6 +29,10 @@ USAGE = """usage: python -m encore_server [command]
 """
 
 
+#: Seconds uvicorn gives running requests on a stop: inside Docker's ten before the kill.
+STOP_GRACE_S = 8
+
+
 def main(argv: list[str] | None = None) -> None:
     args = sys.argv[1:] if argv is None else argv
     # Only NO word runs the server. A word this program does not know (`--help`, `restore`, a typo) used to fall through to it: typed in the
@@ -57,6 +61,10 @@ def main(argv: list[str] | None = None) -> None:
         port=settings.port,
         log_level=settings.log_level.lower(),
         access_log=False,
+        # `docker stop` (so `encore update` and `encore stop`) kills the container ten seconds after SIGTERM. Uvicorn waits for every running request
+        # on a stop and, with no limit of its own, was killed in the middle of its shutdown (exit code 137, AUDIT B-129). The live connections end at
+        # once now (api.live); this is the bound for whatever else holds a stop, such as a long stream, and it leaves the lifespan shutdown its time.
+        timeout_graceful_shutdown=STOP_GRACE_S,
     )
 
 

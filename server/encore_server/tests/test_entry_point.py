@@ -49,3 +49,18 @@ def test_a_word_it_does_not_know_is_refused_with_the_commands_and_starts_nothing
     err = capsys.readouterr().err
     assert args[0] in err, "it says which word it did not understand"
     assert "setup" in err and "backup" in err
+
+
+def test_the_server_is_run_with_a_stop_that_ends_inside_dockers_grace(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    """AUDIT B-129, second layer: `docker stop` kills the container ten seconds after SIGTERM. Uvicorn waits for every running request on a stop (a long
+    stream, an import's download); without its own limit the server was killed (exit code 137) in the middle of its shutdown. The live connections are
+    fixed at their source (tests/test_graceful_stop.py); this is the bound for whatever else could hold a stop."""
+    seen: dict[str, Any] = {}
+    settings = entry.Settings(data_dir=tmp_path, youtube=False, auto_tools=False)
+    monkeypatch.setattr(entry.uvicorn, "run", lambda app, **kwargs: seen.update(kwargs))
+    monkeypatch.setattr(entry, "create_app", lambda settings, **kwargs: object())
+    monkeypatch.setattr(entry.Settings, "from_env", staticmethod(lambda: settings))
+
+    entry.main([])
+
+    assert 0 < seen["timeout_graceful_shutdown"] < 10

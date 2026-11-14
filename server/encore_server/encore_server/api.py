@@ -1376,12 +1376,23 @@ async def live(websocket: WebSocket) -> None:
         return
 
     connection = svc.hub.attach(row["person"], row["device"])
+    # The device's side is listened to as well as the queue: a phone that goes away, and uvicorn's own "this connection is ending" when the server is
+    # asked to stop, arrive as a disconnect message, and the handler must end THEN, not at the next ping (B-129: a stop with one phone connected waited
+    # for the 25 s ping, past Docker's 10 s grace, and ended in SIGKILL; a device that had gone stayed on the hub as "listening").
+    closed = asyncio.create_task(_until_closed(websocket))
+    waiting: asyncio.Task[dict[str, Any]] | None = None
     try:
         await websocket.send_json({"type": "hello", "serverTime": now_ms(), "cursor": str(cursor)})
         while True:
-            try:
-                event = await asyncio.wait_for(connection.queue.get(), timeout=PING_EVERY_S)
-            except TimeoutError:
+            if waiting is None:
+                waiting = asyncio.create_task(connection.queue.get())
+            await asyncio.wait({waiting, closed}, timeout=PING_EVERY_S, return_when=asyncio.FIRST_COMPLETED)
+            if closed.done():
+                return  # an event that came with it is not lost: the device asks for what it missed by its cursor when it connects again
+            if waiting.done():
+                event = waiting.result()
+                waiting = None
+            else:
                 event = {"type": "ping", "serverTime": now_ms()}
             if connection.ended or event is END:
                 await websocket.close(code=4401)  # the device was signed out, revoked, locked or removed (AUDIT B5)
@@ -1390,7 +1401,21 @@ async def live(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     finally:
+        closed.cancel()
+        if waiting is not None:
+            waiting.cancel()
         svc.hub.detach(connection)
+
+
+async def _until_closed(websocket: WebSocket) -> None:
+    """Returns when the device's side closes the socket or the connection ends. Whatever the device sends after its first message is read and ignored."""
+    try:
+        while True:
+            message = await websocket.receive()
+            if message["type"] == "websocket.disconnect":
+                return
+    except (RuntimeError, WebSocketDisconnect):
+        return  # the socket is already closed
 
 
 # ------------------------------------------------------------------------------------------------ the application
