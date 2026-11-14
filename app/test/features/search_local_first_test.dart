@@ -196,7 +196,7 @@ void main() {
     /// Searches "eminem" while one page of [what] is written every 100 ms for three seconds. [readTime] is how long one read of the
     /// database takes (a phone that is busy; zero is a database that answers at once).
     ///
-    /// The rows must be on screen within a second of typing, and once there, in every frame.
+    /// The rows must be on screen within a third of a second of typing, and once there, in every frame.
     Future<void> searchWhileWriting(WidgetTester tester, _Write what,
         {Duration readTime = Duration.zero}) async {
       final reads = _SlowReads();
@@ -240,9 +240,10 @@ void main() {
       expect(shownAt, isNotNull,
           reason: 'the rows of the library were not drawn during three '
               'seconds of writing');
-      expect(shownAt!, lessThanOrEqualTo(10),
-          reason: 'within about a second of typing (the pages are 100 ms '
-              'apart), not when the writing stopped');
+      // Measured on the fixed code: step 1 on a database that answers at once, step 2 on the busy one (three reads of 40 ms and a frame).
+      expect(shownAt!, lessThanOrEqualTo(3),
+          reason: 'within about a third of a second of typing (the pages are '
+              '100 ms apart), not when the writing stopped');
 
       reads.delay = Duration.zero;
       await tester.pump(const Duration(seconds: 2));
