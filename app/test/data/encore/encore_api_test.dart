@@ -136,6 +136,17 @@ void main() {
       expect(result.failureOrNull, isNot(isA<AuthFailure>()));
     });
 
+    test(
+        'a page is a network that is not the server for info(), and a definite "no such API here" for detect() (AUDIT B-78)',
+        () async {
+      expect((await behind(200).info()).failureOrNull, isA<NetworkFailure>(),
+          reason:
+              'every ordinary caller: a sign-in page is not the server, and not a plain music server either');
+      expect((await behind(200).detect()).failureOrNull, isA<NotFoundFailure>(),
+          reason:
+              'asked of an address that has already proved itself: a page of its own instead of the API means there is no Encore server');
+    });
+
     test('a refusal that is not the own of the server is not "sign in again"',
         () async {
       for (final status in [401, 403]) {
