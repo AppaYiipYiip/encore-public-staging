@@ -1,0 +1,506 @@
+{
+  "tracks": [
+    {
+      "id": "3818963601",
+      "title": "Dracula (with JENNIE)",
+      "artists": [
+        {
+          "id": "134790",
+          "name": "Tame Impala"
+        }
+      ],
+      "album": {
+        "id": "910510411",
+        "title": "Dracula (with JENNIE)"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/b868399da682f34dcd7d98af1c0de80b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 209000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Dracula (with JENNIE)",
+        "artists": [
+          "Tame Impala"
+        ],
+        "album": "Dracula (with JENNIE)",
+        "durationMs": 209000,
+        "deezerId": "3818963601",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/b868399da682f34dcd7d98af1c0de80b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "4015341011",
+      "title": "Dai Dai",
+      "artists": [
+        {
+          "id": "160",
+          "name": "Shakira"
+        }
+      ],
+      "album": {
+        "id": "980745831",
+        "title": "Dai Dai"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/a7f9bae0243c512059298a68d09f45a1/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 223000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Dai Dai",
+        "artists": [
+          "Shakira"
+        ],
+        "album": "Dai Dai",
+        "durationMs": 223000,
+        "deezerId": "4015341011",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/a7f9bae0243c512059298a68d09f45a1/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "76563092",
+      "title": "Sweet November",
+      "artists": [
+        {
+          "id": "5531258",
+          "name": "SZA"
+        }
+      ],
+      "album": {
+        "id": "7594233",
+        "title": "Z"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/1159962710260d77e5e18fa66bfd92e4/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 243000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Sweet November",
+        "artists": [
+          "SZA"
+        ],
+        "album": "Z",
+        "durationMs": 243000,
+        "deezerId": "76563092",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/1159962710260d77e5e18fa66bfd92e4/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "400413172",
+      "title": "Massage Music",
+      "artists": [
+        {
+          "id": "9201556",
+          "name": "Massage Relaxation"
+        }
+      ],
+      "album": {
+        "id": "47130152",
+        "title": "Massage Music: Buddhist Meditation and Transcendental Meditation Zone, Japanese Zen Music, Tea Garden, Nature Sounds, Yoga & Spa R"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6e2e61872747d64e8ce81eb4c2cbd5d6/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 242000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Massage Music",
+        "artists": [
+          "Massage Relaxation"
+        ],
+        "album": "Massage Music: Buddhist Meditation and Transcendental Meditation Zone, Japanese Zen Music, Tea Garden, Nature Sounds, Yoga & Spa R",
+        "durationMs": 242000,
+        "deezerId": "400413172",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/6e2e61872747d64e8ce81eb4c2cbd5d6/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "13810910",
+      "title": "Georgia On My Mind",
+      "artists": [
+        {
+          "id": "1342",
+          "name": "Ray Charles"
+        }
+      ],
+      "album": {
+        "id": "1263751",
+        "title": "Genius of Soul"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/eb001c67721572f70127c86e70657e20/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 218000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Georgia On My Mind",
+        "artists": [
+          "Ray Charles"
+        ],
+        "album": "Genius of Soul",
+        "durationMs": 218000,
+        "deezerId": "13810910",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/eb001c67721572f70127c86e70657e20/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "4401853961",
+      "title": "BANTU MENTALITÉ",
+      "artists": [
+        {
+          "id": "604107",
+          "name": "SDM"
+        }
+      ],
+      "album": {
+        "id": "1142273521",
+        "title": "IN INFINITUM"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6fbcac43aeb93c95ae60aa652145caeb/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 191000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "BANTU MENTALITÉ",
+        "artists": [
+          "SDM"
+        ],
+        "album": "IN INFINITUM",
+        "durationMs": 191000,
+        "deezerId": "4401853961",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/6fbcac43aeb93c95ae60aa652145caeb/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "408691402",
+      "title": "Again (feat. XXXTENTACION)",
+      "artists": [
+        {
+          "id": "4592596",
+          "name": "Noah Cyrus"
+        }
+      ],
+      "album": {
+        "id": "48514022",
+        "title": "Again (feat. XXXTENTACION)"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/756519f0b63a45a65156cbcb341364f4/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 194000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Again (feat. XXXTENTACION)",
+        "artists": [
+          "Noah Cyrus"
+        ],
+        "album": "Again (feat. XXXTENTACION)",
+        "durationMs": 194000,
+        "deezerId": "408691402",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/756519f0b63a45a65156cbcb341364f4/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "3895241341",
+      "title": "Boston",
+      "artists": [
+        {
+          "id": "181157207",
+          "name": "STELLA LEFTY"
+        }
+      ],
+      "album": {
+        "id": "937796461",
+        "title": "Boston"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/66d6baca9df5092af22a710ce10d39cf/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 170000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Boston",
+        "artists": [
+          "STELLA LEFTY"
+        ],
+        "album": "Boston",
+        "durationMs": 170000,
+        "deezerId": "3895241341",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/66d6baca9df5092af22a710ce10d39cf/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "3602074142",
+      "title": "Choosin' Texas",
+      "artists": [
+        {
+          "id": "14867123",
+          "name": "Ella Langley"
+        }
+      ],
+      "album": {
+        "id": "837881302",
+        "title": "Choosin' Texas"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/749ad2ad7609ec768e342bec41078095/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 232000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Choosin' Texas",
+        "artists": [
+          "Ella Langley"
+        ],
+        "album": "Choosin' Texas",
+        "durationMs": 232000,
+        "deezerId": "3602074142",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/749ad2ad7609ec768e342bec41078095/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "4208859922",
+      "title": "BbY WOW",
+      "artists": [
+        {
+          "id": "5297021",
+          "name": "KAROL G"
+        }
+      ],
+      "album": {
+        "id": "1048237582",
+        "title": "NO ME ARREPIENTO DE SENTIR TANTO"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/f794dd1931dac42fc13f938850b686c6/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 225000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "BbY WOW",
+        "artists": [
+          "KAROL G"
+        ],
+        "album": "NO ME ARREPIENTO DE SENTIR TANTO",
+        "durationMs": 225000,
+        "deezerId": "4208859922",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/f794dd1931dac42fc13f938850b686c6/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "3949488111",
+      "title": "Obvious",
+      "artists": [
+        {
+          "id": "102",
+          "name": "Chris Brown"
+        }
+      ],
+      "album": {
+        "id": "957252991",
+        "title": "Obvious"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/a7ab758fef1fc4f7b097d6f1339f28a5/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 186000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Obvious",
+        "artists": [
+          "Chris Brown"
+        ],
+        "album": "Obvious",
+        "durationMs": 186000,
+        "deezerId": "3949488111",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/a7ab758fef1fc4f7b097d6f1339f28a5/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "4250696681",
+      "title": "Nicole Kidman",
+      "artists": [
+        {
+          "id": "306607671",
+          "name": "ADÉLA"
+        }
+      ],
+      "album": {
+        "id": "1064827231",
+        "title": "PRIMA"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/68502d8730fa4ce6a41e2cb4db6d2fb7/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 181000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Nicole Kidman",
+        "artists": [
+          "ADÉLA"
+        ],
+        "album": "PRIMA",
+        "durationMs": 181000,
+        "deezerId": "4250696681",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/68502d8730fa4ce6a41e2cb4db6d2fb7/1000x1000-000000-80-0-0.jpg"
+      }
+    }
+  ],
+  "artists": [
+    {
+      "id": "5542343",
+      "name": "Ninho",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/7601c5c0e2bd16cb585898316fd0dfec/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "52463032",
+      "name": "ElGrandeToto",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/dae5e8616f907599e3d0be7b04131ac1/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "604107",
+      "name": "SDM",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/330038fdb64b558777faf2fc04a78389/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "121672292",
+      "name": "Werenoi",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/c9a941ffdfec123385b9e0b8b20f9ac0/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "1191615",
+      "name": "Jul",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/16eb681d72934d4db17088dfc216669d/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "246791",
+      "name": "Drake",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/eb0ed5b21d1ea5af021fc074ded0e91f/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "722",
+      "name": "Elissa",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/fd21757371e52bb02ac2ec102c2bbe08/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "4050205",
+      "name": "The Weeknd",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/581693b4724a7fcfa754455101e13a44/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "9635624",
+      "name": "Billie Eilish",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/8eab1a9a644889aabaca1e193e05f984/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "52937632",
+      "name": "Niaks",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/bc6aa04bcdb012e988b3e47c70c6f0ad/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "148380152",
+      "name": "Mauvais Djo",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/53a24f6cf5d51209e74e606765394e70/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "13918545",
+      "name": "Tiakola",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/0df16db136e7417eeef74988208859c3/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "58624",
+      "name": "Niro",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/572831844e25b714cab8a26059831a20/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "9430902",
+      "name": "TIF",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/8f1881ac874cfa2d7fa8857c86bc58c4/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    },
+    {
+      "id": "4448630",
+      "name": "Maes",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/14c919011b4dc5575aa64bcf7311aa5d/1000x1000-000000-80-0-0.jpg",
+      "fans": null,
+      "albumCount": null
+    }
+  ],
+  "albums": [
+    {
+      "id": "997406121",
+      "title": "Friend World",
+      "artists": [
+        {
+          "id": "869599",
+          "name": "Do Nothing"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/daeb114770df80e63ac9a1b3b4aecbd3/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "album"
+    },
+    {
+      "id": "980438811",
+      "title": "MI AMOR",
+      "artists": [
+        {
+          "id": "182492167",
+          "name": "bxkq"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c3da38c912d4cb393a542950d4f3d9aa/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "ep"
+    },
+    {
+      "id": "1058264482",
+      "title": "AFANDI / افندي",
+      "artists": [
+        {
+          "id": "148852642",
+          "name": "Saint Levant"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/0b35fe0e7521c4d192fca75a212c9bc5/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "album"
+    }
+  ]
+}

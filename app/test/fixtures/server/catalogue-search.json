@@ -1,0 +1,389 @@
+{
+  "query": "billie eilish",
+  "artists": [
+    {
+      "id": "9635624",
+      "name": "Billie Eilish",
+      "picture": "https://cdn-images.dzcdn.net/images/artist/8eab1a9a644889aabaca1e193e05f984/1000x1000-000000-80-0-0.jpg",
+      "fans": 9282134,
+      "albumCount": 32
+    },
+    {
+      "id": "120810992",
+      "name": "Billie Eilish & ROSALÍA",
+      "picture": null,
+      "fans": 1323,
+      "albumCount": 0
+    },
+    {
+      "id": "214957705",
+      "name": "DJ Billie Eilish",
+      "picture": null,
+      "fans": 12,
+      "albumCount": 0
+    },
+    {
+      "id": "12001578",
+      "name": "Billie Eilish O'Connell",
+      "picture": null,
+      "fans": 2233,
+      "albumCount": 0
+    }
+  ],
+  "albums": [
+    {
+      "id": "586786102",
+      "title": "HIT ME HARD AND SOFT",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 10,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "album"
+    },
+    {
+      "id": "91598612",
+      "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 14,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "album"
+    },
+    {
+      "id": "53522522",
+      "title": "dont smile at me",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c6e5ffd676146c447a4a81819c5d29ae/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 9,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "ep"
+    },
+    {
+      "id": "248214242",
+      "title": "Happier Than Ever",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/9955047483278bd0f93420951226ac44/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 16,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "album"
+    },
+    {
+      "id": "61392882",
+      "title": "lovely",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/910033ba5cd64291a921061c8e8ba85a/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 1,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "single"
+    },
+    {
+      "id": "338169017",
+      "title": "Guitar Songs",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/4cc57080cf8a5ce157adf50a85acebf5/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 2,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "ep"
+    },
+    {
+      "id": "131675232",
+      "title": "No Time To Die",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5c8b9fe62c67cb0257ea76bcdf4ee06f/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 1,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "single"
+    },
+    {
+      "id": "623577791",
+      "title": "Guess featuring billie eilish",
+      "artists": [
+        {
+          "id": "1462230",
+          "name": "Charli xcx"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/a6a00854b95f19a50772e50bdd2c4a0e/1000x1000-000000-80-0-0.jpg",
+      "trackCount": 1,
+      "year": null,
+      "releaseDate": null,
+      "recordType": "single"
+    }
+  ],
+  "tracks": [
+    {
+      "id": "2801558052",
+      "title": "BIRDS OF A FEATHER",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "586786102",
+        "title": "HIT ME HARD AND SOFT"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 210000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "BIRDS OF A FEATHER",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "HIT ME HARD AND SOFT",
+        "durationMs": 210000,
+        "deezerId": "2801558052",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2801558062",
+      "title": "WILDFLOWER",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "586786102",
+        "title": "HIT ME HARD AND SOFT"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 261000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "WILDFLOWER",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "HIT ME HARD AND SOFT",
+        "durationMs": 261000,
+        "deezerId": "2801558062",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2801558042",
+      "title": "CHIHIRO",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "586786102",
+        "title": "HIT ME HARD AND SOFT"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 303000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "CHIHIRO",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "HIT ME HARD AND SOFT",
+        "durationMs": 303000,
+        "deezerId": "2801558042",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "655095962",
+      "title": "when the party's over",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "91598612",
+        "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 199000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "when the party's over",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+        "durationMs": 199000,
+        "deezerId": "655095962",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2366043655",
+      "title": "What Was I Made For? [From The Motion Picture \"Barbie\"]",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "463935645",
+        "title": "What Was I Made For? [From The Motion Picture \"Barbie\"]"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 222000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "What Was I Made For? [From The Motion Picture \"Barbie\"]",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "What Was I Made For? [From The Motion Picture \"Barbie\"]",
+        "durationMs": 222000,
+        "deezerId": "2366043655",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2801558032",
+      "title": "LUNCH",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "586786102",
+        "title": "HIT ME HARD AND SOFT"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 180000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "LUNCH",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "HIT ME HARD AND SOFT",
+        "durationMs": 180000,
+        "deezerId": "2801558032",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "655095912",
+      "title": "bad guy",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "91598612",
+        "title": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 194000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "bad guy",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+        "durationMs": 194000,
+        "deezerId": "655095912",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/6630083f454d48eadb6a9b53f035d734/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2801558112",
+      "title": "BLUE",
+      "artists": [
+        {
+          "id": "9635624",
+          "name": "Billie Eilish"
+        }
+      ],
+      "album": {
+        "id": "586786102",
+        "title": "HIT ME HARD AND SOFT"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 343000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "BLUE",
+        "artists": [
+          "Billie Eilish"
+        ],
+        "album": "HIT ME HARD AND SOFT",
+        "durationMs": 343000,
+        "deezerId": "2801558112",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/5d284b31cb9ddeb1a0c79aede5a94e1c/1000x1000-000000-80-0-0.jpg"
+      }
+    }
+  ]
+}

@@ -611,16 +611,17 @@ class Catalogue:
 
     # ------------------------------------------------------------------ parts of one call, asked together
 
-    def _gather(self, jobs: dict[str, Callable[[], Any]], *, within: float = CALL_TIMEOUT_S) -> Gathered:
+    def _gather(self, jobs: dict[str, Callable[[], Any]], *, within: float | None = None) -> Gathered:
         """Runs the parts of a call at once, waiting at most [within] seconds in all. A part that could not be asked, or did not come in time, is in
         `unavailable` (it goes on and fills the cache when it comes); a part that is not there is in `missing`. Anything else that went wrong is raised."""
         futures = {name: self._pool.submit(job) for name, job in jobs.items()}
-        concurrent.futures.wait(futures.values(), timeout=within)
+        concurrent.futures.wait(futures.values(), timeout=CALL_TIMEOUT_S if within is None else within)
         found: dict[str, Any] = {}
         missing: set[str] = set()
         unavailable: list[str] = []
         for name, future in futures.items():
             if not future.done():
+                future.cancel()  # one that has not started is not wanted any more; one that has goes on and fills the cache when it comes
                 unavailable.append(name)
                 continue
             try:

@@ -56,6 +56,9 @@ class Settings:
     #: Mean seconds between the background look-ups and downloads at YouTube (D-67): the Host picks 3 to 8 in `.env`, 4 by default; a test may set 0 (no pacing).
     youtube_pace_s: float = DEFAULT_PACE_S
     fault: str = ""
+    #: The catalogue (Deezer's public search, docs/11 ADR-R47): this server asks it for pictures and answers its phones' search, artist and album pages from
+    #: it. Off (`ENCORE_CATALOGUE=0`), no request is ever opened to it, the feature is not listed, and the pictures finders skip without remembering a miss.
+    catalogue: bool = True
     #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
     keep: bool = True
     #: The worker threads that do background work; off in tests, which run the scheduler by hand.
@@ -93,6 +96,7 @@ class Settings:
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
             youtube_pace_s=pace_from(e.get("ENCORE_YOUTUBE_PACE_S", "")),
             fault=e.get("ENCORE_FAULT", "").strip(),
+            catalogue=e.get("ENCORE_CATALOGUE", "1").strip().lower() not in ("0", "false", "no"),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
             navidrome_admin_user=e.get("ENCORE_NAVIDROME_ADMIN_USER", "").strip(),

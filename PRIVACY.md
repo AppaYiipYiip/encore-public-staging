@@ -14,8 +14,11 @@ Only when the matching feature is in use. Nothing here carries an account, a nam
 |-----------------|-----------|--------------|------|-----------------------------|
 | YouTube and YouTube Music (`music.youtube.com`, `www.youtube.com` and Google's video hosts) | the server | the song title and artist name, to find a song you do not have; then the audio is fetched from **the Host's internet address** (YouTube sees the Host's address, never a member's) | when someone plays or saves a song the server does not have | yes: `ENCORE_YOUTUBE=0` (default: on) |
 | Spotify (`open.spotify.com`) and YouTube playlists | the server | the public playlist link you paste, to read its public page | only when someone imports a playlist | not needed unless used |
-| Deezer (`api.deezer.com`), the server's **cover finder** | the server | the first artist and the title of songs that have no picture yet, up to 300 per pass, once per album, retried after a week. This includes songs from the Host's own collection | in the background, after the library changes | not yet (planned) |
-| Deezer (`api.deezer.com`), the server's **artist-picture finder** | the server | one artist name and the title of one of its songs, for an artist the music server has no picture for and whose songs this server itself saved (never songs of the Host's own collection): at most 20 artists and 3 songs each per pass, retried after a week | in the background, once an hour | not yet: one switch for both Deezer finders is planned (audit B-88, task P3-09) |
+| Deezer (`api.deezer.com`), the server's **cover finder** | the server | the first artist and the title of songs that have no picture yet, up to 300 per pass, once per album, retried after a week. This includes songs from the Host's own collection | in the background, after the library changes | yes: `ENCORE_CATALOGUE=0` (default: on) |
+| Deezer (`api.deezer.com`), the server's **artist-picture finder** | the server | one artist name and the title of one of its songs, for an artist the music server has no picture for and whose songs this server itself saved (never songs of the Host's own collection): at most 20 artists and 3 songs each per pass, retried after a week | in the background, once an hour | yes: `ENCORE_CATALOGUE=0`, the same one switch (audit B-88; its page in the Host's settings is task P3-09) |
+| Deezer (`api.deezer.com`), the server's **catalogue pages** (search, an artist, an album, a genre; built in P2-12 slice 1, **the app does not use them yet**: until it does, the phone asks Deezer itself, see below) | the server | the words a person typed in search, or the number of the artist, album or genre they opened, asked **from the Host's internet address** (never the phone's), nothing that names the person; at most 30 outside requests a minute for one person; every answer is remembered on the server, in a file of its own (`catalogue-cache.db`, never backed up, safe to delete), under a hash: the words typed are not kept and not written in the log | only when an app asks | yes: `ENCORE_CATALOGUE=0` (default: on); the server then opens no connection to Deezer at all and does not list the feature |
+
+Every request this server makes to Deezer, whichever of the three above asks, goes through **one gate**: at most 20 requests in 5 seconds in all (Deezer's own published limit is about 50), at most 4 at once, a person's request before background work, and a rest of 30 seconds (doubling up to 10 minutes) after Deezer refuses or throttles a request, during which the server asks nothing and says so in words. A catalogue that could not be asked is never taken for "there is nothing".
 | PyPI (`pypi.org`) | the server | a request for the newest `yt-dlp`, once a day (nothing about people) | in the background | yes: `ENCORE_AUTO_TOOLS=0` |
 
 ## What leaves the phone
@@ -25,7 +28,9 @@ Today the **app itself** calls two public catalogues directly, so each sees the 
 * **Deezer** (`api.deezer.com`): the words typed in search, to show artist and album results and pictures.
 * **LRCLIB** (`lrclib.net`): the song title, artist, album and length, to fetch lyrics.
 
-Moving both to the server (so the phone only ever talks to your own server) is planned and tracked in the roadmap.
+* **Pictures.** The pictures in those results (and in the server's own answers, which carry the address of a picture, not the picture) are loaded by the phone from **Deezer's picture host** (`cdn-images.dzcdn.net`), so it sees the phone's address. The thumbnail of a song that came from a YouTube playlist is loaded from **YouTube's picture host** (`i.ytimg.com`).
+
+Moving the two calls to the server (so the phone only ever talks to your own server) is planned and tracked in the roadmap: the server side of the Deezer part is built (the row above), the app does not use it yet, and the pictures stay with the picture hosts until a later item serves them through your server.
 
 ## Programs that run beside Encore
 

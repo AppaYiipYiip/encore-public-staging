@@ -138,6 +138,29 @@ def test_a_throttling_answer_is_not_stored_and_rests_the_gate(rig: Rig) -> None:
     assert rig.gate.state()["state"] == "resting"
 
 
+def test_a_part_that_does_not_come_in_time_is_left_out_and_still_fills_the_cache_when_it_comes(
+    rig: Rig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The call has 2.5 s in all (here 0.3): a slow part is named in `unavailable` at once, and the request, already on its way, is not wasted."""
+    monkeypatch.setattr("encore_server.catalogue.CALL_TIMEOUT_S", 0.3)
+    plain = rig.upstream.answer
+
+    def slow(request: httpx.Request) -> httpx.Response:
+        time.sleep(0.8)
+        return httpx.Response(200, json=plain(request.url.path, dict(request.url.params)))
+
+    rig.upstream.overrides["/search/track"] = slow
+    started = time.monotonic()
+    answer = rig.search()
+    assert time.monotonic() - started < 0.7, "the call did not wait for the slow part"
+    assert answer["unavailable"] == ["tracks"] and answer["artists"] and answer["albums"]
+    deadline = time.monotonic() + 3
+    while rig.cache.count() < 3 and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert rig.cache.count() == 3, "the slow answer arrived and was remembered"
+    assert rig.search()["tracks"] and rig.upstream.count("/search/track") == 1
+
+
 # ------------------------------------------------------------------------------------------------------------------ stale on error
 
 

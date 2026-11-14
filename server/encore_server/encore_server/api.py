@@ -25,7 +25,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
-from . import API_VERSION, MIN_APP_VERSION, __version__, gateway, library, netaddr, playback, refmerge, refs
+from . import API_VERSION, MIN_APP_VERSION, __version__, deezer, gateway, library, netaddr, playback, refmerge, refs
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
 from .artist_finder import ArtistFinder, ArtistLookup
@@ -49,9 +49,11 @@ from .auth import (
     valid_stream_signature,
 )
 from .bodylimit import BodyLimit
+from .catalogue import KINDS, Cache, Catalogue
 from .config import Settings
 from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
+from .deezer import DeezerClient, Gate, LookupUnavailable, NotInCatalogue
 from .errors import ApiError
 from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
@@ -86,6 +88,8 @@ FEATURES = ["library", "playback", "live", "refs", "unavailable-ids"]
 #: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`) and `keep-ask` (`POST keep/ask`, a
 #: whole download asked for at once). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
 KEEP_FEATURES = ["keep", "keep-ask"]
+#: What a server whose Host has not switched the catalogue off adds (`ENCORE_CATALOGUE=0`): the routes under `catalogue/` (docs/17 section 3).
+CATALOGUE_FEATURES = ["catalogue"]
 
 
 @dataclass
@@ -118,6 +122,8 @@ class Services:
     keep_watch: KeepWatch | None = None
     #: Finds pictures for the artists the music server has none for (N-15); one of the background errands, `None` when there is no music-server account.
     artist_finder: ArtistFinder | None = None
+    #: What the phones' search, artist and album pages are answered from (P2-12): the one gate to the catalogue, its cache and its shapes.
+    catalogue: Catalogue | None = None
 
 
 def services(request: Request) -> Services:
@@ -289,8 +295,13 @@ def info(request: Request, challenge: str | None = None) -> JSONResponse:
             "minAppVersion": MIN_APP_VERSION,
             "serverVersion": __version__,
             "name": svc.settings.server_name,
-            "features": [*FEATURES, *(KEEP_FEATURES if svc.keeper is not None else [])],
+            "features": [
+                *FEATURES,
+                *(KEEP_FEATURES if svc.keeper is not None else []),
+                *(CATALOGUE_FEATURES if svc.catalogue is not None and svc.catalogue.enabled else []),
+            ],
             "youtube": _youtube_status(svc.youtube),
+            "catalogue": svc.catalogue.state() if svc.catalogue is not None else {"state": "off", "resumesInSec": 0},
             **({"tools": svc.tools.status()} if svc.tools is not None else {}),
         }
     )
@@ -1353,6 +1364,108 @@ def claim_playback(request: Request, p: Principal = Depends(get_principal)) -> J
     return _ok({"state": state})
 
 
+# ------------------------------------------------------------------------------------------------ the catalogue (P2-12)
+
+#: A catalogue id (Deezer's) is digits, and only digits ever reach the catalogue's address.
+CATALOGUE_ID = re.compile(r"[0-9]{1,15}")
+#: One person may cause this many outside requests a minute (a cached answer costs none): what one keeps typing cannot use the whole server's budget.
+CATALOGUE_PER_MINUTE = 30
+SEARCH_LIMIT_MAX = 25
+ARTIST_PARTS = ("popular", "releases")
+
+
+def _catalogue_of(request: Request) -> Catalogue:
+    """The catalogue; or, on a server whose Host switched it off, the answer an app that asked anyway gets (the feature is not listed, so an app does not)."""
+    catalogue = services(request).catalogue
+    if catalogue is None or not catalogue.enabled:
+        raise ApiError("not_found", "This server's catalogue is switched off.", details={"reason": "catalogue_off"})
+    return catalogue
+
+
+def _catalogue_id(value: str) -> str:
+    if CATALOGUE_ID.fullmatch(value) is None:
+        raise ApiError("validation", "That is not a catalogue id.")
+    return value
+
+
+def _catalogue_charge(request: Request, p: Principal) -> Callable[[], None]:
+    """Called once for every outside request made for this person's call (never for a cached answer, never for a call that joined another's request)."""
+    limiter = limiter_of(request)
+
+    def charge() -> None:
+        wait = limiter.allow(f"catalogue:{p.person_id}", CATALOGUE_PER_MINUTE, 60.0)
+        if wait is not None:
+            raise ApiError("rate_limited", "That is a lot of searching at once. Try again in a moment.", retry_after_ms=wait)
+
+    return charge
+
+
+def _catalogue_call(catalogue: Catalogue, work: Callable[[], dict[str, Any]]) -> JSONResponse:
+    """Runs one call and answers: what the catalogue says, `not_found` for a thing it does not have, `source_busy` when it could not be asked at all (a
+    catalogue that could not be asked is never an empty answer: audit B-124)."""
+    try:
+        return _ok(work())
+    except NotInCatalogue:
+        raise ApiError("not_found", "The catalogue has no such thing.", details={"reason": "not_in_catalogue"}) from None
+    except LookupUnavailable:
+        state = catalogue.state()
+        wait = int(state["resumesInSec"]) * 1000 if state["state"] == "resting" else None
+        raise ApiError(
+            "source_busy", "The catalogue is not answering just now. Try again in a little while.", retry_after_ms=wait or None
+        ) from None
+
+
+@router.get("/catalogue/search")
+def catalogue_search(
+    request: Request,
+    q: str = "",
+    types: str = ",".join(KINDS),
+    limit: int = 8,
+    p: Principal = Depends(get_principal),
+) -> JSONResponse:
+    catalogue = _catalogue_of(request)
+    text = " ".join(q.split())
+    named = {t.strip() for t in types.split(",") if t.strip()}
+    if not 2 <= len(text) <= 200 or not 1 <= limit <= SEARCH_LIMIT_MAX:
+        raise ApiError("validation", "Search for 2 to 200 characters, and ask for 1 to 25 results.")
+    if not named or named - set(KINDS):
+        raise ApiError("validation", "types are artists, albums and tracks, separated by commas.")
+    wanted = tuple(kind for kind in KINDS if kind in named)
+    return _catalogue_call(catalogue, lambda: catalogue.search(text, wanted, limit, charge=_catalogue_charge(request, p)))
+
+
+@router.get("/catalogue/artists/{artist_id}")
+def catalogue_artist(
+    artist_id: str, request: Request, parts: str = ",".join(ARTIST_PARTS), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    catalogue = _catalogue_of(request)
+    ident = _catalogue_id(artist_id)
+    asked = {part.strip() for part in parts.split(",") if part.strip()}
+    if asked - set(ARTIST_PARTS):
+        raise ApiError("validation", "parts are popular and releases, separated by commas.")
+    chosen = tuple(part for part in ARTIST_PARTS if part in asked)
+    return _catalogue_call(catalogue, lambda: catalogue.artist_page(ident, chosen, charge=_catalogue_charge(request, p)))
+
+
+@router.get("/catalogue/albums/{album_id}")
+def catalogue_album(album_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    catalogue = _catalogue_of(request)
+    ident = _catalogue_id(album_id)
+    return _catalogue_call(catalogue, lambda: catalogue.album(ident, charge=_catalogue_charge(request, p)))
+
+
+@router.get("/catalogue/genres")
+def catalogue_genres(request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    return _ok(_catalogue_of(request).genres())
+
+
+@router.get("/catalogue/genres/{genre_id}")
+def catalogue_genre(genre_id: str, request: Request, p: Principal = Depends(get_principal)) -> JSONResponse:
+    catalogue = _catalogue_of(request)
+    ident = _catalogue_id(genre_id)
+    return _catalogue_call(catalogue, lambda: catalogue.genre(ident, charge=_catalogue_charge(request, p)))
+
+
 # ------------------------------------------------------------------------------------------------ the live channel
 
 PING_EVERY_S = 25.0
@@ -1448,6 +1561,14 @@ def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | 
     )
 
 
+def _default_catalogue(settings: Settings) -> Catalogue:
+    """The catalogue as this server runs it: Deezer through the one gate, remembered in a file of its own beside the database. Switched off by the Host
+    (`ENCORE_CATALOGUE=0`), the gate opens no connection and no file is made."""
+    gate = Gate(enabled=settings.catalogue)
+    cache = Cache(settings.data_dir / "catalogue-cache.db") if settings.catalogue else None
+    return Catalogue(DeezerClient(gate), cache)
+
+
 def _default_tools(
     settings: Settings,
     youtube: YoutubeSource | None,
@@ -1527,6 +1648,7 @@ def create_app(
     navidrome_admin: NavidromeAdmin | None = None,
     tools_active: Active | None = None,
     artist_lookup: ArtistLookup | None = None,
+    catalogue: Catalogue | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
@@ -1554,6 +1676,10 @@ def create_app(
         else None
     )
     the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
+    catalogue = catalogue or _default_catalogue(settings)
+    # The ONE gate to the catalogue: every look-up of this server that has no client of its own (the cover finder, the artist finder, the keeper's
+    # cover) goes through it, and so do the routes. Taken away again when the server stops (a test makes many apps in one process).
+    deezer.install(catalogue.client)
 
     def ended(person_id: str, user: str | None) -> None:
         # Locked, removed or given a new password: the live connections of the person close and the music server's remembered yes is forgotten.
@@ -1618,6 +1744,9 @@ def create_app(
             def room() -> float:
                 return max(MIN_JOIN_S, deadline - time.monotonic())
 
+            if deezer.installed() is catalogue.client:
+                deezer.install(None)
+            catalogue.close()
             if keep_watch is not None:
                 keep_watch.stop(timeout=room())
             if tools is not None:
@@ -1648,6 +1777,7 @@ def create_app(
         keep_watch=keep_watch,
         stream_key=stream_key,
         artist_finder=artist_finder,
+        catalogue=catalogue,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)

@@ -7,9 +7,11 @@ name: Server
 on:
   push:
     branches: [main]
-    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', '.github/workflows/server.yml']
+    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', '.github/workflows/server.yml']
   pull_request:
-    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', '.github/workflows/server.yml']
+    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', '.github/workflows/server.yml']
+# `app/test/fixtures/deezer/` (the 20 recorded searches) and `app/test/fixtures/server/` (answers the server's own tests write and compare) are read by BOTH suites:
+# a change to them must run this workflow as well as the app's (docs/30 section I).
 
 # The older services (fetch, people, admin, quality, recs) and the Jam hub are tested by server-legacy.yml, only when their own folder changes (D-44).
 
