@@ -216,5 +216,11 @@
   "evidence": "PR #16 (merged 13 Nov 2026): search_rank.dart scale rewritten: an artist whose name is exactly what was typed is the Top result over every song or album that only starts with or contains the words; an exact title or album can take the place only when the artist is barely known (under 50,000 fans, not in the library); tests failed before (search_rank_test, search_band_first_test, 20 recorded Deezer searches unchanged). PR #28 (merged 14 Nov): a sync or download writing no longer keeps a search from answering (regression from #23). Emulator check against VM 108 (build 150, engineering check, not the release-candidate pair): 'eminem' gives 'Top result: Artist, Eminem' with the songs below. NOT walked, and the owner's own case is NOT confirmed: search 'jinjer' on HIS library: band on top means this covered it; a song still on top means another cause (record its title and artist row).",
   "at": "2026-11-14T09:17:15Z",
   "by": "Claude"
+ },
+ "P1-16": {
+  "state": "built",
+  "evidence": "Built 14 Nov 2026, not walked: app/test/features/search_offline_test.dart (25 widget tests, 20 fail on main fc988f0 and pass here) holds S-11, S-12, S-13 offline in both causes (no internet found / only the server silent): the hint, the dimmed genre tiles, the genre page with its way back, the grey rows and the last line, nothing found, the page and the strip agreeing on one screen, the catalogue not asked while the server is away (searches == 0 after 1 s, with a control that asks once), 4 s grace, and it going by itself when the connection returns; flutter test of features, domain, app, playback, data and the architecture test: 2540 passed, 5 skipped (the B-84 script gaps, test/data/db/search_scripts_gap_test.dart); dart analyze --fatal-infos clean",
+  "at": "2026-11-14T09:49:33Z",
+  "by": "helper-p116 (Claude Sonnet 5.5)"
  }
 }

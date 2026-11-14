@@ -1,0 +1,12 @@
+{
+ "id": "20261114T094949Z-agent-2dda",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p116 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T09:49:49Z",
+ "type": "note",
+ "body": "P1-16 (Search offline) added ONE reader of the old notions, on purpose and documented: awayCauseProvider in features/common/playability.dart (null while the server is not away, noInternet or serverSilent otherwise; it reads serverAwayProvider, networkKindProvider, connectionProblemProvider and phoneHasInternetProvider, nothing new). The rule 'no internet found is connect, a silent server with internet is your server' is now written in three places: the strip (connection_banner.dart), the player (playback_engine.dart _notDownloadedWords) and awayCauseProvider. When the one state is built, awayCauseProvider becomes a read of it and the other two follow. Also: catalogueSearchProvider and CatalogueGenreScreen now read serverAwayProvider (the catalogue is not asked while the server is away); the Jam add-songs sheet inherits that.",
+ "to": [
+  "agent"
+ ]
+}
