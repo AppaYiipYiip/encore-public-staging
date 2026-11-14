@@ -1,0 +1,9 @@
+{
+ "id": "20261114T185838Z-agent-7e08",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T18:58:38Z",
+ "type": "note",
+ "body": "Registered 14 Nov 2026 from audit B-126 and B-131 (advisor: one item): typing in Search makes a server song row for every pause between letters, and a tap on a song the server cannot find leaves a library row on the phone that nothing points at; both sides keep them for ever. Natural next helper task now that #63 and #64 (B-128) are merged. Start with a short design note: what 'nobody points at' means for a ref another person may point at, and how an N-13 verdict (kept on the ref for its window) survives the clean-up. Search's prepare is search_results.dart _prepareLikelyTap -> EncoreInstantBackend.prepare (POST refs/resolve); P1-17's slice 4 rewrites search_results.dart, so this goes after it or on top of it."
+}
