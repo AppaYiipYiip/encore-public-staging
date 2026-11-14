@@ -239,6 +239,77 @@ def test_the_route_needs_a_login_takes_one_to_a_hundred_songs_and_is_a_read(clie
     assert client.post(f"{V1}/refs/unavailable", params=creds("marwa"), json={"songs": [one] * 100}).status_code == 200
 
 
+def test_the_question_by_ref_id_answers_in_order_and_makes_no_ref(db: Database) -> None:
+    """B-128: a phone's own rows are refs, so it asks by ref id (the exact identity) and not by a description of the song."""
+    gone = make_ref(db, deezerId="111")
+    fine = make_ref(db, title="Rainy Window", deezerId="222")
+    kept = make_ref(db, title="Kept Anyway", deezerId="333")
+    with db.tx() as conn:
+        refs.remember_missing(conn, gone, "not_found")
+        refs.remember_missing(conn, kept, "not_found")
+        conn.execute(
+            "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at)"
+            " VALUES ('sf_1', ?, 'nd-1', 'k.opus', 'opus', 128, 'youtube', 1, 1)",
+            (kept,),
+        )
+        before = conn.execute("SELECT COUNT(*) AS n FROM song_ref").fetchone()["n"]
+
+    with db.read() as conn:
+        answers = refs.unavailable_for_ids(conn, [fine, gone, "sr_" + "9" * 25, 42, kept, gone])  # type: ignore[list-item]
+
+    assert [a is not None for a in answers] == [False, True, False, False, False, True], (
+        "no problem, a remembered no, an id never seen, not an id at all, a song the server keeps (never marked), the same id twice"
+    )
+    assert answers[1]["reason"] == "not_found" and answers[1]["retryAfter"] > now_ms()  # type: ignore[index]
+    assert answers[1] == answers[5]
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM song_ref").fetchone()["n"] == before, "asking creates nothing"
+
+
+def test_a_ref_id_that_was_merged_away_answers_for_the_survivor(db: Database) -> None:
+    """N-11: an old phone still names the id the merge removed; the verdict is the survivor's (and a survivor with a file has none)."""
+    survivor, loser = "sr_" + "0" * 25 + "1", "sr_" + "0" * 25 + "2"
+    with db.tx() as c:
+        add_ref(c, survivor, "Same Song", ["Ana Vale"])
+        add_ref(c, loser, "Same Song", ["Ana Vale"])
+        refs.remember_missing(c, survivor, "removed")
+        c.execute("INSERT INTO ref_merge (old_id, into_id, at, norm_key) VALUES (?, ?, 1, 'x')", (loser, survivor))
+        c.execute("DELETE FROM song_ref WHERE id = ?", (loser,))
+
+    with db.read() as conn:
+        answers = refs.unavailable_for_ids(conn, [loser])
+
+    assert answers[0] is not None and answers[0]["reason"] == "removed"
+
+
+def test_the_route_takes_ref_ids_too_exactly_one_kind_at_a_time_and_is_still_a_read(client: TestClient) -> None:
+    one = song("Lofi For Focus", "Lofi & Sleep")
+    ref = str(resolve(client, "marwa", one)[0]["id"])
+    db: Database = client.app.state.services.db  # type: ignore[attr-defined]
+    with db.tx() as conn:
+        refs.remember_missing(conn, ref, "age_restricted")
+        before = conn.execute("SELECT COUNT(*) AS n FROM song_ref").fetchone()["n"]
+    ask = f"{V1}/refs/unavailable"
+
+    assert client.post(ask, json={"ids": [ref]}).status_code == 401
+    for bad in ({"ids": []}, {"ids": "x"}, {"ids": [ref] * 101}, {"ids": [ref, 7]}, {"ids": [ref], "songs": [one]}):
+        assert client.post(ask, params=creds("marwa"), json=bad).status_code == 400, bad
+    reply = client.post(ask, params=creds("marwa"), json={"ids": [ref, "sr_" + "9" * 25]})
+
+    assert reply.status_code == 200
+    items = reply.json()["items"]
+    assert items[0]["reason"] == "age_restricted" and items[0]["message"] and items[1] is None
+    assert client.post(ask, params=creds("marwa"), json={"ids": [ref] * 100}).status_code == 200
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM song_ref").fetchone()["n"] == before, "asking by id creates nothing"
+
+
+def test_the_app_is_told_by_the_features_that_it_may_ask_by_ref_id(client: TestClient) -> None:
+    """docs/17 "Versions": an app does without a feature the server does not list and never tries a route to find out. An N-13 server before this
+    change answers `{"ids": ...}` with a 400, so the phone must not send it there."""
+    assert "unavailable-ids" in client.get(f"{V1}/info").json()["features"]
+
+
 # ------------------------------------------------------------------------------------------------------------ the source: no repeat look-ups
 
 

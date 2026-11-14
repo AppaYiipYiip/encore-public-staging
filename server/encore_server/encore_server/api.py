@@ -81,7 +81,7 @@ from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
 
-FEATURES = ["library", "playback", "live", "refs"]
+FEATURES = ["library", "playback", "live", "refs", "unavailable-ids"]
 #: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`) and `keep-ask` (`POST keep/ask`, a
 #: whole download asked for at once). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
 KEEP_FEATURES = ["keep", "keep-ask"]
@@ -684,14 +684,20 @@ MAX_UNAVAILABLE_ASKED = 100
 def unavailable_refs(
     request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
 ) -> JSONResponse:
-    """Which of these songs the server already knows it cannot get (N-13). The songs are described as `POST refs/resolve` takes them and answered in the
-    same order: `null` (no known problem, a song the server has never seen, or one it could not read) or `{reason, message, since, retryAfter}`. A read:
-    it makes no ref and asks YouTube nothing, so a phone can ask about every song of a list it is showing (a Search is all catalogue songs, no ref yet)."""
-    items = body.get("songs")
-    if not isinstance(items, list) or not items or len(items) > MAX_UNAVAILABLE_ASKED:
+    """Which of these songs the server already knows it cannot get (N-13), answered in the order asked: `null` (no known problem, a song the server has never
+    seen, or one it could not read) or `{reason, message, since, retryAfter}`. A read: it makes no ref and asks YouTube nothing, so a phone can ask about every
+    song of a list it is showing. The songs are named one of two ways, never both: `songs` (described as `POST refs/resolve` takes them: a Search is all
+    catalogue songs, no ref yet) or `ids` (ref ids: the rows of the phone's own library, B-128; the server lists the feature `unavailable-ids`)."""
+    songs, ids = body.get("songs"), body.get("ids")
+    if (songs is None) == (ids is None):
+        raise ApiError("validation", "Send either songs or ids, not both.")
+    named = ids if ids is not None else songs
+    if not isinstance(named, list) or not named or len(named) > MAX_UNAVAILABLE_ASKED:
         raise ApiError("validation", f"Send between 1 and {MAX_UNAVAILABLE_ASKED} songs.")
+    if ids is not None and not all(isinstance(i, str) for i in named):
+        raise ApiError("validation", "Ids are texts.")
     with services(request).db.read() as conn:
-        return _ok({"items": refs.unavailable_for(conn, items)})
+        return _ok({"items": refs.unavailable_for_ids(conn, named) if ids is not None else refs.unavailable_for(conn, named)})
 
 
 @router.get("/refs/{ref_id}")

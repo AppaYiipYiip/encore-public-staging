@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/db/app_database.dart';
+import '../../data/encore/encore_models.dart' show EncoreUnavailable;
 import '../../design/tokens.dart';
 import '../../domain/album_names.dart';
 import 'cover_art.dart';
 import 'format.dart';
-import 'playability.dart' show kNotDownloadedWords;
+import 'playability.dart' show kNotAvailableWords, kNotDownloadedWords;
 
 /// Bold section title with an optional "Show all" action.
 class SectionHeader extends StatelessWidget {
@@ -191,6 +192,7 @@ class TrackTile extends StatelessWidget {
     this.isCurrent = false,
     this.isPlaying = false,
     this.available = true,
+    this.mark,
     this.downloaded = false,
     this.showAlbum = false,
     this.onTap,
@@ -208,6 +210,11 @@ class TrackTile extends StatelessWidget {
   /// `false` when the track cannot be played right now (offline and not
   /// downloaded): dimmed, with an explanation on tap (ADR-008).
   final bool available;
+
+  /// The server already knows it cannot get this song (N-13, B-128; drawn in S-12, S-15, S-17): the row is grey and says [kNotAvailableWords] in place of
+  /// the artist, as "Not downloaded" does, with no cloud (the song is not away, it is not there). **Offline wins:** a song that cannot be played now
+  /// says [kNotDownloadedWords] and never both. A tap still calls [onTap]: the play helper says why and does not try.
+  final EncoreUnavailable? mark;
   final bool downloaded;
   final bool showAlbum;
   final VoidCallback? onTap;
@@ -216,26 +223,36 @@ class TrackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final titleColor = isCurrent ? c.accent : c.onBg;
+    final marked = available && mark != null;
+    final titleColor = isCurrent
+        ? c.accent
+        : marked
+            ? c.onBgMuted
+            : c.onBg;
     final album = realAlbumName(track.album);
     // A song that cannot be played now says so in words, as drawn (S-17, S-18: "Not downloaded" where the artist stood); it is also greyed, and
     // a tap on it says what to do.
     final subtitle = !available
         ? kNotDownloadedWords
-        : [
-            if (track.artist != null) track.artist!,
-            if (showAlbum && album != null) album,
-          ].join(' • ');
+        : marked
+            ? kNotAvailableWords
+            : [
+                if (track.artist != null) track.artist!,
+                if (showAlbum && album != null) album,
+              ].join(' • ');
 
     final row = Row(
       children: [
         if (showArt)
           SizedBox.square(
             dimension: 48,
-            child: CoverArt(
-              coverArtId: track.coverArt,
-              fallbackLabel: album ?? track.title,
-              fallbackArtist: album == null ? null : track.artist,
+            child: Opacity(
+              opacity: marked ? .6 : 1,
+              child: CoverArt(
+                coverArtId: track.coverArt,
+                fallbackLabel: album ?? track.title,
+                fallbackArtist: album == null ? null : track.artist,
+              ),
             ),
           )
         else
@@ -303,7 +320,8 @@ class TrackTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${track.title}, ${track.artist ?? ''}'
-          '${available ? '' : ', not downloaded'}',
+          '${available ? '' : ', not downloaded'}'
+          '${marked ? ', $kNotAvailableWords' : ''}',
       excludeSemantics: true,
       child: Opacity(
         opacity: available ? 1 : 0.45,

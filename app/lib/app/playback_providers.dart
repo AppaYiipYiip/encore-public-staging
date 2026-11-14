@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/clock.dart';
 import '../core/logger.dart';
 import '../data/db/app_database.dart';
+import '../data/encore/encore_api.dart' show EncoreApi;
 import '../data/encore/signed_addresses.dart' show withQuality;
 import '../data/repos/downloads_repository.dart';
 import '../data/sync/endpoint_resolver.dart' show EndpointResolver;
@@ -16,6 +17,7 @@ import '../features/instant/instant_controller.dart'
     show instantControllerProvider;
 import '../features/instant/library_resolver.dart'
     show SessionLibraryResolver, libraryResolverProvider;
+import '../features/instant/song_refusals.dart' show songRefusalsProvider;
 import '../features/settings/settings_controller.dart';
 import '../playback/encore_audio_handler.dart';
 import '../playback/equalizer_service.dart';
@@ -47,6 +49,21 @@ final audioHandlerProvider = Provider<Future<EncoreAudioHandler>>(
 /// (the first second of the app) and without a session, the network decides alone.
 bool canReachServerNow(NetworkKind? network, EndpointResolver? endpoints) =>
     network != NetworkKind.none && !(endpoints?.isKnownUnreachable ?? false);
+
+/// Asks the server why a stream failed (`null` for a server that is not an Encore server) and, when it refuses the song **for good**, says so through
+/// [onRefusedForGood] (the marks ask the server again, B-128). Answers the player what it needs: the server's sentence and whether to give up on the song.
+/// A failure that may pass (YouTube resting, a timeout) is not reported: the song may well be playable in a minute.
+Future<({String message, bool permanent})?> askSongRefusal(
+  EncoreApi? encore,
+  Uri address, {
+  required void Function() onRefusedForGood,
+}) async {
+  if (encore == null) return null;
+  final why = await encore.streamRefusal(address);
+  if (why == null) return null;
+  if (why.permanent) onRefusedForGood();
+  return (message: why.message, permanent: why.permanent);
+}
 
 /// How many coming songs the phone has the server make ready while one plays: two, or only the next one while Data saver is in force (P4-24).
 int prepareAheadSongs({required bool dataSaverInForce}) =>
@@ -166,13 +183,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     },
     // A stream that failed is asked about once: the server says why (no matching upload, removed, age check), and a song it cannot have is
     // not tried a second time. Only on an Encore server, which writes that answer.
-    songRefusal: (address) async {
+    songRefusal: (address) {
       final s = session();
-      if (s == null || !s.encoreMode) return null;
-      final why = await s.encore.streamRefusal(address);
-      return why == null
-          ? null
-          : (message: why.message, permanent: why.permanent);
+      return askSongRefusal(
+          s == null || !s.encoreMode ? null : s.encore, address,
+          // A song the server refuses for good is news for the marks: the lists on screen ask the server again at once (B-128).
+          onRefusedForGood: () {
+        if (ref.mounted) ref.read(songRefusalsProvider.notifier).refused();
+      });
     },
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
     canReachServer: () => canReachServerNow(

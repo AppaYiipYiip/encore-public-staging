@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../data/catalogue/catalogue_models.dart';
+import '../../data/db/app_database.dart' show TrackRow;
+import '../providers.dart' show playbackFacadeProvider;
 import 'instant_controller.dart';
 import 'song_marks.dart';
 
@@ -139,6 +141,56 @@ Future<void> tapPlayRun(
 void _say(ScaffoldMessengerState? messenger, String line) => messenger
   ?..hideCurrentSnackBar()
   ..showSnackBar(SnackBar(content: Text(line)));
+
+/// A tap (or a Play, a Shuffle) on rows of the phone's **own library**: the one place they are played from, so that **a song the server already knows it
+/// cannot get is never tried** (N-13, B-128; drawn in S-12, S-15, S-17). The rule is the one [tapPlayRun] keeps for catalogue songs: a tap on a marked row
+/// says why in the server's own sentence and asks the player for nothing; a whole-list play leaves marked songs out, with no failed try and no notice (a
+/// list of only such songs says the first one's sentence). Everything else goes to the player as it always did.
+///
+/// The mark is read the way every row reads it ([libraryMarkProvider]): a song with a file, a downloaded song and a song while the server is away are
+/// never marked, so this never takes a playable song out of a list.
+Future<void> playLibraryTracks(
+  WidgetRef ref,
+  List<TrackRow> tracks, {
+  int startIndex = 0,
+  String? sourceName,
+  String? sourceId,
+  bool shuffle = false,
+  bool skipUnavailable = false,
+}) async {
+  final facade = ref.read(playbackFacadeProvider);
+  Future<void> play(List<TrackRow> list, int start) => facade.playTracks(list,
+      startIndex: start,
+      sourceName: sourceName,
+      sourceId: sourceId,
+      shuffle: shuffle,
+      skipUnavailable: skipUnavailable);
+  if (tracks.isEmpty) return play(tracks, startIndex);
+  final container = ProviderScope.containerOf(ref.context);
+  final messenger = ScaffoldMessenger.maybeOf(ref.context);
+  final marks = {
+    for (final t in tracks)
+      t.id: container.read(libraryMarkProvider(t.markKey)),
+  };
+  final tapped = !shuffle && startIndex >= 0 && startIndex < tracks.length
+      ? tracks[startIndex]
+      : null;
+  if (tapped != null && marks[tapped.id] != null) {
+    _say(messenger, marks[tapped.id]!.sentence);
+    return;
+  }
+  final playable = [
+    for (final t in tracks)
+      if (marks[t.id] == null) t,
+  ];
+  if (playable.isEmpty) {
+    _say(messenger, marks[tracks.first.id]!.sentence);
+    return;
+  }
+  if (playable.length == tracks.length) return play(tracks, startIndex);
+  return play(playable,
+      tapped == null ? 0 : playable.indexWhere((t) => t.id == tapped.id));
+}
 
 /// A tap on one song of a search (no list behind it).
 Future<void> tapPlayOne(WidgetRef ref, CatalogueTrack track) async {
