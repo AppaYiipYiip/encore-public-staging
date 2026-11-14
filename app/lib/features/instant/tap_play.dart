@@ -170,7 +170,9 @@ Future<void> playLibraryTracks(
   final messenger = ScaffoldMessenger.maybeOf(ref.context);
   final marks = {
     for (final t in tracks)
-      t.id: container.read(libraryMarkProvider(t.markKey)),
+      t.id: t.mayBeUnavailable
+          ? container.read(libraryMarkProvider(t.markKey))
+          : null,
   };
   final tapped = !shuffle && startIndex >= 0 && startIndex < tracks.length
       ? tracks[startIndex]
