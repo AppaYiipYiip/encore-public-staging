@@ -4,6 +4,7 @@ import '../../core/result.dart';
 import '../db/app_database.dart';
 import '../sync/sync_state_store.dart';
 import 'encore_api.dart';
+import 'encore_merge.dart' show DiskFiles, MergeOutcome, MergedFiles;
 import 'encore_writer.dart';
 
 /// What one pull brought.
@@ -13,7 +14,8 @@ class EncoreSyncStats {
       this.refs = 0,
       this.likes = 0,
       this.playlists = 0,
-      this.entries = 0});
+      this.entries = 0,
+      this.merges = 0});
 
   final int files;
   final int refs;
@@ -21,7 +23,10 @@ class EncoreSyncStats {
   final int playlists;
   final int entries;
 
-  int get changed => files + refs + likes + playlists + entries;
+  /// Songs of this phone that were folded into another one (N-11).
+  final int merges;
+
+  int get changed => files + refs + likes + playlists + entries + merges;
 
   EncoreSyncStats operator +(EncoreSyncStats o) => EncoreSyncStats(
         files: files + o.files,
@@ -29,6 +34,7 @@ class EncoreSyncStats {
         likes: likes + o.likes,
         playlists: playlists + o.playlists,
         entries: entries + o.entries,
+        merges: merges + o.merges,
       );
 }
 
@@ -46,10 +52,12 @@ class EncoreSync {
     required String ownerName,
     Clock clock = const SystemClock(),
     this.pageLimit = 500,
+    MergedFiles files = const DiskFiles(),
   })  : _db = db,
         _api = api,
         _clock = clock,
-        _writer = EncoreWriter(db, serverId, ownerName: ownerName),
+        _writer =
+            EncoreWriter(db, serverId, ownerName: ownerName, files: files),
         _state = SyncStateStore(db, serverId);
 
   final AppDatabase _db;
@@ -61,6 +69,9 @@ class EncoreSync {
   final int pageLimit;
 
   static const filesCursor = 'encoreFilesCursor';
+
+  /// Where the server's list of merged songs was read to (its own cursor, not [filesCursor]).
+  static const mergesCursor = 'encoreMergesCursor';
   static const changesCursor = 'encoreChangesCursor';
 
   /// Both feeds: the server's files, then the person's library.
@@ -73,25 +84,47 @@ class EncoreSync {
   Future<Result<EncoreSyncStats>> pullFiles() => guard(() async {
         var total = const EncoreSyncStats();
         var cursor = await _state.get(filesCursor) ?? '0';
+        var mergesAt = await _state.get(mergesCursor) ?? '0';
         while (true) {
-          final page =
-              (await _api.files(since: cursor, limit: pageLimit)).getOrThrow();
+          final page = (await _api.files(
+                  since: cursor, limit: pageLimit, mergesSince: mergesAt))
+              .getOrThrow();
           final nowMs = _clock.now().millisecondsSinceEpoch;
+          late MergeOutcome merged;
           await _db.transaction(() async {
+            // The songs the server folded into another first: what the phone has under the old id moves to the survivor, then the page's songs
+            // are written (they carry the survivor's own fields). One transaction, so a pull that stops halfway leaves nothing half folded.
+            merged = await _writer.applyMerges(page.merges);
             await _writer.upsertRefs(page.refs);
+            await _writer.settleMerges(merged);
             await _writer.dropUnused([
               for (final r in page.refs)
                 if (r.file?.navidromeSongId == null) r.id
             ], nowMs: nowMs);
             await _state.set(filesCursor, page.cursor);
+            // A server that predates merges does not say: the cursor stays where it was.
+            if (page.mergesCursor != null) {
+              await _state.set(mergesCursor, page.mergesCursor);
+            }
           });
-          total += EncoreSyncStats(files: page.refs.length);
-          final moved = page.cursor != cursor;
+          // Files cannot be rolled back, so they are touched only once the rows are safe.
+          await _writer.finishMerges(merged);
+          total +=
+              EncoreSyncStats(files: page.refs.length, merges: merged.folded);
+          final filesMoved = page.cursor != cursor;
+          final mergesMoved =
+              page.mergesCursor != null && page.mergesCursor != mergesAt;
           cursor = page.cursor;
-          if (!page.more || !moved) break;
+          mergesAt = page.mergesCursor ?? mergesAt;
+          // Two feeds, two cursors: keep reading while either has more AND is getting somewhere.
+          if (!((page.more && filesMoved) ||
+              (page.mergesMore && mergesMoved))) {
+            break;
+          }
         }
-        if (total.files > 0) {
-          Log.info('encore-sync', 'files: ${total.files} songs changed');
+        if (total.files > 0 || total.merges > 0) {
+          Log.info('encore-sync',
+              'files: ${total.files} songs changed, ${total.merges} merged songs folded');
         }
         return total;
       });
@@ -136,6 +169,8 @@ class EncoreSync {
   /// Forgets where the feeds were (a new account on this phone, or a server that was set up again): the next pull reads everything.
   Future<void> reset() async {
     await _state.set(filesCursor, null);
+    // Applying a merge twice changes nothing, so reading all of them again is safe.
+    await _state.set(mergesCursor, null);
     await _state.set(changesCursor, null);
   }
 }

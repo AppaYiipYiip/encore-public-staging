@@ -140,6 +140,30 @@ class ReleaseStore {
     if (changed) await _writePhone(all);
   }
 
+  /// Songs the server merged into another (N-11): a release this phone saved names the survivor instead, once (the same song twice would be two
+  /// rows in Library > Downloaded). [redirect] maps each id that is gone to the song that took its place.
+  Future<void> foldSongs(Map<String, String> redirect) async {
+    if (redirect.isEmpty) return;
+    final all = await phone();
+    var changed = false;
+    for (final e in all.entries.toList()) {
+      if (!e.value.refIds.any(redirect.containsKey)) continue;
+      final seen = <String>{};
+      final now = [
+        for (final r in e.value.refIds)
+          if (seen.add(redirect[r] ?? r)) redirect[r] ?? r
+      ];
+      all[e.key] = PhoneRelease(
+        refIds: now,
+        title: e.value.title,
+        artist: e.value.artist,
+        download: e.value.download,
+      );
+      changed = true;
+    }
+    if (changed) await _writePhone(all);
+  }
+
   Future<void> _writePhone(Map<String, PhoneRelease> all) => _state.set(
         phoneKey,
         jsonEncode({for (final e in all.entries) e.key: e.value.toJson()}),
