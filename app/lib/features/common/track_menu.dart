@@ -13,11 +13,13 @@ import '../../domain/album_names.dart';
 import '../downloads/download_notifications_prompt.dart';
 import '../downloads/download_providers.dart';
 import '../instant/release_save.dart';
+import '../instant/song_marks.dart';
 import '../providers.dart';
 import 'cover_art.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
 import 'open_artist.dart';
+import 'playability.dart' show kNotAvailableWords;
 import 'playlist_actions.dart';
 
 /// Opens the action sheet for one track (docs/06-ux-spec.md section 0: an
@@ -111,6 +113,8 @@ class _TrackMenu extends ConsumerWidget {
     final artists =
         ref.watch(songArtistsProvider(live.id)).value ?? const <String>[];
     final liked = live.starredAtMs != null;
+    // The server already knows it cannot get this song (N-13, B-128; drawn in S-34): its line says so, and what needs the song to be had says why.
+    final mark = ref.watch(libraryMarkProvider(live.markKey));
     final session = ref.watch(sessionProvider).value;
     final facade = ref.watch(playbackFacadeProvider);
     final c = context.colors;
@@ -163,10 +167,12 @@ class _TrackMenu extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             style: context.text.titleMedium),
                         Text(
-                          [
-                            if (track.artist != null) track.artist!,
-                            if (quality.isNotEmpty) quality,
-                          ].join(' • '),
+                          mark != null
+                              ? kNotAvailableWords
+                              : [
+                                  if (track.artist != null) track.artist!,
+                                  if (quality.isNotEmpty) quality,
+                                ].join(' • '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.text.bodyMedium,
@@ -237,6 +243,11 @@ class _TrackMenu extends ConsumerWidget {
                 icon: Icons.arrow_circle_down_outlined,
                 label: 'Download',
                 onTap: () {
+                  if (mark != null) {
+                    close();
+                    toast(mark.sentence);
+                    return;
+                  }
                   unawaited(ref
                       .read(downloadActionsProvider)
                       .pin(PinTargetType.track, track.id));
@@ -265,6 +276,11 @@ class _TrackMenu extends ConsumerWidget {
               icon: Icons.playlist_play_rounded,
               label: 'Play next',
               onTap: () {
+                if (mark != null) {
+                  close();
+                  toast(mark.sentence);
+                  return;
+                }
                 facade.playNext(track);
                 close();
                 toast('Will play next');
@@ -274,6 +290,11 @@ class _TrackMenu extends ConsumerWidget {
               icon: Icons.queue_music_rounded,
               label: 'Add to queue',
               onTap: () {
+                if (mark != null) {
+                  close();
+                  toast(mark.sentence);
+                  return;
+                }
                 facade.addToQueue(track);
                 close();
                 toast('Added to queue');

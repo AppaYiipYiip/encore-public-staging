@@ -221,6 +221,26 @@ class EncoreApi {
         }
       });
 
+  /// The same question for songs the phone has as rows of its own library, by ref id (`{"ids": [...]}`, at most 100, B-128): `null` for a song with no
+  /// known problem. Only for a server that lists `unavailable-ids`; **a 400, 404 or 405 is "no verdicts here" too** (a second layer behind the feature
+  /// list: a server that does not know the question, whatever it calls the refusal), never an error state.
+  Future<Result<List<EncoreUnavailable?>?>> unavailableByIds(
+          List<String> refIds) =>
+      guard(() async {
+        try {
+          final body =
+              await _send('POST', '/refs/unavailable', body: {'ids': refIds});
+          final items = body['items'];
+          if (items is! List) return null;
+          return [for (final item in items) EncoreUnavailable.fromJson(item)];
+        } on NotFoundFailure {
+          return null;
+        } on ServerFailure catch (e) {
+          if (e.statusCode == 405 || e.statusCode == 400) return null;
+          rethrow;
+        }
+      });
+
   Future<Result<EncoreRef>> ref(String id) =>
       guard(() async => EncoreRef.fromJson(await _send('GET', '/refs/$id')));
 

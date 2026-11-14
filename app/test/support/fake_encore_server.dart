@@ -193,21 +193,51 @@ class FakeEncoreServer {
     };
   }
 
+  /// B-128: `POST /refs/unavailable` also takes `{"ids": [...]}` (ref ids), and the server says so in `features` (`unavailable-ids`). With
+  /// [hasUnavailableIds] false it is the N-13 server before that: no such feature, and a question by ids is answered 400, as the real one does.
+  /// [unavailableIdsAsked] is each question's ids, in order; [idsSentToAServerWithoutThem] counts the questions that should never have been sent.
+  bool hasUnavailableIds = true;
+  final List<List<String>> unavailableIdsAsked = [];
+  int idsSentToAServerWithoutThem = 0;
+
   FakeResponse _unavailable(RecordedRequest r) {
-    final songs = ((jsonDecode(r.body) as Map)['songs'] as List)
-        .cast<Map<String, Object?>>();
-    unavailableAsked.add([for (final s in songs) '${s['title']}']);
+    final body = jsonDecode(r.body) as Map;
+    final ids = (body['ids'] as List?)?.cast<String>();
+    if (ids != null) {
+      if (!hasUnavailableIds) {
+        idsSentToAServerWithoutThem++;
+        return _error(400, 'validation');
+      }
+      unavailableIdsAsked.add(ids);
+    } else {
+      unavailableAsked.add([
+        for (final s in (body['songs'] as List).cast<Map<String, Object?>>())
+          '${s['title']}'
+      ]);
+    }
     if (unavailableStatus == 405) {
       return FakeResponse.json({'detail': 'Method Not Allowed'}, status: 405);
     }
     if (unavailableStatus == 404) {
       return FakeResponse.json({'detail': 'Not Found'}, status: 404);
     }
+    if (unavailableStatus == 400) return _error(400, 'validation');
     if ((unavailableStatus ?? 0) >= 500) {
       return _error(unavailableStatus!, 'internal');
     }
+    if (ids != null) {
+      return _ok({
+        'items': [
+          for (final id in ids)
+            refs[id] == null ? null : _unavailableOf('${refs[id]!['title']}')
+        ]
+      });
+    }
     return _ok({
-      'items': [for (final s in songs) _unavailableOf('${s['title']}')]
+      'items': [
+        for (final s in (body['songs'] as List).cast<Map<String, Object?>>())
+          _unavailableOf('${s['title']}')
+      ]
     });
   }
 
@@ -626,6 +656,7 @@ class FakeEncoreServer {
           'playback',
           'live',
           'refs',
+          if (hasUnavailableIds) 'unavailable-ids',
           if (hasKeep) 'keep',
           if (hasKeep && hasKeepAsk) 'keep-ask',
         ],

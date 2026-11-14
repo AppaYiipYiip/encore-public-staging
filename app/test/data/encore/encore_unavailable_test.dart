@@ -177,6 +177,66 @@ void main() {
     });
   });
 
+  group('the question by ref id (B-128)', () {
+    test(
+        'a library row is asked about by its ref id, one request for the list, in the order asked; asking makes no ref',
+        () async {
+      final gone = server.addRef('Lofi For Focus', 'Lofi & Sleep');
+      final fine = server.addRef('Rainy Window', 'Lofi & Sleep');
+      server.cannotGet['lofi for focus'] =
+          (reason: 'not_found', retryIn: const Duration(days: 7));
+
+      final answer = await backend.unavailableAmongRefs([fine, gone, 'sr_x']);
+
+      expect(answer!.supported, isTrue);
+      expect(answer.verdicts[0], isNull);
+      expect(answer.verdicts[1]!.reason, 'not_found');
+      expect(answer.verdicts[2], isNull, reason: 'an id the server never saw');
+      expect(server.unavailableIdsAsked, [
+        [fine, gone, 'sr_x']
+      ]);
+      expect(server.refs, hasLength(2), reason: 'a read: asking makes no ref');
+    });
+
+    test(
+        'a server that does not list unavailable-ids is never sent the question (docs/17: an app never tries a route to find out)',
+        () async {
+      server.hasUnavailableIds = false;
+      final ref = server.addRef('Lofi For Focus', 'Lofi & Sleep');
+
+      final answer = await backend.unavailableAmongRefs([ref]);
+
+      expect(answer!.supported, isFalse);
+      expect(server.idsSentToAServerWithoutThem, 0);
+      expect(server.unavailableIdsAsked, isEmpty);
+    });
+
+    for (final status in [400, 404, 405]) {
+      test(
+          'a $status on the question is "no verdicts here" too, a second layer behind the feature list',
+          () async {
+        final ref = server.addRef('Lofi For Focus', 'Lofi & Sleep');
+        server.unavailableStatus = status;
+
+        final answer = await backend.unavailableAmongRefs([ref]);
+
+        expect(answer, isNotNull);
+        expect(answer!.supported, isFalse);
+      });
+    }
+
+    test('a server that cannot be reached or errs is "ask again later"',
+        () async {
+      final ref = server.addRef('Lofi For Focus', 'Lofi & Sleep');
+      server.unavailableStatus = 500;
+      expect(await backend.unavailableAmongRefs([ref]), isNull);
+
+      server.unavailableStatus = null;
+      server.online = false;
+      expect(await backend.unavailableAmongRefs([ref]), isNull);
+    });
+  });
+
   group('a tap on a song the server cannot get', () {
     test(
         'is not saved, not played and not tried: the job fails with the server\'s own sentence',

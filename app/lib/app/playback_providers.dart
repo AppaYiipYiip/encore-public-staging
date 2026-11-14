@@ -16,6 +16,8 @@ import '../features/instant/instant_controller.dart'
     show instantControllerProvider;
 import '../features/instant/library_resolver.dart'
     show SessionLibraryResolver, libraryResolverProvider;
+import '../features/instant/song_refusals.dart'
+    show askSongRefusal, songRefusalsProvider;
 import '../features/settings/settings_controller.dart';
 import '../playback/encore_audio_handler.dart';
 import '../playback/equalizer_service.dart';
@@ -166,13 +168,14 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     },
     // A stream that failed is asked about once: the server says why (no matching upload, removed, age check), and a song it cannot have is
     // not tried a second time. Only on an Encore server, which writes that answer.
-    songRefusal: (address) async {
+    songRefusal: (address) {
       final s = session();
-      if (s == null || !s.encoreMode) return null;
-      final why = await s.encore.streamRefusal(address);
-      return why == null
-          ? null
-          : (message: why.message, permanent: why.permanent);
+      return askSongRefusal(
+          s == null || !s.encoreMode ? null : s.encore, address,
+          // A song the server refuses for good is news for the marks: the lists on screen ask the server again at once (B-128).
+          onRefusedForGood: () {
+        if (ref.mounted) ref.read(songRefusalsProvider.notifier).refused();
+      });
     },
     // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
     canReachServer: () => canReachServerNow(

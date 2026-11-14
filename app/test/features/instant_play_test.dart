@@ -6,6 +6,7 @@ import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/fetch/fetch_client.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/instant_play.dart';
+import 'package:encore/features/instant/song_refusals.dart';
 import 'package:encore/features/jam/jam_providers.dart';
 import 'package:encore/features/player/playback_facade.dart';
 import 'package:encore/features/requests/request_providers.dart';
@@ -556,6 +557,48 @@ void main() {
         expect(s.facade.calls, ['streamed(2, start=0)']);
         await closeApp(tester, s.db);
       });
+    });
+
+    testWidgets(
+        'a tap that finds the song marked says so to the marks (B-128): the memory of the server changed since the phone asked, so the lists ask again',
+        (tester) async {
+      final s = await open(
+          tester,
+          _FakeBackend(
+              fail: const FetchJob(
+                  id: 'x',
+                  state: FetchState.failed,
+                  error: 'unavailable',
+                  message: 'Nothing matching that song was found.')),
+          more: [songRefusalsProvider.overrideWith(SongRefusals.new)]);
+      final container = ProviderScope.containerOf(
+          tester.element(find.byType(Scaffold).first));
+      expect(container.read(songRefusalsProvider), 0);
+
+      await tester.runAsync(() => s.controller.play(_t('1', 'Lofi For Focus')));
+
+      expect(container.read(songRefusalsProvider), 1);
+      await closeApp(tester, s.db);
+    });
+
+    testWidgets(
+        'a failure that may pass (YouTube resting, a busy service) is not a refusal for good: the marks hear nothing',
+        (tester) async {
+      final s = await open(
+          tester,
+          _FakeBackend(
+              fail: const FetchJob(
+                  id: 'x',
+                  state: FetchState.failed,
+                  error: 'resting',
+                  message: 'YouTube is resting.')));
+      final container = ProviderScope.containerOf(
+          tester.element(find.byType(Scaffold).first));
+
+      await tester.runAsync(() => s.controller.play(_t('1', 'Lofi For Focus')));
+
+      expect(container.read(songRefusalsProvider), 0);
+      await closeApp(tester, s.db);
     });
 
     testWidgets('play starts the song once it is ready', (tester) async {
