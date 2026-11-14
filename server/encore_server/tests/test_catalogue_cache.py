@@ -236,12 +236,13 @@ def test_a_cached_answer_is_not_charged_and_costs_no_budget(rig: Rig) -> None:
     assert len(charged) == 3
 
 
-def test_the_cache_keeps_no_typed_text_and_the_log_none(rig: Rig, caplog: pytest.LogCaptureFixture) -> None:
-    with caplog.at_level(logging.DEBUG):
-        rig.search("a secret band name")
-    keys = [row[0] for row in sqlite3.connect(rig.cache.path).execute("SELECT key FROM answer")]
-    assert keys and all(re.fullmatch(r"[0-9a-f]{64}", key) for key in keys), "keys are hashes, not queries"
-    assert "secret band" not in caplog.text.lower()
+def test_the_cache_keeps_no_typed_text(rig: Rig) -> None:
+    """The keys are hashes and nothing but the answer is stored (what the log may hold is tested through the routes, with the server's own logging)."""
+    rig.search("zqxprivate band")
+    rows = list(sqlite3.connect(rig.cache.path).execute("SELECT key, kind FROM answer"))
+    assert rows and all(re.fullmatch(r"[0-9a-f]{64}", key) for key, _ in rows), "keys are hashes, not queries"
+    stored = b"".join(file.read_bytes() for file in Path(rig.cache.path).parent.glob("catalogue-cache.db*"))
+    assert stored and b"zqxprivate" not in stored.lower()
 
 
 # ------------------------------------------------------------------------------------------------------------------ the file

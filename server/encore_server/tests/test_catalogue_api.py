@@ -23,6 +23,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from encore_server import deezer, refs
+from encore_server.__main__ import configure_logging
 from encore_server.api import create_app
 from encore_server.catalogue import Cache, Catalogue, fold_releases, release_key
 from encore_server.config import Settings
@@ -435,11 +436,36 @@ def test_the_switch_is_read_from_the_environment() -> None:
 # ------------------------------------------------------------------------------------------------------------------ no text in the log
 
 
-def test_what_a_person_typed_is_not_in_the_log(rig: Rig, caplog: pytest.LogCaptureFixture) -> None:
+@pytest.fixture()
+def the_logging_the_server_really_sets_up() -> Iterator[None]:
+    """`__main__.configure_logging`: the server's own set-up, which keeps `httpx` (it prints every address it asks, with the words in it, at INFO) to
+    warnings. A test that did not run it would prove nothing about what a running server writes."""
+    names = ("httpx", "httpcore")
+    before = {name: logging.getLogger(name).level for name in names}
+    configure_logging("INFO")
+    yield
+    for name, level in before.items():
+        logging.getLogger(name).setLevel(level)
+
+
+def test_what_a_person_typed_is_not_in_the_log(
+    rig: Rig, caplog: pytest.LogCaptureFixture, the_logging_the_server_really_sets_up: None
+) -> None:
     with caplog.at_level(logging.DEBUG):
-        rig.ok("/catalogue/search", q="a private band name")
-        rig.ok("/catalogue/search", q="nobody at all zzz", types="artists")
-    assert "private band" not in caplog.text.lower() and "nobody at all" not in caplog.text.lower()
+        rig.ok("/catalogue/search", q="zqxprivate")
+        rig.ok("/catalogue/search", q="zqxsecond", types="artists")
+        rig.ok("/catalogue/search", q="zqxthird words", types="albums")
+    assert "zqx" not in caplog.text.lower() and "HTTP Request" not in caplog.text
+
+
+def test_that_promise_rests_on_the_httpx_cap_and_this_test_would_catch_its_loss(
+    rig: Rig, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The control of the test above: with `httpx` left at its own level the words ARE in the log (httpx prints the address it asked). So the
+    assertion above can fail, and the cap in `configure_logging` is what PRIVACY.md's sentence stands on (tests/test_logging.py holds the cap)."""
+    with caplog.at_level(logging.DEBUG):
+        rig.ok("/catalogue/search", q="zqxprivate")
+    assert "zqxprivate" in caplog.text
 
 
 # ------------------------------------------------------------------------------------------------------------------ pure: editions

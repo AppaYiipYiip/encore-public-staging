@@ -1748,9 +1748,6 @@ def create_app(
             def room() -> float:
                 return max(MIN_JOIN_S, deadline - time.monotonic())
 
-            if deezer.installed() is catalogue.client:
-                deezer.install(None)
-            catalogue.close()
             if keep_watch is not None:
                 keep_watch.stop(timeout=room())
             if tools is not None:
@@ -1759,6 +1756,10 @@ def create_app(
                 linker.stop(timeout=room())
             if scheduler is not None:
                 scheduler.stop(timeout=room())
+            # After the threads that ask the catalogue (the errands, the keeper) have stopped, not before: a look-up in flight would find its client closed.
+            if deezer.installed() is catalogue.client:
+                deezer.install(None)
+            catalogue.close()
             database.release()
 
     app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
