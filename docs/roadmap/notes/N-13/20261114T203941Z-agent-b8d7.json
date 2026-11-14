@@ -1,0 +1,9 @@
+{
+ "id": "20261114T203941Z-agent-b8d7",
+ "item": "N-13",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T20:39:41Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 evening (verified on an emulator and on the owner's secondary test phone, a Samsung A35, against VM 108 updated to sha-004ea8c (the server is unchanged since that commit) with debug APK build 153 from main cb37c62; NOT the release-candidate pair; nothing is marked walked). B-128 SEEN ON THE PHONE'S LIBRARY ROWS (build 153). The unfindable song \"Lofi For Focus\" (the server's verdict from the walk of 13:14 UTC still live) was liked through the server API as a second device, which put it in the emulator's Liked Songs as a library row with no file: the row was GREY (\"Lofi For Focus / Not available on your server\", the \"...\" kept); a tap did not try and the snackbar said \"Nothing matching that song was found. Try again in a few days.\"; its menu's header line said \"Not available on your server\" and Remove from Liked Songs, Add to playlist, Download, Play next and Add to queue were listed; added to the playlist \"Upgrade test\" it was grey there too. With the Encore server stopped the same rows said \"Not downloaded\" with the cloud-off icon (offline wins over the verdict, as drawn). Not walked: Search's library row after a real tap (done on 14 Nov afternoon for the catalogue case; the library case is in the unit tests), the Queue and Recently played (not drawn). Test data taken back (unliked, removed from the playlist)."
+}

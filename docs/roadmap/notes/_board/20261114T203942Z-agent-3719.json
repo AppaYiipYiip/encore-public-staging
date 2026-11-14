@@ -1,0 +1,9 @@
+{
+ "id": "20261114T203942Z-agent-3719",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T20:39:42Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 evening (verified on an emulator and on the owner's secondary test phone, a Samsung A35, against VM 108 updated to sha-004ea8c (the server is unchanged since that commit) with debug APK build 153 from main cb37c62; NOT the release-candidate pair; nothing is marked walked). DEVICE WALK OF BUILD 153 (14 Nov evening) on the emulator and the A35 (secondary test phone): P1-17's D1 and D2 seen, B-128's grey rows on Liked and a playlist seen, B-129 passes on the real stack (0.43 s, exit 0), the A35 upgraded 144 to 153 in place. See the notes on P1-17, N-13, P3-29 and N-15. B-127 not walked. Nothing marked walked. The bench is down again (emulator killed, VM 108 stopped)."
+}
