@@ -30,7 +30,7 @@ log = logging.getLogger("encore_server.imports")
 #: A file of songs the app parsed is cut here (a person's whole history can be long; the link readers have their own limit).
 MAX_SONGS = 10_000
 _SOURCES = ("youtube", "spotify", "file")
-_REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0}
+_REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0, "search_failed": 300.0}
 
 
 class Finder(Protocol):

@@ -33,11 +33,14 @@ class FakeYoutube(FakeSource):
         self.looked_up: list[str] = []
         self.missing: set[str] = set()
         self.blocked = False
+        self.search_down = False
 
     def find(self, wanted: Wanted) -> str | None:
         self.looked_up.append(wanted.title)
         if self.blocked:
             raise DownloadError("blocked")
+        if self.search_down:
+            raise DownloadError("search_failed")
         return None if wanted.title in self.missing else f"vid{len(self.looked_up):08d}"[:11]
 
 
@@ -325,6 +328,18 @@ def test_when_youtube_pushes_back_the_import_waits_and_carries_on_later(rig: Rig
 
     record = rig.get("marwa", f"/imports/{made['import']['id']}")["import"]
     assert record["state"] == "running" and record["pending"] == 5, "no song is called missing because YouTube said not now"
+    assert rig.svc.scheduler.counts()["match"]["queued"] == 5
+
+
+def test_when_the_search_itself_fails_no_song_is_called_missing_and_the_import_waits(rig: Rig) -> None:
+    """B-122: a failed search used to come out as `unavailable`, so every song of the playlist was settled as "not found" for good."""
+    rig.source.search_down = True
+    made = rig.imported()
+
+    rig.svc.scheduler.drain("background")
+
+    record = rig.get("marwa", f"/imports/{made['import']['id']}")["import"]
+    assert record["state"] == "running" and record["pending"] == 5 and record["unmatched"] == 0
     assert rig.svc.scheduler.counts()["match"]["queued"] == 5
 
 

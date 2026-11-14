@@ -60,10 +60,19 @@ MESSAGES = {
     "unavailable": "YouTube has no copy of that song that can be played.",
     "age_restricted": "That song needs an age check, so it cannot be played here.",
     "blocked": "YouTube is not letting this server fetch songs right now. Try again in a little while.",
+    "search_failed": "The song could not be looked up just now. Try again.",
     "slow": "The song could not be started in time. Try again.",
     "failed": "The song could not be fetched. Try again.",
 }
-STATUS = {"not_found": 404, "unavailable": 404, "age_restricted": 404, "blocked": 503, "slow": 504, "failed": 502}
+STATUS = {
+    "not_found": 404,
+    "unavailable": 404,
+    "age_restricted": 404,
+    "blocked": 503,
+    "search_failed": 502,
+    "slow": 504,
+    "failed": 502,
+}
 
 
 class StreamError(Exception):

@@ -13,6 +13,7 @@ from encore_server.api import create_app
 from encore_server.auth import sign_stream
 from encore_server.config import Settings
 from encore_server.sources.youtube.errors import DownloadError
+from encore_server.sources.youtube.lean import LeanResolver
 from encore_server.sources.youtube.source import Wanted, YoutubeSource
 from encore_server.sources.youtube.stream import StreamError, StreamProxy
 from tests.conftest import FakeVerifier, creds, resolve, song
@@ -205,6 +206,31 @@ def test_a_song_nothing_matches_is_song_unavailable(tmp_path: Path, verifier: Fa
         response = client.get(address(client, ref))
 
     assert response.status_code == 404 and response.json()["error"]["details"]["reason"] == "not_found"
+
+
+def test_a_search_that_failed_is_a_retryable_502_and_never_a_missing_song(tmp_path: Path, verifier: FakeVerifier) -> None:
+    """B-122: the search service timing out or being down said nothing about the song, yet it was answered 404 `song_unavailable` (reason `removed`,
+    `retryable: false`), which the app takes as final and which the server may one day remember. It is a 502 `source_unreachable`, retryable, with no
+    reason about the song. The whole path is real: the route, the source, the proxy and the resolver, with only the search service broken."""
+
+    class BrokenSearch:
+        def songs(self, query: str, limit: int) -> list[dict]:
+            raise OSError("the search service is not answering")
+
+        videos = songs
+
+    resolver = LeanResolver(BrokenSearch(), max_duration_s=6 * 3600)
+    source = YoutubeSource(tmp_path / "work", resolver=resolver, extractor=object())
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
+    )
+    with TestClient(create_app(settings, verifier=verifier, youtube=source)) as client:  # type: ignore[arg-type]
+        ref = str(resolve(client, "marwa", song())[0]["id"])
+        response = client.get(address(client, ref))
+
+    body = response.json()["error"]
+    assert response.status_code == 502 and body["code"] == "source_unreachable" and body["retryable"] is True
+    assert "reason" not in (body.get("details") or {})
 
 
 def test_a_slow_start_is_a_504_with_a_sentence(tmp_path: Path, verifier: FakeVerifier) -> None:

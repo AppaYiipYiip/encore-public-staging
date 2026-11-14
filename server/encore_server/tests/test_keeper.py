@@ -305,6 +305,7 @@ def test_everyone_who_has_the_song_is_told_the_file_is_there(rig: Rig, db: Datab
         ("too_big", GiveUp),
         ("blocked", Retry),
         ("timeout", Retry),
+        ("search_failed", Retry),  # B-122: a search that could not be made is not "no copy of the song"
     ],
 )
 def test_what_goes_wrong_fetching_is_a_retry_or_a_giving_up(rig: Rig, code: str, outcome: type[Exception]) -> None:

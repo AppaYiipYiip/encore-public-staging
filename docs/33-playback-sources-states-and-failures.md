@@ -50,12 +50,12 @@ On an Encore server "Add to library" and "Download" on a catalogue release are *
 |----|--------------|---------|-----------------|--------|-------|------|
 | PB-10 | the address is valid and YouTube answers | the song is looked up (or its saved video id used), one look-up gives the stream, bytes pass on with Range | audio | Built | `stream.py` | `test_stream_route.py` |
 | PB-11 | the signed address has **expired** (older than 6 hours) | the server refuses | 401 "This song address has expired. Ask the app to play it again." | Built | `valid_stream_signature` | `test_stream_route.py` |
-| PB-12 | the song is not on YouTube | none found | 404 `song_unavailable` reason `not_found` | Built | `_stream_error` | same |
+| PB-12 | the song is not on YouTube | the search ANSWERED and nothing acceptable matched (a search that could not be made is PB-17, not this) | 404 `song_unavailable` reason `not_found` | Built | `_stream_error` | same |
 | PB-13 | removed / private | | 404 `song_unavailable` reason `removed` | Built | same | same |
 | PB-14 | age check | | 404 reason `age_restricted` | Built | same | same |
 | PB-15 | **YouTube is refusing this server** (`rest`, a rest of 30 min up to a day) | background work waits; a person's tap may try once in a while | 503 `source_busy` with `retryAfterMs`: "YouTube is not letting this server fetch songs right now. Try again in a little while." | Built | `rest.py`, `_stream_error` | `test_rest.py` |
 | PB-16 | the song could not be started in time | first bytes later than 10 s | 504 `upstream_timeout` | Built | `stream.py` `first_byte_s` | `test_stream.py` |
-| PB-17 | any other failure | | 502 `source_unreachable` "The song could not be fetched. Try again." | Built | same | same |
+| PB-17 | any other failure, **including a search that could not be made** (the search service timing out or down: `search_failed`, B-122; it says nothing about the song, so it is never a PB-12 to PB-14 and is waited out, not given up, by the keeper and the imports) | | 502 `source_unreachable` "The song could not be fetched. Try again." (for a failed search: "The song could not be looked up just now. Try again.") | Built | same | same |
 | PB-18 | **no YouTube on this server** (switched off, libraries missing) | | 502 `source_unreachable` "This server cannot fetch songs from YouTube." | Built | `api.py` | none |
 
 ## 3. The player's states (what the person can see)
