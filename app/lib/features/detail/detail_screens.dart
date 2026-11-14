@@ -32,6 +32,7 @@ import '../downloads/download_providers.dart';
 import '../downloads/download_status.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/song_marks.dart';
 import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'album_gap.dart';
@@ -284,6 +285,8 @@ class AlbumScreen extends ConsumerWidget {
 List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
   final snapshot = ref.watch(playbackSnapshotProvider).value;
   final sourceId = 'album-missing:${album.id}';
+  // The songs the server already knows it cannot get are marked (N-13): one question for the whole list.
+  ref.watch(songMarksCheckProvider(TrackList(gap.missing)));
   return [
     const SliverToBoxAdapter(
         child: SectionHeader(title: 'Not in your library')),
@@ -301,6 +304,7 @@ List<Widget> _missingSongs(WidgetRef ref, AlbumRow album, AlbumGap gap) {
           isCurrent: current,
           isPlaying: current && (snapshot?.isPlaying ?? false),
           status: status,
+          mark: ref.watch(songMarkProvider(t.id)),
           onTap: () => unawaited(tapPlayRun(ref, gap.missing,
               startIndex: i,
               sourceName: albumDisplayName(album.name),

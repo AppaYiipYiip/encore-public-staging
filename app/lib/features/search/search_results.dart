@@ -18,6 +18,7 @@ import '../common/track_menu.dart';
 import '../common/track_swipe.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/song_marks.dart';
 import '../instant/tap_play.dart';
 import '../providers.dart';
 import '../requests/request_providers.dart';
@@ -85,6 +86,17 @@ class _SearchResultsViewState extends ConsumerState<SearchResultsView> {
     );
     WidgetsBinding.instance
         .addPostFrameCallback((_) => mounted ? _prepareLikelyTap(found) : null);
+    // The catalogue songs the server already knows it cannot get are marked (N-13): one question for the whole list, once the rows are drawn.
+    ref.watch(songMarksCheckProvider(TrackList([
+      for (final track in {
+        for (final hit in [
+          if (found.top is SongHit) found.top! as SongHit,
+          ...found.songs
+        ])
+          if (hit.catalogue != null) hit.catalogue!.id: hit.catalogue!,
+      }.values)
+        track,
+    ])));
 
     if (found.isEmpty) {
       // Offline the question is not "is the catalogue slow" but "what cannot be done": never a spinner for a line that is not there, and
@@ -193,6 +205,10 @@ class _TopResult extends ConsumerWidget {
     // A song of the library that is not on the phone cannot be played without a connection.
     final unavailable =
         h is SongHit && h.local != null && !playable(h.local!.id);
+    // A catalogue song the server already knows it cannot get (N-13): the card greys, its Play circle is a quiet one, and a tap says why.
+    final mark = h is SongHit && h.catalogue != null
+        ? ref.watch(songMarkProvider(h.catalogue!.id))
+        : null;
     // An album of the library with nothing on the phone says so while the server is away, as its row does (S-12, S-14 offline).
     final albumGone = h is AlbumHit &&
         h.local != null &&
@@ -227,7 +243,8 @@ class _TopResult extends ConsumerWidget {
     };
     return Semantics(
       button: true,
-      label: 'Top result: $kind, $title${artist == null ? '' : ', $artist'}',
+      label: 'Top result: $kind, $title${artist == null ? '' : ', $artist'}'
+          '${mark == null ? '' : ', $kNotAvailableWords'}',
       excludeSemantics: true,
       child: Material(
         color: c.surfaceHigh,
@@ -239,7 +256,10 @@ class _TopResult extends ConsumerWidget {
             padding: const EdgeInsets.all(Space.md),
             child: Row(
               children: [
-                SizedBox.square(dimension: 92, child: art),
+                SizedBox.square(
+                    dimension: 92,
+                    child:
+                        mark == null ? art : Opacity(opacity: .6, child: art)),
                 const SizedBox(width: Space.md),
                 Expanded(
                   child: Column(
@@ -252,8 +272,9 @@ class _TopResult extends ConsumerWidget {
                       Text(title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: context.text.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                          style: context.text.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: mark == null ? null : c.onBgMuted)),
                       Text(
                         [
                           kind,
@@ -267,6 +288,13 @@ class _TopResult extends ConsumerWidget {
                         style: context.text.bodyMedium
                             ?.copyWith(color: c.onBgMuted),
                       ),
+                      if (mark != null)
+                        Text(kNotAvailableWords,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.text.bodyMedium?.copyWith(
+                                color: c.onBgMuted,
+                                fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -275,11 +303,14 @@ class _TopResult extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (onMore != null) TrackMoreButton(onPressed: onMore),
-                      unavailable
-                          ? Icon(Icons.cloud_off_rounded,
-                              size: 28, color: c.onBgFaint)
-                          : Icon(Icons.play_circle_fill_rounded,
-                              size: 44, color: c.accent),
+                      mark != null
+                          ? Icon(Icons.remove_circle_outline_rounded,
+                              size: 44, color: c.onBgFaint)
+                          : unavailable
+                              ? Icon(Icons.cloud_off_rounded,
+                                  size: 28, color: c.onBgFaint)
+                              : Icon(Icons.play_circle_fill_rounded,
+                                  size: 44, color: c.accent),
                     ],
                   ),
               ],
@@ -419,6 +450,8 @@ class _CatalogueSongRow extends ConsumerWidget {
     final playing = ref.watch(playbackSnapshotProvider).value;
     final portal = ref.watch(requestPortalOfferedProvider);
     final status = ref.watch(instantStatusProvider(track.id));
+    // The server already knows it cannot get this song (N-13): grey, in the words of the drawing; a tap says why.
+    final mark = ref.watch(songMarkProvider(track.id));
     final isThis = playing?.track?.id == track.id ||
         (status?.track != null && playing?.track?.id == status!.track!.id);
     final working = status?.isWorking ?? false;
@@ -428,10 +461,12 @@ class _CatalogueSongRow extends ConsumerWidget {
         ? status!.label
         : failed
             ? (status!.message ?? 'Could not get it')
-            : [
-                track.artistName,
-                if (track.albumTitle != null) track.albumTitle!,
-              ].join(' • ');
+            : mark != null
+                ? kNotAvailableWords
+                : [
+                    track.artistName,
+                    if (track.albumTitle != null) track.albumTitle!,
+                  ].join(' • ');
 
     return InkWell(
       onTap: () {
@@ -448,9 +483,12 @@ class _CatalogueSongRow extends ConsumerWidget {
           children: [
             SizedBox.square(
               dimension: 48,
-              child: CoverArt(
-                imageUrl: track.coverUrl,
-                fallbackLabel: track.albumTitle ?? track.title,
+              child: Opacity(
+                opacity: mark == null ? 1 : .6,
+                child: CoverArt(
+                  imageUrl: track.coverUrl,
+                  fallbackLabel: track.albumTitle ?? track.title,
+                ),
               ),
             ),
             const SizedBox(width: Space.md),
@@ -464,7 +502,11 @@ class _CatalogueSongRow extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.text.bodyLarge?.copyWith(
-                      color: isThis ? c.accent : c.onBg,
+                      color: mark != null
+                          ? c.onBgMuted
+                          : isThis
+                              ? c.accent
+                              : c.onBg,
                       fontWeight: isThis ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),

@@ -185,6 +185,28 @@ class EncoreApi {
         ];
       });
 
+  /// Which of these songs the server already knows it cannot get (`POST /refs/unavailable`, N-13), in the order asked: `null` for a song with no known
+  /// problem. A read: it makes no ref and asks YouTube nothing, so a screen may ask about every song of a list it shows (at most 100 at a time).
+  ///
+  /// **The whole answer is `null` when the server has no such question** (404, or 405: an older server matches the path against `GET refs/{id}`): that is
+  /// "no verdicts here", never an error state, so nothing is marked and nothing is shown.
+  Future<Result<List<EncoreUnavailable?>?>> unavailable(
+          List<Map<String, Object?>> songs) =>
+      guard(() async {
+        try {
+          final body =
+              await _send('POST', '/refs/unavailable', body: {'songs': songs});
+          final items = body['items'];
+          if (items is! List) return null;
+          return [for (final item in items) EncoreUnavailable.fromJson(item)];
+        } on NotFoundFailure {
+          return null;
+        } on ServerFailure catch (e) {
+          if (e.statusCode == 405) return null;
+          rethrow;
+        }
+      });
+
   Future<Result<EncoreRef>> ref(String id) =>
       guard(() async => EncoreRef.fromJson(await _send('GET', '/refs/$id')));
 
