@@ -1,0 +1,96 @@
+{
+ "recorded": "2026-11-14",
+ "path": "/chart/{genre}/albums",
+ "params": {
+  "limit": 15
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 997406121,
+    "title": "Friend World",
+    "link": "https://www.deezer.com/album/997406121",
+    "cover": "https://api.deezer.com/album/997406121/image",
+    "cover_small": "https://cdn-images.dzcdn.net/images/cover/daeb114770df80e63ac9a1b3b4aecbd3/56x56-000000-80-0-0.jpg",
+    "cover_medium": "https://cdn-images.dzcdn.net/images/cover/daeb114770df80e63ac9a1b3b4aecbd3/250x250-000000-80-0-0.jpg",
+    "cover_big": "https://cdn-images.dzcdn.net/images/cover/daeb114770df80e63ac9a1b3b4aecbd3/500x500-000000-80-0-0.jpg",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/daeb114770df80e63ac9a1b3b4aecbd3/1000x1000-000000-80-0-0.jpg",
+    "record_type": "album",
+    "tracklist": "https://api.deezer.com/album/997406121/tracks",
+    "explicit_lyrics": false,
+    "position": 1,
+    "artist": {
+     "id": 869599,
+     "name": "Do Nothing",
+     "link": "https://www.deezer.com/artist/869599",
+     "picture": "https://api.deezer.com/artist/869599/image",
+     "picture_small": "https://cdn-images.dzcdn.net/images/artist/6390c09ed04ec0b60247aef702677a1a/56x56-000000-80-0-0.jpg",
+     "picture_medium": "https://cdn-images.dzcdn.net/images/artist/6390c09ed04ec0b60247aef702677a1a/250x250-000000-80-0-0.jpg",
+     "picture_big": "https://cdn-images.dzcdn.net/images/artist/6390c09ed04ec0b60247aef702677a1a/500x500-000000-80-0-0.jpg",
+     "picture_xl": "https://cdn-images.dzcdn.net/images/artist/6390c09ed04ec0b60247aef702677a1a/1000x1000-000000-80-0-0.jpg",
+     "radio": true,
+     "tracklist": "https://api.deezer.com/artist/869599/top?limit=50",
+     "type": "artist"
+    },
+    "type": "album"
+   },
+   {
+    "id": 980438811,
+    "title": "MI AMOR",
+    "link": "https://www.deezer.com/album/980438811",
+    "cover": "https://api.deezer.com/album/980438811/image",
+    "cover_small": "https://cdn-images.dzcdn.net/images/cover/c3da38c912d4cb393a542950d4f3d9aa/56x56-000000-80-0-0.jpg",
+    "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c3da38c912d4cb393a542950d4f3d9aa/250x250-000000-80-0-0.jpg",
+    "cover_big": "https://cdn-images.dzcdn.net/images/cover/c3da38c912d4cb393a542950d4f3d9aa/500x500-000000-80-0-0.jpg",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c3da38c912d4cb393a542950d4f3d9aa/1000x1000-000000-80-0-0.jpg",
+    "record_type": "ep",
+    "tracklist": "https://api.deezer.com/album/980438811/tracks",
+    "explicit_lyrics": false,
+    "position": 2,
+    "artist": {
+     "id": 182492167,
+     "name": "bxkq",
+     "link": "https://www.deezer.com/artist/182492167",
+     "picture": "https://api.deezer.com/artist/182492167/image",
+     "picture_small": "https://cdn-images.dzcdn.net/images/artist/58d1113987430dfcd0a60cc5522c62a6/56x56-000000-80-0-0.jpg",
+     "picture_medium": "https://cdn-images.dzcdn.net/images/artist/58d1113987430dfcd0a60cc5522c62a6/250x250-000000-80-0-0.jpg",
+     "picture_big": "https://cdn-images.dzcdn.net/images/artist/58d1113987430dfcd0a60cc5522c62a6/500x500-000000-80-0-0.jpg",
+     "picture_xl": "https://cdn-images.dzcdn.net/images/artist/58d1113987430dfcd0a60cc5522c62a6/1000x1000-000000-80-0-0.jpg",
+     "radio": true,
+     "tracklist": "https://api.deezer.com/artist/182492167/top?limit=50",
+     "type": "artist"
+    },
+    "type": "album"
+   },
+   {
+    "id": 1058264482,
+    "title": "AFANDI / افندي",
+    "link": "https://www.deezer.com/album/1058264482",
+    "cover": "https://api.deezer.com/album/1058264482/image",
+    "cover_small": "https://cdn-images.dzcdn.net/images/cover/0b35fe0e7521c4d192fca75a212c9bc5/56x56-000000-80-0-0.jpg",
+    "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0b35fe0e7521c4d192fca75a212c9bc5/250x250-000000-80-0-0.jpg",
+    "cover_big": "https://cdn-images.dzcdn.net/images/cover/0b35fe0e7521c4d192fca75a212c9bc5/500x500-000000-80-0-0.jpg",
+    "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0b35fe0e7521c4d192fca75a212c9bc5/1000x1000-000000-80-0-0.jpg",
+    "record_type": "album",
+    "tracklist": "https://api.deezer.com/album/1058264482/tracks",
+    "explicit_lyrics": false,
+    "position": 3,
+    "artist": {
+     "id": 148852642,
+     "name": "Saint Levant",
+     "link": "https://www.deezer.com/artist/148852642",
+     "picture": "https://api.deezer.com/artist/148852642/image",
+     "picture_small": "https://cdn-images.dzcdn.net/images/artist/ece5cdbf56a3cb10203a25d304543123/56x56-000000-80-0-0.jpg",
+     "picture_medium": "https://cdn-images.dzcdn.net/images/artist/ece5cdbf56a3cb10203a25d304543123/250x250-000000-80-0-0.jpg",
+     "picture_big": "https://cdn-images.dzcdn.net/images/artist/ece5cdbf56a3cb10203a25d304543123/500x500-000000-80-0-0.jpg",
+     "picture_xl": "https://cdn-images.dzcdn.net/images/artist/ece5cdbf56a3cb10203a25d304543123/1000x1000-000000-80-0-0.jpg",
+     "radio": true,
+     "tracklist": "https://api.deezer.com/artist/148852642/top?limit=50",
+     "type": "artist"
+    },
+    "type": "album"
+   }
+  ],
+  "total": 3
+ }
+}

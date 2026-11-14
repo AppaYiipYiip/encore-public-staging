@@ -1,0 +1,96 @@
+{
+  "genres": [
+    {
+      "id": "132",
+      "name": "Pop"
+    },
+    {
+      "id": "116",
+      "name": "Rap / Hip Hop"
+    },
+    {
+      "id": "152",
+      "name": "Rock"
+    },
+    {
+      "id": "113",
+      "name": "Dance"
+    },
+    {
+      "id": "165",
+      "name": "R&B"
+    },
+    {
+      "id": "85",
+      "name": "Alternative"
+    },
+    {
+      "id": "106",
+      "name": "Electro"
+    },
+    {
+      "id": "464",
+      "name": "Metal"
+    },
+    {
+      "id": "129",
+      "name": "Jazz"
+    },
+    {
+      "id": "98",
+      "name": "Classical"
+    },
+    {
+      "id": "169",
+      "name": "Soul & Funk"
+    },
+    {
+      "id": "153",
+      "name": "Blues"
+    },
+    {
+      "id": "466",
+      "name": "Folk"
+    },
+    {
+      "id": "144",
+      "name": "Reggae"
+    },
+    {
+      "id": "197",
+      "name": "Latin"
+    },
+    {
+      "id": "2",
+      "name": "African music"
+    },
+    {
+      "id": "12",
+      "name": "Arabic music"
+    },
+    {
+      "id": "16",
+      "name": "Asian music"
+    },
+    {
+      "id": "75",
+      "name": "Brazilian music"
+    },
+    {
+      "id": "81",
+      "name": "Indian music"
+    },
+    {
+      "id": "52",
+      "name": "French chanson"
+    },
+    {
+      "id": "173",
+      "name": "Films & games"
+    },
+    {
+      "id": "95",
+      "name": "Kids"
+    }
+  ]
+}

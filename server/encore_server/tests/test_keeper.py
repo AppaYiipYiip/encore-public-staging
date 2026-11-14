@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import shutil
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ import pytest
 
 from encore_server import library, refs
 from encore_server.db import Database
+from encore_server.deezer import LookupUnavailable
 from encore_server.keeper.keeper import Keeper, KeepSettings
 from encore_server.keeper.process import RunResult
 from encore_server.keeper.tagging import Tags
@@ -96,6 +98,7 @@ class Rig:
         self.now = 0.0
         self.cover_found: str | None = None
         self.cover_breaks = False
+        self.cover_unavailable = False
         self.cover_asked: list[tuple[str, str, str | None]] = []
 
         def write_tags(path: Path, tags: Tags, cover: bytes | None = None) -> bool:
@@ -123,6 +126,8 @@ class Rig:
 
     def find_cover(self, artist: str, title: str, album: str | None) -> str | None:
         self.cover_asked.append((artist, title, album))
+        if self.cover_unavailable:
+            raise LookupUnavailable("the catalogue is resting")
         if self.cover_breaks:
             raise RuntimeError("the catalogue is down")
         return self.cover_found
@@ -213,6 +218,20 @@ def test_no_picture_found_or_a_lookup_that_fails_never_stops_the_keep(rig: Rig, 
     assert rig.ref(ref)["file"]["navidromeSongId"] == "nd-1"
     assert rig.tagged[0][2] is None
     assert rig.ref(ref)["coverUrl"] is None
+
+
+def test_a_catalogue_that_cannot_be_asked_is_one_quiet_line_and_never_stops_the_keep(
+    rig: Rig, caplog: pytest.LogCaptureFixture
+) -> None:
+    """P2-12: with the gate resting or `ENCORE_CATALOGUE=0` EVERY song kept used to log a stack trace here."""
+    rig.cover_unavailable = True
+    ref = rig.make_ref()
+
+    with caplog.at_level(logging.INFO, logger="encore_server.keeper"):
+        rig.keep(ref)
+
+    assert rig.ref(ref)["file"]["navidromeSongId"] == "nd-1" and rig.ref(ref)["coverUrl"] is None
+    assert "could not be asked" in caplog.text and all(record.exc_info is None for record in caplog.records)
 
 
 def test_the_work_folder_is_left_clean(rig: Rig, tmp_path: Path) -> None:

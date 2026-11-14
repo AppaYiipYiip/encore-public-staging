@@ -1,0 +1,1008 @@
+{
+  "artist": {
+    "id": "719",
+    "name": "Bob Marley & The Wailers",
+    "picture": "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg",
+    "fans": 12308836,
+    "albumCount": 83
+  },
+  "popular": [
+    {
+      "id": "530300631",
+      "title": "Could You Be Loved",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 236000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Could You Be Loved",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 236000,
+        "deezerId": "530300631",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "530300641",
+      "title": "Three Little Birds",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 183000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Three Little Birds",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 183000,
+        "deezerId": "530300641",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2293791",
+      "title": "Is This Love",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "228718",
+        "title": "Kaya"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 233000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Is This Love",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Kaya",
+        "durationMs": 233000,
+        "deezerId": "2293791",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/6367879e2e914efb1a5e546c7492ca0f/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "1768222537",
+      "title": "One Love / People Get Ready",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "322427657",
+        "title": "Exodus"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 171000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "One Love / People Get Ready",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Exodus",
+        "durationMs": 171000,
+        "deezerId": "1768222537",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/4a8376ef313d132ca7b434fe82309f47/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "530300651",
+      "title": "Buffalo Soldier",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 256000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Buffalo Soldier",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 256000,
+        "deezerId": "530300651",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "2542705",
+      "title": "Redemption Song",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "249141",
+        "title": "Uprising"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 227000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Redemption Song",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Uprising",
+        "durationMs": 227000,
+        "deezerId": "2542705",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "530300751",
+      "title": "Jamming",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 211000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Jamming",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 211000,
+        "deezerId": "530300751",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "530300621",
+      "title": "No Woman, No Cry (Live At The Lyceum, London/1975)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 428000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "No Woman, No Cry (Live At The Lyceum, London/1975)",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 428000,
+        "deezerId": "530300621",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "86648035",
+      "title": "Natural Mystic",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "8740481",
+        "title": "Natural Mystic"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 206000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Natural Mystic",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Natural Mystic",
+        "durationMs": 206000,
+        "deezerId": "86648035",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/1000x1000-000000-80-0-0.jpg"
+      }
+    },
+    {
+      "id": "530300711",
+      "title": "Waiting In Vain",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "album": {
+        "id": "68685711",
+        "title": "Legend - The Best Of Bob Marley And The Wailers"
+      },
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "durationMs": 256000,
+      "isrc": null,
+      "trackNo": null,
+      "discNo": null,
+      "description": {
+        "title": "Waiting In Vain",
+        "artists": [
+          "Bob Marley & The Wailers"
+        ],
+        "album": "Legend - The Best Of Bob Marley And The Wailers",
+        "durationMs": 256000,
+        "deezerId": "530300711",
+        "coverUrl": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg"
+      }
+    }
+  ],
+  "releases": [
+    {
+      "id": "1059353762",
+      "title": "Roots, Rock, Reggae (Live At The Hammersmith Odeon, London, UK - June 1976)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/96ed40b2669588116c229b257e9905eb/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2026,
+      "releaseDate": "2026-08-28",
+      "recordType": "album"
+    },
+    {
+      "id": "542665382",
+      "title": "One Love (Original Motion Picture Soundtrack)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6138a15c71a5fbab7b331e31263cd08c/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2024,
+      "releaseDate": "2024-02-09",
+      "recordType": "album"
+    },
+    {
+      "id": "505337231",
+      "title": "Catch A Fire (50th Anniversary)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/94b5a6f802bfc533e27eb909180da687/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2023,
+      "releaseDate": "2023-11-03",
+      "recordType": "album"
+    },
+    {
+      "id": "469646025",
+      "title": "Africa Unite",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/737b5220f52688900a7c69bda2f58343/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2023,
+      "releaseDate": "2023-08-04",
+      "recordType": "album"
+    },
+    {
+      "id": "336067167",
+      "title": "Bob Marley with the Chineke! Orchestra",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/f4817fc444e23364886ee1084bad5414/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2022,
+      "releaseDate": "2022-07-22",
+      "recordType": "album"
+    },
+    {
+      "id": "328176677",
+      "title": "Exodus (Deluxe Edition)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/2322965d12f92aed0be7994354173eb9/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2022,
+      "releaseDate": "2022-06-24",
+      "recordType": "album"
+    },
+    {
+      "id": "326316787",
+      "title": "Live At The Rainbow, 3rd June 1977",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/58e94bd35de09512c3b373560106d384/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2022,
+      "releaseDate": "2022-06-17",
+      "recordType": "album"
+    },
+    {
+      "id": "324269707",
+      "title": "Live At The Rainbow, 2nd June 1977",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/a226ab74831cd1fa66ebdc09b7287208/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2022,
+      "releaseDate": "2022-06-10",
+      "recordType": "album"
+    },
+    {
+      "id": "322427407",
+      "title": "Live At The Rainbow, 1st June 1977",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/08d2d2970de110c55f557f1cddc478f2/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2022,
+      "releaseDate": "2022-06-03",
+      "recordType": "album"
+    },
+    {
+      "id": "254638012",
+      "title": "The Capitol Session '73 (Live)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/f1da233b8e9e76cac5dd2983265016ff/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2021,
+      "releaseDate": "2021-09-03",
+      "recordType": "album"
+    },
+    {
+      "id": "190810082",
+      "title": "Bob Marley Legacy: Punky Reggae Party",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/d015356f3acaac8e71b33facd5c92248/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-12-11",
+      "recordType": "album"
+    },
+    {
+      "id": "189837732",
+      "title": "Bob Marley Legacy: Rhythm of the Game",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/1feb42ba0d977a5c406c9d53cc517170/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-12-04",
+      "recordType": "ep"
+    },
+    {
+      "id": "184396972",
+      "title": "Bob Marley Legacy: Freedom Fighter",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/9765efb62db39ce8c6271985f7bb827a/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-11-09",
+      "recordType": "album"
+    },
+    {
+      "id": "174174112",
+      "title": "I Know A Place: The Remixes (Pt. 1)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/d8f89aca15020d8da0a455a2af43fb55/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-09-25",
+      "recordType": "album"
+    },
+    {
+      "id": "174177872",
+      "title": "I Know A Place: The Remixes (Pt. 2)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/99a43d46a089cc5af2f9209fe5078278/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-09-25",
+      "recordType": "album"
+    },
+    {
+      "id": "164591122",
+      "title": "Songs Of Freedom Rarities",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/9d9e330a55fb4f1cab529c0a2c4b80e8/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-08-07",
+      "recordType": "album"
+    },
+    {
+      "id": "156009702",
+      "title": "Why Should I/Exodus",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/731af68706e6c313c4fde0b298e59c23/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-06-26",
+      "recordType": "album"
+    },
+    {
+      "id": "151578082",
+      "title": "Live At The Rainbow, 4th June 1977 (Remastered 2020)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/1e963d7233efc76bf8e1b5a4a78a3b61/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-06-04",
+      "recordType": "album"
+    },
+    {
+      "id": "129798982",
+      "title": "Legend (Deluxe Edition)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/7ef360d8df760038e0330664ead31e55/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2020,
+      "releaseDate": "2020-02-07",
+      "recordType": "album"
+    },
+    {
+      "id": "71058662",
+      "title": "Kaya (40th Anniversary Edition)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/468a236588e174e2ab6a32fbe6ad1775/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2018,
+      "releaseDate": "2018-08-24",
+      "recordType": "album"
+    },
+    {
+      "id": "70199552",
+      "title": "Exodus 40",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/b3ebc2a82a7c60065b1f340272823a68/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2018,
+      "releaseDate": "2018-08-08",
+      "recordType": "album"
+    },
+    {
+      "id": "68349141",
+      "title": "Exodus 30th Anniversary Edition",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/7e3fd88b0a452fbfa5b225750390580a/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2018,
+      "releaseDate": "2018-07-20",
+      "recordType": "album"
+    },
+    {
+      "id": "14830621",
+      "title": "Live! (Deluxe Edition)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/1aa58ea74195b3cfad1641d88449f1eb/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2016,
+      "releaseDate": "2016-12-16",
+      "recordType": "album"
+    },
+    {
+      "id": "9594152",
+      "title": "Easy Skanking In Boston '78",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/045c94bc0e0f70d866c21caed7dfd7e4/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2015,
+      "releaseDate": "2015-02-03",
+      "recordType": "album"
+    },
+    {
+      "id": "8740481",
+      "title": "Natural Mystic",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/49475632bddbb1332b14bb40eda1e1d3/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2014,
+      "releaseDate": "2014-10-07",
+      "recordType": "album"
+    },
+    {
+      "id": "208495192",
+      "title": "Legend Remixed",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/a2c0a3a98cf4d08b93250ea5ffe2201c/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2013,
+      "releaseDate": "2013-06-25",
+      "recordType": "album"
+    },
+    {
+      "id": "6487920",
+      "title": "Kaya - Deluxe Edition",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/f41d2af0e23d8309e05bf52a7c77a2b1/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2013,
+      "releaseDate": "2013-04-23",
+      "recordType": "album"
+    },
+    {
+      "id": "152283152",
+      "title": "Marley (The Original Soundtrack)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/4e23efabee5697a2918a98b2cb6dfaad/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2012,
+      "releaseDate": "2012-04-16",
+      "recordType": "album"
+    },
+    {
+      "id": "6108671",
+      "title": "Live Forever: The Stanley Theatre, Pittsburgh, PA, 9/23/1980",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/b89713261b381868be44a2f59ebd62a6/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2011,
+      "releaseDate": "2011-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "5953210",
+      "title": "In Dub Vol. 1",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/ed957a4610893820a3e0642cde8b885d/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2010,
+      "releaseDate": "2010-05-04",
+      "recordType": "album"
+    },
+    {
+      "id": "82084892",
+      "title": "B Is For Bob",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/e8b5321b139ad218c8facaf55922dddb/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2009,
+      "releaseDate": "2009-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "72542",
+      "title": "Collections",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/4957d720c5977656776f8e287deca653/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2007,
+      "releaseDate": "2007-05-18",
+      "recordType": "album"
+    },
+    {
+      "id": "82085562",
+      "title": "Gold",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6fc23c5aa55edbf73554f9b7c477e44c/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2005,
+      "releaseDate": "2005-01-11",
+      "recordType": "album"
+    },
+    {
+      "id": "123474",
+      "title": "Live At The Roxy - The Complete Concert",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/8151683a0b3cd6a5519e7f977e9508db/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2003,
+      "releaseDate": "2003-06-24",
+      "recordType": "album"
+    },
+    {
+      "id": "246348",
+      "title": "Talkin' Blues",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/489a6a0138e414ea707adeafa322881f/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2002,
+      "releaseDate": "2002-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "287827",
+      "title": "Rebel Music",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/6826a395137f829e9503ee261eea2331/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2002,
+      "releaseDate": "2002-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "68685711",
+      "title": "Legend - The Best Of Bob Marley And The Wailers",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/c43e3b1d83e0107dfff7e4238096fe5b/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2002,
+      "releaseDate": "2002-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "671791",
+      "title": "Rastaman Vibration",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/7ea309b127ead5c83d84b3722b550f35/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2002,
+      "releaseDate": "2002-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "223761",
+      "title": "Confrontation",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/d8e8f73a61e6cdb06cd35efa19fd640b/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-08-02",
+      "recordType": "album"
+    },
+    {
+      "id": "430669",
+      "title": "Catch A Fire",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/ecb4d6c2406ad010d9e2dae3ae33c594/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-04-16",
+      "recordType": "album"
+    },
+    {
+      "id": "249141",
+      "title": "Uprising",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/8d66bb5d623fed6a464415dbc744df21/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "245955",
+      "title": "Survival",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/8a0f4643283f28a111161ffa247f6509/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "162222",
+      "title": "Natty Dread",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5db36bd3cc7b31adae35d856cd66f23e/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "162221",
+      "title": "Burnin'",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/3f5ef4b2cc96ae5d2289881e83ada06a/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 2001,
+      "releaseDate": "2001-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "223393",
+      "title": "Chant Down Babylon",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/5a959a324496a58396ea653e605a1377/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 1999,
+      "releaseDate": "1999-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "120834",
+      "title": "Dreams Of Freedom (Ambient Translations Of Bob Marley In Dub)",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/02f779ba46e828f4191047d0b18b2441/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 1997,
+      "releaseDate": "1997-01-01",
+      "recordType": "album"
+    },
+    {
+      "id": "217953",
+      "title": "Babylon By Bus",
+      "artists": [
+        {
+          "id": "719",
+          "name": "Bob Marley & The Wailers"
+        }
+      ],
+      "cover": "https://cdn-images.dzcdn.net/images/cover/e4bfd85fdb5e4c7f5d5fef316b6c0fc0/1000x1000-000000-80-0-0.jpg",
+      "trackCount": null,
+      "year": 1978,
+      "releaseDate": "1978-01-01",
+      "recordType": "album"
+    }
+  ]
+}
