@@ -1,0 +1,12 @@
+{
+ "id": "20261114T174723Z-agent-1c71",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p117 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T17:47:23Z",
+ "type": "note",
+ "body": "ANSWER (c), not built: can the SERVER tell its Host that its own music server is refusing the app's login? Yes, in principle, and better than the phone can. The Encore server is the one that holds the music-server connection for its own work (cover pictures, kept files, the library scan it waits on, B-127) and sees a refusal (HTTP 401/403 or Subsonic error 40) or a restart (connection refused, 503) the moment it happens; the PHONE only sees it indirectly, through the one door. Where it would show: (1) on the admin pages, the status card of the music server (\"Music server: not answering\" / \"login refused: sign in again in Settings\") fed by the same health check the server already needs for B-127; (2) in GET /encore/api/v1/info as a field the phone reads (for example musicServer: ok | restarting | login_refused), so that the app can draw ONE quiet line on Settings > Your server and the browse failure of B-130 stops being invisible, which would also be the removal trigger of B-130 if the app does not drop its music-server calls first. Note that the phone's own music-server login (the one the app signs the browse calls with) is a different credential from the server's own login to Navidrome, so the server can say \"my login works\" while the phone's is refused: the field would have to be about the phone's login (the server can check a token the phone presents) to catch B-130's case. Not built; a decision for the lead and the advisor.",
+ "to": [
+  "agent"
+ ]
+}

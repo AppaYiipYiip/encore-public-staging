@@ -1,0 +1,12 @@
+{
+ "id": "20261114T174722Z-agent-1583",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "helper-p117 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T17:47:22Z",
+ "type": "note",
+ "body": "STOP-GAP RECORDED (decision 2 of the lead, 14 Nov 2026), audit row B-130, PR #60. B-77's fix makes a failing MUSIC server a \"browse failure\": the Encore pass still completes, lastError stays empty, no screen shows it. WHAT THIS COSTS LATER: a music-server login that STAYS broken (a changed Navidrome password the app never learns, the B-55 family) leaves the browse index (artists, albums) stale for ever and nobody is told; before the fix the same failure was loud (\"Last attempt did not finish: Server error (503)\"), which is how B-77 was seen at all. What exists meanwhile: one WARNING-level log line per pass (\"sync: the browse index could not be refreshed: ...\", pinned by session_encore_test.dart). REMOVAL TRIGGER, either one: P2-20 (the app drops its music-server calls, so there is no browse phase to fail) or the first screen that shows a browse failure (a quiet line on Settings > Your server, \"Your music list could not be refreshed\" and why, read from SyncStats.browseFailure). Task: P2-20, or a Your-server line as a P1-17 follow-up.",
+ "to": [
+  "agent"
+ ]
+}
