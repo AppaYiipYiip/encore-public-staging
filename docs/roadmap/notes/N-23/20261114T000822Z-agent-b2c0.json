@@ -1,0 +1,9 @@
+{
+ "id": "20261114T000822Z-agent-b2c0",
+ "item": "N-23",
+ "role": "agent",
+ "by": "helper-n23 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T00:08:22Z",
+ "type": "note",
+ "body": "N-23a built, not walked: PR #23 (task/N-23a-typo-tolerance). The library part of a search now finds an artist whose name is a typo of what was typed: when NO artist of the library begins with the typed words, the phone scans the library's artist names (folded once, ~1.5 ms for 5,000) for one that is a typo. The rule in one sentence: both have 5 or more letters and one letter is wrong, missing, extra or swapped with its neighbour (two from 9 letters on); never for names of 1 to 4 letters (app/lib/domain/artist_typo.dart). It scores 0.6 (typoArtistScore) in search_rank.dart, below every exact hit; wired only in searchResultsProvider. artistMatch now uses this one rule instead of the old '75% alike' test, so the catalogue side is slightly stricter for short names (the 20 recorded Deezer searches are unchanged). LEFT: N-23b (the catalogue's tolerance through Deezer on the server, after P2-12) so N-23 is NOT marked built; the walk on the release-candidate pair; library_browser.dart (Android Auto browsing) still matches exact/prefix only; a typo in a word that is still unfinished is not found until the word is complete."
+}

@@ -7,6 +7,7 @@
 /// Pure Dart: no widgets, no database (it also runs in tests with plain strings).
 library;
 
+import 'artist_typo.dart';
 import 'text_match.dart';
 
 /// Apostrophes and dots join letters instead of separating words, on both sides: "God's Plan" is "gods plan", "N.Y. State of
@@ -20,6 +21,11 @@ final RegExp _featured = RegExp(
 
 String _plain(String? text) =>
     normalizeForMatch((text ?? '').replaceAll(_joiners, ''));
+
+/// What the scores below compare: [text] folded (case, accents, apostrophes, dots, "The", every alphabet kept). The typo scan of
+/// artist names ([ArtistTypoIndex]) is given this one function for the names and for what was typed, so it cannot fold differently
+/// from the scores.
+String searchKey(String? text) => _plain(text);
 
 String _plainTitle(String? text) => normalizeForMatch(
     (text ?? '').replaceAll(_featured, '').replaceAll(_joiners, ''));
@@ -37,11 +43,20 @@ bool _covers(List<String> query, List<String> words) =>
 /// * [partialSongCeiling] (0.8) and below: a song that merely has the words, or starts with them, down to 0.5.
 /// * below 0.4: only some of the words.
 ///
+/// For an artist ([artistMatch]): 0.95 the name typed exactly, 0.7 the start of the name, [typoArtistScore] (0.6) a name that is one or two
+/// letters off (the one rule of `artist_typo.dart`), 0.55 every typed word begins some word of the name, not the first ("eilish" for "Billie Eilish"). So a typo is below
+/// every exact answer and every start of a name, above a loose one, and inside the band of the partial songs (0.5 to [partialSongCeiling]): a song whose title starts with the typed word
+/// (0.72 and up) is above it, a song that only contains the word, or has it in its artist, is level with it or below (0.5 to about 0.6).
+///
 /// The rule behind it (P1-07, owner 13 Nov 2026: searching "jinjer", spelled right, put a song before the band): **an answer that is
 /// only partial is never worth as much as an exact one**, whatever its parts add up to, so an artist whose name is exactly what was
 /// typed comes before every song and album that only starts with or contains the words. Only an exact title or an exact album can
 /// take that place, and only when the artist is barely known ([barelyKnownArtistPenalty]).
 const double partialSongCeiling = 0.8;
+
+/// What an artist whose name is one or two letters off what was typed is worth ([typoEdits], N-23a: "landmarks" finds "Landmvrks").
+/// Under an exact name (0.95) and the start of a name (0.7), so a typo only comes first when nothing answers better.
+const double typoArtistScore = 0.6;
 
 /// What an artist that is barely known (not in the library and below the fan count of `wellKnownFans`) loses when the Top result is
 /// picked: enough to go below an exact title (0.95) and an exact album (0.9) that are named like it ("Hotel California" is the song,
@@ -103,8 +118,10 @@ bool _splitsIntoArtistAndTitle(
   return false;
 }
 
-/// 0 to 1: how well the artist [name] answers [query]. A name spelled almost like what was typed ("bilie eilsh") still scores 0.6:
-/// the catalogue corrects such typos and the person meant that artist.
+/// 0 to 1: how well the artist [name] answers [query]: 0.95 exactly, 0.7 the start of the name, [typoArtistScore] a name one letter off
+/// (two from 9 letters on, never for 1 to 4 letters: [typoEdits]), 0.55 every typed word begins some word of the name. The library's search
+/// cannot find a typo, so `searchResultsProvider` adds such artists to its results ([ArtistTypoIndex]); the catalogue's (Deezer's) own
+/// matching finds them for the catalogue. Both are scored here, by the same rule.
 double artistMatch(String query, String name) {
   final q = _plain(query);
   final n = _plain(name);
@@ -112,26 +129,7 @@ double artistMatch(String query, String name) {
   if (q == n) return 0.95;
   if (n.startsWith(q)) return 0.7;
   if (_covers(q.split(' '), n.split(' '))) return 0.55;
-  return _similarity(q, n) >= 0.75 ? 0.6 : 0;
-}
-
-/// 0 to 1: how alike two strings are (1 minus the edit distance over the longer length).
-double _similarity(String a, String b) {
-  if (a == b) return 1;
-  final longer = a.length > b.length ? a.length : b.length;
-  if (longer == 0) return 1;
-  var previous = List<int>.generate(b.length + 1, (j) => j);
-  for (var i = 1; i <= a.length; i++) {
-    final current = List<int>.filled(b.length + 1, 0)..[0] = i;
-    for (var j = 1; j <= b.length; j++) {
-      final cost = a.codeUnitAt(i - 1) == b.codeUnitAt(j - 1) ? 0 : 1;
-      final best = [previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost]
-          .reduce((x, y) => x < y ? x : y);
-      current[j] = best;
-    }
-    previous = current;
-  }
-  return 1 - previous[b.length] / longer;
+  return typoEdits(q, n) != null ? typoArtistScore : 0;
 }
 
 /// 0 to 1: how well the album [title] by [artist] answers [query].

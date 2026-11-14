@@ -60,6 +60,13 @@ person's setting (`21` §5).
   artist is barely known (not in the library and under 50,000 fans: typing "Hotel California" means the song). Popularity only settles
   that tie (one exception: a row with no releases at all, a collaboration or a namesake, is ranked after the real artist and, when it is
   also barely known, can fall below a partial song). The server's one ranked list (P2-12) keeps this rule.
+* **A typo in an artist's name (N-23a):** the phone's own search of the library only matches the start of a word, so it cannot find
+  "landmarks" for the band "Landmvrks". When **no artist of the library begins with the typed words**, the phone scans the library's artist
+  names (a few thousand, folded once; about 2 ms for 5,000) for one that is a typo: **both have 5 or more letters and one letter is wrong,
+  missing, extra or swapped with its neighbour (two from 9 letters on); a name of 1 to 4 letters is never guessed**
+  (`app/lib/domain/artist_typo.dart`). Such an artist scores 0.6 (`typoArtistScore`): below every exact answer and the start of a name, so it
+  is the Top result only when nothing answers better. This is the phone matching only what is on the phone (audit B-46): the catalogue's
+  typos are Deezer's own matching through the server (N-23b); the server has no search of the library.
 * **Typing:** the search screen waits 90 ms after the last key before it asks (`search_screen.dart`; this page said 250 ms), minimum 2 characters, cache per normalised query (24 h), prepare the Top result (P1-04). **OPEN (needs owner/advisor):** `03` N7 wants catalogue results at most 300 ms after the last key, but the server's fast phase is allowed about 400 ms (P2-12 acceptance: p50 at most 400 ms) and nothing measures the total, so N7 cannot hold as written: relax N7 (to about 500 ms) or cut the phase's target.
 * **Transliteration:** the query is also matched against artist aliases (MusicBrainz) so "fairouz", "fairuz" and "فيروز" find
   the same artist; Arabic queries are normalised with §2.
