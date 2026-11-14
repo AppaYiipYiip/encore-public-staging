@@ -69,7 +69,7 @@ def _ref_for_song(conn: Any, song: dict[str, Any]) -> str | None:
     song_id = str(song.get("id") or "")
     if not song_id:
         return None
-    row = conn.execute("SELECT ref FROM song_file WHERE navidrome_song_id = ?", (song_id,)).fetchone()
+    row = refs.file_holders(conn, [song_id]).get(song_id)
     if row is not None:
         return str(row["ref"])
     item = described(song)
