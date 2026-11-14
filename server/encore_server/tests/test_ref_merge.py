@@ -539,6 +539,22 @@ def test_the_survivor_is_enriched_only_with_what_it_lacks_and_never_with_an_unkn
     assert triple["album"] is None
 
 
+def test_a_column_added_to_song_ref_later_is_enriched_too_and_the_cover_is_never_overwritten(db: Database) -> None:
+    """`thumb_url` (P1-26) came after this repair was written: a column the survivor lacks is copied without the repair being told about it."""
+    other = "https://e-cdns-images.dzcdn.net/images/cover/synthetic/other.jpg"
+    with db.tx() as c:
+        add_ref(c, S1, "Thumbnail", ["Ana Vale"], cover_url=COVER)
+        add_ref(c, L1, "Thumbnail", ["Ana Vale"], cover_url=other)
+        c.execute("UPDATE song_ref SET thumb_url = ? WHERE id = ?", (other, L1))
+        add_file(c, S1, "nd-1", 1, source="youtube", path="a.opus")
+        add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
+
+    refmerge.repair(db)
+
+    row = q(db, "SELECT cover_url, thumb_url FROM song_ref WHERE id = ?", S1)[0]
+    assert (row["cover_url"], row["thumb_url"]) == (COVER, other)
+
+
 def test_a_loser_with_an_id_the_survivor_lacks_hands_it_over(db: Database) -> None:
     with db.tx() as c:
         add_ref(c, S1, "Handover", ["Ana Vale"])
