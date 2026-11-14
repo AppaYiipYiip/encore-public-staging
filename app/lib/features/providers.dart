@@ -431,27 +431,46 @@ final artistTypoIndexProvider =
       nameOf: (a) => a.name, fold: searchKey, reusing: memory.last);
 });
 
-/// Instant, offline full-text search (< 30 ms budget).
+/// The library's own full-text search of [query]: the one answer that must come at once (< 30 ms budget, offline).
+///
+/// **It watches nothing that a write can change**: only the id of the server (which emits when the id changes, not when the server's row is
+/// updated) and the database. A search that watched the list of artists, or the server's row, started over every time a sync or a download
+/// wrote a song; on a phone that is busy a run takes longer than the pause between two writes, so the first answer of a new query was
+/// abandoned again and again and the page stayed empty until the writing stopped (14 Nov 2026, `search_local_first_test.dart`: 30 starts in
+/// 3 s, 30 abandoned). What the list of artists adds is added after this answer, by [searchResultsProvider].
+final _ftsSearchProvider = FutureProvider.autoDispose
+    .family<SearchResults, String>((ref, query) async {
+  final serverId = ref.watch(activeServerIdProvider).value;
+  if (serverId == null || query.trim().isEmpty) return const SearchResults();
+  final dao = SearchDao(ref.watch(databaseProvider));
+  final tracks = await dao.tracks(serverId, query, limit: 30).get();
+  final albums = await dao.albums(serverId, query, limit: 12).get();
+  final artists = await dao.artists(serverId, query, limit: 8).get();
+  return SearchResults(tracks: tracks, albums: albums, artists: artists);
+});
+
+/// Instant, offline search of the library: [_ftsSearchProvider]'s answer, as soon as it is there, plus the typo guess of an artist.
 ///
 /// The library's artists are found by the start of a word, so a name typed with a letter wrong is not found by it (N-23a: "landmarks"
 /// for "Landmvrks"). Only when **no artist begins with the typed words** the artists' names are scanned for one that is a letter or
 /// two off ([ArtistTypoIndex], the rule in `domain/artist_typo.dart`): a name that is an answer is never pushed down by a guess. The
 /// guesses are scored by `artistMatch` with the rest, below every exact answer. The catalogue's part of a search is Deezer's own
 /// matching, not this.
-final searchResultsProvider = FutureProvider.autoDispose
-    .family<SearchResults, String>((ref, query) async {
-  final server = ref.watch(activeServerProvider).value;
-  if (server == null || query.trim().isEmpty) return const SearchResults();
-  final dao = SearchDao(ref.watch(databaseProvider));
-  // Watched here, before the first await, so that a list of artists that arrives or changes runs the search again.
-  final typoIndex = ref.watch(artistTypoIndexProvider);
-  final tracks = await dao.tracks(server.id, query, limit: 30).get();
-  final albums = await dao.albums(server.id, query, limit: 12).get();
-  var artists = await dao.artists(server.id, query, limit: 8).get();
-  if (artists.isEmpty && typoIndex != null) {
-    artists = typoIndex.find(query, limit: 8);
+///
+/// The list of artists is watched only when a guess is needed, and only here: it arriving (late, or again with every write) works the guess
+/// out again over the same answer, and never starts the search over or holds it back.
+final searchResultsProvider = Provider.autoDispose
+    .family<AsyncValue<SearchResults>, String>((ref, query) {
+  final answer = ref.watch(_ftsSearchProvider(query));
+  final found = answer.value;
+  if (found == null || found.artists.isNotEmpty || query.trim().isEmpty) {
+    return answer;
   }
-  return SearchResults(tracks: tracks, albums: albums, artists: artists);
+  final guessed =
+      ref.watch(artistTypoIndexProvider)?.find(query, limit: 8) ?? const [];
+  if (guessed.isEmpty) return answer;
+  return AsyncData(SearchResults(
+      tracks: found.tracks, albums: found.albums, artists: guessed));
 });
 
 /// "Find in playlist" (N-25): the positions of a playlist's entries whose song matches [query], from the phone's own search index (Search's
