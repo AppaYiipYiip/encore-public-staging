@@ -11,3 +11,13 @@ class FixedReachability extends ServerReachabilityNotifier {
   @override
   ServerReachability build() => value;
 }
+
+/// The same, with the value read each time the provider is built (so a test that flips it and invalidates the provider sees the change).
+class ReachabilityFrom extends ServerReachabilityNotifier {
+  ReachabilityFrom(this.pick);
+
+  final ServerReachability Function() pick;
+
+  @override
+  ServerReachability build() => pick();
+}

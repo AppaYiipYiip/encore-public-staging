@@ -86,17 +86,30 @@ class _SearchResultsViewState extends ConsumerState<SearchResultsView> {
     );
     WidgetsBinding.instance
         .addPostFrameCallback((_) => mounted ? _prepareLikelyTap(found) : null);
-    // The catalogue songs the server already knows it cannot get are marked (N-13): one question for the whole list, once the rows are drawn.
-    ref.watch(songMarksCheckProvider(TrackList([
-      for (final track in {
-        for (final hit in [
-          if (found.top is SongHit) found.top! as SongHit,
-          ...found.songs
-        ])
-          if (hit.catalogue != null) hit.catalogue!.id: hit.catalogue!,
-      }.values)
-        track,
-    ])));
+    // The songs the server already knows it cannot get are marked (N-13): one question for the whole list, once the rows are drawn. A catalogue song has no
+    // ref on the phone, so it is described; a row of the phone's own library (the song somebody tapped is one from then on) is asked about by its ref id,
+    // the exact identity (B-128). A row with a file or on the phone is never asked about: it plays.
+    final downloaded = ref.watch(downloadedIdsProvider).value ?? const {};
+    final songHits = [
+      if (found.top is SongHit) found.top! as SongHit,
+      ...found.songs,
+    ];
+    ref.watch(songMarksCheckProvider(TrackList(
+      [
+        for (final track in {
+          for (final hit in songHits)
+            if (hit.catalogue != null) hit.catalogue!.id: hit.catalogue!,
+        }.values)
+          track,
+      ],
+      refIds: [
+        for (final hit in songHits)
+          if (hit.local != null &&
+              hit.local!.mayBeUnavailable &&
+              !downloaded.contains(hit.local!.id))
+            hit.local!.id,
+      ],
+    )));
 
     if (found.isEmpty) {
       // Offline the question is not "is the catalogue slow" but "what cannot be done": never a spinner for a line that is not there, and
@@ -205,10 +218,15 @@ class _TopResult extends ConsumerWidget {
     // A song of the library that is not on the phone cannot be played without a connection.
     final unavailable =
         h is SongHit && h.local != null && !playable(h.local!.id);
-    // A catalogue song the server already knows it cannot get (N-13): the card greys, its Play circle is a quiet one, and a tap says why.
-    final mark = h is SongHit && h.catalogue != null
-        ? ref.watch(songMarkProvider(h.catalogue!.id))
-        : null;
+    // A song the server already knows it cannot get (N-13): the card greys, its Play circle is a quiet one, and a tap says why. A song of the library is
+    // marked by its ref id, a catalogue song by its catalogue id (B-128: the song somebody tapped is both, and the library row is the one that is shown).
+    final mark = h is! SongHit
+        ? null
+        : h.local != null
+            ? ref.watch(libraryMarkProvider(h.local!.markKey))
+            : h.catalogue != null
+                ? ref.watch(songMarkProvider(h.catalogue!.id))
+                : null;
     // An album of the library with nothing on the phone says so while the server is away, as its row does (S-12, S-14 offline).
     final albumGone = h is AlbumHit &&
         h.local != null &&
@@ -370,7 +388,6 @@ void _open(
 }
 
 void _play(WidgetRef ref, SongHit hit, {List<SongHit> songs = const []}) {
-  final facade = ref.read(playbackFacadeProvider);
   final local = hit.local;
   if (local != null) {
     // The library's songs of this list play on from the one that was tapped.
@@ -379,7 +396,8 @@ void _play(WidgetRef ref, SongHit hit, {List<SongHit> songs = const []}) {
         if (s.local != null) s.local!,
     ];
     final tracks = owned.isEmpty ? [local] : owned;
-    unawaited(facade.playTracks(tracks,
+    // Through the one place library rows are played from: a song the server cannot get is never tried (B-128).
+    unawaited(playLibraryTracks(ref, tracks,
         startIndex: math.max(0, tracks.indexWhere((t) => t.id == local.id)),
         sourceName: 'Search'));
     return;
@@ -417,6 +435,7 @@ class _SongRow extends ConsumerWidget {
           track: local,
           showAlbum: true,
           available: playable(local.id),
+          mark: ref.watch(libraryMarkProvider(local.markKey)),
           isCurrent: playing?.track?.id == local.id,
           isPlaying: playing?.isPlaying ?? false,
           onTap: () {

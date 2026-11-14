@@ -356,6 +356,14 @@ def clear_missing(conn: sqlite3.Connection, ref_id: str) -> bool:
     return bool(cursor.rowcount)
 
 
+def _verdict_of(conn: sqlite3.Connection, row: sqlite3.Row | None, at: int) -> dict[str, Any] | None:
+    """What this ref remembers about being impossible to get, as the API shows it (`missing.public`): `None` for no row, a song the server keeps (it has a
+    file: it plays, whatever an old memory says) and a memory that is no longer believed."""
+    if row is None or conn.execute("SELECT 1 FROM song_file WHERE ref = ? LIMIT 1", (row["id"],)).fetchone() is not None:
+        return None
+    return missing.public(missing.standing_of(row, at))
+
+
 def unavailable_for(
     conn: sqlite3.Connection, raw_songs: Sequence[object], *, now: int | None = None
 ) -> list[dict[str, Any] | None]:
@@ -370,10 +378,23 @@ def unavailable_for(
         except ApiError:
             answers.append(None)
             continue
-        has_file = (
-            row is not None and conn.execute("SELECT 1 FROM song_file WHERE ref = ? LIMIT 1", (row["id"],)).fetchone() is not None
-        )
-        answers.append(None if row is None or has_file else missing.public(missing.standing_of(row, at)))
+        answers.append(_verdict_of(conn, row, at))
+    return answers
+
+
+def unavailable_for_ids(
+    conn: sqlite3.Connection, raw_ids: Sequence[object], *, now: int | None = None
+) -> list[dict[str, Any] | None]:
+    """The same answer for songs the asker names by ref id: the rows of a phone's own library are refs, so it has the exact identity and needs no
+    description of the song (B-128: a library row, a playlist entry, a liked song). An id that was merged into another (N-11) answers for the survivor,
+    as every route that takes a song id from a client does; an id that is not one, or that no ref has, answers `None`. A read, like [unavailable_for]."""
+    at = now_ms() if now is None else now
+    texts = [raw for raw in raw_ids if isinstance(raw, str)]
+    live = canonical_many(conn, texts)
+    answers: list[dict[str, Any] | None] = []
+    for raw in raw_ids:
+        row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (live[raw],)).fetchone() if isinstance(raw, str) else None
+        answers.append(_verdict_of(conn, row, at))
     return answers
 
 

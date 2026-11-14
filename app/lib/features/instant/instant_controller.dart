@@ -24,6 +24,7 @@ import '../player/playback_facade.dart';
 import '../providers.dart';
 import '../settings/settings_controller.dart';
 import 'instant_play.dart';
+import 'song_refusals.dart';
 
 /// The instant-play service's usual port.
 const int kFetchPort = 8701;
@@ -296,6 +297,9 @@ class InstantController extends Notifier<Map<String, InstantStatus>> {
       _set(track.id, status);
       if (status.isFailed && status.error == 'login') {
         ref.read(loginProblemProvider.notifier).rejected(fromAction: true);
+      } else if (status.isFailed && status.error == 'unavailable') {
+        // The server already knew it could not get this song (its memory of refusals, N-13): this phone did not, so its marks are stale. They ask again.
+        ref.read(songRefusalsProvider.notifier).refused();
       } else if (status.isFailed && status.error == null) {
         // Possibly the service moved (the phone changed network): look again
         // the next time.

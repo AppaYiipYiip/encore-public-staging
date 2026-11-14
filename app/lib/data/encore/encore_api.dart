@@ -57,7 +57,8 @@ class EncoreApi {
   Future<Map<String, dynamic>> _send(String method, String path,
       {Map<String, Object?> query = const {},
       Object? body,
-      Duration? receiveTimeout}) async {
+      Duration? receiveTimeout,
+      bool pageIsNotFound = false}) async {
     try {
       final response = await _dio.requestUri<Object?>(
         _uri(path, query),
@@ -72,6 +73,12 @@ class EncoreApi {
       if (parsed == null &&
           response.data is String &&
           (response.data as String).trim().isNotEmpty) {
+        // [pageIsNotFound]: the caller asks about an address that has already proved it is the person's server (a music server that serves its
+        // own web page for every path), where a page is a definite "there is no such API here". Everywhere else a page is a network that is not
+        // the server (a sign-in page): not an answer.
+        if (pageIsNotFound) {
+          throw const NotFoundFailure('This address has no Encore server');
+        }
         throw const NetworkFailure(
             'This address did not answer like your server');
       }
@@ -131,6 +138,13 @@ class EncoreApi {
   /// What this server is. Answered without a login, so it also tells whether the address is an Encore server at all.
   Future<Result<EncoreInfo>> info() =>
       guard(() async => EncoreInfo.fromJson(await _send('GET', '/info')));
+
+  /// The same question as [info], asked to find out which KIND of server is at an address that has already proved it is the person's server
+  /// (AUDIT B-78): a [NotFoundFailure] is then a DEFINITE "this is a plain music server" (the server says "not found", or answers a web page
+  /// of its own instead of the API). Any other failure (a gateway's 503 while the Encore server restarts, a 429, a refused login, no answer)
+  /// says nothing about the kind: the caller must look again.
+  Future<Result<EncoreInfo>> detect() => guard(() async =>
+      EncoreInfo.fromJson(await _send('GET', '/info', pageIsNotFound: true)));
 
   /// The addresses this server says it has (signed in): the home one and the one over the internet.
   Future<Result<EncoreServerAddresses>> server() => guard(() async =>
@@ -203,6 +217,26 @@ class EncoreApi {
           return null;
         } on ServerFailure catch (e) {
           if (e.statusCode == 405) return null;
+          rethrow;
+        }
+      });
+
+  /// The same question for songs the phone has as rows of its own library, by ref id (`{"ids": [...]}`, at most 100, B-128): `null` for a song with no
+  /// known problem. Only for a server that lists `unavailable-ids`; **a 400, 404 or 405 is "no verdicts here" too** (a second layer behind the feature
+  /// list: a server that does not know the question, whatever it calls the refusal), never an error state.
+  Future<Result<List<EncoreUnavailable?>?>> unavailableByIds(
+          List<String> refIds) =>
+      guard(() async {
+        try {
+          final body =
+              await _send('POST', '/refs/unavailable', body: {'ids': refIds});
+          final items = body['items'];
+          if (items is! List) return null;
+          return [for (final item in items) EncoreUnavailable.fromJson(item)];
+        } on NotFoundFailure {
+          return null;
+        } on ServerFailure catch (e) {
+          if (e.statusCode == 405 || e.statusCode == 400) return null;
           rethrow;
         }
       });
