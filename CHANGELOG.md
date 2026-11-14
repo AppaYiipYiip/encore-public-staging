@@ -6,6 +6,8 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* An imported song that no catalogue has a picture for no longer shows a plain letter: it shows the thumbnail of its YouTube video, and a real cover still replaces it as soon as one is found (the server keeps the two apart, so it keeps looking for a better one).
+
 * A playlist now has a "Find in playlist" field under its title, as Spotify has: tap it, type a word, and the list shows only the songs of that playlist that match (by title, artist or album, found the way Search finds, so accents and other scripts work, and also with no connection). A tap on a found song plays it from its place in the playlist and the playlist goes on after it; the arrow or Back brings the whole playlist back, and the page is where you left it (N-25).
 * A song you have just tapped can now be paused with the play/pause of a headset or the lock screen in the first moments, before it has started. Before, the player still showed Play for it, so that press asked for play and the song carried on. Now the player says it is loading from the tap on; while it loads the on-screen button is a spinner (nothing to press there) and the song starts when it is ready.
 

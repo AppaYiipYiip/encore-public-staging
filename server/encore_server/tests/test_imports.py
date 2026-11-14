@@ -121,6 +121,26 @@ def test_the_playlist_exists_at_once_with_every_song_in_order(rig: Rig) -> None:
     assert [p["id"] for p in changes["playlists"]] == [made["playlistId"]] and len(changes["entries"]) == 5
 
 
+def test_a_song_of_the_playlist_shows_the_thumbnail_of_its_video_until_a_real_cover_is_found(rig: Rig) -> None:
+    """P1-26: a song no catalogue has a cover for is not a letter tile: the thumbnail its source gave it stands in."""
+    thumb = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+    rig.playlist = Playlist(
+        "Mix",
+        "youtube",
+        "playlist",
+        (
+            Track("With picture", "Artist", video_id="abcdefghijk", thumbnail=thumb),
+            Track("Without picture", "Artist", video_id="bcdefghijkl"),
+        ),
+        False,
+    )
+
+    made = rig.imported()
+
+    covers = {r["title"]: r["coverUrl"] for r in made["refs"]}
+    assert covers == {"With picture": thumb, "Without picture": None}
+
+
 def test_a_song_the_playlist_names_as_the_original_upload_is_not_searched_for(rig: Rig) -> None:
     rig.playlist = Playlist("Albums", "youtube", "playlist", tracks(3, official=True), False)
 

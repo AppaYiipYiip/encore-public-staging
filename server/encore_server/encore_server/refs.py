@@ -69,6 +69,8 @@ def parse_item(raw: object) -> dict[str, Any]:
         "deezer_id": _clean(str(raw["deezerId"]), 30) if raw.get("deezerId") is not None else None,
         "ytm_video_id": _video_id(raw.get("videoId")),
         "cover_url": _cover(raw.get("coverUrl")),
+        # A picture the SOURCE gave this song (an import's YouTube thumbnail): shown only while there is no real cover (P1-26).
+        "thumb_url": _cover(raw.get("thumbnailUrl")),
         "explicit": 1 if raw.get("explicit") is True else 0,
     }
 
@@ -105,7 +107,8 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         "mbid": row["mbid"],
         "deezerId": row["deezer_id"],
         "videoId": row["ytm_video_id"],
-        "coverUrl": row["cover_url"],
+        # The real cover wins; the source's thumbnail stands in until the cover finder (or a keep) finds one.
+        "coverUrl": row["cover_url"] or row["thumb_url"],
         "explicit": bool(row["explicit"]),
         "file": None
         if file_row is None
@@ -152,7 +155,7 @@ def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
 def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) -> sqlite3.Row:
     """What the ref lacked and this description knows is added (an id another ref already owns is never taken from it)."""
     updates: dict[str, Any] = {}
-    for column in ("album", "album_artist", "track_no", "disc_no", "year", "duration_ms", "mbid", "cover_url"):
+    for column in ("album", "album_artist", "track_no", "disc_no", "year", "duration_ms", "mbid", "cover_url", "thumb_url"):
         if row[column] is None and item[column] is not None:
             updates[column] = item[column]
     for column in ("isrc", "deezer_id", "ytm_video_id"):
@@ -182,7 +185,7 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
                 item[column] = None
         conn.execute(
             "INSERT INTO song_ref (id, title, artists, album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id,"
-            " ytm_video_id, cover_url, explicit, norm_key, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " ytm_video_id, cover_url, thumb_url, explicit, norm_key, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 ref_id,
                 item["title"],
@@ -198,6 +201,7 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
                 item["deezer_id"],
                 item["ytm_video_id"],
                 item["cover_url"],
+                item["thumb_url"],
                 item["explicit"],
                 norm_key(item["artists"][0], item["title"]),
                 now_ms(),
