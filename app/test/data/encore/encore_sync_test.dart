@@ -357,4 +357,129 @@ void main() {
       expect((await sync.pull()).getOrThrow().files, 1);
     });
   });
+
+  // P2-28 / B-61: docs/34 rule 5 says what waits in the outbox is never overwritten by a pull. Likes had that; playlist edits did not.
+  group('a playlist edit that is still waiting is not undone by a pull (P2-28)',
+      () {
+    Future<void> seedRoadTrip() async {
+      final a = server.addRef('A', 'X', fileId: 'nd-1');
+      final b = server.addRef('B', 'X');
+      await server.call('POST', '/encore/api/v1/playlists',
+          {'id': _pl1, 'name': 'Road trip'});
+      await server.call('POST', '/encore/api/v1/playlists/$_pl1/entries', {
+        'songs': [
+          {'ref': a, 'id': _pe('a')},
+          {'ref': b, 'id': _pe('b')},
+        ],
+      });
+      await sync.pullChanges();
+    }
+
+    Future<void> queue(String kind, Map<String, Object?> payload) =>
+        db.into(db.outbox).insert(OutboxCompanion.insert(
+              serverId: serverId,
+              kind: kind,
+              payloadJson: jsonEncode(payload),
+              createdAtMs: 1,
+            ));
+
+    Future<PlaylistRow> playlist() => (db.select(db.playlists)
+          ..where((p) => p.serverId.equals(serverId) & p.id.equals(_pl1)))
+        .getSingle();
+
+    Future<List<String>> entryIds() async => [
+          for (final e in await (db.select(db.playlistEntries)
+                ..orderBy([(e) => OrderingTerm.asc(e.position)]))
+              .get())
+            e.entryId ?? '',
+        ];
+
+    // Another device touches the playlist (it adds a song), so the feed brings the playlist row again, with the name the server has.
+    Future<void> anotherDeviceAddsASong({String letter = 'c'}) async {
+      final c = server.addRef(letter.toUpperCase(), 'X');
+      await server.call('POST', '/encore/api/v1/playlists/$_pl1/entries', {
+        'songs': [
+          {'ref': c, 'id': _pe(letter)},
+        ],
+      });
+    }
+
+    test(
+        'a rename that is still waiting keeps the new name, and a song added on another device still arrives',
+        () async {
+      await seedRoadTrip();
+      await (db.update(db.playlists)..where((p) => p.id.equals(_pl1)))
+          .write(const PlaylistsCompanion(name: Value('Summer')));
+      await queue('e.playlist.rename', {'playlistId': _pl1, 'name': 'Summer'});
+      await anotherDeviceAddsASong();
+
+      await sync.pullChanges();
+
+      expect((await playlist()).name, 'Summer',
+          reason: 'the person renamed it here; that is not sent yet');
+      expect(await entryIds(), [_pe('a'), _pe('b'), _pe('c')],
+          reason: 'the pull is not skipped as a whole');
+    });
+
+    test(
+        'once the rename was delivered, the name the server has is the name (nothing keeps the old one)',
+        () async {
+      await seedRoadTrip();
+      await (db.update(db.playlists)..where((p) => p.id.equals(_pl1)))
+          .write(const PlaylistsCompanion(name: Value('Summer')));
+      await queue('e.playlist.rename', {'playlistId': _pl1, 'name': 'Summer'});
+      await server
+          .call('PATCH', '/encore/api/v1/playlists/$_pl1', {'name': 'Winter'});
+      await (db.delete(db.outbox))
+          .go(); // delivered, then renamed again elsewhere
+
+      await sync.pullChanges();
+
+      expect((await playlist()).name, 'Winter');
+    });
+
+    test(
+        'a delete that is still waiting does not bring the playlist back, and a parked one does not hold it',
+        () async {
+      await seedRoadTrip();
+      await (db.update(db.playlists)..where((p) => p.id.equals(_pl1)))
+          .write(const PlaylistsCompanion(deletedAtMs: Value(5)));
+      await queue('e.playlist.delete', {'id': _pl1});
+      await anotherDeviceAddsASong();
+
+      await sync.pullChanges();
+
+      expect((await playlist()).deletedAtMs, isNotNull,
+          reason: 'the person deleted it here; that is not sent yet');
+
+      // A turned-down edit stops protecting: the server's truth shows.
+      await (db.update(db.outbox))
+          .write(const OutboxCompanion(status: Value('failed')));
+      await anotherDeviceAddsASong(letter: 'd');
+      await sync.pullChanges();
+      expect((await playlist()).deletedAtMs, isNull);
+    });
+
+    test(
+        'a removal that is still waiting does not put the song back, and the other songs stay',
+        () async {
+      await seedRoadTrip();
+      await (db.delete(db.playlistEntries)
+            ..where((e) => e.entryId.equals(_pe('b'))))
+          .go();
+      await queue('e.playlist.remove', {
+        'playlistId': _pl1,
+        'entryIds': [_pe('b')],
+      });
+      // Another device moves the songs about, so the feed brings every entry of the playlist again, the removed one with them.
+      await server.call('PUT', '/encore/api/v1/playlists/$_pl1/order', {
+        'entryIds': [_pe('b'), _pe('a')]
+      });
+
+      await sync.pullChanges();
+
+      expect(await entryIds(), [_pe('a')],
+          reason: 'the person removed it here; that is not sent yet');
+    });
+  });
 }
