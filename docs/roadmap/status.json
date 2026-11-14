@@ -264,5 +264,11 @@
   "evidence": "PR #45 (audit B-122, the fix of B-38): a failed search is search_failed, a retryable 502 on a tap and a 300 s wait in the keeper and the imports, not a permanent 'removed'; 4 tests seen failing first; on main the probe 'python -X utf8 docs/evidence/scripts/audit_probes.py transient' ends 'wanted: a Retry, not a GiveUp -> PASS' (14 Nov 2026). The stored-upload re-search is N-13 (PR #53). Not walked.",
   "at": "2026-11-14T12:34:14Z",
   "by": "Claude"
+ },
+ "P1-17": {
+  "state": "built",
+  "evidence": "Built, not walked: one reach state and one server-kind answer, PRs #60 (B-77, B-78), #66 (the state, resolver finding, strip presenter, readers, deleted notions), #67 (the player's one read and one recheck), #68 (serverKindProvider), #69 (encoreApi accessor, encoreMode private). Whole app suite green on each base; grep finds none of the deleted names; no emulator or phone.",
+  "at": "2026-11-14T19:16:07Z",
+  "by": "Claude"
  }
 }
