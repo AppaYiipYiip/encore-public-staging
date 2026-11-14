@@ -96,6 +96,25 @@ class EncoreInstantBackend implements InstantPlayBackend {
     return (supported: true, verdicts: answer);
   }
 
+  /// The same, for songs the phone has as rows of its own library: asked by ref id (B-128), in the order given. `supported: false` also when the server
+  /// does not list `unavailable-ids` (it is not sent the question). `null` when the server could not be asked (or its features could not be read): later.
+  Future<({bool supported, List<EncoreUnavailable?> verdicts})?>
+      unavailableAmongRefs(List<String> refIds) async {
+    final info = await _look();
+    if (info == null) return null;
+    if (!info.hasUnavailableIds) {
+      return (supported: false, verdicts: const <EncoreUnavailable?>[]);
+    }
+    final result = await _api.unavailableByIds(refIds);
+    if (result.failureOrNull != null) return null;
+    final answer = result.valueOrNull;
+    if (answer == null) {
+      return (supported: false, verdicts: const <EncoreUnavailable?>[]);
+    }
+    if (answer.length != refIds.length) return null;
+    return (supported: true, verdicts: answer);
+  }
+
   @override
   Future<Result<FetchJob>> start(FetchRequest request) async {
     final resolved = await _resolve(request);

@@ -476,6 +476,10 @@ class EncoreInfo {
   /// The server can be asked for a whole download at once (`keep/ask`). An app does without a feature that is not listed; it never tries a route to
   /// find out (docs/17 "Versions").
   bool get hasKeepAsk => features.contains('keep-ask');
+
+  /// `POST refs/unavailable` also takes ref ids (`{"ids": [...]}`, B-128): the rows of the phone's own library are asked about by their exact identity.
+  /// An N-13 server before that answers such a question with a 400, so the phone sends it only where this is listed (docs/17 "Versions").
+  bool get hasUnavailableIds => features.contains('unavailable-ids');
 }
 
 /// What bringing a person's library over from the music server did on the Encore server.
