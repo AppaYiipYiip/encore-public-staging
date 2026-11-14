@@ -999,5 +999,33 @@
    }
   ],
   "from": "agent"
+ },
+ "N-29": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: YouTube Music as a second source for the catalogue",
+  "note": "Split out of P2-12 by the advisor (14 Nov 2026, the plan's D3; the plan calls it P2-12b, the proposal list only reads ids like N-29). YouTube Music as a second catalogue source with its OWN budget design (a ytmusicapi search per typed query from the Host's address is the burst ADR-R6 forbids), MusicBrainz aliases, several-artist credits, the 200-pair labelled set and the server's one ranked list. Until then ONE ranker (the phone's) exists. Later: it needs P2-12's server catalogue first.",
+  "proposal": true,
+  "size": "L",
+  "needs": [
+   {
+    "id": "P2-12",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-30": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: catalogue pictures come through your server",
+  "note": "From the P2-12 plan (14 Nov 2026): after its last slice the phone makes no call to Deezer's API, but it still loads Deezer's PICTURES from Deezer's picture host, so \"the phone calls no outside service\" must not be claimed yet (PRIVACY.md says so). Serve the catalogue pictures through the Encore server, cached and ticketed like the covers, so a phone shows its address to nobody but its own server.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-12",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
  }
 }
