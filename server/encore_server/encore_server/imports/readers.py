@@ -9,7 +9,8 @@ song" pipeline). Nothing is downloaded here: this only reads the list.
 * **YouTube / YouTube Music** playlists are listed through YouTube Music's own web interface (`ytmusicapi`): the real
   title, artists, album, length and video id of every entry, about 1.5 s for 150 songs. When that cannot read a
   playlist, yt-dlp lists it without downloading (`--flat-playlist`); those lists carry video titles
-  ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart here. Either way the
+  ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart. **Who the artist of an upload is
+  is decided in one place, `uploads.py` (N-26): the channel is the uploader, and the uploader is evidence, not the artist.** Either way the
   video id is kept: for YouTube's own audio upload of a song it *is* the song (nothing is searched), and otherwise,
   when a song cannot be found by name, the video the person saved is used.
 
@@ -28,6 +29,10 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+from .uploads import DECLARED, UNKNOWN, Reading, is_topic, read_declared, read_official_video, read_upload
+from .uploads import clean_title as clean_title  # re-exported: the name the tests and callers know
+from .uploads import split_artist_title as split_artist_title  # re-exported: the name the tests and callers know
 
 log = logging.getLogger("encore_server.imports.readers")
 
@@ -74,6 +79,11 @@ class Track:
     #: The picture the source gives THIS song (YouTube's thumbnail of the video, the largest on an allowed host). It is only a fallback for a
     #: song no catalogue has a cover for: the server shows it while the song has no real cover (P1-26).
     thumbnail: str | None = None
+    #: How the artist was decided (N-26, `uploads.py`): "declared" (the source says so), "title" (the title names the performer), "channel" (nothing does:
+    #: the uploader stays, flagged) or "unknown" (nobody is named). Only `declared` and `title` are performers; the picture and page guards key on this.
+    artist_basis: str = DECLARED
+    #: The channel that uploaded the video, when the song came from an upload and not from the catalogue.
+    uploader: str | None = None
 
 
 @dataclass(frozen=True)
@@ -117,67 +127,6 @@ def largest_picture(pictures: object) -> str | None:
         if url is not None and (best is None or size > best[0]):
             best = (size, url)
     return best[1] if best else None
-
-
-# --------------------------------------------------------------------------- reading text apart
-
-#: A bracket group that only says what kind of upload this is.
-_NOISE_WORDS = (
-    r"official|video|audio|lyrics?|visuali[sz]er|hd|4k|performance|clip|officiel|oficial|music|"
-    r"with|explicit|topic|version|animated|mv|m/v"
-)
-_NOISE_GROUP = re.compile(rf"\s*[\(\[]\s*(?:(?:{_NOISE_WORDS})\b[\s,/&+-]*)+[\)\]]", re.IGNORECASE)
-_PIPE_NOISE = re.compile(rf"\s*\|\s*(?:(?:{_NOISE_WORDS})\b[\s,/&+-]*)+$", re.IGNORECASE)
-_FEAT_GROUP = re.compile(r"\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring)\s[^\)\]]*[\)\]]", re.IGNORECASE)
-_FEAT_TAIL = re.compile(r"\s+(?:feat\.?|ft\.?|featuring)\s.*$", re.IGNORECASE)
-_SPACES = re.compile(r"\s+")
-_TOPIC = re.compile(r"\s*-\s*Topic$", re.IGNORECASE)
-_VEVO = re.compile(r"\s*VEVO$", re.IGNORECASE)
-_FIRST_ARTIST = re.compile(r"\s*(?:,|&|\bx\b|\bfeat\.?\b|\bft\.?\b|\bfeaturing\b|\band\b)\s*", re.IGNORECASE)
-_NON_ALNUM = re.compile(r"[^a-z0-9]+")
-
-
-def clean_title(raw: str) -> str:
-    """`The Type (Official Music Video) ft. Somebody` -> `The Type`. A bracket that is part of the song
-    (`(Live at Wembley)`, `(2008 Remaster)`) stays: it is a different recording."""
-    text = _NOISE_GROUP.sub("", raw)
-    text = _PIPE_NOISE.sub("", text)
-    text = _FEAT_GROUP.sub("", text)
-    text = _FEAT_TAIL.sub("", text)
-    return _SPACES.sub(" ", text).strip()
-
-
-def _fold(text: str) -> str:
-    import unicodedata
-
-    folded = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
-    return _NON_ALNUM.sub("", folded)
-
-
-def _first_artist(text: str) -> str:
-    return _FIRST_ARTIST.split(text.strip(), maxsplit=1)[0].strip()
-
-
-def _is_channel(channel: str, side: str) -> bool:
-    a, b = _fold(channel), _fold(side)
-    return bool(a) and bool(b) and (a in b or b in a)
-
-
-def split_artist_title(raw_title: str, channel: str) -> tuple[str, str]:
-    """The artist and the song of a video: `("Arcangel", "FN8")` from `Arcangel - FN8 ( Video Lyric )`.
-
-    The channel decides which side of a dash is the artist (`Song - Artist` is as common as `Artist - Song`); a
-    "- Topic" channel *is* the artist and its titles are already clean; with no dash the channel is the artist."""
-    channel = (channel or "").strip()
-    if _TOPIC.search(channel):
-        return _TOPIC.sub("", channel).strip(), clean_title(raw_title)
-    name = _VEVO.sub("", channel).strip()
-    if " - " in raw_title:
-        left, right = raw_title.split(" - ", 1)
-        if _is_channel(name, left) or not _is_channel(name, right):
-            return clean_title(left), clean_title(right)
-        return _first_artist(clean_title(right)), clean_title(left)
-    return name, clean_title(raw_title)
 
 
 # --------------------------------------------------------------------------- Spotify
@@ -236,6 +185,7 @@ def spotify_page(html: str) -> tuple[str, list[Track], str | None]:
                 artist=artists[0] if artists else "",
                 duration_s=int(millis // 1000) if isinstance(millis, (int, float)) and millis > 0 else None,
                 artists=artists,
+                artist_basis=DECLARED if artists else UNKNOWN,
             )
         )
     art = entity.get("coverArt") or entity.get("visualIdentity")
@@ -268,21 +218,22 @@ def _youtube_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
         if not raw or raw in ("[Private video]", "[Deleted video]"):
             continue
         channel = str(entry.get("channel") or entry.get("uploader") or "")
-        artist, title = split_artist_title(raw, channel)
-        if not title:
+        reading = read_upload(raw, channel)
+        if not reading.title:
             continue
         video_id = str(entry.get("id") or "")
-        official = bool(_TOPIC.search(channel.strip()))
         duration = entry.get("duration")
         tracks.append(
             Track(
-                title=title,
-                artist=artist,
+                title=reading.title,
+                artist=reading.artist,
                 duration_s=int(duration) if isinstance(duration, (int, float)) and duration > 0 else None,
-                artists=(artist,) if artist else (),
+                artists=reading.artists,
                 video_id=video_id if _VIDEO_ID.match(video_id) else None,
-                official=official and bool(_VIDEO_ID.match(video_id)),
+                official=is_topic(channel) and bool(_VIDEO_ID.match(video_id)),
                 thumbnail=largest_picture(entry.get("thumbnails")) or _cover_ok(entry.get("thumbnail")),
+                artist_basis=reading.basis,
+                uploader=reading.uploader,
             )
         )
     return name, tracks
@@ -290,6 +241,29 @@ def _youtube_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
 
 #: YouTube Music's kinds of entry that *are* the song: YouTube's own audio upload of it (a "Topic" release, or the label's).
 _SONG_TYPES = frozenset({"MUSIC_VIDEO_TYPE_ATV", "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC"})
+#: An official music video: YouTube Music credits it to the band in almost every case, so the credit is trusted unless the title names another performer.
+_OFFICIAL_VIDEO = "MUSIC_VIDEO_TYPE_OMV"
+
+
+def _read_entry(entry: dict[str, Any], raw: str) -> Reading:
+    """Who made the song of one `get_playlist` entry, and how that was decided (N-26).
+
+    What YouTube Music calls the artist of an UPLOAD (`MUSIC_VIDEO_TYPE_UGC`) is the uploading channel, so only the kinds of entry that are the catalogue's
+    own are taken at their word. **Anything this code does not know is an upload on purpose**: a new `videoType` from a newer library must never promote an
+    uploader to a performer. An entry with no `videoType` at all is the catalogue's own only when YouTube no longer has the video or it has an album (the
+    recorded removed entries have both); an available one with no album is an upload."""
+    listed = [a for a in entry.get("artists") or [] if isinstance(a, dict)]
+    named = [str(a.get("name") or "") for a in listed]
+    kind = entry.get("videoType")
+    if kind in _SONG_TYPES:
+        return read_declared(raw, named)
+    if kind == _OFFICIAL_VIDEO:
+        return read_official_video(raw, named)
+    album = entry.get("album")
+    if not kind and (entry.get("isAvailable") is False or (isinstance(album, dict) and str(album.get("name") or "").strip())):
+        return read_declared(raw, named)
+    # The first listed name is the channel (the raw name: `read_upload` does its own "- Topic" and "VEVO" handling).
+    return read_upload(raw, named[0] if named else "")
 
 
 def _ytmusic_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
@@ -302,13 +276,8 @@ def _ytmusic_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
         raw = str(entry.get("title") or "").strip()
         if not raw:
             continue
-        names = [
-            _VEVO.sub("", _TOPIC.sub("", str(a.get("name") or ""))).strip()
-            for a in entry.get("artists") or []
-            if isinstance(a, dict)
-        ]
-        names = [n for n in names if n]
-        title = clean_title(raw)
+        reading = _read_entry(entry, raw)
+        title = reading.title
         if not title:
             continue
         # An entry YouTube no longer has keeps its name, artist and album (so it is searched by name) but has no video.
@@ -320,15 +289,17 @@ def _ytmusic_tracks(data: dict[str, Any]) -> tuple[str, list[Track]]:
         tracks.append(
             Track(
                 title=title,
-                artist=names[0] if names else "",
+                artist=reading.artist,
                 album=album_name or None,
                 duration_s=int(seconds)
                 if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds > 0
                 else None,
-                artists=tuple(names),
+                artists=reading.artists,
                 video_id=video_id,
                 official=video_id is not None and entry.get("videoType") in _SONG_TYPES,
                 thumbnail=largest_picture(entry.get("thumbnails")),
+                artist_basis=reading.basis,
+                uploader=reading.uploader,
             )
         )
     return name, tracks

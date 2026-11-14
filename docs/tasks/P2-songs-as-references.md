@@ -226,6 +226,23 @@ add that to `RELEASE-CANDIDATE.md` as a gate. **Trigger to build slice 5:** any 
 | 4 | The shapes of context (live session, concert channel credit, anime opening) with their negative corpus | S | the other two audit titles come out right | slice 1; a corpus of recorded titles |
 | 5 | Repair of stored rows (section 4) | M to L | the library of an older install is tidied | the trigger of section 4 |
 
+**Slice 1, as built (14 Nov 2026; built, not walked; where it differs from the text above).** (a) The door is three functions in `imports/uploads.py`, not
+one with `kind` and `declared` arguments: `read_declared` (a song of the catalogue), `read_official_video` (OMV) and `read_upload` (everything else); the gate that
+chooses between them is `readers._read_entry`. (b) **The OMV rule** (the advisor's, from 60 recorded official videos in `tests/fixtures/ytm/n26`): the credit is
+trusted unless the title names a *different* performer before a separator (`Vomit Forth - Prophecy Of Defilement (Official Music Video)` under the label Pure Noise
+Records: the band, basis `title`); a title with no separator, a title that says the credited name anywhere (a fan's account typed OMV, recorded:
+`DANDADAN Opening in ITALIANO - EXTENDED "Otonoke" Creepy Nuts | ItsKlyo` credited to ItsKlyo: read literally, the rule would have made "DANDADAN Opening in
+ITALIANO" an artist), or a side that only describes the upload or the version ("Song - Official Video", "Song - Live in Moscow") keeps the credit. **A recorded
+OMV credited to a label with no separator** (`Vomit Forth "Prophecy Of Defilement" (Official Music Video)`, Pure Noise Records) stays under the label: unknowable from
+YouTube alone, pinned by a test, removal trigger N-28. The rule can still misread `Song - Subtitle` under a band's credit (a side that is neither the credit nor a version
+word); N-28 fixes both. (c) A fourth basis, **`unknown`**: nobody is named (the recorded OMV `Akudama` has an empty `artists`; a Spotify track may have none). The reader says
+so (artist `""`); `ImportService._song_of` files such a song under `Unknown Artist` (the name the keeper's folders already use) so that one song no longer refuses a
+whole import ("A song needs a title and an artist."). **Slice 2's artist-picture guard must treat `unknown` like `channel`**, or "Unknown Artist" gets catalogue look-ups from the
+Host's address. (d) `Track` carries `artist_basis` and `uploader` in memory only. (e) Step 0 recorded nine YouTube Music *search* answers (`videoType` and `artists` as the
+service gave them), not `get_playlist` answers: a test builds a playlist entry from the shape of `playlist_album.json` filled with the recorded values. (f) Names are compared by
+their letters in any alphabet (`uploads._name_key`); the server's own `textnorm.ascii_fold` still folds an Arabic or Cyrillic name to nothing (B-37 / P2-25), a test pins
+that, and the day P2-25 gives the server one fold, `_name_key` is replaced by it in the same change.
+
 **Risks.** The gate trusts YouTube Music's own metadata for OMV from one recorded entry (Lil Wayne): step 0 must record an OMV from a *label* channel before
 slice 1 merges. `videoType` is read from a library (`ytmusicapi`) that can change: an unknown or missing value must never promote an uploader to a performer
 (tested). A title that names the artist second ("Song - Artist" on a label channel) stays unknowable (U2). A song kept before slice 3 keeps a channel-named
