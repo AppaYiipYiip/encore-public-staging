@@ -18,6 +18,38 @@ final serverAwayProvider = Provider<bool>((ref) {
   return problem == ConnectionProblem.offline || problem.serverIsAway;
 });
 
+/// Why the server cannot be reached, in the strip's own two causes (docs/31 CN-1 and CN-4b, D-45 amended).
+enum AwayCause {
+  /// No network at all, or a network on which Android found no internet (4G with no data, a Wi-Fi with a sign-in page): the person is
+  /// offline, and "connect" is the way out.
+  noInternet,
+
+  /// Internet is found and the server alone does not answer (or another one does, CN-11: the person's own is not there either).
+  serverSilent,
+}
+
+/// [AwayCause] while the server is away ([serverAwayProvider]), `null` while it is not: the question every page asks when it must say in
+/// words WHY it cannot do something (Search offline, P1-16). It reads the strip's own facts and nothing new: the same lasting state, the
+/// same Android answer ([phoneHasInternetProvider]) and the same rule as the strip's sentence and the player's "Not downloaded. Connect to
+/// play it." (`playback_engine.dart`, `_notDownloadedWords`), so on one screen they cannot disagree.
+///
+/// **Debt (P1-17, audit B-17):** the rule "no internet found is 'connect', a silent server with internet is 'your server'" is still written
+/// three times (the strip, the player, here). P1-17's one reachability state replaces all three; this provider then becomes a read of it.
+final awayCauseProvider = Provider<AwayCause?>((ref) {
+  if (!ref.watch(serverAwayProvider)) return null;
+  final noNetwork = ref.watch(
+      networkKindProvider.select((kind) => kind.value == NetworkKind.none));
+  final problem = ref.watch(connectionProblemProvider);
+  if (noNetwork || problem == ConnectionProblem.offline) {
+    return AwayCause.noInternet;
+  }
+  // Another server answering at the address is not an outage of the internet: the phone is online (the strip says so in its own words).
+  if (problem == ConnectionProblem.anotherServer) return AwayCause.serverSilent;
+  return (ref.watch(phoneHasInternetProvider).value ?? true)
+      ? AwayCause.serverSilent
+      : AwayCause.noInternet;
+});
+
 /// Whether a library song can be played right now: while the server is there every one can, while it is away only those on the phone (P1-09).
 /// Rows of the others are greyed and say "Not downloaded"; a tap on one says so (the player does not try it, and does not skip).
 final playabilityProvider = Provider<bool Function(String trackId)>((ref) {

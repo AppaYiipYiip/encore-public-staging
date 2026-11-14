@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/navigation.dart';
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart' show TrackRow;
+import '../../data/repos/downloads_repository.dart' show PinTargetType;
 import '../../design/tokens.dart';
 import '../catalogue/catalogue_widgets.dart' show formatFans;
+import '../common/away_words.dart';
 import '../common/cover_art.dart';
 import '../common/format.dart';
 import '../common/playability.dart';
@@ -25,7 +27,9 @@ import 'search_assembly.dart';
 /// What a typed search shows (P1-07): the **Top result**, then songs, artists and albums, each list ranked, the library's and the
 /// catalogue's mixed and looking the same. Whether the library has a song is never a header or a sentence; it is only a tie-break.
 ///
-/// The library answers at once; the catalogue joins when it arrives, and the order is worked out again with both.
+/// The library answers at once; the catalogue joins when it arrives, and the order is worked out again with both. While the server is away
+/// (P1-16, S-12 offline) the catalogue is not asked and not waited for: the library's rows are the page, what is not on the phone is grey,
+/// and one quiet last line says what more cannot be done, in the words of its cause.
 class SearchResultsView extends ConsumerStatefulWidget {
   const SearchResultsView({
     super.key,
@@ -63,6 +67,7 @@ class _SearchResultsViewState extends ConsumerState<SearchResultsView> {
     final query = widget.query;
     final local = ref.watch(searchResultsProvider(query));
     final catalogue = ref.watch(catalogueSearchProvider(query));
+    final cause = ref.watch(awayCauseProvider);
 
     if (local.hasError) {
       return EmptyState(
@@ -82,6 +87,15 @@ class _SearchResultsViewState extends ConsumerState<SearchResultsView> {
         .addPostFrameCallback((_) => mounted ? _prepareLikelyTap(found) : null);
 
     if (found.isEmpty) {
+      // Offline the question is not "is the catalogue slow" but "what cannot be done": never a spinner for a line that is not there, and
+      // never "No results" for what the phone simply cannot look for.
+      if (cause != null) {
+        return EmptyState(
+          icon: Icons.search_off_rounded,
+          title: nothingInYourMusic(query),
+          message: onlyYourMusicSearched(cause),
+        );
+      }
       return catalogue.isLoading
           ? const Padding(
               padding: EdgeInsets.all(Space.xl),
@@ -112,11 +126,32 @@ class _SearchResultsViewState extends ConsumerState<SearchResultsView> {
           const SectionHeader(title: 'Albums'),
           for (final hit in found.albums) _AlbumRow(hit: hit, onOpen: _opened),
         ],
+        if (cause != null) _MoreNeed(cause: cause),
       ],
     );
   }
 
   void _opened() => widget.onOpen(widget.query);
+}
+
+/// The one quiet last line of the results while the server is away (S-12 offline): it takes no room above the list, has no cross, never
+/// repeats the strip, and goes by itself.
+class _MoreNeed extends StatelessWidget {
+  const _MoreNeed({required this.cause});
+
+  final AwayCause cause;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.gutter, 14, Space.gutter, 10),
+      child: Text(
+        moreResultsNeed(cause),
+        style:
+            context.text.bodySmall?.copyWith(color: context.colors.onBgMuted),
+      ),
+    );
+  }
 }
 
 // ----------------------------------------------------------------- the top
@@ -158,6 +193,10 @@ class _TopResult extends ConsumerWidget {
     // A song of the library that is not on the phone cannot be played without a connection.
     final unavailable =
         h is SongHit && h.local != null && !playable(h.local!.id);
+    // An album of the library with nothing on the phone says so while the server is away, as its row does (S-12, S-14 offline).
+    final albumGone = h is AlbumHit &&
+        h.local != null &&
+        ref.watch(notDownloadedNowProvider((PinTargetType.album, h.local!.id)));
     final (kind, title, artist) = switch (hit) {
       final SongHit h => ('Song', h.title, h.artist),
       final ArtistHit h => (
@@ -216,7 +255,13 @@ class _TopResult extends ConsumerWidget {
                           style: context.text.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w800)),
                       Text(
-                        [kind, if (artist != null) artist].join(' • '),
+                        [
+                          kind,
+                          if (albumGone)
+                            kNotDownloadedWords
+                          else if (artist != null)
+                            artist,
+                        ].join(' • '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.text.bodyMedium
@@ -554,6 +599,9 @@ class _AlbumRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final local = hit.local;
     final catalogue = hit.catalogue;
+    // While the server is away an album with nothing on the phone is grey and says so in words (S-12 and S-14 offline), as in the Library.
+    final gone = local != null &&
+        ref.watch(notDownloadedNowProvider((PinTargetType.album, local.id)));
     final parts = [
       if (hit.artist != null) hit.artist!,
       if ((local?.year ?? catalogue?.year) != null)
@@ -561,7 +609,7 @@ class _AlbumRow extends ConsumerWidget {
       if ((local?.songCount ?? catalogue?.trackCount ?? 0) > 0)
         plural((local?.songCount ?? catalogue?.trackCount)!, 'song'),
     ];
-    return _Row(
+    final row = _Row(
       leading: CoverArt(
         coverArtId: local?.coverArt,
         imageUrl: catalogue?.coverUrl,
@@ -570,12 +618,13 @@ class _AlbumRow extends ConsumerWidget {
         radius: Radii.art,
       ),
       title: hit.title,
-      subtitle: parts.join(' - '),
+      subtitle: gone ? kNotDownloadedWords : parts.join(' - '),
       onTap: () => _open(context, ref, hit, onOpen),
       // With the instant-play service a row is just a row; asking for the original files is on the release page (ADR-067).
       trailing: catalogue != null && ref.watch(requestPortalOfferedProvider)
           ? RequestChip(artist: catalogue.artistName, album: catalogue.title)
           : const SizedBox.shrink(),
     );
+    return gone ? Opacity(opacity: 0.45, child: row) : row;
   }
 }
