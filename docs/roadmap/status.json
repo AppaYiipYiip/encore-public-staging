@@ -258,5 +258,11 @@
   "evidence": "PR for N-13 (code, after the drawing #42 and the search-outage fix #45): server memory of refusals (migration 0013, 7-day window from the last try, matcher revision, one hook in YoutubeSource, removed only after the fallback search, age_restricted its own reason), POST /refs/unavailable and the optional unavailable field on refs; app marks Search Top result and rows, album, artist Popular, genre chart, missing-songs rows; 404/405 means no verdicts. Server: test_missing.py 30 tests, whole server suite green, ruff, mypy; app: song_marks_test.dart 20 + encore_unavailable_test.dart 15, full app suites 2697 passed 5 skipped incl. architecture_test, dart analyze --fatal-infos clean, no golden changed. Built, not walked: not seen on a phone.",
   "at": "2026-11-14T12:19:55Z",
   "by": "Claude"
+ },
+ "P2-26": {
+  "state": "built",
+  "evidence": "PR #45 (audit B-122, the fix of B-38): a failed search is search_failed, a retryable 502 on a tap and a 300 s wait in the keeper and the imports, not a permanent 'removed'; 4 tests seen failing first; on main the probe 'python -X utf8 docs/evidence/scripts/audit_probes.py transient' ends 'wanted: a Retry, not a GiveUp -> PASS' (14 Nov 2026). The stored-upload re-search is N-13 (PR #53). Not walked.",
+  "at": "2026-11-14T12:34:14Z",
+  "by": "Claude"
  }
 }
