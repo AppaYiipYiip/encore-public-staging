@@ -222,6 +222,46 @@ void main() {
       });
     });
 
+    test(
+        'P4-24: the pinned run under Data saver (mobile data) fetches and pins the small size only, and never lets go of a large pin',
+        () async {
+      // al-1 was downloaded on Wi-Fi: its large picture is already pinned. al-2 is a download made now, on mobile data under the cap.
+      final largeAl1 = CoverSize.key(1, 'al-1', CoverSize.large);
+      cache.addAll({largeAl1, CoverSize.key(1, 'al-1', CoverSize.small)});
+      pinned.add(largeAl1);
+      final fetched = <String>[];
+      final prefetcher = CoverPrefetcher(
+        serverId: 1,
+        isCached: (key) async => cache.contains(key),
+        fetch: (id, size) async {
+          fetched.add(CoverSize.key(1, id, size));
+          cache.add(CoverSize.key(1, id, size));
+        },
+        pin: (key) async {
+          pinCalls.add(key);
+          if (!cache.contains(key)) return false;
+          pinned.add(key);
+          return true;
+        },
+        retain: (wanted) async => retained.add(wanted),
+      );
+
+      // The same budget the rest of the background fetch uses, so the pinned run cannot disagree with it.
+      await prefetcher
+          .keepPinned(['al-1', 'al-2'], sizes: CoverBudget.mobile.sizes);
+
+      expect(fetched, [CoverSize.key(1, 'al-2', CoverSize.small)],
+          reason: 'no large picture is asked for on mobile data');
+      expect(pinCalls, everyElement(endsWith(':${CoverSize.small}')));
+      expect(pinned, contains(largeAl1),
+          reason: 'a pin that already exists stays');
+      expect(retained.single, contains(largeAl1),
+          reason:
+              'and the release, which is by picture at both sizes, keeps it');
+      expect(
+          retained.single, contains(CoverSize.key(1, 'al-2', CoverSize.large)));
+    });
+
     test('with nothing downloaded nothing is pinned and every pin is released',
         () async {
       final count = await make().keepPinned(const []);

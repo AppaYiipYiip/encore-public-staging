@@ -42,7 +42,7 @@ void main() {
     ]);
   });
 
-  for (final from in const [1, 2, 3, 4, 5, 6]) {
+  for (final from in const [1, 2, 3, 4, 5, 6, 7]) {
     test('v$from upgrades to the current schema and keeps its rows', () async {
       final schema = await verifier.schemaAt(from);
 
@@ -68,6 +68,11 @@ void main() {
       expect(downloads.single.trackId, 'old');
       expect(downloads.single.bytes, 99);
       expect(downloads.single.attempts, 0);
+      expect(downloads.single.refreshQuality, isNull,
+          reason: 'v8: a finished download has no refresh under way (P4-24)');
+      expect(downloads.single.quality, 'original',
+          reason:
+              'the quality the copy was made at is not changed by the upgrade');
 
       final queued = await db.select(db.outbox).get();
       expect(queued.single.kind, 'star');

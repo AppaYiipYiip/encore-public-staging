@@ -217,10 +217,16 @@
   "at": "2026-11-14T09:17:15Z",
   "by": "Claude"
  },
+ "P4-24": {
+  "state": "built",
+  "evidence": "Code PR #36: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers (streaming quality, new downloads with made-at record and Wi-Fi upgrade, small pictures via CoverBudget also for the pinned run, prepare-ahead window 1); tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at, upgrade, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart, core/cover_sizes_test.dart, data/covers/cover_prefetcher_test.dart, playback/media_art_test.dart, features/data_saver_settings_test.dart, download_policy_test.dart, migration v7 to v8. Built, NOT walked: the byte-count acceptance (the phone's per-app data counter on mobile data) is for a real walk.",
+  "at": "2026-11-14T09:22:52Z",
+  "by": "Claude"
+ },
  "N-11": {
   "state": "built",
   "evidence": "N-11 is built in three parts, NOT walked: part A (library scan attaches a file to its owning ref) PR #29, part B server half (start-up merge of refs that hold one file, merges list on GET library/files, saved real-response fixture) PR #35, part B phone half (this PR): EncoreSync reads the merges list with its own cursor and EncoreWriter.applyMerges folds each merge into the phone in the page's transaction (entries, plays, pins, lyrics re-pointed, like carried, saved queue + resume position + saved releases rewritten, old row deleted or renamed, the downloaded copy MOVED to the survivor, never re-downloaded, the better copy kept when both are downloaded); 43 tests in app/test/data/encore/encore_merge_test.dart against the saved fixture, gate green on the merged branch (flutter test of test/features domain app playback data architecture: 2558 passed; tools/check.ps1 -Quick passed). The walk (engineering check on an emulator against a server updated to the image with part B, with an APK with this change, on a phone that synced BEFORE the repair) must check: Songs total drops by the merged pairs, Landmvrks Creature/Requiem only under the right album, a song downloaded under the old copy stays playable offline and is not downloaded again, likes/playlist places/saved queue and resume position intact after a restart, the hourly scan makes no new duplicates. Known gaps (board note on N-11): the running player's in-memory queue keeps the old id until restart (follow-up for the player), an empty Unknown Album row stays while the music server lists the file there.",
-  "at": "2026-11-14T09:35:04Z",
-  "by": "helper-n11c (Claude Sonnet 5.5)"
+  "at": "2026-11-14T09:39:09Z",
+  "by": "Claude"
  }
 }
