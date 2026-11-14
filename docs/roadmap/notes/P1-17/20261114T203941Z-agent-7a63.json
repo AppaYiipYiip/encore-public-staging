@@ -1,0 +1,9 @@
+{
+ "id": "20261114T203941Z-agent-7a63",
+ "item": "P1-17",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T20:39:41Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 evening (verified on an emulator and on the owner's secondary test phone, a Samsung A35, against VM 108 updated to sha-004ea8c (the server is unchanged since that commit) with debug APK build 153 from main cb37c62; NOT the release-candidate pair; nothing is marked walked). D1 AND D2 SEEN FOR THE FIRST TIME. D2 (a tap within seconds of the server going silent is tried and waits): the server was stopped and a streamed song (not downloaded) tapped about 2 s later: the phone said \"Waiting for your server.\" and showed the song as the one now playing (not a refusal); within the next seconds every row of the list turned \"Not downloaded\" with a cloud-off icon, and the waiting song started by itself within about 11 s of the server starting again, with the rows back to normal. D1 (a network switch during an outage): server stopped, rows grey; airplane mode on (rows grey), then off: the rows looked NORMAL right after the network came back and went grey again between 9 and 13 s later (the plan said about 5 to 8 s: the measured figure includes the network re-attaching, about 3 s). Both are the accepted trade-offs, now seen. NOT caught: the strip's sentence (my text samples missed it; it shows for 5 s and its apostrophe may be typographic): not verified. The upgrade of the A35 from build 144 to 153 in place worked (it opened signed in on Home). Mistake of mine, not a product bug: my first APK was x64-only for the emulator and crashed the arm64 phone at start (\"libflutter.so ... only found [x86_64]\"); build the phone with android-arm64."
+}

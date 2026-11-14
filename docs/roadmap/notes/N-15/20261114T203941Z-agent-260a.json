@@ -1,0 +1,9 @@
+{
+ "id": "20261114T203941Z-agent-260a",
+ "item": "N-15",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T20:39:41Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 evening (verified on an emulator and on the owner's secondary test phone, a Samsung A35, against VM 108 updated to sha-004ea8c (the server is unchanged since that commit) with debug APK build 153 from main cb37c62; NOT the release-candidate pair; nothing is marked walked). B-127 NOT WALKED: it can only be seen at the first start after the cover finder found a picture; no way to arrange that on demand. Still owed: restart the Encore container right after a cover is found and look for the artist pass in the log (the unit tests cover the wait)."
+}

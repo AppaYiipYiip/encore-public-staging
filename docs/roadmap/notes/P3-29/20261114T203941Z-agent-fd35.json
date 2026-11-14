@@ -1,0 +1,9 @@
+{
+ "id": "20261114T203941Z-agent-fd35",
+ "item": "P3-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T20:39:41Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 evening (verified on an emulator and on the owner's secondary test phone, a Samsung A35, against VM 108 updated to sha-004ea8c (the server is unchanged since that commit) with debug APK build 153 from main cb37c62; NOT the release-candidate pair; nothing is marked walked). B-129 PASSES ON THE REAL STACK: `docker stop encore-encore-server-1` with the app open on two phones took 0.43 s and left exit code 0, not 137 (on 14 Nov 13:03 the same stop took about 11 s and ended in SIGKILL)."
+}
