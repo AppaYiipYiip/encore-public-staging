@@ -78,9 +78,10 @@ def test_a_picture_file_in_the_artists_own_kept_folder_becomes_its_cover_and_no_
         rig.svc.db, navidrome, catalogue, music_dir=MUSIC, fetch=lambda url: picture, sleep=lambda _: None, per_pass=50
     )
 
+    seen_before = (navidrome.scanning(), finder._own_songs(artist))
     report = finder.run_once()
 
-    assert report.found == 1
+    assert report.found == 1, (report, seen_before, asked)
     assert (artist, "Song") in asked
     assert (MUSIC / "Encore" / artist / "artist.jpg").read_bytes() == picture
     assert not (MUSIC / "Encore" / "artist.jpg").exists(), (
