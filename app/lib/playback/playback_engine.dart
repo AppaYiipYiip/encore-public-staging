@@ -7,6 +7,7 @@ import '../core/clock.dart';
 import '../core/logger.dart';
 import '../core/perf.dart';
 import '../data/db/app_database.dart';
+import '../domain/server_reachability.dart';
 import '../features/player/playback_facade.dart';
 import 'audio_backend.dart';
 import 'playback_state_store.dart';
@@ -82,10 +83,8 @@ class PlaybackEngine implements PlaybackFacade {
     this.loadTimeout = const Duration(seconds: 12),
     PeriodicTimerFactory? periodicTimer,
     bool Function()? moreComing,
-    bool Function()? canReachServer,
-    bool Function()? networkPresent,
-    bool Function()? internetFound,
-    Future<bool> Function()? serverAnswers,
+    ServerReachability Function()? reachability,
+    Future<ServerReachability> Function()? recheck,
     this.serverRetryDelays = const [
       Duration(seconds: 1),
       Duration(seconds: 1),
@@ -102,10 +101,8 @@ class PlaybackEngine implements PlaybackFacade {
         _prepareAheadCount = prepareAheadCount ?? (() => 2),
         _songRefusal = songRefusal,
         _moreComing = moreComing ?? (() => false),
-        _canReach = canReachServer ?? (() => true),
-        _networkPresent = networkPresent ?? (() => false),
-        _internetFound = internetFound ?? (() => true),
-        _serverAnswers = serverAnswers ?? (() async => true),
+        _reachability = reachability ?? (() => ServerReachability.ok),
+        _recheck = recheck ?? (() async => ServerReachability.ok),
         _findByName = findByName,
         _backend = backend,
         _resolver = resolver,
@@ -180,16 +177,23 @@ class PlaybackEngine implements PlaybackFacade {
   /// How long restoring the queue may spend looking streamed songs up in the library: the player must not wait on a dead network.
   final Duration catalogueLookupBudget;
 
-  /// Whether the server can be reached right now (the phone has a network). A song that is not downloaded can only play with it.
-  final bool Function() _canReach;
-  final bool Function() _networkPresent;
+  /// The ONE state of "can I reach my server" (P1-17, docs/31 section 2a), as the app last judged it: read each time, never kept. A song that
+  /// is not downloaded can only play when it is not away; `unknown` (the first second of the app, a change of network) is "may try".
+  final ServerReachability Function() _reachability;
 
-  /// Whether Android itself found internet on the network in use (the strip's test, D-45 amended): `true` when that is not known.
-  final bool Function() _internetFound;
+  /// One FRESH look at the server (its addresses are raced again), answering with what that look found: newer than [_reachability] and
+  /// believed for the tap that asked. With no network it answers `noNetwork` without looking. A phone with a network and a server that does
+  /// not answer is not a phone with a bad song (docs/33 PB-F7, PB-F8, G-1).
+  final Future<ServerReachability> Function() _recheck;
 
-  /// Asks the server whether it answers *now* (one fresh look at its addresses). A phone with a network and a server that does not answer is
-  /// not a phone with a bad song (docs/33 PB-F7, PB-F8, G-1).
-  final Future<bool> Function() _serverAnswers;
+  /// Whether the server can be reached as far as the app last judged (see [_reachability]).
+  bool _canReach() => !_reachability().isAway;
+
+  /// Whether the phone has a network at all.
+  bool _networkPresent() => _reachability() != ServerReachability.noNetwork;
+
+  /// Asks the server whether it answers *now* (one fresh look at its addresses).
+  Future<bool> _serverAnswers() async => !(await _recheck()).isAway;
 
   /// How long to wait before asking again while a song waits for its server; the last value repeats for two minutes, then it is every
   /// 15 s, and after ten minutes the engine stops asking by itself (pressing play, or the server being seen again, still start the song).
@@ -978,9 +982,9 @@ class PlaybackEngine implements PlaybackFacade {
   /// What a tap on a song that is not downloaded says while the server cannot be reached: by cause, with the SAME test as the strip (CN-1 and
   /// CN-4b, D-45 amended). With no network, or a network on which Android found no internet (4G with no data, a sign-in page), "Connect" is the
   /// way out; only with internet found is the person connected and the server alone away.
-  String _notDownloadedWords() => _networkPresent() && _internetFound()
-      ? "Not downloaded. Can't reach your server."
-      : 'Not downloaded. Connect to play it.';
+  String _notDownloadedWords() => _reachability().isOffline
+      ? 'Not downloaded. Connect to play it.'
+      : "Not downloaded. Can't reach your server.";
 
   Future<bool> _canReachNow() async {
     if (_canReach()) return true;

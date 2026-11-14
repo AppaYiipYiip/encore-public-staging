@@ -27,7 +27,7 @@ import '../playback/playback_engine.dart';
 import '../playback/playback_state_store.dart';
 import '../playback/queue_model.dart';
 import '../playback/source_resolver.dart';
-import 'connection.dart' show ServerReachability, serverReachabilityProvider;
+import 'connection.dart' show recheckServer, serverReachabilityProvider;
 import 'providers.dart';
 import 'session.dart';
 
@@ -41,12 +41,6 @@ final audioBackendProvider = Provider<JustAudioBackend>(
 final audioHandlerProvider = Provider<Future<EncoreAudioHandler>>(
   (ref) => throw UnimplementedError('audioHandlerProvider must be overridden'),
 );
-
-/// Whether a song that is not downloaded can be asked for now: the one state of reachability (P1-17) is not "away". A network alone is not
-/// enough: with the 4G radio on and no data the player believed it was online, waited for the server on the first song that was not downloaded and
-/// never reached the downloaded ones behind it (field test 2026-10-31): that state is `noInternet`. Before anybody has looked (the first second of the
-/// app, or just after a change of network) and without a session it is `unknown`, which is "may try".
-bool canReachServerNow(ServerReachability reach) => !reach.isAway;
 
 /// How many coming songs the phone has the server make ready while one plays: two, or only the next one while Data saver is in force (P4-24).
 int prepareAheadSongs({required bool dataSaverInForce}) =>
@@ -175,22 +169,11 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
         if (ref.mounted) ref.read(songRefusalsProvider.notifier).refused();
       });
     },
-    // Songs that are not downloaded need the network: without it they are not tried (and not skipped through).
-    canReachServer: () =>
-        canReachServerNow(ref.read(serverReachabilityProvider)),
-    // Both are the one state (P1-17): `noNetwork` is certain and at once; no internet at all is also what the strip's words say, so a tap on a song
-    // that is not downloaded says what the strip says.
-    networkPresent: () =>
-        ref.read(serverReachabilityProvider) != ServerReachability.noNetwork,
-    internetFound: () => !ref.read(serverReachabilityProvider).isOffline,
-    // One fresh look at the server's addresses: a song that failed with a network but no server is waited for, not skipped (docs/33 G-1).
-    serverAnswers: () async {
-      final s = session() ??
-          await ref
-              .read(sessionProvider.future)
-              .timeout(const Duration(seconds: 8), onTimeout: () => null);
-      return s == null || await s.endpoints.resolve() != null;
-    },
+    // Songs that are not downloaded need the server: without it they are not tried (and not skipped through). The ONE state is read each time
+    // (`unknown`, the first second of the app or just after a change of network, is "may try"); a FRESH look is asked only before a song is
+    // refused or waited for (docs/33 G-1, PB-F7), and it also tells the state.
+    reachability: () => ref.read(serverReachabilityProvider),
+    recheck: () => recheckServer(ref),
     replayGain: () {
       final s = ref.read(settingsProvider);
       return ReplayGainSettings(
@@ -201,14 +184,8 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
   );
   await engine.restore();
   unawaited(backend.warmUp());
-  // A song that waited for the connection plays by itself when it returns.
-  ref.listen(
-    networkKindProvider,
-    (_, next) => unawaited(
-        engine.networkChanged(online: next.value != NetworkKind.none)),
-  );
-  // ... and so does a song that waited for its server, the moment the state leaves "away" (the engine also asks by itself every few
-  // seconds, so this only makes it quicker).
+  // A song that waited for the connection or for its server plays by itself the moment the state leaves "away" (the network is back, the server
+  // answers again; the engine also asks by itself every few seconds while it waits, so this only makes it quicker).
   ref.listen(
     serverReachabilityProvider,
     (previous, next) {

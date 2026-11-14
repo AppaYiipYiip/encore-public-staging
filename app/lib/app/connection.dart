@@ -172,6 +172,28 @@ final serverReachabilityProvider =
     NotifierProvider<ServerReachabilityNotifier, ServerReachability>(
         ServerReachabilityNotifier.new);
 
+/// ONE FRESH look at the person's server, for a reader that must know NOW (the player, before it refuses a song that is not downloaded or waits for
+/// its server): the addresses are raced again, and the answer is the immediate judgement of what that look found, newer than
+/// [serverReachabilityProvider] (which waits out a blink). No network is answered at once without a look; no server at all is `unknown`
+/// (nothing to look at: not away). The look also feeds the state: the finding it changes is what the state is made of.
+Future<ServerReachability> recheckServer(Ref ref) async {
+  if (ref.read(networkKindProvider).value == NetworkKind.none) {
+    return ServerReachability.noNetwork;
+  }
+  final session = ref.read(sessionProvider).value ??
+      await ref
+          .read(sessionProvider.future)
+          .timeout(const Duration(seconds: 8), onTimeout: () => null);
+  if (session == null) return ServerReachability.unknown;
+  await session.endpoints.resolve();
+  final finding = session.endpoints.finding;
+  final internet = finding == ServerFinding.silent
+      ? await ref.read(networkValidationProvider).validated()
+      : null;
+  return reachabilityOf(
+      hasNetwork: true, finding: finding, internetFound: internet);
+}
+
 /// How long an outage stays on the strip: it is said once and goes by itself (owner, 2026-10-31: "all day telling me it cannot connect,
 /// sure we get it"). The details stay on Settings > Your server.
 final connectionShownForProvider =
