@@ -52,7 +52,8 @@ void main() {
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.silent)),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
     ]);
     await tester.pump(const Duration(milliseconds: 50));
@@ -75,7 +76,8 @@ void main() {
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.silent)),
       networkValidationProvider.overrideWithValue(_Validation(false)),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
     ]);
@@ -94,7 +96,8 @@ void main() {
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.silent)),
       networkValidationProvider.overrideWithValue(_Validation(true)),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
     ]);
@@ -111,7 +114,8 @@ void main() {
       (tester) async {
     final app = await pumpApp(tester, overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.anotherServer)),
       anotherServerAtProvider.overrideWith(
           (ref) => Stream.value(Uri.parse('http://192.168.1.10:4533'))),
       downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
@@ -150,7 +154,8 @@ void main() {
       var reachable = false;
       final changes = StreamController<bool>.broadcast();
       final seen = <bool>[];
-      final sub = reachabilityStream(() => reachable, changes.stream).listen(
+      final sub =
+          currentThenChanges<bool>(() => reachable, changes.stream).listen(
         (value) {
           seen.add(value);
           if (seen.length == 1) {
@@ -171,8 +176,8 @@ void main() {
       const reachable = true;
       final changes = StreamController<bool>.broadcast();
       final seen = <bool>[];
-      final sub =
-          reachabilityStream(() => reachable, changes.stream).listen(seen.add);
+      final sub = currentThenChanges<bool>(() => reachable, changes.stream)
+          .listen(seen.add);
       await pumpEventQueue();
       changes.add(false);
       await pumpEventQueue();

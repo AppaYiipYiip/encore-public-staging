@@ -73,23 +73,23 @@ void main() {
   });
 
   test('the status is asked again when the server comes back', () async {
-    final reachable = StreamController<bool>();
+    final reachable = StreamController<ServerFinding>();
     addTearDown(reachable.close);
     final c = ProviderContainer(overrides: [
       sessionProvider.overrideWith((ref) async => session),
-      serverReachableProvider.overrideWith((ref) => reachable.stream),
+      serverFindingProvider.overrideWith((ref) => reachable.stream),
     ]);
     addTearDown(c.dispose);
     final watching = c.listen(encoreServerInfoProvider, (_, __) {});
     addTearDown(watching.close);
     door.down = true;
-    reachable.add(false);
+    reachable.add(ServerFinding.silent);
     await pumpEventQueue();
     expect(await c.read(encoreServerInfoProvider.future), isNull,
         reason: 'while the server is away it does not answer');
 
     door.down = false;
-    reachable.add(true);
+    reachable.add(ServerFinding.answering);
     await pumpEventQueue();
 
     expect((await c.read(encoreServerInfoProvider.future))?.youtubeState, 'ok',

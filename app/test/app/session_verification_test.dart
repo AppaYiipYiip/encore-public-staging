@@ -7,6 +7,7 @@ import 'package:encore/app/session.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/sync/endpoint_resolver.dart';
+import 'package:encore/domain/server_reachability.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_subsonic_server.dart';
@@ -168,7 +169,7 @@ void main() {
     final result = await session.client.ping();
 
     expect(winner, isNull);
-    expect(session.endpoints.isReachable, isFalse);
+    expect(session.endpoints.finding, ServerFinding.anotherServer);
     expect(session.endpoints.currentUrl, EndpointResolver.unverifiedUrl);
     expect(result, isA<Err<Object?>>());
     final sent = door.toHome();
@@ -199,7 +200,7 @@ void main() {
 
     await session.endpoints.resolve();
 
-    expect(session.endpoints.isKnownUnreachable, isTrue);
+    expect(session.endpoints.finding, ServerFinding.silent);
     expect(session.endpoints.anotherServerAt, isNull);
   });
 
@@ -214,7 +215,7 @@ void main() {
     await session.endpoints.resolve();
 
     expect(session.endpoints.anotherServerAt, isNull);
-    expect(session.endpoints.isReachable, isTrue);
+    expect(session.endpoints.finding, ServerFinding.answering);
   });
 
   test(

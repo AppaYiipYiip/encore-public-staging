@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:encore/app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import 'package:encore/app/navigation.dart';
 import 'package:encore/core/result.dart';
 import 'package:encore/data/catalogue/catalogue_models.dart';
@@ -14,7 +16,7 @@ import 'package:encore/design/theme.dart';
 import 'package:encore/design/tokens.dart';
 import 'package:encore/features/catalogue/catalogue_widgets.dart';
 import 'package:encore/features/common/playability.dart'
-    show kNotAvailableWords, serverAwayProvider;
+    show kNotAvailableWords;
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/instant_play.dart';
 import 'package:encore/features/instant/song_marks.dart';
@@ -29,6 +31,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/factories.dart';
 import '../support/fake_catalogue.dart';
 import '../support/fake_encore_server.dart';
+import '../support/reachability.dart';
 import '../support/test_app.dart';
 
 /// N-13: songs the server already knows it cannot get are marked in the lists of catalogue songs, before anybody taps them (drawn 14 Nov 2026, docs/design
@@ -59,7 +62,8 @@ void main() {
       InstantPlayBackend? backendOverride,
     }) {
       final c = ProviderContainer(overrides: [
-        serverAwayProvider.overrideWithValue(away),
+        serverReachabilityProvider.overrideWith(() => FixedReachability(
+            away ? ServerReachability.serverAway : ServerReachability.ok)),
         instantBackendProvider
             .overrideWith((ref) async => backendOverride ?? backend),
         songMarksClockProvider.overrideWithValue(() => now),
@@ -214,7 +218,8 @@ void main() {
 
     ProviderContainer container({EncoreInstantBackend? backendOverride}) {
       final c = ProviderContainer(overrides: [
-        serverAwayProvider.overrideWith((ref) => away),
+        serverReachabilityProvider.overrideWith(() => ReachabilityFrom(() =>
+            away ? ServerReachability.serverAway : ServerReachability.ok)),
         instantBackendProvider
             .overrideWith((ref) async => backendOverride ?? backend),
         songMarksClockProvider.overrideWithValue(() => now),
@@ -293,7 +298,7 @@ void main() {
       expect(c.read(songMarkProvider(goneId)), isNotNull);
 
       away = true;
-      c.invalidate(serverAwayProvider);
+      c.invalidate(serverReachabilityProvider);
 
       expect(c.read(songMarkProvider(goneId)), isNull,
           reason: 'offline always wins (S-12): the row says "Not downloaded"');
@@ -374,7 +379,8 @@ void main() {
       bool away = false,
     }) {
       final c = ProviderContainer(overrides: [
-        serverAwayProvider.overrideWithValue(away),
+        serverReachabilityProvider.overrideWith(() => FixedReachability(
+            away ? ServerReachability.serverAway : ServerReachability.ok)),
         downloadedIdsProvider.overrideWith((ref) => Stream.value(downloaded)),
         songMarksProvider.overrideWith(() => _FixedMarks({'sr_1': live})),
       ]);

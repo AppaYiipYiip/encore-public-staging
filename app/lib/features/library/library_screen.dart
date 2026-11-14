@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../app/tab_reselect.dart';
@@ -577,7 +578,8 @@ bool _usableNow(PinState s, {required bool offline}) => switch (s.phase) {
   return (
     subtitle: replaces ? text : '${entry.subtitle} • $text',
     complete: line?.complete ?? false,
-    usable: _usableNow(state, offline: ref.watch(serverAwayProvider)),
+    usable: _usableNow(state,
+        offline: ref.watch(serverReachabilityProvider).isAway),
     target: target,
     twoStages: replaces,
   );

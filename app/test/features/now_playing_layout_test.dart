@@ -64,7 +64,8 @@ void main() {
         playing: samplePlaying(isPlaying: false),
         overrides: [
           connectionGraceProvider.overrideWithValue(Duration.zero),
-          serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+          serverFindingProvider
+              .overrideWith((ref) => Stream.value(ServerFinding.silent)),
         ]);
     await openPlayer(tester);
     await tester.pump(const Duration(milliseconds: 50));
@@ -91,7 +92,8 @@ void main() {
         playing: samplePlaying(isPlaying: false),
         overrides: [
           connectionGraceProvider.overrideWithValue(Duration.zero),
-          serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+          serverFindingProvider
+              .overrideWith((ref) => Stream.value(ServerFinding.anotherServer)),
           anotherServerAtProvider.overrideWith(
               (ref) => Stream.value(Uri.parse('http://192.168.1.10:4533'))),
         ]);
@@ -111,7 +113,8 @@ void main() {
       'keeps the ordinary scrubber', (tester) async {
     final app = await pumpApp(tester, playing: samplePlaying(), overrides: [
       connectionGraceProvider.overrideWithValue(Duration.zero),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.silent)),
     ]);
     await openPlayer(tester);
     await tester.pump(const Duration(milliseconds: 50));

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/connection.dart' show serverReachabilityProvider;
 import '../../data/catalogue/catalogue_models.dart';
 import '../../data/db/app_database.dart' show TrackRow;
 import '../../data/encore/encore_instant.dart';
 import '../../data/encore/encore_models.dart';
-import '../common/playability.dart' show serverAwayProvider;
 import '../providers.dart' show downloadedIdsProvider;
 import 'instant_controller.dart';
 import 'instant_play.dart';
@@ -29,7 +29,7 @@ final songMarksProvider =
 /// The mark of one song (a catalogue id or a ref id), or null: only while the server still believes it and the server can be reached (offline always
 /// wins: the row says "Not downloaded", or nothing, and the tap goes down the offline path).
 final songMarkProvider = Provider.family<EncoreUnavailable?, String>((ref, id) {
-  if (ref.watch(serverAwayProvider)) return null;
+  if (ref.watch(serverReachabilityProvider).isAway) return null;
   final mark = ref.watch(songMarksProvider.select((marks) => marks[id]));
   if (mark == null) return null;
   return mark.liveAt(ref.read(songMarksClockProvider)()) ? mark : null;
@@ -88,7 +88,7 @@ class SongMarks extends Notifier<Map<String, EncoreUnavailable>> {
   /// Asks about the songs of a list that were not asked about lately. Never throws; does nothing where nothing can be asked.
   Future<void> check(TrackList list) async {
     if (list.isEmpty) return;
-    if (ref.read(serverAwayProvider)) return;
+    if (ref.read(serverReachabilityProvider).isAway) return;
     final now = ref.read(songMarksClockProvider)();
     // **A refusal ends the trust in "no problem" at once.** The server has just told this phone that its memory of what it cannot get changed (a
     // stream was refused for good, or a tap found the song marked): every answer of before may be stale, so every list asks again now. The phone does not
@@ -211,7 +211,7 @@ class TrackList {
 final songMarksCheckProvider =
     FutureProvider.autoDispose.family<void, TrackList>((ref, list) async {
   // When the phone is no longer away the list is asked about again (the question is not asked while it is), and after a refusal.
-  ref.watch(serverAwayProvider);
+  ref.watch(serverReachabilityProvider.select((r) => r.isAway));
   ref.watch(songRefusalsProvider);
   // A provider may not change another while it is being built: let this build finish before the marks are touched.
   await Future<void>.value();

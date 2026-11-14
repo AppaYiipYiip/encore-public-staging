@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:encore/app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_api.dart';
 import 'package:encore/data/encore/encore_instant.dart';
 import 'package:encore/features/common/playability.dart'
-    show kNotAvailableWords, kNotDownloadedWords, serverAwayProvider;
+    show kNotAvailableWords, kNotDownloadedWords;
 import 'package:encore/features/common/widgets.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/providers.dart';
@@ -13,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import '../support/fake_encore_server.dart';
+import '../support/reachability.dart';
 import '../support/test_app.dart';
 
 /// B-128, the playlist (S-17) and Liked Songs (S-15) rows (drawn in #59): a song of the library that the server holds no file of and already knows it
@@ -42,7 +45,8 @@ void main() {
     final app = await pumpApp(tester, size: const Size(390, 1400), overrides: [
       playbackFacadeProvider.overrideWithValue(facade),
       enginePlaybackFacadeProvider.overrideWithValue(facade),
-      serverAwayProvider.overrideWith((ref) => away),
+      serverReachabilityProvider.overrideWith(() => ReachabilityFrom(
+          () => away ? ServerReachability.serverAway : ServerReachability.ok)),
       instantBackendProvider.overrideWith((ref) async => EncoreInstantBackend(
             api: EncoreApi(
               dio: Dio()..httpClientAdapter = server.adapter,

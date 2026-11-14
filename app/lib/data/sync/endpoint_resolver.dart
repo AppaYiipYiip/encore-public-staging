@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 
 import '../../core/logger.dart';
 import '../../core/server_url.dart';
+import '../../domain/server_reachability.dart' show ServerFinding;
 
 /// One candidate way to reach a server (ADR-028), e.g. "Home" (LAN) or
 /// "Tailscale".
@@ -89,19 +90,17 @@ class EndpointResolver {
   bool _verified;
   Future<ServerEndpoint?>? _inFlight;
   int _consecutiveFailures = 0;
-  bool _reachable = false;
-  bool _knownDown = false;
+  ServerFinding _finding = ServerFinding.unknown;
   Uri? _anotherServerAt;
-  final StreamController<bool> _reachability =
-      StreamController<bool>.broadcast();
+  final StreamController<ServerFinding> _findings =
+      StreamController<ServerFinding>.broadcast();
   final StreamController<Uri?> _anotherServer =
       StreamController<Uri?>.broadcast();
 
-  void _setReachable(bool value) {
-    if (value) _knownDown = false;
-    if (value == _reachable) return;
-    _reachable = value;
-    if (!_reachability.isClosed) _reachability.add(value);
+  void _setFinding(ServerFinding value) {
+    if (value == _finding) return;
+    _finding = value;
+    if (!_findings.isClosed) _findings.add(value);
   }
 
   /// Base URL requests should use right now: the last winner of the race, or - when verification is required and no address has proved
@@ -119,9 +118,10 @@ class EndpointResolver {
   /// the next race has found an address that proves itself.
   void invalidate() {
     if (requireVerified) _verified = false;
-    // What was learned about the old network says nothing about this one.
-    _knownDown = false;
+    // What was learned about the old network says nothing about this one, for every reader alike (docs/31 CN-4b): the finding is not known again
+    // until the next race has looked.
     _setAnotherServer(null);
+    _setFinding(ServerFinding.unknown);
   }
 
   /// Adds addresses the server itself told this phone about (`GET /encore/api/v1/server`); known ones are left alone. They are only ever
@@ -133,8 +133,15 @@ class EndpointResolver {
     }
   }
 
-  /// `true` once a probe has succeeded and until a full resolution fails.
-  bool get isReachable => _reachable;
+  /// What the last look found, the one raw fact about the server itself (docs/31): [ServerFinding.unknown] before the first look and after the
+  /// network changed, [ServerFinding.answering] once a probe has succeeded (or a request has worked) and until a full resolution fails,
+  /// [ServerFinding.silent] when a look at every address found none that answers, [ServerFinding.anotherServer] when none proved itself and one
+  /// answered with the key of another server. Not knowing is not a reason to refuse a song (field test 2026-10-31: with 4G on and no data the
+  /// player waited on a song that was not downloaded): readers treat [ServerFinding.unknown] as "may try".
+  ServerFinding get finding => _finding;
+
+  /// Emits whenever [finding] changes (including back to [ServerFinding.unknown] when the network changes).
+  Stream<ServerFinding> get findings => _findings.stream;
 
   /// An address that **answered, but with the key of another server** (docs/31 CN-11), when the last race found no address that proves
   /// itself; `null` when the server was found, when the addresses simply did not answer, before the first look and after the network changed.
@@ -150,17 +157,8 @@ class EndpointResolver {
     if (!_anotherServer.isClosed) _anotherServer.add(value);
   }
 
-  /// A look at every address found none that answers (the radio is on and there is no data, a captive Wi-Fi, the server is off), and
-  /// nothing has worked since. Unlike `!isReachable` it is `false` before the first look and after the network changed: not knowing is not
-  /// a reason to refuse a song (field test 2026-10-31: with 4G on and no data the player waited on a song that was not downloaded).
-  bool get isKnownUnreachable => _knownDown;
-
   /// Emits whenever the chosen endpoint changes.
   Stream<ServerEndpoint> get changes => _changes.stream;
-
-  /// Emits `true` or `false` whenever [isReachable] changes (the app tells the
-  /// person when the server cannot be reached).
-  Stream<bool> get reachability => _reachability.stream;
 
   /// Races the candidates. Returns the winner, or `null` if none answered
   /// (in which case [current] is left untouched).
@@ -206,7 +204,7 @@ class EndpointResolver {
     if (winner != null) {
       _verified = true;
       _setAnotherServer(null);
-      _setReachable(true);
+      _setFinding(ServerFinding.answering);
       _consecutiveFailures = 0;
       if (winner != _current) {
         _current = winner;
@@ -216,11 +214,12 @@ class EndpointResolver {
     } else {
       // Nothing proved itself: the last winner may now be somebody else's address (another network), so it is not used any more.
       if (requireVerified) _verified = false;
-      _knownDown = true;
       final wrong = _anotherServers?.call().toSet() ?? const <Uri>{};
       _setAnotherServer(
           raced.map((e) => e.url).where(wrong.contains).firstOrNull);
-      _setReachable(false);
+      _setFinding(_anotherServerAt == null
+          ? ServerFinding.silent
+          : ServerFinding.anotherServer);
       Log.info('endpoint', 'no endpoint reachable');
     }
     return winner;
@@ -239,12 +238,12 @@ class EndpointResolver {
 
   void reportSuccess() {
     _consecutiveFailures = 0;
-    _setReachable(true);
+    _setFinding(ServerFinding.answering);
   }
 
   Future<void> dispose() async {
     await _changes.close();
-    await _reachability.close();
+    await _findings.close();
     await _anotherServer.close();
   }
 }

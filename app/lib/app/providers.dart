@@ -216,23 +216,10 @@ final streamQualityProvider = Provider<AudioQuality>((ref) {
       : choice;
 });
 
-/// The reader of Android's own "this network has internet" check (see [NetworkValidation]). Replaced by a fake in tests.
+/// The reader of Android's own "this network has internet" check (see [NetworkValidation]), a RAW fact: only the one state of reachability asks it,
+/// at the moment it decides (`serverReachabilityProvider`). Replaced by a fake in tests.
 final networkValidationProvider =
     Provider<NetworkValidation>((ref) => MethodChannelNetworkValidation());
-
-/// Whether the phone has a network at all (`true` while that is not known yet). The address resolver keeps saying "reachable" after the
-/// phone lost its network (nothing tells it), so a page that says the server is working must ask this as well (Q31).
-final phoneOnlineProvider = Provider<bool>(
-    (ref) => ref.watch(networkKindProvider).value != NetworkKind.none);
-
-/// Raw connectivity hint (not truth - see EndpointResolver).
-final connectivityProvider = StreamProvider<bool>((ref) async* {
-  final connectivity = Connectivity();
-  bool isOnline(List<ConnectivityResult> r) =>
-      r.any((e) => e != ConnectivityResult.none);
-  yield isOnline(await connectivity.checkConnectivity());
-  yield* connectivity.onConnectivityChanged.map(isOnline).distinct();
-});
 
 // ------------------------------------------------------------- artwork
 

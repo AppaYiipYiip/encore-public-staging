@@ -90,7 +90,8 @@ void main() {
       connectionGraceProvider.overrideWithValue(Duration.zero),
       connectionShownForProvider.overrideWithValue(const Duration(seconds: 1)),
       networkKindProvider.overrideWith((ref) => Stream.value(NetworkKind.wifi)),
-      serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+      serverFindingProvider
+          .overrideWith((ref) => Stream.value(ServerFinding.silent)),
       downloadedIdsProvider.overrideWith((ref) => Stream.value(<String>{})),
     ]);
     await tester.pump(const Duration(milliseconds: 50));

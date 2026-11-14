@@ -51,7 +51,8 @@ void main() {
         networkKindProvider.overrideWith((ref) => Stream.value(
             how == _Away.noNetwork ? NetworkKind.none : NetworkKind.wifi)),
         if (how != _Away.noNetwork) ...[
-          serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+          serverFindingProvider
+              .overrideWith((ref) => Stream.value(ServerFinding.silent)),
           networkValidationProvider
               .overrideWithValue(_Validation(how == _Away.serverSilent)),
         ],
@@ -511,7 +512,8 @@ void main() {
       final app = await pumpApp(tester, overrides: [
         networkKindProvider
             .overrideWith((ref) => Stream.value(NetworkKind.wifi)),
-        serverReachableProvider.overrideWith((ref) => Stream.value(false)),
+        serverFindingProvider
+            .overrideWith((ref) => Stream.value(ServerFinding.silent)),
         networkValidationProvider.overrideWithValue(_Validation(true)),
         downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
         catalogueClientProvider.overrideWithValue(catalogue),

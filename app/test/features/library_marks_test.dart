@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:encore/app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import 'package:encore/data/catalogue/catalogue_models.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_api.dart';
@@ -8,7 +10,7 @@ import 'package:encore/data/encore/encore_models.dart';
 import 'package:encore/design/theme.dart';
 import 'package:encore/design/tokens.dart';
 import 'package:encore/features/common/playability.dart'
-    show kNotAvailableWords, kNotDownloadedWords, serverAwayProvider;
+    show kNotAvailableWords, kNotDownloadedWords;
 import 'package:encore/features/common/widgets.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/instant/song_refusals.dart';
@@ -21,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/factories.dart';
 import '../support/fake_catalogue.dart';
 import '../support/fake_encore_server.dart';
+import '../support/reachability.dart';
 import '../support/test_app.dart';
 
 /// B-128 (found 14 Nov 2026 on an emulator): N-13's grey row was missing on the phone that tapped the song.
@@ -120,7 +123,8 @@ void main() {
         enginePlaybackFacadeProvider.overrideWithValue(facade),
         catalogueClientProvider.overrideWithValue(
             FakeCatalogue(CatalogueResults(tracks: catalogueTracks))),
-        serverAwayProvider.overrideWith((ref) => away),
+        serverReachabilityProvider.overrideWith(() => ReachabilityFrom(() =>
+            away ? ServerReachability.serverAway : ServerReachability.ok)),
         instantBackendProvider.overrideWith((ref) async => EncoreInstantBackend(
               api: EncoreApi(
                 dio: Dio()..httpClientAdapter = server.adapter,

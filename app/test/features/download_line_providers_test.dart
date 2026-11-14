@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:encore/app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import 'package:encore/app/providers.dart';
 import 'package:encore/core/clock.dart';
 import 'package:encore/data/encore/encore_api.dart';
@@ -9,7 +11,6 @@ import 'package:encore/data/encore/encore_models.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/domain/download_line.dart';
 import 'package:encore/domain/storage_guard.dart';
-import 'package:encore/features/common/playability.dart';
 import 'package:encore/features/downloads/download_line_providers.dart';
 import 'package:encore/features/downloads/download_providers.dart';
 import 'package:encore/features/downloads/keep_providers.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_encore_server.dart';
+import '../support/reachability.dart';
 
 class _Settings extends SettingsController {
   _Settings({required this.wifiOnly});
@@ -95,7 +97,8 @@ void main() {
       keepDebounceProvider.overrideWithValue(Duration.zero),
       clockProvider.overrideWithValue(clock),
       pinStateProvider.overrideWith((ref, arg) => Stream.value(phone)),
-      serverAwayProvider.overrideWithValue(away),
+      serverReachabilityProvider.overrideWith(() => FixedReachability(
+          away ? ServerReachability.serverAway : ServerReachability.ok)),
       networkKindProvider.overrideWith((ref) => Stream.value(network)),
       settingsProvider.overrideWith(() => _Settings(wifiOnly: wifiOnly)),
       ...more,

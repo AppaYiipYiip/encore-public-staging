@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/connection.dart'
+    show ServerReachability, serverReachabilityProvider;
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../data/db/app_database.dart';
@@ -30,8 +32,8 @@ class YouDrawer extends ConsumerWidget {
     final news = ref.watch(newsProvider);
     final canManage = ref.watch(peopleProvider).value?.canManage ?? false;
     final jam = ref.watch(jamEntryShownProvider);
-    final reachable = ref.watch(phoneOnlineProvider) &&
-        (ref.watch(sessionProvider).value?.endpoints.isReachable ?? false);
+    final reachable =
+        ref.watch(serverReachabilityProvider) == ServerReachability.ok;
     final several = profiles.length > 1;
 
     // Closes the drawer, then opens the place (both in the same breath, while the context is still there).

@@ -119,11 +119,11 @@ void main() {
           me_: const PeopleMe(
               user: 'owner', isAdmin: true, sharing: false, canInvite: true))
         ..meAnswers.add(const Result.err(NetworkFailure('Cannot reach')));
-      final reachable = StreamController<bool>();
+      final reachable = StreamController<ServerFinding>();
       addTearDown(reachable.close);
       final c = ProviderContainer(overrides: [
         peopleApiProvider.overrideWith((ref) async => api),
-        serverReachableProvider.overrideWith((ref) => reachable.stream),
+        serverFindingProvider.overrideWith((ref) => reachable.stream),
       ]);
       addTearDown(c.dispose);
       // The screens that show the tiles are listening, and a provider nobody listens to is paused.
@@ -131,7 +131,7 @@ void main() {
 
       expect(await c.read(peopleProvider.future), isNull,
           reason: 'the first ask found nobody to answer');
-      reachable.add(true);
+      reachable.add(ServerFinding.answering);
       await pumpEventQueue();
 
       expect((await c.read(peopleProvider.future))?.canInvite, isTrue,
@@ -143,11 +143,11 @@ void main() {
         () async {
       final api = FakePeopleApi(
           me_: const PeopleMe(user: 'owner', isAdmin: true, sharing: false));
-      final reachable = StreamController<bool>();
+      final reachable = StreamController<ServerFinding>();
       addTearDown(reachable.close);
       final c = ProviderContainer(overrides: [
         peopleApiProvider.overrideWith((ref) async => api),
-        serverReachableProvider.overrideWith((ref) => reachable.stream),
+        serverFindingProvider.overrideWith((ref) => reachable.stream),
       ]);
       addTearDown(c.dispose);
       addTearDown(c.listen(peopleProvider, (_, __) {}).close);
@@ -155,8 +155,8 @@ void main() {
       api.meAnswers.add(const Result.err(NetworkFailure('Cannot reach')));
 
       reachable
-        ..add(false)
-        ..add(true);
+        ..add(ServerFinding.silent)
+        ..add(ServerFinding.answering);
       await pumpEventQueue();
 
       expect(c.read(peopleProvider).value?.user, 'owner');
