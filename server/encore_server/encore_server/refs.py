@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from typing import Any
 
 from .errors import ApiError
@@ -221,6 +222,30 @@ def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str) -> bool
         (video_id, ref_id, video_id),
     )
     return bool(cursor.rowcount)
+
+
+#: How many music-server ids one query asks about (SQLite's limit on the numbers in one statement is lower on older builds).
+_ID_CHUNK = 400
+
+
+def file_holders(conn: sqlite3.Connection, song_ids: Sequence[str]) -> dict[str, sqlite3.Row]:
+    """The row of `song_file` that holds each of these ids of the music server, whichever ref it is attached to. A file belongs to ONE ref, and
+    the row says which: it was attached on purpose (the keeper saved it for that ref), so it is more reliable than what the file's tags say.
+    An id several refs hold (what the scan made before N-11) answers with the oldest row, the one that was attached first.
+
+    Only the id is used, never the path: the music server lists a file at a path it builds from the tags (`JAY-Z/[Unknown Album]/Empire State Of
+    Mind.opus`), the keeper saved it at its own (`Encore/JAY-Z/Singles/Empire State Of Mind.opus`), so the two never compare equal (N-11)."""
+    holders: dict[str, sqlite3.Row] = {}
+    wanted = [i for i in dict.fromkeys(song_ids) if i]
+    for start in range(0, len(wanted), _ID_CHUNK):
+        chunk = wanted[start : start + _ID_CHUNK]
+        marks = ",".join("?" * len(chunk))
+        for row in conn.execute(
+            f"SELECT id, ref, navidrome_song_id, path FROM song_file WHERE navidrome_song_id IN ({marks}) ORDER BY added_at, rowid",  # noqa: S608
+            chunk,
+        ):
+            holders.setdefault(row["navidrome_song_id"], row)
+    return holders
 
 
 def touch_file(conn: sqlite3.Connection, ref_id: str) -> int:

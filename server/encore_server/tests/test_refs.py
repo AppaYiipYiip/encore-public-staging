@@ -144,6 +144,24 @@ def test_attaching_the_same_file_twice_is_one_file(db: Database) -> None:
     assert first == second
 
 
+def test_the_holder_of_a_file_is_found_by_id_for_many_ids_and_the_oldest_row_wins(db: Database) -> None:
+    ids = [f"nd-{n}" for n in range(1050)]  # more than one query asks about at once
+    with db.tx() as conn:
+        first = refs.resolve(conn, {"title": "One", "artists": ["A"], "durationMs": 200000})["id"]
+        second = refs.resolve(conn, {"title": "Two", "artists": ["B"], "durationMs": 200000})["id"]
+        for n in (0, 400, 1049):  # at both ends of the chunks
+            refs.attach_file(conn, first, navidrome_song_id=ids[n], path=None, codec="opus", bitrate_kbps=None, source="youtube")
+        refs.attach_file(
+            conn, second, navidrome_song_id=ids[400], path=None, codec="opus", bitrate_kbps=None, source="library"
+        )  # held twice
+
+    with db.read() as conn:
+        holders = refs.file_holders(conn, [*ids, "", "nd-unknown"])
+
+    assert sorted(holders) == sorted(ids[n] for n in (0, 400, 1049))
+    assert {holders[i]["ref"] for i in holders} == {first}  # the first holder, not the later one
+
+
 def test_a_file_for_an_unknown_ref_is_not_found(db: Database) -> None:
     with pytest.raises(ApiError) as caught, db.tx() as conn:
         refs.attach_file(conn, "sr_00000000000000000000000000", navidrome_song_id="x", path=None, codec=None, bitrate_kbps=None)
