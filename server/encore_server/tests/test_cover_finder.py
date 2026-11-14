@@ -202,3 +202,18 @@ def test_a_folder_that_has_a_picture_already_and_songs_outside_the_servers_folde
     assert not (song.parent / "cover.jpg").exists()
     assert not (hosts.parent / "cover.jpg").exists()
     assert fetched == []
+
+
+def test_a_song_that_has_only_a_thumbnail_is_still_looked_for_and_the_found_cover_wins(tmp_path: Path) -> None:
+    """P1-26: the thumbnail is a fallback shown while no real cover exists; it must not stop the finder from looking."""
+    db = database(tmp_path)
+    thumb = "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"
+    with db.tx() as conn:
+        ref = refs.resolve(conn, {"title": "Nude", "artists": ["Radiohead"], "album": "In Rainbows", "thumbnailUrl": thumb})
+        library.set_item(conn, "pn_1", "like", ref["id"])
+    assert cover_of(db, str(ref["id"])) == thumb
+
+    report = CoverFinder(db, Catalogue({"Nude": PICTURE}), sleep=lambda _: None).run_once()
+
+    assert (report.looked, report.found) == (1, 1), "the thumbnail did not hide the song from the finder"
+    assert cover_of(db, str(ref["id"])) == PICTURE, "a real cover replaces the thumbnail"

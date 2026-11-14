@@ -51,6 +51,8 @@ def _song_of(track: Track) -> dict[str, Any]:
         "album": track.album,
         "durationMs": track.duration_s * 1000 if track.duration_s else None,
         "videoId": track.video_id,
+        # A fallback picture, kept apart from the real cover so that the cover finder still looks for one (P1-26).
+        "thumbnailUrl": track.thumbnail,
     }
 
 
