@@ -9,7 +9,7 @@ song" pipeline). Nothing is downloaded here: this only reads the list.
 * **YouTube / YouTube Music** playlists are listed through YouTube Music's own web interface (`ytmusicapi`): the real
   title, artists, album, length and video id of every entry, about 1.5 s for 150 songs. When that cannot read a
   playlist, yt-dlp lists it without downloading (`--flat-playlist`); those lists carry video titles
-  ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart here. Either way the
+  ("Artist - Song (Official Video)") and the channel, so the artist and the song are teased apart (`uploads.py`). Either way the
   video id is kept: for YouTube's own audio upload of a song it *is* the song (nothing is searched), and otherwise,
   when a song cannot be found by name, the video the person saved is used.
 
@@ -28,6 +28,10 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+from .uploads import DECLARED, Reading, is_topic, read_declared, read_official_video, read_upload
+from .uploads import clean_title as clean_title  # re-exported: the name the tests and callers know
+from .uploads import split_artist_title as split_artist_title  # re-exported: the name the tests and callers know
 
 log = logging.getLogger("encore_server.imports.readers")
 
@@ -74,6 +78,11 @@ class Track:
     #: The picture the source gives THIS song (YouTube's thumbnail of the video, the largest on an allowed host). It is only a fallback for a
     #: song no catalogue has a cover for: the server shows it while the song has no real cover (P1-26).
     thumbnail: str | None = None
+    #: How the artist was decided (N-26, `uploads.py`): "declared" (the source says so), "title" (the title names the performer), "channel" (nothing does:
+    #: the uploader stays, flagged) or "unknown" (nobody is named). Only `declared` and `title` are performers; the picture and page guards key on this.
+    artist_basis: str = DECLARED
+    #: The channel that uploaded the video, when the song came from an upload and not from the catalogue.
+    uploader: str | None = None
 
 
 @dataclass(frozen=True)

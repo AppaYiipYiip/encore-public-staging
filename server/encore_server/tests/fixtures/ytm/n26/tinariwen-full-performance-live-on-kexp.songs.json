@@ -1,0 +1,455 @@
+{
+ "query": "Tinariwen Full Performance Live on KEXP",
+ "filter": "songs",
+ "recorded": "2026-11-14",
+ "results": [
+  {
+   "videoId": "phSYyQ1xGKw",
+   "title": "Bismillah",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "The Radio Tisdas Sessions",
+    "id": "MPREb_Eq7tvWlhTXk"
+   },
+   "duration": "4:23",
+   "duration_seconds": 263,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "25K"
+  },
+  {
+   "videoId": "mH4BrC0E8js",
+   "title": "Amidinine",
+   "artists": [
+    {
+     "name": "Tissilawen",
+     "id": "UCLci0_aic0e0w-2h-T_50VA"
+    }
+   ],
+   "album": {
+    "name": "Amidinine",
+    "id": "MPREb_C9ACKIJN7DY"
+   },
+   "duration": "4:22",
+   "duration_seconds": 262,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2M"
+  },
+  {
+   "videoId": "PhY_ispqYLI",
+   "title": "Arawan",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Amassakoul",
+    "id": "MPREb_CWyaZs9Yz6l"
+   },
+   "duration": "4:07",
+   "duration_seconds": 247,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "165K"
+  },
+  {
+   "videoId": "HNVIfHZxXEA",
+   "title": "Mustt Mustt (Live) (feat. Tinariwen)",
+   "artists": [
+    {
+     "name": "Kiran Alhuwalia",
+     "id": null
+    }
+   ],
+   "album": {
+    "name": "Festival Au Desert 2012 Live",
+    "id": "MPREb_8KZaJ1afLTq"
+   },
+   "duration": "4:48",
+   "duration_seconds": 288,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "620"
+  },
+  {
+   "videoId": "Hga8LhyT9Io",
+   "title": "Anina",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Amadjar",
+    "id": "MPREb_6SILxSHkGlh"
+   },
+   "duration": "3:44",
+   "duration_seconds": 224,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "96K"
+  },
+  {
+   "videoId": "AwwXIBd8a4U",
+   "title": "Tamiditine",
+   "artists": [
+    {
+     "name": "Tissilawen",
+     "id": "UCLci0_aic0e0w-2h-T_50VA"
+    }
+   ],
+   "album": {
+    "name": "Eylel",
+    "id": "MPREb_icGFYf06J5N"
+   },
+   "duration": "5:51",
+   "duration_seconds": 351,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "2.6M"
+  },
+  {
+   "videoId": "ElGC9YAP5G4",
+   "title": "Ikyadarh Dim",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Aman Iman: Water Is Life",
+    "id": "MPREb_b9naIxSyYkN"
+   },
+   "duration": "3:38",
+   "duration_seconds": 218,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "92K"
+  },
+  {
+   "videoId": "0apM9nR6RD0",
+   "title": "Sawt el-wahuch",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Ishumar: Musique touarègue de résistance",
+    "id": "MPREb_5Co3R5dLfuR"
+   },
+   "duration": "7:34",
+   "duration_seconds": 454,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.9M"
+  },
+  {
+   "videoId": "OdT9bhx71g4",
+   "title": "Nak Ezzaragh Tinariwen",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Tassili",
+    "id": "MPREb_zYaSC3xW0i3"
+   },
+   "duration": "2:32",
+   "duration_seconds": 152,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "72K"
+  },
+  {
+   "videoId": "52-bGRHJHDQ",
+   "title": "Cler Achel (Live) (feat. Tinariwen)",
+   "artists": [
+    {
+     "name": "Playing For Change",
+     "id": "UCabadjLlJu6z-BMo6_drMJQ"
+    }
+   ],
+   "album": {
+    "name": "Cler Achel (Live)",
+    "id": "MPREb_y4o2wyFUz1A"
+   },
+   "duration": "3:22",
+   "duration_seconds": 202,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "366K"
+  },
+  {
+   "videoId": "NdUebm0ayzg",
+   "title": "Amidinin Wadar Nohar",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Hoggar",
+    "id": "MPREb_Jhcf2bD9WNa"
+   },
+   "duration": "3:13",
+   "duration_seconds": 193,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "159K"
+  },
+  {
+   "videoId": "PF9wEy8OGO8",
+   "title": "Dounia Tau Ray",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Hoggar",
+    "id": "MPREb_Jhcf2bD9WNa"
+   },
+   "duration": "4:01",
+   "duration_seconds": 241,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "109K"
+  },
+  {
+   "videoId": "2PPXAyiWaC0",
+   "title": "Tinariwen",
+   "artists": [
+    {
+     "name": "Inscribe",
+     "id": "UCMmMsYvHuJlOKr8PpkLFJcw"
+    }
+   ],
+   "album": {
+    "name": "Inscribe",
+    "id": "MPREb_wIyBdBE7kem"
+   },
+   "duration": "4:14",
+   "duration_seconds": 254,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.4K"
+  },
+  {
+   "videoId": "eXf8XSX8UjY",
+   "title": "Imidiwan Sadjdàt Tislim",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Inside / Outside",
+    "id": "MPREb_5D2irfBfXME"
+   },
+   "duration": "4:47",
+   "duration_seconds": 287,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "49K"
+  },
+  {
+   "videoId": "fktTas-pZOs",
+   "title": "Wartilla",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    },
+    {
+     "name": "Warren Ellis",
+     "id": "UCcEZkB25j589fcPPMVO95OQ"
+    },
+    {
+     "name": "Stephen O'Malley",
+     "id": "UCE8fxhqege6OlrvZWweb88Q"
+    }
+   ],
+   "album": {
+    "name": "Amadjar",
+    "id": "MPREb_6SILxSHkGlh"
+   },
+   "duration": "5:37",
+   "duration_seconds": 337,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "86K"
+  },
+  {
+   "videoId": "QhPfP34qXdI",
+   "title": "Tamatant Tilay",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "Aman Iman: Water Is Life",
+    "id": "MPREb_b9naIxSyYkN"
+   },
+   "duration": "3:22",
+   "duration_seconds": 202,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "320K"
+  },
+  {
+   "videoId": "l1cojCxpOSc",
+   "title": "Kek Algahalam Mas Tasossam",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "album": {
+    "name": "The Long Road",
+    "id": "MPREb_cPIHDCUOaZO"
+   },
+   "duration": "3:25",
+   "duration_seconds": 205,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "17K"
+  },
+  {
+   "videoId": "XID_NSPKHqs",
+   "title": "Tinariwen",
+   "artists": [
+    {
+     "name": "Rii7a",
+     "id": "UCDp82pkWHiR4y4iJhonGZmA"
+    }
+   ],
+   "album": {
+    "name": "Tinariwen",
+    "id": "MPREb_EKZJMV02UcI"
+   },
+   "duration": "3:35",
+   "duration_seconds": 215,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "121"
+  },
+  {
+   "videoId": "2Y5OVkxDO-o",
+   "title": "Toumast anlet",
+   "artists": [
+    {
+     "name": "Tamikrest",
+     "id": "UCgMiy1tOfcsBLNjDg766qjA"
+    }
+   ],
+   "album": {
+    "name": "Chatma",
+    "id": "MPREb_Kd26e1PhQmc"
+   },
+   "duration": "5:14",
+   "duration_seconds": 314,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1M"
+  },
+  {
+   "videoId": "2V5Sqko4NkQ",
+   "title": "Tisnant an Chatma",
+   "artists": [
+    {
+     "name": "Tamikrest",
+     "id": "UCgMiy1tOfcsBLNjDg766qjA"
+    }
+   ],
+   "album": {
+    "name": "Chatma",
+    "id": "MPREb_Kd26e1PhQmc"
+   },
+   "duration": "4:51",
+   "duration_seconds": 291,
+   "resultType": "song",
+   "videoType": "MUSIC_VIDEO_TYPE_ATV",
+   "isExplicit": false,
+   "year": null,
+   "category": "Songs",
+   "views": "1.5M"
+  }
+ ]
+}
