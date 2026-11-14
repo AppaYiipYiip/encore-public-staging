@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show Value;
+import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/common/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -120,6 +122,46 @@ void main() {
       app.facade.calls,
       contains('playTracks(5, start=1, source=The Walk, shuffle=false)'),
     );
+
+    await closeApp(tester, app.db);
+  });
+
+  // N-12 (the owner's list, 13 Nov 2026): the player opens each artist of a song on its own; the song's menu still offered one.
+  testWidgets('a song by several artists offers Go to each of them (N-12)',
+      (tester) async {
+    final app = await pumpApp(tester);
+    await (app.db.update(app.db.tracks)..where((t) => t.id.equals('al3-t1')))
+        .write(
+            const TracksCompanion(artistsJson: Value('["Periphery","Opeth"]')));
+    await openAlbum(tester);
+    await openFirstTrackMenu(tester);
+
+    expect(find.text('Go to Periphery'), findsOneWidget);
+    expect(find.text('Go to Opeth'), findsOneWidget);
+    expect(find.text('Go to artist'), findsNothing,
+        reason: 'one line per artist, not one for the first');
+
+    await tester.tap(find.text('Go to Opeth'));
+    await settle(tester);
+
+    expect(find.text('Go to album'), findsNothing, reason: 'sheet closed');
+    expect(find.text('Discography'), findsOneWidget,
+        reason: 'the page of the SECOND artist opened');
+
+    await closeApp(tester, app.db);
+  });
+
+  testWidgets(
+      'a song with one artist keeps the single Go to artist line (N-12)',
+      (tester) async {
+    final app = await pumpApp(tester);
+    await (app.db.update(app.db.tracks)..where((t) => t.id.equals('al3-t1')))
+        .write(const TracksCompanion(artistsJson: Value('["Periphery"]')));
+    await openAlbum(tester);
+    await openFirstTrackMenu(tester);
+
+    expect(find.text('Go to artist'), findsOneWidget);
+    expect(find.text('Go to Periphery'), findsNothing);
 
     await closeApp(tester, app.db);
   });

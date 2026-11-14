@@ -26,7 +26,12 @@ Future<bool> openArtistByName(
   final messenger = ScaffoldMessenger.maybeOf(context);
   final wanted = name.trim();
   if (wanted.isEmpty) return false;
-  final mine = await ref.read(libraryMatcherProvider)?.findArtist(wanted);
+  // Both providers are read BEFORE the first `await`: the widget that asked (a menu's sheet, the player) can be closed while the lookup runs, and
+  // its `ref` is dead from then on. Read after the await, the catalogue read threw inside the lookup's own try and the person was told
+  // "Could not find ..." for an artist that exists (N-12).
+  final matcher = ref.read(libraryMatcherProvider);
+  final catalogue = ref.read(catalogueClientProvider);
+  final mine = await matcher?.findArtist(wanted);
   if (!context.mounted) return false;
   if (mine != null) {
     beforeOpen?.call();
@@ -37,8 +42,7 @@ Future<bool> openArtistByName(
   CatalogueArtist? found;
   try {
     // Artists only: the full search also asks for albums and songs, three requests where one is enough.
-    final artists =
-        await ref.read(catalogueClientProvider).searchArtists(wanted, limit: 8);
+    final artists = await catalogue.searchArtists(wanted, limit: 8);
     final ranked = rankNamesakes(wanted, artists);
     found = ranked.isEmpty ? null : ranked.first;
   } on Object catch (error) {
