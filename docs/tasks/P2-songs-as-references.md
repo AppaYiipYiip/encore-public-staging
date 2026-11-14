@@ -125,9 +125,9 @@ song title and **how the artist was decided** (`basis`).
 
 | What the source says | The artist is | `basis` |
 |-|-|-|
-| `videoType` ATV, OFFICIAL_SOURCE_MUSIC or OMV; or **no `videoType` on an entry that is unavailable or has an album** (a removed catalogue entry: the recorded ones have both) | the artists YouTube Music declares ("- Topic" and "VEVO" stripped) | `declared` |
+| `videoType` ATV, OFFICIAL_SOURCE_MUSIC or OMV; or **no `videoType` on an entry that has an album** (a removed catalogue entry: the recorded ones have one; "unavailable" alone is NOT evidence, see the amendment under "Slice 1, as built") | the artists YouTube Music declares ("- Topic" and "VEVO" stripped) | `declared` |
 | a "- Topic" channel (yt-dlp has no `videoType`) | the channel without "- Topic" | `declared` |
-| `videoType` UGC, **any value this code does not know** (a missing one on an available entry with no album included), or yt-dlp's flat listing | what the title says, else the uploader (below) | `title` / `channel` |
+| `videoType` UGC, **any value this code does not know** (a missing one on an entry with no album included, available or not), or yt-dlp's flat listing | what the title says, else the uploader (below) | `title` / `channel` |
 | a Spotify, file or catalogue description | as given | `declared` |
 
 An unknown `videoType` is an upload on purpose: the safe default never trusts the uploader's name as a performer (values seen in the wild but not yet recorded, such as a person's own uploaded track or a podcast episode, are uploads until step 0 records them). An upload is read in this order (slice 1):
@@ -243,6 +243,8 @@ the basis `unknown` on the ref and treat it like `channel` in its own rule. (d) 
 service gave them), not `get_playlist` answers: a test builds a playlist entry from the shape of `playlist_album.json` filled with the recorded values. (f) Names are compared by
 their letters in any alphabet (`uploads._name_key`); the server's own `textnorm.ascii_fold` still folds an Arabic or Cyrillic name to nothing (B-37 / P2-25), a test pins
 that, and the day P2-25 gives the server one fold, `_name_key` is replaced by it in the same change.
+
+**Slice 1 amendment, found on the real stack (14 Nov 2026, the lead's import of "Best KEXP Live Performances", 29 entries, 27 uploads credited to KEXP).** 27 were filed under their performer; two were still under KEXP: "Nneka - Heartbeat (Live on KEXP)" and "Foals - Full Performance (Live on KEXP)". They are REMOVED UPLOADS: `videoType` None, `isAvailable` False, no album, the artist the uploading channel, no video id. The first rule took "no `videoType` and unavailable OR with an album" for a removed song of the catalogue; the recorded removed catalogue songs are unavailable, but they also have an album, and an unavailable entry carries no evidence of its own. **An entry with no `videoType` is the catalogue's own only when it has an album**; otherwise it is an upload and its title is read (Nneka, title `Heartbeat (Live on KEXP)`, basis `title`, uploader KEXP). The two real entries are recorded (`tests/fixtures/ytm/n26/kexp_removed_uploads.get_playlist.json`), with the control that a removed entry WITH an album stays `declared` and an invariant over every recorded upload (no entry whose title names another performer before a separator is filed under its channel). The first recordings could not show this: every recorded removed entry was a catalogue song.
 
 **Risks.** The gate trusts YouTube Music's own metadata for OMV from one recorded entry (Lil Wayne): step 0 must record an OMV from a *label* channel before
 slice 1 merges. `videoType` is read from a library (`ytmusicapi`) that can change: an unknown or missing value must never promote an uploader to a performer

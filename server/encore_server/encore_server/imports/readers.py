@@ -250,8 +250,10 @@ def _read_entry(entry: dict[str, Any], raw: str) -> Reading:
 
     What YouTube Music calls the artist of an UPLOAD (`MUSIC_VIDEO_TYPE_UGC`) is the uploading channel, so only the kinds of entry that are the catalogue's
     own are taken at their word. **Anything this code does not know is an upload on purpose**: a new `videoType` from a newer library must never promote an
-    uploader to a performer. An entry with no `videoType` at all is the catalogue's own only when YouTube no longer has the video or it has an album (the
-    recorded removed entries have both); an available one with no album is an upload."""
+    uploader to a performer. An entry with no `videoType` at all is the catalogue's own **only when it has an album**: a removed catalogue song keeps its
+    album (the recorded ones do), and nothing else in an entry says "a song of the catalogue". `isAvailable: False` proves nothing: a removed UPLOAD is
+    unavailable too, with no `videoType`, no album and the uploading channel as its artist, and the real stack filed two of them under KEXP when
+    unavailable counted as evidence (found 14 Nov 2026, "Best KEXP Live Performances"). An entry with no `videoType` and no album is an upload."""
     listed = [a for a in entry.get("artists") or [] if isinstance(a, dict)]
     named = [str(a.get("name") or "") for a in listed]
     kind = entry.get("videoType")
@@ -260,7 +262,7 @@ def _read_entry(entry: dict[str, Any], raw: str) -> Reading:
     if kind == _OFFICIAL_VIDEO:
         return read_official_video(raw, named)
     album = entry.get("album")
-    if not kind and (entry.get("isAvailable") is False or (isinstance(album, dict) and str(album.get("name") or "").strip())):
+    if not kind and isinstance(album, dict) and str(album.get("name") or "").strip():
         return read_declared(raw, named)
     # The first listed name is the channel (the raw name: `read_upload` does its own "- Topic" and "VEVO" handling).
     return read_upload(raw, named[0] if named else "")
