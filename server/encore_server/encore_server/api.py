@@ -70,6 +70,7 @@ from .navidrome_admin import NavidromeAdmin
 from .notifications import DEFAULT_PAGE, MAX_PAGE, Notifications
 from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
+from .ref_janitor import RefJanitor
 from .scanner import LibraryLinker
 from .scheduler import PROMOTE_MANY, Scheduler
 from .sources.youtube.errors import DownloadError
@@ -1701,11 +1702,14 @@ def create_app(
         else None
     )
 
+    ref_janitor = RefJanitor(database)
+
     def errands() -> None:
         for errand in (
             accounts.heal_libraries,
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
+            ref_janitor.run_once,  # N-27: the song refs nobody points at (after the finders: they look at refs too)
         ):
             try:
                 errand()
