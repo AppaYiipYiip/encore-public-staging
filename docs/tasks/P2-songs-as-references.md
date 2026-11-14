@@ -82,6 +82,163 @@ Every write is idempotent (client-generated ids for playlists/entries) so the ap
 * **Acceptance.** J-04 (189 songs in Your Library ≤ 5 s, right count, song 57 audible ≤ 3 s); a 1,000-song Spotify export file:
   playlist visible ≤ 15 s.
 
+### N-26 — Who is the artist of an imported upload (design; audit B-125) — Size M, five slices
+
+*Design only: no code exists. Slices 1 and 2 are the fix; 3, 4 and 5 each wait for the proof or the trigger named in them.*
+
+**What goes wrong.** A YouTube upload is not a song of a catalogue. YouTube Music's own list says who the *uploader* is and calls that the artist. The importer
+files the song under it: "Tinariwen - Full Performance (Live on KEXP)" becomes a song of an artist named KEXP, which then has a folder, an artist page and a
+picture look-up of its own. More than half of the 100 artists the music server had no picture for (N-15) were channels, labels or accounts, not performers.
+
+**1. The cause, proved** (the real functions called on the real strings; the code of commit 346883b; the JSON around the strings is the shape of a recorded
+entry, because no recorded answer of a person's upload exists yet, see slice 1 step 0).
+
+| Reader (production: YouTube Music; fallback: yt-dlp) | Input: video title / uploader channel | Output (artist, song) | Why |
+|-|-|-|-|
+| `_ytmusic_tracks` (`videoType` UGC, and also with none) | `Tinariwen - Full Performance (Live on KEXP)` / KEXP | **KEXP**, the whole title | `names[0]` of `artists` is taken for every kind of entry; the title is never read |
+| same | `Sepultura, live at Hellfest Open Air 2026 – ARTE Concert` (en dash) / ARTE Concert | **ARTE Concert**, the whole title | same |
+| same | `DAN DA DAN Opening \| Otonoke by Creepy Nuts` / Crunchyroll | **Crunchyroll**, the whole title | same |
+| `_youtube_tracks` → `split_artist_title` | the first / KEXP | **`Full Performance (Live on KEXP)`**, `Tinariwen` (sides swapped) | `_is_channel` is a substring test on letters only: "kexp" is inside "fullperformanceliveonkexp", so the right side "is the channel" and the sides swap |
+| same | the second / ARTE Concert | **ARTE Concert**, the whole title | an en dash is not a separator; no separator makes the channel the artist |
+| same | the third / Crunchyroll | **Crunchyroll**, the whole title | no " - " in the title makes the channel the artist |
+
+The first three rows are exactly the rows stored on the test server (audit B-125): the stored rows came from the YouTube Music reader, the one a server with
+`ytmusicapi` uses. The yt-dlp reader (a server without it, or when it fails) is wrong in its own way. **Two causes, one consequence:** (C1, primary) the
+YouTube Music reader trusts the uploader for every kind of entry; (C2, fallback only) the channel test is a substring test, ASCII-only (`_fold` keeps
+a-z0-9, so an Arabic, Japanese or Cyrillic name folds to nothing and is silently "no evidence": the same trap as B-37 / P2-25), and only a hyphen with
+spaces is a separator. (The recorded video *search* `tests/fixtures/ytm/surah-al-baqarah-mishary-alafasy.videos.json` shows the same shape: a video hit's `artists` is its uploading channel, "Alafasy Recitations".) Entries that are right today and must stay so: in the recorded `tests/fixtures/ytm/playlist_community.json` 146 entries are
+`MUSIC_VIDEO_TYPE_ATV`, 1 is `OMV` (Lil Wayne, "Lollipop"), 2 are removed catalogue entries with no `videoType` and an album; `playlist_album.json` has 10
+`ATV`. Reproduce: from `server/encore_server` of the live clone, `python -c` (NOT a script path, NOT `-I`) calling `read_playlist(url, ytmusic=lambda i: data)`
+and `split_artist_title(title, channel)`. **Trap:** `C:/dev/venv-encore-server` has `encore_server` installed from the OLD archive clone `encore\`; a script
+started by path (or with `-I`) imports that copy. Run `python -m pytest` or `python -c` from the live clone's `server/encore_server` and print
+`encore_server.__file__` first.
+
+Who else could store a channel as an artist (checked by search): the **file import** (`import_file.dart` → `refs.parse_item`) takes the artist column the
+file gives (Spotify exports, Exportify, a YouTube Music takeout "library songs" file: the file's own artist, not an uploader; whether a takeout row of an
+upload carries the channel is not known without a real takeout file); **`lean.candidate_from_video`** reads the channel of a *search hit* as the artist, but a
+`Candidate` is only scored and never becomes a ref's artist (only `scoring.py` reads `.channel`); the future catalogue search (P2-12, "video" and "song"
+hits tapped into refs) **must go through the same door** (below). No other reader exists.
+
+**2. The rule: the channel is the uploader, and the uploader is evidence, not the artist.** One function, `read_upload(title, uploader, *, kind,
+declared)`, in its own module next to `readers.py`; both readers call it; so will the file import if a takeout needs it and P2-12. It returns the artist, the
+song title and **how the artist was decided** (`basis`).
+
+| What the source says | The artist is | `basis` |
+|-|-|-|
+| `videoType` ATV, OFFICIAL_SOURCE_MUSIC or OMV; or **no `videoType` on an entry that is unavailable or has an album** (a removed catalogue entry: the recorded ones have both) | the artists YouTube Music declares ("- Topic" and "VEVO" stripped) | `declared` |
+| a "- Topic" channel (yt-dlp has no `videoType`) | the channel without "- Topic" | `declared` |
+| `videoType` UGC, **any value this code does not know** (a missing one on an available entry with no album included), or yt-dlp's flat listing | what the title says, else the uploader (below) | `title` / `channel` |
+| a Spotify, file or catalogue description | as given | `declared` |
+
+An unknown `videoType` is an upload on purpose: the safe default never trusts the uploader's name as a performer (values seen in the wild but not yet recorded, such as a person's own uploaded track or a podcast episode, are uploads until step 0 records them). An upload is read in this order (slice 1):
+
+1. **A title with a dash (hyphen, en dash, em dash, with spaces, outside brackets) is `Artist - Song`.** The channel only breaks the tie the other way: when it
+   is a *whole name* of an artist the RIGHT side lists ("BELLAKEO (Video Oficial) - Peso Pluma, Anitta" on the channel Peso Pluma) the title is `Song - Artist`.
+   "Whole name" = Unicode-folded (NFKC, case-folded, letters and digits of any script), with the channel's own decoration ("Official", "VEVO", "- Topic")
+   removed, equal to the side, or to one name of a credit list (`,` `&` `x` `feat.`). **Never a substring.** `basis = title`, **except** when the artist is
+   reached only because the whole right side equals the uploader and names nobody else ("Sepultura, live at ... – ARTE Concert"): then `basis = channel`. The
+   title agrees with the uploader only by repeating its name, and a broadcaster and a performer look the same here. Kept as `title`: the LEFT side is the
+   channel ("Arcangel - FN8" on Arcangel) and a right side that is a credit list naming someone else ("... - Peso Pluma, Anitta"). **Cost, written down:** a
+   performer's own "Song - Artist" upload is weak too; slice 2's rule (a name with one `declared` or `title` song is an artist) absorbs it.
+2. **No dash: the uploader, `basis = channel`** (a VEVO channel is the artist's own: its name without "VEVO", still `channel`, because "TaylorSwiftVEVO" has
+   no space). This is the one stop-gap and it is named below.
+3. **Brackets never decide who the artist is.** A bracket that names a venue, a show or a label ("(Live on KEXP)", "(Live at Wembley)", "[A COLORS SHOW]")
+   stays in the song title, as `clean_title` keeps it today: it says which recording this is.
+
+Slice 4 adds the *shapes of context* the audit's other two examples need, each behind a negative corpus (section 5): `Artist, live at Venue` and
+`<Artist, live at V> – <the channel's own name>` (the right side is a credit, not the artist: ARTE), and `<Show> Opening | <Song> by <Artist>` (anime openings:
+the "by" form is read **only** after a series label that ends in "Opening" or "Ending", never alone: "Stand By Me" must stay a song). Prototype run (scratch
+file, not part of any PR) over the audit's three strings: slice 1 alone gives Tinariwen right and leaves ARTE Concert and Crunchyroll as today; with slice 4
+all three come out right (`Tinariwen` / `Sepultura` / `Creepy Nuts`); over 17 titles that are correct today (`Ed Sheeran - Stand By Me`, `Ed Sheeran - Shape of You | Official Video`, `Chopin - Nocturne Op. 9 No. 2 | Piano`, `Bohemian Rhapsody - Queen` on "Queen Official", `We Live in Fear`, an Arabic `Artist - Song`, ...) it
+changes nothing. A first, wider word list (`op`, `ed`, `ost`, "session", any "live in") gave the artist "Me" to `Ed Sheeran - Stand By Me`, the uploader to `Chopin - Nocturne Op. 9 No. 2 | Piano` and the artist "We" to `We Live in Fear`: **that is why the shapes are a later slice with their own corpus.**
+
+**What YouTube cannot tell us (written down, not hidden).** U1: a personal upload account whose title names nobody ("Windowpane (Official Video)" on a
+channel that is the band's own or a stranger's: the two look the same; the "official artist channel" badge is not in what `ytmusicapi` or yt-dlp's flat
+listing return, to be checked on the real answer in slice 1 step 0). U2: which side is the artist when neither is the channel (`Song - Artist` against
+`Artist - Song`; default `Artist - Song`, the dominant order, as today). U3: an upload that is not a song (a full session, a DJ set, a recitation): the song
+title is the video title, the artist is whoever is named. U4: a performer named only in the description (a flat listing has none).
+
+**The stop-gap for U1, and its removal trigger.** The channel stays as the visible artist, exactly what YouTube Music shows for that upload, flagged `channel`.
+It costs: a name that is not a performer is in the library's artist list until slice 3. The flag exists so that no such name ever gets a picture look-up or an
+artist page (sections 3, slice 2 and slice 3). **Removal trigger:** when the catalogue can identify an artist from a song's title (P2-12, the server's
+catalogue search, or N-14's catalogue artist per library artist), a background errand upgrades a `channel` song to `declared`. Proposed task: **N-26b**
+(not created: the lead decides).
+
+**3. What else reads a channel as an artist.**
+
+| Reader | Today | After |
+|-|-|-|
+| `scoring.score_plain` / `score_structured` | a *candidate's* channel equal to the wanted artist adds 2.5 ("the artist's own channel"); a wanted artist inside the candidate's title or channel adds 2.0 | **unchanged: this is the right use** (the channel as evidence of who the candidate is). `MATCHER_REVISION` stays 1 (no matcher rule changes, and an import attaches the video it came with, so nothing is searched) |
+| `lean.rank` / `artist_matches` | a *song* hit is taken only when its declared artists include the **wanted** artist | with a channel filed as the artist, the real catalogue song of an upload can never be found (a wrong song is worse than none, so "KEXP" never matches "Tinariwen"): the keeper's "better upload" search starts working for these songs once the wanted artist is the performer |
+| `refs.norm_key` / `find` | the dedup key is artist + title: a key made of the channel and the whole video title can never meet the same song described by Spotify | a performer in the key lets the same song described twice find one ref |
+| `artist_finder` (N-15) | looks a picture up for every artist the music server lists without one, by the artist's own songs; a channel gets none *by accident*: no catalogue track has that artist and that title | slice 2 makes it a rule: a name whose songs are **all** `channel` is skipped (about three look-ups a week saved per such name, from the Host's address); a name with one song that is `declared` or `title` is an artist |
+| the music server's artist list | the keeper writes `ALBUMARTIST = album_artist or artist`, so every channel is an album artist with the album "[Unknown Album]"; N-15 saw that artists with no album are not in `getArtists` | slice 3, after a proof on the real music server in CI (its integration job): whether songs flagged `channel` can be kept out of the Artists list through the tags |
+| P2-12 catalogue search, N-14 | not built | read `basis`: a `channel` artist is never linked to a catalogue artist |
+
+**4. Rows already stored.** Fixing the readers changes only new imports. `refs._enrich` never rewrites a stored artist or title (identity: likes, playlists and
+the kept file point at the ref), so importing the same link again finds the old ref by its video id and keeps the old, wrong artist. Facts to keep, so that
+this and any later, better rule is a re-derivation and not a guess (slice 2, one migration): `song_ref.artist_basis` (`declared` / `title` / `channel` / null for
+a ref made before this or by a client) and `song_ref.uploader` (the channel's name, when the song came from an upload). Set only by the importer through
+keyword arguments of `refs.resolve`, **never parsed from a client's JSON** (`parse_item` is shared with phones; a client cannot mark itself "declared"). `_enrich` fills a null basis only when the artist agrees.
+
+*What a repair of a stored wrong row needs (slice 5, sketch; its own note before code).* The row is recognised exactly: its stored artist equals the
+uploader (stored, or, for a ref made before slice 2, got by reading the import's playlist again, one YouTube Music call per playlist) **and** the new reading says
+otherwise. A true "channel" song reads the same twice and is never touched. Then: (a) update `artists`, `title`, `norm_key`, `artist_basis` of the ref; likes,
+playlist entries and plays point at the ref and survive; a changed `norm_key` may now equal another ref's (the index is not unique): two refs for one song is
+the B-71 situation (`find` returns the first), not new, and no merge by name is attempted (`refmerge.py` merges only refs that share a file: "never on the
+name alone"); (b) the kept file under `Encore/KEXP/...` needs its tags rewritten, its folder changed and a scan: the keeper has no "re-place a kept file" step
+today and a moved file is a new song for the music server (its ids follow the path), so the phone learns it through the files feed like any replaced file; (c)
+the artist's old folder and its `artist.jpg` are left to the Host. **Recommended default (decided here, yours to overrule): do not build slice 5 now.** The
+test server's rows are test data and are reset and re-imported by the lead; no stranger has a library yet (no published image, the join and invite steps
+are not walked; nobody else has an install: P2-11 is closed for the same reason). That holds only while slices 1 and 2 are in the **first public image**:
+add that to `RELEASE-CANDIDATE.md` as a gate. **Trigger to build slice 5:** any install other than the owner's test server holds an import made before them.
+
+**5. Tests** (the repo's style: recorded real answers, never a network call).
+* Slice 1 step 0, once: record the real `get_playlist` answers of the playlists the owner imported (their ids are in the test server's `import` table; one
+  look-up per playlist, at most ten in all and spaced: the repository's own rule for YouTube; `tools/record_ytm_fixtures.py` records search answers today and gets a playlist case) into `tests/fixtures/ytm/`, trimmed to the entries that matter
+  (the three audit videos, an OMV from a label channel, a UGC of a performer's own channel). Until then a test says in its comment that the JSON around the real
+  title and channel is constructed from the recorded OMV entry. Check there what `videoType` and `artists[].id` really hold for an upload.
+* `tests/test_import_upload_reading.py`, a table (title, channel, `videoType`) -> (artist, song, basis): the audit's three strings; every case of
+  `SplitArtistTitleTest`; the performer's own channel on the same titles; `Song - Artist` with the channel in a credit list; a channel that is a substring of the
+  other side ("KEXP" in "(Live on KEXP)", "Queen" in "Queen Official"); the right side equal to the channel alone (`channel`) against a credit list
+  (`title`); an en and an em dash; an Arabic `Artist - Song` on the artist's own channel and an
+  Arabic channel that equals nothing; an unknown `videoType`; no dash. **Each guard is mutation-checked** (revert the gate, revert the whole-name test: the
+  named case must fail).
+* The invariance test (blocks slice 1): all 149 entries of `playlist_community.json` and 10 of `playlist_album.json` give exactly the artists they give today
+  (every one is `declared`); with `videoType` removed from them all, the entries that have an album are still `declared`.
+* Slice 2: a `channel` ref's artist gets no look-up in `test_artist_finder.py` while a name with one `declared` song does; `_enrich` never rewrites artists and
+  fills a null basis only when the artist agrees; a client's `artistBasis` is ignored; the migration on a database with rows.
+* Slice 3: a test in `tests/integration/test_artist_pictures.py`'s style on the real music server: the answer of `getArtists` for files tagged the way slice 3
+  decides. Slice 4: the negative corpus above, kept as a table, plus every new shape with the title it came from.
+* **Must stay green:** `test_import_readers.py` and `test_imports.py` (74 tests today, all pass), the matcher tests (`scoring`, `lean`), `test_artist_finder.py`,
+  `test_cover_finder.py`.
+* **Rows that change in the same PR as the code:** audit B-125 (fix, evidence); `docs/19` section 3 gets a paragraph "who is the artist of an upload" (the table
+  of section 2 here); `docs/18` `song_ref` (slice 2: two columns); `CHANGELOG`. No row of `docs/31` to `34` changes (checked: none describes who an artist is);
+  `docs/17` does not change (no API field); `PRIVACY.md` does not change (no new outside call).
+
+**6. Slices** (each merges alone and leaves main green).
+
+| # | What | Size | A person notices | Waits for |
+|-|-|-|-|-|
+| 1 | `read_upload` (the one door, in its own module): the `videoType` gate, the whole-name Unicode channel test, all dash kinds; both readers use it; `Track` carries `artist_basis` and `uploader` in memory; fixtures and tests of section 5 | M | A new import files "Tinariwen - Full Performance (Live on KEXP)" under Tinariwen, and a performer named before a dash is no longer filed under the broadcaster or label that uploaded it. The ARTE Concert and Crunchyroll titles stay under their channels until slice 4 | step 0 (recorded answers) |
+| 2 | Keep the facts: migration (`artist_basis`, `uploader`), `refs.resolve` keyword arguments, `_enrich`, `artist_finder` skips all-`channel` names, `docs/18` | S | Nothing at once (fewer catalogue look-ups from the Host's address) | slice 1 |
+| 3 | A `channel` song never makes an artist page: first a **proof** on the real music server in CI (does a song whose `ARTIST` is X and whose `ALBUMARTIST` is not X list X in `getArtists`? N-15 saw that artists with no album are not listed); then the keeper's tags | S to M | the Artists list holds performers, not channels | slice 2 and the proof |
+| 4 | The shapes of context (live session, concert channel credit, anime opening) with their negative corpus | S | the other two audit titles come out right | slice 1; a corpus of recorded titles |
+| 5 | Repair of stored rows (section 4) | M to L | the library of an older install is tidied | the trigger of section 4 |
+
+**Risks.** The gate trusts YouTube Music's own metadata for OMV from one recorded entry (Lil Wayne): step 0 must record an OMV from a *label* channel before
+slice 1 merges. `videoType` is read from a library (`ytmusicapi`) that can change: an unknown or missing value must never promote an uploader to a performer
+(tested). A title that names the artist second ("Song - Artist" on a label channel) stays unknowable (U2). A song kept before slice 3 keeps a channel-named
+album artist in its tags.
+
+**Rejected.** (a) *Fix `_is_channel` and stop:* repairs the fallback reader and leaves the production reader, which is where the stored rows came from. (b)
+*An "is this a label?" word list* ("Records", "Music", "Entertainment"): Latin-only, open-ended, and it still cannot name the performer. (c) *Ask the catalogue
+for every ambiguous upload at import:* the import is quick and makes no outside call on purpose, a session or an opening is not a catalogue track, and there is
+no Host switch for catalogue look-ups yet (B-88, P3-09); kept as the removal trigger of the stop-gap. (d) *"Unknown Artist" for everything with no evidence:*
+loses a performer's own channel and a reciter's, which are the artist; the flag keeps the choice open. (e) *Split a credit list into several artists now:*
+"Earth, Wind & Fire" and "Simon & Garfunkel" are one artist each; not part of this cause (B-118/B-119 handle a joined name in the tags). (f) *Rewrite a stored
+artist when a later description disagrees:* the ref is the identity; a repair is an explicit step (slice 5).
+
 ## P2-05 — Import stop, progress and consistent counts (server + app) — Size S
 * **Order.** Needs: none.
 * **Why.** E8, E9.

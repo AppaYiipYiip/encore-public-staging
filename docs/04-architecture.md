@@ -123,8 +123,10 @@ tap ─► app: song ref has a local download? ── yes ─► play file (≤ 
 
 **Measured (`09` §2):** server, warm process, one search + one extraction → first audio byte in **3.0–4.0 s** under the old
 3 Mbit/s cap; 188 of 189 songs of a real playlist resolved in 53 s with 6 workers once the cap was raised (per-song p50 1.6 s).
-**Making it feel instant (N3):** the app asks the server to *prepare* (resolve, not download) the top search result after typing
-pauses for 400 ms, the first 3 songs of a page that opens, and the next 2 songs of the queue. A prepared tap starts in ~0.5–1 s.
+**Making it feel instant (N3):** the player asks the server to *prepare* the next 1 to 3 songs of the queue (`POST refs/prepare`, P1-04: the server
+finds the upload and the stream's address ahead, no audio), so a Next to a song the server has not seen does not wait for the look-up. **What is only
+browsed makes no row on an Encore server (B-126, N-27):** the top search result after typing pauses and the first songs of a page that opens used to be
+resolved ahead (a song row on the server), which left a row nobody pointed at for every pause between two letters; the tap now makes its own ref.
 
 **Two pools on the server:** *interactive* (taps and prepares; never waits behind anything) and *background* (imports' matching
 and the keeper). Measured: 6 parallel extractions made each one 9 s instead of 2 s on a 4-vCPU VM under the cap, so background

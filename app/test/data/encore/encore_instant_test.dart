@@ -71,15 +71,32 @@ void main() {
         reason: 'playing is not saving: nothing is added to the library');
   });
 
-  test('the same song is the same ref; a prepare and a tap are one question',
+  test(
+      'a prepare makes no row on the server: browsing (typing in Search, opening a list) never creates a song (B-126)',
       () async {
     await backend.prepare(request);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(server.refs, isEmpty,
+        reason:
+            'the look-up at YouTube waits for the tap, and so does the row');
+    expect(hits('refs/resolve'), 0);
+
+    final job = (await backend.start(request)).getOrThrow();
+    expect(job.id, startsWith('sr_'), reason: 'a tap still makes its ref');
+    expect(server.refs, hasLength(1));
+  });
+
+  test('the same song is the same ref, however many times it is tapped',
+      () async {
+    await backend.prepare(request); // does nothing on an Encore server (B-126)
     final first = (await backend.start(request)).getOrThrow();
     final again = (await backend.start(request)).getOrThrow();
 
     expect(again.id, first.id);
     expect(server.refs, hasLength(1));
-    expect(hits('refs/resolve'), lessThanOrEqualTo(3));
+    expect(hits('refs/resolve'), 2,
+        reason: 'one question for each tap, none for the prepare');
   });
 
   test('a song the server keeps carries its codec; no look at YouTube is made',
