@@ -1,0 +1,9 @@
+{
+ "id": "20261114T043511Z-agent-8dec",
+ "item": "P1-26",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T04:35:11Z",
+ "type": "note",
+ "body": "14 Nov 2026, FOLLOW-UPS found while merging #30 (not done): (1) all 43 songs of '00s Hip Hop without a cover have a ytm_video_id (and 321 of the 505 refs without cover on the test server do): serving https://i.ytimg.com/vi/<ytm_video_id>/hqdefault.jpg as the LAST fallback in refs.row_to_ref (only when cover_url and thumb_url are both empty) would give them a picture at once, with no re-import and without relying on the readers' thumbnail shape (documented by ytmusicapi, not verified live: the recorded fixtures dropped thumbnails); hqdefault is 4:3 with black bars on a square tile: decide whether the bars are acceptable or whether to try the square variants first. (2) ADR-R38 (clients are thin): the phone loads catalogue and thumbnail picture addresses (Deezer, ytimg, googleusercontent) itself; name this in the list of thin-client debts if it is not there (docs/11, docs/30). (3) The migration runner (db.py migrate) tracks applied versions as a SET in schema_migrations, so a lower number merged after a higher one is still applied: out-of-order numbers are safe."
+}

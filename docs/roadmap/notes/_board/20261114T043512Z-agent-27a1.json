@@ -1,0 +1,9 @@
+{
+ "id": "20261114T043512Z-agent-27a1",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T04:35:12Z",
+ "type": "note",
+ "body": "14 Nov 2026, TEST FLAKE under load: app/test/data/requests/portal_import_test.dart 'importLink posts the address and the optional name' failed once in the quick gate of a merge commit while the PC was running three test suites and an emulator, and passed 3 of 3 runs alone. If it fails again alone, investigate; otherwise it is load-sensitive (timing) and worth hardening. Also: AGENTS.md says a first push is a DRAFT PR; helpers open normal PRs: harmless while one lead merges."
+}
