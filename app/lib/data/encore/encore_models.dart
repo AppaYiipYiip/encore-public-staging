@@ -274,23 +274,71 @@ class EncoreChanges {
   final bool more;
 }
 
-/// The songs whose file changed (the browse index of what the server keeps).
+/// One song the server folded into another (N-11 part B, docs/17 "Songs merged into another"): [from] no longer exists on the server, [into]
+/// is the survivor (a live ref), and [seq] is the place in the server's own list of merges (the cursor a phone sends next time).
+@immutable
+class EncoreMerge {
+  const EncoreMerge(
+      {required this.from, required this.into, required this.seq});
+
+  /// Null for an entry that names no song or that merges a song into itself: it would change nothing, and one odd entry must not stop a sync.
+  static EncoreMerge? tryParse(Map<String, dynamic> json) {
+    final from = readString(json['from']);
+    final into = readString(json['into']);
+    if (from == null || into == null || from.isEmpty || into.isEmpty) {
+      return null;
+    }
+    if (from == into) return null;
+    return EncoreMerge(from: from, into: into, seq: readInt(json['seq']) ?? 0);
+  }
+
+  final String from;
+  final String into;
+  final int seq;
+
+  @override
+  String toString() => 'EncoreMerge($seq: $from -> $into)';
+}
+
+/// The songs whose file changed (the browse index of what the server keeps), and the songs that were merged into another.
 @immutable
 class EncoreFiles {
-  const EncoreFiles(
-      {required this.refs, required this.cursor, required this.more});
+  const EncoreFiles({
+    required this.refs,
+    required this.cursor,
+    required this.more,
+    this.merges = const [],
+    this.mergesCursor,
+    this.mergesMore = false,
+  });
 
-  factory EncoreFiles.fromJson(Map<String, dynamic> json) => EncoreFiles(
-        refs: [
-          for (final r in readObjectList(json['refs'])) EncoreRef.fromJson(r)
-        ],
-        cursor: readString(json['cursor']) ?? '0',
-        more: readBool(json['more']),
-      );
+  factory EncoreFiles.fromJson(Map<String, dynamic> json) {
+    final merges = [
+      for (final m in readObjectList(json['merges']))
+        if (EncoreMerge.tryParse(m) case final merge?) merge
+    ]..sort((a, b) => a.seq.compareTo(b.seq));
+    return EncoreFiles(
+      refs: [
+        for (final r in readObjectList(json['refs'])) EncoreRef.fromJson(r)
+      ],
+      cursor: readString(json['cursor']) ?? '0',
+      more: readBool(json['more']),
+      merges: merges,
+      mergesCursor: readString(json['mergesCursor']),
+      mergesMore: readBool(json['mergesMore']),
+    );
+  }
 
   final List<EncoreRef> refs;
   final String cursor;
   final bool more;
+
+  /// The merges after the cursor that was sent, oldest first. Empty from a server that predates merges.
+  final List<EncoreMerge> merges;
+
+  /// Where to ask from next time. Null when the server did not say (one that predates merges): the phone then keeps the cursor it has.
+  final String? mergesCursor;
+  final bool mergesMore;
 }
 
 /// `GET /encore/api/v1/info`: what this server is and can do.
