@@ -81,6 +81,7 @@ void main() {
     required PinState phone,
     bool onEncore = true,
     bool away = false,
+    ServerReachability? reach,
     NetworkKind network = NetworkKind.wifi,
     bool wifiOnly = false,
     StorageVerdict verdict = StorageVerdict.ok,
@@ -97,8 +98,8 @@ void main() {
       keepDebounceProvider.overrideWithValue(Duration.zero),
       clockProvider.overrideWithValue(clock),
       pinStateProvider.overrideWith((ref, arg) => Stream.value(phone)),
-      serverReachabilityProvider.overrideWith(() => FixedReachability(
-          away ? ServerReachability.serverAway : ServerReachability.ok)),
+      serverReachabilityProvider.overrideWith(() => FixedReachability(reach ??
+          (away ? ServerReachability.serverAway : ServerReachability.ok))),
       networkKindProvider.overrideWith((ref) => Stream.value(network)),
       settingsProvider.overrideWith(() => _Settings(wifiOnly: wifiOnly)),
       ...more,
@@ -294,5 +295,15 @@ void main() {
     expect(c.read(phoneWaitProvider), PhoneWait.connection,
         reason:
             'no network at all is "a connection", before it is "your server"');
+  });
+
+  test(
+      'a network on which Android found no internet (4G with no data) is "a connection", the word of the strip, and not "your server"',
+      () async {
+    final c = await start(phone: phone(), reach: ServerReachability.noInternet);
+
+    expect(c.read(phoneWaitProvider), PhoneWait.connection,
+        reason:
+            'the strip says offline there; the line under a download must not say "waiting for your server"');
   });
 }

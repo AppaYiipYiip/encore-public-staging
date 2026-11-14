@@ -16,9 +16,10 @@ final encoreServerInfoProvider =
   // Asked again whenever the server is lost or found, so "did not answer" does not outlive the outage (QA round 1, R1-2).
   ref.watch(serverFindingProvider);
   final session = await ref.watch(sessionProvider.future);
-  if (session == null || !session.encoreMode) return null;
+  final api = session?.encoreApi;
+  if (session == null || api == null) return null;
   await session.whenAddressKnown();
-  return (await session.encore.info()).valueOrNull;
+  return (await api.info()).valueOrNull;
 });
 
 /// "Play any song" on an Encore server: the switch, and in plain words whether new songs can be fetched at the moment. Playing a song

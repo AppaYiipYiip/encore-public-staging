@@ -73,11 +73,12 @@ final peopleServiceProvider = FutureProvider<Uri?>((ref) async {
 /// replace it).
 final encorePeopleApiProvider = FutureProvider<PeopleApi?>((ref) async {
   final session = await ref.watch(sessionProvider.future);
-  if (session == null || !session.encoreMode) return null;
+  final api = session?.encoreApi;
+  if (session == null || api == null) return null;
   // The first ask of a session would otherwise go out before any address has proved itself, fail, and never be made again.
   await session.whenAddressKnown();
   return EncorePeopleApi(
-    api: session.encore,
+    api: api,
     // An invitation goes to somebody who is probably not at home: the server's address on the internet when it has one.
     address: () => EncorePeopleApi.invitationAddress(
         [for (final e in session.endpoints.candidates) e.url],

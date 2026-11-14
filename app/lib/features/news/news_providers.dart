@@ -45,8 +45,7 @@ const int newsKept = 200;
 
 /// The Encore server's API when this phone is on one (only an Encore server keeps news), else `null`: no bell. Tests replace it.
 final newsApiProvider = Provider<EncoreApi?>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  return session != null && session.encoreMode ? session.encore : null;
+  return ref.watch(sessionProvider).value?.encoreApi;
 });
 
 /// What the server says down the live channel. Tests replace it.

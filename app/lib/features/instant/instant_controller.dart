@@ -166,10 +166,11 @@ final instantBackendProvider = FutureProvider<InstantPlayBackend?>((ref) async {
   if (uri == null) return null;
   final session = await ref.watch(sessionProvider.future);
   if (session == null) return null;
-  if (session.encoreMode) {
+  final encoreApi = session.encoreApi;
+  if (encoreApi != null) {
     final writer = EncoreWriter(ref.watch(databaseProvider), session.server.id,
         ownerName: session.server.username);
-    return EncoreInstantBackend(api: session.encore, ingest: writer.upsertRefs);
+    return EncoreInstantBackend(api: encoreApi, ingest: writer.upsertRefs);
   }
   final info = await ref.read(fetchProbeProvider)(uri);
   // A look that failed leaves what was known: a service that could stream can still.
@@ -220,7 +221,7 @@ final instantPlayServiceProvider =
     backend: backend,
     matcher: LibraryMatcher(db, serverId),
     // On an Encore server the song's row was made when it was resolved (its id is the ref's), so there is nothing to ask the music server.
-    loadSong: session.encoreMode ? repo.trackOnce : load,
+    loadSong: session.encoreApi != null ? repo.trackOnce : load,
     findSongId: (artist, title) async {
       final page = await session.client.search3(query: title, songCount: 20);
       final songs = page.valueOrNull?.songs ?? const [];

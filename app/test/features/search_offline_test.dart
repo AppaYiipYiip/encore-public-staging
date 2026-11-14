@@ -20,7 +20,7 @@ import '../support/test_app.dart';
 
 /// P1-16: Search says when the phone cannot ask the catalogue (drawn 5 Nov 2026, docs/design S-11, S-12, S-13, classes C and X).
 ///
-/// The rule these tests hold: **while the server is away (the lasting state of P1-15, `serverAwayProvider`) the catalogue is not asked and
+/// The rule these tests hold: **while the server is away (the one state of P1-17, `serverReachabilityProvider`) the catalogue is not asked and
 /// none of its rows is shown, so that "More results need your server." is true; the phone's own library still answers at once; and every
 /// sentence says what cannot be DONE, in the words of the strip's own two causes (no internet found / only the server silent).** It goes by
 /// itself when the connection is back. A server that goes silent counts only after the 4 s grace of a blink; having no network at all counts

@@ -22,8 +22,7 @@ import 'download_providers.dart';
 
 /// The Encore server's API when this phone is on one (only an Encore server keeps songs of its own), else `null`. Tests replace it.
 final keepApiProvider = Provider<EncoreApi?>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  return session != null && session.encoreMode ? session.encore : null;
+  return ref.watch(sessionProvider).value?.encoreApi;
 });
 
 /// What the server pushes down the live channel. Tests replace it.

@@ -22,7 +22,10 @@ final phoneWaitProvider = Provider<PhoneWait?>((ref) {
   final wifiOnly =
       ref.watch(settingsProvider.select((s) => s.wifiOnlyDownloads));
   if (wifiOnly && network != NetworkKind.wifi) return PhoneWait.wifi;
-  if (ref.watch(serverReachabilityProvider).isAway) return PhoneWait.server;
+  final reach = ref.watch(serverReachabilityProvider);
+  // No internet found on the network (4G with no data, a sign-in page) is "a connection", the strip's own word; only with internet found is it the server.
+  if (reach.isOffline) return PhoneWait.connection;
+  if (reach.isAway) return PhoneWait.server;
   // The queue is held back by the storage guard (the same verdict the banner in Settings shows).
   return switch (ref.watch(downloadVerdictProvider).value) {
     StorageVerdict.limitReached => PhoneWait.limit,

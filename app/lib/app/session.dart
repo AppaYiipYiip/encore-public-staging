@@ -82,7 +82,7 @@ List<ServerEndpoint> learnedAddresses(ServerRow server) {
 /// network side (sync, media URLs) in the background.
 ///
 /// A session runs in one of two modes. On a plain music server the music server is everything (stars, playlists, a dump of its songs). On
-/// an Encore server ([encoreMode]) the person's library lives in the Encore server and songs are references, with the music server kept
+/// an Encore server ([encoreApi] is not null) the person's library lives in the Encore server and songs are references, with the music server kept
 /// for what it does well: the browse index of albums and artists, covers, and the audio of kept files. A phone that knew a server as a
 /// plain one is moved over by [EncoreUpgrade] the first time that server turns out to be an Encore server.
 class ServerSession {
@@ -99,7 +99,7 @@ class ServerSession {
     required this.credentials,
     required this.playHistory,
     required this.encore,
-    required this.encoreMode,
+    required bool encoreMode,
     required this.streams,
     required this.covers,
     required this.live,
@@ -109,7 +109,8 @@ class ServerSession {
     required Dio Function() probeDio,
     required String? Function() knownKey,
     required Future<void> Function() refreshAddresses,
-  })  : _db = db,
+  })  : _encoreMode = encoreMode,
+        _db = db,
         _upgradeRunner = upgradeRunner,
         _probeDio = probeDio,
         _knownKey = knownKey,
@@ -451,16 +452,22 @@ class ServerSession {
   /// Local-first playlist editing (create, add, remove, rename, delete).
   final PlaylistEditor playlists;
 
-  /// The Encore server's API (always built; used when [encoreMode], and to find out whether this server has one).
+  /// The Encore server's API (always built, so that the first look can ask whether this server has one). **Code that talks to the Encore server
+  /// as a server of this phone reads [encoreApi], not this.**
   final EncoreApi encore;
 
   /// This server is an Encore server and this phone has been moved over to it.
-  final bool encoreMode;
+  final bool _encoreMode;
 
-  /// The signed address of every song, kept until it nearly ends (used in [encoreMode]: no login of the music server on a song's address).
+  /// The Encore server's API when this phone has been moved onto an Encore server, else `null` (P1-17, AUDIT B-17): the ONE way for code outside the
+  /// session to ask "is this an Encore server" and to talk to it. The mode itself is private: what the screens say and offer by kind reads
+  /// `serverKindProvider`, which is made of this.
+  EncoreApi? get encoreApi => _encoreMode ? encore : null;
+
+  /// The signed address of every song, kept until it nearly ends (used on an Encore server: no login of the music server on a song's address).
   final StreamAddresses streams;
 
-  /// The one ticket that opens every picture (used in [encoreMode]).
+  /// The one ticket that opens every picture (used on an Encore server).
   final CoverPassHolder covers;
 
   /// Signing out of this phone (docs/32 DV-2): the server ends this phone's device, so its token stops working and the person's device list is
@@ -497,7 +504,7 @@ class ServerSession {
   /// `true` from the moment a plain session is built until the phone KNOWS what the server is: a definite "not an Encore server" answer, or
   /// a move onto Encore that failed. It stays on while the server cannot be reached, and on the way to Encore mode (the session is replaced
   /// then). A tap on a catalogue song waits for it instead of giving up (D-24, AUDIT F33; D-64: there is no preview).
-  late final ValueNotifier<bool> detecting = ValueNotifier<bool>(!encoreMode);
+  late final ValueNotifier<bool> detecting = ValueNotifier<bool>(!_encoreMode);
 
   void _detected() {
     if (!_disposed) detecting.value = false;
@@ -518,7 +525,7 @@ class ServerSession {
       if (finding == ServerFinding.answering) unawaited(outbox.retryNow());
     });
     unawaited(client.loadExtensions());
-    if (encoreMode) {
+    if (_encoreMode) {
       scheduler.start();
       _startLive();
       unawaited(_learnAddresses());
@@ -556,7 +563,7 @@ class ServerSession {
   /// The app came to the front: check at once and listen to the server again.
   void onForeground() {
     scheduler.onForeground();
-    if (encoreMode) {
+    if (_encoreMode) {
       _startLive();
       unawaited(covers.ensure());
     }
@@ -678,7 +685,7 @@ class ServerSession {
   /// until the ticket has arrived (a second after the app starts): the image cache is keyed by picture and size, so a cached cover shows
   /// either way. A plain music server is asked with its own login, as before.
   Uri? coverArtUrl(String id, {int size = 300}) {
-    if (!encoreMode || id.startsWith('https://')) {
+    if (!_encoreMode || id.startsWith('https://')) {
       return client.coverArtUrl(id, size: size);
     }
     return covers.urlFor(id, size);

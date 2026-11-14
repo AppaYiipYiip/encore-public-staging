@@ -98,7 +98,7 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
       if (!s.endpoints.isVerified && await s.endpoints.resolve() == null) {
         throw const ServerNotAnswering();
       }
-      if (s.encoreMode) {
+      if (s.encoreApi != null) {
         // A song is a ref, and the server signs one address for it: it picks where the audio comes from (its own kept file, or YouTube), and
         // the phone needs no login of the music server. The address is kept until just before it ends; the quality rides on it.
         return withQuality(await s.streams.forRef(id),
@@ -152,18 +152,16 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     prepareAheadCount: () =>
         prepareAheadSongs(dataSaverInForce: ref.read(dataSaverInForceProvider)),
     prepareAhead: (upcoming) async {
-      final s = session();
-      if (s == null || !s.encoreMode) return;
+      final api = session()?.encoreApi;
+      if (api == null) return;
       final ids = await idsToPrepare(upcoming, downloads.localPathFor);
       if (ids.isEmpty) return;
-      await s.encore.prepare(ids);
+      await api.prepare(ids);
     },
     // A stream that failed is asked about once: the server says why (no matching upload, removed, age check), and a song it cannot have is
     // not tried a second time. Only on an Encore server, which writes that answer.
     songRefusal: (address) {
-      final s = session();
-      return askSongRefusal(
-          s == null || !s.encoreMode ? null : s.encore, address,
+      return askSongRefusal(session()?.encoreApi, address,
           // A song the server refuses for good is news for the marks: the lists on screen ask the server again at once (B-128).
           onRefusedForGood: () {
         if (ref.mounted) ref.read(songRefusalsProvider.notifier).refused();
