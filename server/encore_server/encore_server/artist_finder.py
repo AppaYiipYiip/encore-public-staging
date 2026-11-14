@@ -40,7 +40,7 @@ from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
 from .keeper.placement import artist_folder, inside
-from .textnorm import artist_parts, norm_artist, norm_title
+from .textnorm import artist_parts, is_unknown_artist, norm_artist, norm_title
 
 log = logging.getLogger("encore_server.artist_finder")
 
@@ -229,7 +229,7 @@ class ArtistFinder:
         due = [
             (artist_id, name)
             for artist_id, name in listed
-            if tried.get(artist_id) is None or now - tried[artist_id] >= RETRY_AFTER_MS
+            if (tried.get(artist_id) is None or now - tried[artist_id] >= RETRY_AFTER_MS) and not is_unknown_artist(name)
         ]
         due.sort(key=lambda item: tried.get(item[0]) or 0)
         return due

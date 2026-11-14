@@ -16,13 +16,15 @@ from __future__ import annotations
 import copy
 import json
 import pathlib
+from pathlib import Path
 from typing import Any
 
 import pytest
 
 from encore_server.imports.readers import Track, read_playlist, split_artist_title
-from encore_server.imports.uploads import UNKNOWN_ARTIST, read_declared, read_official_video, read_upload
-from encore_server.textnorm import ascii_fold
+from encore_server.imports.uploads import read_declared, read_official_video, read_upload
+from encore_server.keeper.placement import plan_placement
+from encore_server.textnorm import UNKNOWN_ARTIST, ascii_fold
 
 # =========================================================================== part 1: the rule, pure
 
@@ -237,7 +239,9 @@ def test_an_official_video_that_names_nobody_is_not_read() -> None:
 
 
 def test_the_unknown_artist_is_the_name_the_keeper_already_files_under() -> None:
-    assert UNKNOWN_ARTIST == "Unknown Artist"
+    """One definition (`textnorm.UNKNOWN_ARTIST`): the folder the keeper makes for a song with no artist is the artist the importer gives it."""
+    folder = plan_placement(Path("/music/Encore"), artist="", album=None, title="Intro").folder
+    assert folder.parent.name == UNKNOWN_ARTIST == "Unknown Artist"
 
 
 # =========================================================================== part 2: the readers, on recorded answers

@@ -23,8 +23,8 @@ from ..notifications import Notifications
 from ..scheduler import Retry, Scheduler, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
+from ..textnorm import UNKNOWN_ARTIST
 from .readers import Playlist, PlaylistError, Track, read_playlist, ytdlp_reader, ytmusic_reader
-from .uploads import UNKNOWN_ARTIST
 
 log = logging.getLogger("encore_server.imports")
 

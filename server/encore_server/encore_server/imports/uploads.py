@@ -12,7 +12,8 @@ catalogue search) and says, for each upload, **who the artist is and how that wa
 * `channel`: nothing names a performer, so the uploader stays as the visible artist, exactly what YouTube Music shows for the upload, flagged. This is the one
   named stop-gap (U1 of the design): a personal account whose title names nobody looks the same whether it is the band's own or a fan's. Removal trigger: the
   catalogue naming the artist of a song by its title (N-28).
-* `unknown`: nothing names anybody and there is no uploader (an official video with an empty credit).
+* `unknown`: nothing names anybody and there is no uploader (an official video with an empty credit). The importer files such a song under
+  `textnorm.UNKNOWN_ARTIST`, a placeholder that identifies nothing (`textnorm.is_unknown_artist`, `refs.find`).
 
 Titles are read here and nowhere else. Brackets never decide who the artist is: a bracket that names a venue or a show ("(Live on KEXP)") stays in the song
 title, because it says which recording this is (`clean_title`, unchanged).
@@ -31,10 +32,6 @@ DECLARED = "declared"
 TITLE = "title"
 CHANNEL = "channel"
 UNKNOWN = "unknown"
-
-#: What a song with no artist at all is filed under: the name the keeper already uses for a folder it cannot name (`placement.artist_folder`).
-UNKNOWN_ARTIST = "Unknown Artist"
-
 
 # --------------------------------------------------------------------------- reading text apart
 

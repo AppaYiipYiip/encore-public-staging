@@ -237,8 +237,9 @@ OMV credited to a label with no separator** (`Vomit Forth "Prophecy Of Defilemen
 YouTube alone, pinned by a test, removal trigger N-28. The rule can still misread `Song - Subtitle` under a band's credit (a side that is neither the credit nor a version
 word); N-28 fixes both. (c) A fourth basis, **`unknown`**: nobody is named (the recorded OMV `Akudama` has an empty `artists`; a Spotify track may have none). The reader says
 so (artist `""`); `ImportService._song_of` files such a song under `Unknown Artist` (the name the keeper's folders already use) so that one song no longer refuses a
-whole import ("A song needs a title and an artist."). **Slice 2's artist-picture guard must treat `unknown` like `channel`**, or "Unknown Artist" gets catalogue look-ups from the
-Host's address. (d) `Track` carries `artist_basis` and `uploader` in memory only. (e) Step 0 recorded nine YouTube Music *search* answers (`videoType` and `artists` as the
+whole import ("A song needs a title and an artist."). **The placeholder carries no identity** (`textnorm.is_unknown_artist`, in the PR's review round): `refs.find` never matches such a song by name (live refs and merge
+tombstones), only by its ids, so two different nameless songs with one title can never share a ref; `artist_finder` never asks the catalogue about it. Slice 2 still has to store
+the basis `unknown` on the ref and treat it like `channel` in its own rule. (d) `Track` carries `artist_basis` and `uploader` in memory only. (e) Step 0 recorded nine YouTube Music *search* answers (`videoType` and `artists` as the
 service gave them), not `get_playlist` answers: a test builds a playlist entry from the shape of `playlist_album.json` filled with the recorded values. (f) Names are compared by
 their letters in any alphabet (`uploads._name_key`); the server's own `textnorm.ascii_fold` still folds an Arabic or Cyrillic name to nothing (B-37 / P2-25), a test pins
 that, and the day P2-25 gives the server one fold, `_name_key` is replaced by it in the same change.
