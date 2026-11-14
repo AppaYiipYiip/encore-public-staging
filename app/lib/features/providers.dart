@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show BooleanExpressionOperators;
 import 'package:encore_session/encore_session.dart' show Command, SessionState;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/playback_providers.dart';
@@ -411,6 +412,21 @@ final searchResultsProvider = FutureProvider.autoDispose
   final albums = await dao.albums(server.id, query, limit: 12).get();
   final artists = await dao.artists(server.id, query, limit: 8).get();
   return SearchResults(tracks: tracks, albums: albums, artists: artists);
+});
+
+/// "Find in playlist" (N-25): the positions of a playlist's entries whose song matches [query], from the phone's own search index (Search's
+/// matching, restricted to this playlist: one matcher, ADR-R42), in playlist order. Watched, so an edit or a sync while the page is open
+/// keeps the list right.
+final playlistFindProvider = StreamProvider.autoDispose
+    .family<List<int>, ({String playlistId, String query})>((ref, key) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null || key.query.trim().isEmpty) {
+    return Stream.value(const <int>[]);
+  }
+  return SearchDao(ref.watch(databaseProvider))
+      .playlistEntryPositions(server.id, key.playlistId, key.query)
+      .watch()
+      .distinct(listEquals);
 });
 
 // ------------------------------------------------------------------ lyrics

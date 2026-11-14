@@ -158,6 +158,30 @@ void main() {
       await closeApp(tester, app.db);
     });
 
+    testWidgets(
+        'remove from this playlist, from a result of "Find in playlist", takes out the entry that was found (N-25)',
+        (tester) async {
+      final app = await pump(tester);
+      await open(tester, '/home/playlist/pl2');
+
+      await tester.tap(find.text('Find in playlist'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), 'hollow');
+      await tester.pump(const Duration(milliseconds: 200));
+      await settle(tester);
+      expect(find.text('Hollow Les'), findsOneWidget);
+      expect(find.text('Opening Kodama'), findsNothing);
+
+      // The only "more" button is the found song's: its place in the list is 0, its place in the playlist is 1.
+      await tester.tap(find.byTooltip('More options'));
+      await settle(tester);
+      await tester.tap(find.text('Remove from this playlist'));
+      await settle(tester);
+
+      expect(await entries(app.db, 'pl2'), ['al1-t1', 'al2-t4']);
+      await closeApp(tester, app.db);
+    });
+
     testWidgets('rename', (tester) async {
       final app = await pump(tester);
       await open(tester, '/home/playlist/pl2');

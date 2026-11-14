@@ -26,6 +26,8 @@ class CollectionScaffold extends StatelessWidget {
     this.tint,
     this.circularArt = false,
     this.bottomPadding = Space.xxl,
+    this.find,
+    this.scrollKey,
   });
 
   final String title;
@@ -41,6 +43,12 @@ class CollectionScaffold extends StatelessWidget {
   final bool circularArt;
   final double bottomPadding;
 
+  /// A field between the subtitle lines and the action row (a playlist's "Find in playlist", N-25); nothing when null.
+  final Widget? find;
+
+  /// Keeps the scroll position when the page is replaced for a moment and comes back (a playlist's find opens a page of its own).
+  final Key? scrollKey;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -51,6 +59,7 @@ class CollectionScaffold extends StatelessWidget {
 
     return Scaffold(
       body: CustomScrollView(
+        key: scrollKey,
         slivers: [
           SliverPersistentHeader(
             pinned: true,
@@ -84,6 +93,10 @@ class CollectionScaffold extends StatelessWidget {
                     const SizedBox(height: Space.xs),
                     ...subtitleLines,
                     const SizedBox(height: Space.md),
+                    if (find != null) ...[
+                      find!,
+                      const SizedBox(height: Space.sm),
+                    ],
                     actions,
                   ],
                 ),
