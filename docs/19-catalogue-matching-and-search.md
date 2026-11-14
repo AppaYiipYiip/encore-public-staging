@@ -46,6 +46,23 @@ Prefer YouTube Music **song** results (official "Topic"/art tracks) over music v
 long content (recitations, DJ sets, podcasts) and when no song result passes. Explicit vs clean: follow the source's flag, and the
 person's setting (`21` §5).
 
+**Who is the artist of an imported upload (N-26; code `imports/uploads.py`, the one door both playlist readers go through).** This is not matching
+(nothing is searched): it decides which artist a song of a pasted YouTube playlist is filed under. **The channel is the uploader, and the uploader is
+evidence, not the artist**: for an upload by a person or an organisation YouTube Music lists the uploading channel as the "artist" ("Tinariwen - Full
+Performance (Live on KEXP)" is credited to KEXP). Each song gets its artists and a **basis**, how that was decided:
+
+| What the source says | The artist is | Basis |
+|----------|---------|-------|
+| `videoType` ATV or OFFICIAL_SOURCE_MUSIC (YouTube's own audio of a song); an entry with no `videoType` that is unavailable or has an album (a removed catalogue entry); a "- Topic" channel (yt-dlp); a Spotify or file description | the artists the source gives ("- Topic" and "VEVO" stripped) | `declared` |
+| `videoType` OMV (an official music video) | the credited artists, **unless the title names a different performer before a separator** ("Band - Song" under a label's credit: the band, basis `title`). A title that says the credited name anywhere, has no separator, or has a side that only describes the upload or the version ("Song - Official Video", "Song - Live in Moscow") keeps the credit | `declared` (`title` when read from the title) |
+| `videoType` UGC, **any value this code does not know**, an available entry with no `videoType` and no album, or yt-dlp's flat listing | a title with a separator (a hyphen, any dash, the minus sign, the middle dot or the bullet, spaces on both sides, outside brackets) is `Artist - Song`; the uploader flips it to `Song - Artist` only when it is a **whole name** of the right side (compared in any alphabet, never as a substring: "kexp" is inside "(Live on KEXP)"). A bracket never decides who the artist is | `title`; `channel` when the artist is reached only because the right side IS the uploader's name |
+| an upload whose title names nobody | the uploader, as YouTube Music shows it (**the one stop-gap**, removal trigger N-28: the catalogue names the artist of a song by its title) | `channel` |
+| nothing names anybody (an official video with an empty credit) | none: the importer files the song under "Unknown Artist" (the name the keeper's folders already use) | `unknown` |
+
+Only `declared` and `title` are performers; the picture and page guards of N-26 slices 2 and 3 key on the basis. Unknowable from YouTube alone, and written down
+rather than hidden: a personal account whose title names nobody looks the same whether it is the band's own or a stranger's; an official video credited to a
+label with no separator in its title; which side is the artist when neither is the uploader.
+
 ## 4. Search (`GET /encore/api/v1/search?q=`; planned, P2-12: the route does not exist yet, `17` section 3)
 
 * **Phone first, instantly:** the person's own library from the phone's database (full-text, ≤ 50 ms), shown at once, offline too.
