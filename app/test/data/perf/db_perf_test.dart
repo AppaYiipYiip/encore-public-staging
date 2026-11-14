@@ -107,6 +107,31 @@ void main() {
     expect(ms, lessThan(90));
   });
 
+  test('find in a 2,000-song playlist, a word every song matches < 90 ms',
+      () async {
+    // N-25. The first version asked the index again for every entry of the playlist: 34 s on this very setup (50k songs, 2,000 entries, "a").
+    await db.batch((b) {
+      b.insert(db.playlists,
+          PlaylistsCompanion.insert(serverId: serverId, id: 'perf', name: 'p'));
+      b.insertAll(db.playlistEntries, [
+        for (var i = 0; i < 2000; i++)
+          PlaylistEntriesCompanion.insert(
+              serverId: serverId,
+              playlistId: 'perf',
+              position: i,
+              trackId: 's${i * 25}'),
+      ]);
+    });
+    final dao = SearchDao(db);
+    final ms = await timeMs(() async {
+      final r = await dao.playlistEntryPositions(serverId, 'perf', 'a').get();
+      expect(r, hasLength(2000));
+    });
+    // ignore: avoid_print
+    print('PERF find in playlist (2,000 entries of 50k): $ms ms');
+    expect(ms, lessThan(90));
+  });
+
   test('diacritic-insensitive search finds Sigur Ros', () async {
     final r = await SearchDao(db).artists(serverId, 'sigur ros').get();
     // artists table is empty here (tracks only) - album search covers artist.

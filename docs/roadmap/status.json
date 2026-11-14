@@ -186,5 +186,11 @@
   "evidence": "app/test/features/artist_play_shuffle_test.dart (library page: Shuffle and Play play every song of the artist the server holds via playTracks with skipUnavailable, Play shows pause and toggles, both dimmed with no songs; catalogue page: Play runs the Popular list in page order, Shuffle runs it shuffled, both off with no popular songs), test/data/repos/artist_tracks_test.dart (one query for the page and Android Auto), test/features/instant_play_test.dart (a shuffled run); 1164 widget/unit tests in test/features test/app test/data/repos pass; built, not walked on a phone",
   "at": "2026-11-13T23:20:19Z",
   "by": "Claude"
+ },
+ "N-25": {
+  "state": "built",
+  "evidence": "Find in a playlist (S-17, drawn in #19): a field between the header lines and the buttons; tapped, a page of its own with Search's field (arrow, field, clear); the list narrows as the person types; a tap plays the WHOLE playlist from the entry's place (by position, so a song held twice plays from the right entry); works offline (a song not downloaded is grey, as on the page); arrow and Back close it and the page keeps its scroll place. Matching is Search's own (the track_fts index, SearchDao.playlistEntryPositions), not a second matcher. Tests: app/test/data/db/playlist_find_test.dart (7: the file did not compile before; includes a query-plan guard that fails on the first, slow query), app/test/features/playlist_find_test.dart (13 through the real router and screens; 9 of the first 10 failed on the old code), one more in playlist_editing_test.dart (remove from a result removes the entry found), one timing test tagged perf (2,000 entries of 50k songs, the word 'a': 34 ms; the first version took 34 s, found by measuring). The rest of features, app, architecture and db tests pass (1123); the quick gate passes. ONE test changes: screens_golden_test 'playlist without server cover shows the golden mosaic' shows the new field, so goldens/windows/playlist_mosaic.png and the Linux one need new pictures (not updated here). Entries: every stored playlist entry has a song row (both sync paths write it first); an entry the server has no song for is skipped by the page as before and so is not found. NOT walked on a phone.",
+  "at": "2026-11-14T00:18:55Z",
+  "by": "Claude"
  }
 }

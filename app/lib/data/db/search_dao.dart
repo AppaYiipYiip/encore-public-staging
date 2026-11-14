@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'app_database.dart';
 
@@ -46,6 +47,18 @@ Set<String> _ligatureVariants(String token) {
   return out;
 }
 
+/// The SQL of [SearchDao.playlistEntryPositions] (`?1` the FTS expression, `?2` the server, `?3` the playlist). The index is asked once (the
+/// subquery), then the playlist's entries are looked up in its answer. Written as a join with the index, SQLite asked the index again for
+/// every entry of the playlist: 34 s for a 2,000-song playlist and the word "a" in a 50,000-song library. A test reads the query plan.
+@visibleForTesting
+const playlistEntryPositionsSql =
+    'SELECT e.position AS position FROM playlist_entries e '
+    'JOIN tracks t ON t.server_id = e.server_id AND t.id = e.track_id '
+    'WHERE e.server_id = ?2 AND e.playlist_id = ?3 '
+    'AND t.deleted_at_ms IS NULL '
+    'AND t.rowid IN (SELECT rowid FROM track_fts WHERE track_fts MATCH ?1) '
+    'ORDER BY e.position';
+
 /// Offline full-text search over the local library (< 30 ms on 50k tracks is a
 /// budget in docs/00-requirements.md).
 class SearchDao {
@@ -70,6 +83,29 @@ class SearchDao {
       ],
       readsFrom: {_db.tracks},
     ).map((row) => _db.tracks.map(row.data));
+  }
+
+  /// The positions of the entries of [playlistId] whose song matches [query], in playlist order: [tracks]'s own matching (the same index and
+  /// the same words, so the two can never disagree, ADR-R42), restricted to one playlist and without a limit. Positions, not song ids: a
+  /// playlist can hold a song twice, and the page tells its entries apart by position. An entry whose song the phone has no row for (or
+  /// has deleted) is not found, as it is not on the page. Empty when the query has nothing searchable.
+  Selectable<int> playlistEntryPositions(
+      int serverId, String playlistId, String query) {
+    final match = toFtsQuery(query);
+    if (match == null) {
+      return _db
+          .customSelect('SELECT 0 AS position WHERE 0')
+          .map((row) => row.read<int>('position'));
+    }
+    return _db.customSelect(
+      playlistEntryPositionsSql,
+      variables: [
+        Variable<String>(match),
+        Variable<int>(serverId),
+        Variable<String>(playlistId),
+      ],
+      readsFrom: {_db.tracks, _db.playlistEntries},
+    ).map((row) => row.read<int>('position'));
   }
 
   Selectable<AlbumRow> albums(int serverId, String query, {int limit = 30}) {

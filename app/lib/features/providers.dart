@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show BooleanExpressionOperators;
 import 'package:encore_session/encore_session.dart' show Command, SessionState;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/playback_providers.dart';
@@ -14,7 +15,9 @@ import '../data/db/search_dao.dart';
 import '../data/repos/library_repository.dart';
 import '../data/repos/lyrics_repository.dart';
 import '../data/sync/playlist_mutations.dart';
+import '../domain/artist_typo.dart';
 import '../domain/household.dart';
+import '../domain/search_rank.dart' show searchKey;
 import 'jam/jam_facade.dart';
 import 'jam/jam_providers.dart'
     show JamSession, jamControllerProvider, jamLoadingProvider;
@@ -407,16 +410,63 @@ class SearchResults {
   bool get isEmpty => tracks.isEmpty && albums.isEmpty && artists.isEmpty;
 }
 
+/// The last [ArtistTypoIndex], so that a list of artists that arrives again with the same names takes over its folded names. (The
+/// database tells the list again whenever any song is written, so during a sync with the search open it arrives often; folding 5,000
+/// names takes about 100 ms in a debug build.) Holds nothing until the first search.
+class _TypoIndexMemory {
+  ArtistTypoIndex<ArtistRow>? last;
+}
+
+final _typoIndexMemoryProvider =
+    Provider<_TypoIndexMemory>((ref) => _TypoIndexMemory());
+
+/// The library's artists, folded once for the typo scan of a search (N-23a). A new one when the list of artists changes; its names are
+/// folded on the first scan that needs them, not here, and not again while the names stay the same.
+final artistTypoIndexProvider =
+    Provider.autoDispose<ArtistTypoIndex<ArtistRow>?>((ref) {
+  final artists = ref.watch(artistsProvider).value;
+  if (artists == null) return null;
+  final memory = ref.read(_typoIndexMemoryProvider);
+  return memory.last = ArtistTypoIndex<ArtistRow>(artists,
+      nameOf: (a) => a.name, fold: searchKey, reusing: memory.last);
+});
+
 /// Instant, offline full-text search (< 30 ms budget).
+///
+/// The library's artists are found by the start of a word, so a name typed with a letter wrong is not found by it (N-23a: "landmarks"
+/// for "Landmvrks"). Only when **no artist begins with the typed words** the artists' names are scanned for one that is a letter or
+/// two off ([ArtistTypoIndex], the rule in `domain/artist_typo.dart`): a name that is an answer is never pushed down by a guess. The
+/// guesses are scored by `artistMatch` with the rest, below every exact answer. The catalogue's part of a search is Deezer's own
+/// matching, not this.
 final searchResultsProvider = FutureProvider.autoDispose
     .family<SearchResults, String>((ref, query) async {
   final server = ref.watch(activeServerProvider).value;
   if (server == null || query.trim().isEmpty) return const SearchResults();
   final dao = SearchDao(ref.watch(databaseProvider));
+  // Watched here, before the first await, so that a list of artists that arrives or changes runs the search again.
+  final typoIndex = ref.watch(artistTypoIndexProvider);
   final tracks = await dao.tracks(server.id, query, limit: 30).get();
   final albums = await dao.albums(server.id, query, limit: 12).get();
-  final artists = await dao.artists(server.id, query, limit: 8).get();
+  var artists = await dao.artists(server.id, query, limit: 8).get();
+  if (artists.isEmpty && typoIndex != null) {
+    artists = typoIndex.find(query, limit: 8);
+  }
   return SearchResults(tracks: tracks, albums: albums, artists: artists);
+});
+
+/// "Find in playlist" (N-25): the positions of a playlist's entries whose song matches [query], from the phone's own search index (Search's
+/// matching, restricted to this playlist: one matcher, ADR-R42), in playlist order. Watched, so an edit or a sync while the page is open
+/// keeps the list right.
+final playlistFindProvider = StreamProvider.autoDispose
+    .family<List<int>, ({String playlistId, String query})>((ref, key) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null || key.query.trim().isEmpty) {
+    return Stream.value(const <int>[]);
+  }
+  return SearchDao(ref.watch(databaseProvider))
+      .playlistEntryPositions(server.id, key.playlistId, key.query)
+      .watch()
+      .distinct(listEquals);
 });
 
 // ------------------------------------------------------------------ lyrics

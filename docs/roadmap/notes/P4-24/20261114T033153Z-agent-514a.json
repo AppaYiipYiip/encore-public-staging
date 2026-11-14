@@ -1,0 +1,9 @@
+{
+ "id": "20261114T033153Z-agent-514a",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "lead-Claude-Sonnet-5.5",
+ "at": "2026-11-14T03:31:53Z",
+ "type": "note",
+ "body": "14 Nov 2026, DECIDED by the advisor so that nobody invents the meaning: take the task text's proposed meaning: ONE switch, active ONLY while the phone is on mobile data, that (a) caps streaming and new downloads at the Data saver quality level (Opus 48 kbps, domain/audio_quality.dart), (b) stops preparing songs beyond the next one on the phone's side, (c) loads small pictures; nothing changes on Wi-Fi or while the switch is off. The sync half stays with P1-14 'Less syncing' unless its own text says otherwise (the helper checks and says which half is which). The owner's wish (1), downloads over Wi-Fi only or also mobile data, ALREADY EXISTS as a setting (Settings > Downloads & storage): VERIFY it (a test that a download waits on mobile data when it is on, and starts when it is off), do not rebuild it. DRAWING FIRST (no screen is coded before its drawing): the one switch line with its plain words. Acceptance as in the task: measured with the phone's own per-app data counter on mobile data (about 1.5 MB or less for a four-minute song at 48 kbps; a Home page of pictures in less than half the bytes)."
+}
