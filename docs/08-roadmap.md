@@ -92,7 +92,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 26 | N-15 | Artists the music server has no picture for get one | S | built | none | 7 to 13 |
 | 27 | P2-25 | Behind the scenes: songs in Arabic, Russian, Korean and Japanese are told apart and found | M | todo | none | 8 to 15 |
 | 28 | P2-12 | Search and artist pages come from your own server | L | todo | none | 10 to 19 |
-| 29 | N-26b | Behind the scenes: the artist of a channel-only upload comes from the catalogue | M | todo | P2-12 | 11 to 21 |
+| 29 | N-28 | Behind the scenes: the artist of a channel-only upload comes from the catalogue | M | todo | P2-12 | 11 to 21 |
 | 30 | P2-15 | Your server checks for new releases; the news shows in the app | S | todo | P2-12 | 11 to 22 |
 | 31 | P4-18 | Follow artists, and get told when one releases something | S | todo | P2-15 | 11 to 22 |
 | 32 | P2-26 | Behind the scenes: a short YouTube hiccup no longer fails a song for good | S | built | none | 11 to 22 |

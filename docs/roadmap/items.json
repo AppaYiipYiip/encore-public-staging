@@ -986,10 +986,10 @@
   "needs": [],
   "from": "agent"
  },
- "N-26b": {
+ "N-28": {
   "kind": "plumbing",
   "title": "Behind the scenes: the artist of a channel-only upload comes from the catalogue",
-  "note": "Removal trigger of N-26's `channel` stop-gap (14 Nov 2026): an upload whose title names nobody (a personal upload account, a title with no dash) keeps the uploader as its artist with basis `channel`. The proper fix is to identify the performer through the catalogue by the song's own title and length, the way N-15 identifies an artist by one of its songs, once the server owns the catalogue (P2-12, N-14). Until then those songs stay under the channel and never get an artist picture or page.",
+  "note": "(Called N-26b in the N-26 design.) Removal trigger of N-26's `channel` stop-gap (14 Nov 2026): an upload whose title names nobody (a personal upload account, a title with no dash) keeps the uploader as its artist with basis `channel`. The proper fix is to identify the performer through the catalogue by the song's own title and length, the way N-15 identifies an artist by one of its songs, once the server owns the catalogue (P2-12, N-14). Until then those songs stay under the channel and never get an artist picture or page.",
   "proposal": true,
   "size": "M",
   "needs": [
