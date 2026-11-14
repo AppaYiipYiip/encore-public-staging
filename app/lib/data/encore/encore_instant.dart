@@ -162,11 +162,13 @@ class EncoreInstantBackend implements InstantPlayBackend {
   Future<Result<FetchJob>> status(String id) async =>
       Result.ok(FetchJob(id: id, state: FetchState.ready, songId: id));
 
+  /// **Does nothing on an Encore server (B-126).** It used to resolve the song ("the cheap half: a row on the server"), but a row is not cheap:
+  /// every pause between two letters typed in Search and every list that was only opened left a song row on the server that no person, file or like
+  /// pointed at and nothing ever retired, for every person who browsed. What it saved was one round trip at the tap, which then has to look the song
+  /// up at YouTube anyway (seconds); the tap makes the ref itself. A server that can look a song up ahead of the tap would do it in
+  /// `POST refs/prepare`, which the player calls for the songs of a queue (P1-04), not here.
   @override
-  Future<void> prepare(FetchRequest request) async {
-    // Resolving is the cheap half (a row on the server); the look-up at YouTube waits for the tap, so browsing never spends it.
-    unawaited(_resolve(request).then((_) {}, onError: (Object _) {}));
-  }
+  Future<void> prepare(FetchRequest request) async {}
 
   /// The audio is opened by the player from the row's ref ([streamUrlFor] is the one case with no row: a very long song).
   @override
