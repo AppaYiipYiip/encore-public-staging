@@ -24,6 +24,7 @@ from typing import Any
 
 import httpx
 
+from ...stopping import join_within
 from .canary import CANARY_VIDEO, ChildCanary
 from .errors import DownloadError
 from .rest import Guarded, Lookups, Rest
@@ -309,10 +310,9 @@ class Tools:
             thread.start()
             self._threads.append(thread)
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 2.0) -> None:
         self._stop.set()
-        for thread in self._threads:
-            thread.join(timeout=2.0)
+        join_within(self._threads, timeout)
         self._threads.clear()
 
 
