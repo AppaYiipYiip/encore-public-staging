@@ -164,6 +164,21 @@ class NavidromeClient:
         song = (body or {}).get("song")
         return song if isinstance(song, dict) else None
 
+    def artists_without_picture(self) -> list[tuple[str, str]] | None:
+        """The artists the music server lists with at least one album and no picture of its own, as `(id, name)`; `None` when it did not answer.
+
+        An artist with no `coverArt` is one its own sources (a picture file in its folder, an upload, the catalogue by name) found nothing for (N-15)."""
+        body = self._call("getArtists")
+        if body is None:
+            return None
+        found: list[tuple[str, str]] = []
+        for group in _as_list((body.get("artists") or {}).get("index")):
+            for artist in _as_list(group.get("artist")):
+                artist_id, name = str(artist.get("id") or ""), str(artist.get("name") or "")
+                if artist_id and name and not artist.get("coverArt") and int(artist.get("albumCount") or 0) > 0:
+                    found.append((artist_id, name))
+        return found
+
     def songs(self, offset: int, size: int = 500) -> list[dict[str, Any]] | None:
         """A page of every song in the library (an empty search lists them all); `None` when the music server did not answer."""
         body = self._call("search3", query='""', songOffset=offset, songCount=size, artistCount=0, albumCount=0)
