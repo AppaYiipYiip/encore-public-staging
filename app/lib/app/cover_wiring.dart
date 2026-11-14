@@ -33,9 +33,9 @@ final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {
     serverId: serverId,
     isCached: (key) async =>
         await coverCacheManager.getFileFromCache(key) != null,
-    pin: coverCacheManager.pin,
+    pin: (key) => coverCacheManager.pin(key, owner: serverId),
     retain: (wanted) async {
-      await coverCacheManager.retainOnly(wanted);
+      await coverCacheManager.retainOnly(wanted, owner: serverId);
     },
     fetch: (id, size) async {
       // On an Encore server the address is written with the cover ticket: get it first (it is kept for days, so this is one question at most).

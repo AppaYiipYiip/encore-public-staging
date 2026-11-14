@@ -8,24 +8,43 @@ import 'package:flutter_test/flutter_test.dart';
 /// P1-10 (owner, 13 Nov 2026): the pictures of a downloaded song are kept with it, once each, and offline nothing is a letter. The cover
 /// cache is least-recently-used and lives where Android may clear it; a PINNED picture is a copy that neither of those can take.
 class _MemoryRegistry implements PinRegistry {
-  Set<String> saved = {};
+  Map<String, Set<int>> saved = {};
   int loads = 0;
 
   @override
-  Future<Set<String>> load() async {
+  Future<Map<String, Set<int>>> load() async {
     loads++;
-    return {...saved};
+    return {
+      for (final e in saved.entries) e.key: {...e.value}
+    };
   }
 
   @override
-  Future<void> save(Set<String> keys) async => saved = {...keys};
+  Future<void> save(Map<String, Set<int>> owners) async => saved = {
+        for (final e in owners.entries) e.key: {...e.value}
+      };
+}
+
+/// A pinned store that cannot be read (a damaged index, a missing platform channel).
+class _BrokenManager extends CacheManager {
+  _BrokenManager()
+      : super(Config(
+          'broken',
+          repo: NonStoringObjectProvider(),
+          fileSystem: DirectoryFileSystem(() async => Directory.systemTemp),
+        ));
+
+  @override
+  Future<FileInfo?> getFileFromCache(String key,
+          {bool ignoreMemCache = false}) async =>
+      throw StateError('the index is damaged');
 }
 
 void main() {
   late Directory root;
   late _MemoryRegistry registry;
 
-  PinningCacheManager make() {
+  PinningCacheManager make({CacheManager? brokenPinned}) {
     final normal = Directory('${root.path}/normal');
     final pinned = Directory('${root.path}/pinned');
     return PinningCacheManager(
@@ -34,15 +53,16 @@ void main() {
         repo: JsonCacheInfoRepository(path: '${root.path}/normal.json'),
         fileSystem: DirectoryFileSystem(() async => normal),
       ),
-      pinned: CacheManager(
-        Config(
-          'pinned',
-          stalePeriod: const Duration(days: 3650),
-          maxNrOfCacheObjects: 100000,
-          repo: JsonCacheInfoRepository(path: '${root.path}/pinned.json'),
-          fileSystem: DirectoryFileSystem(() async => pinned),
-        ),
-      ),
+      pinned: brokenPinned ??
+          CacheManager(
+            Config(
+              'pinned',
+              stalePeriod: const Duration(days: 3650),
+              maxNrOfCacheObjects: 100000,
+              repo: JsonCacheInfoRepository(path: '${root.path}/pinned.json'),
+              fileSystem: DirectoryFileSystem(() async => pinned),
+            ),
+          ),
       registry: registry,
     );
   }
@@ -101,7 +121,7 @@ void main() {
     expect(await cache.pin('k'), isTrue);
     expect(await cache.pin('k'), isTrue);
 
-    expect(registry.saved, {'k'});
+    expect(registry.saved.keys, {'k'});
     expect(await cache.pinnedKeys(), {'k'});
   });
 
@@ -144,7 +164,7 @@ void main() {
     expect(await read(cache, 'a'), isNotNull);
     expect(await read(cache, 'b'), isNull);
     expect(await read(cache, 'c'), isNotNull);
-    expect(registry.saved, {'a', 'c'});
+    expect(registry.saved.keys, {'a', 'c'});
   });
 
   test('what is pinned is remembered by a new manager (a new run of the app)',
@@ -174,10 +194,64 @@ void main() {
     final registry = FilePinRegistry(() async => file);
 
     expect(await registry.load(), isEmpty, reason: 'no file yet');
-    await registry.save({'b', 'a'});
-    expect(await FilePinRegistry(() async => file).load(), {'a', 'b'});
+    await registry.save({
+      'b': {1},
+      'a': {2, 1},
+    });
+    expect(await FilePinRegistry(() async => file).load(), {
+      'a': {1, 2},
+      'b': {1},
+    });
 
     await file.writeAsString('{not json');
     expect(await registry.load(), isEmpty);
+  });
+
+  test('two servers: a run for one never releases the pins of the other',
+      () async {
+    final cache = make();
+    for (final key in ['a', 'b']) {
+      await cache.putFile('https://srv/$key', bytes(key.codeUnitAt(0)),
+          key: key);
+    }
+    await cache.pin('a', owner: 1);
+    await cache.pin('b', owner: 2);
+    await cache.pin('a', owner: 2); // both servers' downloads need picture a
+
+    // Server 2 downloads nothing any more: its run wants no picture.
+    final released = await cache.retainOnly(<String>{}, owner: 2);
+    await cache.emptyCache();
+
+    expect(released, 2);
+    expect(await read(cache, 'a'), isNotNull,
+        reason: 'server 1 still needs it');
+    expect(await read(cache, 'b'), isNull, reason: 'nobody needs it now');
+    expect(registry.saved, {
+      'a': {1}
+    });
+  });
+
+  test('a pinned store that cannot be read never makes a picture unreadable',
+      () async {
+    final cache = make(brokenPinned: _BrokenManager());
+    await cache.putFile('https://srv/cover/a', bytes(7), key: 'k');
+
+    expect(await read(cache, 'k'), bytes(7));
+  });
+
+  test(
+      'signing out clears the pinned pictures too, and clearing the cache does not',
+      () async {
+    final cache = make();
+    await cache.putFile('https://srv/cover/a', bytes(1), key: 'k');
+    await cache.pin('k', owner: 1);
+
+    await cache.emptyCache(); // Android's Clear cache
+    expect(await read(cache, 'k'), isNotNull);
+
+    await cache.clearEverything(); // signing out
+    expect(await read(cache, 'k'), isNull);
+    expect(await cache.pinnedKeys(), isEmpty);
+    expect(registry.saved, isEmpty);
   });
 }

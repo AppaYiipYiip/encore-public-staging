@@ -33,10 +33,11 @@ class DirectoryFileSystem implements FileSystem {
   }
 }
 
-/// Remembers WHICH pictures are pinned (the cache manager cannot list its keys), across runs.
+/// Remembers WHICH pictures are pinned and for which servers (the cache manager cannot list its keys), across runs. A picture is wanted by the
+/// downloaded songs of one or more servers (the app has several profiles): it is released only when no server wants it.
 abstract interface class PinRegistry {
-  Future<Set<String>> load();
-  Future<void> save(Set<String> keys);
+  Future<Map<String, Set<int>>> load();
+  Future<void> save(Map<String, Set<int>> owners);
 }
 
 /// A [PinRegistry] kept in one small JSON file next to the pinned pictures.
@@ -46,27 +47,34 @@ class FilePinRegistry implements PinRegistry {
   final Future<io.File> Function() _file;
 
   @override
-  Future<Set<String>> load() async {
+  Future<Map<String, Set<int>>> load() async {
     try {
       final file = await _file();
-      if (!file.existsSync()) return <String>{};
+      if (!file.existsSync()) return <String, Set<int>>{};
       final decoded = jsonDecode(await file.readAsString());
       return {
-        if (decoded is List)
-          for (final key in decoded)
-            if (key is String) key,
+        if (decoded is Map)
+          for (final entry in decoded.entries)
+            if (entry.key is String && entry.value is List)
+              entry.key as String: {
+                for (final owner in entry.value as List)
+                  if (owner is int) owner,
+              },
       };
     } on Object catch (error) {
       Log.debug('covers', 'the list of pinned pictures was not read: $error');
-      return <String>{};
+      return <String, Set<int>>{};
     }
   }
 
   @override
-  Future<void> save(Set<String> keys) async {
+  Future<void> save(Map<String, Set<int>> owners) async {
     final file = await _file();
     await file.parent.create(recursive: true);
-    await file.writeAsString(jsonEncode(keys.toList()..sort()));
+    await file.writeAsString(jsonEncode({
+      for (final key in owners.keys.toList()..sort())
+        key: owners[key]!.toList()..sort(),
+    }));
   }
 }
 
@@ -88,30 +96,39 @@ class PinningCacheManager extends CacheManager {
 
   final CacheManager _pinned;
   final PinRegistry _registry;
-  Set<String>? _keys;
+  Map<String, Set<int>>? _owners;
 
+  /// The pinned store is an extra: a damaged index file or a store that cannot be opened must never make a picture unreadable, so a failed
+  /// look there is logged and the normal cache answers.
   @override
   Future<FileInfo?> getFileFromCache(String key,
       {bool ignoreMemCache = false}) async {
-    final pinned =
-        await _pinned.getFileFromCache(key, ignoreMemCache: ignoreMemCache);
-    if (pinned != null) return pinned;
+    try {
+      final pinned =
+          await _pinned.getFileFromCache(key, ignoreMemCache: ignoreMemCache);
+      if (pinned != null) return pinned;
+    } on Object catch (error) {
+      Log.debug('covers', 'the pinned store could not be read: $error');
+    }
     return super.getFileFromCache(key, ignoreMemCache: ignoreMemCache);
   }
 
-  Future<Set<String>> _load() async => _keys ??= await _registry.load();
+  Future<Map<String, Set<int>>> _load() async =>
+      _owners ??= await _registry.load();
 
-  /// The keys that are pinned.
-  Future<Set<String>> pinnedKeys() async => {...await _load()};
+  /// The keys that are pinned (for any server).
+  Future<Set<String>> pinnedKeys() async => {...(await _load()).keys};
 
   /// Whether the picture under [key] is pinned.
-  Future<bool> isPinned(String key) async => (await _load()).contains(key);
+  Future<bool> isPinned(String key) async => (await _load()).containsKey(key);
 
-  /// Pins the picture under [key], copying it from the normal cache. `false` when it is not there to copy (fetch it first); `true` when it is
-  /// pinned, now or already.
-  Future<bool> pin(String key) async {
-    final keys = await _load();
-    if (keys.contains(key) && await _pinned.getFileFromCache(key) != null) {
+  /// Pins the picture under [key] for the server [owner], copying it from the normal cache. `false` when it is not there to copy (fetch it
+  /// first); `true` when it is pinned, now or already.
+  Future<bool> pin(String key, {int owner = 0}) async {
+    final owners = await _load();
+    final known = owners[key];
+    if (known != null && await _pinned.getFileFromCache(key) != null) {
+      if (known.add(owner)) await _registry.save(owners);
       return true;
     }
     final cached = await super.getFileFromCache(key);
@@ -123,26 +140,46 @@ class PinningCacheManager extends CacheManager {
       maxAge: const Duration(days: 3650),
       fileExtension: 'jpg',
     );
-    keys.add(key);
-    await _registry.save(keys);
+    (owners[key] ??= <int>{}).add(owner);
+    await _registry.save(owners);
     return true;
   }
 
-  /// Releases the pin on [key] (the normal cache may still hold the picture).
-  Future<void> unpin(String key) async {
-    final keys = await _load();
-    await _pinned.removeFile(key);
-    if (keys.remove(key)) await _registry.save(keys);
+  /// Releases the pin of [owner] on [key]; the picture is deleted when no server wants it any more (the normal cache may still hold it).
+  Future<void> unpin(String key, {int owner = 0}) async {
+    final owners = await _load();
+    final known = owners[key];
+    if (known == null) return;
+    known.remove(owner);
+    if (known.isEmpty) {
+      owners.remove(key);
+      await _pinned.removeFile(key);
+    }
+    await _registry.save(owners);
   }
 
-  /// Unpins every pinned picture that is not in [wanted]: the song that needed it is no longer downloaded.
-  Future<int> retainOnly(Set<String> wanted) async {
+  /// Releases the pins of [owner] on every picture that is not in [wanted] (its downloaded songs no longer need it). Another server's pins are
+  /// never touched: the app runs one server at a time and each run only knows its own downloads.
+  Future<int> retainOnly(Set<String> wanted, {int owner = 0}) async {
     var released = 0;
-    for (final key in [...await _load()]) {
-      if (wanted.contains(key)) continue;
-      await unpin(key);
+    for (final entry in [...(await _load()).entries]) {
+      if (wanted.contains(entry.key) || !entry.value.contains(owner)) continue;
+      await unpin(entry.key, owner: owner);
       released++;
     }
     return released;
+  }
+
+  /// Everything, pinned pictures too (signing out: the pictures of an account must not stay on the phone). [emptyCache] empties only the normal
+  /// store, which is what Android's "Clear cache" does to it.
+  Future<void> clearEverything() async {
+    await emptyCache();
+    try {
+      await _pinned.emptyCache();
+    } on Object catch (error) {
+      Log.debug('covers', 'the pinned store was not emptied: $error');
+    }
+    _owners = <String, Set<int>>{};
+    await _registry.save(_owners!);
   }
 }
