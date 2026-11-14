@@ -8,8 +8,9 @@ catalogue and video ids, then the normalised artist + title (and which version i
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from .errors import ApiError
@@ -22,6 +23,15 @@ DURATION_TOLERANCE_MS = 3000
 
 _TEXT_LIMIT = 300
 _MAX_ARTISTS = 20
+
+#: The album the music server lists a file under when its tags name none. It says "no album", so it is never copied onto a ref that has a real one
+#: or none (N-11: the doubled songs showed under "[unknown album]").
+_PLACEHOLDER_ALBUM = re.compile(r"^\[?\s*unknown album\s*\]?$", re.IGNORECASE)
+
+
+def is_placeholder_album(value: object) -> bool:
+    """Whether an album is no album: nothing, blank, or the music server's `[Unknown Album]`."""
+    return not isinstance(value, str) or not value.strip() or _PLACEHOLDER_ALBUM.match(value.strip()) is not None
 
 
 def norm_key(artist: str, title: str) -> str:
@@ -133,8 +143,46 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
+#: The longest chain of merges followed. The repair keeps `ref_merge.into_id` pointing at a live ref, so one hop is the norm; this only stops a damaged
+#: table (a loop) from looping.
+_MAX_HOPS = 16
+#: How many ids one query asks about (SQLite's limit on the numbers in one statement is lower on older builds).
+_ID_CHUNK = 400
+
+
+def _merged_into(conn: sqlite3.Connection, ref_ids: Iterable[str]) -> dict[str, str]:
+    """`{old id: the ref that took its place}` for those of these ids that were merged away."""
+    wanted = list(dict.fromkeys(ref_ids))
+    found: dict[str, str] = {}
+    for start in range(0, len(wanted), _ID_CHUNK):
+        chunk = wanted[start : start + _ID_CHUNK]
+        marks = ",".join("?" * len(chunk))
+        for row in conn.execute(f"SELECT old_id, into_id FROM ref_merge WHERE old_id IN ({marks})", chunk):  # noqa: S608 - placeholders only
+            found[row["old_id"]] = row["into_id"]
+    return found
+
+
+def canonical_many(conn: sqlite3.Connection, ref_ids: Iterable[str]) -> dict[str, str]:
+    """`{id: the id to use now}` for each of these song ids. A ref that was merged into another (N-11) no longer exists, but a client may still name
+    it (an old app, an edit queued offline, a signed address handed out before the repair): its answer is the ref that took its place. An id that was
+    never merged answers itself, so a made-up id still fails where it always did."""
+    answer = {ref_id: ref_id for ref_id in ref_ids}
+    for _ in range(_MAX_HOPS):
+        step = _merged_into(conn, set(answer.values()))
+        if not step:
+            break
+        answer = {asked: step.get(now, now) for asked, now in answer.items()}
+    return answer
+
+
+def canonical(conn: sqlite3.Connection, ref_id: str) -> str:
+    """The id to use now for one song id (see [canonical_many]). Every place that takes a song id from a client calls this first."""
+    return canonical_many(conn, [ref_id])[ref_id]
+
+
 def get_ref(conn: sqlite3.Connection, ref_id: str) -> dict[str, Any]:
-    row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
+    """The song's ref. An id that was merged into another answers with the survivor (its `id` says which one)."""
+    row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (canonical(conn, ref_id),)).fetchone()
     if row is None:
         raise ApiError("not_found", "That song is not known to this server.")
     return row_to_ref(conn, row)
@@ -149,17 +197,47 @@ def _compatible(row: sqlite3.Row, duration_ms: int | None) -> bool:
     return known is None or duration_ms is None or abs(known - duration_ms) <= DURATION_TOLERANCE_MS
 
 
+def _survivor(conn: sqlite3.Connection, into_id: str) -> sqlite3.Row | None:
+    row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (canonical(conn, into_id),)).fetchone()
+    return row  # type: ignore[no-any-return]
+
+
+def _find_merged(conn: sqlite3.Connection, column: str, value: str) -> sqlite3.Row | None:
+    """The survivor of a ref that was merged away and had this id."""
+    for row in conn.execute(f"SELECT into_id FROM ref_merge WHERE {column} = ? ORDER BY seq DESC", (value,)):  # noqa: S608 - fixed column names
+        survivor = _survivor(conn, row["into_id"])
+        if survivor is not None:
+            return survivor
+    return None
+
+
 def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
-    """The ref a described song already has, or `None`."""
-    for column, value in (("isrc", item["isrc"]), ("deezer_id", item["deezer_id"]), ("ytm_video_id", item["ytm_video_id"])):
+    """The ref a described song already has, or `None`.
+
+    A ref that was merged into another (N-11) is still found, as the survivor: the same song described the way the deleted ref was (the music server's
+    tags list the artists as one string and the length a few seconds off) must not make the duplicate again. The order is the strength of the
+    evidence: the ids of live refs, the ids of merged ones, then the artist + title + length of live refs, then of merged ones."""
+    ids = (("isrc", item["isrc"]), ("deezer_id", item["deezer_id"]), ("ytm_video_id", item["ytm_video_id"]))
+    for column, value in ids:
         if value:
             row = conn.execute(f"SELECT * FROM song_ref WHERE {column} = ?", (value,)).fetchone()  # noqa: S608 - fixed column names
             if row is not None:
                 return row  # type: ignore[no-any-return]
+    for column, value in ids:
+        if value:
+            merged = _find_merged(conn, column, value)
+            if merged is not None:
+                return merged
     key = norm_key(item["artists"][0], item["title"])
     for row in conn.execute("SELECT * FROM song_ref WHERE norm_key = ? ORDER BY created_at", (key,)):
         if _compatible(row, item["duration_ms"]):
             return row  # type: ignore[no-any-return]
+    # The length is compared with the DELETED ref's own (kept in `ref_merge`), not with the survivor's, which may be seconds off.
+    for gone in conn.execute("SELECT into_id, duration_ms FROM ref_merge WHERE norm_key = ? ORDER BY seq", (key,)):
+        if _compatible(gone, item["duration_ms"]):
+            survivor = _survivor(conn, gone["into_id"])
+            if survivor is not None:
+                return survivor
     return None
 
 
@@ -168,6 +246,8 @@ def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) ->
     updates: dict[str, Any] = {}
     for column in ("album", "album_artist", "track_no", "disc_no", "year", "duration_ms", "mbid", "cover_url", "thumb_url"):
         if row[column] is None and item[column] is not None:
+            if column == "album" and is_placeholder_album(item[column]):
+                continue  # "[Unknown Album]" says there is no album: a ref without one stays without (N-11)
             updates[column] = item[column]
     for column in ("isrc", "deezer_id", "ytm_video_id"):
         value = item[column]
@@ -232,10 +312,6 @@ def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str) -> bool
         (video_id, ref_id, video_id),
     )
     return bool(cursor.rowcount)
-
-
-#: How many music-server ids one query asks about (SQLite's limit on the numbers in one statement is lower on older builds).
-_ID_CHUNK = 400
 
 
 def file_holders(conn: sqlite3.Connection, song_ids: Sequence[str]) -> dict[str, sqlite3.Row]:

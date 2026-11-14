@@ -17,9 +17,16 @@ void main() {
     late List<String> fetched;
     late Future<void> Function(String id, int size) onFetch;
 
-    CoverPrefetcher make({int concurrency = 2, int giveUpAfter = 4}) =>
+    CoverPrefetcher make({
+      int concurrency = 2,
+      int giveUpAfter = 4,
+      CoverPin? pin,
+      CoverRetain? retain,
+    }) =>
         CoverPrefetcher(
           serverId: 1,
+          pin: pin,
+          retain: retain,
           isCached: (key) async => cache.contains(key),
           fetch: (id, size) async {
             await onFetch(id, size);
@@ -131,6 +138,227 @@ void main() {
 
       expect(await first, 1);
       expect(await second, 0, reason: 'by then it is cached');
+    });
+  });
+
+  group('pinning what downloaded songs need (P1-10)', () {
+    late Set<String> cache;
+    late Set<String> pinned;
+    late List<String> pinCalls;
+    late List<Set<String>> retained;
+
+    CoverPrefetcher make() => CoverPrefetcher(
+          serverId: 1,
+          isCached: (key) async => cache.contains(key),
+          fetch: (id, size) async => cache.add(CoverSize.key(1, id, size)),
+          pin: (key) async {
+            pinCalls.add(key);
+            if (!cache.contains(key)) return false;
+            pinned.add(key);
+            return true;
+          },
+          retain: (wanted) async => retained.add(wanted),
+        );
+
+    setUp(() {
+      cache = {};
+      pinned = {};
+      pinCalls = [];
+      retained = [];
+    });
+
+    test(
+        'every picture is fetched if it is missing and pinned, at both sizes, once per id',
+        () async {
+      // Five songs of one album by one artist: the album cover and the artist picture, never five.
+      final ids = ['al-1', 'al-1', 'al-1', 'al-1', 'al-1', 'ar-9'];
+
+      final pinnedCount = await make().keepPinned(ids);
+
+      expect(pinnedCount, 4);
+      expect(pinned, {
+        for (final id in ['al-1', 'ar-9'])
+          for (final size in [CoverSize.small, CoverSize.large])
+            CoverSize.key(1, id, size)
+      });
+      expect(pinCalls.length, 4, reason: 'each (id, size) once');
+    });
+
+    test(
+        'a picture that was already cached is pinned without being fetched again',
+        () async {
+      cache.add(CoverSize.key(1, 'al-1', CoverSize.small));
+      var fetches = 0;
+      final prefetcher = CoverPrefetcher(
+        serverId: 1,
+        isCached: (key) async => cache.contains(key),
+        fetch: (id, size) async {
+          fetches++;
+          cache.add(CoverSize.key(1, id, size));
+        },
+        pin: (key) async {
+          pinned.add(key);
+          return cache.contains(key);
+        },
+        retain: (wanted) async {},
+      );
+
+      await prefetcher.keepPinned(['al-1'], sizes: const [CoverSize.small]);
+
+      expect(fetches, 0);
+      expect(pinned, {CoverSize.key(1, 'al-1', CoverSize.small)});
+    });
+
+    test(
+        'what is no longer wanted is released, and a pin at the other size is never released by a run at one size',
+        () async {
+      // On mobile data only the small size is fetched, but the large pin of the same picture must stay.
+      await make().keepPinned(['al-1'], sizes: const [CoverSize.small]);
+
+      expect(retained, hasLength(1));
+      expect(retained.single, {
+        CoverSize.key(1, 'al-1', CoverSize.small),
+        CoverSize.key(1, 'al-1', CoverSize.large),
+      });
+    });
+
+    test(
+        'P4-24: the pinned run under Data saver (mobile data) fetches and pins the small size only, and never lets go of a large pin',
+        () async {
+      // al-1 was downloaded on Wi-Fi: its large picture is already pinned. al-2 is a download made now, on mobile data under the cap.
+      final largeAl1 = CoverSize.key(1, 'al-1', CoverSize.large);
+      cache.addAll({largeAl1, CoverSize.key(1, 'al-1', CoverSize.small)});
+      pinned.add(largeAl1);
+      final fetched = <String>[];
+      final prefetcher = CoverPrefetcher(
+        serverId: 1,
+        isCached: (key) async => cache.contains(key),
+        fetch: (id, size) async {
+          fetched.add(CoverSize.key(1, id, size));
+          cache.add(CoverSize.key(1, id, size));
+        },
+        pin: (key) async {
+          pinCalls.add(key);
+          if (!cache.contains(key)) return false;
+          pinned.add(key);
+          return true;
+        },
+        retain: (wanted) async => retained.add(wanted),
+      );
+
+      // The same budget the rest of the background fetch uses, so the pinned run cannot disagree with it.
+      await prefetcher
+          .keepPinned(['al-1', 'al-2'], sizes: CoverBudget.mobile.sizes);
+
+      expect(fetched, [CoverSize.key(1, 'al-2', CoverSize.small)],
+          reason: 'no large picture is asked for on mobile data');
+      expect(pinCalls, everyElement(endsWith(':${CoverSize.small}')));
+      expect(pinned, contains(largeAl1),
+          reason: 'a pin that already exists stays');
+      expect(retained.single, contains(largeAl1),
+          reason:
+              'and the release, which is by picture at both sizes, keeps it');
+      expect(
+          retained.single, contains(CoverSize.key(1, 'al-2', CoverSize.large)));
+    });
+
+    test('with nothing downloaded nothing is pinned and every pin is released',
+        () async {
+      final count = await make().keepPinned(const []);
+
+      expect(count, 0);
+      expect(retained.single, isEmpty);
+    });
+
+    test('a picture that could not be fetched is not counted as pinned',
+        () async {
+      final prefetcher = CoverPrefetcher(
+        serverId: 1,
+        isCached: (key) async => false,
+        fetch: (id, size) async => throw StateError('no network'),
+        pin: (key) async => false,
+        retain: (wanted) async {},
+      );
+
+      expect(await prefetcher.keepPinned(['al-1']), 0);
+    });
+  });
+
+  group('what a downloaded song needs (P1-10)', () {
+    late AppDatabase db;
+    late int serverId;
+    late LibraryRepository repo;
+
+    setUp(() async {
+      db = AppDatabase(NativeDatabase.memory());
+      serverId = await Seed.library(db);
+      repo = LibraryRepository(db, serverId);
+    });
+
+    tearDown(() => db.close());
+
+    Future<void> download(String trackId) =>
+        db.into(db.downloads).insert(DownloadsCompanion.insert(
+            serverId: serverId,
+            trackId: trackId,
+            updatedAtMs: 0,
+            state: const Value(2)));
+
+    test('nothing downloaded, nothing to pin', () async {
+      expect(await repo.coverIdsOfDownloads(), isEmpty);
+    });
+
+    test(
+        'songs of one album by one artist need one album cover and one artist picture',
+        () async {
+      final songs = await (db.select(db.tracks)
+            ..where((t) => t.albumId.equals('al3')))
+          .get();
+      expect(songs.length, greaterThan(1));
+      final artistId = songs.first.artistId!;
+      await (db.update(db.artists)..where((a) => a.id.equals(artistId)))
+          .write(const ArtistsCompanion(coverArt: Value('ar-pic')));
+      for (final song in songs) {
+        await download(song.id);
+      }
+
+      final ids = await repo.coverIdsOfDownloads();
+
+      expect(ids.toSet(), {'al-al3', 'ar-pic'});
+      expect(ids.length, 2, reason: 'each picture once');
+    });
+
+    test("a song's own cover id is needed too when it differs from its album's",
+        () async {
+      await (db.update(db.tracks)..where((t) => t.id.equals('al3-t1')))
+          .write(const TracksCompanion(coverArt: Value('mf-al3-t1')));
+      await download('al3-t1');
+
+      final ids = await repo.coverIdsOfDownloads();
+
+      expect(ids, containsAll(['mf-al3-t1', 'al-al3']));
+    });
+
+    test('a song that is not finished downloading needs nothing yet', () async {
+      await db.into(db.downloads).insert(DownloadsCompanion.insert(
+          serverId: serverId,
+          trackId: 'al3-t1',
+          updatedAtMs: 0,
+          state: const Value(1)));
+
+      expect(await repo.coverIdsOfDownloads(), isEmpty);
+    });
+
+    test('there is no limit: every downloaded song counts', () async {
+      final all = await db.select(db.tracks).get();
+      for (final song in all) {
+        await download(song.id);
+      }
+
+      final ids = await repo.coverIdsOfDownloads();
+
+      expect(ids.toSet(), containsAll(['al-al1', 'al-al2', 'al-al3']));
+      expect(ids.length, ids.toSet().length);
     });
   });
 

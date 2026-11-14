@@ -9,6 +9,8 @@ import '../core/logger.dart';
 import '../data/covers/cover_prefetcher.dart';
 import '../features/common/cover_art.dart'
     show coverCacheManager, coverFileService, retireOldCoverCache;
+import '../features/downloads/download_providers.dart'
+    show downloadedTracksProvider;
 import 'providers.dart';
 
 /// A picture the server refuses as not valid (401) makes the app renew its cover ticket (`CoverPassHolder.refused`), so a ticket that stopped
@@ -31,6 +33,10 @@ final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {
     serverId: serverId,
     isCached: (key) async =>
         await coverCacheManager.getFileFromCache(key) != null,
+    pin: (key) => coverCacheManager.pin(key, owner: serverId),
+    retain: (wanted) async {
+      await coverCacheManager.retainOnly(wanted, owner: serverId);
+    },
     fetch: (id, size) async {
       // On an Encore server the address is written with the cover ticket: get it first (it is kept for days, so this is one question at most).
       await session.covers.ensure();
@@ -71,10 +77,24 @@ final coverPrefetchProvider = Provider<void>((ref) {
       final ids =
           await repo.coverIdsToKeepOffline(limit: budget.backgroundLimit);
       await prefetcher.prefetch(ids, sizes: budget.sizes);
+      // What the downloaded songs need is PINNED, once each and with no limit: it stays whatever else the cache holds or the system clears,
+      // and is released only when no downloaded song needs it any more (P1-10). On mobile data (and so under Data saver) it is the small
+      // size only, from the same budget as the rest of the background fetch (P4-24); a larger picture that is already pinned stays.
+      await prefetcher.keepPinned(await repo.coverIdsOfDownloads(),
+          sizes: budget.sizes);
     } on Object catch (error) {
       Log.debug('covers', 'the background cover fetch stopped: $error');
     }
   }
+
+  // A download that finishes (or is removed) changes what must be pinned. A bulk download finishes a song every few seconds: wait for it to settle.
+  Timer? settle;
+  ref.onDispose(() => settle?.cancel());
+  ref.listen(downloadedTracksProvider, (previous, next) {
+    if (!next.hasValue) return;
+    settle?.cancel();
+    settle = Timer(const Duration(seconds: 5), () => unawaited(run()));
+  });
 
   ref.listen(syncStatusProvider, (previous, next) {
     final after = next.value?.lastSuccessAt;

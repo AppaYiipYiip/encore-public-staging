@@ -199,10 +199,16 @@
   "at": "2026-11-14T04:04:39Z",
   "by": "Claude"
  },
+ "P1-10": {
+  "state": "built",
+  "evidence": "Pinned pictures (the remaining part of P1-10): app/lib/data/covers/pinning_cache.dart (PinningCacheManager: a second PERSISTENT store under the app's support directory, found first by every reader, no eviction, survives emptyCache = 'Clear cache'; FilePinRegistry remembers what is pinned), CoverPrefetcher.keepPinned (fetch if missing, pin, release by picture at both sizes so a mobile-data run never drops a large pin), LibraryRepository.coverIdsOfDownloads (the song's own cover, its album's and its artist's picture of every finished download, each id once, no limit), wired in app/cover_wiring.dart (every run, and 5 s after the set of downloaded songs changes). Tests: 9 for the pinning cache with the real flutter_cache_manager on temporary directories (a pinned picture survives emptyCache, an unpinned one does not, pin once, unpin, retainOnly, remembered by a new manager/run, registry read once, file registry survives a restart and a damaged file), 5 for keepPinned (5 songs of one album + 1 artist = 4 pins, already cached is not fetched again, release by picture at both sizes, nothing downloaded = every pin released, a failed fetch is not counted), 5 for coverIdsOfDownloads (one album cover + one artist picture for 5 songs; own cover id; unfinished download needs nothing; no limit). All of test/features, app, core, data, domain, design, playback and architecture (2589) pass and dart analyze --fatal-infos is clean. NOT walked, and NOT covered by a test: the wiring in cover_wiring.dart (same path as before plus keepPinned) and Android's real 'Clear cache' (to walk: download a playlist, Settings > Apps > Clear cache, airplane mode, covers and artist pictures still show). NOT done: the artist picture of an artist the music server has none for (N-15, separate), and the notification art (a content:// URI, old bug B35).",
+  "at": "2026-11-14T08:52:45Z",
+  "by": "Claude"
+ },
  "P4-24": {
   "state": "built",
-  "evidence": "Code PR #36: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers (streaming quality, new downloads with made-at record and Wi-Fi upgrade, small pictures via CoverBudget, prepare-ahead window 1); tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at, upgrade, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart, core/cover_sizes_test.dart, playback/media_art_test.dart, features/data_saver_settings_test.dart, download_policy_test.dart, migration v7 to v8; 2620 tests green. Built, NOT walked: the byte-count acceptance (the phone's per-app data counter on mobile data) is for a real walk.",
-  "at": "2026-11-14T08:51:12Z",
+  "evidence": "Code PR #36: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers (streaming quality, new downloads with made-at record and Wi-Fi upgrade, small pictures via CoverBudget also for the pinned run, prepare-ahead window 1); tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at, upgrade, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart, core/cover_sizes_test.dart, data/covers/cover_prefetcher_test.dart, playback/media_art_test.dart, features/data_saver_settings_test.dart, download_policy_test.dart, migration v7 to v8. Built, NOT walked: the byte-count acceptance (the phone's per-app data counter on mobile data) is for a real walk.",
+  "at": "2026-11-14T09:18:01Z",
   "by": "Claude"
  }
 }
