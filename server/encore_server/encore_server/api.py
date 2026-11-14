@@ -77,6 +77,7 @@ from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
 from .sources.youtube.tools import Active, ToolStore
 from .sources.youtube.updater import Tools, create_tools
+from .stopping import LIFESPAN_STOP_S, MIN_JOIN_S
 from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
@@ -1604,14 +1605,21 @@ def create_app(
         try:
             yield
         finally:
+            # ONE budget for all the background threads (stopping.py): each is told to stop, then waited for only as long as the budget lasts. Before, every
+            # stop had its own join (the scheduler 5 s for each of its four workers): a stop with busy workers outlasted Docker's ten seconds (B-129).
+            deadline = time.monotonic() + LIFESPAN_STOP_S
+
+            def room() -> float:
+                return max(MIN_JOIN_S, deadline - time.monotonic())
+
             if keep_watch is not None:
-                keep_watch.stop()
+                keep_watch.stop(timeout=room())
             if tools is not None:
-                tools.stop()
+                tools.stop(timeout=room())
             if linker is not None:
-                linker.stop()
+                linker.stop(timeout=room())
             if scheduler is not None:
-                scheduler.stop()
+                scheduler.stop(timeout=room())
             database.release()
 
     app = FastAPI(title="Encore server", version=__version__, docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)

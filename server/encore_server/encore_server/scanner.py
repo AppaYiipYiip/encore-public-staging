@@ -197,11 +197,11 @@ class LibraryLinker:
         self._thread = threading.Thread(target=self._loop, name="library-link", daemon=True)
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 5.0) -> None:
         self._stop.set()
         self._soon.set()
         if self._thread is not None:
-            self._thread.join(timeout=5)
+            self._thread.join(timeout=timeout)
             self._thread = None
 
     def _loop(self) -> None:

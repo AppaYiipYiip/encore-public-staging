@@ -8,6 +8,7 @@ end before it shuts down, so a stop with one phone connected took longer than Do
 
 from __future__ import annotations
 
+import inspect
 import json
 import threading
 import time
@@ -23,9 +24,13 @@ from websockets.sync.client import connect
 from encore_server import api
 from encore_server.api import create_app
 from encore_server.config import Settings
+from encore_server.db import Database
+from encore_server.scheduler import Scheduler
+from encore_server.stopping import DOCKER_GRACE_S, UVICORN_GRACE_S, join_within, worst_case_stop_s
 from tests.conftest import creds
 from tests.test_accounts import FakeAdmin
 from tests.test_revocation import MusicServer
+from tests.test_scheduler import make_person, make_refs
 
 V1 = "/encore/api/v1"
 #: Docker's grace before SIGKILL is 10 s: a stop must be well inside it.
@@ -125,3 +130,61 @@ def test_a_connected_phone_still_receives_what_is_published_to_it(served: tuple[
         socket.close()
 
     assert (got["n"], got_next["n"]) == (1, 2)
+
+
+# ------------------------------------------------------------------------------------------------ the whole stop adds up
+
+
+def test_the_two_phases_of_a_stop_add_up_to_less_than_dockers_grace() -> None:
+    """uvicorn's grace + the lifespan's one budget + the least each stop is always given: the number in stopping.py's docstring."""
+    assert worst_case_stop_s() <= DOCKER_GRACE_S - 1.0, "a stop that can take the whole grace ends in SIGKILL (B-129)"
+
+
+def test_threads_are_waited_for_together_not_one_after_another() -> None:
+    release = threading.Event()
+    stuck = [threading.Thread(target=release.wait, args=(30,), daemon=True) for _ in range(4)]
+    for thread in stuck:
+        thread.start()
+    began = time.monotonic()
+    try:
+        join_within(stuck, 0.5)
+        took = time.monotonic() - began
+    finally:
+        release.set()
+
+    assert took < 1.2, f"four stuck threads took {took:.1f} s: they were waited for one after another (0.5 s each would be 2 s)"
+
+
+def test_stopping_busy_workers_takes_one_budget_not_one_per_worker(tmp_path: Path) -> None:
+    """The scheduler used to join each of its workers for 5 s: with four of them in the middle of a long look-up a stop took 20 s."""
+    db = Database(tmp_path / "e.db")
+    db.migrate(version="test")
+    refs = make_refs(db, 4)
+    who = make_person(db, "marwa")
+    started, release = threading.Semaphore(0), threading.Event()
+
+    def stuck(item: Any) -> None:
+        started.release()
+        release.wait(30)
+
+    scheduler = Scheduler(db, {"keep": stuck}, workers={"background": 4, "interactive": 1})
+    scheduler.start()
+    try:
+        for ref in refs:
+            scheduler.submit("keep", ref, who)
+        for _ in refs:
+            assert started.acquire(timeout=5), "a worker never took its item"
+        began = time.monotonic()
+        scheduler.stop(timeout=0.5)
+        took = time.monotonic() - began
+    finally:
+        release.set()
+
+    assert took < 1.2, f"stopping four busy workers took {took:.1f} s: each was waited for on its own"
+
+
+def test_the_installed_uvicorn_takes_the_grace_the_server_passes_it() -> None:
+    """The entry point test replaces `uvicorn.run`; this one asks the real one, so an image whose uvicorn refused the argument cannot slip through."""
+    assert "timeout_graceful_shutdown" in inspect.signature(uvicorn.run).parameters
+    config = uvicorn.Config(lambda scope, receive, send: None, timeout_graceful_shutdown=int(UVICORN_GRACE_S))  # type: ignore[arg-type]
+    assert config.timeout_graceful_shutdown == int(UVICORN_GRACE_S)

@@ -25,6 +25,7 @@ from dataclasses import dataclass
 
 from .db import Database
 from .ids import new_id
+from .stopping import join_within
 
 log = logging.getLogger("encore_server.scheduler")
 
@@ -404,12 +405,13 @@ class Scheduler:
                 thread.start()
                 self._threads.append(thread)
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 5.0) -> None:
         with self._wake:
             self._stopping = True
             self._wake.notify_all()
-        for thread in self._threads:
-            thread.join(timeout=5)
+        join_within(
+            self._threads, timeout
+        )  # all the workers together: a worker in the middle of a long look-up must not hold a stop (B-129)
         self._threads.clear()
 
     def _loop(self, pool: str) -> None:
