@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103431Z-agent-b6fd",
+ "item": "N-11",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:31Z",
+ "type": "note",
+ "body": "Engineering check on the bench, 14 Nov 2026 (NOT the release-candidate pair; nothing is marked walked): verified on an emulator against VM 108 updated to sha-35a086e. Server start-up repair: 3528 -> 3354 refs (174 merged; 5 pairs held back on purpose, different source video). Phone (debug build 151 over 150, same account, no wipe): library rows 3416 -> 3242, songs holding a file in common with another song 178 -> 5 (the five held pairs), merges cursor 174 (the phone applied every merge once). The server's own copy before the repair is /data/backups/encore-before-ref-merge-20261114-101106.db on VM 108 (undo in local/homelab-changes-2026-11-13.md, entry 1e). Still open: a download that sat on a merged duplicate (the phone had 0 downloads here), the 5 held pairs (B-110: the keeper shares one file between two refs), and a walk on the release-candidate pair."
+}

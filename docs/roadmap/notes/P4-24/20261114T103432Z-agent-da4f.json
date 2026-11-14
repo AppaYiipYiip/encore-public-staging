@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103432Z-agent-da4f",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:32Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151): Settings > Playback shows \"Data saver: Uses less mobile data: lower quality, smaller pictures, less loaded ahead. Never on Wi-Fi.\" under \"On mobile data\". The byte-count acceptance still needs a real phone on a real mobile line."
+}

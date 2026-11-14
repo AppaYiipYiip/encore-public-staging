@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103432Z-agent-de8b",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:32Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151, account qaowner) against VM 108; not the release-candidate pair. Downloaded In Da Club (opus160, 4.1 MB, from a song the server already keeps). Airplane mode ON: tapping the downloaded row in the playlist started the song at once; after a force-stop and a cold start in airplane mode (\"You're offline. Downloaded music still plays.\" showed), tapping the downloaded row again started it at once. Not covered: a list whose first song is NOT downloaded (the Play button still pays one reach look, noted before), the real A35 line."
+}

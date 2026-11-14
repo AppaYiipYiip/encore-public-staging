@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103432Z-agent-b50e",
+ "item": "N-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:32Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151) against VM 108; not the release-candidate pair. 50 Cent's page (3 of 8 albums on the server): Play queues 50 Cent's songs that the server keeps (queue: P.I.M.P., Just A Lil Bit, In Da Club, Candy Shop, ...), \"Playing from 50 Cent\", shuffle off; the server log shows no YouTube look-up for it. To look at in a walk: the first song is P.I.M.P., not the first row of \"Popular\" (In Da Club): is the queue order the albums' order on purpose? Also a long press on a Popular row plays it (the rows there have no menu button; the check mark is the kept-on-server sign)."
+}

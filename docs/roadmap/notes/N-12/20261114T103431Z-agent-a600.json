@@ -1,0 +1,9 @@
+{
+ "id": "20261114T103431Z-agent-a600",
+ "item": "N-12",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:34:31Z",
+ "type": "note",
+ "body": "Engineering check, 14 Nov 2026: verified on an emulator (build 151) against VM 108 (sha-35a086e); not the release-candidate pair. '00s Hip Hop > a song by two artists (Hate It Or Love It): the long-press menu offers \"Go to The Game\" and \"Go to 50 Cent\" and \"Go to album\"; tapping \"Go to 50 Cent\" closes the sheet and opens 50 Cent's page (no false \"Could not find\"). A song with one artist (In Da Club) keeps the single \"Go to artist\" line."
+}
