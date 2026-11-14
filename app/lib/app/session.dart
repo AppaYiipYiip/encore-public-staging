@@ -688,16 +688,20 @@ class ServerSession {
 
   Future<void> dispose() async {
     _disposed = true;
+    // First, and before any `await`: no new delivery starts and the outbox's wake timer is cancelled at once (the rest of the teardown takes
+    // several turns of the event loop, and a timer that outlives the session is a leak, in a test a failure).
+    final outboxEnded = outbox.dispose();
+    // Not awaited: one more turn of the event loop here delays the scheduler's own teardown, and its retry timer must be gone when the screen is.
+    unawaited(_reachable?.cancel());
     unawaited(covers.dispose());
     upgrade.dispose();
     detecting.dispose();
     await _addressChanges?.cancel();
-    await _reachable?.cancel();
     await _liveEvents?.cancel();
     await _liveConnection?.cancel();
     await live?.dispose();
     await scheduler.dispose();
-    await outbox.dispose();
+    await outboxEnded;
     await sync.dispose();
     await endpoints.dispose();
   }

@@ -177,7 +177,8 @@ class OutboxProcessor {
           ..orderBy([(o) => OrderingTerm.asc(o.id)])
           ..limit(1))
         .getSingleOrNull();
-    if (head == null) return;
+    // The session may have ended while the queue was read: no timer may outlive it.
+    if (head == null || _disposed) return;
     final wait = head.nextAttemptAtMs - _clock.now().millisecondsSinceEpoch;
     // Due now: the pass that just ended stopped for another reason (a lost lease), not for a backoff.
     if (wait <= 0) return;
