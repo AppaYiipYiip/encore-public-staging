@@ -10,7 +10,7 @@ because a burst of requests is what got the owner's home address refused for hou
 
 * it waits its turn at the background pacer like every other request nobody is waiting for (`sources/youtube/pace.py`);
 * it asks nothing while YouTube is being given a rest;
-* it asks nothing for a song the server already keeps or whose address it already has;
+* it asks nothing for a song the server already keeps or whose address it already has, nor for one it already knows it cannot get (N-13);
 * at most [PER_HOUR] songs are prepared in an hour, so skipping through a long list cannot turn into a burst; the cap is the server's, not a person's.
 """
 
@@ -37,6 +37,8 @@ PER_HOUR = 40
 
 
 class Source(Protocol):
+    def is_missing(self, wanted: Wanted) -> bool: ...
+
     def is_ready(self, wanted: Wanted) -> bool: ...
 
     def resting_for(self) -> float: ...
@@ -80,6 +82,9 @@ class Preparer:
         if _kept(ref):
             return
         wanted = wanted_from_ref(ref)
+        # A song the server already knows it cannot get (N-13) is not asked about again, and it does not fail either: nothing is wrong.
+        if self._source.is_missing(wanted):
+            return
         # A song that needs no asking costs no slot of the hour, and nothing is asked while YouTube rests (the slot is taken last).
         if self._source.is_ready(wanted):
             return

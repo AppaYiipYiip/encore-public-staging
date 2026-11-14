@@ -1,0 +1,9 @@
+{
+ "id": "20261114T114742Z-agent-b03f",
+ "item": "N-13",
+ "role": "agent",
+ "by": "helper-n13 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T11:47:42Z",
+ "type": "note",
+ "body": "PR 2 of 2 opened: #53, the N-13 code (server memory of refusals, migration 0012, 7-day window from the last try, POST /refs/unavailable and the optional unavailable field on refs, Search Top result/rows, album, artist Popular, genre chart and missing-songs rows marked; Play and Shuffle skip marked songs). Marked built, not walked. Not done: library and playlist rows are not marked yet (asking by ref id is the next step); catalogue rows have no '...' menu in the app, so the drawn menu rule is listed as a known difference. Goldens: none changed."
+}

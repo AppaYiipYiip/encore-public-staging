@@ -13,6 +13,7 @@ import sqlite3
 from collections.abc import Iterable, Sequence
 from typing import Any
 
+from . import missing
 from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
@@ -113,7 +114,7 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         "SELECT id, navidrome_song_id, codec, bitrate_kbps, meta FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC LIMIT 1",
         (row["id"],),
     ).fetchone()
-    return {
+    ref: dict[str, Any] = {
         "id": row["id"],
         "title": row["title"],
         "artists": json.loads(row["artists"]),
@@ -141,6 +142,12 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
             "meta": json.loads(file_row["meta"]) if file_row["meta"] else {},
         },
     }
+    # A song the server already knows it cannot get (N-13): only while the memory is believed, and never for a song the server has a file of (it plays).
+    # Absent, not null, when there is none: an app from before this field reads nothing new, and the new app treats it as optional.
+    unavailable = missing.public(missing.standing_of(row, now_ms())) if file_row is None else None
+    if unavailable is not None:
+        ref["unavailable"] = unavailable
+    return ref
 
 
 #: The longest chain of merges followed. The repair keeps `ref_merge.into_id` pointing at a live ref, so one hop is the norm; this only stops a damaged
@@ -261,6 +268,8 @@ def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) ->
         return row
     assignments = ", ".join(f"{column} = ?" for column in updates)
     conn.execute(f"UPDATE song_ref SET {assignments} WHERE id = ?", (*updates.values(), row["id"]))  # noqa: S608 - fixed column names
+    if "ytm_video_id" in updates:
+        clear_missing(conn, row["id"])  # somebody knows an upload of this song: what was remembered about its absence is void
     return conn.execute("SELECT * FROM song_ref WHERE id = ?", (row["id"],)).fetchone()  # type: ignore[no-any-return]
 
 
@@ -304,14 +313,68 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
     return row_to_ref(conn, row)
 
 
-def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str) -> bool:
-    """A play found the upload of this song: the next play needs no search. An upload another ref already owns is never taken from it."""
+def remember_video(conn: sqlite3.Connection, ref_id: str, video_id: str, *, replacing: str | None = None) -> bool:
+    """A play found the upload of this song: the next play needs no search. An upload another ref already owns is never taken from it.
+
+    With [replacing] (N-13) the ref's own upload turned out to be gone and a search found another: that dead id is replaced, and only that one. The dead
+    id stays in the column until a live one replaces it, on purpose: a phone's description of an imported song carries the same dead id, and writing it
+    into an empty column would void what the server remembers about the song."""
     cursor = conn.execute(
-        "UPDATE song_ref SET ytm_video_id = ? WHERE id = ? AND ytm_video_id IS NULL"
+        "UPDATE song_ref SET ytm_video_id = ? WHERE id = ? AND (ytm_video_id IS NULL OR ytm_video_id = ?)"
         " AND NOT EXISTS (SELECT 1 FROM song_ref WHERE ytm_video_id = ?)",
-        (video_id, ref_id, video_id),
+        (video_id, ref_id, replacing, video_id),
+    )
+    if cursor.rowcount:
+        clear_missing(conn, ref_id)  # an upload was found: the song is not missing
+    return bool(cursor.rowcount)
+
+
+_MISSING_COLUMNS = "missing_reason, missing_at, missing_tried_at, missing_rev"
+
+
+def remember_missing(conn: sqlite3.Connection, ref_id: str, reason: str, *, now: int | None = None) -> None:
+    """The source ANSWERED no about this song (N-13, `missing.py`): remembered for a window. `missing_at` is when it was first learned and stays across
+    later tries; `missing_tried_at` is this try. **The files feed is not told**: it is the phone's index of what the server KEEPS, a ref that has no file
+    is not its business (300 songs of an import that were not found would be 300 rows to write and retire on every phone), and the phone reads the mark
+    from the ref it resolves and from `POST refs/unavailable`."""
+    if reason not in missing.REASONS:
+        raise ValueError(f"not a reason a song is missing: {reason!r}")
+    at = now_ms() if now is None else now
+    conn.execute(
+        "UPDATE song_ref SET missing_reason = ?, missing_at = COALESCE(missing_at, ?), missing_tried_at = ?, missing_rev = ? WHERE id = ?",
+        (reason, at, at, missing.MATCHER_REVISION, ref_id),
+    )
+
+
+def clear_missing(conn: sqlite3.Connection, ref_id: str) -> bool:
+    """The song was found (an upload, a file): what was remembered about its absence is void."""
+    cursor = conn.execute(
+        "UPDATE song_ref SET missing_reason = NULL, missing_at = NULL, missing_tried_at = NULL, missing_rev = NULL"
+        " WHERE id = ? AND missing_reason IS NOT NULL",
+        (ref_id,),
     )
     return bool(cursor.rowcount)
+
+
+def unavailable_for(
+    conn: sqlite3.Connection, raw_songs: Sequence[object], *, now: int | None = None
+) -> list[dict[str, Any] | None]:
+    """For each described song, in order: what the server remembers about it being impossible to get (`missing.public`), or `None`. A read: no ref is made
+    for a song the server has not seen, and a song the server keeps (it has a file) is never unavailable. A description that cannot be read answers
+    `None`, as one that matches nothing does: the question is about songs, not about the asker's mistakes."""
+    at = now_ms() if now is None else now
+    answers: list[dict[str, Any] | None] = []
+    for raw in raw_songs:
+        try:
+            row = find(conn, parse_item(raw))
+        except ApiError:
+            answers.append(None)
+            continue
+        has_file = (
+            row is not None and conn.execute("SELECT 1 FROM song_file WHERE ref = ? LIMIT 1", (row["id"],)).fetchone() is not None
+        )
+        answers.append(None if row is None or has_file else missing.public(missing.standing_of(row, at)))
+    return answers
 
 
 def file_holders(conn: sqlite3.Connection, song_ids: Sequence[str]) -> dict[str, sqlite3.Row]:
@@ -356,6 +419,7 @@ def attach_file(
     if not ref_exists(conn, ref_id):
         raise ApiError("not_found", "That song is not known to this server.")
     meta_json = json.dumps(meta, separators=(",", ":"), sort_keys=True) if meta else None
+    clear_missing(conn, ref_id)  # the server has a file of this song now: whatever was remembered about its absence is void
     existing = conn.execute(
         "SELECT id, navidrome_song_id, path, codec, bitrate_kbps, meta FROM song_file WHERE ref = ?"
         " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",

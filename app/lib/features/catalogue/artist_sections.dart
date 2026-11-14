@@ -7,6 +7,7 @@ import '../../data/catalogue/catalogue_models.dart';
 import '../../design/tokens.dart';
 import '../common/widgets.dart';
 import '../instant/instant_controller.dart';
+import '../instant/song_marks.dart';
 import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'catalogue_providers.dart';
@@ -65,6 +66,8 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final all = top.value ?? const <CatalogueTrack>[];
     final collapsible = all.length > widget.collapsedCount;
+    // The songs the server already knows it cannot get are marked (N-13): one question for the whole list.
+    ref.watch(songMarksCheckProvider(TrackList(all)));
 
     return SliverMainAxisGroup(
       slivers: [
@@ -110,6 +113,7 @@ class _ArtistPopularSectionState extends ConsumerState<ArtistPopularSection> {
                   isCurrent: current,
                   isPlaying: current && (snapshot?.isPlaying ?? false),
                   status: status,
+                  mark: ref.watch(songMarkProvider(t.id)),
                   onTap: () => unawaited(tapPlayRun(ref, items,
                       startIndex: i,
                       sourceName: artist.name,

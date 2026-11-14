@@ -77,6 +77,7 @@ from .sources.youtube.source import YoutubeSource, wanted_from_ref
 from .sources.youtube.stream import StreamError
 from .sources.youtube.tools import Active, ToolStore
 from .sources.youtube.updater import Tools, create_tools
+from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
 
@@ -673,6 +674,24 @@ def prepare_refs(
                 svc.scheduler.submit("prepare", ref_id, p.person_id, conn=conn)
                 accepted += 1
     return _ok({"accepted": accepted})
+
+
+#: How many songs one `POST refs/unavailable` may ask about (a page of results, an album, an artist's popular songs).
+MAX_UNAVAILABLE_ASKED = 100
+
+
+@router.post("/refs/unavailable")
+def unavailable_refs(
+    request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """Which of these songs the server already knows it cannot get (N-13). The songs are described as `POST refs/resolve` takes them and answered in the
+    same order: `null` (no known problem, a song the server has never seen, or one it could not read) or `{reason, message, since, retryAfter}`. A read:
+    it makes no ref and asks YouTube nothing, so a phone can ask about every song of a list it is showing (a Search is all catalogue songs, no ref yet)."""
+    items = body.get("songs")
+    if not isinstance(items, list) or not items or len(items) > MAX_UNAVAILABLE_ASKED:
+        raise ApiError("validation", f"Send between 1 and {MAX_UNAVAILABLE_ASKED} songs.")
+    with services(request).db.read() as conn:
+        return _ok({"items": refs.unavailable_for(conn, items)})
 
 
 @router.get("/refs/{ref_id}")
@@ -1380,9 +1399,9 @@ async def live(websocket: WebSocket) -> None:
 def _default_youtube(settings: Settings, database: Database) -> YoutubeSource | None:
     """The real YouTube source, when its libraries are installed (a server without them still runs: songs it keeps still play)."""
 
-    def remember(ref_id: str, video_id: str) -> None:
+    def remember(ref_id: str, video_id: str, replacing: str | None = None) -> None:
         with database.tx() as conn:
-            refs.remember_video(conn, ref_id, video_id)
+            refs.remember_video(conn, ref_id, video_id, replacing=replacing)
 
     if importlib.util.find_spec("yt_dlp") is None or importlib.util.find_spec("ytmusicapi") is None:
         log.warning("yt-dlp or ytmusicapi is not installed: songs that are not kept cannot be streamed")
@@ -1485,6 +1504,9 @@ def create_app(
     refmerge.repair(database)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
+    if isinstance(youtube, YoutubeSource) and youtube.verdicts is None:
+        # The memory of the songs the source cannot get (N-13) lives in the database, so any source the application runs is given it here.
+        youtube.verdicts = RefVerdicts(database)
     hub = Hub()
     client = navidrome or NavidromeClient(
         settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password

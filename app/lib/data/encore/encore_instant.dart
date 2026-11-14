@@ -80,12 +80,39 @@ class EncoreInstantBackend implements InstantPlayBackend {
     return info ?? _info;
   }
 
+  /// Which of these songs the server already knows it cannot get (N-13), one answer per song in the order asked (`null`: no known problem).
+  /// One request however many songs (at most 100). `null` when the server could not be asked (the network: ask again later); `supported: false` when
+  /// the server has no such question (an older one: 404 or 405), which is "no verdicts here" and never an error. Asking changes nothing on the server.
+  Future<({bool supported, List<EncoreUnavailable?> verdicts})?>
+      unavailableAmong(List<FetchRequest> songs) async {
+    final result = await _api.unavailable([for (final s in songs) describe(s)]);
+    if (result.failureOrNull != null) return null;
+    final answer = result.valueOrNull;
+    if (answer == null) {
+      return (supported: false, verdicts: const <EncoreUnavailable?>[]);
+    }
+    // An answer of the wrong length cannot be matched to the songs: it is no answer.
+    if (answer.length != songs.length) return null;
+    return (supported: true, verdicts: answer);
+  }
+
   @override
   Future<Result<FetchJob>> start(FetchRequest request) async {
     final resolved = await _resolve(request);
     final ref = resolved.valueOrNull;
     if (ref == null) return Result.err(resolved.failureOrNull!);
     final kept = ref.file?.navidromeSongId != null;
+    // The server already knows it cannot get this song (N-13): it is not saved, not played and not tried again, and the row says why in the server's own
+    // sentence. (The marked row of a list never gets here: a tap on it says so first. This is the song whose memory the server made after the list drew.)
+    final unavailable = ref.unavailable;
+    if (!kept && unavailable != null && unavailable.liveAt(_now())) {
+      return Result.ok(FetchJob(
+        id: ref.id,
+        state: FetchState.failed,
+        error: 'unavailable',
+        message: unavailable.sentence,
+      ));
+    }
     if (!kept) {
       final info = await _look();
       if (info != null && info.youtubeState == 'resting') {

@@ -1,0 +1,9 @@
+{
+ "id": "20261114T105856Z-agent-0369",
+ "item": "N-13",
+ "role": "agent",
+ "by": "helper-n13 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T10:58:56Z",
+ "type": "note",
+ "body": "PR 1 of 2 opened: #45, the search-outage defect (audit row B-122): a search that could not be made was answered as a permanent 404 song_unavailable/removed (the app never retried it, the keeper gave the song up, an import called it missing). Now search_failed: 502 source_unreachable, retryable, waited out by the keeper and the imports. Four failing tests first, the whole server suite and the gate green. Built, not walked. The N-13 code PR follows once #45 is merged."
+}
