@@ -406,6 +406,31 @@ def test_two_refs_with_different_isrc_or_catalogue_ids_are_two_recordings_and_ar
     assert report.backup is None  # nothing to merge: nothing is backed up
 
 
+def test_two_nameless_songs_are_never_merged_by_their_shared_placeholder_name(db: Database) -> None:
+    """N-26: the repair merges refs that hold ONE FILE, never on the name; so two songs filed under "Unknown Artist" with the same title are merged only
+    if they share a file, and not even then when they name different videos (the keeper's habit of handing a file to a second ref)."""
+    with db.tx() as c:
+        add_ref(c, S1, "Intro", ["Unknown Artist"], duration_ms=100000, ytm_video_id="VIDEOAAAAA1")
+        add_ref(
+            c, L1, "Intro", ["Unknown Artist"], duration_ms=101000, ytm_video_id="VIDEOBBBBB2"
+        )  # a different song, a different file
+        add_ref(c, S2, "Intro", ["Unknown Artist"], duration_ms=100000, ytm_video_id="VIDEOCCCCC3")
+        add_ref(
+            c, L2, "Intro", ["Unknown Artist"], duration_ms=100000, ytm_video_id="VIDEODDDDD4"
+        )  # a different song that shares S2's file
+        add_file(c, S1, "nd-1", 1, source="youtube", path="Encore/Unknown Artist/a.opus")
+        add_file(c, L1, "nd-2", 2, source="youtube", path="Encore/Unknown Artist/b.opus")
+        add_file(c, S2, "nd-3", 3, source="youtube", path="Encore/Unknown Artist/c.opus")
+        add_file(c, L2, "nd-3", 4, source="library", path="Encore/Unknown Artist/c.opus")
+
+    report = refmerge.repair(db)
+
+    assert report.merged == []
+    assert {h.reason for h in report.held} == {"different_source_video"}
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0] == 4
+
+
 def test_entries_and_plays_per_person_are_unchanged_and_the_likes_that_changed_are_explained(seeded: Database) -> None:
     before = per_person(seeded)
 

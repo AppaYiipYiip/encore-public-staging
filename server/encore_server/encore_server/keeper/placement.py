@@ -13,7 +13,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..textnorm import norm_title, safe_path_part, version_signature
+from ..textnorm import UNKNOWN_ARTIST, norm_title, safe_path_part, version_signature
 
 AUDIO_SUFFIXES = {".opus", ".ogg", ".m4a", ".mp3", ".flac", ".aac", ".wav"}
 
@@ -56,7 +56,7 @@ def _existing_child(parent: Path, wanted: str) -> Path | None:
 def artist_folder(kept_root: Path, artist: str) -> Path | None:
     """The folder under [kept_root] (the server's own `Encore/` folder) that the keeper puts [artist]'s albums in, if it exists yet: the very one
     [plan_placement] chooses, so what finds an artist's folder and what makes it can never disagree."""
-    name = safe_path_part(artist, "Unknown Artist")
+    name = safe_path_part(artist, UNKNOWN_ARTIST)
     folder = _existing_child(kept_root, name) or (kept_root / name)
     return folder if folder.is_dir() else None
 
@@ -81,7 +81,7 @@ def plan_placement(
     suffix: str = ".opus",
 ) -> Placement:
     """Where the file goes. Nothing is created here."""
-    artist_name = safe_path_part(artist, "Unknown Artist")
+    artist_name = safe_path_part(artist, UNKNOWN_ARTIST)
     artist_dir = _existing_child(music_dir, artist_name) or (music_dir / artist_name)
     album_name = safe_path_part(album or "Singles", "Singles")
     album_dir = _existing_child(artist_dir, album_name) or (artist_dir / album_name)

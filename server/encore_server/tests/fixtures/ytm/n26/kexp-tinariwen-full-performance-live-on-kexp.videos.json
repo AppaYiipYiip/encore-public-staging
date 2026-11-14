@@ -1,0 +1,340 @@
+{
+ "query": "KEXP Tinariwen Full Performance Live on KEXP",
+ "filter": "videos",
+ "recorded": "2026-11-14",
+ "results": [
+  {
+   "videoId": "kGJwMhVICg0",
+   "title": "Tinariwen - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "28:59",
+   "duration_seconds": 1739,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "669K"
+  },
+  {
+   "videoId": "bUO6qINN5nY",
+   "title": "Tinariwen · Full Performance · Live on KEXP",
+   "artists": [
+    {
+     "name": "Товарищ Lxss",
+     "id": "UCW4xU674a8BHPn9sj4SpL7g"
+    }
+   ],
+   "duration": "26:14",
+   "duration_seconds": 1574,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "227"
+  },
+  {
+   "videoId": "H1YIgwPsX5Q",
+   "title": "Nànnuflày",
+   "artists": [
+    {
+     "name": "Tinariwen",
+     "id": "UC8s6TihH6f3Ry2dcTcZAXyw"
+    }
+   ],
+   "duration": "4:12",
+   "duration_seconds": 252,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_OMV",
+   "year": null,
+   "category": "Videos",
+   "views": "9.4M"
+  },
+  {
+   "videoId": "nkCwGCDaaZ4",
+   "title": "Etran de L'Aïr - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "37:06",
+   "duration_seconds": 2226,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "405K"
+  },
+  {
+   "videoId": "Ds7Cui4ZwlE",
+   "title": "Imarhan - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "24:49",
+   "duration_seconds": 1489,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "206K"
+  },
+  {
+   "videoId": "GOs74rXJ3zs",
+   "title": "Khemmis - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "31:03",
+   "duration_seconds": 1863,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "52K"
+  },
+  {
+   "videoId": null,
+   "title": "Ty Segall & Freedom Band - Full Performance (Live on KEXP)",
+   "duration": "26:39",
+   "duration_seconds": 1599,
+   "resultType": "video",
+   "videoType": null,
+   "year": null,
+   "category": "Videos"
+  },
+  {
+   "videoId": "BNFJGGnOz7I",
+   "title": "Bombino - Takamba (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "5:29",
+   "duration_seconds": 329,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "1.5M"
+  },
+  {
+   "videoId": "U4qNFSkOa6o",
+   "title": "Pigs Pigs Pigs Pigs Pigs Pigs Pigs - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "26:34",
+   "duration_seconds": 1594,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "937K"
+  },
+  {
+   "videoId": "hkhieWruMGM",
+   "title": "Nation of Language - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "28:23",
+   "duration_seconds": 1703,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "188K"
+  },
+  {
+   "videoId": "ci6uY78rcVw",
+   "title": "Sloucher - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "22:05",
+   "duration_seconds": 1325,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "11K"
+  },
+  {
+   "videoId": "NDjMwPrUo40",
+   "title": "Páll Ívan frá Eiðum - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "13:11",
+   "duration_seconds": 791,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "7K"
+  },
+  {
+   "videoId": "kQaChzMQkFg",
+   "title": "Nearby - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "24:07",
+   "duration_seconds": 1447,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "4.9K"
+  },
+  {
+   "videoId": "H95yJTSVyho",
+   "title": "Red Baraat - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "28:56",
+   "duration_seconds": 1736,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "264K"
+  },
+  {
+   "videoId": "H8uy2apeCCY",
+   "title": "Tinariwen performing \"Nànnuflày\" Live on KCRW",
+   "artists": [
+    {
+     "name": "KCRW",
+     "id": "UC54U5gpKkaa_BpXRVNip2Dw"
+    }
+   ],
+   "duration": "7:57",
+   "duration_seconds": 477,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "168K"
+  },
+  {
+   "videoId": "i6QzuizpK9k",
+   "title": "Elephant Gym - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "21:56",
+   "duration_seconds": 1316,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "113K"
+  },
+  {
+   "videoId": "3cZA-jXzEMw",
+   "title": "Rəhman Məmmədli - Dervish (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "6:21",
+   "duration_seconds": 381,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "2.8M"
+  },
+  {
+   "videoId": "5yZQFBFG4vs",
+   "title": "Real Estate - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "33:53",
+   "duration_seconds": 2033,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "51K"
+  },
+  {
+   "videoId": "kvQ6V7q1tzw",
+   "title": "My Goodness - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "20:09",
+   "duration_seconds": 1209,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "7.8K"
+  },
+  {
+   "videoId": "cWC1Ws__Dwo",
+   "title": "Loon - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": "UC3I2GFN_F8WudD_2jUZbojA"
+    }
+   ],
+   "duration": "19:32",
+   "duration_seconds": 1172,
+   "resultType": "video",
+   "videoType": "MUSIC_VIDEO_TYPE_UGC",
+   "year": null,
+   "category": "Videos",
+   "views": "10K"
+  }
+ ]
+}

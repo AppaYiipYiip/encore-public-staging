@@ -5,6 +5,7 @@ import pytest
 from encore_server import refs
 from encore_server.db import Database
 from encore_server.errors import ApiError
+from encore_server.textnorm import is_unknown_artist
 
 
 def resolve(db: Database, **song: object) -> dict[str, object]:
@@ -47,6 +48,82 @@ def test_ids_from_the_catalogue_and_youtube_find_the_ref(db: Database) -> None:
     first = resolve(db, deezerId="12345", videoId="bgsmr7t8zGE")
     assert resolve(db, title="Something else entirely", artists=["Anybody"], deezerId="12345")["id"] == first["id"]
     assert resolve(db, title="Another", artists=["Other"], videoId="bgsmr7t8zGE")["id"] == first["id"]
+
+
+PLACEHOLDERS = ["Unknown Artist", "unknown artist", "[Unknown Artist]", "UNKNOWN ARTIST "]
+
+
+@pytest.mark.parametrize(
+    ("name", "is_nobody"),
+    [
+        ("Unknown Artist", True),
+        ("unknown artist", True),
+        ("[Unknown Artist]", True),
+        ("  UNKNOWN   ARTIST ", True),
+        ("Unknown Mortal Orchestra", False),  # a real band
+        ("Unknown", False),
+        ("Unknown Artists", False),
+        ("", False),
+        ("Some Band", False),
+    ],
+)
+def test_only_the_placeholder_itself_says_nobody(name: str, is_nobody: bool) -> None:
+    assert is_unknown_artist(name) is is_nobody
+
+
+@pytest.mark.parametrize("placeholder", PLACEHOLDERS)
+def test_a_song_whose_only_artist_is_the_placeholder_is_never_found_by_its_name(db: Database, placeholder: str) -> None:
+    """N-26: "Unknown Artist" names nobody, so artist + title + length says nothing about WHICH song this is. Two different videos with the same title
+    and lengths a second apart are two refs, each keeping its own video (before: the second landed on the first ref and played the first song's audio)."""
+    first = resolve(db, title="Intro", artists=[placeholder], durationMs=100_000, videoId="aaaaaaaaaaa")
+    second = resolve(db, title="Intro", artists=[placeholder], durationMs=101_000, videoId="bbbbbbbbbbb")
+
+    assert second["id"] != first["id"]
+    assert (first["videoId"], second["videoId"]) == ("aaaaaaaaaaa", "bbbbbbbbbbb")
+
+
+@pytest.mark.parametrize("placeholder", PLACEHOLDERS)
+def test_the_placeholder_is_still_found_by_its_ids_so_the_same_import_twice_is_one_ref(db: Database, placeholder: str) -> None:
+    first = resolve(db, title="Intro", artists=["Unknown Artist"], durationMs=100_000, videoId="aaaaaaaaaaa", isrc="GBAAA0000009")
+    again = resolve(db, title="Intro", artists=[placeholder], durationMs=100_000, videoId="aaaaaaaaaaa")
+    by_isrc = resolve(db, title="Another name", artists=[placeholder], durationMs=250_000, isrc="gb-aaa-00-00009")
+
+    assert again["id"] == first["id"], "the video id finds it"
+    assert by_isrc["id"] == first["id"], "the ISRC finds it"
+
+
+def test_a_description_with_the_placeholder_and_no_id_at_all_is_a_new_ref_each_time_and_the_cost_is_written_down(
+    db: Database,
+) -> None:
+    """DECISION (N-26): the placeholder carries no identity, and that includes a real artist literally named "Unknown Artist": a name that cannot be told
+    from "nobody" cannot identify a song. The cost: a description with the placeholder and NO id (nothing in the server makes one repeatedly: an import
+    always has the video, and the library scan finds a file's ref by the file first) is not found again. Its removal trigger: a source that describes
+    such songs without ids twice gets ids, or the song's own file is matched first, as the scanner does."""
+    one = resolve(db, title="Intro", artists=["Unknown Artist"], durationMs=100_000)
+    two = resolve(db, title="Intro", artists=["Unknown Artist"], durationMs=100_000)
+
+    assert one["id"] != two["id"]
+
+
+def test_a_real_artist_is_still_found_by_name_and_so_is_one_that_only_has_the_placeholder_as_a_second_name(db: Database) -> None:
+    first = resolve(db, title="Intro", artists=["Some Band"], durationMs=100_000)
+    assert resolve(db, title="Intro", artists=["Some Band", "Unknown Artist"], durationMs=101_000)["id"] == first["id"]
+    assert resolve(db, title="Intro", artists=["some band"], durationMs=99_000)["id"] == first["id"]
+
+
+def test_a_merged_away_song_with_the_placeholder_is_not_a_door_to_another_song_by_name(db: Database) -> None:
+    """The tombstone of a merged ref (N-11) also answers by artist + title + length. A tombstone made of the placeholder must not send a different
+    nameless song to the survivor."""
+    survivor = resolve(db, title="Other Song", artists=["Real Band"], durationMs=100_000)
+    with db.tx() as conn:
+        conn.execute(
+            "INSERT INTO ref_merge (old_id, into_id, at, norm_key, duration_ms) VALUES (?,?,?,?,?)",
+            ("sr_00000000000000000000000099", survivor["id"], 1, refs.norm_key("Unknown Artist", "Intro"), 100_000),
+        )
+
+    nameless = resolve(db, title="Intro", artists=["Unknown Artist"], durationMs=100_000, videoId="aaaaaaaaaaa")
+
+    assert nameless["id"] != survivor["id"]
 
 
 def test_what_a_ref_lacked_is_filled_in_by_a_later_description(db: Database) -> None:
