@@ -17,7 +17,8 @@ docs/11 ADR-R46).
 "none" (an artist it is still resolving carries an id), so the list is made of settled misses, not of pictures on their way.
 
 **Pace.** Part of the hourly errands, at most 20 artists a pass, three songs at most per artist, a pause between look-ups; a miss is remembered for a
-week, and a catalogue that could not be asked ends the pass and is not remembered as a miss.
+week, and a catalogue that could not be asked ends the pass and is not remembered as a miss. A scan of the music server that is running (the cover finder,
+which runs just before, asks for one whenever it found a picture) is waited for, up to a minute, so the pass is not lost for an hour (B-127).
 """
 
 from __future__ import annotations
@@ -139,6 +140,8 @@ class ArtistFinder:
         after: Callable[[], object] | None = None,
         per_pass: int = 20,
         pause_s: float = 1.0,
+        scan_wait_s: float = 60.0,
+        scan_poll_s: float = 2.0,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], int] = now_ms,
     ) -> None:
@@ -151,14 +154,33 @@ class ArtistFinder:
         self._after = after
         self._per_pass = per_pass
         self._pause = pause_s
+        self._scan_wait = scan_wait_s
+        self._scan_poll = max(0.1, scan_poll_s)
         self._sleep = sleep
         self._clock = clock
 
     # ------------------------------------------------------------------ one pass
 
+    def _music_server_settled(self) -> bool:
+        """Whether the music server's pictures are settled: it says it is not scanning. A scan that is running is waited for, up to [scan_wait_s]: the
+        cover finder runs just before this pass and asks for a scan whenever it found a picture, so without the wait the pass found "scanning" at
+        every start after such a find and left every artist alone for an hour (B-127). A music server that cannot say is not waited for, and one
+        that is still scanning after the wait (a very large library) is left alone until the next errand."""
+        waited = 0.0
+        while True:
+            state = self._music.scanning()
+            if state is False:
+                return True
+            if state is None or waited >= self._scan_wait:
+                if state:
+                    log.info("the music server is still scanning after %.0f s; the artist pass waits for the next errand", waited)
+                return False
+            self._sleep(self._scan_poll)
+            waited += self._scan_poll
+
     def run_once(self) -> ArtistReport:
         report = ArtistReport()
-        if self._root is None or self._music.scanning() is not False:
+        if self._root is None or not self._music_server_settled():
             return report  # no folder of the server's own to write to, or the music server is busy (or silent): its pictures are not settled
         listed = self._music.artists_without_picture()
         if listed is None:

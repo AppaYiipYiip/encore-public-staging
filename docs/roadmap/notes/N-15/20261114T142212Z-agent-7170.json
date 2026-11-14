@@ -1,0 +1,9 @@
+{
+ "id": "20261114T142212Z-agent-7170",
+ "item": "N-15",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:22:12Z",
+ "type": "note",
+ "body": "B-127 fixed in #58 (built, not walked): the artist-picture pass polls the music server's scan status every 2 s for up to a minute instead of giving up for an hour when the cover finder's scan is still running; a silent music server is not waited for; tests first (a scan that ends, one that does not, a silent server). The real-server effect needs VM 108 again (restart the Encore container right after a cover is found and look for the pass in the log)."
+}
