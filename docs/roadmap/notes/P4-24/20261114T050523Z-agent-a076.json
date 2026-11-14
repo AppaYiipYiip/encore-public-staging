@@ -1,0 +1,9 @@
+{
+ "id": "20261114T050523Z-agent-a076",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "helper-p424 (Claude Sonnet 5.5)",
+ "at": "2026-11-14T05:05:23Z",
+ "type": "note",
+ "body": "P4-24, the advisor's rulings on the four open questions (relayed by the lead, 14 Nov 2026), recorded before the code.\n\n1. A download made under the cap STAYS at 48 kbps until it is upgraded. Each download row records the quality it was made at. When the phone is next on Wi-Fi it is re-downloaded at the person's own quality and the file is replaced ONLY after the new one is complete. Reuse the download planner's path for a changed download quality if there is one; if the upgrade cannot fit the code PR, the made-at record is still required now and the upgrade becomes a board item with a visible note.\n2. The cap NEVER changes the codec. A Compatible (MP3) listener is capped at the lowest MP3 level that already exists in domain/audio_quality.dart; if none is below 192, Compatible stays uncapped and the switch's line says so. No new quality level is invented.\n3. Only a MOBILE-DATA connection makes \"Data saver is in force\" true. Ethernet, no connection and VPN-over-Wi-Fi do not. A metered Wi-Fi hotspot is out of scope: LATER.\n4. The switch line is HIDDEN wherever the platform cannot report a mobile-data connection (a browser): the wide (X) frames say so.\n\nWhere a ruling differs from the drawing, the code PR adjusts the drawing."
+}

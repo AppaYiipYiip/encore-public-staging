@@ -96,8 +96,10 @@ class PlaybackEngine implements PlaybackFacade {
     Future<TrackRow?> Function(String artist, String title, String? album)?
         findByName,
     Future<void> Function(List<QueueItem> upcoming)? prepareAhead,
+    int Function()? prepareAheadCount,
     Future<SongRefusal?> Function(Uri address)? songRefusal,
   })  : _prepareAhead = prepareAhead,
+        _prepareAheadCount = prepareAheadCount ?? (() => 2),
         _songRefusal = songRefusal,
         _moreComing = moreComing ?? (() => false),
         _canReach = canReachServer ?? (() => true),
@@ -139,6 +141,10 @@ class PlaybackEngine implements PlaybackFacade {
   /// is pressed (P1-04, audit B-107: the player itself only asks for a song when it is wanted, and the platform player loads its next source as late as
   /// possible). Best effort.
   final Future<void> Function(List<QueueItem> upcoming)? _prepareAhead;
+
+  /// How many coming songs are handed over at a time: 2, or 1 while Data saver is in force (P4-24: nothing is prepared beyond the next song on
+  /// mobile data). Asked every time, so a change of link applies at once: a song held back is handed over at the next tick of the position.
+  final int Function() _prepareAheadCount;
 
   /// The queue entries already handed over (by uid), so each song is named once however often the queue changes. A catalogue album is queued one song
   /// at a time behind the first (audit B-83), so the next songs often do not exist yet when the first one starts: they are handed over as they arrive.
@@ -1578,7 +1584,7 @@ class PlaybackEngine implements PlaybackFacade {
     PerfMonitor.instance.cancel('play.audible');
   }
 
-  /// The next two songs of the queue are handed to [_prepareAhead], each song once: when a song is loaded (the tap), when the queue changes (an
+  /// The next songs of the queue (two, or one under Data saver: [_prepareAheadCount]) are handed to [_prepareAhead], each song once: when a song is loaded (the tap), when the queue changes (an
   /// album's next songs are queued one by one behind the first), and as a safety at every position tick once the music is moving (cheap: it looks
   /// at two entries). Nothing when the song repeats itself or the sleep timer ends the music after it (there is no next song to wait for).
   /// Owner, 7 Nov 2026: do not wait for the first song to be audible, a person skips (taps the 5th song while the 1st plays) and a little more asking
@@ -1588,7 +1594,7 @@ class PlaybackEngine implements PlaybackFacade {
     if (hand == null || _queue.current == null || !_loaded) return;
     if (_loopOne || _sleepAtEnd) return;
     final next = [
-      for (final item in _queue.peekAhead(2))
+      for (final item in _queue.peekAhead(_prepareAheadCount()))
         if (!_handedOver.contains(item.uid)) item,
     ];
     if (next.isEmpty) return;

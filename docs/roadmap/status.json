@@ -198,5 +198,11 @@
   "evidence": "Server: the readers keep each track's thumbnail (ytmusicapi tracks and yt-dlp entries, the largest on an allowed host: imports/readers.py Track.thumbnail), the importer passes it as 'thumbnailUrl', refs keeps it in a NEW column song_ref.thumb_url (migration 0010) apart from cover_url and serves it as coverUrl only while cover_url is empty, so the cover finder (cover_url IS NULL) still looks for a better picture and a real cover replaces it. Tests (server/encore_server/tests): 4 reader tests, 4 ref tests, 1 cover-finder guard (the thumbnail does not hide the song from the finder; the found cover wins), 1 import test through the HTTP API; they failed before (Track had no thumbnail); the whole server suite, ruff check, ruff format and mypy pass. NOT walked: the shape of a real ytmusicapi track's thumbnails is the documented one (the recorded fixtures dropped thumbnails): re-import a playlist on VM 108 and count the letter tiles (acceptance: a handful at most). The app needs no change (it shows a ref's coverUrl).",
   "at": "2026-11-14T04:04:39Z",
   "by": "Claude"
+ },
+ "P4-24": {
+  "state": "built",
+  "evidence": "PR code: one switch (Settings > Playback) + one derived value dataSaverInForceProvider (switch on AND NetworkKind.mobile) read by the four consumers; tests: app/test/app/data_saver_test.dart, domain/data_saver_test.dart, data/downloads/download_manager_test.dart (cap, made-at record, upgrade on Wi-Fi, Wi-Fi-only on/off), download_planner_test.dart, playback/playback_engine_test.dart (prepare window 1), core/cover_sizes_test.dart + playback/media_art_test.dart (small pictures), features/data_saver_settings_test.dart + download_policy_test.dart, migration v7 to v8. 2615 tests green in test/features test/domain test/app test/playback test/data test/core. Built, NOT walked: the byte-count acceptance (phone's per-app data counter on mobile data) is for a real walk.",
+  "at": "2026-11-14T08:41:27Z",
+  "by": "Claude"
  }
 }

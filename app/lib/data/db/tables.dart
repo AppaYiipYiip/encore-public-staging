@@ -257,6 +257,9 @@ class Downloads extends Table {
   TextColumn get localPath => text().nullable()();
   IntColumn get bytes => integer().withDefault(const Constant(0))();
   IntColumn get expectedBytes => integer().nullable()();
+
+  /// The quality of the copy on this phone, made at (what the file is), or, for a first download not finished yet, the quality it is made at.
+  /// What Data saver lowered on the way is recorded here (P4-24: the pin keeps the person's own choice).
   TextColumn get quality => text().withDefault(const Constant('original'))();
 
   /// `Tracks.audioKey` at download time; differs from the live value => stale.
@@ -272,6 +275,11 @@ class Downloads extends Table {
 
   /// Failed attempts since the last success (v2); drives retry back-off.
   IntColumn get attempts => integer().withDefault(const Constant(0))();
+
+  /// Set (v8) only while a refresh of the copy on this phone is queued or running: the quality that transfer is asked at. [quality] keeps
+  /// naming the copy that is on the phone until the new one is in place, so a refresh that fails, or one that is made again at the person's
+  /// own quality after Data saver lowered it (P4-24), never leaves the row saying something the file is not. Cleared when the refresh ends.
+  TextColumn get refreshQuality => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {serverId, trackId};

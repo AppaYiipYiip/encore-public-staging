@@ -48,6 +48,10 @@ final audioHandlerProvider = Provider<Future<EncoreAudioHandler>>(
 bool canReachServerNow(NetworkKind? network, EndpointResolver? endpoints) =>
     network != NetworkKind.none && !(endpoints?.isKnownUnreachable ?? false);
 
+/// How many coming songs the phone has the server make ready while one plays: two, or only the next one while Data saver is in force (P4-24).
+int prepareAheadSongs({required bool dataSaverInForce}) =>
+    dataSaverInForce ? 1 : 2;
+
 /// The playback engine for the configured server.
 ///
 /// Depends on the server *id* only: a server row that is merely updated must
@@ -79,6 +83,8 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     download: (url, key) async =>
         (await coverCacheManager.downloadFile(url, key: key)).file,
     urlFor: (id, size) => session()?.coverArtUrl(id, size: size)?.toString(),
+    // The lock screen asks for the small picture too while Data saver is in force.
+    smallOnly: () => ref.read(dataSaverInForceProvider),
   );
   handler.setBrowser(browser, coverArt: art.resolve);
 
@@ -106,13 +112,8 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
       }
       return s.client.streamUrl(id, maxBitRate: maxBitRate, format: format);
     },
-    streamQuality: () {
-      final settings = ref.read(settingsProvider);
-      final network = ref.read(networkKindProvider).value ?? NetworkKind.wifi;
-      return network == NetworkKind.mobile
-          ? settings.streamQualityMobile
-          : settings.streamQualityWifi;
-    },
+    // The choice for this link, held to Data saver quality while that is in force (one derived value: `streamQualityProvider`).
+    streamQuality: () => ref.read(streamQualityProvider),
   );
 
   final engine = PlaybackEngine(
@@ -153,6 +154,9 @@ final playbackEngineProvider = FutureProvider<PlaybackEngine?>((ref) async {
     moreComing: () => ref.read(instantControllerProvider.notifier).fetchingMore,
     // The next songs of the queue are made ready on the server while this one plays, so Next finds them at once (P1-04): only on an Encore
     // server, only for songs that will be streamed. Best effort; the engine swallows a failure.
+    // Two songs ahead; one while Data saver is in force (the one derived value, read each time).
+    prepareAheadCount: () =>
+        prepareAheadSongs(dataSaverInForce: ref.read(dataSaverInForceProvider)),
     prepareAhead: (upcoming) async {
       final s = session();
       if (s == null || !s.encoreMode) return;

@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// Bump together with a migration step *and* a schema snapshot
   /// (`dart run drift_dev schema dump ...`) so migrations are testable.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             // v7: a device can hold several people's profiles; the one chosen last is in use.
             await m.addColumn(servers, servers.lastUsedAtMs);
+          }
+          if (from < 8) {
+            // v8: the quality a queued or running refresh of a downloaded copy is asked at (the copy keeps its own `quality` until the new file is
+            // in place): Data saver's made-at record and the upgrade on Wi-Fi.
+            await m.addColumn(downloads, downloads.refreshQuality);
           }
         },
         beforeOpen: (details) async {
