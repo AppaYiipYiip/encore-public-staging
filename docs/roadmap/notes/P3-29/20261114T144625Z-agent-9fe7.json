@@ -1,0 +1,9 @@
+{
+ "id": "20261114T144625Z-agent-9fe7",
+ "item": "P3-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:46:25Z",
+ "type": "note",
+ "body": "B-129 corrected after the advisor's review of #61: (1) the first version's 8 s uvicorn grace did not add up: the lifespan shutdown joined keep-watch (5 s), the yt-dlp updater (2 x 2 s), the library link (5 s) and each of the scheduler's four workers (5 s each) one after another, up to 34 s with busy workers, plus B-127's scan wait that ignores the stop. Now ONE shared 3 s budget for all the background threads (they are daemon threads: one in the middle of a long look-up no longer holds the stop) and uvicorn's grace is 5 s: worst case 8.8 s of Docker's 10 (stopping.py, with a test of the sum and a mutation-checked test that four busy workers take one budget). (2) a test asks the REAL uvicorn whether it takes timeout_graceful_shutdown (the entry-point test replaces uvicorn.run). (3) the claim is narrower: what the test proves is that any stop while a phone is connected waited for the ping; all four stops on VM 108 had a live socket, nothing more is proved."
+}
