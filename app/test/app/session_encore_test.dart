@@ -9,10 +9,25 @@ import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_device.dart';
 import 'package:encore/data/encore/encore_mutations.dart';
 import 'package:encore/data/sync/playlist_mutations.dart';
+import 'package:encore/data/sync/sync_engine.dart';
+import 'package:encore/data/sync/sync_state_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_encore_server.dart';
+import '../support/fake_http.dart' show subsonicError;
 import '../support/fake_subsonic_server.dart';
+
+/// How the MUSIC server (Navidrome, behind the same address) fails while the Encore server answers (AUDIT B-77).
+enum _MusicFault {
+  /// A gateway answers 503 for it (Navidrome restarting during `encore update`): the Subsonic client says `ServerFailure`.
+  unavailable,
+
+  /// Its own login is refused (a stale music-server password): `AuthFailure`.
+  loginRefused,
+
+  /// Nothing answers for it at all: `NetworkFailure`.
+  unreachable,
+}
 
 /// One address, two servers behind it: the music server's `/rest/...` and the Encore server's `/encore/...`.
 class _OneDoor implements HttpClientAdapter {
@@ -22,9 +37,31 @@ class _OneDoor implements HttpClientAdapter {
   final FakeEncoreServer encore;
   bool encoreInstalled = true;
 
+  /// While set, the music server's own calls (`/rest/...`) fail this way; the Encore server is untouched.
+  _MusicFault? musicFault;
+
   @override
   Future<ResponseBody> fetch(RequestOptions options,
       Stream<Uint8List>? requestStream, Future<void>? cancelFuture) {
+    final fault = musicFault;
+    if (fault != null && !options.uri.path.startsWith('/encore/')) {
+      switch (fault) {
+        case _MusicFault.unavailable:
+          return Future.value(
+              ResponseBody.fromString('Service Unavailable', 503, headers: {
+            Headers.contentTypeHeader: ['text/plain'],
+          }));
+        case _MusicFault.loginRefused:
+          return Future.value(ResponseBody.fromString(
+              jsonEncode(subsonicError(40, 'Wrong username or password')), 200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              }));
+        case _MusicFault.unreachable:
+          return Future.error(DioException.connectionError(
+              requestOptions: options, reason: 'connection refused'));
+      }
+    }
     if (options.uri.path.startsWith('/encore/')) {
       if (!encoreInstalled) {
         return Future.value(ResponseBody.fromString(
@@ -260,5 +297,90 @@ void main() {
     expect(music.adapter.count('search3'), greaterThan(0),
         reason: 'the old way of syncing carries on');
     expect((await capabilitiesNow())['encore'], isNull);
+  });
+
+  group(
+      'AUDIT B-77: the Encore server answering is not the music server answering',
+      () {
+    for (final fault in _MusicFault.values) {
+      test(
+          'a pass still pulls the Encore feeds and completes while the music server fails ($fault)',
+          () async {
+        await start(capabilities: {'encore': true});
+        encore.addRef('Kept', 'Artist',
+            album: 'Album', fileId: 'nd-1', meta: {'albumId': 'al0'});
+        final liked = encore.addRef('Streamed', 'Artist');
+        encore.otherDeviceLikes(liked);
+        door.musicFault = fault;
+
+        final outcome = await session.sync.run();
+
+        expect(outcome, isA<SyncCompleted>(),
+            reason:
+                'Settings must not say "did not finish" because Navidrome is restarting: the Encore server answered');
+        final titles = (await (db.select(db.tracks)
+                  ..where((t) => t.deletedAtMs.isNull()))
+                .get())
+            .map((t) => t.title)
+            .toSet();
+        expect(titles, {'Kept', 'Streamed'},
+            reason: 'the Encore feeds do not depend on the music server');
+        expect((outcome as SyncCompleted).stats.browseFailure, isNotNull,
+            reason: 'the browse failure is reported, separately');
+        expect(
+            await SyncStateStore(db, server.id).get(SyncStateStore.lastError),
+            isNull);
+      });
+    }
+
+    test(
+        'the browse index is tried again on the next pass, once the music server is back',
+        () async {
+      await start(capabilities: {'encore': true});
+      encore.addRef('Kept', 'Artist',
+          album: 'Album', fileId: 'nd-1', meta: {'albumId': 'al0'});
+      door.musicFault = _MusicFault.unavailable;
+      final first = await session.sync.run() as SyncCompleted;
+      expect(first.stats.libraryPhaseRan, isFalse);
+
+      door.musicFault = null;
+      final second = await session.sync.run() as SyncCompleted;
+
+      expect(second.stats.libraryPhaseRan, isTrue,
+          reason: 'the index never finished, so it is still due');
+      expect(second.stats.browseFailure, isNull);
+    });
+
+    for (final fault in _MusicFault.values) {
+      test(
+          'the cheap check for changes from other devices still pulls them ($fault)',
+          () async {
+        await start(capabilities: {'encore': true});
+        encore.addRef('Kept', 'Artist',
+            album: 'Album', fileId: 'nd-1', meta: {'albumId': 'al0'});
+        expect(await session.sync.run(), isA<SyncCompleted>());
+        door.musicFault = fault;
+        final liked = encore.addRef('Added elsewhere', 'Artist');
+        encore.otherDeviceLikes(liked);
+
+        final outcome = await session.sync.probe();
+
+        expect(outcome, isA<ProbeUpdated>(),
+            reason: 'an edit from another device appears');
+      });
+    }
+
+    test(
+        'a music server that is down never makes the probe ask for a full pass over and over',
+        () async {
+      await start(capabilities: {'encore': true});
+      door.musicFault = _MusicFault.unavailable;
+
+      final outcome = await session.sync.probe();
+
+      expect(outcome, isNot(isA<ProbeNeedsFullPass>()),
+          reason: 'a full pass cannot work now; the probe runs every 3 s');
+      expect(outcome, isNot(isA<ProbeFailed>()));
+    });
   });
 }

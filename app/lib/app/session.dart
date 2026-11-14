@@ -633,13 +633,13 @@ class ServerSession {
         dio: _probeDio(),
         baseUrl: () => endpoints.currentUrl,
         auth: client.authQuery);
-    final result = await probe.info();
-    // An answer that is not an Encore server's ("not found", a page that is not JSON) is a plain music server; a line that does not answer is
-    // not known yet.
+    final result = await probe.detect();
+    // Only a DEFINITE answer says "a plain music server": the server says "not found", or answers a web page instead of the API (AUDIT B-78).
+    // A gateway's 503 while the Encore server restarts, a 429, a refused login or a line that does not answer say nothing about the kind: the
+    // look is repeated and the phone does not yet act as if it knew.
     return (
       info: result.valueOrNull,
-      knownPlain: result.failureOrNull != null &&
-          result.failureOrNull is! NetworkFailure,
+      knownPlain: result.failureOrNull is NotFoundFailure,
     );
   }
 
