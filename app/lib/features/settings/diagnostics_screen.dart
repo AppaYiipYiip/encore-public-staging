@@ -10,6 +10,7 @@ import '../../app/branding.dart';
 import '../../app/notifications.dart';
 import '../../app/power_wiring.dart';
 import '../../app/providers.dart';
+import '../../app/server_kind.dart';
 import '../../core/logger.dart';
 import '../../core/perf.dart';
 import '../../data/alerts/alerts_service.dart';
@@ -23,17 +24,19 @@ import 'settings_controller.dart';
 
 /// Which kind of server the session is talking to, in words (AUDIT F53): every mode-dependent behaviour (the first minutes after a sign-in, a tap
 /// on a catalogue song, Download, Import, Jam) depends on it, and a report that cannot say it has to be read from the outside. A phone that has
-/// just signed in to an Encore server starts as a plain music server "still looking" and becomes an Encore server within seconds (F30).
+/// just signed in to an Encore server starts as a plain music server "still looking" and becomes an Encore server within seconds (F30). The kind
+/// is the app's one answer (`serverKindProvider`, P1-17); this only puts it in words.
 String describeSessionMode({
   required bool signedIn,
-  required bool encoreMode,
-  required bool detecting,
+  required ServerKind kind,
 }) {
   if (!signedIn) return 'none (nobody is signed in, or it is still starting)';
-  if (encoreMode) return 'Encore server';
-  return detecting
-      ? 'plain music server, still looking for an Encore server'
-      : 'plain music server';
+  return switch (kind) {
+    ServerKind.encore => 'Encore server',
+    ServerKind.detecting =>
+      'plain music server, still looking for an Encore server',
+    ServerKind.plain => 'plain music server',
+  };
 }
 
 /// Builds the plain-text report shown on screen and copied to the clipboard.
@@ -91,7 +94,7 @@ class DiagnosticsScreen extends ConsumerWidget {
     final sections = <String, String>{
       'App': '${AppBranding.name} ${AppBranding.versionLine} (${mode()})\n'
           '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-      'Server': 'session: ${describeSessionMode(signedIn: session != null, encoreMode: session?.encoreMode ?? false, detecting: session?.detecting.value ?? false)}\n'
+      'Server': 'session: ${describeSessionMode(signedIn: session != null, kind: ref.watch(serverKindProvider))}\n'
           'name: ${server?.name ?? '-'}\n'
           'tracks in library: ${tracks ?? '-'}\n'
           'network: ${network?.name ?? '-'}\n'

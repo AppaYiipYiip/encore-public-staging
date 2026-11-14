@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/file_intake.dart';
 import '../../app/navigation.dart';
-import '../../app/providers.dart' show sessionProvider;
+import '../../app/server_kind.dart';
 import '../../core/result.dart';
 import '../../data/fetch/import_models.dart';
 import '../../design/tokens.dart';
@@ -36,7 +36,7 @@ class ImportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // An Encore server takes an import itself: no separate service to find, no review page, no special playlist page.
-    if (ref.watch(sessionProvider).value?.encoreMode ?? false) {
+    if (ref.watch(serverKindProvider) == ServerKind.encore) {
       return EncoreImportScreen(sharedText: sharedText);
     }
     if (ref.watch(playlistImportBackendProvider) != null) {

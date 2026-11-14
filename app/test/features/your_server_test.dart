@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:encore/app/providers.dart';
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/data/auth/server_setup_service.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/sync/endpoint_resolver.dart';
@@ -11,7 +12,6 @@ import 'package:encore/design/theme.dart';
 import 'package:encore/design/tokens.dart';
 import 'package:encore/features/instant/instant_controller.dart';
 import 'package:encore/features/people/people_providers.dart';
-import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/requests/request_providers.dart';
 import 'package:encore/features/requests/request_ui.dart';
 import 'package:flutter/material.dart';
@@ -117,7 +117,7 @@ void main() {
       final app = await pumpApp(
         tester,
         overrides: [
-          onEncoreServerProvider.overrideWith((ref) async => true),
+          serverKindProvider.overrideWithValue(ServerKind.encore),
           syncStatusProvider.overrideWith((ref) => Stream.value(SyncStatus(
                 initialSyncDone: true,
                 lastSuccessAt: DateTime(2026, 10, 15, 20),

@@ -5,6 +5,7 @@ import 'dart:math' show Random;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/server_kind.dart';
 import '../../app/session.dart' show serverCapabilities;
 import '../../core/network_policy.dart';
 import '../../data/catalogue/catalogue_models.dart';
@@ -186,13 +187,12 @@ final instantAvailableProvider = Provider<bool>(
 
 /// Whether the old request portal (Settings > "Get new music", the Request chips, the download-service sheets) may be offered: only on a plain
 /// music server that has no instant-play service. **Never on an Encore server**, whatever "Play songs your server does not have" says: that switch
-/// decides how a tap plays, not which kind of server this is (AUDIT A-7, UX-REVIEW M3). Until it is known which kind of server this is, the
-/// portal is not offered.
-final requestPortalOfferedProvider = Provider<bool>((ref) {
-  final encore = ref.watch(onEncoreServerProvider);
-  if (!encore.hasValue || (encore.value ?? false)) return false;
-  return !ref.watch(instantAvailableProvider);
-});
+/// decides how a tap plays, not which kind of server this is (AUDIT A-7, UX-REVIEW M3). Until it is known which kind of server this is
+/// ([ServerKind.detecting]), the portal is not offered. It is a rule over the kind and the capability, not a notion of its own, and it goes with
+/// the portal (P2-07).
+final requestPortalOfferedProvider = Provider<bool>((ref) =>
+    ref.watch(serverKindProvider) == ServerKind.plain &&
+    !ref.watch(instantAvailableProvider));
 
 final instantPlayServiceProvider =
     FutureProvider<InstantPlayService?>((ref) async {

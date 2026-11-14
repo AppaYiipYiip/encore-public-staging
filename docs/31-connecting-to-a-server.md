@@ -43,6 +43,18 @@ Three raw facts, ONE derived state; every reader (the strip, the grey rows and t
 
 **One blink filter, in the state:** entering `noInternet`, `serverAway` or `wrongServer` waits 4 s; `noNetwork` is at once; leaving any of them, and changing from one to another, is at once. **The strip is a presenter:** it says an outage once, for 5 s or until the cross, and not again until everything has worked for 10 s. **A fresh look is newer than the state:** the player asks the server once before it refuses a song (`PB-F7`; `recheckServer`: no network is answered at once without a look, no server is `unknown`) and believes that answer for the tap that asked; the look also feeds the state. **The player has ONE read and ONE recheck** (`PlaybackEngine(reachability:, recheck:)`) and one listener (the state leaving "away" starts a song that waited); its own retry timers (`PB-F7`: after 1, 1, 2, then every 3 s) only DRIVE looks, they define no notion. **The Jam is not part of it** (the strip no longer says "Reconnecting to the Jam"; the Jam screen shows its own). **The music server is not part of it:** whether Navidrome answers shows only as the failure of a browse call, and the sync reports it apart (`SyncStats.browseFailure`, AUDIT B-77). The test that fails when two readers disagree is `can_reach_server_test.dart` ("every reader says the same thing in every state").
 
+### 2b. Which KIND of server (P1-17, AUDIT B-17, B-78)
+
+The second question every screen asks, answered once: `serverKindProvider` (`app/server_kind.dart`), read by the words and offers that depend on it (Home's empty state, the catalogue pages, Settings > Your server, the import page, the request portal) and by a tap on a catalogue song (`tap_play.dart`).
+
+| Kind | What it means | What the readers do | Test |
+|------|---------------|---------------------|------|
+| `detecting` | the session is still being built, failed to build, or is a plain session whose server has not yet answered DEFINITELY | a tap on a catalogue song WAITS for the answer (D-24, at most 12 s); nothing that is for one kind only is offered (the request portal is not) | `server_kind_test.dart`, `session_detect_test.dart` |
+| `plain` | no server, or the phone KNOWS this is not an Encore server: the server answered "not found" or a web page of its own to `GET /info` (B-78: a 503, a 429, a refused login or no answer is NOT such an answer) | the old way; the request portal is offered where there is no instant-play service | same, `request_portal_offered_test.dart` |
+| `encore` | the phone has been moved onto an Encore server | songs are references the server plays itself; playing does not save | same |
+
+`instantAvailableProvider` is NOT a kind: it is the "Play songs your server does not have" switch plus a service found, a capability that stays. `requestPortalOfferedProvider` is a rule over the two (`plain` and no instant-play service) and goes with the portal (P2-07). `ServerSession.encoreMode` is the session's own construction fact (it decides which clients the session builds); code that already holds the session and needs `session.encore` still reads it today (keep, news, people, import, release save, downloads, the player's address builder: an open decision, AUDIT B-17), everything else reads the kind.
+
 ## 3. One address of one server (question 2): the states of a single candidate
 
 A server has a list of candidate addresses (a typed one, the Tailscale/Funnel one, later the ones the server tells the phone). Each candidate is in one state.

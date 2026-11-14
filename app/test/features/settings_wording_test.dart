@@ -1,6 +1,6 @@
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/instant/instant_controller.dart';
-import 'package:encore/features/providers.dart' show onEncoreServerProvider;
 import 'package:encore/features/settings/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +19,7 @@ void main() {
       {bool instant = false, bool encore = false}) async {
     final app = await pumpApp(tester, size: const Size(390, 1800), overrides: [
       instantAvailableProvider.overrideWithValue(instant),
-      if (encore) onEncoreServerProvider.overrideWith((ref) async => true),
+      if (encore) serverKindProvider.overrideWithValue(ServerKind.encore),
     ]);
     final element = tester.element(find.byType(Scaffold).first);
     GoRouter.of(element).go('/settings');

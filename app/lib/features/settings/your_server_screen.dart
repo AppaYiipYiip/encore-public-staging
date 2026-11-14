@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/connection.dart'
     show ServerReachability, serverReachabilityProvider;
 import '../../app/providers.dart';
+import '../../app/server_kind.dart';
 import '../../data/fetch/fetch_client.dart';
 import '../../data/sync/sync_scheduler.dart';
 import '../../design/tokens.dart';
@@ -46,7 +47,7 @@ class YourServerScreen extends ConsumerWidget {
     final connected = serviceUrl != null && serviceUrl.isNotEmpty;
     final instantReady = ref.watch(fetchServiceProvider).value != null;
     // An Encore server plays songs itself: nothing to find, nothing to install next to it.
-    final encore = ref.watch(onEncoreServerProvider).value ?? false;
+    final encore = ref.watch(serverKindProvider) == ServerKind.encore;
     final now = ref.watch(clockProvider).now();
     final synced = sync.isSyncing
         ? 'syncing now'

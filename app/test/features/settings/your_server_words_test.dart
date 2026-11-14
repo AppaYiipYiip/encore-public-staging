@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:encore/app/providers.dart';
+import 'package:encore/app/server_kind.dart';
 import 'package:encore/app/session.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/features/providers.dart';
@@ -33,7 +34,7 @@ void main() {
       tester,
       size: const Size(390, 6000),
       overrides: [
-        onEncoreServerProvider.overrideWith((ref) async => false),
+        serverKindProvider.overrideWithValue(ServerKind.plain),
         networkKindProvider.overrideWith((ref) => Stream.value(network)),
         downloadedIdsProvider.overrideWith((ref) => Stream.value(downloaded)),
       ],
