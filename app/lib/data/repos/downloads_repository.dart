@@ -389,7 +389,14 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
               onConflict: DoUpdate(
                 (old) => DownloadsCompanion(
                   state: const Value(DownloadState.queued),
-                  quality: Value(want?.quality ?? AudioQuality.original.id),
+                  // A refresh keeps naming the copy that is on the phone in `quality` until the new file is in place; what the refresh is asked
+                  // at waits in `refreshQuality` (P4-24).
+                  quality: keepFile
+                      ? const Value.absent()
+                      : Value(want?.quality ?? AudioQuality.original.id),
+                  refreshQuality: keepFile
+                      ? Value(want?.quality ?? AudioQuality.original.id)
+                      : const Value(null),
                   lastError: const Value(null),
                   orphanedAtMs: const Value(null),
                   updatedAtMs: Value(now),
@@ -440,6 +447,14 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
         .go();
   }
 
+  /// Rows with a refresh of a downloaded copy queued or running (P4-24: Data saver's copies made again at the person's own quality).
+  Future<List<DownloadRow>> rowsRefreshing() => (_db.select(_db.downloads)
+        ..where((d) =>
+            d.serverId.equals(serverId) &
+            d.refreshQuality.isNotNull() &
+            d.state.equals(DownloadState.queued)))
+      .get();
+
   Future<List<DownloadRow>> rowsInState(int state, {int? limit}) {
     final q = _db.select(_db.downloads)
       ..where((d) => d.serverId.equals(serverId) & d.state.equals(state));
@@ -470,6 +485,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           expectedBytes: Value(bytes),
           sourceAudioKey: Value(audioKey),
           quality: Value(quality),
+          refreshQuality: const Value(null),
           stale: const Value(false),
           lastError: const Value(null),
           attempts: const Value(0),
@@ -487,12 +503,28 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
       trackId,
       DownloadsCompanion(
         state: const Value(DownloadState.done),
+        // The refresh is over and the copy is what it was.
+        refreshQuality: const Value(null),
         lastError: Value(error),
         attempts: Value(attempts),
         updatedAtMs: Value(_nowMs),
       ),
     );
   }
+
+  /// Records the quality a transfer is really asked at, once it is known (Data saver may have lowered the wanted one): a first download is made
+  /// at [quality], a refresh of a copy is asked at it while the copy keeps its own [DownloadRow.quality] until the new file is in place.
+  Future<void> setTransferQuality(
+    String trackId, {
+    required String quality,
+    required bool refresh,
+  }) =>
+      _update(
+        trackId,
+        refresh
+            ? DownloadsCompanion(refreshQuality: Value(quality))
+            : DownloadsCompanion(quality: Value(quality)),
+      );
 
   Future<void> markFailed(String trackId, String error) async {
     final row = await rowsFor([trackId]);

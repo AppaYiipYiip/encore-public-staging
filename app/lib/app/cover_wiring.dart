@@ -56,9 +56,10 @@ final coverPrefetcherProvider = Provider<CoverPrefetcher?>((ref) {
   );
 });
 
-/// On mobile data only this many covers, small size only: a background job must not eat a data plan (a big library is
-/// finished on Wi-Fi).
-const _mobileLimit = 120;
+/// What the background fetch may ask for on this link: on mobile data the small size only and few covers, so a background job does not eat a
+/// data plan (a big library is finished on Wi-Fi). The same budget Data saver gives every picture (P4-24).
+CoverBudget coverBudgetForNetwork(NetworkKind network) =>
+    network == NetworkKind.wifi ? CoverBudget.full : CoverBudget.mobile;
 
 /// Keeps the covers of what a person is likely to see in the disk cache, so that offline shows covers and not letters (E3):
 /// when the app starts, after every library sync and when the network comes back. Watched once by the app widget.
@@ -71,18 +72,16 @@ final coverPrefetchProvider = Provider<void>((ref) {
   Future<void> run() async {
     final network = ref.read(networkKindProvider).value ?? NetworkKind.wifi;
     if (network == NetworkKind.none) return;
-    final onWifi = network == NetworkKind.wifi;
+    final budget = coverBudgetForNetwork(network);
     try {
       final ids =
-          await repo.coverIdsToKeepOffline(limit: onWifi ? 600 : _mobileLimit);
-      final sizes = onWifi
-          ? const [CoverSize.small, CoverSize.large]
-          : const [CoverSize.small];
-      await prefetcher.prefetch(ids, sizes: sizes);
+          await repo.coverIdsToKeepOffline(limit: budget.backgroundLimit);
+      await prefetcher.prefetch(ids, sizes: budget.sizes);
       // What the downloaded songs need is PINNED, once each and with no limit: it stays whatever else the cache holds or the system clears,
-      // and is released only when no downloaded song needs it any more (P1-10).
+      // and is released only when no downloaded song needs it any more (P1-10). On mobile data (and so under Data saver) it is the small
+      // size only, from the same budget as the rest of the background fetch (P4-24); a larger picture that is already pinned stays.
       await prefetcher.keepPinned(await repo.coverIdsOfDownloads(),
-          sizes: sizes);
+          sizes: budget.sizes);
     } on Object catch (error) {
       Log.debug('covers', 'the background cover fetch stopped: $error');
     }

@@ -27,6 +27,7 @@ class AppSettings {
     this.streamQualityWifi = AudioQuality.original,
     this.streamQualityMobile = AudioQuality.high,
     this.downloadQuality = AudioQuality.high,
+    this.dataSaver = false,
     this.downloadLimitBytes,
     this.backgroundSyncHours = 6,
     this.playbackSpeed = 1.0,
@@ -73,6 +74,10 @@ class AppSettings {
 
   /// Default quality for new downloads.
   final AudioQuality downloadQuality;
+
+  /// The Data saver switch (P4-24). Only the switch is stored: whether it is in force depends on the link the phone is on right now
+  /// (`dataSaverInForceProvider`), and the person's own quality choices above are never overwritten by it.
+  final bool dataSaver;
 
   /// Cap on the space offline music may use; `null` = no cap.
   final int? downloadLimitBytes;
@@ -135,6 +140,7 @@ class AppSettings {
     AudioQuality? streamQualityWifi,
     AudioQuality? streamQualityMobile,
     AudioQuality? downloadQuality,
+    bool? dataSaver,
     int? downloadLimitBytes,
     bool clearDownloadLimit = false,
     int? backgroundSyncHours,
@@ -169,6 +175,7 @@ class AppSettings {
         streamQualityWifi: streamQualityWifi ?? this.streamQualityWifi,
         streamQualityMobile: streamQualityMobile ?? this.streamQualityMobile,
         downloadQuality: downloadQuality ?? this.downloadQuality,
+        dataSaver: dataSaver ?? this.dataSaver,
         downloadLimitBytes: clearDownloadLimit
             ? null
             : (downloadLimitBytes ?? this.downloadLimitBytes),
@@ -200,6 +207,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kQualityWifi = 'encore.quality.wifi';
   static const _kQualityMobile = 'encore.quality.mobile';
   static const _kQualityDownload = 'encore.quality.download';
+  static const _kDataSaver = 'encore.dataSaver';
   static const _kDownloadLimit = 'encore.downloadLimitBytes';
   static const _kBackgroundSync = 'encore.backgroundSyncHours';
   static const _kSpeed = 'encore.playbackSpeed';
@@ -250,6 +258,7 @@ class SettingsController extends Notifier<AppSettings> {
           fallback: AudioQuality.high),
       downloadQuality: AudioQuality.byId(p.getString(_kQualityDownload),
           fallback: AudioQuality.high),
+      dataSaver: p.getBool(_kDataSaver) ?? false,
       downloadLimitBytes: p.getInt(_kDownloadLimit),
       backgroundSyncHours: (p.getInt(_kBackgroundSync) ?? 6).clamp(0, 168),
       // D-23 (AUDIT F35): music has no speed control any more, so a speed saved by an earlier version is dropped (nobody stays at 1.25x with
@@ -338,6 +347,11 @@ class SettingsController extends Notifier<AppSettings> {
   void setDownloadQuality(AudioQuality q) {
     state = state.copyWith(downloadQuality: q);
     _save((p) => p.setString(_kQualityDownload, q.id));
+  }
+
+  void setDataSaver(bool value) {
+    state = state.copyWith(dataSaver: value);
+    _save((p) => p.setBool(_kDataSaver, value));
   }
 
   /// `null` removes the cap.

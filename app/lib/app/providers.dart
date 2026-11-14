@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
@@ -14,6 +16,8 @@ import '../data/db/app_database.dart';
 import '../data/repos/library_repository.dart';
 import '../data/sync/server_identity.dart';
 import '../data/sync/sync_scheduler.dart';
+import '../domain/audio_quality.dart';
+import '../features/settings/settings_controller.dart';
 import 'session.dart';
 
 // ----------------------------------------------------------------- roots
@@ -155,23 +159,61 @@ final syncStatusProvider = StreamProvider<SyncStatus>((ref) async* {
 /// Wi-Fi-only download rule.
 enum NetworkKind { none, wifi, mobile }
 
-final networkKindProvider = StreamProvider<NetworkKind>((ref) async* {
-  final connectivity = Connectivity();
-  NetworkKind kindOf(List<ConnectivityResult> r) {
-    if (r.isEmpty || r.every((e) => e == ConnectivityResult.none)) {
-      return NetworkKind.none;
-    }
-    // A VPN (Tailscale) reports alongside its underlying transport.
-    if (r.contains(ConnectivityResult.wifi) ||
-        r.contains(ConnectivityResult.ethernet)) {
-      return NetworkKind.wifi;
-    }
-    if (r.contains(ConnectivityResult.mobile)) return NetworkKind.mobile;
+/// What the platform's list of active links means for the app. A link is [NetworkKind.mobile] only when mobile data is the transport and no
+/// Wi-Fi or Ethernet is up with it (a VPN over mobile data is still mobile data). Wi-Fi, Ethernet, a VPN over Wi-Fi and anything the app does
+/// not know are "not mobile data" (P4-24, the advisor's ruling: a metered Wi-Fi hotspot is not told apart yet; that is later).
+NetworkKind networkKindOf(List<ConnectivityResult> r) {
+  if (r.isEmpty || r.every((e) => e == ConnectivityResult.none)) {
+    return NetworkKind.none;
+  }
+  // A VPN (Tailscale) reports alongside its underlying transport.
+  if (r.contains(ConnectivityResult.wifi) ||
+      r.contains(ConnectivityResult.ethernet)) {
     return NetworkKind.wifi;
   }
+  if (r.contains(ConnectivityResult.mobile)) return NetworkKind.mobile;
+  return NetworkKind.wifi;
+}
 
-  yield kindOf(await connectivity.checkConnectivity());
-  yield* connectivity.onConnectivityChanged.map(kindOf).distinct();
+final networkKindProvider = StreamProvider<NetworkKind>((ref) async* {
+  final connectivity = Connectivity();
+  yield networkKindOf(await connectivity.checkConnectivity());
+  yield* connectivity.onConnectivityChanged.map(networkKindOf).distinct();
+});
+
+/// Data saver is in force (P4-24): the switch is on AND the phone is on mobile data. The ONE rule: every place that saves data reads
+/// [dataSaverInForceProvider] and nothing asks the network itself, so the places cannot disagree. Wi-Fi, Ethernet, no connection and a VPN
+/// over Wi-Fi never make it true, and with the switch off nothing changes anywhere.
+bool dataSaverInForce({required bool switchOn, required NetworkKind network}) =>
+    switchOn && network == NetworkKind.mobile;
+
+final dataSaverInForceProvider = Provider<bool>((ref) {
+  final switchOn = ref.watch(settingsProvider.select((s) => s.dataSaver));
+  // Before the first answer about the link it is not known to be mobile data.
+  final network = ref.watch(networkKindProvider).value ?? NetworkKind.wifi;
+  return dataSaverInForce(switchOn: switchOn, network: network);
+});
+
+/// Whether this platform can tell that the phone is on mobile data at all. Where it cannot (a browser, a desktop) the Data saver line is not
+/// shown: a switch that can never do anything is not offered (P4-24, the advisor's ruling).
+bool mobileDataReportable(TargetPlatform platform, {required bool isWeb}) =>
+    !isWeb &&
+    (platform == TargetPlatform.android || platform == TargetPlatform.iOS);
+
+final mobileDataReportableProvider = Provider<bool>(
+    (ref) => mobileDataReportable(defaultTargetPlatform, isWeb: kIsWeb));
+
+/// The quality the next song is streamed at: the choice for this link, held to Data saver quality while that is in force. The person's own
+/// choices in Settings are never changed by it.
+final streamQualityProvider = Provider<AudioQuality>((ref) {
+  final settings = ref.watch(settingsProvider);
+  final network = ref.watch(networkKindProvider).value ?? NetworkKind.wifi;
+  final choice = network == NetworkKind.mobile
+      ? settings.streamQualityMobile
+      : settings.streamQualityWifi;
+  return ref.watch(dataSaverInForceProvider)
+      ? choice.cappedForDataSaver()
+      : choice;
 });
 
 /// The reader of Android's own "this network has internet" check (see [NetworkValidation]). Replaced by a fake in tests.
@@ -200,10 +242,17 @@ final connectivityProvider = StreamProvider<bool>((ref) async* {
 /// ready a placeholder URL is returned: a disk-cache hit (by key) still
 /// renders instantly offline; a miss simply shows the fallback.
 class CoverArtResolver {
-  const CoverArtResolver({required this.serverId, this.session});
+  const CoverArtResolver({
+    required this.serverId,
+    this.session,
+    this.budget = CoverBudget.full,
+  });
 
   final int serverId;
   final ServerSession? session;
+
+  /// How much of a cover this phone fetches right now: the small size only while Data saver is in force (P4-24).
+  final CoverBudget budget;
 
   /// The size a widget of [px] device pixels fetches (two sizes only: [CoverSize]).
   static int bucket(int px) => CoverSize.forPixels(px);
@@ -211,7 +260,7 @@ class CoverArtResolver {
   /// `ready` is false while the address is a placeholder (no session yet, or the cover ticket has not arrived): a picture already in the disk
   /// cache still shows, and the widget asks again when `ready` turns true, because the cache key does not change.
   ({Uri url, String cacheKey, bool ready}) resolve(String coverArtId, int px) {
-    final size = bucket(px);
+    final size = budget.fetchSize(px);
     final real = coverArtId.startsWith('https://')
         ? Uri.parse(coverArtId)
         : session?.coverArtUrl(coverArtId, size: size);
@@ -230,8 +279,8 @@ class CoverArtResolver {
   }
 
   /// The cache key of the *other* size of the cover [resolve] would fetch: what stands in for it when it is not cached.
-  String alternateKey(String coverArtId, int px) =>
-      CoverSize.key(serverId, coverArtId, CoverSize.otherThan(bucket(px)));
+  String alternateKey(String coverArtId, int px) => CoverSize.key(
+      serverId, coverArtId, CoverSize.otherThan(budget.fetchSize(px)));
 }
 
 /// How many cover tickets this session has had: pictures asked for before the first one were placeholders, so everything that shows a picture
@@ -248,5 +297,10 @@ final coverArtResolverProvider = Provider<CoverArtResolver?>((ref) {
   if (server == null) return null;
   final session = ref.watch(sessionProvider).value;
   ref.watch(coverPassGenerationProvider);
-  return CoverArtResolver(serverId: server.id, session: session);
+  // Data saver in force: every widget asks for the small picture, so a Home page of covers costs a fraction of the bytes (P4-24).
+  final budget = ref.watch(dataSaverInForceProvider)
+      ? CoverBudget.mobile
+      : CoverBudget.full;
+  return CoverArtResolver(
+      serverId: server.id, session: session, budget: budget);
 });

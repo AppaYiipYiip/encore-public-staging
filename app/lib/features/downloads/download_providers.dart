@@ -226,6 +226,21 @@ final downloadVerdictProvider = StreamProvider<StorageVerdict>((ref) async* {
   yield* manager.verdicts;
 });
 
+/// What the download manager is told about the person's settings and the link, each time it schedules work (one place, so it is testable):
+/// "Download over Wi-Fi only" and whether the phone is on Wi-Fi decide whether anything may start; the Data saver value (the one derived
+/// value, in force only on mobile data with the switch on, P4-24) makes new transfers go out at the capped quality.
+DownloadPolicy downloadPolicyFor({
+  required AppSettings settings,
+  required NetworkKind network,
+  required bool dataSaverInForce,
+}) =>
+    DownloadPolicy(
+      wifiOnly: settings.wifiOnlyDownloads,
+      onWifi: network == NetworkKind.wifi,
+      limitBytes: settings.downloadLimitBytes,
+      dataSaver: dataSaverInForce,
+    );
+
 /// The reconciler that makes files match pins. Built once per server and
 /// started immediately; reacts to pins, sync completions and network changes.
 final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
@@ -244,15 +259,11 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
     repository: repo,
     transport: ref.watch(downloadTransportProvider),
     clock: clock,
-    policy: () {
-      final settings = ref.read(settingsProvider);
-      final network = ref.read(networkKindProvider).value ?? NetworkKind.wifi;
-      return DownloadPolicy(
-        wifiOnly: settings.wifiOnlyDownloads,
-        onWifi: network == NetworkKind.wifi,
-        limitBytes: settings.downloadLimitBytes,
-      );
-    },
+    policy: () => downloadPolicyFor(
+      settings: ref.read(settingsProvider),
+      network: ref.read(networkKindProvider).value ?? NetworkKind.wifi,
+      dataSaverInForce: ref.read(dataSaverInForceProvider),
+    ),
     diskSpace: ref.watch(diskSpaceProvider),
     urlBuilder: (id,
         {quality = AudioQuality.original, sourceSuffix, sourceBitRate}) async {
@@ -301,6 +312,8 @@ final downloadManagerProvider = FutureProvider<DownloadManager?>((ref) async {
   await manager.start();
 
   ref.listen(networkKindProvider, (_, __) => manager.requestReconcile());
+  // Data saver coming into force or going out of it changes the quality new transfers are made at, and lets an upgrade start or hold.
+  ref.listen(dataSaverInForceProvider, (_, __) => manager.requestReconcile());
   // Turning "Wi-Fi only" off lets what waited for Wi-Fi start now (and on, hold back what has not started).
   ref.listen(
     settingsProvider.select((s) => s.wifiOnlyDownloads),

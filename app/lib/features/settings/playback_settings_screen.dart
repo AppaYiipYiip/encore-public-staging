@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/providers.dart';
 import '../../domain/audio_quality.dart';
 import '../../playback/replay_gain.dart';
+import 'data_saver_line.dart';
 import 'settings_controller.dart';
 import 'settings_page.dart';
 
@@ -16,6 +18,7 @@ class PlaybackSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(settingsProvider);
     final ctrl = ref.read(settingsProvider.notifier);
+    final inForce = ref.watch(dataSaverInForceProvider);
 
     return SettingsPage(
       title: 'Playback',
@@ -34,6 +37,8 @@ class PlaybackSettingsScreen extends ConsumerWidget {
           title: 'On mobile data',
           value: s.streamQualityMobile,
           onChanged: ctrl.setStreamQualityMobile,
+          // While Data saver is in force the row keeps the person's own choice and says what limits it (the choice is back when it goes off).
+          subtitle: DataSaverWords.streamingRowLine(s, inForce: inForce),
           options: const [
             AudioQuality.original,
             AudioQuality.high,
@@ -42,6 +47,8 @@ class PlaybackSettingsScreen extends ConsumerWidget {
             AudioQuality.compatible,
           ],
         ),
+        // One line under the two quality rows: both are about mobile data (P4-24).
+        const DataSaverLine(),
         const SettingsSection('Sound'),
         ListTile(
           leading: const Icon(Icons.equalizer_rounded),
