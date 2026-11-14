@@ -483,6 +483,7 @@ class ServerSession {
   final String? Function() _knownKey;
   final Future<void> Function() _refreshAddresses;
   StreamSubscription<ServerEndpoint>? _addressChanges;
+  StreamSubscription<bool>? _reachable;
   bool _disposed = false;
 
   /// Asks the server which addresses it has and keeps the new ones (also done by itself once an address has proved itself).
@@ -509,6 +510,10 @@ class ServerSession {
   /// On a plain server the first thing is to ask whether it is an Encore server: if so the phone is moved over before the first sync, so
   /// the two ways of syncing never run against one database at once.
   Future<void> start() async {
+    // The server answers again after being away: what waited out a network failure is delivered now (AUDIT B-58), on every kind of server.
+    _reachable ??= endpoints.reachability.listen((up) {
+      if (up) unawaited(outbox.retryNow());
+    });
     unawaited(client.loadExtensions());
     if (encoreMode) {
       scheduler.start();
@@ -683,6 +688,11 @@ class ServerSession {
 
   Future<void> dispose() async {
     _disposed = true;
+    // First, and before any `await`: no new delivery starts and the outbox's wake timer is cancelled at once (the rest of the teardown takes
+    // several turns of the event loop, and a timer that outlives the session is a leak, in a test a failure).
+    final outboxEnded = outbox.dispose();
+    // Not awaited: one more turn of the event loop here delays the scheduler's own teardown, and its retry timer must be gone when the screen is.
+    unawaited(_reachable?.cancel());
     unawaited(covers.dispose());
     upgrade.dispose();
     detecting.dispose();
@@ -691,7 +701,7 @@ class ServerSession {
     await _liveConnection?.cancel();
     await live?.dispose();
     await scheduler.dispose();
-    await outbox.dispose();
+    await outboxEnded;
     await sync.dispose();
     await endpoints.dispose();
   }

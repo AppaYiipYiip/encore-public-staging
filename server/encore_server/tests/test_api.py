@@ -81,6 +81,8 @@ class TestSigningIn:
                 calls.append(url)
 
                 class Response:
+                    status_code = 200
+
                     def json(self_inner):  # type: ignore[no-untyped-def]
                         return {"subsonic-response": {"status": "ok"}}
 
