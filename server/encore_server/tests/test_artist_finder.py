@@ -9,15 +9,18 @@ import httpx
 import pytest
 
 from encore_server import refs
+from encore_server.api import create_app
 from encore_server.artist_finder import (
     RETRY_AFTER_MS,
     ArtistFinder,
     deezer_artist_picture,
     pick_artist_picture,
 )
+from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.deezer import LookupUnavailable
 from encore_server.navidrome import NavidromeClient
+from encore_server.navidrome_admin import NavidromeAdmin
 
 PICTURE = "https://cdn-images.dzcdn.net/images/artist/c8241e15efdefa9465c7b470643efb3b/1000x1000-000000-80-0-0.jpg"
 OTHER = "https://cdn-images.dzcdn.net/images/artist/ffffffffffffffffffffffffffffffff/1000x1000-000000-80-0-0.jpg"
@@ -258,6 +261,24 @@ def test_a_picture_the_host_put_in_the_folder_is_left_alone(tmp_path: Path) -> N
     assert (catalogue.asked, fetched) == ([], []), "nothing is asked of the catalogue for a picture that is there"
 
 
+def test_a_pass_that_died_half_way_or_a_file_of_another_tool_does_not_hide_the_artist_for_ever(tmp_path: Path) -> None:
+    """Only a file the music server takes for a picture counts as "a picture is there": `artist.jpg.part` is what a killed pass leaves behind
+    (it is written aside and renamed), `artist.nfo` is what media tools write."""
+    db, music, clock = database(tmp_path), tmp_path / "music", Clock()
+    song = kept(db, music, "Bob Marley", "Could You Be Loved")
+    folder = song.parent.parent
+    (folder / "artist.jpg.part").write_bytes(b"half")
+    (folder / "artist.nfo").write_bytes(b"<artist/>")
+    the = finder(db, music, [("ar-1", "Bob Marley")], Catalogue({"Bob Marley": PICTURE}), clock)
+
+    report = the.run_once()
+
+    assert (report.looked, report.found) == (1, 1)
+    assert (folder / "artist.jpg").read_bytes() == JPEG
+    assert not (folder / "artist.jpg.part").exists(), "the leftover is replaced by the finished file"
+    assert (folder / "artist.nfo").read_bytes() == b"<artist/>", "another tool's file is left alone"
+
+
 def test_an_artist_whose_songs_are_not_in_the_servers_own_folder_costs_no_look_up_and_nothing_is_written(tmp_path: Path) -> None:
     """The Host's own music is never written to; and asking the catalogue for a picture with nowhere to put it would be a wasted look-up."""
     db, music, clock = database(tmp_path), tmp_path / "music", Clock()
@@ -389,6 +410,50 @@ def test_an_artist_with_no_songs_of_its_own_is_not_asked_about(tmp_path: Path) -
     the.run_once()
 
     assert catalogue.asked == []
+
+
+# ------------------------------------------------------------------------------------------------ the app runs it
+
+
+def test_the_app_runs_the_artist_finder_as_one_of_the_errands_before_the_library_link(tmp_path: Path) -> None:
+    """Without this a finder that nothing calls would pass every test above."""
+    answers: dict[str, dict[str, Any]] = {
+        "getScanStatus.view": {"scanStatus": {"scanning": False}},
+        "getArtists.view": {
+            "artists": {"index": [{"name": "B", "artist": [{"id": "ar-1", "name": "Bob Marley", "albumCount": 1}]}]}
+        },
+        "search3.view": {"searchResult3": {}},
+    }
+
+    def music_server(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, json={"subsonic-response": {"status": "ok", **answers.get(request.url.path.rsplit("/", 1)[-1], {})}}
+        )
+
+    music = tmp_path / "music"
+    settings = Settings(
+        data_dir=tmp_path / "data",
+        music_dir=music,
+        navidrome_url="http://music.invalid",
+        navidrome_admin_user="admin",
+        navidrome_admin_password="pw",
+        youtube=False,
+        workers=False,
+    )
+    client = NavidromeClient(
+        "http://music.invalid", "admin", "pw", client=httpx.Client(transport=httpx.MockTransport(music_server))
+    )
+    catalogue = Catalogue({"Bob Marley": None})
+    app = create_app(
+        settings, navidrome=client, navidrome_admin=NavidromeAdmin("http://music.invalid", "", ""), artist_lookup=catalogue
+    )
+    services = app.state.services
+    kept(services.db, music, "Bob Marley", "Could You Be Loved")
+
+    assert services.artist_finder is not None and services.linker is not None
+    services.linker.run_once()
+
+    assert catalogue.asked == [("Bob Marley", "Could You Be Loved")]
 
 
 # ------------------------------------------------------------------------------------------------ what the music server says

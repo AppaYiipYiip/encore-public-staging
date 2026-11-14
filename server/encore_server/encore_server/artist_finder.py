@@ -49,6 +49,8 @@ RETRY_AFTER_MS = 7 * 24 * 3600 * 1000
 SONGS_PER_ARTIST = 3
 #: The picture's file name in the artist's folder: the first of the music server's own names for it (`artist.*`).
 PICTURE_FILE = "artist.jpg"
+#: What the music server takes for a picture file (its own `IsImageFile`): anything else named `artist.*` is not one.
+IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif"})
 
 _JPEG = b"\xff\xd8\xff"
 _PNG = b"\x89PNG\r\n\x1a\n"
@@ -259,9 +261,14 @@ class ArtistFinder:
 
     @staticmethod
     def _has_picture_file(folder: Path) -> bool:
-        """Any `artist.*` already there (the Host's own, or ours from before): left as it is, whatever its case or type."""
+        """An `artist.<picture>` already there (the Host's own, or ours from before): left as it is, whatever its case or type. Only what the music
+        server itself takes for a picture counts: our own half-written `artist.jpg.part` (a pass killed between writing and renaming) or an
+        `artist.nfo` of some other tool must not hide the artist from the finder for ever."""
         try:
-            return any(child.is_file() and child.name.lower().startswith("artist.") for child in folder.iterdir())
+            return any(
+                child.is_file() and child.name.lower().startswith("artist.") and child.suffix.lower() in IMAGE_SUFFIXES
+                for child in folder.iterdir()
+            )
         except OSError:
             return True
 
