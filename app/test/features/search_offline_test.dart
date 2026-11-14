@@ -23,7 +23,8 @@ import '../support/test_app.dart';
 /// The rule these tests hold: **while the server is away (the lasting state of P1-15, `serverAwayProvider`) the catalogue is not asked and
 /// none of its rows is shown, so that "More results need your server." is true; the phone's own library still answers at once; and every
 /// sentence says what cannot be DONE, in the words of the strip's own two causes (no internet found / only the server silent).** It goes by
-/// itself when the connection is back, and nothing changes during the 4 s grace of a blink.
+/// itself when the connection is back. A server that goes silent counts only after the 4 s grace of a blink; having no network at all counts
+/// at once (the grey rows already do, P1-09).
 void main() {
   setUpAll(loadAppFonts);
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -487,6 +488,23 @@ void main() {
     });
 
     testWidgets(
+        'having no network at all counts at once, before the strip has appeared (the grey rows already do, P1-09)',
+        (tester) async {
+      final app = await pumpApp(tester, overrides: [
+        networkKindProvider
+            .overrideWith((ref) => Stream.value(NetworkKind.none)),
+        downloadedIdsProvider.overrideWith((ref) => Stream.value({'al1-t1'})),
+      ]);
+      await openSearch(tester);
+
+      expect(find.textContaining("You're offline"), findsNothing,
+          reason: 'the strip waits for its 4 s grace');
+      expect(find.text(hintOffline), findsOneWidget,
+          reason: 'the page does not');
+      await closeApp(tester, app.db);
+    });
+
+    testWidgets(
         'a silent server counts only after the 4 s grace (a blink is not news): nothing changes before it, everything after it',
         (tester) async {
       final catalogue = FakeCatalogue(catalogueKnows);
@@ -501,7 +519,7 @@ void main() {
       await openSearch(tester);
       await search(tester, 'kodama');
 
-      // About 1.5 s in: the server has been silent for less than the grace.
+      // About 3 s in (the test's own clock): the server has been silent for less than the 4 s grace.
       expect(find.text(moreNeedServer), findsNothing);
       expect(tile(tester, 'Echoes Kodama').available, isTrue,
           reason: 'nothing is greyed during the first 4 s');
