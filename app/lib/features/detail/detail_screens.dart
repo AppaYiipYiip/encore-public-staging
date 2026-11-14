@@ -9,6 +9,7 @@ import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../core/perf.dart';
 import '../../data/db/app_database.dart';
+import '../../data/encore/encore_models.dart' show EncoreUnavailable;
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
 import '../../domain/album_names.dart';
@@ -97,9 +98,10 @@ class _ActionRow extends ConsumerWidget {
         ShufflePlayButtons(
           isPlaying: isPlaying,
           shuffleOn: shuffle,
+          // Through the one place library rows are played from: a song the server already knows it cannot get is left out (N-13, B-128).
           onShuffle: tracks.isEmpty
               ? null
-              : () => facade.playTracks(tracks,
+              : () => playLibraryTracks(ref, tracks,
                   sourceName: sourceName,
                   sourceId: sourceId,
                   shuffle: true,
@@ -108,7 +110,7 @@ class _ActionRow extends ConsumerWidget {
               ? null
               : () => isCurrent
                   ? facade.togglePlayPause()
-                  : facade.playTracks(tracks,
+                  : playLibraryTracks(ref, tracks,
                       sourceName: sourceName,
                       sourceId: sourceId,
                       skipUnavailable: true),
@@ -148,10 +150,23 @@ class _TrackList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final facade = ref.watch(playbackFacadeProvider);
     final snapshot = ref.watch(playbackSnapshotProvider).value;
     final downloaded = ref.watch(downloadedIdsProvider).value ?? const {};
     final playable = ref.watch(playabilityProvider);
+
+    // The songs the server already knows it cannot get are marked (N-13, B-128; drawn in S-15 and S-17): the rows with no file that are not on the phone
+    // are asked about by ref id, one question for each stretch of [kSongMarksPerAsk] rows **that is built**, so a playlist of two thousand songs the
+    // server never fetched is not twenty questions when it opens, only the ones for the rows a person scrolls to; a list whose songs all have files
+    // asks nothing.
+    final stretches = <int, TrackList>{};
+    TrackList stretchOf(int place) =>
+        stretches.putIfAbsent(place ~/ kSongMarksPerAsk, () {
+          final from = (place ~/ kSongMarksPerAsk) * kSongMarksPerAsk;
+          return TrackList(const [], refIds: [
+            for (final t in tracks.skip(from).take(kSongMarksPerAsk))
+              if (t.mayBeUnavailable && !downloaded.contains(t.id)) t.id,
+          ]);
+        });
 
     final shown = only;
     return SliverList.builder(
@@ -160,35 +175,60 @@ class _TrackList extends ConsumerWidget {
         final i = shown == null ? row : shown[row];
         final t = tracks[i];
         final current = snapshot?.track?.id == t.id;
-        return TrackSwipe(
+        return _MarkedRow(
           track: t,
-          index: i,
-          child: TrackTile(
+          stretch: stretchOf(i),
+          builder: (mark) => TrackSwipe(
             track: t,
-            showArt: !numbered,
-            number: numbered ? (t.trackNo ?? i + 1) : null,
-            showAlbum: showAlbum,
-            isCurrent: current,
-            isPlaying: current && (snapshot?.isPlaying ?? false),
-            downloaded: downloaded.contains(t.id),
-            available: playable(t.id),
-            onTap: () => facade.playTracks(tracks,
-                startIndex: i, sourceName: sourceName, sourceId: sourceId),
-            onMore: () => showTrackMenu(
-              context,
-              t,
-              fromPlaylist: editablePlaylist == null || positions == null
-                  ? null
-                  : (
-                      playlistId: editablePlaylist!.id,
-                      playlistName: editablePlaylist!.name,
-                      position: positions![i],
-                    ),
+            index: i,
+            child: TrackTile(
+              track: t,
+              showArt: !numbered,
+              number: numbered ? (t.trackNo ?? i + 1) : null,
+              showAlbum: showAlbum,
+              isCurrent: current,
+              isPlaying: current && (snapshot?.isPlaying ?? false),
+              downloaded: downloaded.contains(t.id),
+              available: playable(t.id),
+              mark: mark,
+              onTap: () => playLibraryTracks(ref, tracks,
+                  startIndex: i, sourceName: sourceName, sourceId: sourceId),
+              onMore: () => showTrackMenu(
+                context,
+                t,
+                fromPlaylist: editablePlaylist == null || positions == null
+                    ? null
+                    : (
+                        playlistId: editablePlaylist!.id,
+                        playlistName: editablePlaylist!.name,
+                        position: positions![i],
+                      ),
+              ),
             ),
           ),
         );
       },
     );
+  }
+}
+
+/// One row of a list of the library: it asks the server about its stretch of rows when it is built (`songMarksCheckProvider`, once per stretch,
+/// however many of its rows are built) and draws with the mark the server's answer gives it, or none.
+class _MarkedRow extends ConsumerWidget {
+  const _MarkedRow({
+    required this.track,
+    required this.stretch,
+    required this.builder,
+  });
+
+  final TrackRow track;
+  final TrackList stretch;
+  final Widget Function(EncoreUnavailable? mark) builder;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!stretch.isEmpty) ref.watch(songMarksCheckProvider(stretch));
+    return builder(ref.watch(libraryMarkProvider(track.markKey)));
   }
 }
 
