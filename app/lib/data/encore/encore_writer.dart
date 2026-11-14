@@ -8,6 +8,7 @@ import '../sync/fingerprint.dart';
 import '../sync/pending_intent.dart';
 import 'encore_merge.dart';
 import 'encore_models.dart';
+import 'pending_playlist_edits.dart';
 
 /// Writes what the Encore server says into the local database (docs/18 section 2).
 ///
@@ -173,6 +174,10 @@ class EncoreWriter {
     Iterable<EncoreEntry> entries, {
     required int nowMs,
   }) async {
+    // What the person did on this phone and the server has not heard yet is not undone by what the server last knew (P2-28, B-61): a rename,
+    // a delete and a removal that wait in the outbox. Each is protected on its own field, never by skipping the whole playlist: another device's
+    // entries arrive one touched entry at a time, each with its own older sequence number, so skipping a pull for a playlist would lose them.
+    final waiting = await pendingPlaylistEdits(_db, serverId);
     final touched = <String>{};
     for (final p in playlists) {
       if (p.id.isEmpty) continue;
@@ -187,20 +192,46 @@ class EncoreWriter {
             .go();
         continue;
       }
-      await _db
-          .into(_db.playlists)
-          .insertOnConflictUpdate(PlaylistsCompanion.insert(
-            serverId: serverId,
-            id: p.id,
-            name: p.name,
-            owner: Value(ownerName),
-            readonly: const Value(false),
-            coverArt: Value(p.cover),
-            createdAtMs: Value(p.createdAtMs),
-            changedAtMs: Value(p.updatedAtMs),
-            entriesFetchedAtMs: Value(nowMs),
-            deletedAtMs: const Value(null),
-          ));
+      // A server that deleted it wins over a waiting rename (docs/34 CF-21: the tombstone branch above). A waiting rename keeps the person's
+      // name until it was delivered (then the feed brings the same name back); a waiting delete does not bring the playlist back from the tombstone.
+      final keepName = waiting.renamed.contains(p.id);
+      final keepDeleted = waiting.deleted.contains(p.id);
+      final existing = keepName || keepDeleted
+          ? await (_db.select(_db.playlists)
+                ..where((t) => t.serverId.equals(serverId) & t.id.equals(p.id)))
+              .getSingleOrNull()
+          : null;
+      if (existing != null) {
+        // The row is there and part of it is the person's: write the other columns only (an upsert would need every required column, the name
+        // too, so a protected column is left out of an UPDATE instead).
+        await (_db.update(_db.playlists)
+              ..where((t) => t.serverId.equals(serverId) & t.id.equals(p.id)))
+            .write(PlaylistsCompanion(
+          name: keepName ? const Value.absent() : Value(p.name),
+          owner: Value(ownerName),
+          readonly: const Value(false),
+          coverArt: Value(p.cover),
+          createdAtMs: Value(p.createdAtMs),
+          changedAtMs: Value(p.updatedAtMs),
+          entriesFetchedAtMs: Value(nowMs),
+          deletedAtMs: keepDeleted ? const Value.absent() : const Value(null),
+        ));
+      } else {
+        await _db
+            .into(_db.playlists)
+            .insertOnConflictUpdate(PlaylistsCompanion.insert(
+              serverId: serverId,
+              id: p.id,
+              name: p.name,
+              owner: Value(ownerName),
+              readonly: const Value(false),
+              coverArt: Value(p.cover),
+              createdAtMs: Value(p.createdAtMs),
+              changedAtMs: Value(p.updatedAtMs),
+              entriesFetchedAtMs: Value(nowMs),
+              deletedAtMs: const Value(null),
+            ));
+      }
     }
     for (final e in entries) {
       if (e.id.isEmpty || e.playlist.isEmpty) continue;
@@ -209,7 +240,8 @@ class EncoreWriter {
             ..where(
                 (t) => t.serverId.equals(serverId) & t.entryId.equals(e.id)))
           .go();
-      if (e.deleted) continue;
+      // A removal that waits stays removed: the entry comes back from the server until the removal was delivered. By the entry's own id.
+      if (e.deleted || waiting.removedEntries.contains(e.id)) continue;
       final playlist = await (_db.select(_db.playlists)
             ..where(
                 (t) => t.serverId.equals(serverId) & t.id.equals(e.playlist)))
