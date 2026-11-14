@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:encore/app/session.dart';
+import 'package:encore/core/logger.dart';
 import 'package:encore/data/auth/credential_store.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/encore/encore_device.dart';
@@ -312,9 +313,17 @@ void main() {
         final liked = encore.addRef('Streamed', 'Artist');
         encore.otherDeviceLikes(liked);
         door.musicFault = fault;
+        Log.clear();
 
         final outcome = await session.sync.run();
 
+        expect(
+            Log.recent.where((r) =>
+                r.level == LogLevel.warn &&
+                r.message.contains('browse index could not be refreshed')),
+            isNotEmpty,
+            reason:
+                'the recorded stop-gap of B-77 (AUDIT B-130): a music-server login that stays broken is visible in the log at WARNING level, every pass');
         expect(outcome, isA<SyncCompleted>(),
             reason:
                 'Settings must not say "did not finish" because Navidrome is restarting: the Encore server answered');
