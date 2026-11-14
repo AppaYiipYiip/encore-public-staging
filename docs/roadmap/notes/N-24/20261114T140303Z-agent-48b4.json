@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140303Z-agent-48b4",
+ "item": "N-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:03Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-24 PASSES: one tap on Play on 50 Cent's artist page started his songs (\"PLAYING FROM 50 Cent\", P.I.M.P. from \"Get Rich Or Die Tryin'\", 2:07 of 4:09 running a minute later). The order is the one found on 14 Nov (album title A to Z, then track number; by design, the owner decides if Play should start from Popular)."
+}

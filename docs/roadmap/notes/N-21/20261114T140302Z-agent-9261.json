@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140302Z-agent-9261",
+ "item": "N-21",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:02Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-21 PASSES for a song of the library: the Top result \"Candy Shop\" has the \"...\" menu (Add to Liked Songs, Add to playlist, Remove download, Play next, Add to queue, Go to album, Go to artist) and the Play circle, the same as the rows below. A CATALOGUE-ONLY Top result (e.g. BUSTA by ARXMANE) and the catalogue rows have only Play and no menu: that is B-121, unchanged."
+}

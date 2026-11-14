@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140302Z-agent-d328",
+ "item": "N-20",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:02Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-20: measured with the app's own spans, offline (airplane mode), tapping a downloaded song (source=file): `play.tap->playing` 126 ms (Candy Shop) and 244 ms (In Da Club); `play.audible` 528 ms and 447 ms. A probe that polls the media session and the audio system with adb read 2.5 s for both, which is the polling cost (each poll is about a second), not the app: do not quote 2.5 s. That puts a downloaded song at about half a second from tap to sound, offline."
+}

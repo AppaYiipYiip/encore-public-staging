@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140301Z-agent-cd6b",
+ "item": "P1-16",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). P1-16 PASSES, both causes, all four screens (shots kept by the checker). NO INTERNET (airplane mode): the field says \"Search your music\" and the genre tiles are dimmed; results are the phone's own songs, grey \"not downloaded\", with the last line \"More results need a connection.\"; no results: \"Nothing in your music matches \"zzqxkw\".\" + \"Connect to search more.\"; a genre page: \"Not available right now\" / \"Browsing needs a connection.\". INTERNET FOUND, SERVER SILENT (the Encore container stopped): results end with \"More results need your server.\"; no results: \"Your server isn't answering, so only your music can be searched.\"; a genre page: \"Not available right now\" / \"Browsing needs your server.\". The words are the ones in `features/common/away_words.dart` and the drawing (S-11, S-12, S-13). Not covered: the Jam add-songs sheet."
+}

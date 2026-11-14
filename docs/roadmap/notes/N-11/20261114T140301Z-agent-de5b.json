@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140301Z-agent-de5b",
+ "item": "N-11",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:01Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). N-11 holds after the update. Server: 3363 refs, 5 files held by more than one ref (the same five pairs that were held back on purpose: Darkbloom, Empire State Of Mind, Rule Of Nines, Lose Yourself, Paranoid Android; each pair is two different YouTube uploads, 4 to 8 seconds apart, sharing one file), 174 rows in ref_merge. Phone (fresh pull of its database): 3245 live rows, 5 files shared by more than one row (the same five). 63 groups of refs have the same artist and title; 62 of them have a file on every ref (separate files and uploads, durations mostly more than 5 s apart: separate copies, not merged by design) and one group has a file on only one ref. A first count of \"6\" was my query counting two files that have no music-server id yet (a NULL group): not a defect."
+}

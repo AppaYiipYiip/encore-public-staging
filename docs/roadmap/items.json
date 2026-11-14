@@ -967,5 +967,14 @@
   "size": "M",
   "needs": [],
   "from": "owner"
+ },
+ "N-26": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: imported songs are filed under the performer, not the uploading channel",
+  "note": "Found 14 Nov 2026 reading the artists N-15 could not give a picture (audit B-125): more than half of the 100 artists without a picture are YouTube channels, labels or accounts (a live-session channel, a concert channel, an anime channel, record labels), because an imported video is saved with its uploader as its artist. The importer should read \"Artist - Title\" from the video title, as the search matcher already does, and a name that is a channel must never get an artist picture or an artist page of its own.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }

@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140300Z-agent-9552",
+ "item": "P2-28",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:00Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). P2-28 AND THE B-58 SLICE, ON A PHONE (partial, said plainly). (a) The whole phone offline (airplane mode): \"Upgrade test\" renamed to \"Upgrade test W14\" (offline, the Library lists the server's playlists as \"Not downloaded\" once \"Show the whole server\" is on); network back: the server held the new name at the FIRST sample, 3 s after airplane mode went off; 11 samples over 40 s, the screen never showed the old name. (b) The phone online and only the Encore server away (its container stopped for about 50 s): the playlist was renamed back 21 s after the stop; the container was started again; the server held the new name within 11 to 16 s of the start (before the B-58 fix the same situation took 549 s); every screen sample showed the new name. NOT proved on a phone: the case the item is really about (a pull brings the OLD name while the edit is still waiting): the delivery was too fast to hold it and the server has no fault hook for edits. The proof of that stays the end-to-end session test of #48 and #49."
+}

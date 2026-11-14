@@ -1,0 +1,9 @@
+{
+ "id": "20261114T140303Z-agent-a6c0",
+ "item": "P4-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T14:03:03Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK, 14 Nov 2026 (verified on an emulator against VM 108 updated to sha-4066593, the merge of #53 = frozen commit 40665932; debug APK build 152 from the same commit; NOT the release-candidate pair; nothing is marked walked). P4-24: the line is there, in Settings > Playback: \"Data saver | Uses less mobile data: lower quality, smaller pictures, less loaded ahead. Never on Wi-Fi.\" Its effect needs a metered network, which the emulator does not have: not tried."
+}
