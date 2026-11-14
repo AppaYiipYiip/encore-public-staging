@@ -976,5 +976,14 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-27": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: songs nobody asked for are cleaned away",
+  "note": "Audit B-126 and B-131 together: typing in Search and tapping a song the server cannot find leave rows nobody points at, on the server and on the phone, that are never retired. Make Search ask by a read that creates no row (or only after the query settles), and retire unused rows on both sides (keeping a row's N-13 verdict for its window). Needs a short design note first.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }
