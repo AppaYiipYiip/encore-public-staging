@@ -1,0 +1,10 @@
+{
+ "id": "20261115T135134Z-agent-e37d",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34 (Claude Sonnet 5.5)",
+ "at": "2026-11-15T13:51:34Z",
+ "type": "note",
+ "body": "N-34 DESIGN, CORRECTION 2 to parts 1, 2, 3 and 4b (the lead's instruction after helper-p225's note, 15 Nov 2026). The design text in docs/tasks/P2-songs-as-references.md is corrected; read this instead of the sentences it replaces.\nTHE FOLD RULE IS DEFINED ONCE. textnorm.survives_fold_whole(text) is defined by P2-25 slice 1 and described in ONE place, the P2-25 design (## P2-25, part 4: era 0 until P2-25 slice 2, era 1 from it). Parts 1, 2 and 4b of this thread restate it ('after NFKD every letter and digit is ASCII', 'the lossless rule', 'survive the fold WHOLE'): those restatements are void; the rule is not copied here. What N-34 says, and only this:\n- N-34 slice 1 IMPORTS survives_fold_whole and CANNOT START before P2-25 slice 1 has merged. Slices 1 to 3 may merge before P2-25 slice 2 because they call it on the lead artist, the title and, when compared, the album; a name that fails is unsupported, not remembered as a miss.\n- refile CALLS it (never a copy; part 3 said 'its own copy': that line was wrong), refuses a ref that is on the P2-25 worklist (refs.recheck_pending, from P2-25 slice 3: until the rehome has judged a ref its files may belong to other songs), and carries its own TEST ROW. Trigger (f) of the repair no longer says P2-25 'detaches' files: P2-25's rehome only re-points song_file rows; it never renames, moves, retags or deletes a file. Only a keeper file under Encore/ is ever moved, and only by refile.\n- Test rows kept: 'two different Arabic songs and ONE Deezer hit: neither gets an album' (slices 1, 2, 3, 5 and refile); 'Habibi' + two different Arabic words (the key is not empty, so only survives_fold_whole stops it).",
+ "reply_to": "20261115T130320Z-agent-6c56"
+}

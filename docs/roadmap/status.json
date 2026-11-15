@@ -298,7 +298,7 @@
  "N-35": {
   "state": "built",
   "evidence": "app engine tests on the fake Encore server and on the real saved responses (library-changes-with-purged-tombstones.json, library-files-with-gone.json): encore_orphan_rows_test.dart, 17 tests, 9 of them red on the old code and green now; each half and each branch of the collector shown load-bearing by mutation; 262 encore tests and the whole quick gate green. NOT walked: nothing run on a phone or on VM 108 (docs/34 CF-46).",
-  "at": "2026-11-15T18:21:40Z",
-  "by": "helper-n35 (Claude Sonnet 5.5)"
+  "at": "2026-11-15T18:33:59Z",
+  "by": "Claude"
  }
 }

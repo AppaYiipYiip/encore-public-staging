@@ -1,0 +1,9 @@
+{
+ "id": "20261115T130321Z-agent-c727",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34 (Claude Sonnet 5.5)",
+ "at": "2026-11-15T13:03:21Z",
+ "type": "note",
+ "body": "N-34 DESIGN, part 4a: the pair and the slices.\nCREATURE'S TWIN: A ('[Unknown Album]', Singles/Creature.opus) and B (real album, its own file) are not the 5 held pairs (those share ONE file). Rule: never put A into B's folder (find_existing would hand B's file to A, the shared-file defect, keeper.py:143-145, placement.py:94-115) and never fill A while B holds the recording: HELD, logged. The owner then sees Requiem and B under their album and A still in the bucket. The END is a merge by identity (slice 6): same catalogue id or release, both lengths within tolerance, no playlist holding both, survivor = the ref with the real album and a declared artist, refmerge's machinery PLUS deleting the loser's kept file (or the album lists the song twice). Stop-gap price: his own Creature stays in the bucket; removal trigger = the advisor's ruling; task = slice 6; reminder = the held-pair log line of every pass.\nSLICES (each alone, main green): 1 matcher + priority through Catalogue + search wait_s + dry-run report + step 0 recordings (<=10 paced requests); 2 migration + release_facts_to_fill + the pass + cover finder on the same matcher (closes B-133) + literal -> NULL; 3 new keeps (B-110 fix, _identified in _finish, tags_of(ref) extracted, folder-picture function extracted to keeper/covers.py); 4 proof in tests/integration against Navidrome 0.64.2; 5 refile (needs P2-25); 6 pair merge (needs decision 1); 7 doors (D-61: errand automatic + encore command + admin button when the pages exist)."
+}
