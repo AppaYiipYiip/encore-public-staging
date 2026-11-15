@@ -1,7 +1,9 @@
 /// Typo tolerance for artist names (N-23a, owner 13 Nov 2026: typing "landmarks" must find the band "Landmvrks").
 ///
 /// **The rule, in one sentence: when what was typed and an artist's name both have 5 or more letters, one letter wrong, missing, extra
-/// or swapped with its neighbour still finds the artist, and two do from 9 letters on; a name of 1 to 4 letters is never guessed.**
+/// or swapped with its neighbour still finds the artist, and two do from 9 letters on; a name of 1 to 4 letters is never guessed.** A name
+/// that is not finished yet counts too ([typoEditsOfStart], owner 15 Nov 2026: "landmrvk" for "Landmvrks"): what was typed is compared with
+/// the same number of letters from the start of the name, by the same allowance.
 ///
 /// Why it is a scan and not part of the library's text search: the full-text index only matches the start of a word, and a typo in the
 /// first letters ("lamdmarks") has no start to match. The scan compares the typed words with the library's artist names only (a few
@@ -44,6 +46,25 @@ int _letters(String key) {
 int? typoEdits(String typed, String name) {
   final allowed = typoAllowance(math.min(_letters(typed), _letters(name)));
   return allowed == 0 ? null : _editsWithin(typed, name, allowed);
+}
+
+/// How many edits [typed] is from the START of [name], or `null` when that is more than the rule allows (the allowance follows what was
+/// typed): a typo in a name that is not finished yet ("landmrvk" for "Landmvrks": a swap, and no last letter; owner, 15 Nov 2026). What was
+/// typed is compared with the first letters of the name, as many as it has, one fewer or one more (a letter missing or extra inside what
+/// was typed moves the end). Only for a name LONGER than what was typed: a whole name is [typoEdits], and a start that is right as typed is
+/// 0 here (the library's own search finds that one). Both are folded.
+int? typoEditsOfStart(String typed, String name) =>
+    _startEdits(typed, name, typoAllowance(_letters(typed)));
+
+int? _startEdits(String typed, String name, int allowed) {
+  if (allowed == 0 || name.length <= typed.length) return null;
+  int? best;
+  for (final k in [typed.length - 1, typed.length, typed.length + 1]) {
+    if (k < 1 || k >= name.length) continue;
+    final edits = _editsWithin(typed, name.substring(0, k), allowed);
+    if (edits != null && (best == null || edits < best)) best = edits;
+  }
+  return best;
 }
 
 /// The optimal string alignment distance of [a] and [b] (Levenshtein, plus one for two neighbours swapped) when it is at most [most],
@@ -142,8 +163,11 @@ class ArtistTypoIndex<T> {
     final found = <(int, int)>[];
     for (var i = 0; i < keys.length; i++) {
       final allowed = typoAllowance(math.min(typedLetters, letters[i]));
-      if (allowed == 0) continue;
-      final edits = _editsWithin(typed, keys[i], allowed);
+      final whole = allowed == 0 ? null : _editsWithin(typed, keys[i], allowed);
+      final start = _startEdits(typed, keys[i], typoAllowance(typedLetters));
+      final edits = whole == null
+          ? start
+          : (start == null || whole <= start ? whole : start);
       if (edits != null) found.add((edits, i));
     }
     found.sort((x, y) => x.$1 != y.$1 ? x.$1 - y.$1 : x.$2 - y.$2);

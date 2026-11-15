@@ -148,7 +148,7 @@ bool _splitsIntoArtistAndTitle(
 }
 
 /// 0 to 1: how well the artist [name] answers [query]: 0.95 exactly, 0.7 the start of the name, [typoArtistScore] a name one letter off
-/// (two from 9 letters on, never for 1 to 4 letters: [typoEdits]), 0.55 every typed word begins some word of the name. The library's search
+/// (two from 9 letters on, never for 1 to 4 letters: [typoEdits]; or the START of the name, for a name not finished yet: [typoEditsOfStart]), 0.55 every typed word begins some word of the name. The library's search
 /// cannot find a typo, so `searchResultsProvider` adds such artists to its results ([ArtistTypoIndex]); the catalogue's (Deezer's) own
 /// matching finds them for the catalogue. Both are scored here, by the same rule.
 double artistMatch(String query, String name) {
@@ -158,7 +158,9 @@ double artistMatch(String query, String name) {
   if (q == n) return 0.95;
   if (n.startsWith(q)) return 0.7;
   if (_covers(q.split(' '), n.split(' '))) return 0.55;
-  return typoEdits(q, n) != null ? typoArtistScore : 0;
+  return typoEdits(q, n) != null || typoEditsOfStart(q, n) != null
+      ? typoArtistScore
+      : 0;
 }
 
 /// 0 to 1: how well the album [title] by [artist] answers [query].
