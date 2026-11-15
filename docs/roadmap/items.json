@@ -1104,17 +1104,17 @@
   "from": "agent"
  },
  "N-37": {
- "kind": "feature",
- "title": "Fix an imported playlist by reading its link again",
- "note": "From P2-25's design (15 Nov 2026, D11, ruled yes): playlists imported while the server could not tell songs in other alphabets apart hold the wrong songs (one song repeated). The information to correct them exists for a while (import.url and import_entry.video name the song the source meant, until the entries are purged 60 days after the import), but putting the right song into a person's own playlist is a change to their list nobody asked for, so it is never automatic: read the link again, show what would change (this entry: this song), and apply only what the person accepts. The same for the likes a person brought over from the music server (bring-my-library-over adds likes for the songs that are now separate; a playlist it filled once is not filled again). Needs P2-25's rehome and fold first.",
- "proposal": true,
- "size": "M",
- "needs": [
-  {
-   "id": "P2-25",
-   "mark": "d"
-  }
- ],
- "from": "agent"
-}
+  "kind": "feature",
+  "title": "Fix an imported playlist by reading its link again",
+  "note": "From P2-25's design (15 Nov 2026, D11, ruled yes): playlists imported while the server could not tell songs in other alphabets apart hold the wrong songs (one song repeated). The information to correct them exists for a while (import.url and import_entry.video name the song the source meant, until the entries are purged 60 days after the import), but putting the right song into a person's own playlist is a change to their list nobody asked for, so it is never automatic: read the link again, show what would change (this entry: this song), and apply only what the person accepts. The same for the likes a person brought over from the music server (bring-my-library-over adds likes for the songs that are now separate; a playlist it filled once is not filled again). Needs P2-25's rehome and fold first.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
+ }
 }
