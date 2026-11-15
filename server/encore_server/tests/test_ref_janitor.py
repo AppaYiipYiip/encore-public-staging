@@ -26,7 +26,7 @@ from typing import Any
 import httpx
 import pytest
 
-from encore_server import library, missing, ref_janitor, refs
+from encore_server import library, missing, ref_janitor
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.db import Database
@@ -146,9 +146,9 @@ def _survivor(conn: sqlite3.Connection, ref: str) -> None:
     conn.execute("INSERT INTO ref_merge (old_id, into_id, at) VALUES (?,?,1)", (rid(800), ref))
 
 
-def _file_once_changed(conn: sqlite3.Connection, ref: str) -> None:
-    """The ref held a file once (every attach and every prune writes a row), however long ago: here 100 days."""
-    conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (ref, NOW - 100 * DAY))
+def _file_touched_lately(conn: sqlite3.Connection, ref: str) -> None:
+    """A change of the ref's files (every attach and every prune writes a row) inside the last 14 days: a library file the music server lost an hour ago."""
+    conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (ref, NOW - DAY))
 
 
 #: scenario -> (what is written, the key of the clause in `POINTERS` that keeps the ref). Every clause has at least one scenario.
@@ -167,7 +167,7 @@ SCENARIOS: dict[str, tuple[Pointer, str]] = {
     "the song being played": (_playing, "playback_state"),
     "a song inside somebody's queue (a JSON text)": (_queued, "queue"),
     "a survivor that older ids resolve to": (_survivor, "merge_survivor"),
-    "a ref that once held a file (and has none now)": (_file_once_changed, "file_history"),
+    "a file change in the last 14 days": (_file_touched_lately, "recent_file_change"),
 }
 
 
@@ -325,42 +325,60 @@ def test_a_queue_that_holds_other_songs_does_not_keep_this_one(world: Database) 
     assert refs_left(world) == {theirs} and mine not in refs_left(world)
 
 
-def test_a_ref_that_once_held_a_file_stays_and_so_does_its_log_while_one_that_never_did_goes(world: Database) -> None:
-    """The cost of what the janitor will not do (see `ref_janitor`): a ref whose file was removed is the only thing that can tell a phone that was away
-    "no file". The junk it is for (taps, typing) never had a file and so has no log rows."""
+def test_a_ref_whose_file_was_removed_long_ago_goes_with_its_log_and_one_changed_lately_stays(world: Database) -> None:
+    """Slice 2e: a ref that once held a file is retired like any other, because phones now hear it (`ref_gone`, read by the phone). Its `file_log` rows have
+    no foreign key, so they go in the same transaction; a ref whose files changed in the last 14 days stays, with its log."""
     with world.tx() as conn:
-        junk = add_ref(conn, 1)
-        ex_file = add_ref(conn, 2)
-        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (ex_file, NOW - 30 * DAY))
+        long_ago = add_ref(conn, 1)
+        lately = add_ref(conn, 2)
+        for at in (NOW - 40 * DAY, NOW - 30 * DAY):
+            conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (long_ago, at))
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (lately, NOW - AGE_MS + HOUR))
 
     assert janitor(world).run_once() == 1
 
-    assert refs_left(world) == {ex_file}, f"{junk} never held a file and goes"
+    assert refs_left(world) == {lately}, f"{long_ago} changed its files more than 14 days ago and goes"
     with world.read() as conn:
-        assert [row["ref"] for row in conn.execute("SELECT ref FROM file_log")] == [ex_file]
+        assert {row["ref"] for row in conn.execute("SELECT ref FROM file_log")} == {lately}
 
 
-def test_a_phone_that_was_away_for_weeks_is_still_told_that_a_song_has_no_file_any_more(world: Database) -> None:
-    """The scenario that decides the rule. The owner removes a song: the prune writes a log row. Phone A syncs and drops the song. Phone B is away; the
-    janitor passes more than 14 days later; B comes back with its OLD cursor. The files feed lists the ref with `file: null` (that is how B hears), which
-    needs the ref to still exist: `files_since` skips a ref that is gone."""
+def test_the_keep_after_a_change_of_files_is_exactly_the_age(world: Database) -> None:
+    with world.tx() as conn:
+        on_the_line = add_ref(conn, 1)
+        one_older = add_ref(conn, 2)
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (on_the_line, NOW - AGE_MS))
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (one_older, NOW - AGE_MS - 1))
+
+    janitor(world).run_once()
+
+    assert refs_left(world) == {on_the_line}, f"{one_older} is one millisecond past the line and goes"
+
+
+def test_a_phone_that_was_away_for_weeks_is_told_that_a_song_that_lost_its_file_is_gone(world: Database) -> None:
+    """The scenario that decided the rule in slice 2a, finished by 2c and 2e. The owner removes a song: the prune writes a log row. Phone B reads the feed
+    and goes away; the janitor passes more than 14 days later; B comes back with its OLD cursors. Before, the feed could only skip a ref that is gone, so the
+    janitor had to keep it. Now the tombstone tells B (`gone`), and the ref's log is gone with it."""
     with world.tx() as conn:
         ref = add_ref(conn, 1)
         junk = add_ref(conn, 2)
         conn.execute("INSERT INTO song_file (id, ref, source, added_at) VALUES ('sf_1', ?, 'library', 1)", (ref,))
-        refs.touch_file(conn, ref)  # the song was linked
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (ref, NOW - 40 * DAY))  # the song was linked
     with world.read() as conn:
-        phone_b_cursor = int(library.files_since(conn, 0)["cursor"])  # phone B read the feed here, and went away
+        phone_b = library.files_since(conn, 0, gone_since=0)  # phone B read the feed here, and went away
+        phone_b_cursor, phone_b_gone = int(phone_b["cursor"]), int(phone_b["goneCursor"])
+        assert [r["id"] for r in phone_b["refs"]] == [ref] and phone_b["gone"] == []
     with world.tx() as conn:
         conn.execute("DELETE FROM song_file WHERE id = 'sf_1'")  # the owner removed the song from the music server: the prune
-        refs.touch_file(conn, ref)
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (ref, NOW - 30 * DAY))
 
-    assert janitor(world).run_once() == 1  # more than 14 days on (the ref is 15 days old)
+    assert janitor(world).run_once() == 2  # more than 14 days on: the junk ref and the one that lost its file
 
-    assert refs_left(world) == {ref}, f"{junk} was junk and went; the ref that once held a file stays"
+    assert refs_left(world) == set()
     with world.read() as conn:
-        feed = library.files_since(conn, phone_b_cursor)
-    assert [(r["id"], r["file"]) for r in feed["refs"]] == [(ref, None)]
+        feed = library.files_since(conn, phone_b_cursor, gone_since=phone_b_gone)
+        assert conn.execute("SELECT COUNT(*) AS n FROM file_log").fetchone()["n"] == 0
+    assert {g["id"] for g in feed["gone"]} == {ref, junk}, "B hears both, whatever it held"
+    assert feed["refs"] == [], "the feed itself skips a ref that is gone: only the tombstone can tell"
 
 
 # ------------------------------------------------------------------------------------------------ the memory of songs the server cannot get (N-13)
@@ -539,11 +557,15 @@ def test_a_pass_that_fails_changes_nothing_not_even_what_an_earlier_statement_de
         free = add_ref(conn, 1, OLD - DAY)  # the older one: deleted first
         pointed = add_ref(conn, 2)
         _play(conn, pointed)
+        conn.execute("INSERT INTO file_log (ref, at) VALUES (?,?)", (free, NOW - 40 * DAY))
 
     with pytest.raises(sqlite3.IntegrityError):
         janitor(world).run_once()
 
     assert refs_left(world) == {free, pointed}
+    with world.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM file_log").fetchone()["n"] == 1, "its log is back too"
+        assert conn.execute("SELECT COUNT(*) AS n FROM ref_gone").fetchone()["n"] == 0, "and no phone is told it is gone"
 
 
 # ------------------------------------------------------------------------------------------------ the app runs it

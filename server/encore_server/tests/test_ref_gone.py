@@ -160,14 +160,19 @@ def test_a_pass_that_fails_leaves_no_tombstone_for_a_ref_that_is_still_there(
         assert {r["id"] for r in conn.execute("SELECT id FROM song_ref")} == {free, pointed}
 
 
-def test_a_ref_that_once_held_a_file_is_still_kept_in_this_slice(db: Database) -> None:
-    """Slice 2c only makes the server able to tell; 2e lifts `file_history` once the phone reads the tombstone (2b)."""
+def test_a_ref_that_once_held_a_file_is_retired_and_told_like_any_other(db: Database) -> None:
+    """Slice 2e: 2c made the server able to tell and 2b made the phone read it, so `file_history` is lifted: a ref whose file was removed long ago goes, with
+    its `file_log` rows (no foreign key), and every phone is told."""
     with db.tx() as conn:
         ex_file = add_ref(conn, 1)
         conn.execute("INSERT INTO file_log (ref, at) VALUES (?, ?)", (ex_file, NOW - 100 * DAY))
 
-    assert janitor(db).run_once() == 0
-    assert tombstones(db) == []
+    assert janitor(db).run_once() == 1
+
+    assert tombstones(db) == [(ex_file, NOW)]
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM file_log").fetchone()["n"] == 0
+        assert [g["id"] for g in library.files_since(conn, 0, gone_since=0)["gone"]] == [ex_file]
 
 
 # ------------------------------------------------------------------------------------------------ the feed tells phones

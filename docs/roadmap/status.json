@@ -270,5 +270,11 @@
   "evidence": "Built, not walked: one reach state and one server-kind answer, PRs #60 (B-77, B-78), #66 (the state, resolver finding, strip presenter, readers, deleted notions), #67 (the player's one read and one recheck), #68 (serverKindProvider), #69 (encoreApi accessor, encoreMode private). Whole app suite green on each base; grep finds none of the deleted names; no emulator or phone.",
   "at": "2026-11-14T19:16:07Z",
   "by": "Claude"
+ },
+ "N-27": {
+  "state": "built",
+  "evidence": "Built, not walked: slice 1 #72 (browsing makes no row), 2a #77 (the server janitor, checked on VM 108), 2c #83 (ref_gone, goneSince, feature ref-gone), 2b #85 (the phone reads the tombstones: applyGone, third cursor, pinned and downloaded songs kept), 2e (this PR: the janitor lifts file_history, deletes the retired refs' file_log rows in the same transaction, restores the 14-day keep); tests: server tests/test_ref_janitor.py and test_ref_gone.py (the away-phone scenario end to end through the feed), app test/data/encore/encore_gone_test.dart. Deleted playlists and imports are the new item N-31 (slice 2d).",
+  "at": "2026-11-15T03:54:18Z",
+  "by": "lead (Claude Sonnet 5.5)"
  }
 }
