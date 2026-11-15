@@ -1,0 +1,9 @@
+{
+ "id": "20261115T090429Z-agent-1cd9",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T09:04:29Z",
+ "type": "note",
+ "body": "15 Nov 2026, advisor's reading of the 13 Nov report (to keep next to the evidence): in the lead's own 'before' screenshot the offline strip (\"You're offline. Downloaded music still plays.\", cloud icon in the warning colour) arrived a few seconds after the network dropped. A person who goes offline and pauses inside that window sees the strip arrive WITH the pause, which is a plausible origin of the original report even though the pause does nothing wrong (the strip is said once and goes). That is the right behaviour (it tells the truth about the network and says downloaded music still plays); if the owner still finds it alarming the question is its colour and its timing, a drawing question, not the pause. N-19 is built-not-walked with the pin tests of PR #91."
+}

@@ -197,6 +197,78 @@ void main() {
     });
   });
 
+  group(
+      'an upload whose title begins with the name of an artist that is one of the answers',
+      () {
+    // A library row of an old import: saved with the uploading channel as its artist, the band only at the start of the title (N-26, B-125).
+    const upload =
+        'LANDMVRKS - CONCERT 4K - ZÉNITH DE PARIS 2026 - slash musique';
+    final known = {searchKey('LANDMVRKS')};
+
+    test('is not worth more than the artist whose name was typed unfinished',
+        () {
+      // Owner, 15 Nov 2026: "landmvrk" put this song before the band (0.72 against 0.7).
+      final song = songMatch('landmvrk',
+          artist: 'slash musique', title: upload, knownArtists: known);
+
+      expect(song, lessThan(artistMatch('landmvrk', 'LANDMVRKS')));
+    });
+
+    test(
+        'the words before the dash name the artist: artist and title typed together still find it',
+        () {
+      final song = songMatch('landmvrks concert',
+          artist: 'slash musique', title: upload, knownArtists: known);
+
+      expect(song, greaterThanOrEqualTo(0.8),
+          reason: 'the first typed word is the artist, the rest is the song');
+    });
+
+    test('the song is still found by its own words', () {
+      final song = songMatch('concert 4k zenith',
+          artist: 'slash musique', title: upload, knownArtists: known);
+
+      expect(song, greaterThan(0.5));
+    });
+
+    test(
+        'with no such artist among the answers nothing changes (the rule is a second layer, not a guess)',
+        () {
+      final alone =
+          songMatch('landmvrk', artist: 'slash musique', title: upload);
+      final other = songMatch('landmvrk',
+          artist: 'slash musique',
+          title: upload,
+          knownArtists: {searchKey('Someone Else')});
+
+      expect(other, alone);
+      expect(alone, greaterThan(artistMatch('landmvrk', 'LANDMVRKS')),
+          reason: 'the old score, kept when the dash names nobody we know');
+    });
+
+    test('a title that is "Song - Suffix" is not an upload of an artist', () {
+      // Deezer and every live cut: "Hotel California - Live at the Forum" by Eagles. The words before the dash are the song's.
+      const title = 'Hotel California - Live at the Forum';
+      expect(
+          songMatch('hotel california',
+              artist: 'Eagles',
+              title: title,
+              knownArtists: {searchKey('Eagles')}),
+          songMatch('hotel california', artist: 'Eagles', title: title));
+    });
+
+    test('an exact title or an exact "artist title" is still what it was', () {
+      expect(
+          songMatch('landmvrks concert 4k zenith de paris 2026 slash musique',
+              artist: 'slash musique', title: upload, knownArtists: known),
+          greaterThanOrEqualTo(0.8));
+      expect(
+          songMatch(upload.toLowerCase(),
+              artist: 'slash musique', title: upload, knownArtists: known),
+          0.95);
+    });
+  });
+
   group('an artist and an album', () {
     test('the exact name is best, a start of it next', () {
       expect(artistMatch('cairokee', 'Cairokee'), 0.95);
