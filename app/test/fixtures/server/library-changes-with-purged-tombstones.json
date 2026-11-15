@@ -1,0 +1,50 @@
+{
+  "refs": [],
+  "likes": [],
+  "savedAlbums": [],
+  "follows": [],
+  "playlists": [
+    {
+      "id": "pl_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "name": "Keepers",
+      "cover": null,
+      "collaborative": false,
+      "sourceId": null,
+      "createdAt": 1000,
+      "updatedAt": 2000,
+      "deleted": false
+    },
+    {
+      "id": "pl_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "name": "Old mix",
+      "cover": null,
+      "collaborative": false,
+      "sourceId": null,
+      "createdAt": 2000,
+      "updatedAt": 5000,
+      "deleted": true
+    },
+    {
+      "id": "pl_cccccccccccccccccccccccccc",
+      "deleted": true
+    }
+  ],
+  "entries": [
+    {
+      "id": "pe_xxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "playlist": "pl_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "deleted": true
+    },
+    {
+      "id": "pe_yyyyyyyyyyyyyyyyyyyyyyyyyy",
+      "playlist": "pl_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deleted": true
+    },
+    {
+      "id": "pe_zzzzzzzzzzzzzzzzzzzzzzzzzz",
+      "deleted": true
+    }
+  ],
+  "cursor": "6",
+  "more": false
+}

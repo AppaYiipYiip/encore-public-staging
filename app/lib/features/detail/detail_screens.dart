@@ -38,6 +38,7 @@ import '../instant/tap_play.dart';
 import '../providers.dart';
 import 'album_gap.dart';
 import 'hero_header.dart';
+import 'list_finder.dart';
 import 'playlist_find.dart';
 
 /// Download / more / shuffle / play row under the title.
@@ -139,7 +140,7 @@ class _TrackList extends ConsumerWidget {
   final bool numbered;
   final bool showAlbum;
 
-  /// The places in [tracks] that are shown, in the order shown (a playlist's "Find in playlist", N-25); null shows all of [tracks]. A row
+  /// The places in [tracks] that are shown, in the order shown ("Find in playlist" of a playlist and of Liked Songs, N-25 and N-32); null shows all of [tracks]. A row
   /// is still its place in the whole list: it plays from there with the whole list queued, and removes its own entry.
   final List<int>? only;
 
@@ -367,63 +368,23 @@ class PlaylistScreen extends ConsumerStatefulWidget {
 }
 
 class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
-  // "Find in playlist" (N-25, docs/design S-17). Whether the finding page is open, the words typed (settled after Search's own 90 ms wait),
-  // and the positions the last answer named, kept on screen until the next answer arrives so the list never blinks between two letters.
-  bool _finding = false;
-  String _query = '';
-  List<int>? _held;
-  Timer? _debounce;
-  final _controller = TextEditingController();
-  final _focus = FocusNode();
+  // "Find in playlist" (N-25, docs/design S-17): whether the finding page is open, the words typed and the positions the last answer named;
+  // the same state as Liked Songs' finding keeps (N-32), so it lives in one place.
+  late final _finder = ListFinder<List<int>>(onChanged: () {
+    if (mounted) setState(() {});
+  });
 
   @override
   void didUpdateWidget(PlaylistScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     // The page now shows another playlist: what was typed was about the first.
-    if (oldWidget.playlistId != widget.playlistId) _reset();
+    if (oldWidget.playlistId != widget.playlistId) _finder.reset();
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
-    _controller.dispose();
-    _focus.dispose();
+    _finder.dispose();
     super.dispose();
-  }
-
-  void _reset() {
-    _debounce?.cancel();
-    _controller.clear();
-    _finding = false;
-    _query = '';
-    _held = null;
-  }
-
-  void _openFind() => setState(() => _finding = true);
-
-  /// The arrow and Back: the whole playlist again, as it was, with nothing typed.
-  void _closeFind() {
-    _focus.unfocus();
-    setState(_reset);
-  }
-
-  void _onChanged(String text) {
-    // As in Search: the index is fast enough for every letter; the short wait only joins quick typing.
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 90), () {
-      if (mounted) setState(() => _query = text.trim());
-    });
-  }
-
-  /// Empties the field and shows the whole list; the finding stays open for the next word.
-  void _clear() {
-    _debounce?.cancel();
-    _controller.clear();
-    _focus.requestFocus();
-    setState(() {
-      _query = '';
-      _held = null;
-    });
   }
 
   @override
@@ -450,7 +411,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       PerfMonitor.instance
           .pageFull('playlist', detail: '${entries.length} songs');
     }
-    if (_finding && entries.isNotEmpty) {
+    if (_finder.open && entries.isNotEmpty) {
       return _findingPage(playlist, entries, editable);
     }
     final total = tracks.fold<int>(0, (s, t) => s + (t.durationSec ?? 0));
@@ -468,7 +429,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       tint: swatch == null ? null : backdropFor(swatch),
       // The finding page replaces this one for a moment: the page comes back where it was.
       scrollKey: PageStorageKey<String>('playlist-${playlist.id}'),
-      find: entries.isEmpty ? null : PlaylistFindField(onTap: _openFind),
+      find: entries.isEmpty
+          ? null
+          : PlaylistFindField(onTap: _finder.openFinding),
       art: CoverArt(
         coverArtId: playlist.coverArt,
         mosaicIds: mosaic,
@@ -558,14 +521,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     List<({int position, TrackRow track})> entries,
     PlaylistRow? editable,
   ) {
-    final query = _query;
-    if (query.isNotEmpty) {
-      final found = ref
-          .watch(playlistFindProvider((playlistId: playlist.id, query: query)));
-      if (found.hasValue) _held = found.requireValue;
-    }
+    final query = _finder.query;
+    final held = query.isEmpty
+        ? null
+        : _finder.hold(ref.watch(
+            playlistFindProvider((playlistId: playlist.id, query: query))));
     // Positions to places in the list, now: an edit can land between two answers.
-    final held = query.isEmpty ? null : _held;
     List<int>? shown;
     if (held != null) {
       final placeOf = {for (final (i, e) in entries.indexed) e.position: i};
@@ -574,12 +535,49 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           if (placeOf[position] != null) placeOf[position]!,
       ];
     }
-    final sourceId = 'playlist:${playlist.id}';
 
+    return _FindingPage(
+      finder: _finder,
+      words: FindWords.playlist,
+      noResultsFor: shown != null && shown.isEmpty ? query : null,
+      list: _TrackList(
+        tracks: [for (final e in entries) e.track],
+        sourceName: playlist.name,
+        sourceId: 'playlist:${playlist.id}',
+        showAlbum: true,
+        editablePlaylist: editable,
+        positions: [for (final e in entries) e.position],
+        only: shown,
+      ),
+    );
+  }
+}
+
+/// The page while the person finds a song inside a list (S-15 and S-17): the field at the top of the page, built like Search's own, and under it
+/// [list] (a sliver: the whole list, or the songs the words match) or, when nothing matches, the words saying so. The arrow and Back close it.
+class _FindingPage extends StatelessWidget {
+  const _FindingPage({
+    required this.finder,
+    required this.words,
+    required this.noResultsFor,
+    required this.list,
+  });
+
+  final ListFinder<Object> finder;
+
+  /// What the field and the no-results line say: they name the list ([FindWords]).
+  final FindWords words;
+
+  /// The words typed when nothing matches them; null when something does (or nothing is typed).
+  final String? noResultsFor;
+  final Widget list;
+
+  @override
+  Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _closeFind();
+        if (!didPop) finder.close();
       },
       child: Scaffold(
         body: SafeArea(
@@ -587,11 +585,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           child: Column(
             children: [
               PlaylistFindBar(
-                controller: _controller,
-                focusNode: _focus,
-                onChanged: _onChanged,
-                onClear: _clear,
-                onClose: _closeFind,
+                words: words,
+                controller: finder.controller,
+                focusNode: finder.focus,
+                onChanged: finder.typed,
+                onClear: finder.clear,
+                onClose: finder.close,
               ),
               const SizedBox(height: Space.sm),
               Expanded(
@@ -600,25 +599,17 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
-                    if (shown != null && shown.isEmpty)
+                    if (noResultsFor != null)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: EmptyState(
                           icon: Icons.search_off_rounded,
-                          title: 'No results for "$query" in this playlist',
+                          title: words.noResults(noResultsFor!),
                           message: 'Check the spelling, or try fewer words.',
                         ),
                       )
                     else
-                      _TrackList(
-                        tracks: [for (final e in entries) e.track],
-                        sourceName: playlist.name,
-                        sourceId: sourceId,
-                        showAlbum: true,
-                        editablePlaylist: editable,
-                        positions: [for (final e in entries) e.position],
-                        only: shown,
-                      ),
+                      list,
                     const SliverToBoxAdapter(
                         child: SizedBox(height: Space.xxl)),
                   ],
@@ -819,16 +810,40 @@ class _ArtistNotOnThisPhoneState extends ConsumerState<_ArtistNotOnThisPhone> {
 
 // ------------------------------------------------------------------- liked
 
-class LikedScreen extends ConsumerWidget {
+class LikedScreen extends ConsumerStatefulWidget {
   const LikedScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LikedScreen> createState() => _LikedScreenState();
+}
+
+class _LikedScreenState extends ConsumerState<LikedScreen> {
+  // "Find in Liked Songs" (N-32, docs/design S-15): the same finding as a playlist's (S-17), the same state in `ListFinder`, the same finding
+  // page; only its answer differs (the ids of the liked songs that match) and the words, which name the list ([FindWords.liked]).
+  late final _finder = ListFinder<List<String>>(onChanged: () {
+    if (mounted) setState(() {});
+  });
+
+  @override
+  void dispose() {
+    _finder.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tracks = ref.watch(likedTracksProvider).value ?? const [];
+    if (_finder.open && tracks.isNotEmpty) return _findingPage(tracks);
     final c = context.colors;
     return CollectionScaffold(
       title: 'Liked Songs',
       tint: c.accent.withValues(alpha: 0.55),
+      // The finding page replaces this one for a moment: the page comes back where it was.
+      scrollKey: const PageStorageKey<String>('liked'),
+      find: tracks.isEmpty
+          ? null
+          : PlaylistFindField(
+              onTap: _finder.openFinding, words: FindWords.liked),
       art: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Radii.hero),
@@ -866,6 +881,38 @@ class LikedScreen extends ConsumerWidget {
             showAlbum: true,
           ),
       ],
+    );
+  }
+
+  /// The page while the person is finding a song among the ones they liked: the field at the top, and under it the liked songs, all of them
+  /// or the ones the words match, in the order of Liked Songs. A row is still its place in the whole of Liked Songs: a tap queues all of
+  /// them from there (the filter narrows what is shown, not what plays), as in a playlist.
+  Widget _findingPage(List<TrackRow> tracks) {
+    final query = _finder.query;
+    final held = query.isEmpty
+        ? null
+        : _finder.hold(ref.watch(likedFindProvider(query)));
+    // Ids to places in the list as it is now: a like or an unlike can land between two answers, and the page's own list is what is shown.
+    List<int>? shown;
+    if (held != null) {
+      final ids = held.toSet();
+      shown = [
+        for (final (i, t) in tracks.indexed)
+          if (ids.contains(t.id)) i,
+      ];
+    }
+
+    return _FindingPage(
+      finder: _finder,
+      words: FindWords.liked,
+      noResultsFor: shown != null && shown.isEmpty ? query : null,
+      list: _TrackList(
+        tracks: tracks,
+        sourceName: 'Liked Songs',
+        sourceId: 'liked',
+        showAlbum: true,
+        only: shown,
+      ),
     );
   }
 }
