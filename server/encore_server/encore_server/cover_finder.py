@@ -20,13 +20,14 @@ from typing import Any, Protocol
 import httpx
 
 from . import library, refs
+from .artist_basis import performer_clause
 from .db import Database
 from .deezer import LookupUnavailable, search_tracks
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
 from .keeper.placement import inside
-from .textnorm import norm_artist, norm_title
+from .textnorm import is_unknown_artist, norm_artist, norm_title
 
 log = logging.getLogger("encore_server.cover_finder")
 
@@ -95,10 +96,13 @@ class CoverFinder:
         self._sleep = sleep
 
     def _wanting(self, conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
-        """Songs somebody has (a like, a playlist entry) or the server keeps, without a picture, kept ones and liked ones first."""
+        """Songs somebody has (a like, a playlist entry) or the server keeps, without a picture, kept ones and liked ones first. **Never a song whose artist
+        is a channel's name or nobody's** (N-26: `channel`, `unknown`): the name of an uploader is not asked about at the catalogue from the Host's address.
+        The cost, written down: an upload on a band's own channel loses a catalogue cover until N-28 names its artist, and keeps its video's thumbnail."""
         return conn.execute(
             "SELECT r.id, r.title, r.artists, r.album, r.album_artist FROM song_ref r"
             " WHERE r.cover_url IS NULL AND (r.cover_tried_at IS NULL OR r.cover_tried_at < ?)"
+            f" AND {performer_clause('r.artist_basis')}"
             " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
             "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
             "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL))"
@@ -136,6 +140,11 @@ class CoverFinder:
         for row in rows[: self._per_pass]:
             artists = _artists(row["artists"])
             if not artists:
+                continue
+            if is_unknown_artist(artists[0]):
+                # The library scan files an untagged file of the Host's under "[Unknown Artist]" with NO facts: only the name says nobody. Settled, not
+                # asked: the catalogue cannot know it, and it must not take a place in every pass.
+                self._store(row["id"], None)
                 continue
             album = row["album"]
             key = (norm_artist(row["album_artist"] or artists[0]), norm_title(album)) if album else None

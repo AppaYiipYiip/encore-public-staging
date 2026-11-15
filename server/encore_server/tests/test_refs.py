@@ -126,6 +126,161 @@ def test_a_merged_away_song_with_the_placeholder_is_not_a_door_to_another_song_b
     assert nameless["id"] != survivor["id"]
 
 
+def facts_of(db: Database, ref_id: object) -> tuple[object, object]:
+    with db.read() as conn:
+        row = conn.execute("SELECT artist_basis, uploader FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
+    return row["artist_basis"], row["uploader"]
+
+
+def resolve_as(db: Database, basis: str | None, uploader: str | None = None, **song: object) -> dict[str, object]:
+    """What the importer does: the song AND how its artist was decided (keyword arguments of `refs.resolve`, never part of the description)."""
+    base = {"title": "Windowpane", "artists": ["Opeth"], "durationMs": 478_000}
+    with db.tx() as conn:
+        return refs.resolve(conn, {**base, **song}, artist_basis=basis, uploader=uploader)
+
+
+def stored(db: Database, ref_id: object) -> tuple[object, ...]:
+    with db.read() as conn:
+        row = conn.execute("SELECT title, artists, norm_key FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
+    return tuple(row)
+
+
+def test_a_new_ref_keeps_how_its_artist_was_decided_and_who_uploaded_the_video(db: Database) -> None:
+    ref = resolve_as(db, "title", "KEXP", title="Heartbeat (Live on KEXP)", artists=["Nneka"], videoId="IY2WwzI_86k")
+
+    assert facts_of(db, ref["id"]) == ("title", "KEXP")
+
+
+def test_a_ref_made_without_facts_has_none_and_none_means_as_before(db: Database) -> None:
+    """A description of a phone, a library file or a ref from before N-26: NULL. Never `channel`: it is treated as a performer, as it always was."""
+    assert facts_of(db, resolve(db)["id"]) == (None, None)
+
+
+def test_a_new_ref_keeps_the_uploader_of_the_upload_it_was_made_from_even_when_that_upload_is_removed(db: Database) -> None:
+    """DECISION (N-26 slice 2, with the alternative): the design says `uploader` is "the channel's name, when the song came from an upload", no video
+    required, and the real removed uploads (Nneka - Heartbeat, Foals - Full Performance: no video id, filed under their performer) are exactly the rows
+    that need it. The cost: a later search may attach ANOTHER video to the ref, and the uploader stays the one of the upload it was made from. The
+    alternative (stored only with a video) would have said nothing about the removed ones."""
+    ref = resolve_as(db, "title", "KEXP", title="Heartbeat (Live on KEXP)", artists=["Nneka"])  # no video id
+
+    assert facts_of(db, ref["id"]) == ("title", "KEXP")
+
+
+def test_a_ref_that_is_found_takes_an_uploader_only_when_it_plays_from_that_very_video(db: Database) -> None:
+    first = resolve_as(db, None, None, videoId="bgsmr7t8zGE")
+    resolve_as(
+        db, "title", "Some Channel", videoId="otherVideo1", durationMs=478_500
+    )  # found by name: the upload it read is another one
+    assert facts_of(db, first["id"]) == ("title", None), (
+        "the basis agrees (a performer), but another upload's channel is not this ref's"
+    )
+
+    resolve_as(db, None, "Opeth", videoId="bgsmr7t8zGE")
+    assert facts_of(db, first["id"]) == ("title", "Opeth")
+
+
+def test_a_client_cannot_mark_itself_the_facts_are_never_read_from_a_description(db: Database) -> None:
+    ref = resolve(
+        db,
+        title="Intro",
+        artists=["Somebody"],
+        videoId="aaaaaaaaaaa",
+        artistBasis="declared",
+        artist_basis="declared",
+        uploader="Not Me",
+    )
+
+    assert facts_of(db, ref["id"]) == (None, None)
+
+
+def test_the_facts_are_not_part_of_what_a_phone_is_told(db: Database) -> None:
+    ref = resolve_as(db, "channel", "KEXP", title="Heartbeat", artists=["KEXP"], videoId="IY2WwzI_86k")
+
+    with db.read() as conn:
+        told = refs.get_ref(conn, str(ref["id"]))
+    assert not [key for key in (*ref, *told) if "basis" in key.lower() or "uploader" in key.lower()]
+
+
+def test_a_basis_nobody_knows_is_refused_where_it_is_given(db: Database) -> None:
+    """A mistake of the importer, never of a person: it must not be stored and found later."""
+    with pytest.raises(ValueError, match="artist basis"):
+        resolve_as(db, "performer")
+
+
+@pytest.mark.parametrize("basis", ["declared", "title"])
+def test_a_performers_basis_fills_an_empty_one_when_the_artist_agrees(db: Database, basis: str) -> None:
+    first = resolve(db, title="Windowpane", artists=["Opeth"], durationMs=478_000)  # from a phone or an old import: NULL
+    again = resolve_as(db, basis, "Opeth", videoId="bgsmr7t8zGE", durationMs=478_500)
+
+    assert again["id"] == first["id"]
+    assert facts_of(db, first["id"]) == (basis, "Opeth"), "the ref took the video this reading came from, and who uploaded it"
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_a_weaker_basis_never_fills_an_empty_one_of_a_ref_that_is_not_the_upload_it_read(db: Database, basis: str) -> None:
+    """DECISION: a real performer's catalogue ref (NULL = performer) that is found by NAME for a UGC upload on the band's own channel must not be
+    downgraded to `channel` (the finders would then never look for its picture or its cover). `channel` and `unknown` say something about THAT upload."""
+    first = resolve_as(db, None, None, videoId="bgsmr7t8zGE")  # the ref already plays from another video
+    again = resolve_as(db, basis, "Opeth", videoId="otherVideo1", durationMs=478_500)
+
+    assert again["id"] == first["id"]
+    assert facts_of(db, first["id"]) == (None, None)
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_a_weaker_basis_fills_an_empty_one_when_it_is_the_same_video(db: Database, basis: str) -> None:
+    first = resolve_as(
+        db, None, None, videoId="bgsmr7t8zGE"
+    )  # a ref from before N-26 (or a phone's) that plays from this very video
+    again = resolve_as(db, basis, "Opeth", videoId="bgsmr7t8zGE")
+
+    assert again["id"] == first["id"]
+    assert facts_of(db, first["id"]) == (basis, "Opeth")
+
+
+def test_the_basis_follows_the_artist_a_reading_of_another_artist_fills_no_basis_but_the_uploader_is_kept(db: Database) -> None:
+    """The ref keeps the artist it has (slice 5 repairs a stored artist, deliberately not this): a basis is a fact about THAT artist string, so a reading
+    that names somebody else says nothing about it. The uploader is the channel of the UPLOAD, and it is exactly what the repair of slice 5 needs to
+    recognise a ref filed under its channel."""
+    first = resolve_as(db, None, None, title="Heartbeat (Live on KEXP)", artists=["KEXP"], videoId="IY2WwzI_86k")
+    again = resolve_as(db, "title", "KEXP", title="Heartbeat (Live on KEXP)", artists=["Nneka"], videoId="IY2WwzI_86k")
+
+    assert again["id"] == first["id"]
+    assert facts_of(db, first["id"]) == (None, "KEXP"), (
+        "no basis (it says something about Nneka, the ref's artist is KEXP) but the uploader: a fact about the video"
+    )
+    assert stored(db, first["id"])[:2] == ("Heartbeat (Live on KEXP)", '["KEXP"]')
+
+
+@pytest.mark.parametrize("later", ["declared", "title", "channel", "unknown"])
+def test_a_later_reading_never_changes_a_basis_that_is_set_nor_the_artist_title_or_key(db: Database, later: str) -> None:
+    """The design (section 4) fills an EMPTY basis only. A stronger reading of the same song later (a Topic upload after a personal one, a re-import)
+    changes nothing: upgrading `channel` to `declared` belongs to the repair of stored rows (slice 5) and to N-28 (the catalogue names the artist),
+    which also rewrite the artist, title and key the facts describe."""
+    first = resolve_as(db, "channel", "KEXP", title="Intro", artists=["Some Channel"], videoId="aaaaaaaaaaa", durationMs=100_000)
+    kept_as_was = stored(db, first["id"])
+
+    again = resolve_as(db, later, "Other", title="Intro", artists=["Some Channel"], videoId="aaaaaaaaaaa", durationMs=100_000)
+
+    assert again["id"] == first["id"]
+    assert facts_of(db, first["id"]) == ("channel", "KEXP")
+    assert stored(db, first["id"]) == kept_as_was
+
+
+def test_a_set_basis_is_not_weakened_either(db: Database) -> None:
+    first = resolve_as(db, "declared", None, title="Windowpane", artists=["Opeth"])
+    resolve_as(db, "channel", "Opeth", videoId="bgsmr7t8zGE", durationMs=478_100)
+
+    assert facts_of(db, first["id"])[0] == "declared"
+
+
+def test_the_uploader_of_a_ref_is_never_replaced(db: Database) -> None:
+    first = resolve_as(db, "title", "KEXP", title="Nneka - Heartbeat", artists=["Nneka"], videoId="IY2WwzI_86k")
+    resolve_as(db, "title", "Somebody Else", title="Nneka - Heartbeat", artists=["Nneka"], videoId="IY2WwzI_86k")
+
+    assert facts_of(db, first["id"]) == ("title", "KEXP")
+
+
 def test_what_a_ref_lacked_is_filled_in_by_a_later_description(db: Database) -> None:
     first = resolve(db)
     assert first["isrc"] is None and first["videoId"] is None

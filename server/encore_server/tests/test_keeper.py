@@ -7,17 +7,20 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 
-from encore_server import library, refs
+from encore_server import deezer, library, refs
+from encore_server.cover_finder import deezer_lookup
 from encore_server.db import Database
-from encore_server.deezer import LookupUnavailable
+from encore_server.deezer import DeezerClient, Gate, LookupUnavailable
 from encore_server.keeper.keeper import Keeper, KeepSettings
 from encore_server.keeper.process import RunResult
 from encore_server.keeper.tagging import Tags
 from encore_server.scheduler import GiveUp, Retry, WorkItem
 from encore_server.sources.youtube.errors import DownloadError
 from encore_server.sources.youtube.source import Wanted
+from tests.catalogue_fakes import RecordedDeezer
 
 AUDIO = b"OggS" + bytes(range(256)) * 40
 
@@ -132,7 +135,7 @@ class Rig:
             raise RuntimeError("the catalogue is down")
         return self.cover_found
 
-    def make_ref(self, **extra: Any) -> str:
+    def make_ref(self, *, basis: str | None = None, uploader: str | None = None, **extra: Any) -> str:
         item = {
             "title": "Weird Fishes / Arpeggi",
             "artists": ["Radiohead"],
@@ -141,7 +144,7 @@ class Rig:
             **extra,
         }
         with self.db.tx() as conn:
-            return str(refs.resolve(conn, item)["id"])
+            return str(refs.resolve(conn, item, artist_basis=basis, uploader=uploader)["id"])
 
     def keep(self, ref: str) -> None:
         self.keeper.handle(WorkItem("wk_test", "keep", ref, 4, 1, ()))
@@ -154,6 +157,51 @@ class Rig:
 @pytest.fixture()
 def rig(tmp_path: Path, db: Database) -> Rig:
     return Rig(tmp_path, db)
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_n26_a_song_whose_artist_is_a_channel_or_nobody_is_kept_with_no_cover_look_up(rig: Rig, basis: str) -> None:
+    """The keeper is the third caller that sends an artist and a title to the catalogue (after the two passes): the name of an uploader must not go
+    out from here either. The song is kept all the same, and keeps the picture it has (here none: its video's thumbnail is served from the ref)."""
+    rig.cover_found = "https://cdn.dzcdn.net/found.jpg"
+    ref = rig.make_ref(artists=["KEXP"], basis=basis)
+
+    rig.keep(ref)
+
+    assert rig.cover_asked == []
+    assert rig.ref(ref)["file"]["navidromeSongId"] == "nd-1" and rig.ref(ref)["coverUrl"] is None
+
+
+def test_n26_the_placeholder_name_alone_is_not_sent_to_the_catalogue_when_a_song_is_kept(rig: Rig) -> None:
+    """A ref the library scan made for an untagged file has the placeholder for an artist and NO facts: only the name says nobody."""
+    rig.cover_found = "https://cdn.dzcdn.net/found.jpg"
+
+    rig.keep(rig.make_ref(artists=["[Unknown Artist]"]))
+
+    assert rig.cover_asked == []
+
+
+@pytest.mark.parametrize("basis", [None, "declared", "title"])
+def test_n26_a_song_of_a_performer_or_with_no_facts_is_asked_about_as_before(rig: Rig, basis: str | None) -> None:
+    rig.cover_found = "https://cdn.dzcdn.net/found.jpg"
+
+    rig.keep(rig.make_ref(basis=basis))
+
+    assert rig.cover_asked == [("Radiohead", "Weird Fishes / Arpeggi", "In Rainbows")]
+
+
+@pytest.mark.parametrize(("basis", "paths"), [("channel", []), ("unknown", []), (None, ["/search"]), ("declared", ["/search"])])
+def test_n26_the_real_look_up_through_the_gate_sends_nothing_out_for_a_channel_when_a_song_is_kept(
+    rig: Rig, basis: str | None, paths: list[str]
+) -> None:
+    """The look-up that must not happen, shown not to happen at the gate (the catalogue would answer); the controls are asked."""
+    upstream = RecordedDeezer()
+    deezer.install(DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport())))
+    rig.keeper._find_cover = deezer_lookup  # the production look-up (api.py passes it), in the place of the fake the rig has
+
+    rig.keep(rig.make_ref(title="Blinding Lights", artists=["The Weeknd"], album="After Hours", basis=basis))
+
+    assert upstream.paths() == paths
 
 
 def test_a_kept_song_lands_in_the_shared_folder_tagged_found_and_attached(rig: Rig) -> None:

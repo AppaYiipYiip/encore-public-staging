@@ -1,0 +1,63 @@
+{
+ "recorded": "2026-11-14 ~23:50 UTC by the lead (ytmusicapi get_playlist of a real public playlist, 'Best KEXP Live Performances'); the entries YouTube Music lists as no longer available",
+ "playlistId": "PLqh-GLl-LURzdsV9qVaSMRvUMTTBaNdf0",
+ "note": "REMOVED UPLOADS: videoType None, isAvailable False, album None, artists = the uploading channel. The reader promoted them to 'declared' (filed under KEXP) because of the isAvailable arm of its no-videoType rule; found on the real stack, 14 Nov 2026 (N-26).",
+ "tracks": [
+  {
+   "videoId": null,
+   "title": "Nneka - Heartbeat (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": null
+    }
+   ],
+   "album": null,
+   "likeStatus": null,
+   "inLibrary": null,
+   "pinnedToListenAgain": null,
+   "thumbnails": [
+    {
+     "url": "https://i.ytimg.com/vi/IY2WwzI_86k/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3ksmsQAEbBZP3A41hMaS5ucZ2W-9w",
+     "width": 400,
+     "height": 225
+    }
+   ],
+   "isAvailable": false,
+   "isExplicit": false,
+   "videoType": null,
+   "views": null,
+   "communityVoteStatus": null,
+   "duration": "4:05",
+   "duration_seconds": 245
+  },
+  {
+   "videoId": null,
+   "title": "Foals - Full Performance (Live on KEXP)",
+   "artists": [
+    {
+     "name": "KEXP",
+     "id": null
+    }
+   ],
+   "album": null,
+   "likeStatus": null,
+   "inLibrary": null,
+   "pinnedToListenAgain": null,
+   "thumbnails": [
+    {
+     "url": "https://i.ytimg.com/vi/7x91ZFVt0qI/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3nY_FPyjnoiLXu-X17IzeSCwc4ZiQ",
+     "width": 400,
+     "height": 225
+    }
+   ],
+   "isAvailable": false,
+   "isExplicit": false,
+   "videoType": null,
+   "views": null,
+   "communityVoteStatus": null,
+   "duration": "21:38",
+   "duration_seconds": 1298
+  }
+ ]
+}

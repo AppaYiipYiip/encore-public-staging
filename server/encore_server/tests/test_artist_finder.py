@@ -173,11 +173,18 @@ def kept(
     album: str = "Uprising",
     folder: str | None = None,
     relative: str | None = None,
+    basis: str | None = None,
+    uploader: str | None = None,
 ) -> Path:
     """A song of [artist] the server keeps: a ref, a file where the keeper puts it (`Encore/<artist>/<album>/...`)."""
     relative = relative or f"Encore/{folder or artist}/{album}/{title}.opus"
     with db.tx() as conn:
-        ref = refs.resolve(conn, {"title": title, "artists": [artist], "album": album, "albumArtist": artist})
+        ref = refs.resolve(
+            conn,
+            {"title": title, "artists": [artist], "album": album, "albumArtist": artist},
+            artist_basis=basis,
+            uploader=uploader,
+        )
         refs.attach_file(
             conn, ref["id"], navidrome_song_id=f"nd-{title}", path=relative, codec="opus", bitrate_kbps=130, source="youtube"
         )

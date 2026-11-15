@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 
+from encore_server.imports import uploads
 from encore_server.imports.readers import Track, read_playlist, split_artist_title
 from encore_server.imports.uploads import read_declared, read_official_video, read_upload
 from encore_server.keeper.placement import plan_placement
@@ -252,8 +253,13 @@ N26 = FIXTURES / "n26"
 LINK = "https://music.youtube.com/playlist?list=OLAK5uy_m59x-hBFsC789l1_qWwFXwH3gjntwy_CA"
 
 
+def recorded_searches() -> list[pathlib.Path]:
+    """The recorded search answers (`*.videos.json`, `*.songs.json`); the folder also holds a recorded `get_playlist` answer."""
+    return sorted([*N26.glob("*.videos.json"), *N26.glob("*.songs.json")])
+
+
 def recorded_result(video_id: str) -> dict[str, Any]:
-    for path in sorted(N26.glob("*.json")):
+    for path in recorded_searches():
         for result in json.loads(path.read_text(encoding="utf-8"))["results"]:
             if result["videoId"] == video_id:
                 return result  # type: ignore[no-any-return]
@@ -365,7 +371,7 @@ def test_every_recorded_official_video_with_a_credit_keeps_it() -> None:
     Records, Creepy Nuts, Bad Bunny, a fan's account ...) are all credited to who YouTube Music says, with the basis `declared`: no recorded official video is moved to
     another artist by the title. (The one OMV with no credit is `Akudama`, tested apart.)"""
     seen = 0
-    for path in sorted(N26.glob("*.json")):
+    for path in recorded_searches():
         for result in json.loads(path.read_text(encoding="utf-8"))["results"]:
             if result.get("videoType") != "MUSIC_VIDEO_TYPE_OMV" or not result.get("artists") or not result.get("videoId"):
                 continue
@@ -453,6 +459,104 @@ def test_a_removed_entry_of_the_catalogue_keeps_its_declared_artist() -> None:
     gone = next(t for t in removed if t["title"] == "We Fly High")
     track = read_one(gone)
     assert (track.artist, track.artist_basis, track.video_id) == ("Jim Jones", "declared", None)
+
+
+def removed_uploads() -> list[dict[str, Any]]:
+    """The two REAL `get_playlist` entries of "Best KEXP Live Performances" that the real stack still filed under KEXP (recorded 14 Nov 2026 by the lead,
+    VM 108): removed uploads, `videoType` None, `isAvailable` False, no album, the artist the uploading channel, no video id."""
+    data = json.loads((N26 / "kexp_removed_uploads.get_playlist.json").read_text(encoding="utf-8"))
+    return data["tracks"]  # type: ignore[no-any-return]
+
+
+@pytest.mark.parametrize(
+    ("index", "expected"),
+    [
+        (0, ("Nneka", "Heartbeat (Live on KEXP)", "title")),
+        (1, ("Foals", "Full Performance (Live on KEXP)", "title")),
+    ],
+)
+def test_found_on_the_real_stack_a_removed_upload_is_an_upload_and_is_filed_under_its_performer_not_its_channel(
+    index: int, expected: tuple[str, str, str]
+) -> None:
+    """Slice 1 amendment. An unavailable entry with no `videoType` was taken for the catalogue's own song (`declared`) because the recorded removed
+    CATALOGUE songs are unavailable; but unavailable proves nothing: a removed UPLOAD is unavailable too, and nothing but an ALBUM says "a song of the
+    catalogue". The two real entries were filed under KEXP."""
+    track = read_one(removed_uploads()[index])
+
+    assert (track.artist, track.title, track.artist_basis) == expected
+    assert (track.uploader, track.video_id) == ("KEXP", None)
+
+
+def test_the_whole_recorded_playlist_of_removed_uploads_is_read_by_the_real_entry_point() -> None:
+    data = {"title": "Best KEXP Live Performances", "tracks": removed_uploads()}
+
+    playlist = read_playlist(LINK, ytmusic=lambda ident: data)
+
+    assert [(t.artist, t.artist_basis, t.uploader) for t in playlist.tracks] == [
+        ("Nneka", "title", "KEXP"),
+        ("Foals", "title", "KEXP"),
+    ]
+
+
+def test_a_removed_entry_with_an_album_is_a_song_of_the_catalogue_whatever_else_it_says() -> None:
+    """The control: the entry that is unavailable AND has an album stays `declared` (a removed catalogue song keeps its name, artist and album)."""
+    entry = playlist_entry("phSYyQ1xGKw", videoType=None, isAvailable=False)
+    assert entry["album"], "the recorded song has an album"
+
+    track = read_one(entry)
+
+    assert (track.artist, track.title, track.artist_basis, track.uploader, track.video_id) == (
+        "Tinariwen",
+        "Bismillah",
+        "declared",
+        None,
+        None,
+    )
+
+
+def test_an_unavailable_entry_with_no_album_and_no_separator_keeps_its_uploader_flagged_and_is_not_a_performer() -> None:
+    """Nothing says who it is: the first listed name stays as YouTube Music shows it, flagged `channel` (never `declared`)."""
+    entry = copy.deepcopy(removed_uploads()[0])
+    entry["title"] = "Heartbeat (Live on KEXP)"
+
+    track = read_one(entry)
+
+    assert (track.artist, track.title, track.artist_basis, track.uploader) == (
+        "KEXP",
+        "Heartbeat (Live on KEXP)",
+        "channel",
+        "KEXP",
+    )
+
+
+def test_no_recorded_upload_whose_title_names_another_performer_before_a_separator_is_filed_under_its_channel() -> None:
+    """The invariant behind both real findings, over every recorded entry of an upload kind (UGC, an unknown type, or no type and no album): when its title
+    has a separator and neither side is the credited channel, the artist is not the channel. (Before the amendment two real entries failed this.)"""
+    entries = [e for path in recorded_searches() for e in _entries_of(path)] + removed_uploads()
+    checked = 0
+    for entry in entries:
+        kind = entry.get("videoType")
+        if kind in ("MUSIC_VIDEO_TYPE_ATV", "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC", "MUSIC_VIDEO_TYPE_OMV"):
+            continue
+        if not kind and entry.get("album"):
+            continue  # a removed song of the catalogue
+        channel = (entry.get("artists") or [{}])[0].get("name") or ""
+        sides = uploads._real_split(entry["title"])
+        if not channel or sides is None:
+            continue
+        key = uploads._name_key(channel)
+        if key in uploads._names(sides[0]) | uploads._names(sides[1]):
+            continue  # a side IS the channel: the performer's own channel, or a credit that repeats it (the rule's other branch, tested above)
+        track = read_one(entry)
+        assert track.artist != channel, (entry["title"], channel)
+        checked += 1
+    assert checked >= 50, "a guard against recordings that quietly stopped being read"
+
+
+def _entries_of(path: pathlib.Path) -> list[dict[str, Any]]:
+    """The recorded search results of one file as playlist entries (an available one, as the recorded search said it)."""
+    results = json.loads(path.read_text(encoding="utf-8"))["results"]
+    return [playlist_entry(r["videoId"]) for r in results if r.get("videoId")]
 
 
 def test_an_entry_with_no_video_type_but_an_album_is_still_declared() -> None:

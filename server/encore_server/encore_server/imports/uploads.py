@@ -26,12 +26,8 @@ import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from ..artist_basis import CHANNEL, DECLARED, TITLE, UNKNOWN
 from ..textnorm import artist_parts, mentions_version
-
-DECLARED = "declared"
-TITLE = "title"
-CHANNEL = "channel"
-UNKNOWN = "unknown"
 
 # --------------------------------------------------------------------------- reading text apart
 

@@ -56,11 +56,13 @@ def add_ref(conn: sqlite3.Connection, ref: str, title: str, artists: list[str], 
         "ytm_video_id": None,
         "cover_url": None,
         "year": None,
+        "artist_basis": None,
+        "uploader": None,
         **fields,
     }
     conn.execute(
-        "INSERT INTO song_ref (id, title, artists, album, album_artist, year, duration_ms, isrc, deezer_id, ytm_video_id, cover_url, norm_key, created_at)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO song_ref (id, title, artists, album, album_artist, year, duration_ms, isrc, deezer_id, ytm_video_id, cover_url, norm_key, created_at,"
+        " artist_basis, uploader) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             ref,
             title,
@@ -75,6 +77,8 @@ def add_ref(conn: sqlite3.Connection, ref: str, title: str, artists: list[str], 
             row["cover_url"],
             refs.norm_key(artists[0], title),
             1000 + n,
+            row["artist_basis"],
+            row["uploader"],
         ),
     )
 
@@ -429,6 +433,68 @@ def test_two_nameless_songs_are_never_merged_by_their_shared_placeholder_name(db
     assert {h.reason for h in report.held} == {"different_source_video"}
     with db.read() as conn:
         assert conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0] == 4
+
+
+def facts_of(db: Database, ref: str) -> tuple[object, object]:
+    with db.read() as conn:
+        row = conn.execute("SELECT artist_basis, uploader FROM song_ref WHERE id = ?", (ref,)).fetchone()
+    return row["artist_basis"], row["uploader"]
+
+
+def merge_pair(db: Database, survivor: dict[str, Any], loser: dict[str, Any]) -> str:
+    """Two refs that hold one file (the survivor's file first): returns the survivor's id after the repair."""
+    with db.tx() as c:
+        add_ref(c, S1, "Heartbeat", survivor.pop("artists", ["Nneka"]), duration_ms=245000, **survivor)
+        add_ref(c, L1, "Heartbeat", loser.pop("artists", ["Nneka"]), duration_ms=245000, **loser)
+        add_file(c, S1, "nd-1", 1, source="youtube", path="Encore/Nneka/a.opus")
+        add_file(c, L1, "nd-1", 2, source="library", path="Nneka/b.opus")
+    report = refmerge.repair(db)
+    assert report.merged, "the pair was merged"
+    return S1
+
+
+@pytest.mark.parametrize("basis", ["declared", "title", "channel", "unknown"])
+def test_a_survivor_with_no_facts_takes_those_of_the_ref_merged_into_it_when_the_artist_agrees_and_it_takes_its_video(
+    db: Database, basis: str
+) -> None:
+    survivor = merge_pair(db, {}, {"ytm_video_id": "VIDEOAAAAA1", "artist_basis": basis, "uploader": "KEXP"})
+
+    assert facts_of(db, survivor) == (basis, "KEXP")
+
+
+def test_the_basis_follows_the_artist_but_the_uploader_follows_the_video(db: Database) -> None:
+    """The loser was filed under the channel, the survivor under the performer: the survivor keeps its artist, takes no basis that is about the other
+    artist, and takes the uploader with the video it is handed."""
+    survivor = merge_pair(
+        db,
+        {"artists": ["Nneka"]},
+        {"artists": ["KEXP"], "ytm_video_id": "VIDEOAAAAA1", "artist_basis": "channel", "uploader": "KEXP"},
+    )
+
+    assert facts_of(db, survivor) == (None, "KEXP")
+
+
+def test_a_weak_basis_with_no_video_behind_it_is_not_copied_to_a_survivor_that_plays_from_another(db: Database) -> None:
+    """`channel` and `unknown` say something about THE upload the ref was made from; without that video the survivor (a performer, NULL) stays one."""
+    survivor = merge_pair(db, {"ytm_video_id": "VIDEOBBBBB2"}, {"artist_basis": "channel", "uploader": "Nneka"})
+
+    assert facts_of(db, survivor) == (None, None)
+
+
+@pytest.mark.parametrize("later", ["declared", "title", "channel", "unknown"])
+def test_a_survivor_that_has_facts_keeps_them_whatever_the_other_ref_says(db: Database, later: str) -> None:
+    survivor = merge_pair(
+        db,
+        {"artist_basis": "channel", "uploader": "KEXP", "ytm_video_id": "VIDEOAAAAA1"},
+        {"artist_basis": later, "uploader": "Other"},
+    )
+
+    assert facts_of(db, survivor) == ("channel", "KEXP")
+
+
+def test_the_new_columns_are_classified_in_the_copy_rules_and_not_copied_by_the_generic_loop() -> None:
+    """A column added to `song_ref` is copied when empty unless it is listed here: the facts have a rule of their own (above), so the loop must skip them."""
+    assert {"artist_basis", "uploader"} <= refmerge._NOT_COPIED
 
 
 def test_entries_and_plays_per_person_are_unchanged_and_the_likes_that_changed_are_explained(seeded: Database) -> None:

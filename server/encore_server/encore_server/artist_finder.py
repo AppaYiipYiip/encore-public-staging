@@ -34,6 +34,7 @@ from typing import Any, Protocol
 
 import httpx
 
+from .artist_basis import is_performer
 from .db import Database
 from .deezer import PLACEHOLDER_ARTIST_PICTURE, LookupUnavailable, search_tracks
 from .ids import now_ms
@@ -273,6 +274,9 @@ class ArtistFinder:
             return None, []
         with self._db.read() as conn:
             rows = _own_songs(conn, name)
+        # N-26: a name is an artist when ONE of its songs is a performer's (declared, title, or no facts: as before). A name whose songs are ALL a channel's
+        # or nobody's is not asked about, and the songs it is asked about with are the performer's own: a channel's "song" is a whole video title.
+        rows = [row for row in rows if is_performer(row["basis"])]
         songs: list[tuple[str, str | None]] = []
         seen: set[str] = set()
         for row in rows:
@@ -314,7 +318,7 @@ def _own_songs(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row]:
     """The songs the server holds a file of whose lead artist, or album artist when they say one, is [name]: the songs the music server files under
     this artist (the keeper tags the album artist, and an artist is listed with albums only as an album artist)."""
     return conn.execute(
-        "SELECT r.title AS title, r.album AS album FROM song_ref r"
+        "SELECT r.title AS title, r.album AS album, r.artist_basis AS basis FROM song_ref r"
         " WHERE EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
         " AND COALESCE(NULLIF(r.album_artist, ''), json_extract(r.artists, '$[0]')) = ?"
         " ORDER BY r.id",

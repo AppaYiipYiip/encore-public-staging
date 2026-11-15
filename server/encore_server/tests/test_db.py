@@ -96,3 +96,81 @@ def test_ids_have_a_type_prefix_and_sort_by_creation() -> None:
     assert ulid(1000) < ulid(2000)
     assert not is_id("pl_short", "pl") and not is_id(None, "pl")
     assert second != first
+
+
+def _the_migration_that_stores_the_artist_facts() -> tuple[int, str, str]:
+    found = [m for m in Database._migrations() if m[1].startswith("0014")]
+    assert len(found) == 1, "N-26 slice 2 is migration 0014"
+    return found[0]
+
+
+def test_the_migration_that_stores_the_artist_facts_only_adds_two_columns_and_no_value(tmp_path: Path) -> None:
+    """No `DEFAULT` (an old row would read as that value), no `CHECK` (a fifth basis would need a table rebuild: the value is checked in `refs`), no
+    `UPDATE` (nothing is derived for old rows): what an old row means is NULL, "as before"."""
+    _, _, sql = _the_migration_that_stores_the_artist_facts()
+    statements = [
+        " ".join(part.split())
+        for part in "\n".join(line for line in sql.splitlines() if not line.strip().startswith("--")).split(";")
+        if part.strip()
+    ]
+    assert statements == [
+        "ALTER TABLE song_ref ADD COLUMN artist_basis TEXT",
+        "ALTER TABLE song_ref ADD COLUMN uploader TEXT",
+    ]
+
+
+def test_the_artist_facts_migration_leaves_every_old_row_as_it_was_and_takes_a_backup_first(tmp_path: Path) -> None:
+    db = Database(tmp_path / "encore.db")
+    # Exactly the steps up to the one under test: a migration added LATER (N-27's 0015 came the next day) must not change what this test says.
+    up_to_this_one = [m for m in Database._migrations() if m[0] <= 14]
+    db.migrate(version="before", migrations=[m for m in up_to_this_one if m[0] <= 13])
+    with db.tx() as conn:
+        for number, (title, artists, video) in enumerate(
+            [
+                ("Heartbeat (Live on KEXP)", '["KEXP"]', "IY2WwzI_86k"),
+                ("Windowpane", '["Opeth"]', None),
+                ("Intro", '["Unknown Artist"]', "aaaaaaaaaaa"),
+            ]
+        ):
+            conn.execute(
+                "INSERT INTO song_ref (id, title, artists, album, duration_ms, ytm_video_id, norm_key, created_at, missing_reason, missing_at)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    f"sr_{number:026d}",
+                    title,
+                    artists,
+                    None,
+                    245000 + number,
+                    video,
+                    f"key{number}",
+                    1000 + number,
+                    "not_found" if number == 1 else None,
+                    5,
+                ),
+            )
+    with db.read() as conn:
+        before = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]
+        width = len(before[0])
+
+    assert db.migrate(version="n26-slice2", migrations=up_to_this_one) == [14]
+
+    with db.read() as conn:
+        after = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]
+        columns = {c["name"]: c for c in conn.execute("PRAGMA table_info(song_ref)")}
+    assert [row[:width] for row in after] == before, "every column an old row had is byte for byte what it was"
+    assert [row[width:] for row in after] == [(None, None)] * 3, (
+        'the two new columns are NULL, which means "as before" and is never read as `channel`'
+    )
+    assert list(columns)[-2:] == ["artist_basis", "uploader"]
+    assert all(columns[name]["notnull"] == 0 and columns[name]["dflt_value"] is None for name in ("artist_basis", "uploader"))
+    backups = list((tmp_path / "backups").glob("encore-n26-slice2-*.db"))
+    assert len(backups) == 1
+    copy = sqlite3.connect(backups[0])
+    try:
+        names = {row[1] for row in copy.execute("PRAGMA table_info(song_ref)")}
+        assert "artist_basis" not in names and copy.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0] == 3, (
+            "the copy is from before"
+        )
+    finally:
+        copy.close()
+    assert db.migrate(migrations=up_to_this_one) == [], "and a second run does nothing"

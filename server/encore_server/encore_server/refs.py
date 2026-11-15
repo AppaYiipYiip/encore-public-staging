@@ -14,6 +14,7 @@ from collections.abc import Iterable, Sequence
 from typing import Any
 
 from . import missing
+from .artist_basis import BASES, NOT_PERFORMERS, is_known_basis
 from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
@@ -253,8 +254,62 @@ def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
     return None
 
 
-def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) -> sqlite3.Row:
-    """What the ref lacked and this description knows is added (an id another ref already owns is never taken from it)."""
+def lead_artist(artists: object) -> str:
+    """The first artist of a stored (JSON) or described list of artists, as the name key reads it."""
+    if isinstance(artists, str):
+        try:
+            artists = json.loads(artists)
+        except ValueError:
+            return ""
+    return str(artists[0]) if isinstance(artists, list) and artists else ""
+
+
+def facts_to_fill(
+    *,
+    have_basis: str | None,
+    have_uploader: str | None,
+    have_artist: str,
+    have_video: str | None,
+    basis: str | None,
+    uploader: str | None,
+    artist: str,
+    video: str | None,
+) -> dict[str, str]:
+    """The fact columns (`artist_basis`, `uploader`) a reading may FILL on a ref, as `{column: value}` (N-26 slice 2). ONE rule for both places that
+    describe a ref a second time: a song described again (`_enrich`) and two refs of one file merged (`refmerge`). `have_*` is what the ref holds (the
+    video it will hold once this description or merge has filled the ids), the rest is the reading.
+
+    **Facts are only ever FILLED, never rewritten.** A set basis or uploader is never changed, by a stronger reading (a Topic upload after a personal one)
+    or a weaker one: the design (section 4) fills a NULL basis only when the artist agrees and says nothing of an upgrade, and an upgrade is not a fact
+    column on its own, it goes with the artist, title and key the facts describe (the repair of stored rows, slice 5; N-28 for the catalogue's answer).
+
+    * The **basis** is a fact about the ref's artist, so it is filled only when the reading names the SAME artist (as the name key compares them).
+    * A reading that says `channel` or `unknown` is a fact about THAT UPLOAD, so it is filled only when the ref plays from the very video the reading
+      came from. Otherwise a real performer's catalogue ref (NULL: a performer) found by name for an upload on the band's own channel would be downgraded,
+      and the finders would then never look for its picture or its cover. `declared` and `title` name a performer and need no video.
+    * The **uploader** is the channel of the UPLOAD the ref was made from. A NEW ref stores it whatever the video (the design: "the channel's name, when
+      the song came from an upload"; a removed upload has no video id and a title that names its performer, which is exactly the row that needs it).
+      A ref FOUND takes it only when it plays from the very video the reading came from, whatever the artist: another upload's channel is not
+      attributed to a ref that was not made from it (it is what the repair of slice 5 needs to recognise a ref filed under its channel)."""
+    updates: dict[str, str] = {}
+    same_video = video is not None and have_video == video
+    if (
+        basis is not None
+        and have_basis is None
+        and norm_artist(have_artist) == norm_artist(artist)
+        and (basis not in NOT_PERFORMERS or same_video)
+    ):
+        updates["artist_basis"] = basis
+    if uploader and have_uploader is None and same_video:
+        updates["uploader"] = uploader
+    return updates
+
+
+def _enrich(
+    conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any], basis: str | None = None, uploader: str | None = None
+) -> sqlite3.Row:
+    """What the ref lacked and this description knows is added (an id another ref already owns is never taken from it). The artist, the title and the
+    key are never rewritten (identity: likes, playlists and the kept file point at the ref); the facts only fill (`facts_to_fill`)."""
     updates: dict[str, Any] = {}
     for column in ("album", "album_artist", "track_no", "disc_no", "year", "duration_ms", "mbid", "cover_url", "thumb_url"):
         if row[column] is None and item[column] is not None:
@@ -269,6 +324,18 @@ def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) ->
                 updates[column] = value
     if item["explicit"] and not row["explicit"]:
         updates["explicit"] = 1
+    updates.update(
+        facts_to_fill(
+            have_basis=row["artist_basis"],
+            have_uploader=row["uploader"],
+            have_artist=lead_artist(row["artists"]),
+            have_video=updates.get("ytm_video_id", row["ytm_video_id"]),
+            basis=basis,
+            uploader=uploader,
+            artist=item["artists"][0],
+            video=item["ytm_video_id"],
+        )
+    )
     if not updates:
         return row
     assignments = ", ".join(f"{column} = ?" for column in updates)
@@ -278,9 +345,18 @@ def _enrich(conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any]) ->
     return conn.execute("SELECT * FROM song_ref WHERE id = ?", (row["id"],)).fetchone()  # type: ignore[no-any-return]
 
 
-def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
-    """Finds or makes the ref for a described song; the same song described twice (or by two people) is one ref."""
+def resolve(
+    conn: sqlite3.Connection, raw: object, *, artist_basis: str | None = None, uploader: str | None = None
+) -> dict[str, Any]:
+    """Finds or makes the ref for a described song; the same song described twice (or by two people) is one ref.
+
+    [artist_basis] and [uploader] are how the importer read an upload (N-26, `imports/uploads.py`): see `artist_basis.py`. They are keyword arguments, **never
+    part of the description** (`parse_item` is shared with phones: a client cannot mark itself `declared`). A new ref stores them; a ref found keeps its
+    artist, title and key and takes a missing fact only by the rule of [facts_to_fill]. A basis nobody knows is a mistake of the importer and is refused."""
+    if artist_basis is not None and not is_known_basis(artist_basis):
+        raise ValueError(f"unknown artist basis {artist_basis!r}; one of {', '.join(BASES)}")
     item = parse_item(raw)
+    cleaned_uploader = _clean(uploader, 200) if uploader else None
     row = find(conn, item)
     if row is None:
         ref_id = new_id("sr")
@@ -290,7 +366,8 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
                 item[column] = None
         conn.execute(
             "INSERT INTO song_ref (id, title, artists, album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id,"
-            " ytm_video_id, cover_url, thumb_url, explicit, norm_key, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " ytm_video_id, cover_url, thumb_url, explicit, norm_key, created_at, artist_basis, uploader)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 ref_id,
                 item["title"],
@@ -310,11 +387,13 @@ def resolve(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
                 item["explicit"],
                 norm_key(item["artists"][0], item["title"]),
                 now_ms(),
+                artist_basis,
+                cleaned_uploader,
             ),
         )
         row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
     else:
-        row = _enrich(conn, row, item)
+        row = _enrich(conn, row, item, artist_basis, cleaned_uploader)
     return row_to_ref(conn, row)
 
 

@@ -14,6 +14,7 @@ from collections.abc import Callable
 from typing import Any, Protocol
 
 from .. import library, refs
+from ..artist_basis import UNKNOWN
 from ..db import Database
 from ..errors import ApiError
 from ..ids import is_id, new_id, now_ms
@@ -58,6 +59,13 @@ def _song_of(track: Track) -> dict[str, Any]:
         # A fallback picture, kept apart from the real cover so that the cover finder still looks for one (P1-26).
         "thumbnailUrl": track.thumbnail,
     }
+
+
+def _facts_of(track: Track) -> dict[str, str | None]:
+    """How the reader decided the artist of [track] and who uploaded its video, as the keyword arguments of `refs.resolve` (N-26 slice 2). A song nobody
+    names is filed under the placeholder, so its basis is `unknown` whatever the reader said: the fact must agree with the artist the ref gets."""
+    named = bool(track.artists or track.artist)
+    return {"artist_basis": track.artist_basis if named else UNKNOWN, "uploader": track.uploader}
 
 
 def default_reader() -> Callable[[str], Playlist]:
@@ -117,10 +125,10 @@ class ImportService:
             if again is not None:
                 return {"import": again, "playlistId": again["playlistId"]}
 
-        source, url, name, songs, extra, truncated, cover = self._what(body)
+        source, url, name, songs, extra, truncated, cover, facts = self._what(body)
         import_id = import_id or new_id("im")
         with self._db.tx() as conn:
-            made = [refs.resolve(conn, song) for song in songs]
+            made = [refs.resolve(conn, song, **fact) for song, fact in zip(songs, facts, strict=True)]
             now = now_ms()
             if liked:
                 # Every song is liked and no playlist is made; the first of the list is the newest like, so Liked Songs reads the way the list did.
@@ -169,8 +177,10 @@ class ImportService:
 
     def _what(
         self, body: dict[str, Any]
-    ) -> tuple[str, str | None, str, list[dict[str, Any]], list[str | None], bool, str | None]:
-        """(source, url, name, the songs, each song's own video if any, cut, the picture the source gave the list)."""
+    ) -> tuple[str, str | None, str, list[dict[str, Any]], list[str | None], bool, str | None, list[dict[str, str | None]]]:
+        """(source, url, name, the songs, each song's own video if any, cut, the picture the source gave the list, each song's facts: how its artist was
+        decided and who uploaded its video, for `refs.resolve`). **Only a link has facts**: the importer read the title. A list of songs a phone sends
+        (a file import) has none: it is a client's description, and a client cannot mark itself."""
         url = body.get("url")
         songs = body.get("songs")
         if isinstance(url, str) and url.strip():
@@ -188,6 +198,7 @@ class ImportService:
                 [t.video_id for t in playlist.tracks],
                 playlist.truncated,
                 playlist.cover_url,
+                [_facts_of(t) for t in playlist.tracks],
             )
         if isinstance(songs, list) and songs:
             name = str(body.get("name") or "").strip()
@@ -209,7 +220,16 @@ class ImportService:
                 }
                 for p in parsed
             ]
-            return str(source), None, name, described, [None] * len(described), len(songs) > MAX_SONGS, _picture(body)
+            return (
+                str(source),
+                None,
+                name,
+                described,
+                [None] * len(described),
+                len(songs) > MAX_SONGS,
+                _picture(body),
+                [{} for _ in described],
+            )
         raise ApiError("validation", "Send a link (url) or a list of songs (name and songs).")
 
     @staticmethod
