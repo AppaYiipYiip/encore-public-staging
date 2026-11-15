@@ -81,6 +81,7 @@ from .sources.youtube.stream import StreamError
 from .sources.youtube.tools import Active, ToolStore
 from .sources.youtube.updater import Tools, create_tools
 from .stopping import LIFESPAN_STOP_S, MIN_JOIN_S
+from .tombstone_purge import TombstonePurge
 from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
@@ -1705,6 +1706,7 @@ def create_app(
         else None
     )
 
+    tombstone_purge = TombstonePurge(database)
     ref_janitor = RefJanitor(database)
 
     def errands() -> None:
@@ -1712,6 +1714,7 @@ def create_app(
             accounts.heal_libraries,
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
+            tombstone_purge.run_once,  # N-31: old tombstones and old import lists go, so that the janitor below finds their songs unpointed
             ref_janitor.run_once,  # N-27: the song refs nobody points at (after the finders: they look at refs too)
         ):
             try:

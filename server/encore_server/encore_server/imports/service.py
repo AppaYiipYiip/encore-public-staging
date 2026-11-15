@@ -35,6 +35,28 @@ _SOURCES = ("youtube", "spotify", "file")
 _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0, "search_failed": 300.0}
 
 
+def counts_of(conn: sqlite3.Connection, import_id: str) -> dict[str, int]:
+    """What an import's songs add up to, counted from its entries: `total`, `matched`, `unmatched`, `pending` and `kept` (songs with a copy on the music
+    server). The ONE place that counts them: a person's import record reads it while the import has its entries, and the purge of an old import
+    (`tombstone_purge`) stores the same numbers before it removes them."""
+    counts = {
+        r["state"]: r["n"]
+        for r in conn.execute("SELECT state, COUNT(*) AS n FROM import_entry WHERE import = ? GROUP BY state", (import_id,))
+    }
+    kept = conn.execute(
+        "SELECT COUNT(*) FROM import_entry e WHERE e.import = ? AND EXISTS"
+        " (SELECT 1 FROM song_file f WHERE f.ref = e.ref AND f.navidrome_song_id IS NOT NULL)",
+        (import_id,),
+    ).fetchone()[0]
+    return {
+        "total": sum(counts.values()),
+        "matched": counts.get("matched", 0),
+        "unmatched": counts.get("not_found", 0),
+        "pending": counts.get("pending", 0),
+        "kept": int(kept),
+    }
+
+
 class Finder(Protocol):
     def find(self, wanted: Wanted) -> str | None: ...
 
@@ -271,26 +293,18 @@ class ImportService:
         row = conn.execute("SELECT * FROM import WHERE id = ? AND person = ?", (import_id, person)).fetchone()
         if row is None:
             return None
-        counts = {
-            r["state"]: r["n"]
-            for r in conn.execute("SELECT state, COUNT(*) AS n FROM import_entry WHERE import = ? GROUP BY state", (import_id,))
-        }
-        kept = conn.execute(
-            "SELECT COUNT(*) FROM import_entry e WHERE e.import = ? AND EXISTS"
-            " (SELECT 1 FROM song_file f WHERE f.ref = e.ref AND f.navidrome_song_id IS NOT NULL)",
-            (import_id,),
-        ).fetchone()[0]
+        if row["entries_purged_at"] is not None:
+            # An old import's songs were purged (`tombstone_purge`), after its counts were stored: the page shows counts, not songs.
+            counts = {key: int(row[f"final_{key}"] or 0) for key in ("total", "matched", "unmatched", "pending", "kept")}
+        else:
+            counts = counts_of(conn, import_id)
         return {
             "id": row["id"],
             "source": row["source"],
             "name": row["name"],
             "state": row["state"],
             "playlistId": row["playlist"],
-            "total": sum(counts.values()),
-            "matched": counts.get("matched", 0),
-            "unmatched": counts.get("not_found", 0),
-            "pending": counts.get("pending", 0),
-            "kept": kept,
+            **counts,
             "truncated": bool(row["truncated"]),
             "createdAt": row["created_at"],
         }
