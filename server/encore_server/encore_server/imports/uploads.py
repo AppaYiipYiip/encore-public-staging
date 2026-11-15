@@ -7,8 +7,8 @@ picture look-up. This module is the ONE door every reader goes through (YouTube 
 catalogue search) and says, for each upload, **who the artist is and how that was decided** (the `basis`):
 
 * `declared`: the source says so: a song of the catalogue (YouTube's own "Topic" audio), a Spotify or file description, an official music video's credit.
-* `title`: the title names the performer ("Artist - Song"). The channel only breaks the tie between the two sides, and only when it is a WHOLE NAME of a
-  side (never a substring: "kexp" is inside "(Live on KEXP)").
+* `title`: the title names the performer ("Artist - Song"; or "<Series> Opening | Song by Artist", the one shape of context that is read, with a pipe and
+  one "by"). The channel only breaks the tie between the two sides, and only when it is a WHOLE NAME of a side (never a substring: "kexp" is inside "(Live on KEXP)").
 * `channel`: nothing names a performer, so the uploader stays as the visible artist, exactly what YouTube Music shows for the upload, flagged. This is the one
   named stop-gap (U1 of the design): a personal account whose title names nobody looks the same whether it is the band's own or a fan's. Removal trigger: the
   catalogue naming the artist of a song by its title (N-28).
@@ -52,6 +52,16 @@ _FIRST_ARTIST = re.compile(r"\s*(?:,|&|\bx\b|\bfeat\.?\b|\bft\.?\b|\bfeaturing\b
 #: ("Jay-Z" and "col·legi" have none).
 _SEPARATOR = re.compile(r"\s+[-‐-―−·•]\s+")
 _OPEN, _CLOSE = "([{", ")]}"
+#: Where a series label ends: a PIPE only (a section break, which is NOT a separator between an artist and a song: "Chopin - Nocturne Op. 9 No. 2 | Piano"). A
+#: dash is not read: before a dash a name ending in Opening or Ending is a band or a show ("Happy Ending - Born by the River", "Grand Opening - Nothing by
+#: Chance"), and the rule filed those under "the River" and "Chance" (the corpus rows of slice 4). Used only by `_series_credit`.
+_SERIES_BREAK = re.compile(r"\s*\|\s*")
+#: A series label ends in the word Opening or Ending, with a number after it: "DAN DA DAN Opening", "Naruto Shippuden Ending 5". The abbreviations OP and ED
+#: are NOT read: they are what broke "Chopin - Nocturne Op. 9 No. 2" and "Ed Sheeran - Stand By Me" when the shape was first tried as a word list.
+_SERIES_LABEL = re.compile(r"\b(?:opening|ending)(?:\s*\d{1,2})?$", re.IGNORECASE)
+_BY = re.compile(r"\s+by\s+", re.IGNORECASE)
+#: What a credited artist must not hold once the noise is cleaned away: a bracket, a pipe or a quote means the credit is not a plain name.
+_NOT_A_NAME = re.compile(r"[|()\[\]{}\"“”„«»「」『』]")
 
 
 def clean_title(raw: str) -> str:
@@ -119,7 +129,7 @@ def _names(side: str) -> set[str]:
     return keys
 
 
-def _split(raw_title: str) -> tuple[str, str] | None:
+def _split(raw_title: str, separator: re.Pattern[str] = _SEPARATOR) -> tuple[str, str] | None:
     """The two sides of the first separator that is outside every bracket, as written; `None` when the title has none."""
     depth = 0
     index = 0
@@ -130,11 +140,41 @@ def _split(raw_title: str) -> tuple[str, str] | None:
         elif char in _CLOSE:
             depth = max(0, depth - 1)
         elif depth == 0:
-            found = _SEPARATOR.match(raw_title, index)
+            found = separator.match(raw_title, index)
             if found is not None:
                 return raw_title[:index].strip(), raw_title[found.end() :].strip()
         index += 1
     return None
+
+
+def _series_credit(raw_title: str, channel: str) -> tuple[str, str] | None:
+    """`DAN DA DAN Opening | Otonoke by Creepy Nuts` -> `("Creepy Nuts", "Otonoke")`: a series label that ends in Opening or Ending, a pipe, then
+    `<Song> by <Artist>`. `None` unless EVERY part is there, so that nothing else changes (each guard is a row of the negative corpus):
+    no label word at the end of the first segment (a bare "by" is not a shape: "Stand By Me" is a song), or a separator inside that segment (the title already
+    reads `Artist - Song`); a label that is the uploader's own name ("Happy Ending |
+    Born by the River" on the channel Happy Ending is a band, not a series); no credit, or MORE THAN ONE " by " in it ("Stand By Me by Ben E. King" and "Song by
+    Death by Stereo" cannot be told apart by the string, so nobody is named); a credit that is not a clean name (a bracket, a pipe or a quote left in it: a
+    half-clean name would file the song under a wrong, trusted artist, which is worse than the uploader flagged `channel`). A dash after the label is not read
+    (see `_SERIES_BREAK`). The series is context and is dropped from the song: "Otonoke" is what a catalogue can match."""
+    sides = _split(raw_title, _SERIES_BREAK)
+    if sides is None:
+        return None
+    if _split(sides[0]) is not None:
+        return None  # a separator before the pipe: the title already reads `Artist - Song` ("Mozart - Opening | Overture by Karajan")
+    label = clean_title(sides[0])
+    if _SERIES_LABEL.search(label) is None:
+        return None
+    uploader = _channel_key(channel)
+    if uploader and uploader == _name_key(label):
+        return None
+    credits = list(_BY.finditer(sides[1]))
+    if len(credits) != 1:
+        return None
+    song = clean_title(sides[1][: credits[0].start()])
+    artist = clean_title(sides[1][credits[0].end() :])
+    if not song or not artist or _NOT_A_NAME.search(artist):
+        return None
+    return artist, song
 
 
 def _describes_only(side: str) -> bool:
@@ -187,11 +227,15 @@ def read_declared(raw_title: str, artists: Sequence[str]) -> Reading:
 def read_upload(raw_title: str, uploader: str) -> Reading:
     """The artist and the song of a video somebody uploaded: `Reading(("Arcangel",), "FN8", "title")` from `Arcangel - FN8 ( Video Lyric )`.
 
-    In this order: a "- Topic" channel is the artist; a title with a separator is `Artist - Song`, unless the channel is a whole name of the RIGHT side only
-    (`Song - Artist`); with no separator the uploader stays, flagged `channel`; with no uploader either, nobody is named."""
+    In this order: a "- Topic" channel is the artist; a series credit (`<Series> Opening | <Song> by <Artist>`) names its artist; a title with a separator is
+    `Artist - Song`, unless the channel is a whole name of the RIGHT side only (`Song - Artist`); with no separator the uploader stays, flagged `channel`; with
+    no uploader either, nobody is named."""
     channel = (uploader or "").strip()
     if is_topic(channel):
         return Reading((plain_name(channel),), clean_title(raw_title), DECLARED)
+    credit = _series_credit(raw_title, channel)
+    if credit is not None:
+        return Reading((credit[0],), credit[1], TITLE, channel or None)
     sides = _real_split(raw_title)
     if sides is None:
         name = _VEVO.sub("", channel).strip()

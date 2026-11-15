@@ -1063,11 +1063,17 @@
  "N-34": {
   "kind": "feature",
   "title": "Real albums stop losing songs to \"Songs without an album\"",
-  "note": "Owner, 15 Nov 2026: \"the issue of the unknown album is still present\" (first reported 13 Nov, notes on N-11). Seen on the A35, build 156: LANDMVRKS has a row 'Songs without an album' among its Albums holding 'Creature' and 'Requiem'. READ ON THE SERVER (VM 108): 'Requiem' is ONE ref with album '[Unknown Album]', kept by the keeper as Encore/LANDMVRKS/Singles/Requiem.opus, so the music server files it in its [Unknown Album] bucket; 'Creature' is TWO refs: one '[Unknown Album]' (Encore/LANDMVRKS/Singles/Creature.opus) and one with the real album 'The Darkest Place I've Ever Been' (its own file and folder): the same song twice (a B-110 family pair: two source videos, not merged by design). The display rule works (album_names.dart names the bucket in plain words and keeps it off Home); the fault is upstream: a YouTube import carries no album and nothing fills it in. PROPER FIX: the server identifies the song in the catalogue by artist, title and length (the identity N-15 and N-28 use; slice 1 of P2-12 already gave the server its own gated Deezer client), fills the ref's album, and the keeper writes the album tag and files the copy under the album's folder ('Singles' only for a real single); a song the catalogue says has no album stays in the bucket. The repair of files already kept needs a tag rewrite, a new folder and a scan, and a moved file is a NEW song id for the music server: it is the same machinery as N-26 slice 5, so build them as one repair. NOT the fix: hiding the bucket row on the artist page (it hides songs: rule 1).",
+  "note": "Owner, 15 Nov 2026: \"the issue of the unknown album is still present\" (first reported 13 Nov, notes on N-11). Seen on the A35, build 156: LANDMVRKS has a row 'Songs without an album' among its Albums holding 'Creature' and 'Requiem'. READ ON THE SERVER (VM 108): 'Requiem' is ONE ref with album '[Unknown Album]', kept by the keeper as Encore/LANDMVRKS/Singles/Requiem.opus, so the music server files it in its [Unknown Album] bucket; 'Creature' is TWO refs: one '[Unknown Album]' (Encore/LANDMVRKS/Singles/Creature.opus) and one with the real album 'The Darkest Place I've Ever Been' (its own file and folder): the same song twice (a B-110 family pair: two source videos, not merged by design). The display rule works (album_names.dart names the bucket in plain words and keeps it off Home); the fault is upstream: a YouTube import carries no album and nothing fills it in. PROPER FIX: the server identifies the song in the catalogue by artist, title and length (the identity N-15 and N-28 use; slice 1 of P2-12 already gave the server its own gated Deezer client), fills the ref's album, and the keeper writes the album tag and files the copy under the album's folder ('Singles' only for a real single); a song the catalogue says has no album stays in the bucket. The repair of files already kept needs a tag rewrite, a new folder and a scan, and a moved file is a NEW song id for the music server: it is the same machinery as N-26 slice 5, so build them as one repair. NOT the fix: hiding the bucket row on the artist page (it hides songs: rule 1). DESIGN (15 Nov 2026): docs/tasks/P2-songs-as-references.md, section N-34 (seven slices; PR of the design). It changes two sentences above: the repair of kept files is built HERE as the one retag-move-link machinery N-26's slice 5 will also use (not left to it), and a single is its own release rather than a song in 'Singles' (the default; decision 3 of the design, the advisor's to overrule). It needs P2-25: a name that folds to nothing must never be matched.",
   "proposal": true,
   "size": "L",
-  "needs": [],
-  "from": "owner"
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "owner",
+  "why": "Every name this item compares goes through the server's normaliser, which folds every Arabic, Cyrillic, Korean and Japanese name to nothing (audit B-37): two different Arabic songs would share one catalogue hit, one album and one moved file. The repair (slice 5) waits for P2-25; the slices before it skip such names."
  },
  "N-35": {
   "kind": "plumbing",
@@ -1081,6 +1087,43 @@
     "mark": "b"
    }
   ],
+  "from": "agent"
+ },
+ "N-36": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the one-time repair of songs in other alphabets is deleted",
+  "note": "Removal trigger of P2-25's repair (design 15 Nov 2026): the worklist table ref_recheck, rehome.py, keyrepair's frozen test of what the old fold lost, the recheck_pending hold in refmerge and tests/legacy_fold.py exist only to repair databases the old text folding damaged. Delete them (and drop the table in a migration) when the table is EMPTY on every install the project knows (VM 108, the lead's server, the owner's: each read, not assumed) and one release has passed since slice 4. Every piece is marked STOP-GAP(P2-25 one-shot-repair) in the code; a guard test fails when a marked piece names a release that has passed. The permanent parts stay: the fold, the revision constant and the rekey at start-up.",
+  "proposal": true,
+  "size": "S",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-37": {
+  "kind": "feature",
+  "title": "Fix an imported playlist by reading its link again",
+  "note": "From P2-25's design (15 Nov 2026, D11, ruled yes): playlists imported while the server could not tell songs in other alphabets apart hold the wrong songs (one song repeated). The information to correct them exists for a while (import.url and import_entry.video name the song the source meant, until the entries are purged 60 days after the import), but putting the right song into a person's own playlist is a change to their list nobody asked for, so it is never automatic: read the link again, show what would change (this entry: this song), and apply only what the person accepts. The same for the likes a person brought over from the music server (bring-my-library-over adds likes for the songs that are now separate; a playlist it filled once is not filled again). Needs P2-25's rehome and fold first.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-38": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a retagged song is not downloaded again",
+  "note": "Advisor ruling on the N-34 design (15 Nov 2026): refAudioKey (app/lib/data/downloads/fingerprint.dart:101) hashes the FILE SIZE, so a download of a song whose file the server rewrites (a retag, a move, the N-34 repair, N-26 slice 5) goes stale and is downloaded AGAIN: one re-download on Wi-Fi is accepted for N-34, but EVERY later repair that rewrites tags repeats it: a cost to the future (rule 1). Build an audio-only key (a hash of the audio stream or of the song's identity plus its audio length, never the tags), on the server and the phone, so a tag rewrite keeps every download valid. TRIGGER: built BEFORE any second tag-rewriting repair ships (N-26 slice 5 is the second). Not built now; N-34's first repair run accepts the one-time re-download.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
   "from": "agent"
  }
 }

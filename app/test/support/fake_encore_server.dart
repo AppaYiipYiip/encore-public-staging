@@ -154,6 +154,26 @@ class FakeEncoreServer {
   /// When set, `GET library/files` answers exactly this (a real response saved as a fixture), whatever the phone asked.
   Map<String, Object?>? filesAnswer;
 
+  /// When set, `GET library/changes` answers exactly this (a real response saved as a fixture), whatever the phone asked.
+  Map<String, Object?>? changesAnswer;
+
+  /// The entries the server purged (N-31): their rows are gone, the change log still names them, and the feed says `{id, playlist, deleted: true}` for
+  /// each (the playlist comes from `change_log.parent`). Entry id -> its playlist.
+  final Map<String, String> _purgedEntries = {};
+
+  /// The purge of tombstones (`tombstone_purge.py`, N-31): every removed entry and every entry of a deleted playlist loses its row. The playlist rows
+  /// stay (never purged) and the log stays (never pruned), so a phone that was away is still told.
+  void purgeTombstones() {
+    for (final MapEntry(key: playlistId, value: list) in entries.entries) {
+      final gone = playlists[playlistId]?['deleted'] == true;
+      list.removeWhere((e) {
+        if (e['deleted'] != true && !gone) return false;
+        _purgedEntries['${e['id']}'] = playlistId;
+        return true;
+      });
+    }
+  }
+
   /// The `mergesSince` of each `GET library/files` (null = the app did not send one), in order.
   final List<String?> mergesSinceSeen = [];
   int clockMs = 1790000000000;
@@ -714,6 +734,8 @@ class FakeEncoreServer {
   }
 
   FakeResponse _changes(RecordedRequest r) {
+    final fixed = changesAnswer;
+    if (fixed != null) return _ok(fixed);
     final since = int.parse(r.param('since') ?? '0');
     final touched = _log.where((e) => e.seq > since).toList();
     final cursor = touched.isEmpty ? since : touched.last.seq;
@@ -736,6 +758,11 @@ class FakeEncoreServer {
         for (final e in list) {
           if (e['id'] == id) entryItems.add(e);
         }
+      }
+      // A purged entry: no row, but the log names it, and the feed says which playlist it was in (never its song).
+      final purgedFrom = _purgedEntries[id];
+      if (purgedFrom != null) {
+        entryItems.add({'id': id, 'playlist': purgedFrom, 'deleted': true});
       }
     }
     final wanted = <String>{
