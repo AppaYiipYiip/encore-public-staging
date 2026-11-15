@@ -197,11 +197,16 @@ class EncoreWriter {
 
   /// Playlists as the server has them now (a deleted one is tombstoned with its entries), then their entries; the order of each affected
   /// playlist is counted again from the server's fractional positions.
-  Future<void> applyPlaylists(
+  ///
+  /// Returns the songs whose place in a playlist this took away (N-35): the phone's own entry rows say which, because a tombstone the server purged
+  /// (`{id, playlist, deleted: true}`) names no song. The caller hands them to [dropUnused] together with the ids its page carries, AFTER the whole page was
+  /// applied: an entry that comes again, or one that moved to another playlist, holds its song again by then, and a like, a download and a pin keep theirs.
+  Future<Set<String>> applyPlaylists(
     Iterable<EncorePlaylist> playlists,
     Iterable<EncoreEntry> entries, {
     required int nowMs,
   }) async {
+    final freed = <String>{};
     // What the person did on this phone and the server has not heard yet is not undone by what the server last knew (P2-28, B-61): a rename,
     // a delete and a removal that wait in the outbox. Each is protected on its own field, never by skipping the whole playlist: another device's
     // entries arrive one touched entry at a time, each with its own older sequence number, so skipping a pull for a playlist would lose them.
@@ -214,10 +219,7 @@ class EncoreWriter {
         await (_db.update(_db.playlists)
               ..where((t) => t.serverId.equals(serverId) & t.id.equals(p.id)))
             .write(PlaylistsCompanion(deletedAtMs: Value(nowMs)));
-        await (_db.delete(_db.playlistEntries)
-              ..where((e) =>
-                  e.serverId.equals(serverId) & e.playlistId.equals(p.id)))
-            .go();
+        await _takeOut(freed, (e) => e.playlistId.equals(p.id));
         continue;
       }
       // A server that deleted it wins over a waiting rename (docs/34 CF-21: the tombstone branch above). A waiting rename keeps the person's
@@ -264,10 +266,7 @@ class EncoreWriter {
     for (final e in entries) {
       if (e.id.isEmpty || e.playlist.isEmpty) continue;
       touched.add(e.playlist);
-      await (_db.delete(_db.playlistEntries)
-            ..where(
-                (t) => t.serverId.equals(serverId) & t.entryId.equals(e.id)))
-          .go();
+      await _takeOut(freed, (t) => t.entryId.equals(e.id));
       // A removal that waits stays removed: the entry comes back from the server until the removal was delivered. By the entry's own id.
       if (e.deleted || waiting.removedEntries.contains(e.id)) continue;
       final playlist = await (_db.select(_db.playlists)
@@ -293,19 +292,30 @@ class EncoreWriter {
           ));
     }
     for (final id in touched) {
-      await _renumber(id, nowMs: nowMs);
+      await _renumber(id, freed, nowMs: nowMs);
     }
+    return freed;
+  }
+
+  /// Takes the entries of this server that match [where] out of their playlists, and adds the songs they held to [freed].
+  Future<void> _takeOut(Set<String> freed,
+      Expression<bool> Function($PlaylistEntriesTable e) where) async {
+    final match = _db.select(_db.playlistEntries)
+      ..where((e) => e.serverId.equals(serverId) & where(e));
+    for (final row in await match.get()) {
+      freed.add(row.trackId);
+    }
+    await (_db.delete(_db.playlistEntries)
+          ..where((e) => e.serverId.equals(serverId) & where(e)))
+        .go();
   }
 
   /// Counts a playlist's live entries again, 0..n-1, in the server's order, and refreshes what the playlist row says about them.
-  Future<void> _renumber(String playlistId, {required int nowMs}) async {
+  Future<void> _renumber(String playlistId, Set<String> freed,
+      {required int nowMs}) async {
     // Entries of the old kind of server (no id of the server's own) have no place in a playlist of this one.
-    await (_db.delete(_db.playlistEntries)
-          ..where((e) =>
-              e.serverId.equals(serverId) &
-              e.playlistId.equals(playlistId) &
-              e.entryId.isNull()))
-        .go();
+    await _takeOut(
+        freed, (e) => e.playlistId.equals(playlistId) & e.entryId.isNull());
     final rows = await (_db.select(_db.playlistEntries)
           ..where((e) =>
               e.serverId.equals(serverId) & e.playlistId.equals(playlistId))
