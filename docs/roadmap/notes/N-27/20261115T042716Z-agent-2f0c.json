@@ -1,0 +1,9 @@
+{
+ "id": "20261115T042716Z-agent-2f0c",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T04:27:16Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of the whole N-27 chain on the REAL stack, 15 Nov 2026 ~04:26 UTC (server sha-3aa082b with slices 2a, 2c and 2e; the A35 on main APK 156 with slice 2b; NOT the release-candidate pair; nothing marked walked). THE PHONE DROPS A ROW: the A35's own database (read with run-as, the WAL copied beside it) held an `is_ref` row with no file, no like and no entry for \"Deep Chill Lofi\" (a junk ref an earlier walk left); on VM 108 its ref had no pointer and no verdict, and was 7.4 days old: its created_at was set to 20 days ago (synthetic, logged, entry 1x), the container restarted, and the errand logged \"ref janitor: retired 1 song refs nobody points at\" (3395 -> 3394 refs, nothing else) with ONE row in ref_gone (seq 1). After a COLD START of the app the phone's `encoreGoneCursor` went 0 -> 1 and that row got `deleted_at_ms`; the rows of \"Simple Lofi\" (just played) and \"Lofi For Focus\" (a verdict and a tombstoned playlist entry) were left alone. WHAT WAS SEEN ABOUT WHEN: bringing the app back to the foreground did NOT pull within 25 s; the cold start did. The server pushes no live event when the janitor retires a ref, so the phone learns at its next pull (start, or its periodic sync): harmless (a retired song's row stays visible a little longer), but a phone that never restarts learns late: do not promise \"at once\" in any text. NOT checked: an ex-file ref (a file pruned from the music server, then retired after 14 days: tested at the server and phone level, not on the real stack), a phone away for weeks. LESSON FOR THE NEXT CHECK: the unfindable song needed for a tap is hard to make on purpose (\"Lofi For Focus\" already had a tombstoned entry from an earlier walk: the N-31 case); a junk ref left by an earlier walk was the cleanest way."
+}

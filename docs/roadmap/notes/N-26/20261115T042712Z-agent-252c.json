@@ -1,0 +1,9 @@
+{
+ "id": "20261115T042712Z-agent-252c",
+ "item": "N-26",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T04:27:12Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of slice 2 on the REAL stack, 15 Nov 2026 ~04:15 UTC (VM 108 at sha-3aa082b = main after #86, label verified; the A35 on main APK 156; NOT the release-candidate pair; nothing marked walked). The KEXP playlist (PLqh-GLl-LURzdsV9qVaSMRvUMTTBaNdf0, 29 entries) was imported AGAIN through the owner test account. RESULT: all 29 refs read `artist_basis = title` and `uploader = KEXP`. As the advisor predicted, 27 of them are the SAME refs the first import made (found by video id; their facts were only FILLED: the first import ran before slice 2 and had left them NULL) and the two removed uploads are NEW refs under their performers: \"Nneka\" (Heartbeat (Live on KEXP)) and \"Foals\" (Full Performance (Live on KEXP)), basis `title`, uploader KEXP: the slice 1 amendment (removed uploads) works on real data. The old KEXP-filed copies of those two from the FIRST import stay (held by that import and its deleted playlist's tombstones: N-31), not a regression. NOT checked on the real stack: a channel-only artist skipped by the artist finder (no such upload in this playlist), `unknown`, and the keeper's cover gate (covered by tests through the installed gate). The import also KEPT 27 more songs under Encore/<performer>/Singles (logged in the homelab log, entry 1x, with the undo)."
+}
