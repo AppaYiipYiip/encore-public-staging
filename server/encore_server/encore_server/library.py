@@ -40,8 +40,14 @@ def ensure_person(conn: sqlite3.Connection, navidrome_user: str, *, admin: bool 
     return conn.execute("SELECT * FROM person WHERE id = ?", (person_id,)).fetchone()  # type: ignore[no-any-return]
 
 
-def _touch(conn: sqlite3.Connection, person: str, kind: str, target: str) -> int:
-    cursor = conn.execute("INSERT INTO change_log (person, kind, target, at) VALUES (?,?,?,?)", (person, kind, target, now_ms()))
+def _touch(conn: sqlite3.Connection, person: str, kind: str, target: str, parent: str | None = None) -> int:
+    """Logs that [target] was touched. An `entry` is logged with its playlist ([parent]): once the entry is purged (`tombstone_purge`) the feed can only say
+    `{id, playlist, deleted: true}` if the log remembers the playlist, and a phone skips an entry that names none. A writer that forgets it is refused."""
+    if kind == "entry" and not parent:
+        raise ValueError("an entry is logged with its playlist")
+    cursor = conn.execute(
+        "INSERT INTO change_log (person, kind, target, parent, at) VALUES (?,?,?,?,?)", (person, kind, target, parent, now_ms())
+    )
     return int(cursor.lastrowid or 0)
 
 
@@ -57,11 +63,11 @@ def touch_ref_holders(conn: sqlite3.Connection, ref_id: str) -> dict[str, int]:
     for row in conn.execute("SELECT person FROM library_item WHERE kind = 'like' AND target = ?", (ref_id,)).fetchall():
         touched[row["person"]] = _touch(conn, row["person"], "like", ref_id)
     for row in conn.execute(
-        "SELECT e.id AS entry, p.owner AS owner FROM playlist_entry e JOIN playlist p ON p.id = e.playlist"
+        "SELECT e.id AS entry, e.playlist AS playlist, p.owner AS owner FROM playlist_entry e JOIN playlist p ON p.id = e.playlist"
         " WHERE e.ref = ? AND e.deleted_at IS NULL AND p.deleted_at IS NULL",
         (ref_id,),
     ).fetchall():
-        touched[row["owner"]] = _touch(conn, row["owner"], "entry", row["entry"])
+        touched[row["owner"]] = _touch(conn, row["owner"], "entry", row["entry"], row["playlist"])
     return touched
 
 
@@ -222,7 +228,7 @@ def add_entries(
             "INSERT INTO playlist_entry (id, playlist, position, ref, added_by, at) VALUES (?,?,?,?,?,?)",
             (entry_id, playlist_id, position, item["ref"], person, now),
         )
-        _touch(conn, person, "entry", entry_id)
+        _touch(conn, person, "entry", entry_id, playlist_id)
         added.append(entry_id)
     if added:
         conn.execute("UPDATE playlist SET updated_at = ? WHERE id = ?", (now, playlist_id))
@@ -239,7 +245,7 @@ def remove_entries(conn: sqlite3.Connection, person: str, playlist_id: str, entr
             (now_ms(), entry_id, playlist_id),
         )
         if cursor.rowcount:
-            _touch(conn, person, "entry", entry_id)
+            _touch(conn, person, "entry", entry_id, playlist_id)
             removed.append(entry_id)
     if removed:
         conn.execute("UPDATE playlist SET updated_at = ? WHERE id = ?", (now_ms(), playlist_id))
@@ -257,7 +263,7 @@ def reorder(conn: sqlite3.Connection, person: str, playlist_id: str, entry_ids: 
     for entry_id, position in zip(wanted, slots, strict=True):
         if live[entry_id]["position"] != position:
             conn.execute("UPDATE playlist_entry SET position = ? WHERE id = ?", (position, entry_id))
-            _touch(conn, person, "entry", entry_id)
+            _touch(conn, person, "entry", entry_id, playlist_id)
 
 
 def playlist_json(conn: sqlite3.Connection, row: sqlite3.Row, *, with_entries: bool = False) -> dict[str, Any]:
@@ -416,7 +422,7 @@ def changes(conn: sqlite3.Connection, person: str, since: int) -> dict[str, Any]
     """Everything that changed for [person] after cursor [since], as the state it is in now (docs/17: `library/changes`)."""
     rows = list(
         conn.execute(
-            "SELECT seq, kind, target FROM change_log WHERE person = ? AND seq > ? ORDER BY seq LIMIT ?",
+            "SELECT seq, kind, target, parent FROM change_log WHERE person = ? AND seq > ? ORDER BY seq LIMIT ?",
             (person, since, CHANGES_PAGE),
         )
     )
@@ -427,8 +433,11 @@ def changes(conn: sqlite3.Connection, person: str, since: int) -> dict[str, Any]
     )
 
     touched: dict[str, set[str]] = {}
+    playlist_of_entry: dict[str, str] = {}
     for row in rows:
         touched.setdefault(row["kind"], set()).add(row["target"])
+        if row["kind"] == "entry" and row["parent"]:
+            playlist_of_entry[row["target"]] = row["parent"]
 
     likes: list[dict[str, Any]] = []
     for target in sorted(touched.get("like", ())):
@@ -439,11 +448,18 @@ def changes(conn: sqlite3.Connection, person: str, since: int) -> dict[str, Any]
     albums = [_set_state(conn, person, "saved_album", t) for t in sorted(touched.get("saved_album", ()))]
     follows = [_set_state(conn, person, "follow_artist", t) for t in sorted(touched.get("follow_artist", ()))]
 
+    # A thing the log names is answered with the state it is in now. One that is [person]'s is answered as it is (a deleted one with `deleted: true`: its
+    # row is its tombstone). One whose row exists but is somebody else's (a member of a collaborative playlist reads its owner's rows) is NOT answered: the
+    # phone must never be told a live shared playlist was deleted. Only when NO row with that id exists at all, whoever owns it, is it told deleted: a
+    # purged entry (`tombstone_purge`), the one case that exists today. `change_log` is never pruned, which is what makes this answer reach a phone that
+    # was away for any time: if it ever is, a phone whose cursor is older than the oldest row needs a way to know (docs/18 "change_log").
     playlists: list[dict[str, Any]] = []
     for target in sorted(touched.get("playlist", ())):
         row = conn.execute("SELECT * FROM playlist WHERE id = ? AND owner = ?", (target, person)).fetchone()
         if row is not None:
             playlists.append(playlist_json(conn, row))
+        elif conn.execute("SELECT 1 FROM playlist WHERE id = ?", (target,)).fetchone() is None:
+            playlists.append({"id": target, "deleted": True})
     entries: list[dict[str, Any]] = []
     for target in sorted(touched.get("entry", ())):
         row = conn.execute(
@@ -452,6 +468,11 @@ def changes(conn: sqlite3.Connection, person: str, since: int) -> dict[str, Any]
         ).fetchone()
         if row is not None:
             entries.append(entry_json(row))
+        elif conn.execute("SELECT 1 FROM playlist_entry WHERE id = ?", (target,)).fetchone() is None:
+            gone: dict[str, Any] = {"id": target}
+            if target in playlist_of_entry:
+                gone["playlist"] = playlist_of_entry[target]  # the phone skips an entry that names no playlist
+            entries.append({**gone, "deleted": True})
 
     wanted = {like["ref"] for like in likes if not like["removed"]} | {e["ref"] for e in entries if not e["deleted"]}
     ref_list = [refs.get_ref(conn, ref_id) for ref_id in sorted(wanted) if refs.ref_exists(conn, ref_id)]
