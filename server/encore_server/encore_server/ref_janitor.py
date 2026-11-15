@@ -28,7 +28,9 @@ exists the janitor must not touch a ref with a file history, and `file_history` 
 
 **How it runs**: one more errand of the hourly library link (`api.create_app`, after the finders), at most `BATCH` refs a pass, the candidates chosen and
 deleted in ONE transaction (so a like that arrives between the two cannot be lost). The batch limit is applied AFTER every exclusion: refs that may not go
-never use it up. It adds no column and no table: it only removes rows (finished work goes by its cascade; `change_log` rows stay).
+never use it up. It adds no column to `song_ref`: it removes rows (finished work goes by its cascade; `change_log` rows stay) and, for every ref it retires, writes one
+tombstone in `ref_gone` (slice 2c, migration 0015) in the SAME transaction, so that a phone that was away can be told the id is gone (`GET /library/files?
+goneSince=`, feature `ref-gone`): a phone must never be told a ref is gone while the server still has it, nor miss that one is.
 
 The foreign keys are a second net: a table that is not yet in `POINTERS` and has no cascade makes the delete fail, the whole pass rolls back and the
 errand logs it (the library link carries on, see `LibraryLinker.run_once`); a table WITH a cascade would lose its rows silently, which is why the schema
@@ -98,6 +100,10 @@ NOT_POINTERS: dict[tuple[str, str], str] = {
         "old_id",
     ): "The id of a ref that no longer exists: the tombstone clients fold the old id through; never deleted by the janitor.",
     ("song_file", "navidrome_song_id"): "The music server's own song id for the file, not a song ref.",
+    (
+        "ref_gone",
+        "ref_id",
+    ): "The id of a ref the janitor already retired (the tombstone phones are told about): it names nothing that still exists, so it keeps nothing.",
 }
 
 
@@ -164,6 +170,8 @@ class RefJanitor:
             ids = [row["id"] for row in conn.execute(sql, params)]
             for chunk in _chunks(ids):
                 marks = ", ".join("?" for _ in chunk)
+                # The tombstone first, in the same transaction as the delete: a failed delete rolls it back too (a phone is never told a ref is gone while it is not).
+                conn.executemany("INSERT OR IGNORE INTO ref_gone (ref_id, at) VALUES (?, ?)", [(ref, now) for ref in chunk])
                 # work_item (and work_item_person) go by their cascade: the rows left are over, the pointer clause counted only the active ones.
                 conn.execute(f"DELETE FROM song_ref WHERE id IN ({marks})", tuple(chunk))
         if ids:

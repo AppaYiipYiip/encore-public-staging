@@ -1,0 +1,20 @@
+{
+  "refs": [],
+  "cursor": "0",
+  "more": false,
+  "merges": [],
+  "mergesCursor": "0",
+  "mergesMore": false,
+  "gone": [
+    {
+      "id": "sr_00000000000000000000000001",
+      "seq": 1
+    },
+    {
+      "id": "sr_00000000000000000000000002",
+      "seq": 2
+    }
+  ],
+  "goneCursor": "2",
+  "goneMore": false
+}
