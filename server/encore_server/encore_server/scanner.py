@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -22,11 +23,14 @@ from . import library, refs
 from .db import Database
 from .errors import ApiError
 from .ids import now_ms
+from .link_plan import LinkPlan
 from .navidrome import file_meta
 
 log = logging.getLogger("encore_server.scanner")
 
 PAGE = 500
+#: How a pass is said in the log: which of the reasons in `link_plan.Kind` started it.
+_WHY = {"scan": "after a scan of the music server", "poke": "asked for"}
 _CODEC = {"opus": "opus", "ogg": "opus", "m4a": "aac", "aac": "aac", "mp3": "mp3", "flac": "flac", "wav": "wav"}
 
 
@@ -152,48 +156,77 @@ def _prune(db: Database, seen_ids: set[str], before: int) -> int:
 
 
 class LibraryLinker:
-    """Runs [link_library] soon after the server starts and then every [every_s]; [poke] asks for a pass sooner (a person added music)."""
+    """Runs [link_library] soon after the server starts, every [every_s] (the tick), and, when it is given the music server's scan status, soon after
+    each scan of the music server that changed something (P3-35). [poke] asks for a pass at once (a person added music).
+
+    The tick is the whole errand: [before] (the finders, the purges), then the pass. A pass because of a scan is the link alone: the errands ask the
+    catalogue from the Host's address and themselves start scans, so run after every scan they would make a loop. When to run is decided by
+    [LinkPlan] (`link_plan.py`), which has no thread and no clock; this class only asks it and acts."""
 
     def __init__(
         self,
         db: Database,
         navidrome: Library,
         *,
+        scan_status: Callable[[], dict[str, Any] | None] | None = None,
         first_after_s: float = 20.0,
         every_s: float = 3600.0,
+        watch_s: float = 30.0,
+        busy_s: float = 5.0,
+        min_gap_s: float = 60.0,
         before: Callable[[], object] | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._db = db
         self._navidrome = navidrome
         self._before = before
-        self._first = first_after_s
-        self._every = every_s
+        self._scan_status = scan_status
+        self._clock = clock
+        self._plan = LinkPlan(first_after_s=first_after_s, every_s=every_s, watch_s=watch_s, busy_s=busy_s, min_gap_s=min_gap_s)
         self._stop = threading.Event()
         self._soon = threading.Event()
         self._thread: threading.Thread | None = None
         self.last: LinkReport | None = None
 
+    @property
+    def watching(self) -> bool:
+        """Whether the link follows the music server's scans (it was given the scan status) and not only the clock."""
+        return self._scan_status is not None
+
     def run_once(self) -> LinkReport:
+        """The tick: the errands, then the pass."""
         if self._before is not None:
             try:
                 self._before()
             except Exception:  # noqa: BLE001 - a side errand must not stop the link; it is tried again next time
                 log.exception("the errand before the library link failed")
+        return self.link_now("every hour")
+
+    def link_now(self, why: str = "asked for") -> LinkReport:
+        """The pass alone."""
+        began = time.monotonic()
         self.last = link_library(self._db, self._navidrome)
         if self.last.linked or self.last.pruned:
             log.info(
-                "library linked: %d songs seen, %d new refs, %d files pruned",
+                "library linked: %d songs seen, %d new refs, %d files pruned (%s, %.1f s)",
                 self.last.seen,
                 self.last.new_refs,
                 self.last.pruned,
+                why,
+                time.monotonic() - began,
             )
         return self.last
 
     def poke(self) -> None:
+        self._plan.poke()
         self._soon.set()
 
     def start(self) -> None:
         self._stop.clear()
+        log.info(
+            "the library link runs every hour%s",
+            " and after each scan of the music server that changed something" if self.watching else "",
+        )
         self._thread = threading.Thread(target=self._loop, name="library-link", daemon=True)
         self._thread.start()
 
@@ -204,16 +237,29 @@ class LibraryLinker:
             self._thread.join(timeout=timeout)
             self._thread = None
 
+    def _status(self) -> dict[str, Any] | None:
+        """What the music server's scanner says now; `None` when it was not asked to be watched or could not say."""
+        if self._scan_status is None:
+            return None
+        try:
+            return self._scan_status()
+        except Exception:  # noqa: BLE001 - a scan status that fails is "cannot say": the tick still links
+            log.info("the music server's scan status could not be read; the library link goes by the clock")
+            return None
+
     def _loop(self) -> None:
-        wait = self._first
+        self._plan.begin(self._clock())
         while not self._stop.is_set():
-            self._soon.wait(timeout=wait)
-            self._soon.clear()
-            if self._stop.is_set():
-                return
+            step = self._plan.next(self._clock(), self._status())
+            if step.run is None:
+                self._soon.wait(timeout=step.wait_s)
+                self._soon.clear()
+                continue
+            began = self._clock()
             try:
-                report = self.run_once()
-                wait = self._every if report.complete else min(self._every, 120.0)
+                report = self.run_once() if step.run == "tick" else self.link_now(_WHY[step.run])
             except Exception:  # noqa: BLE001 - the loop must survive a hiccup; it is logged and tried again
                 log.exception("the library link failed")
-                wait = min(self._every, 300.0)
+                self._plan.failed(step, at=self._clock())
+                continue
+            self._plan.finished(step, started=began, ended=self._clock(), complete=report.complete)

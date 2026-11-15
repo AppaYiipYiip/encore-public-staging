@@ -87,7 +87,8 @@ The columns of every table are in `18` section 1; the migrations (`server/encore
 * A **song ref** exists the moment anyone sees a song (search, import, recommendation). It is the identity used everywhere:
   likes, playlists, queues, playback state, history.
 * A **file** is attached when the server keeps the song (or it was already in the Host's folder: the scanner's songs get refs
-  too, matched by ISRC/MBID/tags). Replacing a file (better quality later, re-tag, move) only changes `file_id`; likes and
+  too, matched by ISRC/MBID/tags, within about two minutes of the music server finishing a scan that changed something, and by an hourly
+  pass as the safety net: `22` §7). Replacing a file (better quality later, re-tag, move) only changes `file_id`; likes and
   playlists never move. This removes the upgrade map, pending likes and the special imported-playlist page (C3).
 * **Navidrome mirror (one-way):** for every playlist and like, the songs that have files are mirrored into Navidrome's playlists
   and stars, so Subsonic apps (Tinkerer persona) still see them. Edits made in other apps are not read back in v1 (stated in the
