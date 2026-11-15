@@ -1,0 +1,12 @@
+{
+ "id": "20261114T234914Z-agent-bd92",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-14T23:49:14Z",
+ "type": "note",
+ "body": "ENGINEERING CHECK of slice 1 in the REAL image, 14 Nov 2026 ~23:46 UTC (VM 108 at sha-eb66523, label org.opencontainers.image.revision = eb665233..., NOT the release-candidate pair; nothing marked walked). The gate IS installed in the real image (the advisor's fear was a fail-closed gate nobody installed, which would have killed the pictures silently): (1) the public info lists the feature `catalogue` and `catalogue: {state: ok, resumesInSec: 0}`; (2) one signed-in GET catalogue/search?q=bob+marley answers 200 with real Deezer results in our shape (artists with id, name, picture, fans, albumCount); (3) catalogue-cache.db (+ -wal, -shm) exists in /data, encore.db untouched by it; (4) a read makes no ref: song_ref 3364 before and after a second search; (5) the finders go through the gate in the real image: two remembered artist-picture misses were made due again (tried_at 0), the container restarted, and within the first errand pass both were re-asked and rewritten as honest misses with fresh timestamps (if the gate had refused, no row would have been written); (6) the container log after the errand pass holds no CatalogueOff, no \"could not be asked\", no traceback. Not checked: the switch ENCORE_CATALOGUE=0 on the real image; a real 429 / quota rest; the Funnel address while the container restarted (it answered 000 for ~1 min after the update; it answered 200 again before the first check of the next hour, not investigated).",
+ "to": [
+  "agent"
+ ]
+}
