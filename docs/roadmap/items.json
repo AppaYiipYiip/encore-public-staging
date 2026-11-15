@@ -1068,5 +1068,19 @@
   "size": "L",
   "needs": [],
   "from": "owner"
+ },
+ "N-35": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the phone drops a song's row when the server removes its last entry",
+  "note": "Found by helper-n31 (15 Nov 2026) and the advisor: after a tombstone for a playlist entry drops the last entry that held a song, the phone's row for that song is not dropped (dropUnused sees the ids a page carries, not those of entries a tombstone removed), and pull() in app/lib/data/encore/encore_sync.dart reads the gone feed BEFORE the changes feed, so a phone that was away across the purge and the janitor hears 'gone' while its entries still hold the row: an orphan row pointing at a ref that no longer exists (it stays until a rebuild). Only an away phone is hit: an online phone deleted the entry months before the ref is retired. PROPER FIX (advisor): apply the changes before the gone list (pullChanges, then pullFiles), so every pointer type is covered, and let dropUnused see the ids of the entries a tombstone removed; collecting entry ids inside applyPlaylists alone patches one path. Tests first on the saved real responses (library-changes-with-purged-tombstones.json from N-31, library-files-with-gone.json from N-27).",
+  "proposal": true,
+  "size": "S",
+  "needs": [
+   {
+    "id": "N-31",
+    "mark": "b"
+   }
+  ],
+  "from": "agent"
  }
 }

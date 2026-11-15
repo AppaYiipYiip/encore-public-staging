@@ -1,6 +1,7 @@
 @Tags(['perf'])
 library;
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:encore/data/api/opensubsonic/models.dart';
 import 'package:encore/data/db/app_database.dart';
@@ -129,6 +130,29 @@ void main() {
     });
     // ignore: avoid_print
     print('PERF find in playlist (2,000 entries of 50k): $ms ms');
+    expect(ms, lessThan(90));
+  });
+
+  test('find in 2,000 liked songs of 50k, a word every song has < 90 ms',
+      () async {
+    // N-32. The same shape as the playlist's finding above (the index asked once, the liked songs looked up in its answer): every one of the
+    // 50,000 songs has "a" in it and 2,000 of them are liked.
+    await db.batch((b) {
+      for (var i = 0; i < 2000; i++) {
+        b.update(
+          db.tracks,
+          TracksCompanion(starredAtMs: Value(1700000000000 + i)),
+          where: (t) => t.id.equals('s${i * 25}'),
+        );
+      }
+    });
+    final dao = SearchDao(db);
+    final ms = await timeMs(() async {
+      final r = await dao.likedTrackIds(serverId, 'a').get();
+      expect(r, hasLength(2000));
+    });
+    // ignore: avoid_print
+    print('PERF find in liked songs (2,000 of 50k): $ms ms');
     expect(ms, lessThan(90));
   });
 

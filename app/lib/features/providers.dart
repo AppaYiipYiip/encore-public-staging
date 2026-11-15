@@ -481,6 +481,20 @@ final playlistFindProvider = StreamProvider.autoDispose
       .distinct(listEquals);
 });
 
+/// "Find in playlist" on Liked Songs (N-32): the ids of the liked songs that match [query], from the same index and the same matching as Search
+/// and [playlistFindProvider] (one matcher, ADR-R42). Watched, so a like or an unlike while the page is open keeps the list right.
+final likedFindProvider =
+    StreamProvider.autoDispose.family<List<String>, String>((ref, query) {
+  final server = ref.watch(activeServerProvider).value;
+  if (server == null || query.trim().isEmpty) {
+    return Stream.value(const <String>[]);
+  }
+  return SearchDao(ref.watch(databaseProvider))
+      .likedTrackIds(server.id, query)
+      .watch()
+      .distinct(listEquals);
+});
+
 // ------------------------------------------------------------------ lyrics
 
 final lyricsRepositoryProvider = Provider<LyricsRepository?>((ref) {
