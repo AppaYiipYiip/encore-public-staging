@@ -198,7 +198,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 132 | N-01 | Share a song, album or playlist as a link | M | todo | none | 96 to 191 |
 | 133 | N-02 | Export a playlist as a file | S | todo | none | 96 to 192 |
 
-**Later** (23 items: future work to keep in mind and not bother with now, D-58; no estimate)
+**Later** (24 items: future work to keep in mind and not bother with now, D-58; no estimate)
 
 | Item | What | Size | Needs |
 |------|------|------|-------|
@@ -225,6 +225,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | P3-37 | Behind the scenes: updating the server says what it did | S | none |
 | N-29 | Behind the scenes: YouTube Music as a second source for the catalogue | L | P2-12 |
 | N-36 | Behind the scenes: the one-time repair of songs in other alphabets is deleted | S | P2-25 |
+| N-37 | Fix an imported playlist by reading its link again | M | P2-25 |
 
 **Done** (26 items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)
 
