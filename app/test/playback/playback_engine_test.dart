@@ -2270,6 +2270,65 @@ void main() {
       await h.dispose();
     });
 
+    // N-19 (owner, 13 Nov 2026: "with no network, pausing a song that is already downloaded shows a no connection error"; 15 Nov: "it still shows the
+    // bar in yellow when i pause"). NOT reproduced on build 156 on the A35 (Wi-Fi and data off, a downloaded song, pause: nothing at 1, 3 or 8 s; the
+    // bar the owner saw was the cover's tint). These tests PIN it: they pass on the code that was there, and a pause that starts talking about the
+    // connection turns them red. Nothing about a file on the phone needs the network, and a pause is the person's own act.
+    group('N-19: pausing a downloaded song says nothing about the connection',
+        () {
+      test('with no network', () async {
+        final h = await Harness.start();
+        h.resolver.local.add('t1');
+        await h.engine.playTracks(h.tracks.sublist(0, 3));
+        h.reachable = false;
+        h.notices.clear();
+
+        await h.engine.pause();
+
+        expect(h.backend.state.playing, isFalse);
+        expect(h.currentId, 't1', reason: 'the same song, paused');
+        expect(h.notices, isEmpty);
+
+        await h.engine.play();
+
+        expect(h.backend.state.playing, isTrue,
+            reason: 'and it plays again, still offline');
+        expect(h.notices, isEmpty);
+        await h.dispose();
+      });
+
+      test('with a network and a server that does not answer', () async {
+        final h = await Harness.start();
+        h.resolver.local.add('t1');
+        await h.engine.playTracks(h.tracks.sublist(0, 3));
+        h.resolver.serverAway = true;
+        h.notices.clear();
+
+        await h.engine.pause();
+        await h.engine.play();
+
+        expect(h.backend.state.playing, isTrue);
+        expect(h.notices, isEmpty);
+        await h.dispose();
+      });
+
+      test('when the song behind it is not downloaded and the network goes',
+          () async {
+        final h = await Harness.start();
+        h.resolver.local.add('t1');
+        await h.engine.playTracks(h.tracks.sublist(0, 3));
+        h.reachable = false;
+        await h.engine.networkChanged(online: false);
+        h.notices.clear();
+
+        await h.engine.pause();
+
+        expect(h.currentId, 't1');
+        expect(h.notices, isEmpty);
+        await h.dispose();
+      });
+    });
+
     test(
         'offline, the next song to play is not preloaded when it is not downloaded',
         () async {

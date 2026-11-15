@@ -277,10 +277,16 @@
   "at": "2026-11-15T03:54:18Z",
   "by": "lead (Claude Sonnet 5.5)"
  },
+ "N-19": {
+  "state": "built",
+  "evidence": "NOT REPRODUCED as a defect (15 Nov 2026, A35, build 156 against VM 108): a downloaded song playing, Wi-Fi and data off, pause: no message and no strip at 1, 3 or 8 s (the strip 'You're offline. Downloaded music still plays.' shows once when the network goes, not on the pause); with the server container stopped (network present): no strip in 40 s idle, nor on play and pause. The yellow bar the owner saw is the dark tint of the playing cover (Jinjer Outlander, gold): identical playing, paused and with the server away. PINNED by 3 engine tests in test/playback/playback_engine_test.dart (group 'N-19': no network, server away, the next song not downloaded and the network goes: pause says nothing and play resumes); they pass on the code that was there, no code changed. Built, not walked: the owner or the release-candidate walk confirms on a real phone.",
+  "at": "2026-11-15T08:54:52Z",
+  "by": "Claude"
+ },
  "N-31": {
   "state": "built",
   "evidence": "built, not walked: server tombstone_purge.py + migration 0016 (change_log.parent, stored import counts) + library.changes answers a gone id as deleted only when no row exists; the whole server suite, ruff, mypy and the Dart test of the saved response pass; the refs of a deleted playlist and an old import are retired by the janitor in one errand; nothing walked on VM 108 or a phone",
-  "at": "2026-11-15T09:17:14Z",
+  "at": "2026-11-15T09:28:39Z",
   "by": "Claude"
  }
 }
