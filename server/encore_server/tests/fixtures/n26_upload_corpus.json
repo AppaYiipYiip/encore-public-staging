@@ -198,14 +198,19 @@
   },
   {
    "id": "rec-019",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "DAN DA DAN Opening | Otonoke by Creepy Nuts",
    "uploader": "Crunchyroll",
-   "artist": "Crunchyroll",
-   "song": "DAN DA DAN Opening | Otonoke by Creepy Nuts",
-   "basis": "channel",
+   "artist": "Creepy Nuts",
+   "song": "Otonoke",
+   "basis": "title",
+   "before": {
+    "artist": "Crunchyroll",
+    "song": "DAN DA DAN Opening | Otonoke by Creepy Nuts",
+    "basis": "channel"
+   },
    "source": "recorded:n26/creepy-nuts-otonoke-dan-da-dan-opening-crunchyroll.videos.json",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): the audit's third string (B-125): a series label ending in Opening, a pipe, then `<Song> by <Artist>`; the song is bare 'Otonoke' because the series is context, and 'Otonoke' by Creepy Nuts is what a catalogue can match"
+   "why": "the audit's third string (B-125): a series label ending in Opening, a pipe, then `<Song> by <Artist>`; the song is bare 'Otonoke' because the series is context, and 'Otonoke' by Creepy Nuts is what a catalogue can match"
   },
   {
    "id": "rec-020",
@@ -242,14 +247,19 @@
   },
   {
    "id": "rec-023",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "DAN DA DAN Ending | TAIDADA by ZUTOMAYO",
    "uploader": "Crunchyroll",
-   "artist": "Crunchyroll",
-   "song": "DAN DA DAN Ending | TAIDADA by ZUTOMAYO",
-   "basis": "channel",
+   "artist": "ZUTOMAYO",
+   "song": "TAIDADA",
+   "basis": "title",
+   "before": {
+    "artist": "Crunchyroll",
+    "song": "DAN DA DAN Ending | TAIDADA by ZUTOMAYO",
+    "basis": "channel"
+   },
    "source": "recorded:n26/creepy-nuts-otonoke-dan-da-dan-opening-crunchyroll.videos.json",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): the same shape with 'Ending', recorded"
+   "why": "the same shape with 'Ending', recorded"
   },
   {
    "id": "rec-024",
@@ -2135,47 +2145,67 @@
   },
   {
    "id": "hand-048",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "Anime Opening | Stand By Me by Ben E. King",
    "uploader": "Anime Channel",
-   "artist": "Anime Channel",
-   "song": "Anime Opening | Stand By Me by Ben E. King",
-   "basis": "channel",
+   "artist": "Ben E. King",
+   "song": "Stand By Me",
+   "basis": "title",
+   "before": {
+    "artist": "Anime Channel",
+    "song": "Anime Opening | Stand By Me by Ben E. King",
+    "basis": "channel"
+   },
    "source": "hand",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): the credit is split on the LAST ' by ': 'Stand By Me' stays a song"
+   "why": "the credit is split on the LAST ' by ': 'Stand By Me' stays a song"
   },
   {
    "id": "hand-049",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "Spy x Family Opening | Mixed Nuts by Official HIGE DANdism",
    "uploader": "Crunchyroll",
-   "artist": "Crunchyroll",
-   "song": "Spy x Family Opening | Mixed Nuts by Official HIGE DANdism",
-   "basis": "channel",
+   "artist": "Official HIGE DANdism",
+   "song": "Mixed Nuts",
+   "basis": "title",
+   "before": {
+    "artist": "Crunchyroll",
+    "song": "Spy x Family Opening | Mixed Nuts by Official HIGE DANdism",
+    "basis": "channel"
+   },
    "source": "hand",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): constructed on the audit's shape"
+   "why": "constructed on the audit's shape"
   },
   {
    "id": "hand-050",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "Naruto Shippuden Ending 5 | Sign by FLOW",
    "uploader": "Funimation",
-   "artist": "Funimation",
-   "song": "Naruto Shippuden Ending 5 | Sign by FLOW",
-   "basis": "channel",
+   "artist": "FLOW",
+   "song": "Sign",
+   "basis": "title",
+   "before": {
+    "artist": "Funimation",
+    "song": "Naruto Shippuden Ending 5 | Sign by FLOW",
+    "basis": "channel"
+   },
    "source": "hand",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): a number after Ending"
+   "why": "a number after Ending"
   },
   {
    "id": "hand-051",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "Attack on Titan Opening 1 - Guren no Yumiya by Linked Horizon",
    "uploader": "Anime Fan",
-   "artist": "Attack on Titan Opening 1",
-   "song": "Guren no Yumiya by Linked Horizon",
+   "artist": "Linked Horizon",
+   "song": "Guren no Yumiya",
    "basis": "title",
+   "before": {
+    "artist": "Attack on Titan Opening 1",
+    "song": "Guren no Yumiya by Linked Horizon",
+    "basis": "title"
+   },
    "source": "hand",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): a dash after the label (`<Series> Opening - <Song> by <Artist>`): read as a series, not as the artist 'Attack on Titan Opening 1'"
+   "why": "a dash after the label (`<Series> Opening - <Song> by <Artist>`): read as a series, not as the artist 'Attack on Titan Opening 1'"
   },
   {
    "id": "hand-052",
@@ -2201,14 +2231,19 @@
   },
   {
    "id": "hand-054",
-   "kind": "leftover",
+   "kind": "fixed",
    "title": "Opening | Song by Artist",
    "uploader": "Some Channel",
-   "artist": "Some Channel",
-   "song": "Opening | Song by Artist",
-   "basis": "channel",
+   "artist": "Artist",
+   "song": "Song",
+   "basis": "title",
+   "before": {
+    "artist": "Some Channel",
+    "song": "Opening | Song by Artist",
+    "basis": "channel"
+   },
    "source": "hand",
-   "why": "slice 4 target (becomes `fixed` in the commit that builds the shape): a bare label word"
+   "why": "a bare label word"
   },
   {
    "id": "hand-055",

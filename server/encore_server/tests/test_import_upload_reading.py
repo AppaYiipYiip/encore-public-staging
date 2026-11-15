@@ -431,11 +431,27 @@ def test_KNOWN_LEFTOVER_a_title_that_names_the_song_first_is_read_artist_first_w
     assert reading_of("C2mTh6DPM_s") == ("Lionel Messi ★ Monaco", "Bad Bunny", "title")
 
 
-def test_KNOWN_LEFTOVER_the_audit_titles_that_need_the_shapes_of_slice_4_stay_under_their_channel() -> None:
-    """ARTE Concert (an en dash, then the broadcaster's own name) and Crunchyroll (a pipe and a "by" form) need the context shapes of slice 4. Until then
-    both are flagged `channel`: they are never taken for a performer by the picture and page guards."""
+def test_the_audits_series_title_is_filed_under_its_performer_not_under_its_channel() -> None:
+    """Slice 4 (a). Recorded: `DAN DA DAN Opening | Otonoke by Creepy Nuts`, a UGC upload of the channel Crunchyroll, was filed under "Crunchyroll" with the whole
+    title as the song. A series label that ends in Opening, a pipe and `<Song> by <Artist>` name the artist (basis `title`); the series is context, so the song
+    is "Otonoke"."""
+    assert reading_of("a4na2opArGY") == ("Creepy Nuts", "Otonoke", "title")
+    assert read_one(playlist_entry("a4na2opArGY")).uploader == "Crunchyroll"
+
+
+def test_KNOWN_LEFTOVER_the_arte_concert_title_stays_under_its_channel_because_a_live_credit_cannot_be_told_from_a_song_by_the_performer() -> (
+    None
+):
+    """Slice 4 (b), NOT BUILT. `Sepultura, live at Hellfest Open Air 2026 – ARTE Concert` (an en dash, then the broadcaster's own name) is flagged `channel`: it is
+    never taken for a performer by the picture and page guards. The same shape on the performer's own channel, `Bohemian Rhapsody, live at Wembley – Queen` on
+    "Queen" (right today, a row of the negative corpus), cannot be told apart by the title and the uploader, so a rule that files the first under Sepultura files
+    the second under "Bohemian Rhapsody" (`test_import_upload_corpus.py`, the last test, shows the two have the same features). The lead decides."""
     assert reading_of("_IIdj4ZXvko") == ("ARTE Concert", "Sepultura, live at Hellfest Open Air 2026", "channel")
-    assert reading_of("a4na2opArGY") == ("Crunchyroll", "DAN DA DAN Opening | Otonoke by Creepy Nuts", "channel")
+    assert upload("Bohemian Rhapsody, live at Wembley – Queen", "Queen") == (
+        "Queen",
+        "Bohemian Rhapsody, live at Wembley",
+        "channel",
+    )
 
 
 # --------------------------------------------------------------------------- the trust rule: what YouTube Music declares, and what it does not
@@ -609,11 +625,7 @@ def test_with_the_video_type_removed_every_entry_that_has_an_album_is_still_decl
             "ARTE Concert",
             ("ARTE Concert", "Sepultura, live at Hellfest Open Air 2026", "channel"),
         ),
-        (
-            "DAN DA DAN Opening | Otonoke by Creepy Nuts",
-            "Crunchyroll",
-            ("Crunchyroll", "DAN DA DAN Opening | Otonoke by Creepy Nuts", "channel"),
-        ),
+        ("DAN DA DAN Opening | Otonoke by Creepy Nuts", "Crunchyroll", ("Creepy Nuts", "Otonoke", "title")),
         ("The Leper Affinity", "Opeth - Topic", ("Opeth", "The Leper Affinity", "declared")),
     ],
 )
