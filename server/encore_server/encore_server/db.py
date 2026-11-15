@@ -105,6 +105,15 @@ class Database:
     def migrate(self, *, version: str = "dev", migrations: list[tuple[int, str, str]] | None = None) -> list[int]:
         """Applies what is pending; returns the versions applied. Raises [MigrationFailed] after restoring the backup."""
         pending_source = migrations if migrations is not None else self._migrations()
+        numbers = [m[0] for m in pending_source]
+        shared = sorted({n for n in numbers if numbers.count(n) > 1})
+        if shared:
+            # Two branches that start from one main both take the next free number. On a database that ran the first, the second would count as applied and
+            # its tables would be missing at run time with no error at all: refuse to start, and say which number.
+            raise MigrationFailed(
+                f"Two of the server's database steps have the same number ({', '.join(f'{n:04d}' for n in shared)}). This is a mistake in this version of the "
+                "server, not in your data: nothing was changed."
+            )
         conn = self.connect()
         try:
             conn.execute(
