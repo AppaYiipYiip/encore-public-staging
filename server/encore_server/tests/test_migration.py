@@ -140,6 +140,34 @@ def test_running_it_again_or_from_a_second_phone_makes_nothing_twice(rig: tuple[
     assert len(body["playlists"]) == 1 and len(body["likes"]) == 1 and len(body["entries"]) == 2
 
 
+def test_a_playlist_the_person_deleted_stays_deleted_when_it_is_brought_over_again_even_after_its_songs_were_purged(
+    rig: tuple[TestClient, FakeMusic],
+) -> None:
+    """N-31. A deleted playlist's songs are purged after 90 days (`tombstone_purge`) and its row is kept: the row is what tells a second 'bring over my
+    library' that this source playlist was already brought over (and deleted). Once its songs are gone the playlist looks 'empty', and without a rule of its
+    own the bring-over would try to fill the DELETED playlist, which refuses (`not_found`) and stops the whole bring-over for that person."""
+    client, music = rig
+    music.playlists = [{"id": "p1", "name": "Mix", "owner": "marwa"}, {"id": "p2", "name": "Second", "owner": "marwa"}]
+    music.entries = {"p1": [song(1), song(2)], "p2": [song(3)]}
+    migrate(client)
+    first = next(p for p in changes(client)["playlists"] if p["sourceId"] == "nd:p1")
+    assert client.delete(f"{V1}/playlists/{first['id']}", params=creds("marwa")).status_code == 200
+    db = client.app.state.services.db  # type: ignore[attr-defined]
+    with db.tx() as conn:  # what the purge does 90 days later
+        conn.execute("DELETE FROM playlist_entry WHERE playlist = ?", (first["id"],))
+
+    again = migrate(client)
+
+    assert again.status_code == 200, again.text
+    assert again.json()["report"] == {"likes": 0, "albums": 0, "artists": 0, "playlists": 0, "entries": 0, "unmatched": 0}
+    with db.read() as conn:
+        rows = conn.execute("SELECT id, deleted_at FROM playlist WHERE source_id = 'nd:p1'").fetchall()
+        assert conn.execute("SELECT COUNT(*) FROM playlist_entry WHERE playlist = ?", (first["id"],)).fetchone()[0] == 0
+    assert [r["id"] for r in rows] == [first["id"]] and rows[0]["deleted_at"] is not None, (
+        "one playlist, still deleted, nothing brought back"
+    )
+
+
 def test_a_song_the_scanner_already_linked_is_not_made_again(rig: tuple[TestClient, FakeMusic]) -> None:
     client, music = rig
     from encore_server import refs
