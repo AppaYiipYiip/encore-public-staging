@@ -1116,5 +1116,14 @@
    }
   ],
   "from": "agent"
+ },
+ "N-38": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a retagged song is not downloaded again",
+  "note": "Advisor ruling on the N-34 design (15 Nov 2026): refAudioKey (app/lib/data/downloads/fingerprint.dart:101) hashes the FILE SIZE, so a download of a song whose file the server rewrites (a retag, a move, the N-34 repair, N-26 slice 5) goes stale and is downloaded AGAIN: one re-download on Wi-Fi is accepted for N-34, but EVERY later repair that rewrites tags repeats it: a cost to the future (rule 1). Build an audio-only key (a hash of the audio stream or of the song's identity plus its audio length, never the tags), on the server and the phone, so a tag rewrite keeps every download valid. TRIGGER: built BEFORE any second tag-rewriting repair ships (N-26 slice 5 is the second). Not built now; N-34's first repair run accepts the one-time re-download.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }
