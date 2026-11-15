@@ -102,13 +102,26 @@ AssembledSearch assembleSearch(
   required SearchResults local,
   CatalogueResults? catalogue,
 }) {
+  // The artists a LIBRARY song may be "by" when its title begins with their name (P1-07, 15 Nov: "LANDMVRKS - CONCERT 4K ..." saved under the
+  // uploading channel): the library's own, and the catalogue's only when the person has them or they are well known. A namesake with a handful of
+  // fans ("Hotel California", 7,812) must not turn "Hotel California - 2013 Remaster" by Eagles into an upload. The catalogue's own songs are never
+  // reread this way: Deezer names the real artist (B-46: the phone matches only what is on the phone).
+  final knownArtists = <String>{
+    for (final a in local.artists) searchKey(a.name),
+    for (final a in catalogue?.artists ?? const <CatalogueArtist>[])
+      if (catalogue!.ownedArtists.containsKey(a.id) ||
+          (a.fans ?? 0) >= wellKnownFans)
+        searchKey(a.name),
+  };
+
   // ---- songs: the library's first, then the catalogue's that the library does not have (the same song twice is one row)
   final songs = <Ranked<SongHit>>[];
   final ownedSongs = <String>{};
   for (final t in local.tracks) {
     ownedSongs.add(matchKey(t.artist, t.title));
     // The library's own search found it; a weak word match still belongs in the list, below the strong ones.
-    final score = _atLeast(songMatch(query, artist: t.artist, title: t.title));
+    final score = _atLeast(songMatch(query,
+        artist: t.artist, title: t.title, knownArtists: knownArtists));
     songs.add(Ranked(SongHit.local(t, score), score, owned: true));
   }
   for (final t in catalogue?.tracks ?? const <CatalogueTrack>[]) {

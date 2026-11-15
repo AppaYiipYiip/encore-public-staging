@@ -277,10 +277,16 @@
   "at": "2026-11-15T03:54:18Z",
   "by": "lead (Claude Sonnet 5.5)"
  },
+ "N-19": {
+  "state": "built",
+  "evidence": "NOT REPRODUCED as a defect (15 Nov 2026, A35, build 156 against VM 108): a downloaded song playing, Wi-Fi and data off, pause: no message and no strip at 1, 3 or 8 s (the strip 'You're offline. Downloaded music still plays.' shows once when the network goes, not on the pause); with the server container stopped (network present): no strip in 40 s idle, nor on play and pause. The yellow bar the owner saw is the dark tint of the playing cover (Jinjer Outlander, gold): identical playing, paused and with the server away. PINNED by 3 engine tests in test/playback/playback_engine_test.dart (group 'N-19': no network, server away, the next song not downloaded and the network goes: pause says nothing and play resumes); they pass on the code that was there, no code changed. Built, not walked: the owner or the release-candidate walk confirms on a real phone.",
+  "at": "2026-11-15T08:54:52Z",
+  "by": "Claude"
+ },
  "N-32": {
   "state": "built",
   "evidence": "built in PR #89, NOT walked (fakes only, no device): drawing S-15 first (field at rest + 7 find frames, commit 7855864); Liked Songs has the S-17 'Find in playlist' field; SearchDao.likedTrackIds shares Search's one matcher; ListFinder + _FindingPage shared with the playlist page; 15 widget tests (13 failed on the old code, 2 guards) + 8 data tests + a perf budget (10 ms for 2,000 liked of 50k) pass; whole app suite 2924 passed, playlist find tests unchanged and green",
-  "at": "2026-11-15T08:53:09Z",
+  "at": "2026-11-15T09:26:36Z",
   "by": "Claude"
  }
 }
