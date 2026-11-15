@@ -1,0 +1,9 @@
+{
+ "id": "20261115T082651Z-agent-4257",
+ "item": "N-19",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T08:26:51Z",
+ "type": "note",
+ "body": "15 Nov 2026, ENGINEERING CHECK on the A35 (build 156 against VM 108; not the release-candidate pair; nothing marked walked). The owner wrote: \"back on the a35 it still shows the bar in yellow when i pause, as if the server is not on.\"\n(1) NOT REPRODUCED as a message. A DOWNLOADED song (Get Lucky, Liked Songs) playing, then Wi-Fi and data switched off (airplane mode): the strip \"You're offline. Downloaded music still plays.\" appears when the network goes (once, a few seconds), and pausing afterwards shows NOTHING at 1, 3 or 8 seconds (no error, no strip). With the Encore container stopped instead (the server away, the phone online): 40 s idle, then play and pause: no strip in any of the three states. So pausing a downloaded song offline does not say there is no connection in this build; N-19 stays 'todo' only because nobody has marked it: it needs a regression test that pins 'pausing a downloaded song offline shows nothing' before it is marked built (not done yet).\n(2) THE YELLOW BAR IS THE COVER, not the server. The player bar is a dark tint of the playing cover (mini_player.dart, artworkSwatchProvider). The A35 held Jinjer's 'Outlander', a gold cover: a gold-brown bar, identical playing, paused and with the server away (screenshots compared). The connection strip is a different thing: a thin grey row above the bar with a cloud icon and words. The owner read the tint as a warning: a design question for the advisor (keep the tint, it is the Spotify look; the words of the real strip say what is wrong), not a defect.\n(3) The test server (VM 108) is OFF whenever no agent is working, so a song that is only streamed cannot play then, and the app says so with words (\"Can't reach your server.\"). Said to the owner in plain words."
+}

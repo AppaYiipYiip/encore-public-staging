@@ -1,0 +1,9 @@
+{
+ "id": "20261115T082652Z-agent-5a46",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T08:26:52Z",
+ "type": "note",
+ "body": "15 Nov 2026, THE OWNER IS CONFUSED THAT THE WORK STOPPED while the plan has 132 things left (his words: \"so many things left to do, im confused you stopped\"). The restart-night list was finished and the end-of-night note said 'next = N-31', which the lead read as a place to stop. STANDING RULE (advisor, 15 Nov): when a list is finished, take the next item of docs/roadmap/order.json WITH the advisor and carry on; a handoff note is a place to resume, never a reason to end the session. Work order set today: N-19 (pin it with a test), the P1-07 ranking fix, Find on Liked Songs (N-32, drawing first), then down the order list; at most two helpers at once.\nA35 RULE (owner): keep only the LATEST Encore on the A35. Found on 15 Nov: two Encore icons, one with a blue badge = Samsung's Dual Messenger copy (user 95) of the SAME build 156, never opened: not an older build, but the owner may have opened it. Removed with `pm uninstall --user 95 app.encore.player`; every install from now on is `adb install --user 0 -r`, followed by `pm list packages --user 95 | grep encore` (docs/guides/dev-gotchas.md)."
+}
