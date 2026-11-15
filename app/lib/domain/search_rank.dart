@@ -63,10 +63,32 @@ const double typoArtistScore = 0.6;
 /// not the artist with 7,812 fans), not enough to go below a song that is only partial ([partialSongCeiling], at most 0.8).
 const double barelyKnownArtistPenalty = 0.1;
 
+/// The spaced dash of an upload's title: "Artist - Title", "Artist – Title".
+final RegExp _spacedDash = RegExp(r'\s[-–—]\s');
+
+/// An upload is usually named "Artist - Title ...", and a song saved from one before N-26 kept the uploading channel as its artist (B-125):
+/// "LANDMVRKS - CONCERT 4K - ..." by "slash musique". When the words before the first spaced dash are exactly the name of an artist that is one
+/// of the answers to this search ([knownArtists], each given through [searchKey]), the song is BY that artist: the name is an artist word
+/// and the rest is the title. Only a name we know is taken: "Hotel California - 2013 Remaster" is a song with a suffix, not an upload by
+/// "Hotel California", and with no such artist in the answers nothing changes. A second layer over the stored rows: it stays right after
+/// N-26 slice 5 has refiled them (their title then no longer starts with the artist's name).
+({String name, String body})? _leadingArtist(
+    String title, Set<String> knownArtists) {
+  if (knownArtists.isEmpty) return null;
+  final dash = _spacedDash.firstMatch(title);
+  if (dash == null) return null;
+  final name = _plain(title.substring(0, dash.start));
+  if (name.isEmpty || !knownArtists.contains(name)) return null;
+  return (name: name, body: _plainTitle(title.substring(dash.end)));
+}
+
 /// 0 to 1: how well "[artist] [title]" answers [query]. 1 is exactly artist and title (in either order), 0.95 exactly the
 /// title, then "artist title" (0.8 to 0.94), then every typed word found (shorter songs first, never above [partialSongCeiling]), and
 /// below 0.4 only some of the words. The whole scale is explained at [partialSongCeiling].
-double songMatch(String query, {String? artist, required String title}) {
+double songMatch(String query,
+    {String? artist,
+    required String title,
+    Set<String> knownArtists = const {}}) {
   final q = _plain(query);
   if (q.isEmpty) return 0;
   final t = _plainTitle(title);
@@ -76,8 +98,14 @@ double songMatch(String query, {String? artist, required String title}) {
   if (q == t) return 0.95;
 
   final typed = q.split(' ');
-  final titleWords = t.split(' ').where((w) => w.isNotEmpty).toList();
-  final artistWords = a.split(' ').where((w) => w.isNotEmpty).toList();
+  // A title that begins with the name of an artist among the answers: the name is the artist's, the rest the title ([_leadingArtist]).
+  final lead = _leadingArtist(title, knownArtists);
+  final body = lead?.body ?? t;
+  final titleWords = body.split(' ').where((w) => w.isNotEmpty).toList();
+  final artistWords = [
+    ...a.split(' ').where((w) => w.isNotEmpty),
+    if (lead != null) ...lead.name.split(' ').where((w) => w.isNotEmpty),
+  ];
   final all = [...titleWords, ...artistWords];
   final found = typed.where((w) => all.any((x) => x.startsWith(w))).length;
   if (found < typed.length) return 0.4 * found / typed.length;
@@ -95,7 +123,7 @@ double songMatch(String query, {String? artist, required String title}) {
   // exact title, an exact album and an exact artist, whatever the parts add up to: a song of Jinjer named "Jinjer - Pisces" has the
   // band's name twice and is still not the band.
   var score = 0.5;
-  if (t.startsWith(q)) score += 0.13;
+  if (body.startsWith(q)) score += 0.13;
   if (_covers(typed, titleWords)) score += 0.09;
   if (_covers(typed, artistWords)) score += 0.03;
   // The tighter the match, the higher: "Instant Crush" before "Instant Crush (Live at Wembley)".

@@ -102,18 +102,27 @@ AssembledSearch assembleSearch(
   required SearchResults local,
   CatalogueResults? catalogue,
 }) {
+  // The artists among the answers: a song titled "Name - ..." by an uploading channel is a song BY Name when Name is one of them (P1-07, 15 Nov).
+  final knownArtists = <String>{
+    for (final a in local.artists) searchKey(a.name),
+    for (final a in catalogue?.artists ?? const <CatalogueArtist>[])
+      searchKey(a.name),
+  };
+
   // ---- songs: the library's first, then the catalogue's that the library does not have (the same song twice is one row)
   final songs = <Ranked<SongHit>>[];
   final ownedSongs = <String>{};
   for (final t in local.tracks) {
     ownedSongs.add(matchKey(t.artist, t.title));
     // The library's own search found it; a weak word match still belongs in the list, below the strong ones.
-    final score = _atLeast(songMatch(query, artist: t.artist, title: t.title));
+    final score = _atLeast(songMatch(query,
+        artist: t.artist, title: t.title, knownArtists: knownArtists));
     songs.add(Ranked(SongHit.local(t, score), score, owned: true));
   }
   for (final t in catalogue?.tracks ?? const <CatalogueTrack>[]) {
     if (ownedSongs.contains(matchKey(t.artistName, t.title))) continue;
-    final score = songMatch(query, artist: t.artistName, title: t.title);
+    final score = songMatch(query,
+        artist: t.artistName, title: t.title, knownArtists: knownArtists);
     songs.add(Ranked(SongHit.catalogue(t, score), score, owned: false));
   }
   final rankedSongs = rankHits(songs);
