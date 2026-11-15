@@ -121,7 +121,9 @@ def test_the_migration_that_stores_the_artist_facts_only_adds_two_columns_and_no
 
 def test_the_artist_facts_migration_leaves_every_old_row_as_it_was_and_takes_a_backup_first(tmp_path: Path) -> None:
     db = Database(tmp_path / "encore.db")
-    db.migrate(version="before", migrations=[m for m in Database._migrations() if m[0] <= 13])
+    # Exactly the steps up to the one under test: a migration added LATER (N-27's 0015 came the next day) must not change what this test says.
+    up_to_this_one = [m for m in Database._migrations() if m[0] <= 14]
+    db.migrate(version="before", migrations=[m for m in up_to_this_one if m[0] <= 13])
     with db.tx() as conn:
         for number, (title, artists, video) in enumerate(
             [
@@ -150,7 +152,7 @@ def test_the_artist_facts_migration_leaves_every_old_row_as_it_was_and_takes_a_b
         before = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]
         width = len(before[0])
 
-    assert db.migrate(version="n26-slice2") == [14]
+    assert db.migrate(version="n26-slice2", migrations=up_to_this_one) == [14]
 
     with db.read() as conn:
         after = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]
@@ -171,4 +173,4 @@ def test_the_artist_facts_migration_leaves_every_old_row_as_it_was_and_takes_a_b
         )
     finally:
         copy.close()
-    assert db.migrate() == [], "and a second run does nothing"
+    assert db.migrate(migrations=up_to_this_one) == [], "and a second run does nothing"
