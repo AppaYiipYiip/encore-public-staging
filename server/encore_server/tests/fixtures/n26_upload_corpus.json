@@ -838,7 +838,7 @@
    "song": "Sepultura, live at Hellfest Open Air 2026",
    "basis": "channel",
    "source": "recorded:n26/sepultura-live-at-hellfest-open-air-arte-concert.videos.json",
-   "why": "SHAPE (b), NOT BUILT: 'Sepultura, live at Hellfest Open Air 2026 – ARTE Concert' cannot be told from 'Bohemian Rhapsody, live at Wembley – Queen' on the channel Queen (the hand rows with COUNTER-EXAMPLE, right today): the same form, the right side is the uploader alone; reading it as a performer's credit would change those negative rows. The lead decides (see the N-26 board note)"
+   "why": "SHAPE (b), DECIDED NOT TO READ (the advisor, 15 Nov: option 3, owned by N-28): 'Sepultura, live at Hellfest Open Air 2026 – ARTE Concert' cannot be told from 'Bohemian Rhapsody, live at Wembley – Queen' on the channel Queen (the hand rows marked COUNTER-EXAMPLE, right today): the same form, the right side is the uploader alone. A length threshold is a guess that needs recordings; today's basis `channel` is safe: no artist page, no picture, no catalogue question until N-28 names the artist"
   },
   {
    "id": "rec-080",
@@ -953,7 +953,7 @@
    "song": "The Young Gods, live at Hellfest Open Air 2026",
    "basis": "channel",
    "source": "recorded:n26/sepultura-live-at-hellfest-open-air-arte-concert.videos.json",
-   "why": "SHAPE (b), NOT BUILT: the same title shape as the first ARTE row (see there)"
+   "why": "SHAPE (b), DECIDED NOT TO READ, owned by N-28: the same title shape as the first ARTE row (see there)"
   },
   {
    "id": "rec-091",
@@ -2145,19 +2145,14 @@
   },
   {
    "id": "hand-048",
-   "kind": "fixed",
+   "kind": "leftover",
    "title": "Anime Opening | Stand By Me by Ben E. King",
    "uploader": "Anime Channel",
-   "artist": "Ben E. King",
-   "song": "Stand By Me",
-   "basis": "title",
-   "before": {
-    "artist": "Anime Channel",
-    "song": "Anime Opening | Stand By Me by Ben E. King",
-    "basis": "channel"
-   },
+   "artist": "Anime Channel",
+   "song": "Anime Opening | Stand By Me by Ben E. King",
+   "basis": "channel",
    "source": "hand",
-   "why": "the credit is split on the LAST ' by ': 'Stand By Me' stays a song"
+   "why": "two ' by ' in the credit ('Stand By Me by Ben E. King' and 'Song by Death by Stereo' cannot be told apart by the string): the credit is ambiguous, so nobody is named and the title reads as before (the lead's ruling 3); the uploader is shown; N-28"
   },
   {
    "id": "hand-049",
@@ -2193,19 +2188,14 @@
   },
   {
    "id": "hand-051",
-   "kind": "fixed",
+   "kind": "leftover",
    "title": "Attack on Titan Opening 1 - Guren no Yumiya by Linked Horizon",
    "uploader": "Anime Fan",
-   "artist": "Linked Horizon",
-   "song": "Guren no Yumiya",
+   "artist": "Attack on Titan Opening 1",
+   "song": "Guren no Yumiya by Linked Horizon",
    "basis": "title",
-   "before": {
-    "artist": "Attack on Titan Opening 1",
-    "song": "Guren no Yumiya by Linked Horizon",
-    "basis": "title"
-   },
    "source": "hand",
-   "why": "a dash after the label (`<Series> Opening - <Song> by <Artist>`): read as a series, not as the artist 'Attack on Titan Opening 1'"
+   "why": "a DASH after the label is NOT read (the lead's ruling 2): a band or show name that ends in Opening or Ending before a dash and a song with 'by' (rows 'Happy Ending - Born by the River', 'Grand Opening - Nothing by Chance') would be filed under the wrong, trusted artist; the artist shown is the series; N-28"
   },
   {
    "id": "hand-052",
@@ -2472,6 +2462,160 @@
    "song": "The Sound of Silence",
    "basis": "title",
    "source": "hand"
+  },
+  {
+   "id": "hand-079",
+   "kind": "negative",
+   "title": "Happy Ending - Born by the River",
+   "uploader": "Some Uploader",
+   "artist": "Happy Ending",
+   "song": "Born by the River",
+   "basis": "title",
+   "source": "hand",
+   "why": "a name ending in Ending, a dash, a song with 'by'"
+  },
+  {
+   "id": "hand-080",
+   "kind": "negative",
+   "title": "Grand Opening - Nothing by Chance",
+   "uploader": "Some Uploader",
+   "artist": "Grand Opening",
+   "song": "Nothing by Chance",
+   "basis": "title",
+   "source": "hand",
+   "why": "a name ending in Opening, a dash, a song with 'by'"
+  },
+  {
+   "id": "hand-081",
+   "kind": "negative",
+   "title": "Grand Opening - Nothing by Chance",
+   "uploader": "Grand Opening",
+   "artist": "Grand Opening",
+   "song": "Nothing by Chance",
+   "basis": "title",
+   "source": "hand",
+   "why": "the same on the band's own channel"
+  },
+  {
+   "id": "hand-082",
+   "kind": "negative",
+   "title": "Hollow Ending - Standing By You",
+   "uploader": "Hollow Ending Official",
+   "artist": "Hollow Ending",
+   "song": "Standing By You",
+   "basis": "title",
+   "source": "hand",
+   "why": "'By' with a capital in the song"
+  },
+  {
+   "id": "hand-083",
+   "kind": "leftover",
+   "title": "Gilmore Girls Opening - Stand By Me",
+   "uploader": "Some Uploader",
+   "artist": "Gilmore Girls Opening",
+   "song": "Stand By Me",
+   "basis": "title",
+   "source": "hand",
+   "why": "a label that ends in Opening before a DASH is not read: the artist shown is the show (N-28); the dash form was dropped because rows like this one flipped to the artist 'Me'"
+  },
+  {
+   "id": "hand-084",
+   "kind": "negative",
+   "title": "كينو Ending - Born by the River",
+   "uploader": "كينو",
+   "artist": "كينو Ending",
+   "song": "Born by the River",
+   "basis": "title",
+   "source": "hand",
+   "why": "Arabic name, Latin 'Ending' and 'by'"
+  },
+  {
+   "id": "hand-085",
+   "kind": "negative",
+   "title": "Кино Ending - Born by the River",
+   "uploader": "Кино",
+   "artist": "Кино Ending",
+   "song": "Born by the River",
+   "basis": "title",
+   "source": "hand",
+   "why": "Russian name, Latin 'Ending' and 'by'"
+  },
+  {
+   "id": "hand-086",
+   "kind": "negative",
+   "title": "ヨルシカ Opening - Nothing by Chance",
+   "uploader": "ヨルシカ",
+   "artist": "ヨルシカ Opening",
+   "song": "Nothing by Chance",
+   "basis": "title",
+   "source": "hand",
+   "why": "Japanese name, Latin 'Opening' and 'by'"
+  },
+  {
+   "id": "hand-087",
+   "kind": "negative",
+   "title": "Happy Ending | Born by the River",
+   "uploader": "Happy Ending",
+   "artist": "Happy Ending",
+   "song": "Happy Ending | Born by the River",
+   "basis": "channel",
+   "source": "hand",
+   "why": "the label is the uploader's own name"
+  },
+  {
+   "id": "hand-088",
+   "kind": "negative",
+   "title": "Grand Opening | Nothing by Chance",
+   "uploader": "Grand Opening Official",
+   "artist": "Grand Opening Official",
+   "song": "Grand Opening | Nothing by Chance",
+   "basis": "channel",
+   "source": "hand",
+   "why": "the label is the uploader's own name, Official ending"
+  },
+  {
+   "id": "hand-089",
+   "kind": "negative",
+   "title": "Кино Ending | Born by the River",
+   "uploader": "Кино Ending",
+   "artist": "Кино Ending",
+   "song": "Кино Ending | Born by the River",
+   "basis": "channel",
+   "source": "hand",
+   "why": "Russian, the label is the uploader's own name"
+  },
+  {
+   "id": "hand-090",
+   "kind": "negative",
+   "title": "Mozart - Opening | Overture by Karajan",
+   "uploader": "Some Channel",
+   "artist": "Mozart",
+   "song": "Opening | Overture by Karajan",
+   "basis": "title",
+   "source": "hand",
+   "why": "a separator before the pipe: the title already reads Artist - Song"
+  },
+  {
+   "id": "hand-091",
+   "kind": "negative",
+   "title": "Ed Sheeran - Ending | Song by Somebody",
+   "uploader": "Some Channel",
+   "artist": "Ed Sheeran",
+   "song": "Ending | Song by Somebody",
+   "basis": "title",
+   "source": "hand",
+   "why": "same, with Ending"
+  },
+  {
+   "id": "hand-092",
+   "kind": "leftover",
+   "title": "Series Opening | Song by Death by Stereo",
+   "uploader": "Crunchyroll",
+   "artist": "Crunchyroll",
+   "song": "Series Opening | Song by Death by Stereo",
+   "basis": "channel",
+   "source": "hand",
+   "why": "two ' by ' in the credit: ambiguous, nobody is named (as the row 'Stand By Me by Ben E. King'); N-28"
   }
  ]
 }

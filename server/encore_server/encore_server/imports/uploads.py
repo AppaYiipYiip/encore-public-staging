@@ -7,8 +7,8 @@ picture look-up. This module is the ONE door every reader goes through (YouTube 
 catalogue search) and says, for each upload, **who the artist is and how that was decided** (the `basis`):
 
 * `declared`: the source says so: a song of the catalogue (YouTube's own "Topic" audio), a Spotify or file description, an official music video's credit.
-* `title`: the title names the performer ("Artist - Song"; or "<Series> Opening | Song by Artist", the one shape of context that is read). The channel only
-  breaks the tie between the two sides, and only when it is a WHOLE NAME of a side (never a substring: "kexp" is inside "(Live on KEXP)").
+* `title`: the title names the performer ("Artist - Song"; or "<Series> Opening | Song by Artist", the one shape of context that is read, with a pipe and
+  one "by"). The channel only breaks the tie between the two sides, and only when it is a WHOLE NAME of a side (never a substring: "kexp" is inside "(Live on KEXP)").
 * `channel`: nothing names a performer, so the uploader stays as the visible artist, exactly what YouTube Music shows for the upload, flagged. This is the one
   named stop-gap (U1 of the design): a personal account whose title names nobody looks the same whether it is the band's own or a fan's. Removal trigger: the
   catalogue naming the artist of a song by its title (N-28).
@@ -52,9 +52,10 @@ _FIRST_ARTIST = re.compile(r"\s*(?:,|&|\bx\b|\bfeat\.?\b|\bft\.?\b|\bfeaturing\b
 #: ("Jay-Z" and "col·legi" have none).
 _SEPARATOR = re.compile(r"\s+[-‐-―−·•]\s+")
 _OPEN, _CLOSE = "([{", ")]}"
-#: Where a series label ends: a pipe (a section break, which is NOT a separator between an artist and a song: "Chopin - Nocturne Op. 9 No. 2 | Piano") or a
-#: separator. Used only by `_series_credit`.
-_SERIES_BREAK = re.compile(rf"\s*\|\s*|{_SEPARATOR.pattern}")
+#: Where a series label ends: a PIPE only (a section break, which is NOT a separator between an artist and a song: "Chopin - Nocturne Op. 9 No. 2 | Piano"). A
+#: dash is not read: before a dash a name ending in Opening or Ending is a band or a show ("Happy Ending - Born by the River", "Grand Opening - Nothing by
+#: Chance"), and the rule filed those under "the River" and "Chance" (the corpus rows of slice 4). Used only by `_series_credit`.
+_SERIES_BREAK = re.compile(r"\s*\|\s*")
 #: A series label ends in the word Opening or Ending, with a number after it: "DAN DA DAN Opening", "Naruto Shippuden Ending 5". The abbreviations OP and ED
 #: are NOT read: they are what broke "Chopin - Nocturne Op. 9 No. 2" and "Ed Sheeran - Stand By Me" when the shape was first tried as a word list.
 _SERIES_LABEL = re.compile(r"\b(?:opening|ending)(?:\s*\d{1,2})?$", re.IGNORECASE)
@@ -146,22 +147,31 @@ def _split(raw_title: str, separator: re.Pattern[str] = _SEPARATOR) -> tuple[str
     return None
 
 
-def _series_credit(raw_title: str) -> tuple[str, str] | None:
-    """`DAN DA DAN Opening | Otonoke by Creepy Nuts` -> `("Creepy Nuts", "Otonoke")`: a series label that ends in Opening or Ending, a pipe or a dash, then
-    `<Song> by <Artist>`. `None` unless EVERY part is there, so that nothing else changes: no label word at the end of the first segment (a bare "by" is not a
-    shape: "Stand By Me" is a song), no credit, or a credit that is not a clean name (a bracket, a pipe or a quote left in it names nobody: a half-clean name
-    would file the song under a wrong, trusted artist, which is worse than the uploader flagged `channel`). The credit is split on the LAST " by ": a song with
-    the word in it ("Stand By Me by Ben E. King") stays whole; an artist with the word in it ("Death by Stereo") is cut, which the string cannot tell apart (N-28).
-    The series is context and is dropped from the song: "Otonoke" is what a catalogue can match."""
+def _series_credit(raw_title: str, channel: str) -> tuple[str, str] | None:
+    """`DAN DA DAN Opening | Otonoke by Creepy Nuts` -> `("Creepy Nuts", "Otonoke")`: a series label that ends in Opening or Ending, a pipe, then
+    `<Song> by <Artist>`. `None` unless EVERY part is there, so that nothing else changes (each guard is a row of the negative corpus):
+    no label word at the end of the first segment (a bare "by" is not a shape: "Stand By Me" is a song), or a separator inside that segment (the title already
+    reads `Artist - Song`); a label that is the uploader's own name ("Happy Ending |
+    Born by the River" on the channel Happy Ending is a band, not a series); no credit, or MORE THAN ONE " by " in it ("Stand By Me by Ben E. King" and "Song by
+    Death by Stereo" cannot be told apart by the string, so nobody is named); a credit that is not a clean name (a bracket, a pipe or a quote left in it: a
+    half-clean name would file the song under a wrong, trusted artist, which is worse than the uploader flagged `channel`). A dash after the label is not read
+    (see `_SERIES_BREAK`). The series is context and is dropped from the song: "Otonoke" is what a catalogue can match."""
     sides = _split(raw_title, _SERIES_BREAK)
-    if sides is None or _SERIES_LABEL.search(clean_title(sides[0])) is None:
+    if sides is None:
+        return None
+    if _split(sides[0]) is not None:
+        return None  # a separator before the pipe: the title already reads `Artist - Song` ("Mozart - Opening | Overture by Karajan")
+    label = clean_title(sides[0])
+    if _SERIES_LABEL.search(label) is None:
+        return None
+    uploader = _channel_key(channel)
+    if uploader and uploader == _name_key(label):
         return None
     credits = list(_BY.finditer(sides[1]))
-    if not credits:
+    if len(credits) != 1:
         return None
-    last = credits[-1]
-    song = clean_title(sides[1][: last.start()])
-    artist = clean_title(sides[1][last.end() :])
+    song = clean_title(sides[1][: credits[0].start()])
+    artist = clean_title(sides[1][credits[0].end() :])
     if not song or not artist or _NOT_A_NAME.search(artist):
         return None
     return artist, song
@@ -223,7 +233,7 @@ def read_upload(raw_title: str, uploader: str) -> Reading:
     channel = (uploader or "").strip()
     if is_topic(channel):
         return Reading((plain_name(channel),), clean_title(raw_title), DECLARED)
-    credit = _series_credit(raw_title)
+    credit = _series_credit(raw_title, channel)
     if credit is not None:
         return Reading((credit[0],), credit[1], TITLE, channel or None)
     sides = _real_split(raw_title)

@@ -131,7 +131,7 @@ def test_P2_25_a_name_in_another_alphabet_is_read_right_although_the_servers_fol
     assert ascii_fold("فيروز").strip() == ""  # Arabic: the old trap, still there
 
 
-# --------------------------------------------------------------------------- why the live-credit shape was NOT built (the finding for the lead)
+# --------------------------------------------------------------------------- why the live-credit shape is NOT read (decided: left to N-28)
 
 
 def live_credit_features(title: str, uploader: str) -> tuple[bool, bool]:
@@ -150,9 +150,10 @@ def live_credit_features(title: str, uploader: str) -> tuple[bool, bool]:
 
 def test_a_live_credit_shape_cannot_tell_the_broadcaster_from_the_performer_so_it_is_not_built() -> None:
     """The ARTE rows and the performer-uploaded counter-examples (right today) have the SAME features, so no rule that reads only the title and the uploader can
-    fix the first without changing the second. The corpus therefore refuses shape (b) of the design: the ARTE rows are `leftover`, the counter-examples stay
-    `negative`. The lead decides (N-26 board note); a discriminator from outside the title (the entry's length: a concert is long) would need the readers to pass it."""
-    arte = [row for row in ROWS if row.get("why", "").startswith("SHAPE (b), NOT BUILT")]
+    fix the first without changing the second. The corpus therefore refuses shape (b) of the design: the ARTE rows are `leftover` (owner N-28, the catalogue names
+    the artist by the title), the counter-examples stay `negative`. Decided on 15 Nov (the advisor, option 3): a length threshold would be a guess that needs
+    recordings no helper may make, and today's basis `channel` is safe (no artist page, no picture, no catalogue question)."""
+    arte = [row for row in ROWS if row.get("why", "").startswith("SHAPE (b), DECIDED NOT TO READ")]
     performer = [row for row in ROWS if row["source"] == "hand" and "COUNTER-EXAMPLE" in row.get("why", "")]
     assert len(arte) == 2, [row["title"] for row in arte]
     assert len(performer) == 4

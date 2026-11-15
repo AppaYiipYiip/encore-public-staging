@@ -442,10 +442,10 @@ def test_the_audits_series_title_is_filed_under_its_performer_not_under_its_chan
 def test_KNOWN_LEFTOVER_the_arte_concert_title_stays_under_its_channel_because_a_live_credit_cannot_be_told_from_a_song_by_the_performer() -> (
     None
 ):
-    """Slice 4 (b), NOT BUILT. `Sepultura, live at Hellfest Open Air 2026 – ARTE Concert` (an en dash, then the broadcaster's own name) is flagged `channel`: it is
+    """Slice 4 (b), NOT READ on purpose (decided 15 Nov, owner of the fix: N-28). `Sepultura, live at Hellfest Open Air 2026 – ARTE Concert` (an en dash, then the broadcaster's own name) is flagged `channel`: it is
     never taken for a performer by the picture and page guards. The same shape on the performer's own channel, `Bohemian Rhapsody, live at Wembley – Queen` on
     "Queen" (right today, a row of the negative corpus), cannot be told apart by the title and the uploader, so a rule that files the first under Sepultura files
-    the second under "Bohemian Rhapsody" (`test_import_upload_corpus.py`, the last test, shows the two have the same features). The lead decides."""
+    the second under "Bohemian Rhapsody" (`test_import_upload_corpus.py`, the last test, shows the two have the same features)."""
     assert reading_of("_IIdj4ZXvko") == ("ARTE Concert", "Sepultura, live at Hellfest Open Air 2026", "channel")
     assert upload("Bohemian Rhapsody, live at Wembley – Queen", "Queen") == (
         "Queen",

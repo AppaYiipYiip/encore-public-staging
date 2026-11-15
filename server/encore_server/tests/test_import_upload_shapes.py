@@ -1,9 +1,10 @@
 """N-26 slice 4: the series label shape of the upload reader (docs/tasks/P2-songs-as-references.md, "N-26", slice 4).
 
-`<Series> Opening | <Song> by <Artist>` (a pipe, or a dash, after a label that ends in Opening or Ending) names the artist after "by": "DAN DA DAN Opening |
-Otonoke by Creepy Nuts" is "Otonoke" by Creepy Nuts, not a song of the channel Crunchyroll. The rule is deliberately NARROW (its first, wider form, any "by",
-"op", "ed" or "ost", broke good titles: see `test_import_upload_corpus.py`, whose 235 rows no rule may change). Each case here is a title, who uploaded it
-and what must come out; the near misses are as important as the hits.
+`<Series> Opening | <Song> by <Artist>` (a PIPE after a label that ends in Opening or Ending, and exactly one "by") names the artist after "by": "DAN DA DAN
+Opening | Otonoke by Creepy Nuts" is "Otonoke" by Creepy Nuts, not a song of the channel Crunchyroll. The rule is deliberately NARROW (its first, wider form,
+any "by", "op", "ed" or "ost", broke good titles, and a DASH after the label filed "Happy Ending - Born by the River" under "the River": see
+`test_import_upload_corpus.py`, whose rows no rule may change). Each case here is a title, who uploaded it and what must come out; the near misses are as
+important as the hits.
 
 No I/O, no network.
 """
@@ -40,22 +41,9 @@ def upload(title: str, uploader: str) -> tuple[str, str, str]:
             "Crunchyroll",
             ("Official HIGE DANdism", "Mixed Nuts", "title"),
         ),
-        # a dash after the label reads the same as a pipe
-        (
-            "Attack on Titan Opening 1 - Guren no Yumiya by Linked Horizon",
-            "Anime Fan",
-            ("Linked Horizon", "Guren no Yumiya", "title"),
-        ),
-        (
-            "Attack on Titan Opening 1 – Guren no Yumiya by Linked Horizon",
-            "Anime Fan",
-            ("Linked Horizon", "Guren no Yumiya", "title"),
-        ),
         # the label may be the word alone, in any case, and no space is needed around the pipe
         ("Opening | Song by Artist", "Some Channel", ("Artist", "Song", "title")),
         ("ENDING|Song by Artist", "Some Channel", ("Artist", "Song", "title")),
-        # the credit is split on the LAST " by ": a song that has the word in it stays whole
-        ("Anime Opening | Stand By Me by Ben E. King", "Anime Channel", ("Ben E. King", "Stand By Me", "title")),
         # a song bracket stays (it says which recording this is); a noise bracket and a feat. tail go, as everywhere
         ("Series Opening | Otonoke (TV Size) by Creepy Nuts", "Crunchyroll", ("Creepy Nuts", "Otonoke (TV Size)", "title")),
         ("Series Opening | Otonoke by Creepy Nuts (Lyrics)", "Crunchyroll", ("Creepy Nuts", "Otonoke", "title")),
@@ -65,9 +53,7 @@ def upload(title: str, uploader: str) -> tuple[str, str, str]:
         ("Series Ending | Song by Кино", "Anime Channel", ("Кино", "Song", "title")),
     ],
 )
-def test_a_series_label_a_pipe_or_a_dash_and_a_credit_name_the_artist(
-    title: str, uploader: str, expected: tuple[str, str, str]
-) -> None:
+def test_a_series_label_a_pipe_and_a_credit_name_the_artist(title: str, uploader: str, expected: tuple[str, str, str]) -> None:
     assert upload(title, uploader) == expected
 
 
@@ -108,6 +94,24 @@ def test_the_uploader_is_still_kept_as_a_fact() -> None:
         ("Big Ed | Song by Someone", "Some Channel", ("Some Channel", "Big Ed | Song by Someone", "channel")),
         # the label word sits inside another word
         ("Happy Pending | Song by Someone", "Some Channel", ("Some Channel", "Happy Pending | Song by Someone", "channel")),
+        # a DASH after the label is not read (the lead's ruling): a band or a show whose name ends in Opening or Ending is an artist before a dash
+        (
+            "Attack on Titan Opening 1 - Guren no Yumiya by Linked Horizon",
+            "Anime Fan",
+            ("Attack on Titan Opening 1", "Guren no Yumiya by Linked Horizon", "title"),
+        ),
+        ("Happy Ending - Born by the River", "Some Uploader", ("Happy Ending", "Born by the River", "title")),
+        ("Grand Opening - Nothing by Chance", "Some Uploader", ("Grand Opening", "Nothing by Chance", "title")),
+        ("Hollow Ending - Standing By You", "Hollow Ending Official", ("Hollow Ending", "Standing By You", "title")),
+        ("Gilmore Girls Opening - Stand By Me", "Some Uploader", ("Gilmore Girls Opening", "Stand By Me", "title")),
+        ("Кино Ending - Born by the River", "Кино", ("Кино Ending", "Born by the River", "title")),
+        # a label that IS the uploader's own name is a performer, not a series (a pipe, on the band's own channel)
+        ("Happy Ending | Born by the River", "Happy Ending", ("Happy Ending", "Happy Ending | Born by the River", "channel")),
+        (
+            "Grand Opening | Nothing by Chance",
+            "Grand Opening Official",
+            ("Grand Opening Official", "Grand Opening | Nothing by Chance", "channel"),
+        ),
         # a title with an ordinary artist-dash-song form keeps it, even with Opening in the song
         ("Mozart - Opening | Overture by Karajan", "Some Channel", ("Mozart", "Opening | Overture by Karajan", "title")),
     ],
@@ -138,10 +142,26 @@ def test_a_credit_that_is_not_a_clean_name_names_nobody(title: str) -> None:
     assert (reading.artist, reading.basis) == ("Crunchyroll", "channel")
 
 
-def test_KNOWN_LEFTOVER_an_artist_whose_name_contains_by_is_cut_at_the_last_one() -> None:
-    """Unknowable from the string: "Stand By Me by Ben E. King" needs the LAST ' by ' and "Song by Death by Stereo" needs the first. The last is taken (a song with
-    the word in it is the commoner family on an opening's title); the band "Death by Stereo" is read as "Stereo" until the catalogue names the artist (N-28)."""
-    assert upload("Series Opening | Song by Death by Stereo", "Crunchyroll") == ("Stereo", "Song by Death", "title")
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Series Opening | Song by Death by Stereo",
+        "Anime Opening | Stand By Me by Ben E. King",
+        "Series Ending | Born by the River by Someone",
+    ],
+)
+def test_a_credit_with_more_than_one_by_is_ambiguous_so_nobody_is_named(title: str) -> None:
+    """The lead's ruling. "Stand By Me by Ben E. King" needs the LAST " by " and "Song by Death by Stereo" needs the first, and the string cannot say which: the
+    shape fails closed and the title reads as before (the uploader, flagged `channel`), exactly as for a bracket, a pipe or a quote left in the credit. The fix
+    of both is the catalogue naming the artist by the title (N-28)."""
+    reading = read_upload(title, "Crunchyroll")
+    assert (reading.artist, reading.basis) == ("Crunchyroll", "channel")
+
+
+def test_KNOWN_LEFTOVER_a_band_named_like_a_series_label_on_somebody_elses_channel_is_read_as_a_series() -> None:
+    """`Happy Ending | Born by the River` on the band's own channel reads as before (the own-name guard). The same title on another channel cannot be told from a
+    series: it is read as one. Unknowable from the string; N-28."""
+    assert upload("Happy Ending | Born by the River", "Some Uploader") == ("the River", "Born", "title")
 
 
 def test_a_topic_channel_still_wins_over_the_shape() -> None:
