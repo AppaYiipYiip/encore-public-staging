@@ -1027,5 +1027,14 @@
    }
   ],
   "from": "agent"
+ },
+ "N-31": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the songs of deleted playlists and old imports are cleaned away too",
+  "note": "N-27 slice 2d (14 Nov 2026 design, notes on N-27 part 2): the refs of a DELETED playlist and of an import are never retired, because tombstoned playlist entries and import_entry rows count as pointers (VM 108 shows it: the 29 refs of a deleted test playlist stay). Make library.changes answer for a playlist or entry whose row is MISSING with the tombstone shape ({id, deleted: true}), synthesized ONLY when NO row with that id exists at all (a member of a collaborative playlist must never be told a live shared playlist was deleted); purge tombstoned playlists and entries after 90 days (the change_log row is what protects an away phone: write that dependency down); keep an import's counts and purge its import_entry rows 60 days after it is done (confirm with the drawing of the import page). Then the janitor retires their refs and ref_gone tells the phones.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }

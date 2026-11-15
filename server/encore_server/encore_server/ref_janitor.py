@@ -4,8 +4,8 @@ A tap on a song the server cannot find leaves its ref behind (the tap made it, n
 before slice 1 (`EncoreInstantBackend.prepare` no longer makes a row). Nothing ever removed them. This is the permanent hygiene of the table: it clears
 what exists and what real taps leave behind; the SOURCE of junk was removed in slice 1, so there is no removal trigger.
 
-**The rule** (one sentence): a ref is retired when NOTHING points at it, it has no live verdict (N-13), it NEVER held a file, and it is itself older than
-14 days. "Nothing points at it" means nobody among ALL the people: another person's like, entry or play keeps the ref for
+**The rule** (one sentence): a ref is retired when NOTHING points at it, it has no live verdict (N-13), none of its files changed in the last 14 days, and it
+is itself older than 14 days. "Nothing points at it" means nobody among ALL the people: another person's like, entry or play keeps the ref for
 everybody. The age keeps a ref a tap has just made safe (resolve, then play within seconds), and a person who searched yesterday and taps today still
 finds the ref.
 
@@ -18,13 +18,11 @@ adding its clause here: the test fails until you do.
 walks every boundary against `standing_of` itself, so there is ONE definition of "live". A ref with a live verdict stays for the length of its window,
 because deleting it would forget what saves a look-up at YouTube for everybody.
 
-**A ref that once held a file is NOT retired, and this is a cost, not a feature.** A phone that was away learns that a song's file is gone only from the
-files feed (`library.files_since`), which lists a ref that STILL EXISTS with `file: null` (and the phone's `dropUnused` then clears the row nobody points
-at). The feed cannot report a ref that is gone, so retiring a ref that once had a file would leave an away phone showing a playable song for ever. Such
-refs are the ones with a `file_log` row (every attach and every prune writes one); junk made by taps and typing never had a file, so the janitor is fully
-effective on what it is for. The cost: refs whose file was removed stay, as they do today, bounded by the number of files ever removed. **Removal trigger:**
-a files-feed tombstone (a feature string, because an old phone parses every `refs` entry as a full ref; the phone reads it) = N-27 slice 2c; until it
-exists the janitor must not touch a ref with a file history, and `file_history` below is what says so.
+**A ref whose file was removed is retired like any other** (slice 2e), after 14 days from the last change of its files (`recent_file_change`: a library
+file the music server lost an hour ago is not a song nobody wanted, and a phone that reads the feed between the prune and the retirement hears `file: null`
+first). Until 2e the janitor kept every ref that had ever held a file, because the files feed (`library.files_since`) can only list a ref that STILL EXISTS and
+so could never tell a phone that was away that a song is gone. Now every retirement leaves a tombstone (`ref_gone`, 2c) and the phone reads it (2b), so there
+is nothing left to protect. The `file_log` rows of a retired ref have no foreign key and go in the same transaction.
 
 **How it runs**: one more errand of the hourly library link (`api.create_app`, after the finders), at most `BATCH` refs a pass, the candidates chosen and
 deleted in ONE transaction (so a like that arrives between the two cannot be lost). The batch limit is applied AFTER every exclusion: refs that may not go
@@ -73,8 +71,8 @@ POINTERS: dict[str, str] = {
     "queue": "SELECT 1 FROM playback_state WHERE instr(playback_state.queue, r.id) > 0",
     # A survivor of a merge: clients carry the old ids and resolve them through `ref_merge` to this one.
     "merge_survivor": "SELECT 1 FROM ref_merge WHERE ref_merge.into_id = r.id",
-    # A ref that ever held a file stays (see the module's text): only an existing ref can tell a phone that was away "no file". Not age-bounded.
-    "file_history": "SELECT 1 FROM file_log WHERE file_log.ref = r.id",
+    # The age counts from the last change of the files too: a library file the music server lost an hour ago is not a song nobody wanted.
+    "recent_file_change": "SELECT 1 FROM file_log WHERE file_log.ref = r.id AND file_log.at >= :cutoff",
 }
 
 #: The columns that name a ref through a foreign key (one list with the merge's: `refmerge` re-points exactly these, the janitor reads exactly these).
@@ -86,7 +84,10 @@ TEXT_POINTERS: frozenset[tuple[str, str]] = frozenset(
         ("playback_state", "ref"),
         ("playback_state", "queue"),
         ("ref_merge", "into_id"),
-        ("file_log", "ref"),  # a log of file changes with no foreign key: a row means the ref once held a file (`file_history`)
+        (
+            "file_log",
+            "ref",
+        ),  # a log of file changes with no foreign key: a change in the last 14 days keeps the ref (`recent_file_change`)
     }
 )
 #: Columns a name says might hold a ref and that do NOT keep one alive, each with its reason.
@@ -172,6 +173,8 @@ class RefJanitor:
                 marks = ", ".join("?" for _ in chunk)
                 # The tombstone first, in the same transaction as the delete: a failed delete rolls it back too (a phone is never told a ref is gone while it is not).
                 conn.executemany("INSERT OR IGNORE INTO ref_gone (ref_id, at) VALUES (?, ?)", [(ref, now) for ref in chunk])
+                # `file_log` has no foreign key, so nothing else would remove the log of a retired ref (slice 2e): the same transaction.
+                conn.execute(f"DELETE FROM file_log WHERE ref IN ({marks})", tuple(chunk))
                 # work_item (and work_item_person) go by their cascade: the rows left are over, the pointer clause counted only the active ones.
                 conn.execute(f"DELETE FROM song_ref WHERE id IN ({marks})", tuple(chunk))
         if ids:
