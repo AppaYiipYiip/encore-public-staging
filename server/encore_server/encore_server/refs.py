@@ -362,6 +362,8 @@ def resolve(
             # A description that carries an id some other ref owns has been matched above; this only guards a race.
             if item[column] and conn.execute(f"SELECT 1 FROM song_ref WHERE {column} = ?", (item[column],)).fetchone():  # noqa: S608
                 item[column] = None
+        # The uploader is a fact about the VIDEO: kept only with the video the ref plays from (the race guard above may have dropped the id).
+        kept_uploader = cleaned_uploader if item["ytm_video_id"] else None
         conn.execute(
             "INSERT INTO song_ref (id, title, artists, album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id,"
             " ytm_video_id, cover_url, thumb_url, explicit, norm_key, created_at, artist_basis, uploader)"
@@ -386,9 +388,7 @@ def resolve(
                 norm_key(item["artists"][0], item["title"]),
                 now_ms(),
                 artist_basis,
-                cleaned_uploader
-                if item["ytm_video_id"]
-                else None,  # a fact about the video: kept only with the video it belongs to
+                kept_uploader,
             ),
         )
         row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
