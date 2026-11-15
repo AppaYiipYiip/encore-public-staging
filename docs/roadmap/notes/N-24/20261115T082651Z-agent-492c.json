@@ -1,0 +1,9 @@
+{
+ "id": "20261115T082651Z-agent-492c",
+ "item": "N-24",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T08:26:51Z",
+ "type": "note",
+ "body": "15 Nov 2026, OWNER: \"lets say i want to play all jinjer songs, how do i do that, downloaded or not downloaded. or all opeth songs, or an artist i never played before.\" ANSWER, read on the A35 (build 156): artist the library holds (Jinjer): Play and Shuffle on the artist page queue every song the server holds, downloaded or streamed, in album-title order (N-24 as built). Artist the library does not hold (Opeth, 26 albums, 269K fans): Play runs the Popular list only (it started 'Bleak' from Blackwater Park), not the whole discography. The gap is filed as N-33 (needs the server's artist route of P2-12; the phone must not call Deezer per album, ADR-R38; D-51 holds P2-12 slices 2 and later until b11)."
+}

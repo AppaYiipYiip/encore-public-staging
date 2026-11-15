@@ -1,0 +1,9 @@
+{
+ "id": "20261115T082651Z-agent-4872",
+ "item": "N-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T08:26:51Z",
+ "type": "note",
+ "body": "15 Nov 2026, OWNER: \"I also want the ability to search in my liked playlist.\" N-25 is built for a playlist's page (S-17). Checked on the A35, build 156: the LIKED SONGS page (S-15) is a screen of its own with no Find field (header, three buttons, the songs). Filed as N-32 (draw S-15 with the field first, then reuse PlaylistFindField / PlaylistFindBar). The owner's 684-song playlist called 'liked' is an ordinary playlist and should already have the field: to be confirmed on the phone by whoever builds N-32."
+}

@@ -1,0 +1,9 @@
+{
+ "id": "20261115T082652Z-agent-1d13",
+ "item": "N-11",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T08:26:52Z",
+ "type": "note",
+ "body": "15 Nov 2026, OWNER: \"the issue of the unknown album is still present\" (the report of 13 Nov, LANDMVRKS 'Creature' and 'Requiem'). Still there on the A35, build 156: the artist page lists 'Songs without an album' among the Albums, holding Creature and Requiem. READ ON VM 108: 'Requiem' is ONE ref, album '[Unknown Album]', kept at Encore/LANDMVRKS/Singles/Requiem.opus; 'Creature' is TWO refs (one '[Unknown Album]' in Singles, one with the real album 'The Darkest Place I've Ever Been' and its own file): a B-110 family pair, two source videos, held back from the merge on purpose. N-11 (one song, one entry) is not the cause and holds; the cause is that a YouTube import carries no album and nothing fills it. Filed as N-34 (identify the song in the catalogue, fill the album, write the tag, file it under the album; repair of kept files together with N-26 slice 5). Hiding the bucket row is NOT the fix (it hides songs)."
+}
