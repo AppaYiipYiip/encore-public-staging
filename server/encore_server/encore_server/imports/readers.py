@@ -30,7 +30,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from .uploads import DECLARED, UNKNOWN, Reading, is_topic, read_declared, read_official_video, read_upload
+from ..artist_basis import DECLARED, UNKNOWN
+from .uploads import Reading, is_topic, read_declared, read_official_video, read_upload
 from .uploads import clean_title as clean_title  # re-exported: the name the tests and callers know
 from .uploads import split_artist_title as split_artist_title  # re-exported: the name the tests and callers know
 

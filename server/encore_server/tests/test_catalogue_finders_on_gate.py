@@ -218,7 +218,13 @@ def test_n26_a_name_with_one_song_that_is_not_a_channel_is_an_artist_and_is_aske
     kept(db, music, "Bob Marley", "Jamming", basis="channel", uploader="Bob Marley")
     kept(db, music, "Bob Marley", "Could You Be Loved", basis=basis)
     the = ArtistFinder(
-        db, Music([("ar-1", "Bob Marley")]), REAL_ARTIST_LOOKUP, music_dir=music, sleep=lambda _: None, clock=clock
+        db,
+        Music([("ar-1", "Bob Marley")]),
+        REAL_ARTIST_LOOKUP,
+        music_dir=music,
+        fetch=lambda url: b"\xff\xd8\xff\xe0" + b"jpeg-bytes",  # the picture itself: no test reaches the network
+        sleep=lambda _: None,
+        clock=clock,
     )
 
     report = the.run_once()

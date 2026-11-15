@@ -68,6 +68,10 @@ _NOT_COPIED = frozenset(
         "norm_key",
         "created_at",
         "cover_tried_at",
+        # How the artist was decided and who uploaded the video (N-26 slice 2): a fact about the survivor's OWN artist and video, so the generic "copy what
+        # the survivor lacks" must not carry it over blindly; `refs.facts_to_fill` decides (the basis follows the artist, the uploader follows the video).
+        "artist_basis",
+        "uploader",
         # What the server remembers about a song it cannot get (N-13) is about THAT ref's absence of an upload; the survivor has the file.
         "missing_reason",
         "missing_at",
@@ -424,4 +428,17 @@ def _enrichment(conn: sqlite3.Connection, survivor: sqlite3.Row, loser: sqlite3.
             updates[column] = loser[column]
     if loser["explicit"] and not survivor["explicit"]:
         updates["explicit"] = 1
+    # The survivor will hold the loser's video when it has none of its own (`_merge_pair` hands the ids over after the delete).
+    updates.update(
+        refs.facts_to_fill(
+            have_basis=survivor["artist_basis"],
+            have_uploader=survivor["uploader"],
+            have_artist=refs.lead_artist(survivor["artists"]),
+            have_video=survivor["ytm_video_id"] or loser["ytm_video_id"],
+            basis=loser["artist_basis"],
+            uploader=loser["uploader"],
+            artist=refs.lead_artist(loser["artists"]),
+            video=loser["ytm_video_id"],
+        )
+    )
     return updates
