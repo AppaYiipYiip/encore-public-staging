@@ -108,7 +108,7 @@ void main() {
   var place = 0;
 
   /// A place in a playlist, as an earlier pull left it.
-  Future<void> entry(String playlistId, String entryId, String trackId) =>
+  Future<void> entry(String playlistId, String? entryId, String trackId) =>
       db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
             serverId: serverId,
             playlistId: playlistId,
@@ -302,6 +302,20 @@ void main() {
 
       expect(await entryIds(), contains(_noPlaylist));
       expect(await live(_other), isTrue);
+    });
+
+    test(
+        "a place of the old kind (no id of the server's own) in a playlist the page touches is taken out, and its song goes with it when nothing else points at it",
+        () async {
+      await playlist(_live);
+      await song(_other);
+      await entry(_live, null, _other);
+      serveTheSavedAnswers();
+
+      (await sync.pull()).getOrThrow();
+
+      expect(await db.select(db.playlistEntries).get(), isEmpty);
+      expect(await live(_other), isFalse);
     });
   });
 
@@ -499,18 +513,19 @@ void main() {
       final b = server.addRef('Song B', 'Artist');
       final c = server.addRef('Song C', 'Artist');
       final d = server.addRef('Song D', 'Artist', fileId: 'nd-d');
-      server.addPlaylist(list, 'Mix', [a, b, c, d]);
+      final e = server.addRef('Song E', 'Artist');
+      server.addPlaylist(list, 'Mix', [a, b, c, d, e]);
       server.otherDeviceLikes(c);
       (await sync.pull()).getOrThrow();
       await download(d);
-      expect((await db.select(db.playlistEntries).get()).length, 4);
-      for (final id in [a, b, c, d]) {
+      expect((await db.select(db.playlistEntries).get()).length, 5);
+      for (final id in [a, b, c, d, e]) {
         expect(await live(id), isTrue, reason: id);
       }
 
-      // The phone is away. Somebody removes the four entries, 90 days pass, the server purges them and its janitor retires the songs nothing points at: A, B
-      // and D (C is liked: the server keeps it).
-      await removeEntriesOf([a, b, c, d]);
+      // The phone is away. Somebody removes the five entries, 90 days pass, the server purges them and its janitor retires the songs nothing points at: A, B
+      // and D (C is liked, and another person keeps E: the server keeps both).
+      await removeEntriesOf([a, b, c, d, e]);
       server.purgeTombstones();
       server.retire(a);
       server.retire(b);
@@ -523,6 +538,9 @@ void main() {
       expect(await live(b), isFalse, reason: "B: no file, gone, no entry");
       expect(await live(c), isTrue, reason: "C: the person liked it");
       expect(await live(d), isTrue, reason: "D: downloaded");
+      expect(await live(e), isFalse,
+          reason:
+              "E: the server did NOT retire it, but nothing of this phone's points at it: the gone list cannot be what drops it");
       expect((await dl(d))!.localPath, '/phone/downloads/song.opus');
       expect((await track(d))!.fileId, isNull);
     });
