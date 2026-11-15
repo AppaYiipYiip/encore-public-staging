@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .. import library, refs
+from ..artist_basis import is_performer
 from ..db import Database
 from ..deezer import LookupUnavailable
 from ..navidrome import NavidromeClient, file_meta
 from ..scheduler import GiveUp, Retry, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
+from ..textnorm import is_unknown_artist
 from .covers import fetch_cover
 from .placement import AUDIO_SUFFIXES, find_existing, free_gb, inside, place_file, plan_placement
 from .process import Runner, run_command
@@ -200,7 +202,7 @@ class Keeper:
 
     def _look_for_cover(self, ref: dict[str, Any]) -> str | None:
         """A song that came without a picture gets the catalogue's, in its file and on its ref (every phone then shows it)."""
-        if self._find_cover is None:
+        if self._find_cover is None or not self._may_ask_the_catalogue(ref):
             return None
         try:
             url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"))
@@ -215,6 +217,16 @@ class Keeper:
             with self._db.tx() as conn:
                 conn.execute("UPDATE song_ref SET cover_url = ? WHERE id = ? AND cover_url IS NULL", (url, ref["id"]))
         return url
+
+    def _may_ask_the_catalogue(self, ref: dict[str, Any]) -> bool:
+        """Never for a song whose artist is a channel's name or nobody's (N-26: the stored basis `channel` or `unknown`, or the placeholder name itself,
+        which the library scan gives an untagged file with no facts): the name of an uploader is not sent to the catalogue from the Host's address.
+        The song is kept all the same. The basis is not in the ref a phone sees, so it is read from the row."""
+        if is_unknown_artist(ref["artists"][0]):
+            return False
+        with self._db.read() as conn:
+            row = conn.execute("SELECT artist_basis FROM song_ref WHERE id = ?", (ref["id"],)).fetchone()
+        return row is None or is_performer(row["artist_basis"])
 
     def _as_opus(self, path: Path) -> Path:
         """YouTube's Opus arrives in a WebM container; the library's own format is the same Opus in Ogg (no re-encoding)."""
