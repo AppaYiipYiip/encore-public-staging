@@ -85,7 +85,7 @@ from .verdicts import RefVerdicts
 
 log = logging.getLogger("encore_server.api")
 
-FEATURES = ["library", "playback", "live", "refs", "unavailable-ids"]
+FEATURES = ["library", "playback", "live", "refs", "unavailable-ids", "ref-gone"]
 #: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`) and `keep-ask` (`POST keep/ask`, a
 #: whole download asked for at once). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
 KEEP_FEATURES = ["keep", "keep-ask"]
@@ -1061,17 +1061,20 @@ def library_files(
     since: str = "0",
     limit: int = 500,
     merges_since: str | None = Query(None, alias="mergesSince"),
+    gone_since: str | None = Query(None, alias="goneSince"),
     p: Principal = Depends(get_principal),
 ) -> JSONResponse:
     """The songs this server keeps, as they change: the app's browse index of the server's files (docs/18 section 2). With `mergesSince` (a cursor of
-    its own) the answer also lists the songs that were merged into another since then, `merges: [{from, into, seq}]` (N-11, docs/17)."""
+    its own) the answer also lists the songs that were merged into another since then, `merges: [{from, into, seq}]` (N-11, docs/17); with `goneSince` (a third
+    cursor) the refs the server retired since then, `gone: [{id, seq}]` (N-27 slice 2c, feature `ref-gone`)."""
     try:
         cursor = max(0, int(since))
         merges_cursor = None if merges_since is None else max(0, int(merges_since))
+        gone_cursor = None if gone_since is None else max(0, int(gone_since))
     except ValueError:
         raise ApiError("validation", "The cursor is a number, as the server gave it.") from None
     with services(request).db.read() as conn:
-        return _ok(library.files_since(conn, cursor, max(1, min(limit, library.FILES_PAGE)), merges_cursor))
+        return _ok(library.files_since(conn, cursor, max(1, min(limit, library.FILES_PAGE)), merges_cursor, gone_cursor))
 
 
 def want_kept(svc: Services, conn: sqlite3.Connection, person: str, ref_ids: list[str]) -> None:

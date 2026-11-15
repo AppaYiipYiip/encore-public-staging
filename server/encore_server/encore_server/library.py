@@ -350,20 +350,32 @@ def played_on_days(conn: sqlite3.Connection, ref_id: str) -> int:
 FILES_PAGE = 500
 
 
-def files_since(conn: sqlite3.Connection, since: int, limit: int = FILES_PAGE, merges_since: int | None = None) -> dict[str, Any]:
+def files_since(
+    conn: sqlite3.Connection,
+    since: int,
+    limit: int = FILES_PAGE,
+    merges_since: int | None = None,
+    gone_since: int | None = None,
+) -> dict[str, Any]:
     """The songs whose file changed after cursor [since], as they are now (`file` is null when the server no longer has one). This is the
     app's browse index of what the server keeps: one first pass, then only what changed.
 
     `merges` is the other half of the same answer: the songs that were merged into another (N-11), after cursor [merges_since] of their own (the
     `seq` of `ref_merge`: not [since], which counts changes of files, whose rows the merge moves). Each is `{from, into, seq}`: the id that no longer
     exists and the one that took its place. A phone folds its own copy of `from` into `into`. It pages like the songs do (`mergesMore`). An app that
-    does not send [merges_since] (one that predates merges) is sent none."""
+    does not send [merges_since] (one that predates merges) is sent none.
+
+    `gone` is the third half of the same answer (N-27 slice 2c): the refs the server RETIRED (`ref_janitor`, table `ref_gone`), after cursor [gone_since]
+    of their own: `[{id, seq}]`, paged like the others (`goneMore`). A phone drops its row for such an id when nothing of the person's points at it. This
+    feed skips a ref that no longer exists, so it could never say so by itself. An app that does not send [gone_since] (one that predates it) is sent an
+    empty list and the cursor "0": nothing for it to act on."""
     rows = conn.execute(
         "SELECT ref, MAX(seq) AS seq FROM file_log WHERE seq > ? GROUP BY ref ORDER BY seq LIMIT ?", (since, limit)
     ).fetchall()
     cursor = rows[-1]["seq"] if rows else since
     more = len(rows) == limit and conn.execute("SELECT 1 FROM file_log WHERE seq > ?", (cursor,)).fetchone() is not None
     merges, merges_cursor, merges_more = merges_after(conn, merges_since, limit) if merges_since is not None else ([], 0, False)
+    gone, gone_cursor, gone_more = gone_after(conn, gone_since, limit) if gone_since is not None else ([], 0, False)
     return {
         "refs": [refs.get_ref(conn, row["ref"]) for row in rows if refs.ref_exists(conn, row["ref"])],
         "cursor": str(cursor),
@@ -371,7 +383,19 @@ def files_since(conn: sqlite3.Connection, since: int, limit: int = FILES_PAGE, m
         "merges": merges,
         "mergesCursor": str(merges_cursor),
         "mergesMore": merges_more,
+        "gone": gone,
+        "goneCursor": str(gone_cursor),
+        "goneMore": gone_more,
     }
+
+
+def gone_after(conn: sqlite3.Connection, since: int, limit: int) -> tuple[list[dict[str, Any]], int, bool]:
+    """The refs retired after cursor [since], oldest first: `(the list, the cursor to ask from next, whether there are more)`. The table is tiny and never
+    purged (one row per retired ref), so a phone that updates months later still gets all of it."""
+    rows = conn.execute("SELECT seq, ref_id FROM ref_gone WHERE seq > ? ORDER BY seq LIMIT ?", (since, limit)).fetchall()
+    cursor = int(rows[-1]["seq"]) if rows else since
+    more = len(rows) == limit and conn.execute("SELECT 1 FROM ref_gone WHERE seq > ?", (cursor,)).fetchone() is not None
+    return [{"id": r["ref_id"], "seq": r["seq"]} for r in rows], cursor, more
 
 
 def merges_after(conn: sqlite3.Connection, since: int, limit: int) -> tuple[list[dict[str, Any]], int, bool]:

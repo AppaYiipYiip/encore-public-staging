@@ -1,0 +1,9 @@
+{
+ "id": "20261115T031419Z-agent-f294",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T03:14:19Z",
+ "type": "note",
+ "body": "CARRY-FORWARD for 2b and 2e (the advisor's review of slice 2c, 15 Nov 2026; not blocking 2c). 2b, THE PULL LOOP: EncoreSync.pullFiles keeps paging only while `more` or `mergesMore` is moving; 2b MUST add goneMore and goneCursor to that condition and write the gone cursor in the SAME transaction as the page, or a phone with more than one page of tombstones stops after the first. Put a test with MORE THAN 500 tombstones (two pages) in 2b's list; parse app/test/fixtures/server/library-files-with-gone.json. 2e, file_log: when it lifts file_history it must ALSO delete the retired refs' file_log rows in the SAME transaction (part 1 of the design says so; it is a no-op in 2c because no ref with file_log rows is retired) and RESTORE the age-bounded keep (\"a file change in the last 14 days\": the clause the first version of 2a had). 2c MIGRATION NUMBERS: 0015 is taken on purpose (N-26 slice 2 has 0014); after merging main, a branch must pass test_the_migrations_the_server_ships_have_one_file_per_number with both present."
+}
