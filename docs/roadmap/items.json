@@ -1125,5 +1125,14 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-39": {
+  "kind": "feature",
+  "title": "A download you cancel stays cancelled",
+  "note": "Found by helper-p229 (15 Nov 2026, READ in the code, NOT run): the downloader's own group notification has a Cancel button that cancels the files in flight, but the pins and the download rows stay, so the manager's next pump most likely STARTS THEM AGAIN. And 'Stop' for a download today means unpin, which DELETES the files (there is no keep-cancel route in docs/17). Wanted: a real stop for a download: the person cancels, the files in flight stop, the pins and rows that asked for them are set aside, and nothing restarts them until the person asks again; removing downloaded files stays a separate, confirmed action. Prove the restart first (a test with the real manager and a fake downloader), then fix it at the source (the manager's intent, not the notification). Related: P2-29 (the new notification has no Stop button on purpose until this exists).",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }

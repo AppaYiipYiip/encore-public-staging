@@ -1,0 +1,9 @@
+{
+ "id": "20261115T231957Z-agent-4ceb",
+ "item": "N-31",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:19:57Z",
+ "type": "note",
+ "body": "15 Nov 2026, REAL-STACK CHECK on VM 108 (image sha-62cf7f0). (1) Migrations 0016 and 0017 were first run on a VACUUM INTO copy of the real database on the dev PC with the worktree's code: integrity ok, foreign_key_check empty, change_log.parent backfilled for all 22,189 entry rows, the 0017 index present; then on VM 108 itself ('database migrated: [16, 17]', schema 17). (2) The purge: the deleted test playlist's deleted_at set to 100 days ago and the finished test import's updated_at to 70 days ago, container restarted: 'tombstone purge: removed 29 playlist entries and the songs of 1 imports'; afterwards 0 entries of that playlist, 0 import entries, the import row KEPT with entries_purged_at set (its counts kept), the playlist ROW kept (by design). PROVEN on real data. (3) STILL OWED on the real stack: the janitor half (the refs retired and ref_gone telling phones): it did not fire because the refs are still pointed by the first test import (entries younger than 60 days) or have a file change inside the last 14 days (recent_file_change), so no ref qualified; it is pinned by the unit tests only. To prove it, a ref is needed whose pointers were all purged AND whose files are 14+ days old (age file_log too, or wait). Undo of the whole check: restore /data/encore.db from /data/backups/encore-before-1z-20261115.db (homelab log 1z)."
+}
