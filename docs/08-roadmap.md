@@ -71,30 +71,30 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 5 | N-22 | Tapping the open tab again returns to that tab's first page (Home, Search, Your Library) | S | built | none | 1 to 1 |
 | 6 | P1-07 | Search shows one clear best result at the top | M | built | none | 1 to 2 |
 | 7 | N-23 | Search finds the band even when a letter or two is wrong | M | todo | none | 3 to 4 |
-| 8 | N-34 | Real albums stop losing songs to "Songs without an album" | L | todo | none | 7 to 10 |
-| 9 | N-24 | Listen to one artist without picking albums: Play all and Shuffle on an artist | M | built | none | 4 to 8 |
-| 10 | N-25 | Search inside a playlist | M | built | none | 4 to 9 |
-| 11 | N-32 | Find a song inside Liked Songs, as in any playlist | S | built | none | 4 to 9 |
-| 12 | N-26 | Behind the scenes: imported songs are filed under the performer, not the uploading channel | M | todo | none | 5 to 10 |
-| 13 | N-27 | Behind the scenes: songs nobody asked for are cleaned away | M | built | none | 5 to 11 |
-| 14 | N-31 | Behind the scenes: the songs of deleted playlists and old imports are cleaned away too | M | todo | none | 6 to 13 |
-| 15 | N-35 | Behind the scenes: the phone drops a song's row when the server removes its last entry | S | todo | N-31 | 7 to 13 |
-| 16 | P1-26 | An imported song without a picture shows YouTube's thumbnail, not a letter | S | built | none | 7 to 13 |
-| 17 | P1-10 | Covers show everywhere, also when you are offline | M | built | P1-26 | 7 to 14 |
-| 18 | P4-24 | One Data saver switch for slow or metered connections | S | built | none | 7 to 14 |
-| 19 | P0-16 | Make GitHub's checks run again (the allowance is used up, so nothing can be merged) | S | todo | none | 7 to 14 |
-| 20 | P1-02 | Playing starts first; size limits only apply when you keep a song | M | built | none | 7 to 14 |
-| 21 | N-14 | Behind the scenes: find why an artist page sometimes waits two seconds | S | todo | none | 8 to 15 |
-| 22 | P1-08 | The player never gets stuck | M | built | none | 8 to 15 |
-| 23 | N-13 | Search marks the songs your server cannot find, and the server remembers it | S | built | none | 8 to 16 |
-| 24 | P1-24 | A Share button on the full player | S | built | P1-22 | 8 to 16 |
-| 25 | P1-17 | Behind the scenes: one "can I reach my server" state in the app instead of eleven | L | built | none | 8 to 17 |
-| 26 | P1-16 | Search says when you are offline (drawn first) | S | built | P1-15, P1-17 | 8 to 17 |
-| 27 | N-17 | After "Rebuild library" your music shows again at once, and "Last sync" tells the truth | S | todo | none | 9 to 18 |
-| 28 | N-10 | Songs by several artists are saved with each artist on its own | M | built | none | 9 to 18 |
-| 29 | N-12 | "Go to artist" in a song's menu offers every artist of the song | S | built | none | 9 to 18 |
-| 30 | N-15 | Artists the music server has no picture for get one | S | built | none | 9 to 18 |
-| 31 | P2-25 | Behind the scenes: songs in Arabic, Russian, Korean and Japanese are told apart and found | M | todo | none | 10 to 20 |
+| 8 | P2-25 | Behind the scenes: songs in Arabic, Russian, Korean and Japanese are told apart and found | M | todo | none | 3 to 5 |
+| 9 | N-34 | Real albums stop losing songs to "Songs without an album" | L | todo | P2-25 | 10 to 15 |
+| 10 | N-24 | Listen to one artist without picking albums: Play all and Shuffle on an artist | M | built | none | 5 to 10 |
+| 11 | N-25 | Search inside a playlist | M | built | none | 5 to 10 |
+| 12 | N-32 | Find a song inside Liked Songs, as in any playlist | S | built | none | 5 to 10 |
+| 13 | N-26 | Behind the scenes: imported songs are filed under the performer, not the uploading channel | M | todo | none | 6 to 12 |
+| 14 | N-27 | Behind the scenes: songs nobody asked for are cleaned away | M | built | none | 6 to 13 |
+| 15 | N-31 | Behind the scenes: the songs of deleted playlists and old imports are cleaned away too | M | todo | none | 7 to 14 |
+| 16 | N-35 | Behind the scenes: the phone drops a song's row when the server removes its last entry | S | todo | N-31 | 8 to 15 |
+| 17 | P1-26 | An imported song without a picture shows YouTube's thumbnail, not a letter | S | built | none | 8 to 15 |
+| 18 | P1-10 | Covers show everywhere, also when you are offline | M | built | P1-26 | 8 to 16 |
+| 19 | P4-24 | One Data saver switch for slow or metered connections | S | built | none | 8 to 16 |
+| 20 | P0-16 | Make GitHub's checks run again (the allowance is used up, so nothing can be merged) | S | todo | none | 8 to 16 |
+| 21 | P1-02 | Playing starts first; size limits only apply when you keep a song | M | built | none | 8 to 16 |
+| 22 | N-14 | Behind the scenes: find why an artist page sometimes waits two seconds | S | todo | none | 8 to 17 |
+| 23 | P1-08 | The player never gets stuck | M | built | none | 9 to 17 |
+| 24 | N-13 | Search marks the songs your server cannot find, and the server remembers it | S | built | none | 9 to 17 |
+| 25 | P1-24 | A Share button on the full player | S | built | P1-22 | 9 to 18 |
+| 26 | P1-17 | Behind the scenes: one "can I reach my server" state in the app instead of eleven | L | built | none | 9 to 19 |
+| 27 | P1-16 | Search says when you are offline (drawn first) | S | built | P1-15, P1-17 | 9 to 19 |
+| 28 | N-17 | After "Rebuild library" your music shows again at once, and "Last sync" tells the truth | S | todo | none | 10 to 19 |
+| 29 | N-10 | Songs by several artists are saved with each artist on its own | M | built | none | 10 to 20 |
+| 30 | N-12 | "Go to artist" in a song's menu offers every artist of the song | S | built | none | 10 to 20 |
+| 31 | N-15 | Artists the music server has no picture for get one | S | built | none | 10 to 20 |
 | 32 | P2-12 | Search and artist pages come from your own server | L | todo | P2-25 | 12 to 24 |
 | 33 | N-33 | Play all of an artist's songs, also for an artist you do not hold | M | todo | P2-12 | 13 to 26 |
 | 34 | N-28 | Behind the scenes: the artist of a channel-only upload comes from the catalogue | M | todo | P2-12 | 14 to 28 |
