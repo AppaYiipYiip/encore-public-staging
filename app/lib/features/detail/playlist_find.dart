@@ -2,13 +2,36 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 
+/// The words of a finding, naming the list it is in, as Spotify's do: a playlist says "Find in playlist" and "in this playlist", Liked Songs
+/// says "Find in Liked Songs" and "in Liked Songs" (docs/design S-17 and S-15). The one place the words are; the field, the open field, the
+/// no-results line and the screen reader's label all read them from here, so they can never say different things.
+class FindWords {
+  const FindWords._(this.field, this.noResultsIn);
+
+  /// A playlist's.
+  static const playlist = FindWords._('Find in playlist', 'this playlist');
+
+  /// Liked Songs' (N-32).
+  static const liked = FindWords._('Find in Liked Songs', 'Liked Songs');
+
+  /// The field at rest, its hint once open, and its label for a screen reader.
+  final String field;
+
+  /// The end of the no-results line: `No results for "x" in <this>`.
+  final String noResultsIn;
+
+  String noResults(String query) => 'No results for "$query" in $noResultsIn';
+}
+
 /// "Find in playlist" at rest (docs/design S-17, N-25): the field between the playlist's header lines and its buttons, Spotify's own place
-/// and words. Liked Songs, a playlist of the person's own, uses it as it is (S-15, N-32). It looks like a field and is a button: tapping it opens [PlaylistFindBar] at the top of the page, so the keyboard never
+/// and words. Liked Songs, a playlist of the person's own, uses it with the words naming it (S-15, N-32: [FindWords.liked]). It looks like a field and is a button: tapping it opens [PlaylistFindBar] at the top of the page, so the keyboard never
 /// covers what the person is looking at.
 class PlaylistFindField extends StatelessWidget {
-  const PlaylistFindField({super.key, required this.onTap});
+  const PlaylistFindField(
+      {super.key, required this.onTap, this.words = FindWords.playlist});
 
   final VoidCallback onTap;
+  final FindWords words;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +39,7 @@ class PlaylistFindField extends StatelessWidget {
     final shape = BorderRadius.circular(Radii.card);
     return Semantics(
       button: true,
-      label: 'Find in playlist',
+      label: words.field,
       excludeSemantics: true,
       child: Material(
         color: c.onBg.withValues(alpha: 0.10),
@@ -35,7 +58,7 @@ class PlaylistFindField extends StatelessWidget {
                   const SizedBox(width: Space.sm),
                   Flexible(
                     child: Text(
-                      'Find in playlist',
+                      words.field,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.text.bodyLarge?.copyWith(
@@ -62,8 +85,10 @@ class PlaylistFindBar extends StatelessWidget {
     required this.onChanged,
     required this.onClear,
     required this.onClose,
+    this.words = FindWords.playlist,
   });
 
+  final FindWords words;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -96,7 +121,7 @@ class PlaylistFindBar extends StatelessWidget {
                 textInputAction: TextInputAction.search,
                 style: context.text.bodyLarge,
                 decoration: InputDecoration(
-                  hintText: 'Find in playlist',
+                  hintText: words.field,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: value.text.isEmpty
                       ? null

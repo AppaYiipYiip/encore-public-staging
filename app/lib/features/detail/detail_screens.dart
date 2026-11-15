@@ -538,6 +538,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
     return _FindingPage(
       finder: _finder,
+      words: FindWords.playlist,
       noResultsFor: shown != null && shown.isEmpty ? query : null,
       list: _TrackList(
         tracks: [for (final e in entries) e.track],
@@ -557,11 +558,15 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 class _FindingPage extends StatelessWidget {
   const _FindingPage({
     required this.finder,
+    required this.words,
     required this.noResultsFor,
     required this.list,
   });
 
   final ListFinder<Object> finder;
+
+  /// What the field and the no-results line say: they name the list ([FindWords]).
+  final FindWords words;
 
   /// The words typed when nothing matches them; null when something does (or nothing is typed).
   final String? noResultsFor;
@@ -580,6 +585,7 @@ class _FindingPage extends StatelessWidget {
           child: Column(
             children: [
               PlaylistFindBar(
+                words: words,
                 controller: finder.controller,
                 focusNode: finder.focus,
                 onChanged: finder.typed,
@@ -598,8 +604,7 @@ class _FindingPage extends StatelessWidget {
                         hasScrollBody: false,
                         child: EmptyState(
                           icon: Icons.search_off_rounded,
-                          title:
-                              'No results for "$noResultsFor" in this playlist',
+                          title: words.noResults(noResultsFor!),
                           message: 'Check the spelling, or try fewer words.',
                         ),
                       )
@@ -813,8 +818,8 @@ class LikedScreen extends ConsumerStatefulWidget {
 }
 
 class _LikedScreenState extends ConsumerState<LikedScreen> {
-  // "Find in playlist" on Liked Songs (N-32, docs/design S-15): the same finding as a playlist's (S-17), the same state in `ListFinder`, the
-  // same finding page; only its answer differs (the ids of the liked songs that match).
+  // "Find in Liked Songs" (N-32, docs/design S-15): the same finding as a playlist's (S-17), the same state in `ListFinder`, the same finding
+  // page; only its answer differs (the ids of the liked songs that match) and the words, which name the list ([FindWords.liked]).
   late final _finder = ListFinder<List<String>>(onChanged: () {
     if (mounted) setState(() {});
   });
@@ -835,8 +840,10 @@ class _LikedScreenState extends ConsumerState<LikedScreen> {
       tint: c.accent.withValues(alpha: 0.55),
       // The finding page replaces this one for a moment: the page comes back where it was.
       scrollKey: const PageStorageKey<String>('liked'),
-      find:
-          tracks.isEmpty ? null : PlaylistFindField(onTap: _finder.openFinding),
+      find: tracks.isEmpty
+          ? null
+          : PlaylistFindField(
+              onTap: _finder.openFinding, words: FindWords.liked),
       art: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Radii.hero),
@@ -897,6 +904,7 @@ class _LikedScreenState extends ConsumerState<LikedScreen> {
 
     return _FindingPage(
       finder: _finder,
+      words: FindWords.liked,
       noResultsFor: shown != null && shown.isEmpty ? query : null,
       list: _TrackList(
         tracks: tracks,

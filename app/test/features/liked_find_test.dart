@@ -21,9 +21,10 @@ import '../support/reachability.dart';
 import '../support/test_app.dart';
 
 /// N-32 (the owner, 15 Nov 2026): "I also want the ability to search in my liked playlist". Liked Songs (S-15) is a page of its own and had no
-/// "Find in playlist" field, although every playlist has one since N-25 (S-17). Drawn in S-15 as the same field with the same words and the same
-/// finding: a field between the header lines and the buttons; tapped, it takes the top of the page, narrows the list as the person types with
-/// Search's own matching restricted to the liked songs, and a tap on a result plays the WHOLE of Liked Songs from that song's place in it.
+/// "Find in playlist" field, although every playlist has one since N-25 (S-17). Drawn in S-15 as the same field and the same finding, with
+/// the words naming the list as Spotify's do ("Find in Liked Songs", "No results for ... in Liked Songs"; a playlist keeps "playlist"): a field
+/// between the header lines and the buttons; tapped, it takes the top of the page, narrows the list as the person types with Search's own
+/// matching restricted to the liked songs, and a tap on a result plays the WHOLE of Liked Songs from that song's place in it.
 ///
 /// The seeded Liked Songs, in the order of the page (the song liked last first): 0 Opening The (Periphery), 1 Echoes The (Periphery),
 /// 2 Opening Ghost (Opeth), 3 Hollow Sky (Katatonia), 4 Echoes Blackwater (Opeth), 5 Tides Kodama (Alcest). The library holds other songs
@@ -31,7 +32,8 @@ import '../support/test_app.dart';
 void main() {
   setUpAll(loadAppFonts);
 
-  const fieldWords = 'Find in playlist';
+  const fieldWords = 'Find in Liked Songs';
+  const noResults = 'No results for "zzzz" in Liked Songs';
 
   /// The likes of the page: the seed already likes al3-t1 (1700000000000); the others are liked a little earlier each, all at different times, so
   /// the order of the page, and what "from its place" means, is never a tie.
@@ -101,9 +103,12 @@ void main() {
   testWidgets(
       'Liked Songs with songs has the field between its header lines and its buttons',
       (tester) async {
+    final handle = tester.ensureSemantics();
     final app = await open(tester);
 
     expect(find.text(fieldWords), findsOneWidget);
+    expect(find.bySemanticsLabel(fieldWords), findsOneWidget,
+        reason: 'a screen reader says the same words as the screen');
     final subtitle = tester.getTopLeft(find.textContaining('6 songs')).dy;
     final field = tester.getTopLeft(find.text(fieldWords)).dy;
     final buttons = tester.getTopLeft(find.byIcon(Icons.shuffle_rounded)).dy;
@@ -117,6 +122,7 @@ void main() {
         greaterThanOrEqualTo(48),
         reason: 'a 48 dp high target');
     await closeApp(tester, app.db);
+    handle.dispose();
   });
 
   testWidgets('empty Liked Songs has no field: there is nothing to find',
@@ -186,14 +192,14 @@ void main() {
   });
 
   testWidgets(
-      'nothing matches: the words of the playlist\'s finding; clearing brings the list back and keeps the field open',
+      'nothing matches: Search\'s words, naming Liked Songs; clearing brings the list back and keeps the field open',
       (tester) async {
     final app = await open(tester);
     await openFind(tester);
 
     await type(tester, 'zzzz');
     expectRows(const []);
-    expect(find.text('No results for "zzzz" in this playlist'), findsOneWidget);
+    expect(find.text(noResults), findsOneWidget);
     expect(
         find.text('Check the spelling, or try fewer words.'), findsOneWidget);
 
@@ -204,7 +210,7 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         isEmpty);
     expect(find.byTooltip('Clear'), findsNothing);
-    expect(find.text('No results for "zzzz" in this playlist'), findsNothing);
+    expect(find.text(noResults), findsNothing);
     await closeApp(tester, app.db);
   });
 
@@ -370,7 +376,7 @@ void main() {
 
     await type(tester, 'zzzz');
     expect(tester.takeException(), isNull);
-    expect(find.text('No results for "zzzz" in this playlist'), findsOneWidget);
+    expect(find.text(noResults), findsOneWidget);
     await closeApp(tester, app.db);
     handle.dispose();
   });
@@ -378,6 +384,7 @@ void main() {
   testWidgets(
       'an ordinary playlist that is called "liked" has the field like any playlist, and is not this page',
       (tester) async {
+    final handle = tester.ensureSemantics();
     final app = await open(tester, seed: (db, serverId) async {
       await db.into(db.playlists).insert(PlaylistsCompanion.insert(
             serverId: serverId,
@@ -401,14 +408,21 @@ void main() {
         .go('/home/playlist/pl-liked');
     await settle(tester);
 
-    expect(find.text(fieldWords), findsOneWidget);
+    // A playlist keeps "playlist" in its words, whatever it is called.
+    expect(find.text('Find in playlist'), findsOneWidget);
+    expect(find.bySemanticsLabel('Find in playlist'), findsOneWidget);
+    expect(find.text(fieldWords), findsNothing);
     expect(find.text('Opening Kodama'), findsOneWidget,
         reason: 'the playlist\'s own songs, which are not liked');
-    await openFind(tester);
+    await tester.tap(find.text('Find in playlist'));
+    await settle(tester);
     await type(tester, 'kodama');
     expect(find.text('Opening Kodama'), findsOneWidget);
     expect(find.text('Hollow The'), findsNothing);
+    await type(tester, 'zzzz');
+    expect(find.text('No results for "zzzz" in this playlist'), findsOneWidget);
     await closeApp(tester, app.db);
+    handle.dispose();
   });
 
   group('B-128 and N-13 inside the finding page', () {
