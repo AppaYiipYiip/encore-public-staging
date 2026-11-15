@@ -1,0 +1,9 @@
+{
+ "id": "20261115T233402Z-agent-aa6b",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:34:02Z",
+ "type": "note",
+ "body": "16 Nov 2026, CORRECTION to the advisor's rulings note of 15 Nov on D1: it says the Arabic table was 'cross-checked against Lucene's ArabicNormalizationFilter and PersianNormalizationFilter'. That overclaims: the helpers worked from the filters' DOCUMENTED behaviour only (no network, nobody opened Lucene's sources), and the fixture says 'not checked'. The slice that finalises the table (slices 2+3) must read the real sources, pin their version and cite them before the table is called checked. ALSO (advisor, 15 Nov): the server image is python:3.12-slim = Unicode 15.0.0 and the slice-1 generator pins 15.0.0, while the dev PC venv is Python 3.13 = Unicode 15.1.0 (627 more code points: the slice-1 tests skip them there): slices 2+3 MUST add a startup/test guard that fails loudly when unicodedata.unidata_version differs from textnorm.UNICODE_VERSION, because stored norm_keys must never depend on the image's Python, and the image, server.yml and the pin must move together."
+}
