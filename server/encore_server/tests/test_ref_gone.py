@@ -92,6 +92,21 @@ def test_two_migrations_with_one_number_are_refused_at_start_not_silently_skippe
         )
 
 
+def test_a_database_that_ran_the_first_of_two_steps_with_one_number_is_not_silently_skipped(tmp_path: Path) -> None:
+    """THE silent case, the one that matters: a database that already ran `0002_one` is given a version that also ships `0002_other`. Old `migrate` took both
+    `0002` as done, applied nothing and returned `[]`: the second step's table would be missing at run time with no error at all."""
+    database = Database(tmp_path / "x.db")
+    first = [(1, "0001_initial.sql", "CREATE TABLE a (x INTEGER);"), (2, "0002_one.sql", "CREATE TABLE b (x INTEGER);")]
+    assert database.migrate(migrations=first) == [1, 2]
+
+    with pytest.raises(MigrationFailed, match="same number"):
+        database.migrate(migrations=[*first, (2, "0002_other.sql", "CREATE TABLE c (x INTEGER);")])
+
+    with database.read() as conn:
+        tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert "c" not in tables and {"a", "b"} <= tables, "nothing was changed"
+
+
 def test_the_migrations_the_server_ships_have_one_file_per_number() -> None:
     numbers = [number for number, _, _ in Database._migrations()]
     assert len(numbers) == len(set(numbers)), f"two files share a number: {sorted(n for n in numbers if numbers.count(n) > 1)}"
