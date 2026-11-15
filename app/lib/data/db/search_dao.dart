@@ -47,6 +47,12 @@ Set<String> _ligatureVariants(String token) {
   return out;
 }
 
+/// The one place the song index is asked (`?1` the FTS expression): the rows of `tracks` that Search's words match, as a list the caller looks its
+/// own rows up in. Every finding inside a list of the library (a playlist's, Liked Songs') restricts this one answer and never asks the index
+/// another way, so what a word finds is the same in Search and in each list (ADR-R42, audit B-46).
+const _matchingTrackRows =
+    '(SELECT rowid FROM track_fts WHERE track_fts MATCH ?1)';
+
 /// The SQL of [SearchDao.playlistEntryPositions] (`?1` the FTS expression, `?2` the server, `?3` the playlist). The index is asked once (the
 /// subquery), then the playlist's entries are looked up in its answer. Written as a join with the index, SQLite asked the index again for
 /// every entry of the playlist: 34 s for a 2,000-song playlist and the word "a" in a 50,000-song library. A test reads the query plan.
@@ -56,8 +62,16 @@ const playlistEntryPositionsSql =
     'JOIN tracks t ON t.server_id = e.server_id AND t.id = e.track_id '
     'WHERE e.server_id = ?2 AND e.playlist_id = ?3 '
     'AND t.deleted_at_ms IS NULL '
-    'AND t.rowid IN (SELECT rowid FROM track_fts WHERE track_fts MATCH ?1) '
+    'AND t.rowid IN $_matchingTrackRows '
     'ORDER BY e.position';
+
+/// The SQL of [SearchDao.likedTrackIds] (`?1` the FTS expression, `?2` the server): the same shape as [playlistEntryPositionsSql], the index
+/// asked once and the liked songs looked up in its answer, for the same reason. A test reads the query plan.
+@visibleForTesting
+const likedTrackIdsSql = 'SELECT t.id AS id FROM tracks t '
+    'WHERE t.server_id = ?2 AND t.starred_at_ms IS NOT NULL '
+    'AND t.deleted_at_ms IS NULL '
+    'AND t.rowid IN $_matchingTrackRows';
 
 /// Offline full-text search over the local library (< 30 ms on 50k tracks is a
 /// budget in docs/00-requirements.md).
@@ -106,6 +120,27 @@ class SearchDao {
       ],
       readsFrom: {_db.tracks, _db.playlistEntries},
     ).map((row) => row.read<int>('position'));
+  }
+
+  /// The ids of the songs the person has liked that match [query] (N-32, Liked Songs' "Find in playlist"): [tracks]'s own matching, restricted to
+  /// the liked songs of the server and without a limit, as [playlistEntryPositions] is to a playlist. Ids and no order: the page keeps the
+  /// order it shows (the song liked last first) and looks each of its songs up here, so there is no second ordering to keep in step with it. A
+  /// like or an unlike changes the answer (it reads `tracks`). Empty when the query has nothing searchable.
+  Selectable<String> likedTrackIds(int serverId, String query) {
+    final match = toFtsQuery(query);
+    if (match == null) {
+      return _db
+          .customSelect("SELECT '' AS id WHERE 0")
+          .map((row) => row.read<String>('id'));
+    }
+    return _db.customSelect(
+      likedTrackIdsSql,
+      variables: [
+        Variable<String>(match),
+        Variable<int>(serverId),
+      ],
+      readsFrom: {_db.tracks},
+    ).map((row) => row.read<String>('id'));
   }
 
   Selectable<AlbumRow> albums(int serverId, String query, {int limit = 30}) {

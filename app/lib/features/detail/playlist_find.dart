@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/tokens.dart';
 
 /// "Find in playlist" at rest (docs/design S-17, N-25): the field between the playlist's header lines and its buttons, Spotify's own place
-/// and words. It looks like a field and is a button: tapping it opens [PlaylistFindBar] at the top of the page, so the keyboard never
+/// and words. Liked Songs, a playlist of the person's own, uses it as it is (S-15, N-32). It looks like a field and is a button: tapping it opens [PlaylistFindBar] at the top of the page, so the keyboard never
 /// covers what the person is looking at.
 class PlaylistFindField extends StatelessWidget {
   const PlaylistFindField({super.key, required this.onTap});
