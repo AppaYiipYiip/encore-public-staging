@@ -276,5 +276,11 @@
   "evidence": "Built, not walked: slice 1 #72 (browsing makes no row), 2a #77 (the server janitor, checked on VM 108), 2c #83 (ref_gone, goneSince, feature ref-gone), 2b #85 (the phone reads the tombstones: applyGone, third cursor, pinned and downloaded songs kept), 2e (this PR: the janitor lifts file_history, deletes the retired refs' file_log rows in the same transaction, restores the 14-day keep); tests: server tests/test_ref_janitor.py and test_ref_gone.py (the away-phone scenario end to end through the feed), app test/data/encore/encore_gone_test.dart. Deleted playlists and imports are the new item N-31 (slice 2d).",
   "at": "2026-11-15T03:54:18Z",
   "by": "lead (Claude Sonnet 5.5)"
+ },
+ "N-31": {
+  "state": "built",
+  "evidence": "built, not walked: server tombstone_purge.py + migration 0016 (change_log.parent, stored import counts) + library.changes answers a gone id as deleted only when no row exists; the whole server suite, ruff, mypy and the Dart test of the saved response pass; the refs of a deleted playlist and an old import are retired by the janitor in one errand; nothing walked on VM 108 or a phone",
+  "at": "2026-11-15T09:17:14Z",
+  "by": "Claude"
  }
 }

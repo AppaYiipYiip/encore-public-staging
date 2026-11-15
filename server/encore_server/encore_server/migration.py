@@ -127,8 +127,12 @@ def migrate_from_navidrome(db: Database, person_id: str, user: str, music: Subso
         songs = _list(detail.get("entry"))
         with db.tx() as conn:
             existing = conn.execute(
-                "SELECT id FROM playlist WHERE owner = ? AND source_id = ?", (person_id, source_id)
+                "SELECT id, deleted_at FROM playlist WHERE owner = ? AND source_id = ?", (person_id, source_id)
             ).fetchone()
+            if existing is not None and existing["deleted_at"] is not None:
+                # The person deleted it here: it stays deleted. Its row is what says so (`tombstone_purge` keeps it for ever and purges only its songs, after
+                # which it would look empty, and a deleted playlist refuses new songs).
+                continue
             if existing is not None:
                 playlist_id = existing["id"]
             else:
