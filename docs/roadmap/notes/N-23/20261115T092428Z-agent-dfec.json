@@ -1,0 +1,9 @@
+{
+ "id": "20261115T092428Z-agent-dfec",
+ "item": "N-23",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T09:24:28Z",
+ "type": "note",
+ "body": "15 Nov 2026, N-23a EXTENDED (task/N-23c-typo-in-unfinished-name): the owner's own typing \"landmrvk\" (a swap AND no last letter) found nothing offline, and online only the catalogue's guess, because the shipped rule compares whole names (8 letters typed against 9 = a swap plus a missing letter = 2 edits, 1 allowed). New clause (advisor's plan, 15 Nov): what was typed is also compared with the same number of letters from the START of the name (one fewer or one more), by the same allowance (typoEditsOfStart; only for a name longer than what was typed); the score stays typoArtistScore 0.6. The 20 recorded searches through the whole assembly are unchanged (the pin test of #90). FOR N-23b / P2-12: the server must implement the SAME clause when it takes over the forgiving (the earlier correction note says 'the SHIPPED N-23a rule'; this is part of it now)."
+}

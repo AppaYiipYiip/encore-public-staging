@@ -57,6 +57,13 @@ void main() {
       }
     });
 
+    test(
+        'a typo in the unfinished name too: "landmrvk" (typed as the owner typed it) gives the band',
+        () {
+      expect(top(assembleSearch('landmrvk', local: library())),
+          'artist: LANDMVRKS');
+    });
+
     test('the upload is still listed, under the band', () {
       final page = assembleSearch('landmvrk', local: library());
 

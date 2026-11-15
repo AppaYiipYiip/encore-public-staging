@@ -125,6 +125,47 @@ void main() {
     });
   });
 
+  // Owner, 15 Nov 2026: "searching landmrvk instead of landmrvks": a typo AND the word not finished. The start of a name is what an unfinished
+  // word is: what was typed is compared with the same number of letters from the START of the name.
+  group('typoEditsOfStart: a typo in an unfinished name', () {
+    test('"landmrvk" (a swap, no last letter) is the start of "landmvrks"', () {
+      expect(typoEditsOfStart('landmrvk', 'landmvrks'), 1);
+    });
+
+    test('a letter wrong, missing or extra in the part typed', () {
+      expect(typoEditsOfStart('landmark', 'landmvrks'), 1, reason: 'wrong');
+      expect(typoEditsOfStart('landmvk', 'landmvrks'), 1, reason: 'missing');
+      expect(typoEditsOfStart('landmmvr', 'landmvrks'), 1, reason: 'extra');
+    });
+
+    test('a name that was typed unfinished and right is 0 edits', () {
+      expect(typoEditsOfStart('landmvrk', 'landmvrks'), 0);
+    });
+
+    test('never for fewer than 5 letters typed', () {
+      expect(typoEditsOfStart('lamd', 'landmvrks'), isNull);
+    });
+
+    test('one edit for 5 to 8 letters typed, two from 9', () {
+      expect(typoEditsOfStart('lamndvrks', 'landmvrksxyz'), 2);
+      expect(typoEditsOfStart('lamndvr', 'landmvrksxyz'), isNull,
+          reason: 'two edits are not allowed for 7 letters');
+    });
+
+    test(
+        'only for a name longer than what was typed; a whole name is typoEdits',
+        () {
+      expect(typoEditsOfStart('landmvrks', 'landmvrks'), isNull);
+      expect(typoEditsOfStart('landmvrksz', 'landmvrks'), isNull);
+    });
+
+    test('an unrelated name is not it', () {
+      expect(typoEditsOfStart('landmrvk', 'radiohead'), isNull);
+      expect(typoEditsOfStart('landmrvk', 'landmarks'), isNull,
+          reason: 'landmark against landmrvk is two edits');
+    });
+  });
+
   group('the index of artist names', () {
     String fold(String s) => searchKey(s);
     ArtistTypoIndex<String> index(List<String> names) =>
@@ -150,6 +191,14 @@ void main() {
       expect(names.find('jinjer'),
           ['Jinjer', 'Jinjir', 'Jonjer', 'Jenjer', 'Janjer']);
       expect(names.find('jinjer', limit: 2), ['Jinjer', 'Jinjir']);
+    });
+
+    test('finds the artist of an unfinished word with a typo', () {
+      final index = ArtistTypoIndex<String>(
+          ['Landmvrks', 'Landmarks', 'Radiohead'],
+          nameOf: (n) => n, fold: searchKey);
+
+      expect(index.find('landmrvk'), ['Landmvrks']);
     });
 
     test('finds nothing for a short word, an empty one or no near name', () {
@@ -249,6 +298,14 @@ void main() {
   });
 
   group('the scale of artistMatch', () {
+    test(
+        'an unfinished name with a typo is a typo: 0.6, under every start of a name',
+        () {
+      expect(artistMatch('landmrvk', 'LANDMVRKS'), typoArtistScore);
+      expect(artistMatch('landmvrk', 'LANDMVRKS'), 0.7,
+          reason: 'unfinished and right is still the start of the name');
+    });
+
     test('an exact name, then the start of a name, then a typo, then words',
         () {
       expect(artistMatch('landmvrks', 'Landmvrks'), 0.95);

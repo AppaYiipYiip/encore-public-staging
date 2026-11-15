@@ -6,6 +6,7 @@ User-visible changes, newest first. One line per change, in plain words.
 
 Everything below is built and tested but **not yet walked on a phone** (`docs/tasks/RELEASE-CANDIDATE.md`, the definition of pass); nothing here is released.
 
+* Search now finds a band whose name you have mistyped AND not finished ("landmrvk" for LANDMVRKS), also offline, and puts it at the top.
 * Liked Songs now has a "Find in Liked Songs" field, like the "Find in playlist" field of a playlist: tap it, type a word, and the list shows only the songs you have liked that match (by title, artist or album, found the way Search finds, so accents and other scripts work, and also with no connection). A tap on a found song plays it from its place in the whole of Liked Songs, so the songs you liked before and after it follow, not only the ones that were found; a song your server cannot get stays grey as on the page; the arrow or Back brings the whole list back, and the page is where you left it (N-32).
 * Pausing a song that is on your phone while you are offline says nothing about the connection (checked on a phone with Wi-Fi and data off, and with the server stopped; three tests now keep it that way). The coloured bar above the tabs is the colour of the cover of the song playing, not a warning.
 * Typing the start of a band's name in Search ("landmvrk" for LANDMVRKS) now gives the band at the top, not a song of an old import whose title repeats the band's name.
