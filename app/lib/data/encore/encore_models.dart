@@ -364,12 +364,19 @@ class EncoreFiles {
     this.merges = const [],
     this.mergesCursor,
     this.mergesMore = false,
+    this.gone = const [],
+    this.goneCursor,
+    this.goneMore = false,
   });
 
   factory EncoreFiles.fromJson(Map<String, dynamic> json) {
     final merges = [
       for (final m in readObjectList(json['merges']))
         if (EncoreMerge.tryParse(m) case final merge?) merge
+    ]..sort((a, b) => a.seq.compareTo(b.seq));
+    final gone = [
+      for (final g in readObjectList(json['gone']))
+        if (EncoreGone.tryParse(g) case final retired?) retired
     ]..sort((a, b) => a.seq.compareTo(b.seq));
     return EncoreFiles(
       refs: [
@@ -380,6 +387,9 @@ class EncoreFiles {
       merges: merges,
       mergesCursor: readString(json['mergesCursor']),
       mergesMore: readBool(json['mergesMore']),
+      gone: gone,
+      goneCursor: readString(json['goneCursor']),
+      goneMore: readBool(json['goneMore']),
     );
   }
 
@@ -393,6 +403,34 @@ class EncoreFiles {
   /// Where to ask from next time. Null when the server did not say (one that predates merges): the phone then keeps the cursor it has.
   final String? mergesCursor;
   final bool mergesMore;
+
+  /// The song refs the server RETIRED after the cursor that was sent, oldest first (N-27 slice 2c, docs/17 "Songs that are gone"). Empty from a server that
+  /// predates them.
+  final List<EncoreGone> gone;
+
+  /// Where to ask from next time. Null when the server did not say (one that predates tombstones): the phone then keeps the cursor it has.
+  final String? goneCursor;
+  final bool goneMore;
+}
+
+/// A song ref the server retired: the id no longer exists there, and no row of it will ever be listed again, so this is the only way a phone that was away
+/// hears it (N-27 slice 2c). `seq` is the order, and the phone's cursor.
+@immutable
+class EncoreGone {
+  const EncoreGone({required this.id, required this.seq});
+
+  /// Null for an entry that names no song: one odd entry must not stop a sync.
+  static EncoreGone? tryParse(Map<String, dynamic> json) {
+    final id = readString(json['id']);
+    if (id == null || id.isEmpty) return null;
+    return EncoreGone(id: id, seq: readInt(json['seq']) ?? 0);
+  }
+
+  final String id;
+  final int seq;
+
+  @override
+  String toString() => 'EncoreGone($seq: $id)';
 }
 
 /// `GET /encore/api/v1/info`: what this server is and can do.

@@ -74,6 +74,9 @@ class EncoreSync {
   static const mergesCursor = 'encoreMergesCursor';
   static const changesCursor = 'encoreChangesCursor';
 
+  /// Where the server's list of retired songs was read to (its own cursor, like [mergesCursor]; N-27 slice 2b).
+  static const goneCursor = 'encoreGoneCursor';
+
   /// Both feeds: the server's files, then the person's library.
   Future<Result<EncoreSyncStats>> pull() => guard(() async {
         final files = (await pullFiles()).getOrThrow();
@@ -85,9 +88,13 @@ class EncoreSync {
         var total = const EncoreSyncStats();
         var cursor = await _state.get(filesCursor) ?? '0';
         var mergesAt = await _state.get(mergesCursor) ?? '0';
+        var goneAt = await _state.get(goneCursor) ?? '0';
         while (true) {
           final page = (await _api.files(
-                  since: cursor, limit: pageLimit, mergesSince: mergesAt))
+                  since: cursor,
+                  limit: pageLimit,
+                  mergesSince: mergesAt,
+                  goneSince: goneAt))
               .getOrThrow();
           final nowMs = _clock.now().millisecondsSinceEpoch;
           late MergeOutcome merged;
@@ -101,10 +108,17 @@ class EncoreSync {
               for (final r in page.refs)
                 if (r.file?.navidromeSongId == null) r.id
             ], nowMs: nowMs);
+            // The songs the server RETIRED (N-27): in the same transaction as the page, so the cursor and what it stands for are never apart.
+            await _writer
+                .applyGone([for (final g in page.gone) g.id], nowMs: nowMs);
             await _state.set(filesCursor, page.cursor);
             // A server that predates merges does not say: the cursor stays where it was.
             if (page.mergesCursor != null) {
               await _state.set(mergesCursor, page.mergesCursor);
+            }
+            // The same for tombstones: a server from before them does not say, and the cursor stays where it was.
+            if (page.goneCursor != null) {
+              await _state.set(goneCursor, page.goneCursor);
             }
           });
           // Files cannot be rolled back, so they are touched only once the rows are safe.
@@ -114,11 +128,15 @@ class EncoreSync {
           final filesMoved = page.cursor != cursor;
           final mergesMoved =
               page.mergesCursor != null && page.mergesCursor != mergesAt;
+          final goneMoved =
+              page.goneCursor != null && page.goneCursor != goneAt;
           cursor = page.cursor;
           mergesAt = page.mergesCursor ?? mergesAt;
-          // Two feeds, two cursors: keep reading while either has more AND is getting somewhere.
+          goneAt = page.goneCursor ?? goneAt;
+          // Three feeds, three cursors: keep reading while any has more AND is getting somewhere.
           if (!((page.more && filesMoved) ||
-              (page.mergesMore && mergesMoved))) {
+              (page.mergesMore && mergesMoved) ||
+              (page.goneMore && goneMoved))) {
             break;
           }
         }
@@ -171,6 +189,8 @@ class EncoreSync {
     await _state.set(filesCursor, null);
     // Applying a merge twice changes nothing, so reading all of them again is safe.
     await _state.set(mergesCursor, null);
+    // Retiring a row twice changes nothing, so reading all of the tombstones again is safe.
+    await _state.set(goneCursor, null);
     await _state.set(changesCursor, null);
   }
 }

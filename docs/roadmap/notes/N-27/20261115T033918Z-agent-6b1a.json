@@ -1,0 +1,9 @@
+{
+ "id": "20261115T033918Z-agent-6b1a",
+ "item": "N-27",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T03:39:18Z",
+ "type": "note",
+ "body": "SLICE 2b BUILT, NOT WALKED (PR of branch task/N-27-slice2b-phone-reads-gone; lead, 15 Nov 2026): the phone reads the server's tombstones (slice 2c). EncoreFiles parses gone, goneCursor, goneMore (an entry that names no song is skipped; a server from before them answers without a cursor and the phone keeps its own); EncoreApi.files sends goneSince; EncoreWriter.applyGone clears ONLY the link to a file of the server (file_id) of the retired ids' Encore-ref rows and then calls the existing dropUnused (a like, a playlist entry or a download keeps the row); EncoreSync.pullFiles reads a THIRD cursor (encoreGoneCursor, like encoreMergesCursor), applies it in the SAME transaction as the page, keeps paging while goneMore (the advisor's carry-forward: a test with 501 tombstones, two pages at the server's page size), and reset() clears it. The advisor's mandatory test passes: a DOWNLOADED song whose server file is gone keeps its row, its download is untouched (state, local path, bytes, updatedAt) and is found by the same keys, so it plays offline; only file_id is cleared. A plain music server's row (is_ref = 0) with the same id text is never touched. The feature string `ref-gone` is NOT used as a gate (like mergesSince: a parameter on the route the phone already calls; an older server ignores it): docs/17 says so (an earlier sentence promised a gate). docs/34 CF-45. NOT DONE: 2e (the janitor still keeps a ref that once held a file until this merges AND the away-phone test is extended), 2d. N-27 stays unmarked."
+}
