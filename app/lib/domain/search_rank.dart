@@ -68,9 +68,10 @@ final RegExp _spacedDash = RegExp(r'\s[-–—]\s');
 
 /// An upload is usually named "Artist - Title ...", and a song saved from one before N-26 kept the uploading channel as its artist (B-125):
 /// "LANDMVRKS - CONCERT 4K - ..." by "slash musique". When the words before the first spaced dash are exactly the name of an artist that is one
-/// of the answers to this search ([knownArtists], each given through [searchKey]), the song is BY that artist: the name is an artist word
-/// and the rest is the title. Only a name we know is taken: "Hotel California - 2013 Remaster" is a song with a suffix, not an upload by
-/// "Hotel California", and with no such artist in the answers nothing changes. A second layer over the stored rows: it stays right after
+/// of the artists the CALLER trusts ([knownArtists], each given through [searchKey]: `assembleSearch` passes the library's artists and the
+/// catalogue artists the person has or that are well known, and only for the library's rows), the song is BY that artist: the name is an
+/// artist word and the rest is the title. Only a trusted name is taken: "Hotel California - Live at the Forum" is a song with a suffix, not
+/// an upload by the namesake artist "Hotel California" (7,812 fans), and with no such artist nothing changes. A second layer over the stored rows: it stays right after
 /// N-26 slice 5 has refiled them (their title then no longer starts with the artist's name).
 ({String name, String body})? _leadingArtist(
     String title, Set<String> knownArtists) {

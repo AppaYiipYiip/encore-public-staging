@@ -1,9 +1,17 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:encore/data/catalogue/catalogue_models.dart';
+import 'package:encore/data/catalogue/deezer_client.dart';
 import 'package:encore/data/db/app_database.dart';
+import 'package:encore/domain/search_rank.dart' show songMatch;
 import 'package:encore/features/providers.dart' show SearchResults;
 import 'package:encore/features/search/search_assembly.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/factories.dart';
+import '../support/fake_http.dart';
 
 /// P1-07 (owner, 15 Nov 2026): "searching landmrvk instead of landmrvks shows one of their songs instead of the band".
 ///
@@ -76,6 +84,87 @@ void main() {
     test('"landmvrks" typed in full is the band', () {
       expect(top(assembleSearch('landmvrks', local: library())),
           'artist: LANDMVRKS');
+    });
+  });
+
+  /// What Deezer really answered for [recorded] (tools/record_deezer_fixtures.py), whatever was typed: the namesake artist
+  /// "Hotel California" (7,812 fans) is in the answer for "hotel california".
+  Future<CatalogueResults> deezerFor(String recorded, String typed) async {
+    final all =
+        jsonDecode(File('test/fixtures/deezer/search.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final adapter = FakeHttpAdapter(routes: {
+      for (final kind in ['artist', 'album', 'track'])
+        '/search/$kind': (request) => FakeResponse.json(
+            {'data': (all[recorded] as Map<String, dynamic>)[kind]}),
+    });
+    return DeezerClient(
+            dio: Dio(BaseOptions(baseUrl: 'https://api.deezer.com'))
+              ..httpClientAdapter = adapter)
+        .search(typed);
+  }
+
+  group('only an artist the song can really be by is taken', () {
+    test(
+        'a catalogue namesake with a handful of fans does not turn "Song - Suffix" into an upload',
+        () async {
+      // Deezer lists an ARTIST called "Hotel California" (7,812 fans) next to the song. A library row "Hotel California - Live at the Forum" by
+      // Eagles is the song with a suffix and must keep the score it had (0.72 and up), not 0.53.
+      const title = 'Hotel California - Live at the Forum';
+      final deezer = await deezerFor('hotel california', 'hotel california');
+
+      final page = assembleSearch('hotel california',
+          local: SearchResults(
+              tracks: [trackRow('1', title: title, artist: 'Eagles')]),
+          catalogue: deezer);
+
+      final listed = [
+        if (page.top is SongHit) page.top as SongHit,
+        ...page.songs,
+      ];
+      final row = listed.firstWhere((s) => s.title == title,
+          orElse: () => fail('the library row is nowhere in the answer: ${[
+                for (final s in listed)
+                  '${s.artist} - ${s.title} ${s.score.toStringAsFixed(2)}'
+              ]}'));
+      expect(row.score,
+          songMatch('hotel california', artist: 'Eagles', title: title));
+      expect(row.score, greaterThan(0.7));
+    });
+
+    test(
+        'a well known catalogue artist the library does not have counts: "jinj" gives Jinjer, not an upload of the band',
+        () async {
+      // Jinjer: 100,806 fans, not in this library. The row is an upload filed under its channel.
+      final deezer = await deezerFor('jinjer', 'jinj');
+
+      final page = assembleSearch('jinj',
+          local: SearchResults(tracks: [
+            trackRow('1',
+                title: 'Jinjer - Pisces (Official Video)',
+                artist: 'Some Music Channel'),
+          ]),
+          catalogue: deezer);
+
+      expect(top(page), 'artist: Jinjer');
+    });
+
+    test('songs of the catalogue are never reread: they name their real artist',
+        () async {
+      final deezer = await deezerFor('jinjer', 'jinjer');
+      final withRule = assembleSearch('jinj',
+          local: const SearchResults(), catalogue: deezer);
+      final jinjerSongs = [
+        for (final s in withRule.songs)
+          if (!s.owned) s.score
+      ];
+
+      // Every catalogue song keeps the score `songMatch` gives it with no known artist.
+      for (final s in withRule.songs.where((s) => !s.owned)) {
+        expect(s.score, songMatch('jinj', artist: s.artist, title: s.title),
+            reason: s.title);
+      }
+      expect(jinjerSongs, isNotEmpty);
     });
   });
 }

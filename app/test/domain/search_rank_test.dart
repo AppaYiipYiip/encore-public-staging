@@ -247,8 +247,8 @@ void main() {
     });
 
     test('a title that is "Song - Suffix" is not an upload of an artist', () {
-      // Deezer and every remaster: "Hotel California - 2013 Remaster" by Eagles. The words before the dash are the song's.
-      const title = 'Hotel California - 2013 Remaster';
+      // Deezer and every live cut: "Hotel California - Live at the Forum" by Eagles. The words before the dash are the song's.
+      const title = 'Hotel California - Live at the Forum';
       expect(
           songMatch('hotel california',
               artist: 'Eagles',

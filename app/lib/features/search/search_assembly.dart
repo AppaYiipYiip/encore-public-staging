@@ -102,11 +102,16 @@ AssembledSearch assembleSearch(
   required SearchResults local,
   CatalogueResults? catalogue,
 }) {
-  // The artists among the answers: a song titled "Name - ..." by an uploading channel is a song BY Name when Name is one of them (P1-07, 15 Nov).
+  // The artists a LIBRARY song may be "by" when its title begins with their name (P1-07, 15 Nov: "LANDMVRKS - CONCERT 4K ..." saved under the
+  // uploading channel): the library's own, and the catalogue's only when the person has them or they are well known. A namesake with a handful of
+  // fans ("Hotel California", 7,812) must not turn "Hotel California - 2013 Remaster" by Eagles into an upload. The catalogue's own songs are never
+  // reread this way: Deezer names the real artist (B-46: the phone matches only what is on the phone).
   final knownArtists = <String>{
     for (final a in local.artists) searchKey(a.name),
     for (final a in catalogue?.artists ?? const <CatalogueArtist>[])
-      searchKey(a.name),
+      if (catalogue!.ownedArtists.containsKey(a.id) ||
+          (a.fans ?? 0) >= wellKnownFans)
+        searchKey(a.name),
   };
 
   // ---- songs: the library's first, then the catalogue's that the library does not have (the same song twice is one row)
@@ -121,8 +126,7 @@ AssembledSearch assembleSearch(
   }
   for (final t in catalogue?.tracks ?? const <CatalogueTrack>[]) {
     if (ownedSongs.contains(matchKey(t.artistName, t.title))) continue;
-    final score = songMatch(query,
-        artist: t.artistName, title: t.title, knownArtists: knownArtists);
+    final score = songMatch(query, artist: t.artistName, title: t.title);
     songs.add(Ranked(SongHit.catalogue(t, score), score, owned: false));
   }
   final rankedSongs = rankHits(songs);
