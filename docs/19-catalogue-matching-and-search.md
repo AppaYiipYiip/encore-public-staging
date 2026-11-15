@@ -22,7 +22,7 @@ one ranking. Lyrics are fetched by the server too and travel with downloads.
 
 ## 2. Normalisation (one function, `textnorm`, shared everywhere)
 
-> **Not implemented as written (audit B-37, proven 6 Nov 2026).** The server's `textnorm` folds to ASCII, so every Arabic, Cyrillic, Korean or Japanese name becomes the empty string, different songs merge into one and an exact non-Latin match from YouTube Music is rejected. The steps below are the specification; P2-25 builds them.
+> **Not implemented as written (audit B-37, proven 6 Nov 2026, run again 15 Nov).** The server's `textnorm` folds to ASCII, so every Arabic, Cyrillic, Korean or Japanese letter is dropped (a name made only of them is the empty string, a name that starts in Latin is cut at its Latin part), the Latin letters that do not decompose (`ø ł ı ß đ æ`) are dropped too, different songs merge into one and an exact non-Latin match from YouTube Music is rejected. The steps below are the specification; the design that builds them (the fold table, which marks are removed and which kept, the digits, one rule `survives_fold_whole`, the repair of databases already built) is `tasks/P2-songs-as-references.md`, section P2-25; the table of its section 3 replaces step 3's list when slice 2 lands.
 
 1. Unicode NFKC, case-fold, collapse spaces.
 2. Latin: strip diacritics (Beyoncé → beyonce), `&`/`and`/`+` → `and`, drop a leading "the ".
@@ -31,7 +31,7 @@ one ranking. Lyrics are fetched by the server too and travel with downloads.
 5. Pull **version tags** out of brackets into a separate field: live, acoustic, remix (with remixer), remaster(ed) (year), radio
    edit, extended, instrumental, karaoke, cover, sped up/slowed, demo, explicit/clean, deluxe/bonus.
 6. Remove punctuation; keep digits.
-`norm_key` = normalised primary artist + normalised base title + duration rounded to 5 s.
+`norm_key` = normalised primary artist + normalised base title + the version words of its brackets (`artist|title|version`, built by `refs.norm_key`); the length is not in the key: a lookup accepts a ref whose length is within 3 s (`refs.DURATION_TOLERANCE_MS`).
 
 ## 3. Matching rules (is candidate C the song S?)
 
