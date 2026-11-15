@@ -152,7 +152,7 @@ void main() {
     });
 
     test("a format character between a base and its mark still composes", () {
-      expect(textFold('か‍゙'), 'が');
+      expect(textFold('か\u200d\u3099'), 'が');
     });
 
     test("ASCII is only lower-cased and words are cut at punctuation", () {
@@ -162,8 +162,8 @@ void main() {
     });
 
     test("a run made only of marks is not a word", () {
-      expect(textWords('ก่า ่'), ['ก่า']);
-      expect(textWords('️'), isEmpty);
+      expect(textWords('ก\u0e48า \u0e48'), ['ก\u0e48า']);
+      expect(textWords('\ufe0f'), isEmpty);
     });
   });
 

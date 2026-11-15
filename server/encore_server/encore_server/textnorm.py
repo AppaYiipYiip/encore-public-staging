@@ -182,7 +182,7 @@ UNICODE_VERSION = "15.0.0"
 #: is lower, so a base-image bump can never change a stored key silently.
 TEXTNORM_REVISION = 1
 
-#: The marks that DECORATE a letter and are removed (an allow-list: what this table does not know stays, so `तुम हो` is still two words and `が` is
+#: The marks that DECORATE a letter and are removed (an allow-list: what this table does not know stays, so a Hindi phrase of two words keeps its vowel signs and stays two words, and `が` is
 #: not `か`): the combining diacritics, the Arabic harakat and Quranic marks, the Hebrew points. Inclusive ranges of code points.
 DECORATING_MARKS: tuple[tuple[int, int], ...] = (
     (0x0300, 0x036F),
@@ -236,7 +236,7 @@ FOLDED_LETTERS: dict[int, str] = {
     0x0640: "",  # ـ the tatweel is a stretch, not a letter
 }
 
-_ZWNJ = "‌"  # the Persian half-space: a SPACE (ruling D7); every other format character (Cf) is removed with no gap
+_ZWNJ = "\u200c"  # the Persian half-space: a SPACE (ruling D7); every other format character (Cf) is removed with no gap
 _MARKS_OUT = {cp: None for lo, hi in DECORATING_MARKS for cp in range(lo, hi + 1)}
 _AFTER_MARKS = str.maketrans(FOLDED_LETTERS)
 _PROTECTED = re.compile(f"([{PROTECTED_LETTERS}])")
@@ -281,7 +281,7 @@ def fold(text: str) -> str:
 
 
 def words(folded: str) -> list[str]:
-    """The words of a folded text: runs of letters, digits and kept marks (`तुम` is one word); everything else is a gap. A run made only of marks
+    """The words of a folded text: runs of letters, digits and kept marks (a Hindi word with its vowel signs is one word); everything else is a gap. A run made only of marks
     (a variation selector after an emoji) is not a word. A Chinese or Japanese title is ONE word (no n-grams in a key, ruling D3)."""
     if folded.isascii():
         return _ASCII_WORDS.findall(folded)

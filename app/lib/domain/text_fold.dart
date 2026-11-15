@@ -46,7 +46,7 @@ String textFold(String text) {
   return String.fromCharCodes(_digits(s, t));
 }
 
-/// The words of a folded text: runs of letters, digits and kept marks (`तुम` is
+/// The words of a folded text: runs of letters, digits and kept marks (a Hindi word with its vowel signs is
 /// one word); everything else is a gap. A run made only of marks is not a word.
 /// A Chinese or Japanese title is ONE word (no n-grams here).
 List<String> textWords(String folded) {

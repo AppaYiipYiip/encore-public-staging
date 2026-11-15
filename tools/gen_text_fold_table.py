@@ -45,22 +45,22 @@ MAX_LENGTH = 8
 #: Where the random strings of the corpus come from: bases and marks of every script the fold has a rule for, in the orders that go wrong (a base that
 #: changes after its mark, a format character in the middle, marks in a row). Hand-chosen; the fixture records it.
 POOL = (
-    "abceinosuxzAEISZ0123-_ !$'.’–/　 "
+    "abceinosuxzAEISZ0123-_ !$'.’–/\u3000\u00a0"
     "ıİłøßẞđðþæœħŧ"
-    "̸̧̨̛̣̀́̂̃̄̆̇̈̊̌͂ͅ"
+    "\u0300\u0301\u0302\u0303\u0304\u0306\u0307\u0308\u030a\u030c\u0323\u0327\u0328\u031b\u0338\u0342\u0345"
     "ابتكلمنهويءةىیکےۀہؤئأإآٱـ"
-    "ًَُِّْٰٕٓٔۖ"
-    "שלוםְִָֹּׁׂ"
-    "कतमह़िु्ंोक़"
-    "กสวดั่้ำํี"
+    "\u064b\u064e\u064f\u0650\u0651\u0652\u0653\u0654\u0655\u0670\u06d6"
+    "שלום\u05b0\u05b4\u05b8\u05b9\u05bc\u05c1\u05c2"
+    "कतमह\u093c\u093f\u0941\u094d\u0902\u094bक़"
+    "กสวด\u0e31\u0e48\u0e49ำ\u0e4d\u0e35"
     "각힝가한글각"
-    "かが゙゚ハばぱカｶﾞﾟー"
+    "かが\u3099\u309aハばぱカｶﾞﾟー"
     "ийеёуўїі"
     "αειουςσΣάΐᾳ"
     "٣۳३๓٠１"
-    "​‌‍‎‏‪‮⁠؜﻿­"
+    "\u200b\u200c\u200d\u200e\u200f\u202a\u202e\u2060\u061c\ufeff\u00ad"
     "ﬃＡｂ①²½㎏Ǆǅﷲﻻﻓﻴ㈱℡Ⅻẛŉǰ"
-    "\U0001f3b5️⃣"
+    "\U0001f3b5\ufe0f\u20e3"
 )
 POOL_CODE_POINTS = [ord(ch) for ch in POOL]
 
@@ -305,7 +305,7 @@ def render_fixture(data: dict[str, object]) -> str:
     pool_lines = ",\n".join("   " + ", ".join(str(cp) for cp in pool[i : i + 16]) for i in range(0, len(pool), 16))
     parts: list[str] = []
     for key, value in data.items():
-        if isinstance(value, list) and value and isinstance(value[0], dict):
+        if isinstance(value, list) and value:
             parts.append(f' "{key}": {_rows(value, " ")}')
         else:
             parts.append(f' "{key}": {_row(value)}')

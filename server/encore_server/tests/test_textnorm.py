@@ -183,9 +183,18 @@ def test_the_fallback_goes_from_the_cleaned_text_to_the_original() -> None:
     assert textnorm.key_text("abc", "xyz") == "abc"
 
 
+def test_a_lone_surrogate_does_not_raise() -> None:
+    """A title from outside can hold half of a surrogate pair; the fold treats it as an unassigned character (a gap), it never raises."""
+    half = chr(0xD800)
+    assert textnorm.fold("a" + half + "b") == "a" + half + "b"
+    assert textnorm.words(textnorm.fold("a" + half + "b")) == ["a", "b"]
+    assert textnorm.key_text(half) == half
+    assert textnorm.survives_fold_whole(half) is False
+
+
 def test_words_drop_a_token_made_only_of_marks() -> None:
-    assert textnorm.words("ก่า ่") == ["ก่า"]
-    assert textnorm.words("️") == []
+    assert textnorm.words("ก\u0e48า \u0e48") == ["ก\u0e48า"]
+    assert textnorm.words("\ufe0f") == []
 
 
 def test_words_of_unfolded_ascii_still_keep_capitals() -> None:
@@ -194,7 +203,7 @@ def test_words_of_unfolded_ascii_still_keep_capitals() -> None:
 
 def test_a_mark_before_a_format_character_still_composes() -> None:
     """The order trap: `か` + zero-width joiner + the voiced mark must compose to `が` (the format characters go first)."""
-    assert textnorm.fold("か‍゙") == "が"
+    assert textnorm.fold("か\u200d\u3099") == "が"
 
 
 def test_every_decimal_digit_of_every_script_folds_to_ascii() -> None:
