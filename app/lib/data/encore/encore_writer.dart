@@ -104,7 +104,7 @@ class EncoreWriter {
       _merger.finish(outcome, _files);
 
   /// Retires the rows of songs that have no file on the server and that nothing of the person's points at (no like, no playlist entry, no
-  /// download): the browse index lists only what the server has and what the person uses. Called after likes and entries were applied.
+  /// download, no pin to keep it): the browse index lists only what the server has and what the person uses. Called after likes and entries were applied.
   Future<void> dropUnused(Iterable<String> ids, {required int nowMs}) async {
     final all = ids.toSet().toList();
     for (var i = 0; i < all.length; i += 400) {
@@ -114,7 +114,9 @@ class EncoreWriter {
         'UPDATE tracks SET deleted_at_ms = ?1 WHERE server_id = ?2 AND file_id IS NULL AND is_ref = 1 AND deleted_at_ms IS NULL '
         'AND id IN ($marks) AND starred_at_ms IS NULL '
         'AND NOT EXISTS (SELECT 1 FROM playlist_entries e WHERE e.server_id = tracks.server_id AND e.track_id = tracks.id) '
-        'AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.server_id = tracks.server_id AND d.track_id = tracks.id)',
+        'AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.server_id = tracks.server_id AND d.track_id = tracks.id) '
+        // A song the person pinned to keep before any download of it exists (offline, or its download was removed) is still a song they asked for.
+        "AND NOT EXISTS (SELECT 1 FROM pins n WHERE n.server_id = tracks.server_id AND n.target_type = 'track' AND n.target_id = tracks.id)",
         variables: [
           Variable<int>(nowMs),
           Variable<int>(serverId),
@@ -124,6 +126,32 @@ class EncoreWriter {
         updateKind: UpdateKind.update,
       );
     }
+  }
+
+  /// Songs the server RETIRED (N-27 slice 2c/2b, docs/17 "Songs that are gone"): the ids no longer exist there. What the phone holds for them:
+  ///
+  /// * the link to a file of the server is cleared (that file is gone with the ref); NOTHING else of the row is touched, so a downloaded song keeps what it
+  ///   needs to show and to play offline, and its download is found by the same keys as before;
+  /// * the row is retired by [dropUnused], the one rule the phone already has for a song with no file: only when nothing of the person's points at it (no
+  ///   like, no playlist entry, no download). An exact signal in place of a guess about age.
+  ///
+  /// Only rows of Encore refs (`is_ref`): a plain music server's songs are never touched, whatever an id looks like.
+  Future<void> applyGone(Iterable<String> ids, {required int nowMs}) async {
+    final all = ids.where((id) => id.isNotEmpty).toSet().toList();
+    for (var i = 0; i < all.length; i += 400) {
+      final chunk = all.sublist(i, i + 400 > all.length ? all.length : i + 400);
+      final marks = List.filled(chunk.length, '?').join(',');
+      await _db.customUpdate(
+        'UPDATE tracks SET file_id = NULL WHERE server_id = ?1 AND is_ref = 1 AND file_id IS NOT NULL AND id IN ($marks)',
+        variables: [
+          Variable<int>(serverId),
+          for (final id in chunk) Variable<String>(id),
+        ],
+        updates: {_db.tracks},
+        updateKind: UpdateKind.update,
+      );
+    }
+    await dropUnused(all, nowMs: nowMs);
   }
 
   /// The person's likes: a set. A like still waiting in the outbox (the person's intent is newer than the server's view) is left alone.
