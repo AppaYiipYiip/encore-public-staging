@@ -135,6 +135,22 @@ class FakeEncoreServer {
   /// The server knows about merges (false = one from before them: it sends no `merges` at all).
   bool hasMerges = true;
 
+  /// The refs the server retired (N-27 slice 2c, docs/17 "Songs that are gone"), oldest first: what `goneSince` pages over.
+  final List<({int seq, String id})> goneLog = [];
+  int _goneSeq = 0;
+
+  /// The server knows about tombstones (false = one from before them: it sends no `gone`, `goneCursor` or `goneMore` at all).
+  bool hasGone = true;
+
+  /// The `goneSince` of each `GET library/files` (null = the app did not send one), in order.
+  final List<String?> goneSinceSeen = [];
+
+  /// The server retires [id]: the ref no longer exists and a tombstone is written (what `ref_janitor.py` does).
+  void retire(String id) {
+    refs.remove(id);
+    goneLog.add((seq: ++_goneSeq, id: id));
+  }
+
   /// When set, `GET library/files` answers exactly this (a real response saved as a fixture), whatever the phone asked.
   Map<String, Object?>? filesAnswer;
 
@@ -748,6 +764,7 @@ class FakeEncoreServer {
     final fixed = filesAnswer;
     if (fixed != null) {
       mergesSinceSeen.add(r.param('mergesSince'));
+      goneSinceSeen.add(r.param('goneSince'));
       return _ok(fixed);
     }
     final since = int.parse(r.param('since') ?? '0');
@@ -766,6 +783,12 @@ class FakeEncoreServer {
         ? const <({int seq, String from, String into})>[]
         : mergeLog.where((m) => m.seq > int.parse(mergesSince)).toList();
     final mergePage = after.take(limit).toList();
+    final goneSince = r.param('goneSince');
+    goneSinceSeen.add(goneSince);
+    final goneAfter = goneSince == null
+        ? const <({int seq, String id})>[]
+        : goneLog.where((g) => g.seq > int.parse(goneSince)).toList();
+    final gonePage = goneAfter.take(limit).toList();
     return _ok({
       'refs': [
         for (final e in page)
@@ -781,6 +804,14 @@ class FakeEncoreServer {
         'mergesCursor':
             '${mergePage.isEmpty ? int.parse(mergesSince ?? '0') : mergePage.last.seq}',
         'mergesMore': after.length > mergePage.length,
+      },
+      if (hasGone) ...{
+        'gone': [
+          for (final g in gonePage) {'id': g.id, 'seq': g.seq}
+        ],
+        'goneCursor':
+            '${gonePage.isEmpty ? int.parse(goneSince ?? '0') : gonePage.last.seq}',
+        'goneMore': goneAfter.length > gonePage.length,
       },
     });
   }

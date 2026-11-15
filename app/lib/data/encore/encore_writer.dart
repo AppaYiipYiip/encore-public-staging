@@ -126,6 +126,32 @@ class EncoreWriter {
     }
   }
 
+  /// Songs the server RETIRED (N-27 slice 2c/2b, docs/17 "Songs that are gone"): the ids no longer exist there. What the phone holds for them:
+  ///
+  /// * the link to a file of the server is cleared (that file is gone with the ref); NOTHING else of the row is touched, so a downloaded song keeps what it
+  ///   needs to show and to play offline, and its download is found by the same keys as before;
+  /// * the row is retired by [dropUnused], the one rule the phone already has for a song with no file: only when nothing of the person's points at it (no
+  ///   like, no playlist entry, no download). An exact signal in place of a guess about age.
+  ///
+  /// Only rows of Encore refs (`is_ref`): a plain music server's songs are never touched, whatever an id looks like.
+  Future<void> applyGone(Iterable<String> ids, {required int nowMs}) async {
+    final all = ids.where((id) => id.isNotEmpty).toSet().toList();
+    for (var i = 0; i < all.length; i += 400) {
+      final chunk = all.sublist(i, i + 400 > all.length ? all.length : i + 400);
+      final marks = List.filled(chunk.length, '?').join(',');
+      await _db.customUpdate(
+        'UPDATE tracks SET file_id = NULL WHERE server_id = ?1 AND is_ref = 1 AND file_id IS NOT NULL AND id IN ($marks)',
+        variables: [
+          Variable<int>(serverId),
+          for (final id in chunk) Variable<String>(id),
+        ],
+        updates: {_db.tracks},
+        updateKind: UpdateKind.update,
+      );
+    }
+    await dropUnused(all, nowMs: nowMs);
+  }
+
   /// The person's likes: a set. A like still waiting in the outbox (the person's intent is newer than the server's view) is left alone.
   Future<void> applyLikes(Iterable<EncoreLike> likes,
       {required int nowMs}) async {
