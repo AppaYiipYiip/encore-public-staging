@@ -47,6 +47,10 @@ def _hex(h: int) -> str:
 #: case fold, decimal digit) of every code point of both versions: the ONLY difference between 15.0.0 and 15.1.0 is that these 627 code points are
 #: assigned (622 CJK ideographs of Extension I, which are letters, and five symbols). A Python that is neither the pin nor listed here skips nothing:
 #: its digests differ and the corpus test says "bump TEXTNORM_REVISION", which is the point of it.
+#: **What this does NOT cover:** the production interpreter. The 15.0.0 pin is held by `server.yml` (Python 3.12, and its `--check` step, which refuses any other
+#: Unicode) and by the image (`python:3.12-slim`). Moving ONLY the image to Python 3.13 would make `words()` read the 622 ideographs of Extension I as
+#: letters (they are gaps under 15.0.0) with no test going red, because this list hides them on a 3.13. Move the image, `server.yml` and the pin
+#: (`textnorm.UNICODE_VERSION`, `TEXTNORM_REVISION`, the fixture header, then the tool) in one pull request, and delete the entry here.
 ASSIGNED_AFTER_PIN: dict[tuple[str, str], tuple[tuple[int, int], ...]] = {
     ("15.0.0", "15.1.0"): ((0x2FFC, 0x2FFF), (0x31EF, 0x31EF), (0x2EBF0, 0x2EE5D)),
 }
