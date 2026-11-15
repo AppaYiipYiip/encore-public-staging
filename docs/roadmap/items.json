@@ -1088,5 +1088,33 @@
    }
   ],
   "from": "agent"
+ },
+ "N-36": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the one-time repair of songs in other alphabets is deleted",
+  "note": "Removal trigger of P2-25's repair (design 15 Nov 2026): the worklist table ref_recheck, rehome.py, keyrepair's frozen test of what the old fold lost, the recheck_pending hold in refmerge and tests/legacy_fold.py exist only to repair databases the old text folding damaged. Delete them (and drop the table in a migration) when the table is EMPTY on every install the project knows (VM 108, the lead's server, the owner's: each read, not assumed) and one release has passed since slice 4. Every piece is marked STOP-GAP(P2-25 one-shot-repair) in the code; a guard test fails when a marked piece names a release that has passed. The permanent parts stay: the fold, the revision constant and the rekey at start-up.",
+  "proposal": true,
+  "size": "S",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-37": {
+  "kind": "feature",
+  "title": "Fix an imported playlist by reading its link again",
+  "note": "From P2-25's design (15 Nov 2026, D11, ruled yes): playlists imported while the server could not tell songs in other alphabets apart hold the wrong songs (one song repeated). The information to correct them exists for a while (import.url and import_entry.video name the song the source meant, until the entries are purged 60 days after the import), but putting the right song into a person's own playlist is a change to their list nobody asked for, so it is never automatic: read the link again, show what would change (this entry: this song), and apply only what the person accepts. The same for the likes a person brought over from the music server (bring-my-library-over adds likes for the songs that are now separate; a playlist it filled once is not filled again). Needs P2-25's rehome and fold first.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
  }
 }
