@@ -576,3 +576,67 @@ def test_the_app_builds_the_linker_so_that_it_follows_the_music_servers_scans(tm
     linker = app.state.services.linker
     assert linker is not None and linker.watching
     assert linker._status() == {"scanning": False, "count": 3, "lastScan": "2026-11-15T10:00:00Z"}
+
+
+# ------------------------------------------------------------------------------------------------ P3-35: a pass after a scan only ever adds
+
+
+def test_a_pass_that_only_adds_prunes_nothing_when_the_music_server_answers_with_no_songs(db: Database) -> None:
+    """B-40 (P3-33, still open): an empty answer makes a pass prune every file row. A disk that is not mounted for a minute gives exactly that, and
+    the music server's scan of it FINISHES with no songs, which is what starts a pass after a scan: that pass must never be able to remove."""
+    link_library(db, FakeLibrary([entry(1), entry(2)]))
+    assert len(files(db)) == 2
+
+    report = link_library(db, FakeLibrary([]), prune=False)
+
+    assert (report.complete, report.pruned) == (True, 0)
+    assert len(files(db)) == 2
+
+
+def test_the_tick_prunes_and_the_pass_alone_does_not(db: Database) -> None:
+    """Removals keep the timing they always had: the hourly tick. (P3-33 will guard that prune; nothing here has to be undone for it.)"""
+    from encore_server.scanner import LibraryLinker
+
+    link_library(db, FakeLibrary([entry(1), entry(2)]))
+    linker = LibraryLinker(db, FakeLibrary([entry(1)]))
+
+    assert linker.link_now().pruned == 0 and len(files(db)) == 2
+    assert linker.run_once().pruned == 1 and len(files(db)) == 1
+
+
+def test_a_finished_scan_that_found_no_songs_does_not_empty_the_file_links_by_itself(db: Database) -> None:
+    lib = WatchedLibrary([entry(1), entry(2)])
+    linker = quick_linker(db, lib)
+    linker.start()
+    try:
+        assert wait_until(lambda: len(files(db)) == 2 and linker.last is not None)
+        first = linker.last
+
+        lib.a_scan_ends_with([])  # the disk went away: the scan finished and the music server lists nothing
+
+        assert wait_until(lambda: linker.last is not first), "the pass after the scan did run, to its end"
+        assert linker.last is not None and linker.last.complete and linker.last.seen == 0
+        assert len(files(db)) == 2, "and it removed nothing"
+    finally:
+        linker.stop()
+
+
+def test_a_music_server_that_is_down_is_asked_about_its_scan_without_a_log_line_every_time(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The link looks every 30 s: a music server that is down for hours would write 2,880 lines a day."""
+    import logging
+
+    import httpx
+
+    from encore_server.navidrome import NavidromeClient
+
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("down")
+
+    client = NavidromeClient("http://music.invalid", "admin", "pw", client=httpx.Client(transport=httpx.MockTransport(down)))
+    with caplog.at_level(logging.INFO, logger="encore_server.navidrome"):
+        assert client.scan_status(quiet=True) is None
+        assert caplog.records == []
+        assert client.scan_status() is None
+        assert len(caplog.records) == 1

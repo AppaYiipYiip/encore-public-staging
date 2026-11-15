@@ -78,8 +78,9 @@ def described(song: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def link_library(db: Database, navidrome: Library, *, page: int = PAGE) -> LinkReport:
-    """One pass over the music server's songs. Safe to run again at any time (nothing is created twice)."""
+def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: bool = True) -> LinkReport:
+    """One pass over the music server's songs. Safe to run again at any time (nothing is created twice). With [prune] off it only ever adds: no file row
+    is removed, whatever the music server answers (the pass after a scan, P3-35: a scan of a disk that is not mounted finishes with no songs)."""
     report = LinkReport()
     began = now_ms()
     seen_ids: set[str] = set()
@@ -129,7 +130,7 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE) -> LinkR
             break
         offset += len(songs)
     report.complete = True
-    report.pruned = _prune(db, seen_ids, began)
+    report.pruned = _prune(db, seen_ids, began) if prune else 0
     return report
 
 
@@ -159,9 +160,11 @@ class LibraryLinker:
     """Runs [link_library] soon after the server starts, every [every_s] (the tick), and, when it is given the music server's scan status, soon after
     each scan of the music server that changed something (P3-35). [poke] asks for a pass at once (a person added music).
 
-    The tick is the whole errand: [before] (the finders, the purges), then the pass. A pass because of a scan is the link alone: the errands ask the
-    catalogue from the Host's address and themselves start scans, so run after every scan they would make a loop. When to run is decided by
-    [LinkPlan] (`link_plan.py`), which has no thread and no clock; this class only asks it and acts."""
+    The tick is the whole errand: [before] (the finders, the purges), then the pass, which also removes the rows of files the music server no longer
+    has. A pass because of a scan is the link alone and **only adds**: the errands ask the catalogue from the Host's address and themselves start scans,
+    so run after every scan they would make a loop, and a scan that finished with no songs (a disk not mounted for a minute, B-40) must not be able to
+    remove every file row within a minute of the disk going away: removals keep the hourly timing they had. When to run is decided by [LinkPlan]
+    (`link_plan.py`), which has no thread and no clock; this class only asks it and acts."""
 
     def __init__(
         self,
@@ -200,12 +203,12 @@ class LibraryLinker:
                 self._before()
             except Exception:  # noqa: BLE001 - a side errand must not stop the link; it is tried again next time
                 log.exception("the errand before the library link failed")
-        return self.link_now("every hour")
+        return self.link_now("every hour", prune=True)
 
-    def link_now(self, why: str = "asked for") -> LinkReport:
-        """The pass alone."""
+    def link_now(self, why: str = "asked for", *, prune: bool = False) -> LinkReport:
+        """The pass alone; it adds, and removes only when asked to ([prune]: the tick)."""
         began = time.monotonic()
-        self.last = link_library(self._db, self._navidrome)
+        self.last = link_library(self._db, self._navidrome, prune=prune)
         if self.last.linked or self.last.pruned:
             log.info(
                 "library linked: %d songs seen, %d new refs, %d files pruned (%s, %.1f s)",
