@@ -1,0 +1,12 @@
+{
+ "id": "20261115T182517Z-agent-575b",
+ "item": "P3-35",
+ "role": "agent",
+ "by": "helper-p335 (Claude Sonnet 5.5)",
+ "at": "2026-11-15T18:25:17Z",
+ "type": "note",
+ "body": "P3-35 SLICE 3 (the Host's doors; helper-p335, 15 Nov 2026): NOT built on purpose. It shows the Host a wording (\"Looking for new music\", \"last linked 3 minutes ago, 2 new albums\"), so a drawing comes first (no screen before its drawing), and D-61 says a Host action with one door is not finished (button on the Library page, docs/15 line 238, AND `encore scan`).\nWHAT IT IS FOR: slice 1 follows the music server's scan; it cannot make the music server SEE a file. Its watcher does the selective rescan in 0.2 to 0.4 s on a local folder (docs/22 section 7, verified on 0.64.2), but a network share (SMB, NFS) or a Docker Desktop bind mount may deliver no file events, and then only ND_SCANSCHEDULE (`@every 1h`, deploy/compose.yaml:15) finds new music: up to an hour. Nobody has measured the watcher on such a mount; a stranger with a NAS is exactly that Host. One operation behind both doors: `NavidromeClient.start_scan()` then `LibraryLinker.poke()` (poke exists and runs at once; the plan runs it as soon as no scan is running, so the link follows the scan the Host asked for).\nPIECES: (1) `POST /encore/api/v1/library/scan`, owner only, answers in plain words; docs/17. (2) `encore scan` in `__main__` (B-57 is fixed: an unknown word no longer starts the server, so the command has a safe home). (3) The Library page button (P3-06) and the Health page line, from `LinkReport` and the time of the last pass (add them to `LibraryLinker.last`; today only `last` exists and no route reads it). (4) The words: \"3 new albums\" needs the album count of the pass: a `LinkReport` field, counted from the new refs' albums; a decision for the drawing.\nOPTION for the Host on a share, no screen: set ND_SCANSCHEDULE shorter in `.env`: the compose file hard-codes it today; passing it through like ENCORE_YOUTUBE_PACE_S is one line. Cost: a quick scan reads every folder's modification time (a spinning NAS disk wakes more often). A Host option, not a mandate (ADR-077).\nSize S to M. Order: after the drawing. Not needed for the phone slice.",
+ "to": [
+  "agent"
+ ]
+}

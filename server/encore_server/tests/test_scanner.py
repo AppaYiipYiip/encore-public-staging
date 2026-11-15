@@ -411,3 +411,232 @@ def test_the_linker_runs_by_itself_soon_after_start_and_again_when_poked(db: Dat
         assert len(files(db)) == 2
     finally:
         linker.stop()
+
+
+# ------------------------------------------------------------------------------------------------ P3-35: the link follows the music server's scan
+
+
+class WatchedLibrary(FakeLibrary):
+    """A music server that also says what its scanner is doing (`getScanStatus`)."""
+
+    def __init__(self, songs: list[dict[str, Any]]) -> None:
+        super().__init__(songs)
+        self.status: dict[str, Any] | None = {"scanning": False, "count": len(songs), "lastScan": "scan-1"}
+        self.status_asked = 0
+
+    def scan_status(self) -> dict[str, Any] | None:
+        self.status_asked += 1
+        return self.status
+
+    def a_scan_ends_with(self, songs: list[dict[str, Any]]) -> None:
+        """Files were added: the scan finishes, its count and its time move."""
+        self.songs_ = songs
+        self.status = {"scanning": False, "count": len(songs), "lastScan": f"scan-{self.status_asked}"}
+
+
+def wait_until(condition: Any, seconds: float = 5.0) -> bool:
+    import time
+
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(0.01)
+    return bool(condition())
+
+
+def quick_linker(db: Database, lib: WatchedLibrary, **extra: Any) -> Any:
+    from encore_server.scanner import LibraryLinker
+
+    return LibraryLinker(
+        db,
+        lib,
+        scan_status=lib.scan_status,
+        first_after_s=0.0,
+        every_s=3600.0,
+        watch_s=0.02,
+        busy_s=0.02,
+        min_gap_s=0.0,
+        **extra,
+    )
+
+
+def test_music_added_to_the_folder_is_linked_after_the_scan_without_a_poke_or_the_hourly_tick(db: Database) -> None:
+    lib = WatchedLibrary([entry(1)])
+    linker = quick_linker(db, lib)
+    linker.start()
+    try:
+        assert wait_until(lambda: len(files(db)) == 1), "the first pass runs soon after the start"
+
+        lib.a_scan_ends_with([entry(1), entry(2), entry(3)])
+
+        assert wait_until(lambda: len(files(db)) == 3), (
+            "the hourly tick is an hour away; the finished scan is what links the two new songs"
+        )
+    finally:
+        linker.stop()
+
+
+def test_a_pass_after_a_scan_does_not_run_the_errands_that_belong_to_the_hourly_tick(db: Database) -> None:
+    """The cover and artist finders ask the music server for a scan when they find a picture, and ask the catalogue (from the Host's address) for
+    every song: a pass that ran them after every scan would make a loop (find, scan, pass, find) and a stream of look-ups."""
+    errands: list[str] = []
+    lib = WatchedLibrary([entry(1)])
+    linker = quick_linker(db, lib, before=lambda: errands.append("errands"))
+    linker.start()
+    try:
+        assert wait_until(lambda: len(files(db)) == 1)
+        assert errands == ["errands"], "the first pass is the tick"
+
+        lib.a_scan_ends_with([entry(1), entry(2)])
+
+        assert wait_until(lambda: len(files(db)) == 2)
+        assert errands == ["errands"], "the pass after a scan is the link alone"
+    finally:
+        linker.stop()
+
+
+def test_a_music_server_that_cannot_say_whether_it_scans_is_linked_by_the_tick_and_a_poke_as_before(db: Database) -> None:
+    lib = WatchedLibrary([entry(1)])
+    lib.status = None
+    linker = quick_linker(db, lib)
+    linker.start()
+    try:
+        assert wait_until(lambda: len(files(db)) == 1)
+        lib.songs_ = [entry(1), entry(2)]
+        assert not wait_until(lambda: len(files(db)) == 2, 0.3), "nothing says the library changed"
+
+        linker.poke()
+
+        assert wait_until(lambda: len(files(db)) == 2)
+    finally:
+        linker.stop()
+
+
+def test_run_once_is_the_tick_with_its_errands_and_link_now_is_the_pass_alone(db: Database) -> None:
+    from encore_server.scanner import LibraryLinker
+
+    errands: list[str] = []
+    linker = LibraryLinker(db, FakeLibrary([entry(1)]), before=lambda: errands.append("errands"))
+
+    linker.link_now()
+    assert errands == []
+    linker.run_once()
+    assert errands == ["errands"]
+
+
+def test_a_linker_is_watching_only_when_it_was_given_the_music_servers_scan_status(db: Database) -> None:
+    from encore_server.scanner import LibraryLinker
+
+    lib = WatchedLibrary([entry(1)])
+
+    assert LibraryLinker(db, lib, scan_status=lib.scan_status).watching is True
+    assert LibraryLinker(db, lib).watching is False
+
+
+def test_finding_the_file_row_of_a_music_server_id_has_an_index(db: Database) -> None:
+    """Every page of a pass asks for 500 ids at once. Without an index each page reads every row of `song_file`: a pass over 200,000 songs took
+    147 s where 7,200 took 0.7 s (measured 15 Nov 2026), which no short interval can afford."""
+    with db.read() as conn:
+        first_columns = [
+            conn.execute(f"PRAGMA index_info({index['name']})").fetchone()["name"]
+            for index in conn.execute("PRAGMA index_list(song_file)")
+        ]
+
+    assert "navidrome_song_id" in first_columns
+
+
+def test_the_app_builds_the_linker_so_that_it_follows_the_music_servers_scans(tmp_path: Any) -> None:
+    """Without this a linker that watches nothing would pass every test above."""
+    import httpx
+
+    from encore_server.accounts import NavidromeAdmin
+    from encore_server.api import create_app
+    from encore_server.config import Settings
+    from encore_server.navidrome import NavidromeClient
+
+    def music_server(request: httpx.Request) -> httpx.Response:
+        body = {"scanStatus": {"scanning": False, "count": 3, "lastScan": "2026-11-15T10:00:00Z"}}
+        return httpx.Response(200, json={"subsonic-response": {"status": "ok", **body}})
+
+    settings = Settings(
+        data_dir=tmp_path / "data",
+        music_dir=tmp_path / "music",
+        navidrome_url="http://music.invalid",
+        navidrome_admin_user="admin",
+        navidrome_admin_password="pw",
+        youtube=False,
+        workers=False,
+    )
+    client = NavidromeClient(
+        "http://music.invalid", "admin", "pw", client=httpx.Client(transport=httpx.MockTransport(music_server))
+    )
+    app = create_app(settings, navidrome=client, navidrome_admin=NavidromeAdmin("http://music.invalid", "", ""))
+
+    linker = app.state.services.linker
+    assert linker is not None and linker.watching
+    assert linker._status() == {"scanning": False, "count": 3, "lastScan": "2026-11-15T10:00:00Z"}
+
+
+# ------------------------------------------------------------------------------------------------ P3-35: a pass after a scan only ever adds
+
+
+def test_a_pass_that_only_adds_prunes_nothing_when_the_music_server_answers_with_no_songs(db: Database) -> None:
+    """B-40 (P3-33, still open): an empty answer makes a pass prune every file row. A disk that is not mounted for a minute gives exactly that, and
+    the music server's scan of it FINISHES with no songs, which is what starts a pass after a scan: that pass must never be able to remove."""
+    link_library(db, FakeLibrary([entry(1), entry(2)]))
+    assert len(files(db)) == 2
+
+    report = link_library(db, FakeLibrary([]), prune=False)
+
+    assert (report.complete, report.pruned) == (True, 0)
+    assert len(files(db)) == 2
+
+
+def test_the_tick_prunes_and_the_pass_alone_does_not(db: Database) -> None:
+    """Removals keep the timing they always had: the hourly tick. (P3-33 will guard that prune; nothing here has to be undone for it.)"""
+    from encore_server.scanner import LibraryLinker
+
+    link_library(db, FakeLibrary([entry(1), entry(2)]))
+    linker = LibraryLinker(db, FakeLibrary([entry(1)]))
+
+    assert linker.link_now().pruned == 0 and len(files(db)) == 2
+    assert linker.run_once().pruned == 1 and len(files(db)) == 1
+
+
+def test_a_finished_scan_that_found_no_songs_does_not_empty_the_file_links_by_itself(db: Database) -> None:
+    lib = WatchedLibrary([entry(1), entry(2)])
+    linker = quick_linker(db, lib)
+    linker.start()
+    try:
+        assert wait_until(lambda: len(files(db)) == 2 and linker.last is not None)
+        first = linker.last
+
+        lib.a_scan_ends_with([])  # the disk went away: the scan finished and the music server lists nothing
+
+        assert wait_until(lambda: linker.last is not first), "the pass after the scan did run, to its end"
+        assert linker.last is not None and linker.last.complete and linker.last.seen == 0
+        assert len(files(db)) == 2, "and it removed nothing"
+    finally:
+        linker.stop()
+
+
+def test_a_music_server_that_is_down_is_asked_about_its_scan_without_a_log_line_every_time(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The link looks every 30 s: a music server that is down for hours would write 2,880 lines a day."""
+    import logging
+
+    import httpx
+
+    from encore_server.navidrome import NavidromeClient
+
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("down")
+
+    client = NavidromeClient("http://music.invalid", "admin", "pw", client=httpx.Client(transport=httpx.MockTransport(down)))
+    with caplog.at_level(logging.INFO, logger="encore_server.navidrome"):
+        assert client.scan_status(quiet=True) is None
+        assert caplog.records == []
+        assert client.scan_status() is None
+        assert len(caplog.records) == 1
