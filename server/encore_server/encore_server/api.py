@@ -1723,7 +1723,13 @@ def create_app(
                 log.exception("a background errand failed")
 
     linker = (
-        LibraryLinker(database, client, every_s=settings.scan_every_min * 60.0, before=errands)
+        LibraryLinker(
+            database,
+            client,
+            scan_status=lambda: client.scan_status(quiet=True),
+            every_s=settings.scan_every_min * 60.0,
+            before=errands,
+        )
         if client.configured and settings.scan_every_min > 0
         else None
     )

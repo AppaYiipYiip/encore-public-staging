@@ -47,14 +47,16 @@ class NavidromeClient:
             **{k: str(v) for k, v in params.items()},
         }
 
-    def _call(self, method: str, **params: object) -> dict[str, Any] | None:
-        """The `subsonic-response` when the music server said ok; `None` for anything else (a busy music server is not an exception)."""
+    def _call(self, method: str, *, quiet: bool = False, **params: object) -> dict[str, Any] | None:
+        """The `subsonic-response` when the music server said ok; `None` for anything else (a busy music server is not an exception). [quiet]: a question
+        asked every few seconds says nothing when the music server does not answer (the caller has its own line for it)."""
         query = self._query(f="json", **params)
         try:
             response = self._client.get(f"{self._base}/rest/{method}.view", params=query)
             body = response.json().get("subsonic-response", {})
         except (httpx.HTTPError, ValueError) as error:
-            log.info("the music server did not answer %s: %s", method, type(error).__name__)
+            if not quiet:
+                log.info("the music server did not answer %s: %s", method, type(error).__name__)
             return None
         return body if isinstance(body, dict) and body.get("status") == "ok" else None
 
@@ -128,9 +130,9 @@ class NavidromeClient:
     def start_scan(self, *, full: bool = False) -> bool:
         return self._call("startScan", fullScan="true" if full else "false") is not None
 
-    def scan_status(self) -> dict[str, Any] | None:
+    def scan_status(self, *, quiet: bool = False) -> dict[str, Any] | None:
         """`{scanning, lastScan, count}` of the music server's scanner; `None` when it cannot say."""
-        body = self._call("getScanStatus")
+        body = self._call("getScanStatus", quiet=quiet)
         return None if body is None else dict(body.get("scanStatus") or {})
 
     def scanning(self) -> bool | None:

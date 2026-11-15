@@ -1,0 +1,9 @@
+{
+ "id": "20261115T182518Z-agent-3a45",
+ "item": "P2-12",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T18:25:18Z",
+ "type": "note",
+ "body": "15 Nov 2026, THE ADVISOR'S RULINGS on the drawing of P2-12 slice 4 (PR #97, the 'Also showing results for' line). (1) WORDING: ship 'Also showing results for \"LANDMVRKS\"' with STRAIGHT quotes, to match the app's 'No results for \"x\"'. (2) TAPPABLE: NO. The rows are the way in; the plan says the phone never changes the field; a tap can be drawn and added later without changing the answer. (3) RULE FOR SLICE 5 (build it as a rule, not as a score tweak): an assumed row that is not the person's own artist can NEVER be the Top result, whatever it scores (LANDMVRKS has 60,100 fans, above the 50,000 well-known line, so today's ranking would hand a friend's phone the Top card). (4) The line arrives in the SAME update as the catalogue's rows, never alone or later, and never while a finger is on the list: slice 5 needs a widget test for 'same update' and 'no finger down'. (5) The phone's own typo guess (N-23a, built) stays silent, also offline: a phone-only follow-up could give it the line; not drawn, not built. (6) Slice 5 stays under D-51. (7) The inventory now exceeds the doc checker's word limit (5,004 against 4,500: reported only): a future split of docs/design/00-screen-inventory.md, noted here. (8) The recorded Deezer answer for 'landmarks' already holds the band, so the extra request never fires; the frames use 'landmrvk', which needs the unfinished-name clause of PR #93 on the SERVER side (the typo rule shared as typo-rule.json): the server must implement that clause."
+}

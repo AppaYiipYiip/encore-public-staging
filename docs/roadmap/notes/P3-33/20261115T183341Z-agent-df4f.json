@@ -1,0 +1,12 @@
+{
+ "id": "20261115T183341Z-agent-df4f",
+ "item": "P3-33",
+ "role": "agent",
+ "by": "helper-p335 (Claude Sonnet 5.5)",
+ "at": "2026-11-15T18:33:41Z",
+ "type": "note",
+ "body": "P3-33 and P3-35 (helper-p335, 15 Nov 2026): the library link now also runs after every music-server scan that finished and changed something (P3-35 slice 1, branch task/P3-35-new-music-within-minutes). B-40's case is exactly such a scan: a disk not mounted for a minute makes the music server FINISH a scan with no songs, count 0 and a new lastScan. So P3-35 made the pass after a scan ADD ONLY (`link_library(prune=False)`; only the hourly tick prunes, as today) and tested it (a finished scan with no songs removes nothing). P3-33's guard therefore still has one job: the TICK's prune (the same empty answer, the half-of-what-is-linked floor above 20 files, the same absence on two passes). Nothing in P3-35 has to be undone for it. One more fact for P3-33: the plan never starts a pass while `getScanStatus` says scanning (`link_plan.py`), so the \"ask whether it is scanning\" part is done for the tick as well; the missing piece is an answer that is empty or far shorter while NOT scanning.",
+ "to": [
+  "agent"
+ ]
+}
