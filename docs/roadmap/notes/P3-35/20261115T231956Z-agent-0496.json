@@ -1,0 +1,9 @@
+{
+ "id": "20261115T231956Z-agent-0496",
+ "item": "P3-35",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:19:56Z",
+ "type": "note",
+ "body": "15 Nov 2026, REAL-STACK CHECK of slice 1 on VM 108 (image sha-62cf7f0, NOT the release-candidate pair; nothing marked walked; P3-35 stays NOT built because the phone slice remains). Three 4-second test songs (ffmpeg opus, 'Bench Artist / Bench Album') were written into the music folder at 19:00:15 UTC. The music server's watcher scanned at 19:00:21 (6 s, scanType quick-selective, lastScan moved) and the Encore link ran at 19:01:01: 'library linked: 3239 songs seen, 3 new refs, 0 files pruned (after a scan of the music server, 0.3 s)'. ABOUT 46 SECONDS from file to linked refs (before: up to an hour). The hourly tick still ran at 20:00, 21:00, 22:00, 23:00 with 0 new refs (nothing to add). So on this stack the music server's own discovery is fast (watcher on a bind mount works); the 47-minute delay of the audit was the hourly timer. NOT measured: a network share or a Docker Desktop mount (no file events: the schedule is the delay there; slice 3, the Host's 'scan now' door); a 200,000-song library. (My first timing script looked for the folder name in song_file.path and printed 'NOT linked': the music server builds that path from TAGS, 'Bench Artist/Bench Album/...': a trap for the next bench: look the file up by title.) The phone side is unchanged: it takes the new songs at the next full run (every 10 minutes while the app is open, 5 minutes after a resume) and the artist and album lists wait libraryPassGap (1 hour, 6 on mobile data): slice 2 (a files.changed event) is still to design and build. The test songs were removed (rm -rf the folder); their 3 refs stay as unpointed junk the janitor retires after 14 days. Homelab log entry 1z."
+}

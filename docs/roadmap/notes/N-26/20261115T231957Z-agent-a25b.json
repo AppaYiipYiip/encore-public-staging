@@ -1,0 +1,9 @@
+{
+ "id": "20261115T231957Z-agent-a25b",
+ "item": "N-26",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:19:57Z",
+ "type": "note",
+ "body": "15 Nov 2026, LEAD'S EXPLICIT RULING on the known false-positive class of N-26 slice 4 (PR #99, advisor asked for a decision, not a pinned test): 'Happy Ending | Born by the River' uploaded by a channel other than the band reads as artist 'the River' with the trusted basis `title`. ACCEPTED as a pinned leftover owned by N-28, with these reasons: (1) it needs THREE coincident features (a band or show name ending in Opening/Ending, the pipe, exactly one ' by ' in the rest) and the uploader must not be the band; (2) the harm is a MIS-FILED song, not lost data, and it is RE-DERIVABLE: slice 2 stored the facts (artist_basis `title`, uploader) so the affected rows can be FOUND, and the raw upload title is NOT stored (the ref keeps the cleaned song title), so the repair re-reads the entry through ytm_video_id (needs the network); N-26 slice 5 (repair of stored rows) and N-28 (the catalogue names the performer of a channel-only upload) replace the heuristic; (3) the benefit: the Crunchyroll openings of an anime library are filed under their artists (two recorded rows). REMOVAL TRIGGER: N-28 built (the catalogue identity makes the title shape unnecessary). The dash form after the label was DROPPED (8 targeted negatives flipped), more than one ' by ' fails closed, a label that is the uploader's own name is not a series, a separator before the pipe is not read."
+}
