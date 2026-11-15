@@ -77,10 +77,15 @@ class EncoreSync {
   /// Where the server's list of retired songs was read to (its own cursor, like [mergesCursor]; N-27 slice 2b).
   static const goneCursor = 'encoreGoneCursor';
 
-  /// Both feeds: the server's files, then the person's library.
+  /// Both feeds: the person's library first, then the server's files and the list of retired songs (N-35).
+  ///
+  /// In this order every pointer at a song (a place in a playlist, a like) is in its final state when the phone hears that a song's file is gone or that
+  /// the song itself is retired, so the one rule that drops a row nothing points at ([EncoreWriter.dropUnused]) decides with the whole picture. The cursors
+  /// are independent (each feed keeps its own, written in the transaction of the page it read), so a feed that cannot be read leaves the other side's cursors
+  /// where they were: the next pull reads both.
   Future<Result<EncoreSyncStats>> pull() => guard(() async {
-        final files = (await pullFiles()).getOrThrow();
         final library = (await pullChanges()).getOrThrow();
+        final files = (await pullFiles()).getOrThrow();
         return files + library;
       });
 
@@ -158,12 +163,15 @@ class EncoreSync {
             await _writer.applyLikes(page.likes, nowMs: nowMs);
             await _writer.applySets(
                 albums: page.savedAlbums, follows: page.follows, nowMs: nowMs);
-            await _writer.applyPlaylists(page.playlists, page.entries,
-                nowMs: nowMs);
+            final freed = await _writer
+                .applyPlaylists(page.playlists, page.entries, nowMs: nowMs);
+            // The songs a page carries, and the songs whose place in a playlist the page took away: a purged tombstone names no song, so the phone's own
+            // entry rows are what says which (N-35).
             await _writer.dropUnused([
               for (final r in page.refs) r.id,
               for (final l in page.likes) l.ref,
               for (final e in page.entries) e.ref,
+              ...freed,
             ], nowMs: nowMs);
             await _state.set(changesCursor, page.cursor);
           });
