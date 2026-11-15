@@ -97,6 +97,14 @@ void main() {
             updatedAtMs: 1,
           ));
 
+  /// The person asked to keep a song on the phone (a pin on the track) before any download of it exists: offline, or the download was removed.
+  Future<void> pin(String id) => db.into(db.pins).insert(PinsCompanion.insert(
+        serverId: serverId,
+        targetType: 'track',
+        targetId: id,
+        createdAtMs: 1,
+      ));
+
   Future<TrackRow?> track(String id) => (db.select(db.tracks)
         ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
       .getSingleOrNull();
@@ -222,6 +230,19 @@ void main() {
       expect(after.bytes, before.bytes);
       expect(after.updatedAtMs, before.updatedAtMs,
           reason: 'nothing of the download was written');
+    });
+
+    test(
+        'a song the person PINNED to keep, with no download made yet, keeps its row: they asked for it',
+        () async {
+      await row(_ref('a'), fileId: 'nd-a');
+      await pin(_ref('a'));
+      server.retire(_ref('a'));
+
+      await sync.pullFiles();
+
+      expect(await live(_ref('a')), isTrue);
+      expect((await track(_ref('a')))!.fileId, isNull);
     });
 
     test(

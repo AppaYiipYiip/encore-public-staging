@@ -104,7 +104,7 @@ class EncoreWriter {
       _merger.finish(outcome, _files);
 
   /// Retires the rows of songs that have no file on the server and that nothing of the person's points at (no like, no playlist entry, no
-  /// download): the browse index lists only what the server has and what the person uses. Called after likes and entries were applied.
+  /// download, no pin to keep it): the browse index lists only what the server has and what the person uses. Called after likes and entries were applied.
   Future<void> dropUnused(Iterable<String> ids, {required int nowMs}) async {
     final all = ids.toSet().toList();
     for (var i = 0; i < all.length; i += 400) {
@@ -114,7 +114,9 @@ class EncoreWriter {
         'UPDATE tracks SET deleted_at_ms = ?1 WHERE server_id = ?2 AND file_id IS NULL AND is_ref = 1 AND deleted_at_ms IS NULL '
         'AND id IN ($marks) AND starred_at_ms IS NULL '
         'AND NOT EXISTS (SELECT 1 FROM playlist_entries e WHERE e.server_id = tracks.server_id AND e.track_id = tracks.id) '
-        'AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.server_id = tracks.server_id AND d.track_id = tracks.id)',
+        'AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.server_id = tracks.server_id AND d.track_id = tracks.id) '
+        // A song the person pinned to keep before any download of it exists (offline, or its download was removed) is still a song they asked for.
+        "AND NOT EXISTS (SELECT 1 FROM pins n WHERE n.server_id = tracks.server_id AND n.target_type = 'track' AND n.target_id = tracks.id)",
         variables: [
           Variable<int>(nowMs),
           Variable<int>(serverId),
