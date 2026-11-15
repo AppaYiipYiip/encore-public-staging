@@ -1,0 +1,9 @@
+{
+ "id": "20261115T231958Z-agent-cdf1",
+ "item": "P2-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:19:58Z",
+ "type": "note",
+ "body": "15 Nov 2026, ADVISOR'S RULINGS on the drawing S-95 (PR #103, merged) and its questions. Q2 App closed: ACCEPT: a live card while the app is open plus the dated card first; a foreground service only if the walk says the gap is felt. Q3 Which jobs get a card: ACCEPT: an import gets the running card, its end is part of the same card, the permission is asked at the first Import too, an import plus a Download of its playlist is one line; a single song gets none. Q4: ACCEPT one running card for everything (3 named, then 'and N more') and one result card per job at the end. Q5 Stop: ACCEPT no Stop button; a real stop is a new item: N-39 (and audit row B-134: the group notification's Cancel stops files in flight but the pins stay, so the manager most likely restarts them: READ, not run). Q6: ACCEPT the permission flow unchanged (D-52) and a new silent low-importance 'Downloads' channel, not new_music. Q1 (PB-38 and the D-52 sentence of ADR-R44): ACCEPT ONLY WITH A CONDITION: the single card must NOT remove the phone-copy card when the app is killed (long-running WorkManager work needs its own foreground notification anyway): do not fix 'no notification' by creating a new 'no notification' case; the code slice proves the phone copy still has a card with the app killed (a fake WorkManager test), and amends PB-38 and the ADR sentence in the same PR. BUILD: a size-M helper after #103 (now merged), tests first, fakes only; it will not be in the owner's week-1 APK (build 160 + server 62cf7f0 are frozen for his test)."
+}

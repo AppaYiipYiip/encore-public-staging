@@ -1,0 +1,9 @@
+{
+ "id": "20261115T231957Z-agent-a094",
+ "item": "N-35",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-15T23:19:57Z",
+ "type": "note",
+ "body": "15 Nov 2026, A35 CHECK (secondary test phone, build 158 then 159 = main 62cf7f0 against VM 108 on the same head; NOT the release-candidate pair; nothing walked): playlist counts before (build 158) and after installing 159 and Sync now: Liked Songs 3, '00s Hip Hop 189, 2000s Rock 200, Favorite Songs 2000 and 2251, liked 684, Upgrade test 1: IDENTICAL. The new pull order (changes before gone) lost no entry. NOT checked on the real stack: the away-phone case (a phone that was away across a purge and the janitor); it is pinned by the saved real responses and 17 tests; VM 108 has no data old enough (see N-31)."
+}
