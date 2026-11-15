@@ -287,8 +287,10 @@ def facts_to_fill(
     * A reading that says `channel` or `unknown` is a fact about THAT UPLOAD, so it is filled only when the ref plays from the very video the reading
       came from. Otherwise a real performer's catalogue ref (NULL: a performer) found by name for an upload on the band's own channel would be downgraded,
       and the finders would then never look for its picture or its cover. `declared` and `title` name a performer and need no video.
-    * The **uploader** is a fact about the VIDEO: stored only with the video it belongs to, whatever the artist (it is what the repair of slice 5 needs
-      to recognise a ref filed under its channel)."""
+    * The **uploader** is the channel of the UPLOAD the ref was made from. A NEW ref stores it whatever the video (the design: "the channel's name, when
+      the song came from an upload"; a removed upload has no video id and a title that names its performer, which is exactly the row that needs it).
+      A ref FOUND takes it only when it plays from the very video the reading came from, whatever the artist: another upload's channel is not
+      attributed to a ref that was not made from it (it is what the repair of slice 5 needs to recognise a ref filed under its channel)."""
     updates: dict[str, str] = {}
     same_video = video is not None and have_video == video
     if (
@@ -362,8 +364,6 @@ def resolve(
             # A description that carries an id some other ref owns has been matched above; this only guards a race.
             if item[column] and conn.execute(f"SELECT 1 FROM song_ref WHERE {column} = ?", (item[column],)).fetchone():  # noqa: S608
                 item[column] = None
-        # The uploader is a fact about the VIDEO: kept only with the video the ref plays from (the race guard above may have dropped the id).
-        kept_uploader = cleaned_uploader if item["ytm_video_id"] else None
         conn.execute(
             "INSERT INTO song_ref (id, title, artists, album, album_artist, track_no, disc_no, year, duration_ms, isrc, mbid, deezer_id,"
             " ytm_video_id, cover_url, thumb_url, explicit, norm_key, created_at, artist_basis, uploader)"
@@ -388,7 +388,7 @@ def resolve(
                 norm_key(item["artists"][0], item["title"]),
                 now_ms(),
                 artist_basis,
-                kept_uploader,
+                cleaned_uploader,
             ),
         )
         row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()

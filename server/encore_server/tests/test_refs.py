@@ -156,12 +156,27 @@ def test_a_ref_made_without_facts_has_none_and_none_means_as_before(db: Database
     assert facts_of(db, resolve(db)["id"]) == (None, None)
 
 
-def test_the_uploader_is_a_fact_about_a_video_and_is_kept_only_with_one(db: Database) -> None:
-    ref = resolve_as(
-        db, "channel", "Some Channel", title="Heartbeat", artists=["Some Channel"]
-    )  # no video: nothing to say who uploaded
+def test_a_new_ref_keeps_the_uploader_of_the_upload_it_was_made_from_even_when_that_upload_is_removed(db: Database) -> None:
+    """DECISION (N-26 slice 2, with the alternative): the design says `uploader` is "the channel's name, when the song came from an upload", no video
+    required, and the real removed uploads (Nneka - Heartbeat, Foals - Full Performance: no video id, filed under their performer) are exactly the rows
+    that need it. The cost: a later search may attach ANOTHER video to the ref, and the uploader stays the one of the upload it was made from. The
+    alternative (stored only with a video) would have said nothing about the removed ones."""
+    ref = resolve_as(db, "title", "KEXP", title="Heartbeat (Live on KEXP)", artists=["Nneka"])  # no video id
 
-    assert facts_of(db, ref["id"]) == ("channel", None)
+    assert facts_of(db, ref["id"]) == ("title", "KEXP")
+
+
+def test_a_ref_that_is_found_takes_an_uploader_only_when_it_plays_from_that_very_video(db: Database) -> None:
+    first = resolve_as(db, None, None, videoId="bgsmr7t8zGE")
+    resolve_as(
+        db, "title", "Some Channel", videoId="otherVideo1", durationMs=478_500
+    )  # found by name: the upload it read is another one
+    assert facts_of(db, first["id"]) == ("title", None), (
+        "the basis agrees (a performer), but another upload's channel is not this ref's"
+    )
+
+    resolve_as(db, None, "Opeth", videoId="bgsmr7t8zGE")
+    assert facts_of(db, first["id"]) == ("title", "Opeth")
 
 
 def test_a_client_cannot_mark_itself_the_facts_are_never_read_from_a_description(db: Database) -> None:
@@ -225,7 +240,7 @@ def test_a_weaker_basis_fills_an_empty_one_when_it_is_the_same_video(db: Databas
 
 def test_the_basis_follows_the_artist_a_reading_of_another_artist_fills_no_basis_but_the_uploader_is_kept(db: Database) -> None:
     """The ref keeps the artist it has (slice 5 repairs a stored artist, deliberately not this): a basis is a fact about THAT artist string, so a reading
-    that names somebody else says nothing about it. The uploader is a fact about the VIDEO, and it is exactly what the repair of slice 5 needs to
+    that names somebody else says nothing about it. The uploader is the channel of the UPLOAD, and it is exactly what the repair of slice 5 needs to
     recognise a ref filed under its channel."""
     first = resolve_as(db, None, None, title="Heartbeat (Live on KEXP)", artists=["KEXP"], videoId="IY2WwzI_86k")
     again = resolve_as(db, "title", "KEXP", title="Heartbeat (Live on KEXP)", artists=["Nneka"], videoId="IY2WwzI_86k")

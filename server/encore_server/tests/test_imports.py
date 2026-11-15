@@ -294,6 +294,9 @@ def test_a_link_import_keeps_how_each_artist_was_decided_and_who_uploaded_the_vi
                 "Bismillah", "Tinariwen", artists=("Tinariwen",), video_id="phSYyQ1xGKw", official=True
             ),  # the default: declared
             Track("From Spotify", "Some Band", artists=("Some Band",)),  # a description with no video
+            Track(
+                "Full Performance (Live on KEXP)", "Foals", artists=("Foals",), artist_basis="title", uploader="KEXP"
+            ),  # a removed upload: no video
         ),
         False,
     )
@@ -306,6 +309,7 @@ def test_a_link_import_keeps_how_each_artist_was_decided_and_who_uploaded_the_vi
         "Akudama": ("unknown", None),
         "Bismillah": ("declared", None),
         "From Spotify": ("declared", None),
+        "Full Performance (Live on KEXP)": ("title", "KEXP"),
     }
 
 
