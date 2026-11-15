@@ -26,9 +26,17 @@ def database(tmp_path: Path) -> Database:
     return db
 
 
-def liked(db: Database, title: str, artist: str = "Radiohead", album: str | None = "In Rainbows") -> str:
+def liked(
+    db: Database,
+    title: str,
+    artist: str = "Radiohead",
+    album: str | None = "In Rainbows",
+    *,
+    basis: str | None = None,
+    uploader: str | None = None,
+) -> str:
     with db.tx() as conn:
-        ref = refs.resolve(conn, {"title": title, "artists": [artist], "album": album})
+        ref = refs.resolve(conn, {"title": title, "artists": [artist], "album": album}, artist_basis=basis, uploader=uploader)
         library.set_item(conn, "pn_1", "like", ref["id"])
     return str(ref["id"])
 

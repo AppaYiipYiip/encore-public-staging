@@ -179,3 +179,101 @@ def test_b124_an_artist_the_catalogue_could_not_be_asked_about_is_not_remembered
             "no row: the artist is asked about again next pass"
         )
     assert gate.state()["state"] == "resting"
+
+
+# ------------------------------------------------------------------------------------------------------------------ N-26 slice 2: a channel is not an artist
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_n26_a_name_whose_every_song_is_a_channel_or_nobody_is_never_asked_about_at_the_catalogue(
+    tmp_path: Path, basis: str
+) -> None:
+    """The look-up that must NOT happen, shown not to happen at the gate: the catalogue would answer (so a look-up would write a picture)."""
+    upstream = RecordedDeezer()
+    upstream.overrides["/search"] = (200, a_hit_for("Could You Be Loved"))
+    install(upstream)
+    db, music, clock = artist_database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Bob Marley", "Could You Be Loved", basis="channel", uploader="Bob Marley")
+    kept(db, music, "Bob Marley", "Jamming", basis=basis)
+    the = ArtistFinder(
+        db, Music([("ar-1", "Bob Marley")]), REAL_ARTIST_LOOKUP, music_dir=music, sleep=lambda _: None, clock=clock
+    )
+
+    report = the.run_once()
+
+    assert upstream.requests == [] and (report.looked, report.found) == (0, 0)
+    assert not (music / "Encore" / "Bob Marley" / "artist.jpg").exists()
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM artist_picture").fetchone()[0] == 0, "nothing remembered: a name is not a miss"
+
+
+@pytest.mark.parametrize("basis", [None, "declared", "title"])
+def test_n26_a_name_with_one_song_that_is_not_a_channel_is_an_artist_and_is_asked_about_with_that_song_only(
+    tmp_path: Path, basis: str | None
+) -> None:
+    upstream = RecordedDeezer()
+    upstream.overrides["/search"] = (200, a_hit_for("Could You Be Loved"))
+    install(upstream)
+    db, music, clock = artist_database(tmp_path), tmp_path / "music", Clock()
+    kept(db, music, "Bob Marley", "Jamming", basis="channel", uploader="Bob Marley")
+    kept(db, music, "Bob Marley", "Could You Be Loved", basis=basis)
+    the = ArtistFinder(
+        db, Music([("ar-1", "Bob Marley")]), REAL_ARTIST_LOOKUP, music_dir=music, sleep=lambda _: None, clock=clock
+    )
+
+    report = the.run_once()
+
+    assert (report.looked, report.found) == (1, 1)
+    assert upstream.paths() == ["/search"]
+    assert "Jamming" not in str(upstream.requests[0].url), "the channel's song is not what an artist is known by"
+    assert (music / "Encore" / "Bob Marley" / "artist.jpg").exists()
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_n26_a_song_that_is_a_channel_or_nobody_gets_no_cover_look_up_and_does_not_use_up_the_pass(
+    tmp_path: Path, basis: str
+) -> None:
+    """DECISION (the lead's: a channel name is NEVER sent out). The cost, written down: a band's own-channel upload loses a catalogue cover until N-28
+    names its artist, and keeps its video's thumbnail (P1-26)."""
+    upstream = RecordedDeezer()
+    install(upstream)
+    db = database(tmp_path)
+    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis, uploader="The Weeknd")
+
+    report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
+
+    assert upstream.requests == [] and (report.looked, report.found) == (0, 0)
+    assert cover_of(db, ref) is None
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM song_ref WHERE cover_tried_at IS NOT NULL").fetchone()[0] == 0, (
+            "not even marked as tried"
+        )
+
+
+@pytest.mark.parametrize("basis", [None, "declared", "title"])
+def test_n26_a_song_of_a_performer_or_one_with_no_facts_is_looked_up_as_before(tmp_path: Path, basis: str | None) -> None:
+    upstream = RecordedDeezer()
+    install(upstream)
+    db = database(tmp_path)
+    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis)
+
+    report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
+
+    assert (report.looked, report.found) == (1, 1) and upstream.paths() == ["/search"]
+    assert (cover_of(db, ref) or "").startswith("https://cdn-images.dzcdn.net/images/cover/")
+
+
+def test_n26_the_placeholder_the_scanner_gives_an_untagged_file_is_not_sent_out_either(tmp_path: Path) -> None:
+    """The refs the library scan makes for a Host's untagged files are "[Unknown Artist]" with NO facts: only the NAME says nobody."""
+    upstream = RecordedDeezer()
+    install(upstream)
+    db = database(tmp_path)
+    ref = liked(db, "Intro", artist="[Unknown Artist]", album=None)
+
+    report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
+
+    assert upstream.requests == [] and report.looked == 0
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_tried_at IS NOT NULL FROM song_ref WHERE id = ?", (ref,)).fetchone()[0] == 1, (
+            "settled, not asked every pass"
+        )

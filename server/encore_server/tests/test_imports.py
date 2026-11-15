@@ -263,6 +263,72 @@ def test_importing_the_same_nameless_songs_again_finds_each_by_its_own_video(rig
     assert len({r["id"] for r in first["refs"]}) == 2
 
 
+def facts_by_title(rig: Rig) -> dict[str, tuple[object, object]]:
+    with rig.svc.db.read() as conn:
+        return {
+            r["title"]: (r["artist_basis"], r["uploader"])
+            for r in conn.execute("SELECT title, artist_basis, uploader FROM song_ref")
+        }
+
+
+def test_a_link_import_keeps_how_each_artist_was_decided_and_who_uploaded_the_video(rig: Rig) -> None:
+    """N-26 slice 2, through the real path (`ImportService._song_of` and its facts -> `refs.resolve`)."""
+    rig.playlist = Playlist(
+        "Mix",
+        "youtube",
+        "playlist",
+        (
+            Track(
+                "Heartbeat (Live on KEXP)",
+                "Nneka",
+                artists=("Nneka",),
+                video_id="IY2WwzI_86k",
+                artist_basis="title",
+                uploader="KEXP",
+            ),
+            Track("Windowpane", "Opeth", artists=("Opeth",), video_id="bbbbbbbbbbb", artist_basis="channel", uploader="Opeth"),
+            Track(
+                "Akudama", "", video_id="3ENMe1rlA0M"
+            ),  # nobody names it: the track says nothing, the placeholder says `unknown`
+            Track(
+                "Bismillah", "Tinariwen", artists=("Tinariwen",), video_id="phSYyQ1xGKw", official=True
+            ),  # the default: declared
+            Track("From Spotify", "Some Band", artists=("Some Band",)),  # a description with no video
+        ),
+        False,
+    )
+
+    rig.imported()
+
+    assert facts_by_title(rig) == {
+        "Heartbeat (Live on KEXP)": ("title", "KEXP"),
+        "Windowpane": ("channel", "Opeth"),
+        "Akudama": ("unknown", None),
+        "Bismillah": ("declared", None),
+        "From Spotify": ("declared", None),
+    }
+
+
+def test_a_file_import_and_a_phone_that_name_a_basis_or_an_uploader_are_not_believed(rig: Rig) -> None:
+    """The facts are the importer's reading of a link; a client cannot mark itself `declared` or name an uploader (`parse_item` is shared with phones)."""
+    song = {
+        "title": "T",
+        "artists": ["A"],
+        "videoId": "aaaaaaaaaaa",
+        "artistBasis": "declared",
+        "artist_basis": "declared",
+        "uploader": "X",
+    }
+    made = rig.post("marwa", {"name": "From a file", "source": "file", "songs": [song]})
+    assert made.status_code == 201, made.text
+    resolved = rig.client.post(
+        f"{V1}/refs/resolve", params=creds("marwa"), json={"songs": [{**song, "title": "T2", "videoId": "bbbbbbbbbbb"}]}
+    )
+    assert resolved.status_code == 200, resolved.text
+
+    assert facts_by_title(rig) == {"T": (None, None), "T2": (None, None)}
+
+
 def test_a_playlist_without_videos_is_still_matched_by_name(rig: Rig) -> None:
     """A list that came from Spotify (or a file) has no video to use: those songs are looked up with the strict match, as before."""
     made = rig.imported()  # the default five tracks have no video id
