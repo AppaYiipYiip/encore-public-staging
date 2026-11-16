@@ -539,17 +539,33 @@ def test_the_album_artist_must_be_the_songs_first_artist() -> None:
     assert choose_release(CREATURE, [creature_hit()], {ALBUM: no_artist}).reason == "no_eligible_release"
 
 
-def test_a_best_of_by_the_same_artist_typed_album_is_chosen_when_it_is_the_only_release_hit() -> None:
-    """A LIMIT, pinned on purpose and OPEN for the lead before slice 2 stores a stamp (the CHANGELOG line of N-34 slice 1 names it): the recorded best-of is
-    by the same artist and the catalogue types it `album` (2011-11-08), so nothing in the rule refuses it; it loses to the original only on the earliest
-    date, and only when the original is also among the hits. DERIVED: the recorded "Comfortably Numb" search WITHOUT The Wall's hit, and the best-of's
-    recorded answer with a song list that holds the hit (its own list was not recorded: the row is The Wall's recorded "Comfortably Numb" with the best-of's
-    hit id, album and a track number)."""
-    found = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
+def best_of_answer() -> dict[str, Any]:
+    """DERIVED: the best-of's recorded answer with a song list that holds the hit (its own list was not recorded: the row is The Wall's recorded
+    "Comfortably Numb" with the best-of's hit id, album and a track number)."""
     best_of = albums(BEST_OF)[BEST_OF]
     row = copy.deepcopy(next(t for t in albums(WALL)[WALL]["tracks"] if t["id"] == "116914122"))
     row.update(id="116914348", album={"id": BEST_OF, "title": best_of["album"]["title"]}, trackNo=7, discNo=1)
     best_of["tracks"] = [row]
+    return best_of
+
+
+def test_an_original_single_loses_to_a_same_artist_best_of_typed_album_whatever_the_dates() -> None:
+    """A LIMIT of the same kind (see the next test): `album` and `ep` rank before `single` whatever the dates, so a song whose ORIGINAL release is a single
+    gets the later best-of as its album when the catalogue types that `album`. DERIVED: The Wall's recorded answer typed `single` (its date 1979-11-30 is
+    EARLIER than the best-of's 2011-11-08), both recorded hits present."""
+    both = {WALL: derive(albums(WALL)[WALL], recordType="single"), BEST_OF: best_of_answer()}
+    verdict = choose_release(COMFORTABLY_NUMB, hits("pink floyd comfortably numb"), both)
+    assert verdict.match is not None and (verdict.match.album_id, verdict.match.record_type) == (BEST_OF, "album")
+    assert {r.album_id: r.reason for r in verdict.releases} == {WALL: "outranked", BEST_OF: "chosen"}
+
+
+def test_a_best_of_by_the_same_artist_typed_album_is_chosen_when_it_is_the_only_release_hit() -> None:
+    """A LIMIT, pinned on purpose and OPEN for the lead before slice 2 stores a stamp (the CHANGELOG line of N-34 slice 1 names it): the recorded best-of is
+    by the same artist and the catalogue types it `album` (2011-11-08), so nothing in the rule refuses it; it loses to an original only on the earliest
+    date, and only when that original is also an `album` or `ep` among the hits (an original single loses to it: the test above). DERIVED: the recorded
+    "Comfortably Numb" search WITHOUT The Wall's hit, and [best_of_answer]."""
+    found = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
+    best_of = best_of_answer()
     assert wanted_albums(COMFORTABLY_NUMB, found) == [BEST_OF]
     verdict = choose_release(COMFORTABLY_NUMB, found, {BEST_OF: best_of})
     assert (verdict.outcome, verdict.reason) == ("matched", "matched")
