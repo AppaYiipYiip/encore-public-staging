@@ -61,12 +61,21 @@ def test_the_image_runs_the_python_that_ships_the_pinned_unicode() -> None:
     )
 
 
-def test_the_server_workflow_runs_the_python_that_ships_the_pinned_unicode() -> None:
-    workflow = (ROOT / ".github" / "workflows" / "server.yml").read_text(encoding="utf-8")
+@pytest.mark.parametrize("name", ["server.yml", "server-image.yml"])
+def test_every_workflow_that_runs_the_server_tests_runs_the_python_that_ships_the_pinned_unicode(name: str) -> None:
+    """The conftest stops a run on any other Python, so a workflow on another Python would fail at once (and a workflow that only builds would say nothing)."""
+    workflow = (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
     versions = re.findall(r"python-version:\s*'?(3\.\d+)'?", workflow)
-    assert versions, "server.yml names no python-version"
+    assert versions, f"{name} names no python-version"
     for minor in versions:
-        assert textnorm.UNICODE_OF_PYTHON.get(minor) == textnorm.UNICODE_VERSION, f"server.yml runs Python {minor}"
+        assert textnorm.UNICODE_OF_PYTHON.get(minor) == textnorm.UNICODE_VERSION, f"{name} runs Python {minor}"
+
+
+def test_the_integration_test_image_runs_the_python_that_ships_the_pinned_unicode() -> None:
+    lines = (ROOT / "server" / "encore_server" / "tests" / "integration" / "Dockerfile").read_text(encoding="utf-8").splitlines()
+    base = next(line for line in lines if line.startswith("FROM "))
+    assert base.startswith("FROM python:"), base
+    assert textnorm.UNICODE_OF_PYTHON.get(_minor(base)) == textnorm.UNICODE_VERSION, base
 
 
 def test_requires_python_accepts_only_pythons_that_ship_the_pinned_unicode() -> None:
