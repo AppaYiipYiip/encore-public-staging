@@ -211,7 +211,9 @@ void main() {
       );
 
       final job = (await jobs(c)).single;
-      expect(job.key, 'import:im_1');
+      expect(job.key, 'pin:playlist:pl_import',
+          reason:
+              'the key of the playlist it made: the Download of that playlist is the same job');
       expect(job.kind, CardJobKind.import);
       expect(job.importing, isTrue);
       expect(job.text, 'Finding songs: 120 of 217');
@@ -370,6 +372,55 @@ void main() {
     });
   });
 
+  group('a single song is no card, not even in its first second', () {
+    const starting = DownloadLine('Getting ready to download', starting: true);
+
+    test('a release of one song, a playlist of one song', () async {
+      final c = start(
+        targets: const [
+          CardTarget(
+            target: DownloadTarget.release('cat:1', ['sr_1']),
+            name: 'A single',
+            knownSongs: 1,
+          ),
+          CardTarget(
+            target: DownloadTarget.pin(PinTargetType.playlist, 'pl_one'),
+            name: 'One song',
+            playlistId: 'pl_one',
+            knownSongs: 1,
+          ),
+        ],
+        line: starting,
+        phone: const PinState(pinned: true),
+      );
+
+      expect(await jobs(c), isEmpty);
+    });
+
+    test('a download whose size nobody knows yet still starts at once',
+        () async {
+      final c = start(line: starting, phone: const PinState(pinned: true));
+
+      expect((await jobs(c)).single.starting, isTrue);
+    });
+  });
+
+  test(
+      'an import and the Download of its playlist are the same key, whichever comes first',
+      () async {
+    final imports = ImportWatchState(imports: [
+      _import('im_1', playlistId: 'pl_1', matched: 117, pending: 100),
+    ]);
+
+    final importOnly = await jobs(start(targets: const [], imports: imports));
+    final both = await jobs(start(
+      line: const DownloadLine('12 of 217 on this phone', twoStages: true),
+      imports: imports,
+    ));
+
+    expect(importOnly.single.key, both.single.key);
+  });
+
   test('a download and an import side by side are two jobs', () async {
     final c = start(
       line: const DownloadLine('12 of 217 on this phone', twoStages: true),
@@ -379,7 +430,23 @@ void main() {
     );
 
     final found = await jobs(c);
-    expect(
-        {for (final j in found) j.key}, {'pin:playlist:pl_1', 'import:im_2'});
+    expect({for (final j in found) j.key},
+        {'pin:playlist:pl_1', 'pin:playlist:pl_other'},
+        reason:
+            'an import of a playlist is keyed by that playlist, so a Download of it later is the same job');
+  });
+
+  test("an import of the liked songs makes no playlist: it is a job of its own",
+      () async {
+    final c = start(
+      targets: const [],
+      imports: ImportWatchState(imports: [
+        _import('im_3', playlistId: null, matched: 5, pending: 100),
+      ]),
+    );
+
+    final found = await jobs(c);
+    expect(found.single.key, 'import:im_3');
+    expect(found.single.liked, isTrue);
   });
 }

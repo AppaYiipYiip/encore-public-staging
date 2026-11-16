@@ -23,10 +23,15 @@ class CardTarget {
     required this.target,
     required this.name,
     this.playlistId,
+    this.knownSongs,
   });
 
   final DownloadTarget target;
   final String name;
+
+  /// How many songs the download has, when the phone already knows (so that a single song is no card even in its first second, before any
+  /// count of the download exists), else `null`.
+  final int? knownSongs;
 
   /// The playlist this download is, when it is one: an import that made it is the same job.
   final String? playlistId;
@@ -47,12 +52,14 @@ final cardTargetsProvider = Provider<List<CardTarget>>((ref) {
       targets.add(CardTarget(
         target: DownloadTarget.release(e.releaseId!, e.releaseRefIds),
         name: e.title,
+        knownSongs: e.songCount,
       ));
     } else if (type != null) {
       targets.add(CardTarget(
         target: DownloadTarget.pin(type, e.pin.targetId),
         name: e.title,
         playlistId: type == PinTargetType.playlist ? e.pin.targetId : null,
+        knownSongs: e.songCount,
       ));
     }
   }
@@ -76,6 +83,8 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
   final merged = <String>{};
 
   for (final t in targets) {
+    // One song is seconds long and nobody wants a card for it: not even for the first second, "Starting...", that would be gone a moment later.
+    if ((t.knownSongs ?? _kSmallestJob) < _kSmallestJob) continue;
     final line = ref.watch(downloadLineProvider(t.target));
     if (line == null) continue;
     final phone = t.target.isRelease
@@ -183,7 +192,9 @@ CardJob? _importJob(
   );
   final playlist = i.playlistId;
   return CardJob(
-    key: 'import:${i.id}',
+    // The key of the playlist when it has one, the same key the Download of that playlist has: pressing Download on a playlist that is still
+    // being imported must not look like another job (the bar would start again, and the card of its end would be two).
+    key: playlist == null ? 'import:${i.id}' : 'pin:playlist:$playlist',
     name: i.name,
     kind: CardJobKind.import,
     text: text,

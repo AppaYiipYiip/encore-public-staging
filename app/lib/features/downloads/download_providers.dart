@@ -84,6 +84,7 @@ class PinEntry {
     this.playlist,
     this.releaseId,
     this.releaseRefIds = const [],
+    this.songCount,
   });
 
   final PinRow pin;
@@ -94,6 +95,9 @@ class PinEntry {
   /// [releaseRefIds] the songs the phone wrote down, [releaseId] is `cat:<catalogue album id>`.
   final String? releaseId;
   final List<String> releaseRefIds;
+
+  /// How many songs the thing has, when the phone knows (a playlist or an album the sync has read, a release it wrote down), else `null`.
+  final int? songCount;
 
   /// The cover to draw (an album's, a playlist's own, an artist's picture), when there is one.
   final String? coverArt;
@@ -159,6 +163,8 @@ Future<List<PinEntry>> buildPinEntries(
             artist: r.release.artist,
             releaseId: r.id,
             releaseRefIds: r.release.refIds,
+            songCount:
+                r.release.refIds.isEmpty ? null : r.release.refIds.length,
           ));
         }
       }
@@ -176,6 +182,7 @@ Future<List<PinEntry>> buildPinEntries(
           kind: 'Playlist',
           coverArt: row?.coverArt,
           playlist: row,
+          songCount: (row?.songCount ?? 0) > 0 ? row!.songCount : null,
         ));
       case 'album':
         final row = await (db.select(db.albums)
@@ -188,6 +195,7 @@ Future<List<PinEntry>> buildPinEntries(
           kind: 'Album',
           coverArt: row?.coverArt,
           artist: row?.artist,
+          songCount: (row?.songCount ?? 0) > 0 ? row!.songCount : null,
         ));
       case 'artist':
         final row = await (db.select(db.artists)

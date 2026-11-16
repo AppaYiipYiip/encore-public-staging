@@ -220,6 +220,34 @@ void main() {
     });
   });
 
+  group(
+      'the same job keeps its bar when it changes from an import to a download',
+      () {
+    test(
+        'pressing Download on a playlist that is still importing does not start the bar again',
+        () async {
+      CardJob job(String name, {required int done, required int of}) => CardJob(
+            key: 'pin:playlist:pl_1',
+            name: 'Prog snob',
+            text: name,
+            songs: 217,
+            progressDone: done,
+            progressOf: of,
+          );
+      // The import was a long way on: 69 % of its own bar; the Download's bar is 23 % of the same job.
+      await presenter.update(
+          jobs: [job('Finding songs: 150 of 217', done: 300, of: 434)],
+          foreground: true);
+      await presenter.update(
+          jobs: [job('12 of 217 on this phone', done: 100, of: 434)],
+          foreground: true);
+
+      expect(sink.running, hasLength(2));
+      expect(sink.running.last.spec.progress,
+          greaterThanOrEqualTo(sink.running.first.spec.progress!));
+    });
+  });
+
   group('the app is left', () {
     test(
         'the card becomes the dated card, with no time to live, on the SAME id',
