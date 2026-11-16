@@ -1,0 +1,79 @@
+{
+ "cap": 10,
+ "attempts": [
+  {
+   "path": "/search",
+   "params": {
+    "q": "LANDMVRKS Requiem",
+    "limit": 8
+   },
+   "at": "2026-11-16T08:37:31Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/search",
+   "params": {
+    "q": "LANDMVRKS Creature",
+    "limit": 8
+   },
+   "at": "2026-11-16T08:37:32Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/artist/9985838/albums",
+   "params": {
+    "limit": 200
+   },
+   "at": "2026-11-16T08:38:11Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/676735071",
+   "params": {},
+   "at": "2026-11-16T08:38:24Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/524195422",
+   "params": {},
+   "at": "2026-11-16T08:38:25Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/12114248",
+   "params": {},
+   "at": "2026-11-16T08:38:25Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/12114262",
+   "params": {},
+   "at": "2026-11-16T08:38:26Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/676735071/tracks",
+   "params": {
+    "limit": 100
+   },
+   "at": "2026-11-16T08:38:33Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/524195422/tracks",
+   "params": {
+    "limit": 100
+   },
+   "at": "2026-11-16T08:38:34Z",
+   "outcome": "ok"
+  },
+  {
+   "path": "/album/12114248/tracks",
+   "params": {
+    "limit": 100
+   },
+   "at": "2026-11-16T08:38:35Z",
+   "outcome": "ok"
+  }
+ ]
+}

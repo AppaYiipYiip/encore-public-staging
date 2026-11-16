@@ -1,0 +1,35 @@
+{
+ "recorded": "2026-11-16",
+ "path": "/album/524195422/tracks",
+ "params": {
+  "limit": 100
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 2586602502,
+    "readable": true,
+    "title": "Creature",
+    "title_short": "Creature",
+    "title_version": "",
+    "isrc": "DEYO62300153",
+    "link": "https://www.deezer.com/track/2586602502",
+    "duration": 225,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 337071,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 1
+ }
+}
