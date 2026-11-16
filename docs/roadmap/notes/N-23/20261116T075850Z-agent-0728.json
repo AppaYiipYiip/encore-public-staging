@@ -1,0 +1,12 @@
+{
+ "id": "20261116T075850Z-agent-0728",
+ "item": "N-23",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-16T07:58:50Z",
+ "type": "note",
+ "body": "16 Nov 2026 (lead): N-23 is #7 in order.json and still todo, SKIPPED on purpose, not forgotten: part A (N-23a, N-23c) is built; what is left is part B (the catalogue's typo tolerance through the server), which waits for P2-12 (held by D-51 until b11) and P2-25 (the one fold; slice 1 = PR #104, slices 2+3 next). The next helper slots go to P2-25 slices 2+3 and P2-29 (the S-95 card), not to N-23.",
+ "to": [
+  "owner"
+ ]
+}
