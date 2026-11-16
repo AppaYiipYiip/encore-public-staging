@@ -364,6 +364,26 @@ void main() {
       expect(c.read(importWatchProvider).stalled, {'im_1'});
     });
 
+    test(
+        'a connection that comes back does not give a stuck import another half hour',
+        () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+      expect(c.read(importWatchProvider).stalled, {'im_1'});
+      final stuck = asked();
+
+      connection.add(true);
+      await settle();
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, {'im_1'},
+          reason: 'a flaky line must not keep a stuck import asked about');
+      expect(asked(), stuck + 1, reason: 'the one look of the reconnection');
+    });
+
     test('an import that ended is never called stalled', () async {
       server.importRows.add(row('im_1',
           state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 214));
