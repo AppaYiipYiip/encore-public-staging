@@ -1,0 +1,12 @@
+{
+ "id": "20261116T080247Z-agent-38d2",
+ "item": "P3-35",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-16T08:02:47Z",
+ "type": "note",
+ "body": "16 Nov 2026 ~08:05 UTC (lead): the Proxmox host was rebooted overnight (up 2 min at 07:57) and VM 108 did NOT come back by itself: it has onboot=0, so ANY host reboot in the owner's test week takes the test server down until someone starts it. I started it (qm start 108, nothing else; log: local/homelab-changes-2026-11-13.md entry 1aa; undo: qm shutdown 108). Checked read-only: image unchanged (sha-62cf7f0, the frozen pair), both containers healthy, database integrity_check ok, foreign_key_check empty, no errors in the log, the A35 reconnected. Question for the owner (his host, not changed by me): set 'qm set 108 --onboot 1'?",
+ "to": [
+  "owner"
+ ]
+}

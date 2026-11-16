@@ -1134,5 +1134,23 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-40": {
+  "kind": "feature",
+  "title": "A download keeps going after you close the app",
+  "note": "Found by helper-p229b (16 Nov 2026, READ in background_downloader 9.6.4 and this repo, NOT run). Today the copy to the phone is driven by the app's own process: DownloadManager is built once in Dart (download_providers.dart), it feeds the OS at most maxInFlight = 4 files, and the only background entry point (background_sync.dart) syncs and runs alerts but never the manager. If the person swipes Encore away, the files in flight finish and nothing starts the rest until the app is opened again. There is no foreground work configured (no Config.runInForeground, no user-initiated job; the manifest has only the mediaPlayback foreground type) and the transport's comment 'survive process death' overclaims. Wanted: a download that continues with the app closed, within what Android allows (a foreground service of type dataSync or a user-initiated transfer job on Android 14+; Android 15 caps dataSync at 6 h per 24 h), with its own card. Prove the current behaviour first (kill the app mid-download on a real phone: how many files finish, does anything restart), then fix at the source. P2-29 ships without it: its cards say only what stays true when the process is frozen, and its PB-38/ADR-R44 text names this item as the revisit trigger. Audit row B-135.",
+  "proposal": true,
+  "size": "L",
+  "needs": [],
+  "from": "agent"
+ },
+ "N-41": {
+  "kind": "feature",
+  "title": "The app speaks Arabic first (localisation)",
+  "note": "Found by helper-p229b (16 Nov 2026): the app has no localisation at all (no flutter_localizations, no supportedLocales, no Arabic anywhere in app/lib; docs 03 and 08 list it as later) while the drawings (S-95 and others) already carry Arabic strings, and the owner's own music is in Arabic. Wanted: the localisation plumbing (gen-l10n / ARB, one whole-message function per sentence with named parameters and counts via plural rules, never sentences glued from fragments), right-to-left layout checks, and Arabic as the first language after English, working in the background isolate too (notifications). S-95's Arabic strings are the first fixture. P2-29 prepares for it on purpose: every card sentence is one whole-message function; its English words live in one table. Needs a design pass on RTL before code (no screen coded before its drawing).",
+  "proposal": true,
+  "size": "L",
+  "needs": [],
+  "from": "agent"
  }
 }
