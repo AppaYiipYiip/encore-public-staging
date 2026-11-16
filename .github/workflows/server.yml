@@ -7,11 +7,12 @@ name: Server
 on:
   push:
     branches: [main]
-    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', '.github/workflows/server.yml']
+    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', 'app/test/fixtures/text/**', 'app/lib/domain/text_fold_table.g.dart', 'tools/gen_text_fold_table.py', '.github/workflows/server.yml']
   pull_request:
-    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', '.github/workflows/server.yml']
-# `app/test/fixtures/deezer/` (the 20 recorded searches) and `app/test/fixtures/server/` (answers the server's own tests write and compare) are read by BOTH suites:
-# a change to them must run this workflow as well as the app's (docs/30 section I).
+    paths: ['server/**', 'packages/**', 'tools/gen_admin_tokens.py', 'app/lib/design/tokens.dart', 'app/test/fixtures/deezer/**', 'app/test/fixtures/server/**', 'app/test/fixtures/text/**', 'app/lib/domain/text_fold_table.g.dart', 'tools/gen_text_fold_table.py', '.github/workflows/server.yml']
+# `app/test/fixtures/deezer/` (the 20 recorded searches), `app/test/fixtures/server/` (answers the server's own tests write and compare) and
+# `app/test/fixtures/text/` (the text fold's rows and digests, P2-25) are read by BOTH suites: a change to them must run this workflow as well as the
+# app's (docs/30 section I). The phone's fold table `app/lib/domain/text_fold_table.g.dart` and its generator are listed for the same reason.
 
 # The older services (fetch, people, admin, quality, recs) and the Jam hub are tested by server-legacy.yml, only when their own folder changes (D-44).
 
@@ -31,6 +32,9 @@ jobs:
       - name: Install
         working-directory: server/encore_server
         run: pip install -e '.[youtube,dev]'
+      - name: The phone's text fold table is what this Python (Unicode 15.0.0) writes
+        # Python 3.12 is the interpreter the tool needs: it refuses any other Unicode version (docs/tasks P2-songs-as-references.md, P2-25 part 10).
+        run: python -X utf8 tools/gen_text_fold_table.py --check
       - name: Lint, types, tests
         working-directory: server/encore_server
         run: |
