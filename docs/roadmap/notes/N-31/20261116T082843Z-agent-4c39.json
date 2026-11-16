@@ -1,0 +1,12 @@
+{
+ "id": "20261116T082843Z-agent-4c39",
+ "item": "N-31",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-16T08:28:43Z",
+ "type": "note",
+ "body": "16 Nov 2026 ~09:00 UTC (lead): THE JANITOR HALF OF N-31 IS PROVEN on a COPY of VM 108's real database (engineering check, not the release-candidate pair; VM 108 untouched in the owner's test week; nothing marked walked). WHAT: the database copy taken 15 Nov 18:51 (3394 song refs, 11,749 playlist entries, 11,747 import entries, 14 playlists, 3244 song_file rows; schema 15, migrated to 17 with main's code, 'database migrated: [16, 17]'); the two errands run with the CLOCK injected at now + 100 days (so every age, verdict window and 14-day file-change guard has expired: 'what the errands do on this data once everything has aged'). RESULT: tombstone purge removed 347 playlist entries and the songs of 13 imports; the janitor then retired 95 refs in 2 passes. ORACLE (independent of ref_janitor.POINTERS: every foreign key to song_ref read from PRAGMA foreign_key_list plus the text columns like targets, playback_state ref/queue, merge survivors, active work only): the 95 retired refs are EXACTLY the set of refs nothing pointed at (0 left unpointed afterwards; no ref that was pointed was retired); ref_gone 1 -> 96, every retired ref has a tombstone; likes and play events unchanged (counts equal before and after); the 11,402 live entries of live playlists unchanged; 14 playlist rows kept (by design); song_file rows unchanged (3244); change_log never pruned; foreign_key_check empty; integrity ok; the files feed gone list from cursor 0 lists the 96 ids; a second run does nothing (idempotent). NOT covered: a RUNNING server (the errands' wiring in api.create_app is pinned by unit tests; on VM 108 the 'tombstone purge' line was seen on 15 Nov), a phone reading the gone feed after it (N-27 slice 2b was walked on the A35 on 15 Nov for one ref). Script: lead_n31_janitor_check.py (scratchpad, read-only on the original, own copy).",
+ "to": [
+  "agent"
+ ]
+}
