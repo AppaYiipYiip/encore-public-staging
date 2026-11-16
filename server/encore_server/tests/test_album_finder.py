@@ -329,6 +329,23 @@ def test_bohemian_rhapsody_a_live_version_three_seconds_away_and_a_live_aid_leng
     assert [k for k, v in live_aid.items() if v.accepted] == ["4091936771"]
 
 
+def test_only_the_catalogues_label_refuses_a_live_hit_so_an_unlabelled_live_upload_is_the_studio_song() -> None:
+    """A LIMIT, pinned so that nobody states the opposite (the CHANGELOG line of N-34 slice 1 names it, in plain words): the matcher is given an artist, a
+    title and a length, never where the file came from, and it reads a hit's version from the hit's TITLE only. DERIVED: the recorded Wembley hit (351 s,
+    3 s inside the tolerance, on the album "Live at Wembley Stadium") with the label taken out of its title is the same recording; so is the recorded
+    studio hit for a song that is in fact a live upload of the studio length. If a refusal is ever added (a look at the album's title, say), these two
+    turn red: change them AND the CHANGELOG sentence together."""
+    found = hits("bohemian rhapsody")
+    song = Song("Queen", "Bohemian Rhapsody", 354_000)
+    wembley = next(row for row in found if row["id"] == 4092342471)
+    wembley["title"] = "Bohemian Rhapsody"
+    got = {v.id: v for v in judge_hits(song, found)}
+    assert (got["4092342471"].reason, got["4092342471"].delta_ms) == ("same_recording", 3_000)
+    assert got["4091937401"].reason == "same_recording", "the studio song is the other candidate: nothing says which one it is"
+    labelled = {v.id: v for v in judge_hits(song, hits("bohemian rhapsody"))}
+    assert labelled["4092342471"].reason == "title_or_version", "with the label in its title the same hit is refused"
+
+
 def test_a_different_title_with_the_right_artist_and_length_is_not_the_song() -> None:
     """ "Prova (Kifak Inta)" (211 s) is a different song on the single "Kifak Inta": only the TITLE differs from the library's "Kifak Inta" at 211 s."""
     got = {v.id: v for v in judge_hits(Song("Fairuz", "Kifak Inta", 211_000), hits("fairuz kifak inta"))}
@@ -520,6 +537,33 @@ def test_the_album_artist_must_be_the_songs_first_artist() -> None:
         assert {r.album_id: r.reason for r in verdict.releases} == {ALBUM: "album_artist", SINGLE: "chosen"}, other
     no_artist = derive(albums(ALBUM)[ALBUM], artists=[])
     assert choose_release(CREATURE, [creature_hit()], {ALBUM: no_artist}).reason == "no_eligible_release"
+
+
+def test_a_best_of_by_the_same_artist_typed_album_is_chosen_when_it_is_the_only_release_hit() -> None:
+    """A LIMIT, pinned on purpose and OPEN for the lead before slice 2 stores a stamp (the CHANGELOG line of N-34 slice 1 names it): the recorded best-of is
+    by the same artist and the catalogue types it `album` (2011-11-08), so nothing in the rule refuses it; it loses to the original only on the earliest
+    date, and only when the original is also among the hits. DERIVED: the recorded "Comfortably Numb" search WITHOUT The Wall's hit, and the best-of's
+    recorded answer with a song list that holds the hit (its own list was not recorded: the row is The Wall's recorded "Comfortably Numb" with the best-of's
+    hit id, album and a track number)."""
+    found = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
+    best_of = albums(BEST_OF)[BEST_OF]
+    row = copy.deepcopy(next(t for t in albums(WALL)[WALL]["tracks"] if t["id"] == "116914122"))
+    row.update(id="116914348", album={"id": BEST_OF, "title": best_of["album"]["title"]}, trackNo=7, discNo=1)
+    best_of["tracks"] = [row]
+    assert wanted_albums(COMFORTABLY_NUMB, found) == [BEST_OF]
+    verdict = choose_release(COMFORTABLY_NUMB, found, {BEST_OF: best_of})
+    assert (verdict.outcome, verdict.reason) == ("matched", "matched")
+    match = verdict.match
+    assert match is not None
+    assert (match.album_id, match.album, match.record_type, match.release_date, match.deezer_id, match.track_no) == (
+        BEST_OF,
+        "A Foot in the Door: The Best of Pink Floyd",
+        "album",
+        "2011-11-08",
+        "116914348",
+        7,
+    )
+    assert [(r.album_id, r.reason) for r in verdict.releases] == [(BEST_OF, "chosen")]
 
 
 def test_a_track_list_without_the_hits_id_is_a_miss_never_a_guess_at_another_release() -> None:
