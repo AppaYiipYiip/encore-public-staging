@@ -102,10 +102,14 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
     // An import that made this playlist and is still going is the same job, its words first.
     final made = t.playlistId == null ? null : importOf[t.playlistId];
     if (made != null) merged.add(made.id);
+    // A stuck import (the server says running, nothing has changed for half an hour) lends the Download nothing: it is a Download again.
+    // KNOWN GAP (docs/33 PB-43 (i)): an import stopped on another device while this Download goes on leaves no "Import stopped" card: the one job
+    // is the Download, and its line is the download's. Removal trigger: a frame for it drawn in S-95.
     final finding = made != null &&
             made.state != 'stopped' &&
             made.state != 'failed' &&
-            made.pending > 0
+            made.pending > 0 &&
+            !watch.stalled.contains(made.id)
         ? made
         : null;
     final importing = finding != null;
@@ -140,6 +144,8 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
   final now = ref.read(clockProvider).now();
   for (final i in watch.imports) {
     if (merged.contains(i.id) || watch.stoppedHere.contains(i.id)) continue;
+    // KNOWN GAP (docs/33 PB-43 (ii)): a failed import is dropped here, so its running card goes away with no word and no result card (the import
+    // page still says it failed). Removal trigger: a frame for it drawn in S-95.
     if (i.state == 'failed' || i.total < _kSmallestJob) continue;
     final job = _importJob(i, watch, keep, now);
     if (job != null) jobs.add(job);
@@ -153,6 +159,9 @@ CardJob? _importJob(
   KeepState keep,
   DateTime now,
 ) {
+  // A stuck import is not followed: it is ABSENT (not "over": that would be a result card saying it is ready, which it is not). Its card, if one was
+  // on screen, goes away; the import page still says what the server says, and a change brings the card back.
+  if (watch.stalled.contains(i.id)) return null;
   final running = i.isRunning || watch.saving.contains(i.id);
   final recent = i.createdAtMs <= 0 ||
       now.difference(DateTime.fromMillisecondsSinceEpoch(i.createdAtMs)) <

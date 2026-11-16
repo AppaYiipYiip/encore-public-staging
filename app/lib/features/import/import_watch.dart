@@ -15,7 +15,8 @@ final importPollProvider =
     Provider<Duration>((ref) => const Duration(seconds: 10));
 
 /// How long an import that has stopped changing is waited for: songs the server could not get never come, and a card that waited for them for ever
-/// would be a lie told every time the app is opened.
+/// would be a lie told every time the app is opened. The same patience applies to an import the server still calls `running` (it is stuck: see
+/// [ImportWatchState.stalled]): asking every few seconds for ever, in the background, would cost every phone its battery for nothing.
 const Duration kImportPatience = Duration(minutes: 30);
 
 /// An import older than this is history, not something that is being saved.
@@ -26,6 +27,7 @@ class ImportWatchState {
   const ImportWatchState({
     this.imports = const [],
     this.saving = const {},
+    this.stalled = const {},
     this.stoppedHere = const {},
   });
 
@@ -34,6 +36,10 @@ class ImportWatchState {
   /// Imports whose songs are all found but not all kept by the server yet, and are still moving: the server stage of an import, which is the long
   /// part (tens of minutes for a long list) and the one nobody could see.
   final Set<String> saving;
+
+  /// Imports the server calls running whose numbers have not changed for [kImportPatience]: a stuck import. It is not followed (no asking every few
+  /// seconds, no card) until something about it changes.
+  final Set<String> stalled;
 
   /// Imports the person stopped on THIS phone: ending one of these leaves no card (the person knows).
   final Set<String> stoppedHere;
@@ -44,8 +50,9 @@ class ImportWatchState {
 /// The server **pushes** `import.progress` (flat: `importId, state, total, matched, unmatched, pending, kept`) when a song of an import has been
 /// matched and when an import is stopped; it does **not** push when its keeper stores a song, so `kept` moves silently after the matching. The watch
 /// therefore reads `GET imports` at the start, at every (re)connection and every return to the app (events only make it faster, never correct, as
-/// `keep.progress` does), takes the pushes as they come, and asks again every [importPollProvider] **only while an import is still running or saving**.
-/// Idle, it asks nothing.
+/// `keep.progress` does), takes the pushes as they come, and asks again every [importPollProvider] **only while an import is still running or saving
+/// and has moved in the last [kImportPatience]**. Idle, or stuck, it asks nothing; a push or a look that finds a change makes it follow the import
+/// again.
 final importWatchProvider =
     NotifierProvider<ImportWatch, ImportWatchState>(ImportWatch.new);
 
@@ -140,6 +147,7 @@ class ImportWatch extends Notifier<ImportWatchState> {
   void _apply(List<EncoreImport> list) {
     final now = ref.read(clockProvider).now();
     final saving = <String>{};
+    final stalled = <String>{};
     for (final i in list) {
       final signature =
           '${i.state}|${i.matched}|${i.unmatched}|${i.pending}|${i.kept}';
@@ -153,11 +161,14 @@ class ImportWatch extends Notifier<ImportWatchState> {
       final moving = now.difference(_changedAt[i.id]!) < kImportPatience;
       if (i.state == 'done' && i.matched > i.kept && recent && moving) {
         saving.add(i.id);
+      } else if (i.isRunning && !moving) {
+        stalled.add(i.id);
       }
     }
     state = ImportWatchState(
       imports: list,
       saving: saving,
+      stalled: stalled,
       stoppedHere: state.stoppedHere,
     );
     _schedule();
@@ -167,8 +178,8 @@ class ImportWatch extends Notifier<ImportWatchState> {
   void _schedule() {
     _timer?.cancel();
     _timer = null;
-    final active =
-        state.saving.isNotEmpty || state.imports.any((i) => i.isRunning);
+    final active = state.saving.isNotEmpty ||
+        state.imports.any((i) => i.isRunning && !state.stalled.contains(i.id));
     if (!active || _api == null) return;
     _timer = Timer(ref.read(importPollProvider), () => unawaited(resync()));
   }
@@ -180,6 +191,7 @@ class ImportWatch extends Notifier<ImportWatchState> {
     state = ImportWatchState(
       imports: state.imports,
       saving: state.saving,
+      stalled: state.stalled,
       stoppedHere: {...state.stoppedHere, id},
     );
     final stopped = await api.stopImport(id);

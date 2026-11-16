@@ -313,6 +313,44 @@ void main() {
       expect(job.importRoute, '/library/liked');
     });
 
+    test(
+        'a running import that has stopped moving is no job at all: no card, and no card of its end',
+        () async {
+      final c = start(
+        targets: const [],
+        imports: ImportWatchState(imports: [
+          _import('im_1', matched: 117, unmatched: 3, pending: 97),
+        ], stalled: const {
+          'im_1'
+        }),
+      );
+
+      expect(await jobs(c), isEmpty,
+          reason:
+              'not a job that is over (that would be a result card, "ready", which it is not): absent');
+    });
+
+    test(
+        'a stalled import that made the playlist of a Download lends it nothing: the Download is a Download again, once',
+        () async {
+      final c = start(
+        line: const DownloadLine('12 of 217 on this phone', twoStages: true),
+        imports: ImportWatchState(imports: [
+          _import('im_1', playlistId: 'pl_1', matched: 117, pending: 97),
+        ], stalled: const {
+          'im_1'
+        }),
+      );
+
+      final job = (await jobs(c)).single;
+      expect(job.kind, CardJobKind.download);
+      expect(job.importing, isFalse);
+      expect(job.text, '12 of 217 on this phone');
+      expect(job.saving, isFalse,
+          reason:
+              'nothing says the server is still saving: no dated card outside the app for a stuck import');
+    });
+
     test('a single song, a failed import and old history are no card',
         () async {
       final c = start(

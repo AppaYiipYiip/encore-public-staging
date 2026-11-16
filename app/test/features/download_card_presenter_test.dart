@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:encore/domain/download_card.dart';
 import 'package:encore/features/downloads/download_card_presenter.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,11 +8,17 @@ import 'package:flutter_test/flutter_test.dart';
 /// manager: nothing here touches a phone.
 class _Sink implements DownloadCardSink {
   bool allowed = true;
+
+  /// When set, the question "may anything be shown?" is not answered until the test completes it (a phone that is slow to say).
+  Completer<void>? gate;
   final List<CardPost> posts = [];
   final List<int> cancels = [];
 
   @override
-  Future<bool> canPost() async => allowed;
+  Future<bool> canPost() async {
+    await gate?.future;
+    return allowed;
+  }
 
   @override
   Future<void> post(CardPost card) async => posts.add(card);
@@ -137,7 +145,9 @@ void main() {
       expect(sink.running.single.spec.title, '2 downloads');
     });
 
-    test('the bar never goes back while the same downloads run', () async {
+    test(
+        "the bar never goes back when a download's own numbers fall (a retry, older numbers)",
+        () async {
       await presenter.update(
           jobs: [_job('playlist:p1', 'Prog snob', onPhone: 100, ready: 100)],
           foreground: true);
@@ -217,6 +227,114 @@ void main() {
       expect(sink.running.last.spec.body, 'three',
           reason: 'the last look is the one that is shown');
       slow.dispose();
+    });
+  });
+
+  group('the bar of the card does not drop while the card lives', () {
+    CardJob a(CardPhase phase, {int onPhone = 10}) =>
+        _job('playlist:a', 'Alpha',
+            songs: 10,
+            onPhone: onPhone,
+            ready: onPhone,
+            phase: phase,
+            saving: phase == CardPhase.running);
+    CardJob b({int onPhone = 1, bool starting = false, int songs = 10}) =>
+        _job('playlist:b', 'Beta',
+            songs: songs, onPhone: onPhone, ready: onPhone, starting: starting);
+
+    test(
+        'one of two downloads ends: the card goes on with the other and the bar stays where it was',
+        () async {
+      // Alpha is all on the phone, Beta at 10 %: the bar of the card is about 55 %.
+      await presenter
+          .update(jobs: [a(CardPhase.running), b()], foreground: true);
+      final before = sink.running.last.spec.progress!;
+      expect(before, closeTo(0.55, 0.01));
+
+      // Alpha ends: the card is Beta's alone now, and Beta's own share is 10 %.
+      await presenter.update(jobs: [a(CardPhase.ready), b()], foreground: true);
+
+      expect(sink.running.last.spec.title, 'Downloading Beta');
+      expect(sink.running.last.spec.progress, greaterThanOrEqualTo(before),
+          reason: 'the bar never drops while the card is live');
+    });
+
+    test('the same when the first one ends while the app is left', () async {
+      await presenter
+          .update(jobs: [a(CardPhase.running), b()], foreground: true);
+      final before = sink.running.last.spec.progress!;
+
+      await presenter
+          .update(jobs: [a(CardPhase.ready), b()], foreground: false);
+      await presenter
+          .update(jobs: [a(CardPhase.ready), b(onPhone: 2)], foreground: true);
+
+      expect(sink.running.last.spec.dated, isFalse);
+      expect(sink.running.last.spec.progress, greaterThanOrEqualTo(before));
+    });
+
+    test(
+        'the bar stays a bar (not an unfinished one) when the next job is starting',
+        () async {
+      await presenter.update(jobs: [
+        a(CardPhase.running, onPhone: 5),
+        b(starting: true, songs: 0, onPhone: 0)
+      ], foreground: true);
+      final before = sink.running.last.spec.progress;
+      expect(before, closeTo(0.50, 0.01));
+
+      await presenter.update(
+          jobs: [a(CardPhase.ready), b(starting: true, songs: 0, onPhone: 0)],
+          foreground: true);
+
+      expect(sink.running.last.spec.progress, isNotNull,
+          reason:
+              'a bar that has shown a value does not go back to having no end');
+      expect(sink.running.last.spec.progress, lessThanOrEqualTo(0.51),
+          reason: 'and it is not full because Alpha ended');
+    });
+
+    test(
+        'a card that ended while the app was left does not lend its bar to the next one',
+        () async {
+      await presenter.update(
+          jobs: [a(CardPhase.running, onPhone: 9), b(onPhone: 9)],
+          foreground: true);
+      expect(sink.running.last.spec.progress, closeTo(0.90, 0.01));
+
+      // Both end while the person is away (nobody in front of the app sees it).
+      await presenter.update(jobs: [
+        a(CardPhase.ready),
+        _job('playlist:b', 'Beta',
+            songs: 10, onPhone: 10, ready: 10, phase: CardPhase.ready),
+      ], foreground: false);
+
+      await presenter.update(jobs: [
+        _job('playlist:c', 'Gamma', songs: 10, onPhone: 1, ready: 1),
+      ], foreground: true);
+
+      expect(sink.running.last.spec.progress, closeTo(0.10, 0.01));
+    });
+
+    test('a new card, once the last job has ended, starts from zero', () async {
+      await presenter.update(
+          jobs: [a(CardPhase.running, onPhone: 9), b(onPhone: 9)],
+          foreground: true);
+      expect(sink.running.last.spec.progress, closeTo(0.90, 0.01));
+      await presenter.update(jobs: [
+        a(CardPhase.ready),
+        _job('playlist:b', 'Beta',
+            songs: 10, onPhone: 10, ready: 10, phase: CardPhase.ready),
+      ], foreground: true);
+      expect(sink.cancels, [kRunningCardId],
+          reason: 'both ended: the card is over');
+
+      await presenter.update(jobs: [
+        _job('playlist:c', 'Gamma', songs: 10, onPhone: 1, ready: 1),
+      ], foreground: true);
+
+      expect(sink.running.last.spec.progress, closeTo(0.10, 0.01),
+          reason: 'not the floor of the card before');
     });
   });
 
@@ -327,6 +445,70 @@ void main() {
       await presenter.update(jobs: [job], foreground: false);
 
       expect(sink.cancels, [kRunningCardId]);
+    });
+
+    testWidgets(
+        'leaving the app takes the refreshing timer itself away, not only what it would post',
+        (tester) async {
+      final timed = DownloadCardPresenter(
+        sink: sink,
+        now: () => now,
+        minGap: Duration.zero,
+        heartbeat: const Duration(seconds: 60),
+      );
+      final job = _job('playlist:p1', 'Prog snob');
+      await timed.update(jobs: [job], foreground: true);
+      await timed.update(jobs: [job], foreground: false);
+      await tester.pump();
+      expect(sink.running.last.spec.dated, isTrue);
+
+      // The presenter is NOT disposed here on purpose: a periodic timer still alive when the test ends fails it ("A Timer is still pending").
+    });
+
+    testWidgets(
+        'a card that was live and is then left is not refreshed again outside the app',
+        (tester) async {
+      final timed = DownloadCardPresenter(
+        sink: sink,
+        now: () => now,
+        minGap: Duration.zero,
+        heartbeat: const Duration(seconds: 60),
+      );
+      final job = _job('playlist:p1', 'Prog snob');
+      await timed.update(jobs: [job], foreground: true);
+      await timed.update(jobs: [job], foreground: false);
+      final before = sink.running.length;
+      expect(before, 2, reason: 'the live card, then the dated one');
+
+      await tester.pump(const Duration(minutes: 5));
+
+      expect(sink.running, hasLength(before),
+          reason:
+              'no beat outside the app: the dated card is not posted again');
+    });
+
+    testWidgets(
+        'a beat that falls due while the phone is still answering about the dated card posts nothing',
+        (tester) async {
+      final timed = DownloadCardPresenter(
+        sink: sink,
+        now: () => now,
+        minGap: Duration.zero,
+        heartbeat: const Duration(seconds: 60),
+      );
+      final job = _job('playlist:p1', 'Prog snob');
+      await timed.update(jobs: [job], foreground: true);
+      sink.gate = Completer<void>();
+      final leaving = timed.update(jobs: [job], foreground: false);
+
+      // The live card's timer is still armed (the dated card has not gone out yet) and falls due.
+      await tester.pump(const Duration(seconds: 61));
+      sink.gate!.complete();
+      await leaving;
+      await tester.pump();
+
+      expect(sink.running, hasLength(2),
+          reason: 'the live card and the dated card, and no beat in between');
     });
 
     testWidgets('there is no refreshing timer outside the app', (tester) async {

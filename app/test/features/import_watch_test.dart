@@ -264,6 +264,120 @@ void main() {
     });
   });
 
+  group('an import the server calls running that moves no more', () {
+    // The same patience as for the saving: half an hour with no change of state, found, not found, waiting or kept.
+    test(
+        'after half an hour with no change it is stalled, and nothing is asked for it any more',
+        () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+      expect(c.read(importWatchProvider).stalled, isEmpty,
+          reason: 'it is only just seen');
+      final first = asked();
+      await settle();
+      expect(asked(), greaterThan(first), reason: 'still asked while it moves');
+
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+      expect(c.read(importWatchProvider).stalled, {'im_1'});
+
+      final before = asked();
+      await settle();
+      await settle();
+      expect(asked(), before, reason: 'no poller for an import that is stuck');
+    });
+
+    test('half an hour is not yet stuck: it is still asked about', () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+
+      clock.advance(const Duration(minutes: 29));
+      await settle();
+      final before = asked();
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, isEmpty);
+      expect(asked(), greaterThan(before));
+    });
+
+    test('a count that moves keeps it alive however long it takes', () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+
+      clock.advance(const Duration(minutes: 29));
+      server.importRows.single['matched'] = 118;
+      server.importRows.single['pending'] = 99;
+      await settle();
+      clock.advance(const Duration(minutes: 29));
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, isEmpty);
+    });
+
+    test(
+        'a push that changes the counts brings it back, and it is asked about again',
+        () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+      expect(c.read(importWatchProvider).stalled, {'im_1'});
+      final stuck = asked();
+
+      events.add(const LiveEvent('import.progress', {
+        'importId': 'im_1',
+        'state': 'running',
+        'total': 217,
+        'matched': 130,
+        'unmatched': 0,
+        'pending': 87,
+        'kept': 0,
+      }));
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, isEmpty);
+      expect(asked(), greaterThan(stuck));
+    });
+
+    test(
+        'coming back to the app still reads the list (once), and it stays stalled while nothing moved',
+        () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start(more: [appInFrontProvider.overrideWith(_Front.new)]);
+      await settle();
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+      final stuck = asked();
+      final front = c.read(appInFrontProvider.notifier) as _Front;
+
+      front.set(false);
+      await settle();
+      front.set(true);
+      await settle();
+      await settle();
+
+      expect(asked(), stuck + 1, reason: 'one look at the return, no poller');
+      expect(c.read(importWatchProvider).stalled, {'im_1'});
+    });
+
+    test('an import that ended is never called stalled', () async {
+      server.importRows.add(row('im_1',
+          state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 214));
+      final c = start();
+      await settle();
+      clock.advance(const Duration(minutes: 31));
+      // Nothing is asked for an import that is over, so the look is made by the connection coming back.
+      connection.add(true);
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, isEmpty);
+    });
+  });
+
   test('a stop pressed on this phone is remembered as ours', () async {
     server.importRows.add(row('im_1'));
     final c = start(poll: const Duration(hours: 1));

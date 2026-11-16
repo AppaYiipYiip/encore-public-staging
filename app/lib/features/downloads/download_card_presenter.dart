@@ -43,7 +43,7 @@ class DownloadCardPresenter {
   final Duration heartbeat;
   final Duration minGap;
 
-  final ProgressFloor _floor = ProgressFloor();
+  final CardBar _bar = CardBar();
   List<CardJob> _jobs = const [];
   bool _foreground = true;
   bool _disposed = false;
@@ -65,6 +65,8 @@ class DownloadCardPresenter {
     final results = resultsBetween(_jobs, jobs, _words);
     final left = foreground != _foreground;
     _jobs = jobs;
+    // The bar follows every look, the app in front or not: a job that ends while the app is left is still part of the card when it comes back.
+    _bar.apply(jobs);
     _foreground = foreground;
     for (final result in results) {
       _enqueue(() => _postResult(result));
@@ -91,12 +93,9 @@ class DownloadCardPresenter {
     if (_foreground) {
       final live = liveCard(_jobs, _words);
       if (live != null) {
-        final keys = {
-          for (final j in _jobs)
-            if (j.running) j.key
-        };
+        // A bar with no end yet only before it has shown anything: once it has a value it keeps one (a job starting next to one that ended).
         final progress =
-            live.progress == null ? null : _floor.apply(keys, live.progress!);
+            live.progress == null && _bar.value <= 0 ? null : _bar.value;
         wanted = CardSpec(
           title: live.title,
           body: live.body,
@@ -108,7 +107,6 @@ class DownloadCardPresenter {
     } else {
       wanted = datedCard(_jobs, _now(), _words);
     }
-    if (wanted == null && !_jobs.any((j) => j.running)) _floor.reset();
 
     if (wanted == null) {
       _later?.cancel();

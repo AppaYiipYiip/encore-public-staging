@@ -146,6 +146,8 @@ class CardSpec {
 const int kRunningCardId = 7410;
 const int _kResultCardIdBase = 7500;
 
+/// Two jobs can land on the same one of the 500 ids, and the later result card then replaces the earlier one: a card is missing, never data lost;
+/// accepted for that reason (a result card is a convenience, the job's own line in Downloaded stays).
 int resultCardId(String key) {
   // FNV-1a: the same job is the same id in every run of the app, so that a card of it is replaced, not repeated.
   var hash = 0x811c9dc5;
@@ -228,28 +230,51 @@ class CardResult {
   return (done: looked + saved, of: 2 * total);
 }
 
-/// Keeps the bar from going back while the same jobs run (a retry, or numbers a little older than the last, must not take away what was shown).
-/// Another set of jobs is a bar of another whole, and starts again.
-class ProgressFloor {
-  Set<String>? _keys;
+/// The bar of the running card: the share of EVERYTHING the card has followed since it started, and **it only moves forward for as long as the card
+/// lives**, with no qualifier (the owner's rule for S-95).
+///
+/// * A job that **ends** keeps its share in the total (its last numbers), so the card that goes on with the others does not restart from their own
+///   share: job A finished at 100 % and job B at 10 % are 55 %, and when A ends the bar still says 55 %, not 10 %.
+/// * A job that **joins** makes the whole bigger and the raw share smaller: the bar holds where it was and moves again once the bigger whole passes it
+///   (the cost, said in docs/33 PB-43: with one job left the bar can sit above that job's own line).
+/// * Only jobs that **ran while the card was live** are part of it: a download that finished long ago is on the list with a full share and must not
+///   lift a bar it was never part of. A job that was running and is no longer on the list (the person removed it) keeps its last share too.
+/// * A look at which **nothing that is left has a size yet** (every running job is `starting`, the server has not answered) does not advance the
+///   bar: the jobs that ended would read as 100 % and the floor would keep that for the rest of the card.
+/// * The card **ends** when no job runs: the next card starts from zero.
+///
+/// Fed with every look at the jobs, the app in front or not (a job that ends while the app is left must still be counted).
+class CardBar {
+  final Map<String, ({int done, int of})> _shares = {};
   double _floor = 0;
 
-  double apply(Set<String> keys, double raw) {
-    final same = _keys != null &&
-        _keys!.length == keys.length &&
-        _keys!.containsAll(keys);
-    if (!same) {
-      _keys = {...keys};
-      _floor = raw;
-      return raw;
-    }
-    if (raw > _floor) _floor = raw;
-    return _floor;
-  }
+  /// What the bar says now: 0 before anything has run.
+  double get value => _floor;
 
-  void reset() {
-    _keys = null;
-    _floor = 0;
+  /// Looks at the jobs once and returns [value].
+  double apply(Iterable<CardJob> jobs) {
+    final list = jobs.toList();
+    if (!list.any((j) => j.running)) {
+      _shares.clear();
+      _floor = 0;
+      return 0;
+    }
+    for (final j in list) {
+      if (j.running || _shares.containsKey(j.key)) {
+        _shares[j.key] = (done: j.progressDone, of: j.progressOf);
+      }
+    }
+    if (!list.where((j) => j.running).every((j) => j.starting)) {
+      var done = 0;
+      var of = 0;
+      for (final share in _shares.values) {
+        done += share.done;
+        of += share.of;
+      }
+      final raw = of <= 0 ? 0.0 : (done / of).clamp(0.0, 1.0);
+      if (raw > _floor) _floor = raw;
+    }
+    return _floor;
   }
 }
 
@@ -269,7 +294,8 @@ double _share(Iterable<CardJob> jobs) {
 const int kNamedOnCard = 3;
 
 /// The card while the app is open: S-16's line for one job; for several, how many and what is on the phone, and pulled open a line each.
-/// `null` when nothing runs.
+/// `null` when nothing runs. Its `progress` is the raw share of the jobs that run, `null` while all of them are starting; the bar that is SHOWN is
+/// [CardBar]'s (it keeps what finished jobs were worth and never goes back), which `DownloadCardPresenter` puts in its place.
 CardSpec? liveCard(List<CardJob> jobs, DownloadCardWords words) {
   final running = [
     for (final j in jobs)

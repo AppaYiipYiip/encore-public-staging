@@ -91,8 +91,8 @@ class LocalNotifications implements AlertSink, DownloadCardSink {
   }
 
   /// Whether there is nothing to ask: `true` below Android 13 (no question exists there) and once the permission is granted; `false` on Android 13+
-  /// while it is not granted. Asked of the downloader's own permission service (the one whose progress notification this is for), which answers
-  /// "granted" below Android 13. When it cannot be known the answer is `true`: a question is never asked on a guess.
+  /// while it is not granted. Read through the downloader plugin's permission service (it answers "granted" below Android 13; the downloader itself
+  /// posts no notification any more, the card is ours). When it cannot be known the answer is `true`: a question is never asked on a guess.
   Future<bool> areAllowed() async {
     try {
       final status = await downloader.FileDownloader()

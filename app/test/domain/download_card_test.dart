@@ -68,14 +68,195 @@ void main() {
       final over = importBar(total: 10, matched: 8, unmatched: 2, kept: 8);
       expect(over.done, over.of);
     });
+  });
 
-    test('it only moves forward while the same jobs run', () {
-      final floor = ProgressFloor();
-      expect(floor.apply({'a'}, 0.40), 0.40);
-      expect(floor.apply({'a'}, 0.25), 0.40, reason: 'a reason to wait');
-      expect(floor.apply({'a'}, 0.55), 0.55);
-      // another download joins: the share is of another whole, and may start again
-      expect(floor.apply({'a', 'b'}, 0.30), 0.30);
+  /// The bar of the card is the share of EVERYTHING the card has followed since it started, and it only moves forward for as long as the card lives:
+  /// a job that ends keeps its share in the total, a job that joins does not pull it back, and a new card starts from zero.
+  group('the bar of the card only moves forward while the card lives', () {
+    CardJob job(
+      String key, {
+      required int onPhone,
+      int? ready,
+      int songs = 10,
+      CardPhase phase = CardPhase.running,
+      bool starting = false,
+    }) =>
+        download(key, key, 'x',
+            songs: songs,
+            onPhone: onPhone,
+            ready: ready ?? onPhone,
+            phase: phase,
+            starting: starting);
+
+    test('a bar that is told a smaller share keeps what it showed', () {
+      final bar = CardBar();
+      expect(bar.apply([job('a', onPhone: 4)]), closeTo(0.40, 1e-9));
+      expect(bar.apply([job('a', onPhone: 2)]), closeTo(0.40, 1e-9),
+          reason: 'a retry, or numbers a little older: no step back');
+      expect(bar.apply([job('a', onPhone: 6)]), closeTo(0.60, 1e-9));
+    });
+
+    test(
+        "one of two jobs ends: its share stays in the total, the bar does not drop to the other one's own share",
+        () {
+      final bar = CardBar();
+      // A is all on the phone (100 %), B is at 10 %: (20 + 2) / 40 = 55 %.
+      final before = bar.apply([
+        job('a', onPhone: 10),
+        job('b', onPhone: 1, ready: 1),
+      ]);
+      expect(before, closeTo(0.55, 1e-9));
+
+      // A ends. The share of B alone is 10 %: the bar must not say so.
+      final after = bar.apply([
+        job('a', onPhone: 10, phase: CardPhase.ready),
+        job('b', onPhone: 1, ready: 1),
+      ]);
+
+      expect(after, closeTo(0.55, 1e-9));
+    });
+
+    test('a finished job that then leaves the list keeps its share too', () {
+      final bar = CardBar();
+      bar.apply([job('a', onPhone: 10), job('b', onPhone: 1)]);
+
+      // The person removed A (or the list no longer has it): the bar does not drop, and what A was worth is still in the whole.
+      expect(bar.apply([job('b', onPhone: 2)]), greaterThanOrEqualTo(0.55));
+      expect(bar.apply([job('b', onPhone: 8)]), closeTo(0.90, 1e-9),
+          reason:
+              '(20 + 16) / 40: Beta moves the bar of the whole, not its own');
+    });
+
+    test(
+        'two jobs end, in either order: the bar never goes down, then the card is over',
+        () {
+      for (final firstToEnd in ['a', 'b']) {
+        final bar = CardBar();
+        final seen = <double>[];
+        CardJob a(CardPhase p, int onPhone) =>
+            job('a', onPhone: onPhone, phase: p);
+        CardJob b(CardPhase p, int onPhone) =>
+            job('b', onPhone: onPhone, phase: p);
+        seen.add(bar.apply([a(CardPhase.running, 6), b(CardPhase.running, 2)]));
+        if (firstToEnd == 'a') {
+          seen.add(
+              bar.apply([a(CardPhase.ready, 10), b(CardPhase.running, 3)]));
+          seen.add(
+              bar.apply([a(CardPhase.ready, 10), b(CardPhase.running, 7)]));
+          seen.add(bar.apply([a(CardPhase.ready, 10), b(CardPhase.ready, 10)]));
+        } else {
+          seen.add(
+              bar.apply([a(CardPhase.running, 7), b(CardPhase.ready, 10)]));
+          seen.add(
+              bar.apply([a(CardPhase.running, 9), b(CardPhase.ready, 10)]));
+          seen.add(bar.apply([a(CardPhase.ready, 10), b(CardPhase.ready, 10)]));
+        }
+
+        expect(seen.removeLast(), 0,
+            reason: 'nothing runs any more: the card is over, there is no bar');
+        for (var i = 1; i < seen.length; i++) {
+          expect(seen[i], greaterThanOrEqualTo(seen[i - 1]),
+              reason: '$firstToEnd ended first, step $i: $seen');
+        }
+      }
+    });
+
+    test(
+        'a job joins: the bar does not drop, and moves again once the bigger whole passes it',
+        () {
+      final bar = CardBar();
+      expect(bar.apply([job('a', onPhone: 8)]), closeTo(0.80, 1e-9));
+
+      final joined =
+          bar.apply([job('a', onPhone: 8), job('b', onPhone: 0, ready: 0)]);
+      expect(joined, closeTo(0.80, 1e-9), reason: 'the raw share is now 40 %');
+
+      expect(bar.apply([job('a', onPhone: 9), job('b', onPhone: 9)]),
+          closeTo(0.90, 1e-9));
+    });
+
+    test(
+        'a job whose size is not known yet does not lift the bar: it is not full because the others ended',
+        () {
+      final bar = CardBar();
+      expect(
+          bar.apply([
+            job('a', onPhone: 5),
+            job('b', onPhone: 0, ready: 0, songs: 0, starting: true),
+          ]),
+          closeTo(0.50, 1e-9));
+
+      // A ends while B has not been answered yet: B counts for nothing so far, and 100 % would be a lie that the floor would then keep.
+      expect(
+          bar.apply([
+            job('a', onPhone: 10, phase: CardPhase.ready),
+            job('b', onPhone: 0, ready: 0, songs: 0, starting: true),
+          ]),
+          closeTo(0.50, 1e-9));
+
+      // B's size arrives: (20 + 0) / 40 = 50 %, and from there it moves.
+      expect(
+          bar.apply([
+            job('a', onPhone: 10, phase: CardPhase.ready),
+            job('b', onPhone: 0, ready: 0),
+          ]),
+          closeTo(0.50, 1e-9));
+      expect(
+          bar.apply([
+            job('a', onPhone: 10, phase: CardPhase.ready),
+            job('b', onPhone: 5),
+          ]),
+          closeTo(0.75, 1e-9));
+    });
+
+    test('a download that finished long ago is no part of the card', () {
+      final bar = CardBar();
+      // A was ready before this card began: it never ran in it, so its full share must not lift the bar.
+      final value = bar.apply([
+        job('old', onPhone: 10, phase: CardPhase.ready),
+        job('b', onPhone: 1, ready: 1),
+      ]);
+
+      expect(value, closeTo(0.10, 1e-9));
+    });
+
+    test('the card ends, and the next card starts from zero', () {
+      final bar = CardBar();
+      bar.apply([job('a', onPhone: 9), job('b', onPhone: 9)]);
+      expect(
+          bar.apply([
+            job('a', onPhone: 10, phase: CardPhase.ready),
+            job('b', onPhone: 10, phase: CardPhase.ready),
+          ]),
+          0);
+
+      // A new download is a new card: its bar is its own share, not the floor of the last one.
+      expect(bar.apply([job('c', onPhone: 1, ready: 1)]), closeTo(0.10, 1e-9));
+      // and the jobs of the card that is over are not in this one's total
+      expect(
+          bar.apply([
+            job('a', onPhone: 10, phase: CardPhase.ready),
+            job('c', onPhone: 2, ready: 2),
+          ]),
+          closeTo(0.20, 1e-9));
+    });
+
+    test(
+        'an import that becomes the Download of its playlist keeps one share and the floor holds',
+        () {
+      final bar = CardBar();
+      const key = 'pin:playlist:pl_1';
+      CardJob made(int done, int of) => CardJob(
+            key: key,
+            name: 'Prog snob',
+            text: 'x',
+            songs: 217,
+            progressDone: done,
+            progressOf: of,
+          );
+
+      expect(bar.apply([made(300, 434)]), closeTo(300 / 434, 1e-9));
+      expect(bar.apply([made(100, 434)]), closeTo(300 / 434, 1e-9));
     });
   });
 
@@ -245,6 +426,27 @@ void main() {
 
       expect(card.body,
           '150 of 214 were ready at 9:03. Open Encore to see how far it is now.');
+    });
+
+    test(
+        'a song on the phone is a song the server holds: never fewer than the phone has',
+        () {
+      // The server's answer is older than the phone's own table: 20 ready by the answer, 60 on the phone. "20 were ready" would be false.
+      final one = datedCard([
+        download('playlist:p1', 'Prog snob', 'x',
+            songs: 214, onPhone: 60, ready: 20),
+      ], at, words)!;
+      expect(one.body,
+          '60 of 214 were ready at 9:03. Open Encore to see how far it is now.');
+
+      final several = datedCard([
+        download('playlist:p1', 'Prog snob', 'x',
+            songs: 214, onPhone: 60, ready: 20),
+        download('playlist:f', 'Fairouz mornings', 'x',
+            songs: 9, onPhone: 3, ready: 4),
+      ], at, words)!;
+      expect(several.body,
+          '64 of 223 were ready at 9:03. Open Encore to see how far it is now.');
     });
 
     test(

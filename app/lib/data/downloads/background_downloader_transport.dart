@@ -79,9 +79,11 @@ class BackgroundDownloaderTransport implements DownloadTransport {
   Future<Set<String>> activeTaskIds() async =>
       (await FileDownloader().allTaskIds(group: group)).toSet();
 
-  // No notification permission is asked for here (ADR-R44, AUDIT F29): nothing reaches the phone's notification area unless the person
-  // switched it on in Settings > Notifications. A download runs without the permission; its progress notification shows only when the
-  // person has allowed notifications for Encore.
+  // This transport asks for no permission and posts no notification (see the class comment). A download runs with or without the phone's notification
+  // permission; the card that shows it is the app's own (`DownloadCardPresenter`) and is posted only when that permission is granted (D-52: asked once,
+  // at the first Download or Import; below Android 13 there is none to ask, so the card is posted unless Encore's notifications were switched off in
+  // Android's own settings). ADR-R44's "nothing is posted by default" is about NEWS (the opt-in categories of Settings > Notifications); the card of
+  // the downloads is the exception D-52 made.
   @override
   Future<void> start(TransferRequest request) async {
     final relativeDir = p.dirname(request.relativePath);
