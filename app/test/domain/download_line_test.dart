@@ -362,4 +362,31 @@ void main() {
           'Downloading 4 of 10');
     });
   });
+  group(
+      'the first second (S-95: the card says "Starting…" with a bar that has no end yet)',
+      () {
+    DownloadLine lineOf(DownloadFacts f) => describeDownload(f);
+
+    test(
+        'a download nobody has answered yet is starting, on either kind of server',
+        () {
+      expect(lineOf(withServer(done: 0, loaded: false)).starting, isTrue);
+      expect(lineOf(const DownloadFacts(phoneDone: 0, phoneTotal: 0)).starting,
+          isTrue);
+      expect(lineOf(const DownloadFacts(phoneDone: 0, phoneTotal: 10)).starting,
+          isTrue);
+    });
+
+    test('as soon as there is a number it is not', () {
+      expect(lineOf(withServer(done: 12, loaded: false)).starting, isFalse);
+      expect(
+          lineOf(withServer(done: 0, ready: 40, keeping: 5)).starting, isFalse);
+      expect(
+          lineOf(const DownloadFacts(
+                  phoneDone: 4, phoneTotal: 10, phoneActive: 3))
+              .starting,
+          isFalse);
+      expect(lineOf(withServer(done: 217)).starting, isFalse);
+    });
+  });
 }

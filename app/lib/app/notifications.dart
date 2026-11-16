@@ -8,21 +8,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/logger.dart';
 import '../data/alerts/alerts_service.dart';
+import '../domain/download_card.dart';
 import 'router.dart';
 
 /// Android channel for "new music" alerts (the user can mute it in system
 /// settings without touching the app).
 const String kNewMusicChannelId = 'new_music';
 
-/// The app's own notifications (new music, imports) - separate from the media
-/// notification (`audio_service`) and the download progress notification
-/// (`background_downloader`).
+/// Android channel of the download card (docs/design S-95): silent and low, so that nothing in it makes a sound, vibrates or pops up over what the
+/// person is doing. Its own channel, NOT [kNewMusicChannelId]: that one is the opt-in news channel, and muting one must not mute the other.
+const String kDownloadsChannelId = 'downloads';
+
+/// The bar of the card is drawn in thousandths: a share of 217 songs moves in steps finer than a percent.
+const int _kBarSteps = 1000;
+
+/// The app's own notifications (new music, imports, the card of the downloads) - separate from the media notification (`audio_service`). The
+/// downloader posts none of its own any more (docs/33 PB-38, P2-29): the one card of the downloads is ours.
 ///
 /// Works from the background sync job too: it initialises itself on first use
 /// and needs nothing but the plugin. A notification is a convenience, so every
 /// call swallows (and logs) platform trouble instead of failing its caller -
 /// on a desktop test host the plugin has no platform at all.
-class LocalNotifications implements AlertSink {
+class LocalNotifications implements AlertSink, DownloadCardSink {
   LocalNotifications([FlutterLocalNotificationsPlugin? plugin])
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
@@ -96,6 +103,70 @@ class LocalNotifications implements AlertSink {
     } on Object catch (error) {
       Log.debug('notify', 'permission status unavailable: $error');
       return true;
+    }
+  }
+
+  /// Whether the card may be shown: the phone's own permission (below Android 13 there is none to ask). Nothing is posted without it.
+  @override
+  Future<bool> canPost() => areAllowed();
+
+  /// Posts the card of the downloads, or replaces it in place when the id is the one already on screen. Silent, low importance, never ongoing (a
+  /// frozen card the person could not swipe away would be worse than none); a live card carries a time to live, the card of a job that is over is
+  /// swiped away by the person.
+  @override
+  Future<void> post(CardPost card) async {
+    await init();
+    if (!_available) return;
+    final spec = card.spec;
+    final running = card.kind == CardKind.running;
+    final progress = spec.progress;
+    try {
+      await _plugin.show(
+        id: card.id,
+        title: spec.title,
+        body: spec.body,
+        payload: spec.route,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            kDownloadsChannelId,
+            'Downloads',
+            channelDescription: 'How far your downloads and imports have got.',
+            importance: Importance.low,
+            priority: Priority.low,
+            icon: 'ic_stat_encore',
+            category: running
+                ? AndroidNotificationCategory.progress
+                : AndroidNotificationCategory.status,
+            playSound: false,
+            enableVibration: false,
+            silent: true,
+            onlyAlertOnce: true,
+            ongoing: false,
+            autoCancel: !running,
+            showWhen: false,
+            showProgress: running && !spec.dated,
+            maxProgress: _kBarSteps,
+            progress: progress == null ? 0 : (progress * _kBarSteps).round(),
+            indeterminate: running && !spec.dated && progress == null,
+            timeoutAfter: card.timeoutAfter?.inMilliseconds,
+            styleInformation:
+                BigTextStyleInformation(spec.expanded ?? spec.body),
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      Log.warn('notify', 'could not show the download card', error);
+    }
+  }
+
+  @override
+  Future<void> cancel(int id) async {
+    await init();
+    if (!_available) return;
+    try {
+      await _plugin.cancel(id: id);
+    } on Object catch (error) {
+      Log.warn('notify', 'could not take the download card away', error);
     }
   }
 

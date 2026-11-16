@@ -63,12 +63,15 @@ class DownloadCardPresenter {
   }) {
     if (_disposed) return _queue;
     final results = resultsBetween(_jobs, jobs, _words);
+    final left = foreground != _foreground;
     _jobs = jobs;
     _foreground = foreground;
     for (final result in results) {
       _enqueue(() => _postResult(result));
     }
-    _decide(force: false);
+    // Leaving the app (or coming back) is posted at once and not paced: the process can be killed any moment, and the card that stays then must be
+    // the dated one.
+    _decide(force: left);
     return _queue;
   }
 

@@ -52,6 +52,7 @@ class CardJob {
     this.progressDone = 0,
     this.progressOf = 0,
     this.importRoute,
+    this.serverTotal,
   });
 
   /// Which job: the same download or import is the same key from one moment to the next (an import and the Download of its playlist are ONE job).
@@ -93,6 +94,10 @@ class CardJob {
 
   /// Where the card of an import that is over opens (the playlist it made).
   final String? importRoute;
+
+  /// How many songs the server is going to hold when the job is not all of [songs] (an import: the songs it found, not the songs it was given),
+  /// for "150 of 214 were ready"; `null` is [songs].
+  final int? serverTotal;
 
   bool get running => phase == CardPhase.running;
 }
@@ -321,7 +326,7 @@ CardSpec? datedCard(List<CardJob> jobs, DateTime now, DownloadCardWords words) {
   var songs = 0;
   for (final j in saving) {
     ready += j.ready < j.onPhone ? j.onPhone : j.ready;
-    songs += j.songs;
+    songs += j.serverTotal ?? j.songs;
   }
   return CardSpec(
     title: saving.length == 1

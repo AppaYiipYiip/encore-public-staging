@@ -116,6 +116,26 @@ final pinEntriesProvider =
   // A release the person downloaded is ONE entry, not N loose songs (D-35): the songs the phone wrote down for it are taken out of the loose
   // track pins and shown once, with the release's own title and artist (so it also reads offline).
   final phone = await ref.watch(phoneReleasesProvider.future);
+  return buildPinEntries(db, pins, phone);
+});
+
+/// The same entries without the loose songs: what the card of the downloads follows (a song is never a card, and a person can pin thousands of them:
+/// one lookup of each on every change of the pins would be the app's slowest start).
+final downloadGroupEntriesProvider =
+    FutureProvider.autoDispose<List<PinEntry>>((ref) async {
+  final pins = await ref.watch(pinsProvider.future);
+  final db = ref.watch(databaseProvider);
+  final phone = await ref.watch(phoneReleasesProvider.future);
+  return buildPinEntries(db, pins, phone, songs: false);
+});
+
+/// What the person pinned, one entry for each thing (a release is ONE entry); [songs] `false` leaves out the loose songs.
+Future<List<PinEntry>> buildPinEntries(
+  AppDatabase db,
+  List<PinRow> pins,
+  Map<String, PhoneRelease> phone, {
+  bool songs = true,
+}) async {
   // A song can belong to more than one release (a single and the album that holds it): it is listed for each of them, so none of the
   // releases the person downloaded loses its entry.
   final released = <String, List<({String id, PhoneRelease release})>>{};
@@ -184,6 +204,8 @@ final pinEntriesProvider =
         entries
             .add(PinEntry(pin: pin, title: 'Liked Songs', kind: 'Collection'));
       default:
+        // A loose song is never a download card.
+        if (!songs) continue;
         final row = await (db.select(db.tracks)
               ..where((t) =>
                   t.serverId.equals(pin.serverId) & t.id.equals(pin.targetId)))
@@ -198,7 +220,7 @@ final pinEntriesProvider =
     }
   }
   return entries;
-});
+}
 
 // ---------------------------------------------------------------- manager
 

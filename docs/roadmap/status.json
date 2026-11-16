@@ -300,5 +300,11 @@
   "evidence": "app engine tests on the fake Encore server and on the real saved responses (library-changes-with-purged-tombstones.json, library-files-with-gone.json): encore_orphan_rows_test.dart, 17 tests, 9 of them red on the old code and green now; each half and each branch of the collector shown load-bearing by mutation; 262 encore tests and the whole quick gate green. NOT walked: nothing run on a phone or on VM 108 (docs/34 CF-46).",
   "at": "2026-11-15T18:33:59Z",
   "by": "Claude"
+ },
+ "P2-29": {
+  "state": "built",
+  "evidence": "Built, not walked (16 Nov 2026, PR #107): S-95 as the app. Fakes only: domain card + words (download_card_test.dart), when a card is posted (download_card_presenter_test.dart: live card with a time to live, dated card with none on the SAME id on leaving, live again on return, one result card per job, nothing without the permission), the real plugin's channel payload (download_card_notifications_test.dart), the jobs from S-16's line and the import watch (download_card_jobs_test.dart, import_watch_test.dart), the question at the first Import (import_started_test.dart), the downloader posts no card (downloader_notifications_test.dart), the event shape pinned on the server (test_imports.py). Whole app suite 3061 passed, dart analyze clean. Three mutations of the presenter were each caught. Read, not run: the 4-file tail with the app killed, Notifications.kt:629.",
+  "at": "2026-11-16T08:40:22Z",
+  "by": "Claude"
  }
 }

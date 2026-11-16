@@ -228,6 +228,26 @@ void main() {
     });
 
     test(
+        'an import counts what the server is going to hold, not what it was given',
+        () {
+      final card = datedCard([
+        CardJob(
+          key: 'import:im1',
+          name: 'Prog snob',
+          kind: CardJobKind.import,
+          text: 'x',
+          songs: 217,
+          serverTotal: 214,
+          ready: 150,
+          saving: true,
+        ),
+      ], at, words)!;
+
+      expect(card.body,
+          '150 of 214 were ready at 9:03. Open Encore to see how far it is now.');
+    });
+
+    test(
         'a download the server has finished with has nothing to say outside the app',
         () {
       expect(

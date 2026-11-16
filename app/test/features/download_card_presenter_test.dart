@@ -175,6 +175,23 @@ void main() {
       timed.dispose();
     });
 
+    testWidgets(
+        'but leaving the app is posted at once, not held back by that pace',
+        (tester) async {
+      final slow = DownloadCardPresenter(
+        sink: sink,
+        now: () => now,
+        minGap: const Duration(seconds: 30),
+      );
+      final job = _job('playlist:p1', 'Prog snob', songs: 214, ready: 150);
+      await slow.update(jobs: [job], foreground: true);
+      await slow.update(jobs: [job], foreground: false);
+
+      expect(sink.running, hasLength(2));
+      expect(sink.running.last.spec.dated, isTrue);
+      slow.dispose();
+    });
+
     testWidgets('cards are not posted faster than the phone allows',
         (tester) async {
       final slow = DownloadCardPresenter(
