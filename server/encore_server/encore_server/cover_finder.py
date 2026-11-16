@@ -27,7 +27,7 @@ from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
 from .keeper.placement import inside
-from .textnorm import is_unknown_artist, norm_artist, norm_title
+from .textnorm import artist_key, is_unknown_artist, title_key
 
 log = logging.getLogger("encore_server.cover_finder")
 
@@ -47,18 +47,23 @@ def deezer_lookup(artist: str, title: str, album: str | None, *, client: httpx.C
     A plain search (the catalogue's field search finds nothing for many real songs), and then only a hit whose artist and title are the
     ones asked for counts. Raises [LookupUnavailable] when the catalogue could not be asked (so nothing is remembered about the song)."""
     found = search_tracks(artist, title, client=client)
-    want_artist, want_title = norm_artist(artist), norm_title(title)
+    # The keys of the shared fold (P2-25, audit B-133): before, every name outside ASCII folded to `''` and `'' == ''`, so ONE hit was the cover of every Arabic song
+    # (and the cover stored for one album went to every other Arabic album of the pass). A blank name or title is nothing and matches nothing.
+    want_artist, want_title = artist_key(artist), title_key(title)
+    if not want_artist or not want_title:
+        return None
+    wanted_album = title_key(album) if album else None
     best: tuple[int, str] | None = None
     for hit in found:
-        hit_artist = norm_artist(str((hit.get("artist") or {}).get("name", "")))
-        hit_title = norm_title(str(hit.get("title", "")))
+        hit_artist = artist_key(str((hit.get("artist") or {}).get("name", "")))
+        hit_title = title_key(str(hit.get("title", "")))
         if hit_artist != want_artist or hit_title != want_title:
             continue
         cover = hit.get("album") or {}
         url = cover.get("cover_xl") or cover.get("cover_big")
         if not isinstance(url, str) or not cover_url_ok(url):
             continue
-        score = 2 if album and norm_title(str(cover.get("title", ""))) == norm_title(album) else 1
+        score = 2 if wanted_album and title_key(str(cover.get("title", ""))) == wanted_album else 1
         if best is None or score > best[0]:
             best = (score, url)
     return best[1] if best else None
@@ -147,7 +152,7 @@ class CoverFinder:
                 self._store(row["id"], None)
                 continue
             album = row["album"]
-            key = (norm_artist(row["album_artist"] or artists[0]), norm_title(album)) if album else None
+            key = (artist_key(row["album_artist"] or artists[0]), title_key(album)) if album else None
             url = by_album.get(key) if key is not None else None
             if url is None:
                 report.looked += 1

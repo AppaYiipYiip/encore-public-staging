@@ -13,7 +13,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..textnorm import UNKNOWN_ARTIST, norm_title, safe_path_part, version_signature
+from ..textnorm import UNKNOWN_ARTIST, fold, norm_title, safe_path_part, title_key, version_signature, words
 
 AUDIO_SUFFIXES = {".opus", ".ogg", ".m4a", ".mp3", ".flac", ".aac", ".wav"}
 
@@ -29,7 +29,9 @@ class Placement:
 
 
 def _folder_key(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", norm_title(name) or name.lower())
+    """A folder name as its letters and digits in any alphabet, joined (P2-25: it was `a-z0-9`, so every Arabic or Russian artist folder was `''`, and a folder
+    that was there was never joined). The same fold as the keys, so a folder written with other marks or another case is the same folder."""
+    return "".join(words(norm_title(name) or fold(name)))
 
 
 def _existing_child(parent: Path, wanted: str) -> Path | None:
@@ -99,7 +101,9 @@ def find_existing(placement: Placement, title: str) -> Path | None:
     # Compared as the file system has it: "Weird Fishes / Arpeggi" is the file "Weird Fishes - Arpeggi", whose part after the dash
     # would otherwise read as a version ("live", "remix") of a different song.
     name = safe_path_part(title, "Track")
-    want = norm_title(name)
+    want = title_key(
+        name
+    )  # the key, not the bare words: a title in any alphabet is found, one that folds to nothing is still itself
     if not want:
         return None
     try:
@@ -110,7 +114,7 @@ def find_existing(placement: Placement, title: str) -> Path | None:
         if f.suffix.lower() not in AUDIO_SUFFIXES or not f.is_file():
             continue
         stem = re.sub(r"^\d{1,2}(-\d{1,2})?\s*-\s*", "", f.stem)
-        if norm_title(stem) == want and version_signature(stem) == version_signature(name):
+        if title_key(stem) == want and version_signature(stem) == version_signature(name):
             return f
     return None
 

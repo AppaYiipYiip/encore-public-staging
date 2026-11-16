@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import pytest
 from fastapi.testclient import TestClient
 
-from encore_server import deezer
+from encore_server import deezer, textnorm
 from encore_server.api import create_app
 from encore_server.auth import subsonic_token
 from encore_server.config import Settings
@@ -39,6 +39,16 @@ def creds(user: str, password: str | None = None) -> dict[str, str]:
     """The Subsonic query a legacy app sends."""
     salt = "salt1234"
     return {"u": user, "t": subsonic_token(password or f"pw-{user}", salt), "s": salt}
+
+
+@pytest.fixture(autouse=True)
+def _the_fold_is_pinned(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The start-up rewrite of the stored keys (`keyrepair`) refuses any Unicode but the pin (`textnorm.UNICODE_VERSION`, Python 3.12, the image). A developer's
+    Python 3.13 has 15.1.0, which only ADDS code points the corpus tests skip, so the suite is green there; but every `create_app` of every test would then log the
+    refusal and no rewrite could be tested. So the tests see the pinned version, EXCEPT the ones that exist to test the guard against the real interpreter
+    (`@pytest.mark.real_unicode`, `tests/test_unicode_pin.py`): which Python runs the suite is its own test, not a side effect of every other."""
+    if request.node.get_closest_marker("real_unicode") is None:
+        monkeypatch.setattr(textnorm, "running_unicode", lambda: textnorm.UNICODE_VERSION)
 
 
 @pytest.fixture()

@@ -60,7 +60,10 @@ class Scored:
 #: remembered for a week (`missing.py`) together with this number, and an answer made by an older revision is not believed. **Change it by one whenever a
 #: change here could make the matcher find what it did not find before** (a looser threshold, a better query, a new rule); a change that only makes it
 #: stricter, or that touches no decision, leaves it. One number voids every older "not found" at once: no sweep, no migration.
-MATCHER_REVISION = 1
+#: 2 (P2-25): the text fold under every comparison now keeps the letters of every alphabet (before, an Arabic, Russian, Korean or Japanese title was `''` and an exact
+#: result was REJECTED), and a title of up to four dense-script characters is compared for equality (`textnorm.ratio`): a "not found" earned under revision 1 for a song
+#: in another alphabet was a wrong answer, so it is not believed any more.
+MATCHER_REVISION = 2
 
 # A candidate must reach this to be used; below it the answer is "not found"
 # rather than a wrong song.

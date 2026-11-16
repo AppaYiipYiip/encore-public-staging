@@ -25,7 +25,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
-from . import API_VERSION, MIN_APP_VERSION, __version__, deezer, gateway, library, netaddr, playback, refmerge, refs
+from . import API_VERSION, MIN_APP_VERSION, __version__, deezer, gateway, keyrepair, library, netaddr, playback, refmerge, refs
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
 from .artist_finder import ArtistFinder, ArtistLookup
@@ -1658,8 +1658,10 @@ def create_app(
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
-    # Right after the migrations and before anything else runs (no thread has started, no request can come): the songs the old library scan made
-    # twice are merged (N-11). It has its own backup, runs as one transaction, and never stops the server from starting.
+    # Right after the migrations and before anything else runs (no thread has started, no request can come), two repairs, each with its own backup, each one
+    # transaction, neither ever stopping the server from starting. FIRST the stored keys are rewritten when the fold is newer than what made them (P2-25: a
+    # song in another alphabet was the key `||`); THEN the songs the old library scan made twice are merged (N-11), so the tombstones carry the new keys.
+    keyrepair.repair(database)
     refmerge.repair(database)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)

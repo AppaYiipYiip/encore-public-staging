@@ -41,7 +41,7 @@ from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
 from .keeper.placement import artist_folder, inside
-from .textnorm import artist_parts, is_unknown_artist, norm_artist, norm_title
+from .textnorm import artist_key, artist_parts, is_unknown_artist, title_key
 
 log = logging.getLogger("encore_server.artist_finder")
 
@@ -79,9 +79,9 @@ class ArtistPicture:
 
 
 def _key(name: str) -> str:
-    """A name as it is compared: letters and digits only, no case, no leading "the". Names that are not written in Latin letters fold to nothing,
-    and nothing is never equal to nothing (the caller refuses an empty key)."""
-    folded = norm_artist(name)
+    """A name as it is compared: its letters and digits in any alphabet (`textnorm.fold`), no case, no leading "the". A blank name is the empty key, which is
+    never equal to anything (the caller refuses it); a name of only symbols (`!!!`) is itself (P2-25: before, every name outside ASCII was empty)."""
+    folded = artist_key(name)
     return folded[4:] if folded.startswith("the ") else folded
 
 
@@ -91,13 +91,13 @@ def pick_artist_picture(hits: list[dict[str, Any]], *, artist: str, title: str) 
     A hit counts when its title is the song's, and its artist is [artist] (the same name), or [artist] is the lead name of its credit ("Bob Marley"
     in "Bob Marley & The Wailers"; the second name of a credit is somebody else's picture). The same name wins over a lead name, whatever the order.
     A picture of nobody (the grey silhouette) is dropped before choosing, so a namesake with a real picture is found behind one without."""
-    want_title, want_artist = norm_title(title), _key(artist)
+    want_title, want_artist = title_key(title), _key(artist)
     if not want_title or not want_artist:
         return None
     best: tuple[int, ArtistPicture] | None = None
     for hit in hits:
         credited = hit.get("artist")
-        if not isinstance(credited, dict) or norm_title(str(hit.get("title", ""))) != want_title:
+        if not isinstance(credited, dict) or title_key(str(hit.get("title", ""))) != want_title:
             continue
         name = str(credited.get("name", ""))
         if _key(name) == want_artist:

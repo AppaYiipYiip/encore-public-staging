@@ -6,14 +6,14 @@
   "(`python -X utf8 tools/gen_text_fold_table.py`, with the Python 3.12 the server runs on): digests of the fold of every code point and of 20,000 seeded random strings; the algorithms are in",
   "server/encore_server/tests/textfold_corpus.py. A digest that differs means the fold changed: bump textnorm.TEXTNORM_REVISION, then rerun the tool. `revision` and `unidata_version` are written by hand, on purpose.",
   "Sections. fold: `input`, its `fold` (the character stage, punctuation kept), its `words`, its `key` (what key_text gives: the words joined, never empty when there is something to read).",
-  "meet / differ: pairs whose keys must be equal / different; `a` and `b` are a text (compared by key_text) or [artist, title] (compared by the key `artist|title|`, which is what refs.norm_key gives from slice 2 on).",
-  "survives: `era0` is textnorm.survives_fold_whole today (the form N-34 calls: decided against the old ASCII fold), `era1` is what it becomes when slice 2 merges (true for every text with a letter or a digit that the fold keeps).",
-  "keys: [artist, title] and the full key `artist|title|version` (no bracket in any title, so the version is empty); the server tests it today with key_text and from slice 2 with refs.norm_key. The phone builds no keys.",
+  "meet / differ: pairs whose keys must be equal / different; `a` and `b` are a text (compared by key_text) or [artist, title] (compared by the key `artist|title|version`, which is what refs.norm_key gives).",
+  "survives: `era0` is the OLD fold's rule (decided against the old ASCII fold: what stored data was made under; the server keeps it frozen as keyrepair._lost_by_old_fold, and a name that fails it is suspect), `era1` is textnorm.survives_fold_whole from P2-25 slice 2 on (true for every text with a letter or a digit that the fold keeps; the form N-34 calls).",
+  "keys: [artist, title] and the full key `artist|title|version` (no bracket in any title, so the version is empty); the server tests it through refs.norm_key. The phone builds no keys.",
   "The phone checks fold and words (and meet and differ through them); `survives` and `keys` are server only."
  ],
  "revision": 1,
  "unidata_version": "15.0.0",
- "lucene": "not checked: the sources of Lucene's ArabicNormalizer, PersianNormalizer and PersianCharFilter were not opened for this slice (the slice ran without network). The Arabic and Persian rows follow the filters as the design records them (P2-25 part 3, 'Cross-check of the Arabic and Persian rows against Lucene'); reading the sources and recording their version is still open.",
+ "lucene": "checked, 16 Nov 2026 (P2-25 slices 2 and 3): the sources of Lucene release `releases/lucene/10.3.2` (annotated tag object 8241bb80dc7f3ef1be6f222f40cc6cbfa9a9aa98, commit dadfd90b4401947f4d0387669dc94999fbb2c830), files lucene/analysis/common/src/java/org/apache/lucene/analysis/ar/ArabicNormalizer.java and ArabicNormalizationFilter.java, fa/PersianNormalizer.java, PersianNormalizationFilter.java and fa/PersianCharFilter.java, were read. Compared: every `case` branch of ArabicNormalizer.normalize (14 rows) and PersianNormalizer.normalize (6 rows) and the zero-width non-joiner of PersianCharFilter, each as a test row against textnorm.fold (tests/test_textnorm.py); the hamza seats are kept apart as in Lucene. This fold adds (a superset): alef wasla, the marks U+0653-065F, U+0670 and the Quranic marks. NOT compared: Lucene's own tests, its stemmers, the order of an analyzer chain, ICU folding, any other release.",
  "fold": [
   {"input": "Beyoncé", "fold": "beyonce", "words": ["beyonce"], "key": "beyonce", "note": "accent removed"},
   {"input": "Björk", "fold": "bjork", "words": ["bjork"], "key": "bjork", "note": "diaeresis removed"},
