@@ -114,7 +114,7 @@ class RecordedDeezer:
                 ("album", "/tracks"): f"album_{ident}_tracks",
                 ("artist", "/albums"): f"artist_albums_{ident}",
             }
-            name = names.get((kind, tail))
-            if name and (RECORDED / f"{name}.json").exists():
-                return recorded(name)
+            stem = names.get((kind, tail))
+            if stem and (RECORDED / f"{stem}.json").exists():
+                return recorded(stem)
         return NO_DATA  # Deezer answers HTTP 200 with this for a thing that does not exist
