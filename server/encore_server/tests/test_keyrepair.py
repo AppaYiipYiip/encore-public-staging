@@ -682,6 +682,41 @@ def test_the_copy_a_finished_repair_used_is_recorded_with_it_in_one_transaction(
     assert used is not None and used["value"] == report.backup.name
 
 
+def test_a_ref_the_server_makes_itself_is_never_stale_so_a_start_never_rewrites_it(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The plan runs at EVERY start, so the key `refs.resolve` stores must be exactly what the plan recomputes (`refs.norm_key` of the first artist and the title as stored):
+    if the two ever differed for one kind of song, every start would rewrite that ref and take a copy, for ever. Songs of every kind, made by the real code after the
+    revision was written, with a library file and a catalogue picture on the Arabic one (the things a suspect ref would lose)."""
+    keyrepair.repair(db)  # a fresh install writes the revision at its first start
+    songs = [
+        {"title": "Dancing Queen", "artists": ["ABBA"]},
+        {"title": "سألوني الناس", "artists": ["فيروز"]},
+        {"title": "Don’t Stop (Live)", "artists": ["Artist feat. Someone", "Someone"]},
+        {"title": "愛", "artists": ["嵐"]},
+        {"title": "Песнь о земле родной", "artists": ["Грай"]},
+        {"title": "???", "artists": ["!!!"]},
+        {"title": "(sic)", "artists": ["Slipknot"]},
+        {"title": "Official Video", "artists": ["X"]},
+        {"title": "   Łódź   ", "artists": ["  Łukasz "]},
+        {"title": "Hyperballad - Remastered 2011", "artists": ["Björk", "Guðmundur"]},
+        {"title": "x" * 400, "artists": ["y" * 400]},
+    ]
+    with db.tx() as c:
+        made = [refs.resolve(c, {**song, "durationMs": 200_000})["id"] for song in songs]
+        c.execute("UPDATE song_ref SET cover_url = ?, cover_tried_at = 5 WHERE id = ?", (DEEZER_COVER, made[1]))
+        c.execute(
+            "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta) VALUES (?,?,?,?,?,?,'library',1,?,?)",
+            ("sf_never_stale_1", made[1], "nd-1", "music/nd-1.opus", "opus", 128, 5000, json.dumps({"size": 100})),
+        )
+    _refuse_every_write(monkeypatch)
+    report = keyrepair.repair(db)
+    assert report.failed is False and report.ran is False and report.rekeyed == 0 and report.backup is None
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (made[1],)).fetchone()[0] == DEEZER_COVER
+        assert conn.execute("SELECT COUNT(*) FROM ref_recheck").fetchone()[0] == 0
+
+
 def test_a_start_that_only_has_to_write_the_revision_takes_no_copy(db: Database) -> None:
     """Nothing to change but the number (an empty database, a Latin library): the revision is written and no copy is taken (a copy of a big library is a minute)."""
     report = keyrepair.repair(db)
