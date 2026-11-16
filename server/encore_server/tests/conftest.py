@@ -41,14 +41,15 @@ def creds(user: str, password: str | None = None) -> dict[str, str]:
     return {"u": user, "t": subsonic_token(password or f"pw-{user}", salt), "s": salt}
 
 
-@pytest.fixture(autouse=True)
-def _the_fold_is_pinned(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
-    """The start-up rewrite of the stored keys (`keyrepair`) refuses any Unicode but the pin (`textnorm.UNICODE_VERSION`, Python 3.12, the image). A developer's
-    Python 3.13 has 15.1.0, which only ADDS code points the corpus tests skip, so the suite is green there; but every `create_app` of every test would then log the
-    refusal and no rewrite could be tested. So the tests see the pinned version, EXCEPT the ones that exist to test the guard against the real interpreter
-    (`@pytest.mark.real_unicode`, `tests/test_unicode_pin.py`): which Python runs the suite is its own test, not a side effect of every other."""
-    if request.node.get_closest_marker("real_unicode") is None:
-        monkeypatch.setattr(textnorm, "running_unicode", lambda: textnorm.UNICODE_VERSION)
+def pytest_configure(config: pytest.Config) -> None:
+    """The whole run stops BEFORE the first test on a Python whose Unicode is not the pin (`textnorm.UNICODE_VERSION`, Python 3.12, the image's): a stored key is a
+    function of the Unicode data of the interpreter, so nobody tests on another one by accident, and the message says which Python to use (the same text the
+    server prints when it refuses to start). There is no override: a suite that passes on another Unicode proves nothing about the image. `tests/test_unicode_pin.py`
+    tests this hook."""
+    try:
+        textnorm.require_pinned_unicode()
+    except textnorm.UnicodeVersionError as refusal:
+        pytest.exit(f"{refusal}", returncode=4)
 
 
 @pytest.fixture()

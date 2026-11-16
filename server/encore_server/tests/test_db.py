@@ -89,6 +89,93 @@ def test_a_backup_is_taken_before_a_pending_migration(tmp_path: Path) -> None:
     copy.close()
 
 
+def test_the_copies_of_one_label_come_oldest_first_whatever_their_names_sort_like(tmp_path: Path) -> None:
+    """A copy made in the same second as another gets `-2`, `-3`...: `x-2.db` sorts BEFORE `x.db` as text and `x-10.db` before `x-2.db`, so the order is the one the names mean."""
+    db = Database(tmp_path / "encore.db")
+    db.backups.mkdir(parents=True)
+    names = [
+        "encore-keys-20261116-120000.db",
+        "encore-keys-20261116-120000-2.db",
+        "encore-keys-20261116-120000-10.db",
+        "encore-keys-20261116-120001.db",
+        "encore-keys-20261115-235959-3.db",
+    ]
+    for name in names:
+        (db.backups / name).write_bytes(b"x")
+    for other in (
+        "encore-keys-extra-20261116-120000.db",
+        "encore-9.9-20261116-120000.db",
+        "encore-keys-20261116-120000.txt",
+        "notes.db",
+    ):
+        (db.backups / other).write_bytes(b"x")
+    assert [p.name for p in db.copies("keys")] == [
+        "encore-keys-20261115-235959-3.db",
+        "encore-keys-20261116-120000.db",
+        "encore-keys-20261116-120000-2.db",
+        "encore-keys-20261116-120000-10.db",
+        "encore-keys-20261116-120001.db",
+    ]
+    assert db.copies("nothing-like-it") == []
+
+
+def test_pruning_keeps_the_newest_copies_of_its_own_label_and_nothing_else_is_touched(tmp_path: Path) -> None:
+    db = Database(tmp_path / "encore.db")
+    db.migrate()
+    db.backups.mkdir(parents=True, exist_ok=True)
+    for stamp in ("120000", "120001", "120002", "120003", "120004"):
+        (db.backups / f"encore-keys-20261116-{stamp}.db").write_bytes(b"x")
+    others = [
+        "encore-before-ref-merge-20261116-120000.db",
+        "encore-9.9-20261116-120000.db",
+        "encore-keys-extra-20261116-120000.db",
+        "readme.txt",
+    ]
+    for other in others:
+        (db.backups / other).write_bytes(b"x")
+
+    removed = db.prune_backups("keys", keep=2)
+
+    assert [p.name for p in removed] == [
+        "encore-keys-20261116-120000.db",
+        "encore-keys-20261116-120001.db",
+        "encore-keys-20261116-120002.db",
+    ]
+    assert [p.name for p in db.copies("keys")] == ["encore-keys-20261116-120003.db", "encore-keys-20261116-120004.db"]
+    assert all((db.backups / other).exists() for other in others), "only the copies of the label are ever removed"
+    assert db.prune_backups("keys", keep=2) == [], "nothing left to prune"
+    assert db.path.exists(), "the database itself is never a candidate"
+
+
+def test_a_new_copy_always_sorts_after_the_copies_of_its_own_second_even_when_a_pruned_one_left_a_gap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pruning removes the OLDEST copy of a second (`x.db`); a new copy must not take that free name, or the newest copy would sort FIRST and be pruned next."""
+    monkeypatch.setattr("encore_server.db.time.strftime", lambda *_args: "20261116-120000")
+    db = Database(tmp_path / "encore.db")
+    db.migrate()
+    taken = [db.backup("keys") for _ in range(3)]
+    assert [p.name for p in taken] == [
+        "encore-keys-20261116-120000.db",
+        "encore-keys-20261116-120000-2.db",
+        "encore-keys-20261116-120000-3.db",
+    ]
+    db.prune_backups("keys", keep=2)
+    newest = db.backup("keys")
+    assert newest.name == "encore-keys-20261116-120000-4.db", "not the free name of the copy that was pruned"
+    assert db.copies("keys")[-1] == newest
+    assert [p.name for p in db.prune_backups("keys", keep=2)] == ["encore-keys-20261116-120000-2.db"], (
+        "the oldest one goes, never the newest"
+    )
+
+
+def test_pruning_refuses_to_keep_nothing(tmp_path: Path) -> None:
+    """`keep=0` would remove the copy that was just taken: a caller that means 'no copies' does not take one."""
+    db = Database(tmp_path / "encore.db")
+    with pytest.raises(ValueError):
+        db.prune_backups("keys", keep=0)
+
+
 def test_ids_have_a_type_prefix_and_sort_by_creation() -> None:
     first, second = new_id("pl"), new_id("pl")
     assert is_id(first, "pl") and not is_id(first, "pe")

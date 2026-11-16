@@ -45,7 +45,7 @@ The project is developed on Windows with PowerShell 5.1; CI runs on Linux. `tool
 | Flutter | 3.47.7 (the version CI uses; `flutter-version` in `.github/workflows/app.yml`) | the app |
 | JDK | 17 or newer (CI uses 17) | the Android build |
 | Android SDK + an emulator | any recent API level; the project's emulators are named in `docs/06` §8 | running the app |
-| Python | 3.12 or newer | the server |
+| Python | **3.12, exactly** (the song keys are pinned to Unicode 15.0.0 = Python 3.12 = the server image: the server refuses to start, and the tests refuse to run, on 3.13; `uv python install 3.12` gets it) | the server |
 | Docker | any recent | the integration tests and a real install |
 | `gh` (GitHub CLI) | recent | PRs, and the installer's sign-in while the image is private |
 
@@ -63,7 +63,7 @@ git config core.hooksPath tools/hooks          # the pre-commit hook runs the qu
 
 # the server (from server/encore_server)
 cd server\encore_server
-python -m venv .venv ; .\.venv\Scripts\Activate.ps1
+py -3.12 -m venv .venv ; .\.venv\Scripts\Activate.ps1      # Python 3.12 EXACTLY: any other makes the server and the tests refuse (docs/guides/dev-gotchas.md)
 pip install -e ".[youtube,dev]"
 ruff check . ; ruff format --check . ; mypy encore_server ; pytest      # exactly what CI runs
 ```

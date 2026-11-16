@@ -31,6 +31,8 @@ ME, YOU = rid("pn", 1), rid("pn", 2)
 # songs: the Latin control, the collapse of two Arabic songs on one ref, the Latin artist with Arabic title tails, the keeper-only Arabic song, Polish, the apostrophes
 ABBA, FAIRUZ, HABIBI, KEPT_ONLY, LUKASZ, CURLY, STRAIGHT, AUDIO, MIXED_COVER, BJORK = (rid("sr", n) for n in range(1, 11))
 PLAYLIST = rid("pl", 1)
+# refs a test adds later: what an OLDER image (a rollback) wrote after the revision was stored, and the all-ASCII song whose old key had an empty title segment
+ROLLED_BACK, ROLLED_BACK_LATIN, SLIPKNOT = (rid("sr", n) for n in (11, 12, 13))
 
 
 def add_ref(conn: sqlite3.Connection, ref: str, title: str, artists: list[str], **fields: Any) -> None:
@@ -83,7 +85,9 @@ def seed(db: Database) -> None:
         add_file(c, LUKASZ, "nd-5")
         add_ref(c, CURLY, "Don’t Stop", ["Artist"])  # old key `artist|dont stop|`
         add_ref(c, STRAIGHT, "Don't Stop", ["Artist"])  # old key `artist|don t stop|`: the same song, two refs (they stay two)
-        add_ref(c, AUDIO, "Official Video", ["X"])  # old key `x||`: not suspect (it is all ASCII), its key is still rewritten
+        add_ref(
+            c, AUDIO, "Official Video", ["X"]
+        )  # old key `x||`: all ASCII, but its stored key has an EMPTY segment, which is the second reason it is suspect
         add_ref(c, MIXED_COVER, "Hello", ["Adele"])
         add_ref(c, BJORK, "Hyperballad", ["Bjørk"], cover_url=DEEZER_COVER, cover_tried_at=15)  # old key `bjrk|hyperballad|`
         add_file(c, BJORK, "nd-6")
@@ -207,11 +211,14 @@ def test_two_refs_that_now_share_a_key_stay_two(old_world: Database) -> None:
 
 
 def test_the_worklist_is_exactly_the_suspect_refs_that_have_a_library_file(old_world: Database) -> None:
-    """Suspect = the ref's own artist or title did not survive the OLD fold (decided from the text, not from the stored key: `fairuz|habibi|` is not empty).
-    On the worklist = and it holds a library file. The keeper's own file is never re-judged; an all-ASCII ref is not suspect even when its key was empty."""
+    """Suspect, for either of two reasons: the ref's own artist or title did not survive the OLD fold (decided from the text: `fairuz|habibi|` is not empty and is
+    still damaged), or its STORED key has an empty artist or title segment (`x||`: all ASCII, and still a key that matched every other song of the artist).
+    On the worklist = and it holds a library file. The keeper's own file is never re-judged."""
     report = keyrepair.repair(old_world)
     assert worklist(old_world) == {FAIRUZ, HABIBI, LUKASZ, BJORK}
-    assert report.suspect == 5, "the four above and the keeper-only Arabic song"
+    assert report.suspect == 6, (
+        "the four above, the keeper-only Arabic song and the all-ASCII `x||` (no file: not on the worklist)"
+    )
     assert report.worklist == 4
     with old_world.read() as conn:
         assert conn.execute("SELECT moved FROM ref_recheck WHERE ref = ?", (FAIRUZ,)).fetchone()["moved"] == 0
@@ -420,6 +427,270 @@ def test_the_report_says_how_many_and_the_log_carries_ids_only(old_world: Databa
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the second reason a ref is suspect: its STORED key has an empty segment (an all-ASCII song the old fold made `slipknot||sic`)
+
+
+def test_an_all_ascii_song_whose_old_key_had_an_empty_segment_is_suspect_and_goes_on_the_worklist(db: Database) -> None:
+    """`(sic)` is a bracket: the old fold dropped it as a noise group and kept it only as a VERSION, so Slipknot's `(sic)` and every other Slipknot song of that kind were one
+    key, `slipknot||sic`, and the library link attached a file to whichever ref came first. Nothing in the TEXT was lost (it is all ASCII), so only the stored key can say so."""
+    key = legacy.norm_key("Slipknot", "(sic)")
+    assert key == "slipknot||sic" and refs.key_is_degenerate(key), "the old key really is empty in the title segment"
+    assert not keyrepair._lost_by_old_fold("(sic)") and not keyrepair._lost_by_old_fold("Slipknot"), (
+        "and the text alone would not have said so"
+    )
+    with db.tx() as c:
+        add_ref(c, SLIPKNOT, "(sic)", ["Slipknot"], cover_url=DEEZER_COVER, cover_tried_at=3)
+        add_file(c, SLIPKNOT, "nd-1")
+    report = keyrepair.repair(db)
+    assert worklist(db) == {SLIPKNOT} and report.suspect == 1 and report.worklist == 1
+    assert key_of(db, SLIPKNOT) == "slipknot|sic|sic"
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (SLIPKNOT,)).fetchone()[0] is None, (
+            "the Deezer picture it was matched to by an empty title is voided like the others"
+        )
+
+
+def test_a_latin_ref_whose_stored_key_is_healthy_is_not_suspect(db: Database) -> None:
+    """The control of the second reason: an ordinary song, all ASCII, with a healthy old key, a library file and a catalogue picture, is left entirely alone. The rewrite
+    is a no-op for it (its key is what it was)."""
+    assert not refs.key_is_degenerate(legacy.norm_key("ABBA", "Dancing Queen"))
+    with db.tx() as c:
+        add_ref(
+            c, ABBA, "Dancing Queen", ["ABBA"], cover_url=DEEZER_COVER, cover_tried_at=10
+        )  # no catalogue id: the cover rule would void it if it were suspect
+        add_file(c, ABBA, "nd-1")
+    report = keyrepair.repair(db)
+    assert (
+        report.suspect == 0
+        and report.worklist == 0
+        and report.covers_voided == 0
+        and report.rekeyed == 0
+        and report.backup is None
+    )
+    assert worklist(db) == set()
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (ABBA,)).fetchone()[0] == DEEZER_COVER
+
+
+def test_each_reason_is_enough_on_its_own(db: Database) -> None:
+    """The text alone (`fairuz|habibi|`: the key is NOT empty) and the key alone (`slipknot||sic`: the text is ASCII) each put a ref on the worklist."""
+    assert not refs.key_is_degenerate(legacy.norm_key("Fairuz", "Habibi يا نور"))
+    with db.tx() as c:
+        add_ref(c, HABIBI, "Habibi يا نور", ["Fairuz"])
+        add_file(c, HABIBI, "nd-1")
+        add_ref(c, SLIPKNOT, "(sic)", ["Slipknot"])
+        add_file(c, SLIPKNOT, "nd-2")
+    keyrepair.repair(db)
+    assert worklist(db) == {HABIBI, SLIPKNOT}
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the plan runs at EVERY start (the rollback hole), writes only when it finds something, and never judges again what it has already judged
+
+
+def _copies(db: Database) -> list[Path]:
+    return db.copies("before-key-rewrite")
+
+
+def _refuse_every_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A start that must not write: opening a transaction or taking a copy fails the test (the repair catches every error, so it would show as `failed`)."""
+
+    def refuse(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("a start with nothing to repair must write nothing and take no copy")
+
+    monkeypatch.setattr(Database, "tx", refuse)
+    monkeypatch.setattr(Database, "backup", refuse)
+
+
+def test_a_start_after_a_finished_repair_writes_nothing_and_takes_no_copy(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyrepair.repair(old_world)
+    before = snapshot(old_world)
+    keys = {ref: key_of(old_world, ref) for ref in (FAIRUZ, ABBA, CURLY, AUDIO)}
+    _refuse_every_write(monkeypatch)
+    again = keyrepair.repair(old_world)
+    assert again.failed is False and again.ran is False and again.backup is None and again.rekeyed == 0
+    assert snapshot(old_world) == before and {ref: key_of(old_world, ref) for ref in keys} == keys
+
+
+def test_an_older_image_that_wrote_old_fold_keys_after_the_revision_was_stored_is_repaired_at_the_next_start(
+    old_world: Database,
+) -> None:
+    """The rollback hole: the revision says the keys are right, an older image (a rollback) then makes new refs with the OLD fold, and the newer image starts again.
+    Everything the first repair did for the refs it found, it does for these: the keys, the worklist, the picture. The refs it already repaired are not touched."""
+    first = keyrepair.repair(old_world)
+    assert first.backup is not None
+    settled = snapshot(old_world)
+    with old_world.tx() as c:
+        add_ref(c, ROLLED_BACK, "يا مصطفى", ["أحمد"], cover_url=DEEZER_COVER, cover_tried_at=40)
+        add_file(c, ROLLED_BACK, "nd-9")
+        add_ref(c, ROLLED_BACK_LATIN, "Hyperballad", ["Bjørk"])  # an old key, `bjrk|hyperballad|`, and no library file
+    assert key_of(old_world, ROLLED_BACK) == "||" and key_of(old_world, ROLLED_BACK_LATIN) == "bjrk|hyperballad|"
+
+    again = keyrepair.repair(old_world)
+
+    assert again.ran is True and again.failed is False and again.rekeyed == 2
+    assert key_of(old_world, ROLLED_BACK) == "احمد|يا مصطفي|", "the hamza seat and the alef maksura fold (U+0649 to yeh)"
+    assert key_of(old_world, ROLLED_BACK_LATIN) == "bjork|hyperballad|"
+    assert worklist(old_world) == {FAIRUZ, HABIBI, LUKASZ, BJORK, ROLLED_BACK}, (
+        "the new damaged ref joins the worklist; the Latin one with no file does not"
+    )
+    with old_world.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (ROLLED_BACK,)).fetchone()[0] is None
+    assert again.backup is not None and again.backup != first.backup, "a real repair takes its own copy"
+    after = snapshot(old_world)
+    for table, rows in settled.items():
+        if table not in ("song_ref", "song_file"):
+            assert after[table] == rows, table
+    assert revision(old_world) == str(textnorm.TEXTNORM_REVISION), "the revision stays what it was"
+
+
+def test_a_picture_found_after_the_repair_is_not_voided_again_at_the_next_start(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cover finder stores a correct catalogue picture on an Arabic ref (no catalogue id); the repair must not undo it at every start."""
+    keyrepair.repair(old_world)
+    with old_world.tx() as c:
+        c.execute("UPDATE song_ref SET cover_url = ?, cover_tried_at = 99 WHERE id = ?", (DEEZER_COVER, FAIRUZ))
+    _refuse_every_write(monkeypatch)
+    report = keyrepair.repair(old_world)
+    assert report.failed is False and report.ran is False and report.covers_voided == 0
+    with old_world.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (FAIRUZ,)).fetchone()[0] == DEEZER_COVER
+
+
+def test_a_ref_the_rehome_took_off_the_worklist_does_not_come_back(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Slice 4 judges a ref and deletes its worklist row. Its key is right by then, so the plan has nothing to say about it, however suspect its text is."""
+    keyrepair.repair(old_world)
+    with old_world.tx() as c:
+        c.execute("DELETE FROM ref_recheck WHERE ref = ?", (FAIRUZ,))
+    _refuse_every_write(monkeypatch)
+    report = keyrepair.repair(old_world)
+    assert report.failed is False and report.ran is False and report.worklist == 0
+    assert worklist(old_world) == {HABIBI, LUKASZ, BJORK}
+
+
+def test_a_database_made_by_a_newer_fold_is_not_even_looked_at(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """An older server on a newer database (a rollback the other way round): the plan would rewrite the keys DOWN to this fold, so it does not run at all."""
+    with old_world.tx() as c:
+        c.execute("INSERT INTO setting (key, value) VALUES ('textnorm_revision', ?)", (str(textnorm.TEXTNORM_REVISION + 1),))
+
+    def not_looked_at(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("a database of a newer fold must not be planned against")
+
+    monkeypatch.setattr(keyrepair, "plan", not_looked_at)
+    report = keyrepair.repair(old_world)
+    assert report.failed is False and report.ran is False
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the copy: reused while the repair has not succeeded, fresh for a later real repair, and never more than KEEP_COPIES of them
+
+
+def test_a_failing_repair_at_every_start_keeps_one_copy_and_logs_once_per_start(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def boom(conn: sqlite3.Connection, ref_id: str) -> dict[str, int]:
+        raise RuntimeError("a bug that stays")
+
+    real = library.touch_ref_holders
+    monkeypatch.setattr(library, "touch_ref_holders", boom)
+    reports = []
+    with caplog.at_level(logging.INFO, logger="encore_server.keyrepair"):
+        for _ in range(5):
+            caplog.clear()
+            reports.append(keyrepair.repair(old_world))  # never raises
+            assert len([r for r in caplog.records if r.levelno >= logging.ERROR]) == 1, (
+                "one ERROR line per start, not one per row or per retry"
+            )
+    assert all(r.failed for r in reports) and len(_copies(old_world)) == 1, "five starts, one copy"
+    assert {r.backup for r in reports} == {_copies(old_world)[0]}, "every start names the same copy"
+    assert revision(old_world) is None and worklist(old_world) == set()
+
+    monkeypatch.setattr(library, "touch_ref_holders", real)  # the bug is fixed in the next image
+    repaired = keyrepair.repair(old_world)
+    assert repaired.ran is True and repaired.backup == reports[0].backup and len(_copies(old_world)) == 1, (
+        "the repair that finally runs used the same copy"
+    )
+    assert repaired.backup is not None
+    copy = sqlite3.connect(repaired.backup)
+    try:
+        assert copy.execute("SELECT norm_key FROM song_ref WHERE id = ?", (FAIRUZ,)).fetchone()[0] == "||", (
+            "and it still holds the keys from before"
+        )
+    finally:
+        copy.close()
+
+
+def test_a_second_real_repair_after_a_rollback_is_not_blocked_by_an_old_copy_and_the_copies_are_capped(
+    old_world: Database,
+) -> None:
+    """The copy of a repair that SUCCEEDED is spent (it was taken for that repair). A rollback and a new repair take a new one, and the pile never grows past
+    `KEEP_COPIES`, so a rollback loop cannot fill the disk. Copies of other repairs (a migration's, the merge's) are never pruned."""
+    old_world.backups.mkdir(parents=True, exist_ok=True)
+    others = [
+        old_world.backups / "encore-before-ref-merge-20200101-000000.db",
+        old_world.backups / "encore-9.9-20200101-000000.db",
+    ]
+    for other in others:
+        other.write_bytes(b"not a key copy")
+    first = keyrepair.repair(old_world).backup
+    assert first is not None
+    taken = [first]
+    for n in range(2, 8):  # rollback rounds: an older image keys a new Arabic song the old way, the newer image starts again
+        with old_world.tx() as c:
+            add_ref(c, rid("sr", 100 + n), f"أغنية {n}", ["فيروز"])
+        report = keyrepair.repair(old_world)
+        assert report.ran is True and report.failed is False and report.rekeyed == 1, n
+        assert report.backup is not None and report.backup not in taken, "the spent copy of the earlier repair is not reused"
+        taken.append(report.backup)
+        assert len(_copies(old_world)) <= keyrepair.KEEP_COPIES
+    assert _copies(old_world) == taken[-keyrepair.KEEP_COPIES :], "the newest copies are the ones kept"
+    assert all(other.exists() for other in others)
+    copy = sqlite3.connect(taken[-1])
+    try:
+        assert copy.execute("SELECT norm_key FROM song_ref WHERE id = ?", (rid("sr", 107),)).fetchone()[0] == legacy.norm_key(
+            "فيروز", "أغنية 7"
+        ), "the newest copy is from before THAT repair"
+    finally:
+        copy.close()
+
+
+def test_a_repair_that_never_settles_cannot_pile_up_copies(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Whatever the cause (a fold that depends on something it should not), a repair that finds something to do at EVERY start and succeeds every time takes a copy every
+    time: the cap, not the logic, is what keeps the disk safe."""
+    real_plan = keyrepair.plan
+
+    def never_settles(conn: sqlite3.Connection, **kwargs: Any) -> keyrepair.Plan:
+        result = real_plan(conn, **kwargs)
+        result.worklist.add(ABBA)  # something to write at every start
+        return result
+
+    monkeypatch.setattr(keyrepair, "plan", never_settles)
+    for _ in range(9):
+        report = keyrepair.repair(old_world)
+        assert report.failed is False and report.backup is not None
+    assert len(_copies(old_world)) == keyrepair.KEEP_COPIES
+
+
+def test_the_copy_a_finished_repair_used_is_recorded_with_it_in_one_transaction(old_world: Database) -> None:
+    report = keyrepair.repair(old_world)
+    assert report.backup is not None
+    with old_world.read() as conn:
+        used = conn.execute("SELECT value FROM setting WHERE key = 'textnorm_backup_used'").fetchone()
+    assert used is not None and used["value"] == report.backup.name
+
+
+def test_a_start_that_only_has_to_write_the_revision_takes_no_copy(db: Database) -> None:
+    """Nothing to change but the number (an empty database, a Latin library): the revision is written and no copy is taken (a copy of a big library is a minute)."""
+    report = keyrepair.repair(db)
+    assert report.ran is True and report.backup is None and _copies(db) == []
+    with db.read() as conn:
+        assert conn.execute("SELECT 1 FROM setting WHERE key = 'textnorm_backup_used'").fetchone() is None
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
 # the hold in the merge repair, and what a merge leaves behind
 
 
@@ -446,19 +717,28 @@ def test_refmerge_holds_a_pair_when_either_ref_is_on_the_worklist(db: Database) 
 
 
 @pytest.mark.parametrize("worklist_ref_is", ["the survivor", "the loser"])
-def test_refmerge_holds_a_pair_when_only_one_of_the_two_refs_is_on_the_worklist(db: Database, worklist_ref_is: str) -> None:
-    """Each half of the guard on its own: the Arabic ref (on the worklist) and a Latin ref (never suspect) hold one library file, and the pair is held WHICHEVER of the two
-    the merge would keep. A guard that looks at one side only would pass the test above (both refs are on the worklist there), and a merge of identities is never undone."""
-    latin, arabic = ABBA, FAIRUZ
-    first, second = (arabic, latin) if worklist_ref_is == "the survivor" else (latin, arabic)
+@pytest.mark.parametrize("reason", ["its text was lost by the old fold", "its stored key had an empty segment"])
+def test_refmerge_holds_a_pair_when_only_one_of_the_two_refs_is_on_the_worklist(
+    db: Database, worklist_ref_is: str, reason: str
+) -> None:
+    """Each half of the guard on its own, for each of the two reasons a ref is suspect: the suspect ref (on the worklist) and a Latin ref (never suspect) hold one
+    library file, and the pair is held WHICHEVER of the two the merge would keep. A guard that looks at one side only would pass the test above (both refs are on
+    the worklist there), and a merge of identities is never undone."""
+    latin = ABBA
+    suspect, title, artists = (
+        (FAIRUZ, "سألوني الناس", ["فيروز"]) if reason.startswith("its text") else (SLIPKNOT, "(sic)", ["Slipknot"])
+    )
+    first, second = (suspect, latin) if worklist_ref_is == "the survivor" else (latin, suspect)
     with db.tx() as c:
         add_ref(c, latin, "Dancing Queen", ["ABBA"])
-        add_ref(c, arabic, "سألوني الناس", ["فيروز"], duration_ms=201_000)
+        add_ref(c, suspect, title, artists, duration_ms=201_000)
         _share_a_file(c, first, second, "nd-1")  # the ref that attached the shared file first is the one the merge keeps
         c.execute("INSERT INTO person (id, navidrome_user, display_name, created_at) VALUES (?,?,?,1)", (ME, "ana", "ana"))
-        library.set_item(c, ME, "like", arabic)  # the like the held pair keeps on its own song (snapshot below)
+        library.set_item(c, ME, "like", suspect)  # the like the held pair keeps on its own song (snapshot below)
     keyrepair.repair(db)
-    assert worklist(db) == {arabic}, "exactly one of the two is on the worklist (the Latin ref lost nothing in the old fold)"
+    assert worklist(db) == {suspect}, (
+        "exactly one of the two is on the worklist (the Latin ref lost nothing in the old fold and its key is healthy)"
+    )
     before = snapshot(db)
 
     report = refmerge.repair(db)

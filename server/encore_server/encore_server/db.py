@@ -152,23 +152,50 @@ class Database:
 
     def backup(self, label: str) -> Path:
         """A whole copy of the database in the backups folder (`encore-<label>-<time>.db`), made with `VACUUM INTO` (a consistent copy taken under a read lock).
-        Returns where it is. It is kept: nothing here deletes it. A migration takes one named after the version; the repair of merged refs takes
-        its own, named for what it is about to do (`refmerge.py`)."""
+        Returns where it is. It is kept: `backup` itself never deletes anything (a repair that takes copies at every start prunes its own label with
+        [prune_backups]). A migration takes one named after the version; the repair of merged refs takes its own, named for what it is about to do
+        (`refmerge.py`), and so does the repair of stored keys (`keyrepair.py`)."""
         self.backups.mkdir(parents=True, exist_ok=True)
         stem = f"encore-{label}-{time.strftime('%Y%m%d-%H%M%S')}"
-        target = self.backups / f"{stem}.db"
-        for again in range(
-            2, 100
-        ):  # two copies in one second (a restart loop) never overwrite or refuse each other: VACUUM INTO will not write over a file
-            if not target.exists():
-                break
-            target = self.backups / f"{stem}-{again}.db"
+        # Two copies in one second (a restart loop) never overwrite or refuse each other (VACUUM INTO will not write over a file), and the suffix always goes ABOVE the
+        # ones that exist, never into a gap a pruned copy left: [copies] orders by (time, suffix), so a new copy must sort after every copy of its second.
+        same_second = [
+            int(match.group(1) or 1)
+            for path in self.backups.glob(f"{stem}*.db")
+            if (match := re.fullmatch(rf"{re.escape(stem)}(?:-(\d+))?\.db", path.name))
+        ]
+        again = max(same_second, default=0) + 1
+        if again >= 1000:
+            raise OSError(f"{again - 1} copies of the database were made in one second: something is looping")
+        target = self.backups / (f"{stem}.db" if again == 1 else f"{stem}-{again}.db")
         source = self.connect()
         try:
             source.execute("VACUUM INTO ?", (str(target),))
         finally:
             source.close()
         return target
+
+    def copies(self, label: str) -> list[Path]:
+        """The copies [backup] made under exactly this label, OLDEST FIRST (a folder that does not exist has none). The order is the one the names mean: the time
+        in the name, then the `-2`, `-3`... of copies made in one second (as text `x-2.db` sorts before `x.db`, and `x-10.db` before `x-2.db`)."""
+        pattern = re.compile(rf"^encore-{re.escape(label)}-(\d{{8}}-\d{{6}})(?:-(\d+))?\.db$")
+        found: list[tuple[str, int, Path]] = []
+        if self.backups.is_dir():
+            for path in self.backups.iterdir():
+                match = pattern.match(path.name)
+                if match and path.is_file():
+                    found.append((match.group(1), int(match.group(2) or 1), path))
+        return [path for _stamp, _again, path in sorted(found)]
+
+    def prune_backups(self, label: str, keep: int) -> list[Path]:
+        """Removes the OLDEST copies of this label (and of no other label: a migration's copy and the merge's are never touched) until `keep` are left; returns the ones
+        it removed. For a repair that takes a copy at every start it finds something to do: the cap that keeps a restart loop from filling the disk."""
+        if keep < 1:
+            raise ValueError("keep at least one copy: the copy a repair just took is the one it needs")
+        removed = self.copies(label)[:-keep]
+        for path in removed:
+            path.unlink(missing_ok=True)
+        return removed
 
     def _restore(self, backup: Path | None) -> None:
         if backup is None:

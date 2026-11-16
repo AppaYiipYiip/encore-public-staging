@@ -21,45 +21,55 @@ import unicodedata
 # The fold of every alphabet (the design is `docs/tasks/P2-songs-as-references.md`, section P2-25, parts 2 to 4).
 
 #: The Unicode version the fold is pinned to: the one Python 3.12 ships (`unicodedata.unidata_version`, run on 3.12.13), which is what CI
-#: (`server.yml`) and the image (`python:3.12-slim`) run. A newer Python (3.13 has 15.1.0, which only ADDS 627 code points, run) gives the same fold;
-#: a version that changes any result fails the corpus test of `tests/test_textnorm.py` with "bump `TEXTNORM_REVISION`". `tools/gen_text_fold_table.py`
+#: (`server.yml`) and the image (`python:3.12-slim`) run. A stored key is a function of the Unicode data of the Python that made it, so the server REFUSES TO START on
+#: any other ([require_pinned_unicode]; there is no switch to turn that off) and so does every run of the tests: a newer Python (3.13 has 15.1.0, which only ADDS 627
+#: code points, among them 622 CJK ideographs that are letters there and gaps here) would store keys the image cannot reproduce. `tools/gen_text_fold_table.py`
 #: refuses to write or to check unless the running Python has exactly this version, and writes it into the phone's table and the fixture.
-#: **Guarded in three places** (`tests/test_unicode_pin.py`): the image and the workflow must run a Python that ships it ([UNICODE_OF_PYTHON]), the tests refuse
-#: any other, and the start-up refuses to rewrite the stored keys under another ([unicode_pin_status], `keyrepair`).
+#: **Why a pin and not a table of our own:** the fold uses `unicodedata` as an ALGORITHM (NFKC, NFD and NFC, `category`, `decimal`, case folding), not a few look-ups,
+#: so folding it into a pinned table of ours would mean carrying a copy of Unicode's normalisation and case-folding data: not feasible, and a worse copy of what Python
+#: already ships. **What a Python bump costs** (and so the removal trigger of the pin; `docs/18`, "the Unicode pin"): regenerate the phone's table and the fixture with
+#: the new Python, raise [TEXTNORM_REVISION] (every Host's keys are rewritten at their next start by `keyrepair`), and move the image, `server.yml`, `requires-python`
+#: and this constant in ONE pull request: `tests/test_unicode_pin.py` fails on each of them moved alone.
 UNICODE_VERSION = "15.0.0"
 
-#: Which Unicode each Python the project has met ships (`unicodedata.unidata_version`, run). The image's base tag and `server.yml` are checked against it, so
-#: the base image cannot move to another Python alone; a Python that is not here must be run and added on purpose.
+#: Which Unicode each Python the project has met ships (`unicodedata.unidata_version`, run). The image's base tag, `server.yml` and `requires-python` are checked against
+#: it, so none of them can move to another Python alone; a Python that is not here must be run and added on purpose. It also names the Python that the message of the
+#: refusal tells a person to use ([unicode_refusal]).
 UNICODE_OF_PYTHON = {"3.12": "15.0.0", "3.13": "15.1.0"}
-
-#: Versions other than the pin that the TESTS tolerate: 15.1.0 only ADDS 627 code points (622 CJK Extension I ideographs and five symbols; run, on category,
-#: combining class, NFKC, NFD, NFKD, case fold and decimal digit of every code point), and the corpus tests skip exactly those
-#: (`tests/textfold_corpus.ASSIGNED_AFTER_PIN`), so a developer's Python 3.13 runs the suite green. **That is a test-side allowance only**: a server never
-#: writes or rewrites a stored key under it (`keyrepair` refuses, at ERROR, on anything but the exact pin), because a stored key must not depend on the
-#: Python that happened to make it (a title with one of those 622 ideographs is a word under 15.1.0 and a gap under 15.0.0).
-UNICODE_COMPATIBLE = frozenset({"15.1.0"})
 
 #: Which fold made the stored keys (`song_ref.norm_key`): 0 is the ASCII fold of the old five functions, 1 is this one. **A change to ANY result of the key**
 #: (`fold`, a table row, a rule of `norm_title`, `norm_artist` or `version_signature`, the noise or version words, a Unicode version) raises it by one;
-#: `keyrepair` rewrites the stored keys at start-up when `setting.textnorm_revision` is lower, so a change can never leave a stored key behind.
+#: `keyrepair` rewrites the stored keys at start-up when `setting.textnorm_revision` is lower, so a change can never leave a stored key behind. (A stored key that is
+#: not what the fold makes is also found at every later start: the keys of a rollback image, or a bump somebody forgot.)
 TEXTNORM_REVISION = 1
 
 
 class UnicodeVersionError(RuntimeError):
-    """The Python that runs has a Unicode version the fold is not pinned to."""
+    """The Python that runs has a Unicode version the fold is not pinned to: the server does not start and the tests do not run."""
 
 
 def running_unicode() -> str:
     return unicodedata.unidata_version
 
 
-def unicode_pin_status(running: str | None = None) -> str:
-    """`pinned` (exactly [UNICODE_VERSION]), `compatible` (a newer version known to only add code points: the TESTS accept it, a server does not) or `other`
-    (nothing is known about it). The start-up (`keyrepair.repair`) acts on `pinned` only."""
+def unicode_refusal(running: str) -> str:
+    """What a person reads when the Python is not the pinned one: which Python is needed and how to get it. One text for the server and for the tests."""
+    needed = next((minor for minor, version in UNICODE_OF_PYTHON.items() if version == UNICODE_VERSION), "3.12")
+    this = next((f" (that is Python {minor})" for minor, version in UNICODE_OF_PYTHON.items() if version == running), "")
+    return (
+        f"This Python has Unicode {running or 'unknown'}{this}, and the song keys of Encore are pinned to Unicode {UNICODE_VERSION}, which is what Python {needed} ships. "
+        f"A stored key must not depend on the Python that made it, so nothing starts on another one. Python {needed} is what the server image already runs "
+        f"(python:{needed}-slim): run the server from the image, or install Python {needed} (https://www.python.org/downloads/ or `uv python install {needed}`) and "
+        f'run it from a virtual environment made with that Python. To move the pin on purpose, see "the Unicode pin" in docs/18-data-model-and-migration.md.'
+    )
+
+
+def require_pinned_unicode(running: str | None = None) -> None:
+    """Raises [UnicodeVersionError] (with [unicode_refusal]) unless the Python's Unicode is exactly [UNICODE_VERSION]. Called first by `create_app` and by the server
+    command, by `keyrepair.repair` and by the test run's `conftest.py`. There is deliberately no way to skip it: no argument, setting or environment variable."""
     version = running_unicode() if running is None else running
-    if version == UNICODE_VERSION:
-        return "pinned"
-    return "compatible" if version in UNICODE_COMPATIBLE else "other"
+    if version != UNICODE_VERSION:
+        raise UnicodeVersionError(unicode_refusal(version))
 
 
 #: The marks that DECORATE a letter and are removed (an allow-list: what this table does not know stays, so a Hindi phrase of two words keeps its vowel signs and stays two words, and `が` is

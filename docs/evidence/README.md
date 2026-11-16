@@ -1128,7 +1128,7 @@ The only golden picture that changed is the "now playing, waiting for the server
 
 **Setup.** The real server code behind a real socket (uvicorn), the real keeper and scheduler; the music server, YouTube and the keeper's picture look-up (Deezer) are fakes, so a run is offline and takes about two minutes. Twenty people: 7 English, 5 French (é, è, ç, œ), 5 Arabic (some with vowel marks), 2 Russian, 1 Chinese; each has 40 different songs by an artist of their own, in their own script. Everything goes over the server's HTTP API only, which is the rulebook any other client (a tablet, a TV, a browser) has to rely on (D-55, `docs/17`).
 
-`C:/dev/venv-encore-server/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_people.py [scripts|crowd|fair|long|chaos] [--people 20] [--seconds 20] [--server DIR]`
+`C:/dev/venv-encore-server-312/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_people.py [scripts|crowd|fair|long|chaos] [--people 20] [--seconds 20] [--server DIR]`
 
 | Scene | What it measured | Result (6 Nov 2026, `main` at `3a601ca`) |
 |-------|------------------|----------------------------------------|
