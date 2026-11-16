@@ -445,6 +445,35 @@ def test_refmerge_holds_a_pair_when_either_ref_is_on_the_worklist(db: Database) 
     assert [(m.survivor, m.loser) for m in report.merged] == [(ABBA, LUKASZ)], "a pair no worklist ref is in merges as before"
 
 
+@pytest.mark.parametrize("worklist_ref_is", ["the survivor", "the loser"])
+def test_refmerge_holds_a_pair_when_only_one_of_the_two_refs_is_on_the_worklist(db: Database, worklist_ref_is: str) -> None:
+    """Each half of the guard on its own: the Arabic ref (on the worklist) and a Latin ref (never suspect) hold one library file, and the pair is held WHICHEVER of the two
+    the merge would keep. A guard that looks at one side only would pass the test above (both refs are on the worklist there), and a merge of identities is never undone."""
+    latin, arabic = ABBA, FAIRUZ
+    first, second = (arabic, latin) if worklist_ref_is == "the survivor" else (latin, arabic)
+    with db.tx() as c:
+        add_ref(c, latin, "Dancing Queen", ["ABBA"])
+        add_ref(c, arabic, "سألوني الناس", ["فيروز"], duration_ms=201_000)
+        _share_a_file(c, first, second, "nd-1")  # the ref that attached the shared file first is the one the merge keeps
+        c.execute("INSERT INTO person (id, navidrome_user, display_name, created_at) VALUES (?,?,?,1)", (ME, "ana", "ana"))
+        library.set_item(c, ME, "like", arabic)  # the like the held pair keeps on its own song (snapshot below)
+    keyrepair.repair(db)
+    assert worklist(db) == {arabic}, "exactly one of the two is on the worklist (the Latin ref lost nothing in the old fold)"
+    before = snapshot(db)
+
+    report = refmerge.repair(db)
+
+    assert [(h.survivor, h.loser, h.reason) for h in report.held] == [(first, second, "recheck_pending")]
+    assert report.merged == [] and report.backup is None, "nothing was merged, so no copy was taken either"
+    assert snapshot(db) == before
+
+    # the control: the worklist is the ONLY thing that held it (slice 4 empties it by re-judging the file); the same pair then merges, the survivor being the same one
+    with db.tx() as c:
+        c.execute("DELETE FROM ref_recheck")
+    again = refmerge.repair(db)
+    assert [(m.survivor, m.loser) for m in again.merged] == [(first, second)] and again.held == []
+
+
 def test_a_merge_now_remembers_the_title_and_the_artist_of_the_ref_it_removes(db: Database) -> None:
     """So the NEXT fold revision can rewrite the tombstone's key (decision D10); a row from before stays NULL."""
     with db.tx() as c:
