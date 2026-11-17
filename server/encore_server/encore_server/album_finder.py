@@ -339,7 +339,7 @@ def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
     """Step 3 (a) and (b): why this release can never be chosen, or `None`."""
     # (a) The album artist is the song's first artist: a song on somebody else's album, a tribute, a compilation of many artists is a miss. An album that names
     # nobody, or whose artist has nothing to compare, is nobody's: the song's own artist has a letter or a digit (step 0), so the equality refuses it.
-    if not facts.artist or norm_artist(facts.artist) != want_artist:
+    if norm_artist(facts.artist) != want_artist:
         return "album_artist"
     # (b) The type: `album` and `ep` rank first, `single` after them, any other value (or none) never wins.
     if facts.record_type not in _FULL_RELEASE and facts.record_type != _SINGLE:

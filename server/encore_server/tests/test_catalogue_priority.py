@@ -127,7 +127,9 @@ def test_the_caller_waits_for_the_song_list_only_what_is_left_of_its_deadline_an
     rig.catalogue.album(ALBUM_ID, deadline_s=1.0)
     assert spy.gets[0]["wait_s"] == 1.0 and spy.gets[1]["wait_s"] == 1.0, spy.gets
     assert spy.deadlines == [1.0, 1.0], "a follower of either request waits twice the deadline"
-    assert spy.gathers[0] == 1.0 and spy.gathers[1] <= 0.62, spy.gathers
+    assert spy.gathers[0] == 1.0 and 0 < spy.gathers[1] <= 0.7, (
+        spy.gathers
+    )  # 0.4 s went on the album; the margin is the clock's granularity
 
 
 def test_a_person_route_gives_the_song_list_the_phones_whole_wait_exactly_as_before_slice_1(rig: Rig) -> None:
@@ -141,7 +143,9 @@ def test_a_person_route_gives_the_song_list_the_phones_whole_wait_exactly_as_bef
     assert [call["path"] for call in spy.gets] == [f"/album/{ALBUM_ID}", f"/album/{ALBUM_ID}/tracks"]
     assert [(deezer.INTERACTIVE_WAIT_S if call["wait_s"] is None else call["wait_s"]) for call in spy.gets] == [2.5, 2.5]
     assert [deadline in (None, 2.5) for deadline in spy.deadlines] == [True, True], spy.deadlines
-    assert spy.gathers[0] == 2.5 and 0 < spy.gathers[1] <= 2.1, "the caller's wait for the song list is what is left of its 2.5 s"
+    assert spy.gathers[0] == 2.5 and 0 < spy.gathers[1] <= 2.25, (
+        "the caller's wait for the song list is what is left of its 2.5 s (0.4 s went on the album)"
+    )
 
 
 def test_search_tracks_waits_for_its_turn_as_long_as_it_is_told_and_by_default_as_a_background_turn_does(

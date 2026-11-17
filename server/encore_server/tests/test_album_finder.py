@@ -41,7 +41,7 @@ from encore_server.album_finder import (
 from encore_server.catalogue import Cache, Catalogue, release_key
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
-from encore_server.textnorm import survives_fold_whole
+from encore_server.textnorm import norm_artist, norm_title, survives_fold_whole
 from tests.catalogue_fakes import RECORDED, SEARCHES, RecordedDeezer, recorded, recorded_search, searches
 
 # ------------------------------------------------------------------------------------------------------------------ the recorded data
@@ -326,6 +326,21 @@ def test_step_zero_asks_the_one_definition_of_a_name_that_can_be_compared(monkey
     monkeypatch.setattr(album_finder, "survives_fold_whole", lambda text: text != "Pink Floyd")
     assert refusal(song) == ("unsupported", "artist_not_comparable")
     assert choose_release(song, hits("pink floyd comfortably numb"), albums(WALL, BEST_OF)).outcome == "unsupported"
+
+
+def test_a_text_that_does_not_survive_the_fold_has_empty_word_keys_too_so_the_rule_is_what_step_zero_names_not_an_extra_refusal() -> (
+    None
+):
+    """The reachability proof behind the comment in `refusal`: every single character of the two first Unicode planes that `survives_fold_whole` refuses is also
+    empty under `norm_artist` and `norm_title`. So at step 0 the named rule decides nothing the word rules' emptiness does not (it is kept as the one definition,
+    see `test_step_zero_asks_the_one_definition...`), and a hit with no letter or digit has a key that no song which step 0 let in can have. When this fails, a
+    name can pass the word rules and fail the fold: step 0's call has become the only thing that refuses it, and the comment there must say so."""
+    for code in range(0x20000):
+        if 0xD800 <= code <= 0xDFFF:
+            continue
+        text = chr(code)
+        if not survives_fold_whole(text):
+            assert norm_artist(text) == "" and norm_title(text) == "", hex(code)
 
 
 #: Hit names the era-1 fold holds no letter or digit of: nothing to compare, in any alphabet's company.

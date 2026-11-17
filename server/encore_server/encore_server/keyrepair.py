@@ -34,7 +34,7 @@ It is idempotent (a start that finds nothing writes nothing), it rolls back whol
 **never stops the server**: a failed repair is tried again at the next start, and logs ONE ERROR line per start. Until it has run, the cost is that a non-Latin song
 described again may make a duplicate ref, which the by-file merge folds later; the ERROR line says so.
 
-**The copy** (`Database.backup`, `Database.prune_backups`). The invariant: **a repair never writes without a copy it can be undone from** (the tombstone keys it
+**The copy** (`Database.backup`, `Database.prune_backups`). The invariant: **a repair never writes without a copy it can be undone from, as far as a check at start-up can tell** (the tombstone keys it
 nulls and the pictures it voids come back from nothing else). It holds in two layers, and neither depends on the ORDER of the copies, because the order is not
 trustworthy: a copy's name is the LOCAL time of the clock that made it, a clock goes back (the end of daylight saving time repeats an hour, a time sync steps it,
 somebody sets it), and a file's modification time comes from the same clock. (The first version ordered the copies by their names: with three copies named in the future
@@ -46,7 +46,9 @@ the copy just taken was the OLDEST of four, the prune removed it, and the repair
    attempt's copy (the first version reused it). The repair that commits records the copy it used (`setting.textnorm_backup_used`) and clears the pending record in the
    SAME transaction, so a copy a committed repair used is spent and a later real repair takes its own.
 2. **At the point of writing.** Inside the write transaction and before the first write, the repair checks that the copy exists, is not empty and begins like a SQLite
-   database. Otherwise it writes nothing (no key, no worklist row, no revision), logs ONE error line and the server goes on; the next start takes a new copy.
+   database (its first 16 bytes are the header `SQLite format 3` and a zero byte; `_is_a_copy`). **That is all: it is not an integrity check of the copy's contents**
+   (nothing opens the copy or runs `PRAGMA integrity_check`; a copy cut short that still begins with the header passes; `Database.backup` is `VACUUM INTO`, a whole new file
+   or an error). Otherwise it writes nothing (no key, no worklist row, no revision), logs ONE error line and the server goes on; the next start takes a new copy.
 
 At most `KEEP_COPIES` copies of this label are kept: the two that must stay and the newest of the others by name (a rollback loop cannot fill the disk; the copies of other
 repairs, a migration's and the merge's, are never touched). **The cost, stated:** when the clock has gone back, the name order can be wrong, and then a spare copy goes

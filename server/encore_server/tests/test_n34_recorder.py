@@ -154,10 +154,15 @@ def test_the_recorder_names_an_answer_by_the_one_function_and_a_non_latin_search
     assert len(asked.calls) == 2, "two queries, two requests, two files (the second used to overwrite the first)"
 
 
-def test_an_id_that_is_not_ascii_digits_is_refused_before_a_request_is_counted(tool: ModuleType, tmp_path: Path) -> None:
+def test_an_id_that_is_not_ascii_digits_is_refused_before_a_request_is_counted(
+    tool: ModuleType, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`str.isdigit` is true for a superscript two and an Arabic-Indic three: they are not Deezer ids. Refused by the id check itself (the message says so), and
+    again by the naming function, which only reads ASCII digits: either way nothing is asked and nothing is counted against the leave."""
     asked = Asked()
     for odd in ("²", "٣", "1²"):
         assert run(tool, tmp_path, asked, "album", odd) == 2, odd
+        assert "is not a Deezer id" in capsys.readouterr().err, odd
     assert asked.calls == [] and not (tmp_path / "n34_requests.json").exists(), "nothing asked, nothing counted against the leave"
 
 
