@@ -1152,5 +1152,37 @@
   "size": "L",
   "needs": [],
   "from": "agent"
+ },
+ "N-42": {
+  "kind": "feature",
+  "title": "The download card tells you when an import fails or stops elsewhere",
+  "note": "Found by the review of PR #107 (P2-29, 16 Nov 2026; PB-43 in docs/33 names the gaps; nothing here is walked). The one card of a download or an import is silent in four cases that a person would want a word for: (1) an import is stopped on ANOTHER device while a Download of its playlist goes on: no 'Import stopped' card appears and the person is not told that songs were not fetched; (2) a failed import just vanishes from the card, no result card is left; (3) an import that stalled (no change for 30 minutes: the phone stops asking and the card goes away) and then finishes while the person is away leaves no result card, because a result card needs a job that was running at the previous look; (4) the 30-minute stall rule itself is silent: a word on the phone ('Still working on the server') needs a frame. Needs a DRAWN S-95 frame for each case first (no screen coded before its drawing exists), then tests, then the build; the first-ask sentence of S-92 ('While Encore downloads music...') is slightly off at a first Import and is re-worded in the same pass. Cost of leaving it: a person can miss that an import did not finish; no data is lost.",
+  "proposal": true,
+  "size": "S",
+  "needs": [],
+  "from": "agent"
+ },
+ "N-43": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: an import tells the phone about each saved song",
+  "note": "Found by helper-p229b and the reviewer of PR #107 (16 Nov 2026). The server pushes import.progress only when a song is matched or the import is stopped, so while an import is SAVING the phone asks GET imports every 10 seconds (app/lib/features/import/import_watch.dart), for at most 30 minutes per app launch after the stall rule of the P2-29 fix round. Wanted: the server publishes import.progress (or keep.progress for the import's playlist) when the keeper stores a song of an import; the phone drops the 10-second asking and keeps only the one look on return to the app. Prove first with a test that the push arrives for every song stored; then remove the polling. Removal trigger of the polling: this item. Cost of leaving it: battery and data on every stranger's phone for up to 30 minutes per import.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
+ },
+ "N-44": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a wrong song from the artist's channel is not accepted",
+  "note": "Found by helper-p225s23 while building P2-25 slices 2+3 (16 Nov 2026; audit row B-136, registered in PR #110): the plain YouTube scorer (sources/youtube/scoring.py) accepts ANOTHER song uploaded on the artist's own channel at the same length (Latin names too), and its substring branches (wt in ct, wa in a) bypass the dense-script equality rule of P2-25 for names of 1 to 4 letters in Han or Kana. Fix at the source: a recorded corpus of wrong-song uploads FIRST (real answers, never invented), the TITLE gates acceptance, the substring branches respect the dense-script equality rule, MATCHER_REVISION is raised so the songs already matched are asked again. Cost of leaving it: a wrong song can be kept under a right name, which is a permanent identity; the rule of the owner says the fix is not a stop-gap.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "P2-25",
+    "mark": "d"
+   }
+  ],
+  "from": "agent"
  }
 }

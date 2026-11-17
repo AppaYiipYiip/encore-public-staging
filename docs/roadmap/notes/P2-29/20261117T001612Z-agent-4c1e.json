@@ -1,0 +1,12 @@
+{
+ "id": "20261117T001612Z-agent-4c1e",
+ "item": "P2-29",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T00:16:12Z",
+ "type": "note",
+ "body": "﻿LEAD RULINGS on PR #107 (MERGED 17 Nov 2026 as 615e8b2; built, not walked), taken with the advisor's rulings of 16 Nov 23:20. ACCEPTED, with their cost: (1) an import stuck in running or saving with no change for 30 minutes loses its live card and its 10 s asking; the card comes back on any change; cost: up to 30 minutes of asking per app launch; REMOVAL TRIGGER = item N-43 (the server pushes each saved song, then the polling goes). (2) The bar never goes backwards while the card lives, so it can sit above the share of the one job that is left (PB-43 says so). (3) Below Android 13 the card posts when the OS allows (areAllowed) with no question and no in-app switch, exactly as the old downloader card did: only the wording of a comment was stale; ADR-R44's nothing-by-default is about the Settings switch and is untouched; a per-app switch is NOT built (no drawing exists). (4) The first-ask sentence of S-92 (While Encore downloads music ...) stays; it is re-worded in item N-42 with its frames. NOT FIXED, filed as items: N-42 (a drawn frame, then a build, for: an import stopped elsewhere with a merged Download; a failed import; an import that stalled and then finished while the person was away leaves no result card; a word for the stall) and N-43 (the server pushes each saved song so the phone stops asking every 10 s). Left for N-42 to strengthen: one test pins the share retention of CardBar only through a job of unknown size. Nothing is walked; the real look of the card is for a walk on the release-candidate pair.",
+ "to": [
+  "agent"
+ ]
+}
