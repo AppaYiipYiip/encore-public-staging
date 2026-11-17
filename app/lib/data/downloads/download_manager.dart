@@ -31,6 +31,10 @@ class SongNotKeptYet implements Exception {
   String toString() => 'The server does not keep this song yet';
 }
 
+/// What a song's row says when its transfer was cancelled by something that is not the manager (N-39). It is a recorded reason, never shown as it
+/// is: `phoneFailureWords` gives the person the plain sentence every song the phone could not take gets.
+const String kDownloadStoppedReason = 'The download was stopped';
+
 /// Policy the manager reads each time it schedules work.
 @immutable
 class DownloadPolicy {
@@ -118,6 +122,10 @@ class DownloadManager {
   Future<void> _serial = Future<void>.value();
   bool _disposed = false;
 
+  /// True while [start] counts what the downloader still runs: nothing is handed to the downloader before that is done, or the in-flight limit
+  /// (`DownloadPolicy.maxInFlight`) would be counted from an empty set while songs run, and [start] would wait for the server's addresses.
+  bool _starting = false;
+
   /// Songs whose address could not be made because the server does not keep them yet, as of this pass: they stay queued, and the next
   /// pass (a pin change, a finished sync, a finished transfer) asks again.
   final Set<String> _waitingForServer = <String>{};
@@ -146,16 +154,27 @@ class DownloadManager {
   Future<void> start() async {
     _updates = _transport.updates.listen(_enqueueUpdate);
     await _transport.resume();
-    // Rows left "downloading" by a previous run whose task is gone go back
-    // to the queue.
-    final active = await _transport.activeTaskIds();
-    final stuck = await _repo.rowsInState(DownloadState.downloading);
-    for (final row in stuck) {
-      if (!active.contains(_taskId(serverId, row.trackId))) {
-        await _repo.markQueued(row.trackId);
-      } else {
-        _inFlight.add(row.trackId);
+    // What the downloader kept while the app was not running (a finished file, a cancel pressed on a card of an older build) is handled first: it
+    // says why a row's task is gone, and the rows whose task is gone with no word at all are only then put back in the queue (N-39: a cancelled song
+    // was started again by the next start of the app).
+    // The replayed updates end a finished or cancelled song with a pass over the queue: no pass hands anything out before the loop below has
+    // counted the tasks that still run (a replayed song that finished or was cancelled used to start four more beside the two that were running).
+    _starting = true;
+    try {
+      await settled();
+      // Rows left "downloading" by a previous run whose task is gone go back
+      // to the queue.
+      final active = await _transport.activeTaskIds();
+      final stuck = await _repo.rowsInState(DownloadState.downloading);
+      for (final row in stuck) {
+        if (!active.contains(_taskId(serverId, row.trackId))) {
+          await _repo.markQueued(row.trackId);
+        } else {
+          _inFlight.add(row.trackId);
+        }
       }
+    } finally {
+      _starting = false;
     }
     // A pin that goes (a playlist deleted, a download switched off) is the person's own act: what only it held leaves the phone now. The
     // grace period is for songs that merely left a list that is regenerated (field test 2026-10-31: "x songs downloaded" a day after the
@@ -268,6 +287,8 @@ class DownloadManager {
 
   /// Starts queued rows, up to the in-flight budget and the storage guard.
   Future<void> _pump() async {
+    // The pass that ends [start] hands the work out, once the tasks that still run are counted.
+    if (_starting) return;
     final policy = _policy();
     if (!policy.mayTransfer) return;
     final slots = policy.maxInFlight - _inFlight.length;
@@ -432,22 +453,21 @@ class DownloadManager {
         await _onComplete(trackId, update.relativePath);
       case TransferStatus.failed:
         _inFlight.remove(trackId);
-        final reason = update.error ?? 'Download failed';
-        final rows = await _repo.rowsFor([trackId]);
-        if (rows.isNotEmpty && _isRefresh(rows.first)) {
-          // A refresh that did not arrive (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone playable:
-          // it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
-          final partial = _plannedPath.remove(trackId);
-          if (partial != null) {
-            await _transport.deleteFile(await _transport.absolutePath(partial));
-          }
-          await _giveUp(trackId, true, reason);
-        } else {
-          await _repo.markFailed(trackId, reason);
-          await _pump();
-        }
+        await _onAttemptEnded(trackId, update.error ?? 'Download failed',
+            reportedPath: update.relativePath);
       case TransferStatus.canceled:
         _inFlight.remove(trackId);
+        // The manager cancels in one place, `_delete`, and deletes the row in the same pass (the update is handled after it): no row. A row that
+        // still says "downloading" was cancelled by something else (the Cancel button of the downloader's card of an older build, a reset of the
+        // downloader, an update the downloader kept while the app was closed), and no task is behind it any more. It is an attempt that ended, not a
+        // download that never does: it was forgotten here, so the pin and the card waited for ever, the place stayed empty and the next start of the
+        // app started the song again at once (N-39, audit row B-134). It is a failed attempt with its back-off: not started again at once, not in a
+        // loop, and "Try again" starts it now. A row in any other state is waiting for nothing: a stale word changes nothing.
+        final rows = await _repo.rowsFor([trackId]);
+        if (rows.isNotEmpty && rows.first.state == DownloadState.downloading) {
+          await _onAttemptEnded(trackId, kDownloadStoppedReason,
+              reportedPath: update.relativePath);
+        }
       case TransferStatus.enqueued:
       case TransferStatus.running:
       case TransferStatus.paused:
@@ -455,10 +475,46 @@ class DownloadManager {
     }
   }
 
+  /// A transfer that ended without a file. A refresh (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone
+  /// playable: it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
+  Future<void> _onAttemptEnded(String trackId, String reason,
+      {String? reportedPath}) async {
+    final rows = await _repo.rowsFor([trackId]);
+    if (rows.isNotEmpty && _isRefresh(rows.first)) {
+      // The half-made `.new` file: where this process planned it, or where the task says it wrote (the downloader tells it with every update, also
+      // for a task of a process that has ended). Only a `.new` path is ever deleted here: the copy that is on the phone is not.
+      final partial = _plannedPath.remove(trackId) ??
+          (reportedPath != null && reportedPath.endsWith('.new')
+              ? reportedPath
+              : null);
+      if (partial != null) {
+        await _transport.deleteFile(await _transport.absolutePath(partial));
+      }
+      await _giveUp(trackId, true, reason);
+    } else {
+      await _repo.markFailed(trackId, reason);
+      await _pump();
+    }
+  }
+
   Future<void> _onComplete(String trackId, String? reportedPath) async {
+    final rows = await _repo.rowsFor([trackId]);
+    // A song that has a copy on the phone (a refresh in flight, one waiting in the queue, or a song that is done) is only ever completed by a `.new`
+    // file. A completion that names another file is the copy that is on the phone, from the acknowledgement of an older task with the same id (item
+    // N-45): it is not about any transfer that runs, and it must neither check that copy against what the refresh asked for and delete it when it does
+    // not pass, nor record the refresh as made, nor give away the place of a transfer that still runs. Found on 17 Nov 2026 while looking for every
+    // other place that deletes, after the review's `.new` guard of `_onAttemptEnded`; a second layer that stays correct once a task id per attempt
+    // (N-45) keeps such words from arriving.
+    if (rows.isNotEmpty &&
+        _isRefresh(rows.first) &&
+        reportedPath != null &&
+        !reportedPath.endsWith('.new')) {
+      Log.warn('downloads',
+          'ignored a completion that names the copy on the phone, not the refresh of $trackId');
+      return;
+    }
     _inFlight.remove(trackId);
     final planned = _plannedPath.remove(trackId);
-    final rows = await _repo.rowsFor([trackId]);
     final track = await (_db.select(_db.tracks)
           ..where((t) => t.serverId.equals(serverId) & t.id.equals(trackId)))
         .getSingleOrNull();
