@@ -133,8 +133,9 @@ def test_pruning_keeps_the_newest_copies_of_its_own_label_and_nothing_else_is_to
     ]
     for other in others:
         (db.backups / other).write_bytes(b"x")
+    newest = db.backups / "encore-keys-20261116-120004.db"
 
-    removed = db.prune_backups("keys", keep=2)
+    removed = db.prune_backups("keys", keep=2, protect=[newest])
 
     assert [p.name for p in removed] == [
         "encore-keys-20261116-120000.db",
@@ -143,8 +144,53 @@ def test_pruning_keeps_the_newest_copies_of_its_own_label_and_nothing_else_is_to
     ]
     assert [p.name for p in db.copies("keys")] == ["encore-keys-20261116-120003.db", "encore-keys-20261116-120004.db"]
     assert all((db.backups / other).exists() for other in others), "only the copies of the label are ever removed"
-    assert db.prune_backups("keys", keep=2) == [], "nothing left to prune"
+    assert db.prune_backups("keys", keep=2, protect=[newest]) == [], "nothing left to prune"
     assert db.path.exists(), "the database itself is never a candidate"
+
+
+def test_a_protected_copy_is_never_removed_whatever_its_name_says_about_its_age(tmp_path: Path) -> None:
+    """The names carry the LOCAL time of the clock that made them, and a clock goes back (the end of daylight saving time, a time sync, somebody setting it): the copy
+    taken just now can carry the OLDEST name of the folder. Pruning by the names alone then removed the very copy a repair was about to rely on (a reviewer reproduced
+    it with three copies named in the future). The caller names the copies that must stay; they are not candidates, whatever their names say, and they count inside `keep`."""
+    db = Database(tmp_path / "encore.db")
+    db.migrate()
+    db.backups.mkdir(parents=True, exist_ok=True)
+    for stamp in ("20991231-120001", "20991231-120002", "20991231-120003"):  # the clock was ahead
+        (db.backups / f"encore-keys-{stamp}.db").write_bytes(b"x")
+    fresh = db.backups / "encore-keys-20261117-080000.db"  # the clock is back: the copy just taken is the OLDEST by name
+    fresh.write_bytes(b"x")
+    assert db.copies("keys")[0] == fresh, "the premise: by its name the fresh copy is the oldest"
+
+    removed = db.prune_backups("keys", keep=3, protect=[fresh])
+
+    assert fresh.exists() and fresh not in removed
+    assert [p.name for p in removed] == ["encore-keys-20991231-120001.db"], (
+        "the oldest of the others goes, and the protected copy counts as one of the three"
+    )
+    assert len(db.copies("keys")) == 3
+
+
+def test_every_protected_copy_stays_even_when_that_is_more_than_keep(tmp_path: Path) -> None:
+    db = Database(tmp_path / "encore.db")
+    db.migrate()
+    db.backups.mkdir(parents=True, exist_ok=True)
+    names = [f"encore-keys-20261116-12000{n}.db" for n in range(5)]
+    for name in names:
+        (db.backups / name).write_bytes(b"x")
+    removed = db.prune_backups("keys", keep=1, protect=[db.backups / names[0], names[1]])  # a path and a bare name are both fine
+    assert [p.name for p in removed] == names[2:]
+    assert [p.name for p in db.copies("keys")] == names[:2]
+
+
+def test_a_protected_copy_that_is_not_there_is_harmless(tmp_path: Path) -> None:
+    """Whether the protected copy exists is not the prune's business (the repair checks it, right before it writes): nothing is invented for it, nothing else is spared for it."""
+    db = Database(tmp_path / "encore.db")
+    db.migrate()
+    db.backups.mkdir(parents=True, exist_ok=True)
+    for stamp in ("120000", "120001", "120002"):
+        (db.backups / f"encore-keys-20261116-{stamp}.db").write_bytes(b"x")
+    removed = db.prune_backups("keys", keep=2, protect=[db.backups / "encore-keys-20261116-999999.db"])
+    assert [p.name for p in removed] == ["encore-keys-20261116-120000.db"]
 
 
 def test_a_new_copy_always_sorts_after_the_copies_of_its_own_second_even_when_a_pruned_one_left_a_gap(
@@ -160,20 +206,25 @@ def test_a_new_copy_always_sorts_after_the_copies_of_its_own_second_even_when_a_
         "encore-keys-20261116-120000-2.db",
         "encore-keys-20261116-120000-3.db",
     ]
-    db.prune_backups("keys", keep=2)
+    db.prune_backups("keys", keep=2, protect=[taken[-1]])
     newest = db.backup("keys")
     assert newest.name == "encore-keys-20261116-120000-4.db", "not the free name of the copy that was pruned"
     assert db.copies("keys")[-1] == newest
-    assert [p.name for p in db.prune_backups("keys", keep=2)] == ["encore-keys-20261116-120000-2.db"], (
+    assert [p.name for p in db.prune_backups("keys", keep=2, protect=[newest])] == ["encore-keys-20261116-120000-2.db"], (
         "the oldest one goes, never the newest"
     )
 
 
-def test_pruning_refuses_to_keep_nothing(tmp_path: Path) -> None:
-    """`keep=0` would remove the copy that was just taken: a caller that means 'no copies' does not take one."""
+def test_pruning_refuses_to_keep_nothing_and_to_run_without_naming_what_must_stay(tmp_path: Path) -> None:
+    """`keep=0` would remove the copy that was just taken: a caller that means 'no copies' does not take one. And a prune that is not told which copy the caller relies on
+    is the prune that removed it: the name is required (a call without it is a TypeError), and an empty list is as good as none."""
     db = Database(tmp_path / "encore.db")
     with pytest.raises(ValueError):
-        db.prune_backups("keys", keep=0)
+        db.prune_backups("keys", keep=0, protect=["encore-keys-20261116-120000.db"])
+    with pytest.raises(ValueError):
+        db.prune_backups("keys", keep=3, protect=[])
+    with pytest.raises(TypeError):
+        db.prune_backups("keys", keep=3)  # type: ignore[call-arg]
 
 
 def test_ids_have_a_type_prefix_and_sort_by_creation() -> None:

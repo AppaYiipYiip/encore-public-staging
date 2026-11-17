@@ -9,12 +9,17 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from encore_server import db as db_module
 from encore_server import keyrepair, library, refmerge, refs, textnorm
 from encore_server.db import Database
 from tests import legacy_fold as legacy
@@ -680,6 +685,248 @@ def test_the_copy_a_finished_repair_used_is_recorded_with_it_in_one_transaction(
     with old_world.read() as conn:
         used = conn.execute("SELECT value FROM setting WHERE key = 'textnorm_backup_used'").fetchone()
     assert used is not None and used["value"] == report.backup.name
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# THE BACKUP IS NEVER PRUNED AWAY, and the repair never writes without it (the last round of PR #110: a reviewer reproduced a repair that ran with NO backup).
+# A copy's name carries the LOCAL time of the clock that made it, and a clock goes back; ordering the copies by their names then pruned the copy just taken.
+
+
+class _StampsOf:
+    """Stands in for the `time` module INSIDE `encore_server.db` only: the stamp of the next copy is the one given, everything else is the real clock."""
+
+    def __init__(self, stamp: str) -> None:
+        self._stamp = stamp
+
+    def strftime(self, *_args: object) -> str:
+        return self._stamp
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(time, name)
+
+
+@contextmanager
+def _clock_says(stamp: str | None) -> Iterator[None]:
+    """The copies made inside the block are named for `stamp` (None: the real clock)."""
+    if stamp is None:
+        yield
+        return
+    real = db_module.time
+    db_module.time = _StampsOf(stamp)  # type: ignore[assignment]
+    try:
+        yield
+    finally:
+        db_module.time = real
+
+
+def _a_repair_at(db: Database, n: int, stamp: str | None, *, mtime: float | None = None) -> keyrepair.Report:
+    """One REAL repair round: an older image keyed one more Arabic song the old way (so there is something to repair), the newer image starts, the clock says `stamp`."""
+    if n > 1:
+        with db.tx() as c:
+            add_ref(c, rid("sr", 100 + n), f"أغنية {n}", ["فيروز"])
+    with _clock_says(stamp):
+        report = keyrepair.repair(db)
+    assert report.ran is True and report.failed is False and report.backup is not None, (n, stamp)
+    if mtime is not None:  # what the operating system stamps from the same wall clock
+        os.utime(report.backup, (mtime, mtime))
+    return report
+
+
+def _used(db: Database) -> str | None:
+    with db.read() as conn:
+        row = conn.execute("SELECT value FROM setting WHERE key = ?", (keyrepair.BACKUP_USED_SETTING,)).fetchone()
+    return None if row is None else str(row["value"])
+
+
+def _pending(db: Database) -> str | None:
+    with db.read() as conn:
+        row = conn.execute("SELECT value FROM setting WHERE key = ?", ("textnorm_backup_pending",)).fetchone()
+    return None if row is None else str(row["value"])
+
+
+_ONE_DAY = 24 * 3600
+CLOCK_STEPS = [
+    pytest.param(
+        ["20991231-120000", "20991231-120001", "20991231-120002"],
+        None,
+        _ONE_DAY,
+        id="the clock was a day ahead and was set back (the reviewers case)",
+    ),
+    pytest.param(
+        ["20261101-015000", "20261101-015500", "20261101-015800"],
+        "20261101-010200",
+        0,
+        id="the end of daylight saving time: the hour repeats",
+    ),
+    pytest.param(
+        ["20261117-120010", "20261117-120011", "20261117-120012"],
+        "20261117-120005",
+        0,
+        id="a time sync steps the clock back a few seconds",
+    ),
+    pytest.param(
+        ["20261101-015000", "20261101-015500", "20261101-010500"],
+        "20261101-011000",
+        0,
+        id="the clock went back between two repairs: the last committed repairs copy has the OLDEST name",
+    ),
+]
+
+
+@pytest.mark.parametrize(("earlier", "now", "ahead"), CLOCK_STEPS)
+def test_the_copy_just_taken_is_never_pruned_when_the_clock_has_gone_back(
+    old_world: Database, earlier: list[str], now: str | None, ahead: int
+) -> None:
+    """Three repairs ran while the clock said `earlier`; the clock went back; a fourth repair takes its copy. Ordered by their names the fresh copy was the OLDEST of
+    four, the prune removed it, and the repair went on with a path that did not exist and logged it as kept: no backup, while docs/18 says it never runs without one.
+    The files' own modification times are put in the future too (the operating system stamps them from the same clock), so a fix that ordered by mtime would fail here.
+    Asserting `ran` and an existing copy (not only 'nothing was written') means the second layer cannot hide the absence of the first."""
+    future = time.time() + ahead
+    taken = [_a_repair_at(old_world, n, stamp, mtime=future + n if ahead else None) for n, stamp in enumerate(earlier, start=1)]
+    assert all(r.backup is not None and r.backup.exists() for r in taken)
+
+    fresh = _a_repair_at(old_world, 4, now)
+
+    assert fresh.backup is not None and fresh.backup.is_file() and fresh.backup.stat().st_size > 0, (
+        "the copy the repair relies on exists"
+    )
+    assert fresh.backup not in [r.backup for r in taken]
+    copy = sqlite3.connect(fresh.backup)
+    try:
+        key = copy.execute("SELECT norm_key FROM song_ref WHERE id = ?", (rid("sr", 104),)).fetchone()[0]
+        assert key == legacy.norm_key("فيروز", "أغنية 4"), "and it is from before THAT repair (the old key)"
+    finally:
+        copy.close()
+    assert _used(old_world) == fresh.backup.name
+    kept = set(_copies(old_world))
+    assert len(kept) == keyrepair.KEEP_COPIES
+    assert {taken[1].backup, taken[2].backup, fresh.backup} == kept, (
+        "the three most recent copies in the order they were TAKEN, whatever the names say"
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [b"SQLite format 3\x00" + b"\x00" * 200, b"not a database at all", b""],
+    ids=["a file that looks like one", "junk", "empty"],
+)
+def test_a_file_that_merely_sorts_newest_is_not_an_earlier_attempts_copy(old_world: Database, content: bytes) -> None:
+    """The reuse used to pick the NEWEST NAME that was not the spent copy. A file named in the future (a clock that was ahead, or anything dropped in the folder) was
+    then 'the copy of an attempt that did not finish', and the repair went on backed by it. Only the copy an attempt RECORDED (in its own committed write, right after
+    taking it) is reused."""
+    old_world.backups.mkdir(parents=True, exist_ok=True)
+    stray = old_world.backups / "encore-before-key-rewrite-20991231-120002.db"
+    stray.write_bytes(content)
+
+    report = keyrepair.repair(old_world)
+
+    assert report.ran is True and report.backup is not None and report.backup != stray
+    assert report.backup.stat().st_size > 1000 and report.backup.read_bytes()[:16] == b"SQLite format 3\x00", (
+        "a real copy of the database"
+    )
+
+
+def _a_repair_that_fails(monkeypatch: pytest.MonkeyPatch) -> Any:
+    """Makes every repair fail (a bug that stays) and returns what puts the real code back."""
+
+    def boom(conn: sqlite3.Connection, ref_id: str) -> dict[str, int]:
+        raise RuntimeError("a bug that stays")
+
+    real = library.touch_ref_holders
+    monkeypatch.setattr(library, "touch_ref_holders", boom)
+    return lambda: monkeypatch.setattr(library, "touch_ref_holders", real)
+
+
+def test_the_copy_an_attempt_takes_is_recorded_in_its_own_committed_write_and_cleared_by_the_repair_that_uses_it(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixed = _a_repair_that_fails(monkeypatch)
+    failed = keyrepair.repair(old_world)
+    assert failed.failed is True and failed.backup is not None
+    assert _pending(old_world) == failed.backup.name, "the rewrite rolled back, the record of its copy did not"
+    assert _used(old_world) is None and revision(old_world) is None
+
+    fixed()
+    done = keyrepair.repair(old_world)
+    assert done.ran is True and done.backup == failed.backup
+    assert _used(old_world) == failed.backup.name
+    assert _pending(old_world) is None, "cleared in the same transaction that spent the copy"
+
+
+def test_an_earlier_attempts_copy_is_reused_even_when_the_clock_has_gone_back_since(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixed = _a_repair_that_fails(monkeypatch)
+    with _clock_says("20991231-120000"):
+        first = keyrepair.repair(old_world)
+    fixed()
+    old_world.backups.mkdir(parents=True, exist_ok=True)
+    (old_world.backups / "encore-before-key-rewrite-20991231-120009.db").write_bytes(b"newer by its name only")
+    done = keyrepair.repair(old_world)  # the real clock: the attempt's copy is named 2099
+    assert first.backup is not None and done.backup == first.backup and done.ran is True
+
+
+def test_a_recorded_copy_that_is_gone_is_replaced_by_a_new_one(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    fixed = _a_repair_that_fails(monkeypatch)
+    failed = keyrepair.repair(old_world)
+    assert failed.backup is not None
+    failed.backup.unlink()  # a Host cleaned the backups folder
+    fixed()
+    with _clock_says(
+        "20261117-130000"
+    ):  # a name of its own: a free name of a copy that was deleted could be taken again within the second
+        done = keyrepair.repair(old_world)
+    assert done.ran is True and done.backup is not None and done.backup.is_file() and done.backup != failed.backup
+    assert _pending(old_world) is None and _used(old_world) == done.backup.name
+
+
+def _spoil_the_copy(how: str) -> Any:
+    """The real `_copy_for_this_repair`, then the copy goes wrong BEFORE the write: it vanishes, is emptied, or is overwritten by something that is not a database."""
+    real = keyrepair._copy_for_this_repair
+
+    def spoiled(db: Database) -> Path:
+        copy = real(db)
+        if how == "vanishes":
+            copy.unlink()
+        elif how == "is emptied":
+            copy.write_bytes(b"")
+        else:
+            copy.write_bytes(b"this is not a database" * 50)
+        return copy
+
+    return spoiled
+
+
+@pytest.mark.parametrize("how", ["vanishes", "is emptied", "is not a database"])
+def test_the_repair_refuses_to_write_when_the_copy_it_was_to_rely_on_is_not_there_when_it_comes_to_write(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, how: str
+) -> None:
+    """The second layer, and the only one that can stand alone: whatever happened to the copy between the moment it was taken and the moment of the write (a prune, an
+    antivirus, a Host who cleared the folder, a full disk), the repair that cannot be undone from a copy does not run. It logs ONCE, writes nothing (not the keys, not
+    the worklist, not the revision), and the server goes on (it never raises)."""
+    before = snapshot(old_world)
+    keys = {ref: key_of(old_world, ref) for ref in (FAIRUZ, ABBA, HABIBI, AUDIO)}
+    with monkeypatch.context() as patched:
+        patched.setattr(keyrepair, "_copy_for_this_repair", _spoil_the_copy(how))
+        with caplog.at_level(logging.INFO, logger="encore_server.keyrepair"):
+            report = keyrepair.repair(old_world)  # must not raise
+
+    assert report.failed is True and report.ran is False and report.rekeyed == 0
+    assert [r.levelno for r in caplog.records if r.levelno >= logging.ERROR] == [logging.ERROR], "ONE line, not two"
+    assert "copy" in "".join(r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR)
+    assert {ref: key_of(old_world, ref) for ref in keys} == keys, "no key was rewritten"
+    assert revision(old_world) is None and worklist(old_world) == set() and _used(old_world) is None
+    assert snapshot(old_world) == before
+    with old_world.read() as conn:
+        assert conn.execute("SELECT cover_url FROM song_ref WHERE id = ?", (FAIRUZ,)).fetchone()[0] == DEEZER_COVER, (
+            "no picture was voided"
+        )
+        assert conn.execute("SELECT COUNT(*) FROM ref_merge WHERE norm_key IS NULL").fetchone()[0] == 1, (
+            "no tombstone key was nulled (one was NULL already)"
+        )
+
+    again = keyrepair.repair(old_world)  # the next start finds nothing it can rely on and takes a new copy
+    assert again.ran is True and again.backup is not None and again.backup.is_file() and again.backup.stat().st_size > 0
 
 
 def test_a_ref_the_server_makes_itself_is_never_stale_so_a_start_never_rewrites_it(

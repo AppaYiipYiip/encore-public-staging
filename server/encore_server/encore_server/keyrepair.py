@@ -33,13 +33,25 @@ It is idempotent (a start that finds nothing writes nothing), it rolls back whol
 **never stops the server**: a failed repair is tried again at the next start, and logs ONE ERROR line per start. Until it has run, the cost is that a non-Latin song
 described again may make a duplicate ref, which the by-file merge folds later; the ERROR line says so.
 
-**The copy** (`Database.backup`, `Database.prune_backups`). A repair that fails for good must not take a copy of a big library at every start, and a repair that
-succeeds again and again (a rollback loop) must not fill the disk. So: the repair records, in the SAME transaction that commits it, the name of the copy it used
-(`setting.textnorm_backup_used`). At the next repair, the newest copy that is NOT the recorded one belongs to an attempt that did not finish (it rolled back), so it
-is REUSED; a copy that a finished repair used is spent, and a new one is taken (a second real repair after a rollback is never blocked by an old copy). After a new copy
-is taken the copies of this label are pruned to `KEEP_COPIES`, newest kept; the copies of other repairs (a migration's, the merge's) are never touched. **The cost, stated:**
-a reused copy can be older than the start that used it (a failing repair that is fixed a week later is backed by the copy of the first attempt), so restoring it loses what was
-written in between; the repair rewrites keys and the worklist only, and every one of them is recomputed from the refs' own text, so a restore is never what undoes it.
+**The copy** (`Database.backup`, `Database.prune_backups`). The invariant: **a repair never writes without a copy it can be undone from** (the tombstone keys it
+nulls and the pictures it voids come back from nothing else). It holds in two layers, and neither depends on the ORDER of the copies, because the order is not
+trustworthy: a copy's name is the LOCAL time of the clock that made it, a clock goes back (the end of daylight saving time repeats an hour, a time sync steps it,
+somebody sets it), and a file's modification time comes from the same clock. (The first version ordered the copies by their names: with three copies named in the future
+the copy just taken was the OLDEST of four, the prune removed it, and the repair went on with a path that did not exist and logged it as kept.)
+
+1. **By construction.** The prune is told which copies must stay and never takes them as candidates: the copy just taken and the one the last COMMITTED repair used.
+   The copy an attempt takes is recorded by name (`setting.textnorm_backup_pending`) in its OWN committed write, right after it is taken, because the rewrite itself may
+   roll back; the next start reuses exactly that copy, and only while it is still there and still looks like a database. A file that merely sorts newest is NOT an earlier
+   attempt's copy (the first version reused it). The repair that commits records the copy it used (`setting.textnorm_backup_used`) and clears the pending record in the
+   SAME transaction, so a copy a committed repair used is spent and a later real repair takes its own.
+2. **At the point of writing.** Inside the write transaction and before the first write, the repair checks that the copy exists, is not empty and begins like a SQLite
+   database. Otherwise it writes nothing (no key, no worklist row, no revision), logs ONE error line and the server goes on; the next start takes a new copy.
+
+At most `KEEP_COPIES` copies of this label are kept: the two that must stay and the newest of the others by name (a rollback loop cannot fill the disk; the copies of other
+repairs, a migration's and the merge's, are never touched). **The cost, stated:** when the clock has gone back, the name order can be wrong, and then a spare copy goes
+before another one: an older spare is kept instead of a newer one. The copy a repair relies on is never what is lost. A reused copy can also be older than the start that
+used it (a failing repair that is fixed a week later is backed by the copy of the first attempt), so restoring it loses what was written in between; the repair rewrites
+keys and the worklist only, and every one of them is recomputed from the refs' own text, so a restore is never what undoes it.
 
 **The Unicode version is a guard, not a hope.** A stored key is a function of the Unicode data of the Python that made it. The fold is pinned to `textnorm.UNICODE_VERSION`
 (15.0.0: `python:3.12-slim`); the server REFUSES TO START on any other (`create_app`, the server command), so no key is ever written or rewritten under another, and
@@ -73,9 +85,15 @@ log = logging.getLogger("encore_server.keyrepair")
 _BACKUP_LABEL = "before-key-rewrite"
 REVISION_SETTING = "textnorm_revision"
 UNICODE_SETTING = "textnorm_unicode"
-#: The name of the copy the last repair that COMMITTED used: a copy with this name is spent; a newer one is an attempt that rolled back and is reused.
+#: The name of the copy the last repair that COMMITTED used: that repair is over, its copy is spent (and is one of the two the prune never removes).
 BACKUP_USED_SETTING = "textnorm_backup_used"
-#: How many copies of the stored keys are kept (newest first). Three: the last repair, the one before it, and one spare; a rollback loop can never cost more disk than this.
+#: The name of the copy an attempt took and has not yet committed with: written in its own committed write right after the copy is taken (the rewrite may roll back),
+#: cleared by the repair that commits. It is the ONLY copy a later start reuses: the order of the names says nothing about which attempt a file belongs to.
+BACKUP_PENDING_SETTING = "textnorm_backup_pending"
+#: How a SQLite database file begins (what `VACUUM INTO` writes): a file that does not is not a copy to undo a repair from.
+_SQLITE_MAGIC = b"SQLite format 3\x00"
+#: How many copies of the stored keys are kept. Three: the one just taken and the one the last COMMITTED repair used (the prune never removes either, whatever their names
+#: say), and one spare (the newest of the others by name, which a clock that went back can get wrong: then an older spare is kept). A rollback loop can never cost more disk.
 KEEP_COPIES = 3
 #: The picture hosts of the catalogue whose hit the broken fold matched to every song with the same (empty) name. The HOSTNAME decides, not a substring.
 _DEEZER_HOSTS = ("dzcdn.net", "deezer.com")
@@ -186,26 +204,50 @@ def _write_revision(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (REVISION_SETTING, str(textnorm.TEXTNORM_REVISION)))
 
 
-def _copy_for_this_repair(db: Database) -> Path:
-    """The copy of the database this repair is backed by: the newest copy of an attempt that did not finish, else a new one (and the pile pruned). See the module's docstring."""
-    with db.read() as conn:
-        row = conn.execute("SELECT value FROM setting WHERE key = ?", (BACKUP_USED_SETTING,)).fetchone()
-    spent = row["value"] if row is not None else None
-    existing = db.copies(_BACKUP_LABEL)
-    if existing and existing[-1].name != spent:
-        log.info(
-            "key rewrite: the copy an earlier attempt took, before the rewrite that did not finish, is used again: %s",
-            existing[-1],
-        )
-        return existing[-1]
-    copy = db.backup(_BACKUP_LABEL)
-    log.info("key rewrite: a copy of the database before the rewrite is kept at %s", copy)
+class CopyMissing(RuntimeError):
+    """The copy a repair was to rely on is not there, or is not a database, at the moment it comes to write: the repair does not run."""
+
+
+def _is_a_copy(path: Path) -> bool:
+    """Is this something a repair can be undone from? It is there, it is not empty and it begins like a SQLite database (reading its first bytes covers all three: a
+    missing file cannot be opened, an empty one has no first bytes, junk does not begin like a database). Never raises (a file that cannot be read is not one)."""
     try:
-        db.prune_backups(_BACKUP_LABEL, KEEP_COPIES)
+        with path.open("rb") as handle:
+            return handle.read(len(_SQLITE_MAGIC)) == _SQLITE_MAGIC
+    except OSError:
+        return False
+
+
+def _setting(conn: sqlite3.Connection, key: str) -> str | None:
+    row = conn.execute("SELECT value FROM setting WHERE key = ?", (key,)).fetchone()
+    return None if row is None else str(row["value"])
+
+
+def _copy_for_this_repair(db: Database) -> Path:
+    """The copy of the database this repair is backed by: the one an earlier attempt of THIS repair recorded, while it is still there; else a new one (and the pile pruned,
+    with this copy and the last committed repair's named as the ones that stay). See the module's docstring: the order of the names is never what chooses."""
+    with db.read() as conn:
+        pending = _setting(conn, BACKUP_PENDING_SETTING)
+        spent = _setting(conn, BACKUP_USED_SETTING)
+    if pending and pending != spent:
+        earlier = db.backups / Path(pending).name  # a name from the table, never a path out of the folder
+        if _is_a_copy(earlier):
+            log.info(
+                "key rewrite: the copy an earlier attempt took, before the rewrite that did not finish, is used again: %s",
+                earlier,
+            )
+            return earlier
+        log.warning("key rewrite: the copy an earlier attempt took is gone or is not a database, so a new one is taken")
+    copy = db.backup(_BACKUP_LABEL)
+    with db.tx() as conn:  # its own committed write: the rewrite below may roll back, the record of its copy must not
+        conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_PENDING_SETTING, copy.name))
+    try:
+        db.prune_backups(_BACKUP_LABEL, KEEP_COPIES, protect=[copy, *([spent] if spent else [])])
     except OSError:
         log.warning(
             "key rewrite: the oldest copies of the stored keys could not be removed (the copy just taken is kept)", exc_info=True
         )
+    log.info("key rewrite: a copy of the database before the rewrite is kept at %s", copy)
     return copy
 
 
@@ -230,10 +272,15 @@ def repair(db: Database) -> Report:
             return report
         report.backup = _copy_for_this_repair(db)
         with db.tx() as conn:
+            # The second layer, at the narrowest point: the first thing inside the write transaction, before any write. Whatever happened to the copy since it was
+            # taken (a prune that went wrong, a cleaned folder, a full disk), a repair that cannot be undone from it does not run.
+            if not _is_a_copy(report.backup):
+                raise CopyMissing(str(report.backup))
             _apply(conn, plan(conn, one_shot=first), report)
             if first:
                 _write_revision(conn)
             conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_USED_SETTING, report.backup.name))
+            conn.execute("DELETE FROM setting WHERE key = ?", (BACKUP_PENDING_SETTING,))
         report.ran = True
         log.info(
             "key rewrite (%s): revision %d, %d of %d keys rewritten, %d refs the old fold damaged, %d refs on the worklist for the library link, %d tombstone keys "
@@ -246,6 +293,14 @@ def repair(db: Database) -> Report:
             report.worklist,
             report.tombstones_nulled,
             report.covers_voided,
+        )
+    except CopyMissing as missing:  # nothing was written: the transaction rolled back before its first write
+        report = Report(failed=True)
+        log.error(
+            "key rewrite REFUSED and changed nothing: the copy of the database it was to rely on (%s) is not there, or is not a database, at the moment of writing, and "
+            "a repair that cannot be undone from a copy does not run (it is tried again at the next start with a new copy, and until then a song in another alphabet "
+            "described again may make a duplicate ref)",
+            missing,
         )
     except Exception:  # noqa: BLE001 - the server must start whatever happens here; the transaction rolled back, the copy is kept
         report = Report(failed=True, backup=report.backup)

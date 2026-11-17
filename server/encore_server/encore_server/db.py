@@ -11,7 +11,7 @@ import re
 import shutil
 import sqlite3
 import time
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, suppress
 from importlib import resources
 from pathlib import Path
@@ -176,8 +176,14 @@ class Database:
         return target
 
     def copies(self, label: str) -> list[Path]:
-        """The copies [backup] made under exactly this label, OLDEST FIRST (a folder that does not exist has none). The order is the one the names mean: the time
-        in the name, then the `-2`, `-3`... of copies made in one second (as text `x-2.db` sorts before `x.db`, and `x-10.db` before `x-2.db`)."""
+        """The copies [backup] made under exactly this label, OLDEST FIRST by their names (a folder that does not exist has none): the time in the name, then the
+        `-2`, `-3`... of copies made in one second (as text `x-2.db` sorts before `x.db`, and `x-10.db` before `x-2.db`).
+
+        **This order is a hint and nothing that must hold may depend on it.** The time in a name is the LOCAL time of the clock that made the copy, and a clock goes
+        back: the end of daylight saving time repeats an hour, a time sync steps it, somebody sets it. A file's modification time is no better (the operating system stamps
+        it from the same clock), and there is no sequence number in a name (names are the format docs/15 and docs/18 describe, shared with the migration and merge copies).
+        So the only ordering use is [prune_backups]'s choice of WHICH surplus copy goes first, and a wrong choice there costs a spare copy, never the one a caller
+        relies on: the caller names that one, and it is not a candidate."""
         pattern = re.compile(rf"^encore-{re.escape(label)}-(\d{{8}}-\d{{6}})(?:-(\d+))?\.db$")
         found: list[tuple[str, int, Path]] = []
         if self.backups.is_dir():
@@ -187,12 +193,27 @@ class Database:
                     found.append((match.group(1), int(match.group(2) or 1), path))
         return [path for _stamp, _again, path in sorted(found)]
 
-    def prune_backups(self, label: str, keep: int) -> list[Path]:
-        """Removes the OLDEST copies of this label (and of no other label: a migration's copy and the merge's are never touched) until `keep` are left; returns the ones
-        it removed. For a repair that takes a copy at every start it finds something to do: the cap that keeps a restart loop from filling the disk."""
+    def prune_backups(self, label: str, keep: int, *, protect: Iterable[Path | str]) -> list[Path]:
+        """Removes copies of this label (and of no other label: a migration's copy and the merge's are never touched) until at most `keep` are left; returns the ones it
+        removed. For a repair that takes a copy at every start it finds something to do: the cap that keeps a restart loop from filling the disk.
+
+        **`protect` is required: the copies that must stay, whatever their names say** (the copy the caller has just taken and is about to rely on, and the one its last
+        committed repair used). A protected copy is never a candidate and counts inside `keep`; more protected copies than `keep` are all kept. The rest go OLDEST FIRST
+        by [copies]'s order, which a clock that went back can get wrong: then a spare copy goes before another, and nothing else. (This used to take only `keep`, ordered
+        by the names alone: with three copies named in the future the copy taken just now was the OLDEST of four, was removed, and the repair that had taken it went on
+        with a path that did not exist.) A protected copy that is not there is not an error here: whether the caller can rely on it is the caller's check."""
         if keep < 1:
             raise ValueError("keep at least one copy: the copy a repair just took is the one it needs")
-        removed = self.copies(label)[:-keep]
+        names = {Path(item).name for item in protect}
+        if not names:
+            raise ValueError(
+                "name the copy that must stay: a prune that is not told which copy the caller relies on is the prune that removed it"
+            )
+        present = self.copies(label)
+        spared = [path for path in present if path.name in names]
+        candidates = [path for path in present if path.name not in names]
+        room = max(keep - len(spared), 0)
+        removed = candidates[: len(candidates) - room] if len(candidates) > room else []
         for path in removed:
             path.unlink(missing_ok=True)
         return removed
