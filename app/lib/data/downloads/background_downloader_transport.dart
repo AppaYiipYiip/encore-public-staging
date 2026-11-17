@@ -67,16 +67,25 @@ class BackgroundDownloaderTransport implements DownloadTransport {
 
   @override
   Future<void> resume() async {
+    // Two steps, each on its own: when the downloader's records cannot be read (`trackTasks`), what it kept while the app was not running must still be
+    // handed over, or `start()` finds rows whose task is gone with no word about them and puts them back in the queue (N-39).
     try {
       await FileDownloader().trackTasks();
+    } on Object catch (error) {
+      Log.warn(
+          'downloads', 'tracking the tasks of the downloader failed', error);
+    }
+    try {
       await FileDownloader().resumeFromBackground();
-      // The replayed updates reach `FileDownloader().updates` and then [updates] through scheduled events (read in background_downloader 9.6.4,
-      // `retrieveLocallyStoredData`): one turn of the event loop lets them all through before this returns (the contract of
-      // [DownloadTransport.resume]).
-      await Future<void>.delayed(Duration.zero);
     } on Object catch (error) {
       Log.warn('downloads', 'resume from background failed', error);
     }
+    // The replayed updates reach `FileDownloader().updates` and then [updates] through two stream controllers, a microtask each (read in
+    // background_downloader 9.6.4, `retrieveLocallyStoredData` and `processStatusUpdate`): one turn of the event loop lets them all through before this
+    // returns (the contract of [DownloadTransport.resume]). In 9.6.4 the plugin's own last round trip to the native side (the progress updates, asked after
+    // the status updates) already gives that turn; this one is for a plugin that would not, and `background_downloader_replay_test.dart` is red without
+    // it in the schedule where that last answer comes at once.
+    await Future<void>.delayed(Duration.zero);
   }
 
   @override
