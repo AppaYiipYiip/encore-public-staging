@@ -417,5 +417,11 @@ class _Actions implements DownloadActions {
   Future<void> retry() async {}
 
   @override
+  Future<void> stop(List<PinKey> pins) async {}
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {}
+
+  @override
   Future<void> removeAll() async {}
 }

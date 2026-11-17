@@ -399,6 +399,12 @@ abstract interface class DownloadActions {
   /// Retry failed downloads now instead of waiting for the back-off.
   Future<void> retry();
 
+  /// The person's Stop (N-39): the phone's copy of these pins stops and waits; the files already on the phone stay. Nothing is deleted.
+  Future<void> stop(List<PinKey> pins);
+
+  /// Takes the Stop off these pins: what was not on the phone is asked for again, in its old order.
+  Future<void> resume(List<PinKey> pins);
+
   /// Removes every pin and every downloaded file now (signing out).
   Future<void> removeAll();
 }
@@ -446,6 +452,27 @@ class ManagerDownloadActions implements DownloadActions {
 
   @override
   Future<void> retry() async => (await _manager())?.retryFailed();
+
+  @override
+  Future<void> stop(List<PinKey> pins) async {
+    final manager = await _manager();
+    if (manager != null) {
+      await manager.stop(pins);
+    } else {
+      // No manager yet (no server): the stop is still the person's, stored for the manager that is built next.
+      await _repo?.stopPins(pins);
+    }
+  }
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {
+    final manager = await _manager();
+    if (manager != null) {
+      await manager.resume(pins);
+    } else {
+      await _repo?.clearStopped(pins);
+    }
+  }
 
   @override
   Future<void> removeAll() async {

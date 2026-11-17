@@ -244,7 +244,21 @@ void main() {
       expect(find.text('Weird Fishes Release'), findsOneWidget);
       expect(find.byTooltip('Remove download'), findsOneWidget);
 
+      // N-39 (S-96): the trash button asks first, in the one question every door that turns a whole download off asks; Cancel changes nothing.
       await tester.tap(find.byTooltip('Remove download'));
+      await settle(tester);
+      expect(find.text('Remove Weird Fishes Release from this phone?'),
+          findsOneWidget);
+      expect(took, isEmpty, reason: 'nothing is deleted before the answer');
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+      expect(took, isEmpty);
+      expect((await ReleaseStore(db, 1).phone())['cat:1']!.download, isTrue,
+          reason: 'Cancel changes nothing');
+
+      await tester.tap(find.byTooltip('Remove download'));
+      await settle(tester);
+      await tester.tap(find.text('Remove'));
       await settle(tester);
 
       expect(took, unorderedEquals(['sr_1', 'sr_2']));
@@ -294,6 +308,8 @@ void main() {
           of: find.widgetWithText(ListTile, 'Weird Fishes Release'),
           matching: find.byTooltip('Remove download')));
       await settle(tester);
+      await tester.tap(find.text('Remove'));
+      await settle(tester);
 
       expect(took, ['sr_1'], reason: 'sr_2 is still wanted by Amnesiac');
       final records = await ReleaseStore(db, 1).phone();
@@ -340,6 +356,12 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> retry() async {}
+
+  @override
+  Future<void> stop(List<PinKey> pins) async {}
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {}
 
   @override
   Future<void> removeAll() async {}

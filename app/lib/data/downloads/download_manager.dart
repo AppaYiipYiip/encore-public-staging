@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/clock.dart';
 import '../../core/logger.dart';
 import '../../domain/audio_quality.dart';
+import '../../domain/download_line.dart' show kDownloadStoppedReason;
 import '../../domain/storage_guard.dart';
 import '../db/app_database.dart';
 import '../repos/downloads_repository.dart';
@@ -13,6 +14,8 @@ import 'disk_space.dart';
 import 'download_planner.dart';
 import 'download_transport.dart';
 import 'download_verify.dart';
+
+export '../../domain/download_line.dart' show kDownloadStoppedReason;
 
 /// Builds the URL for a track at a quality (original -> `download`).
 typedef DownloadUrlBuilder = Future<Uri> Function(
@@ -30,10 +33,6 @@ class SongNotKeptYet implements Exception {
   @override
   String toString() => 'The server does not keep this song yet';
 }
-
-/// What a song's row says when its transfer was cancelled by something that is not the manager (N-39). It is a recorded reason, never shown as it
-/// is: `phoneFailureWords` gives the person the plain sentence every song the phone could not take gets.
-const String kDownloadStoppedReason = 'The download was stopped';
 
 /// Policy the manager reads each time it schedules work.
 @immutable
@@ -165,6 +164,16 @@ class DownloadManager {
       // Rows left "downloading" by a previous run whose task is gone go back
       // to the queue.
       final active = await _transport.activeTaskIds();
+      // A song the person stopped is never fetched: a task that a kill left running between the Stop being stored and its cancel is cancelled now
+      // (its answer finds a row that is not downloading and changes nothing).
+      final stopped = await _repo.heldTrackIds();
+      for (final id in {...active}) {
+        final trackId = _trackIdOf(id);
+        if (trackId != null && stopped.contains(trackId)) {
+          active.remove(id);
+          await _cancelQuietly(id);
+        }
+      }
       final stuck = await _repo.rowsInState(DownloadState.downloading);
       for (final row in stuck) {
         if (!active.contains(_taskId(serverId, row.trackId))) {
@@ -304,11 +313,16 @@ class DownloadManager {
             for (final row in await _repo.rowsRefreshing())
               if (_isPendingUpgrade(row)) row.trackId
           };
+    // Songs the person's Stop holds (N-39) are queued rows too, and nothing starts them: not this pass, not a restart, not a sync. They do not use
+    // up the places, so the rows behind them still start.
+    final stopped = await _repo.heldTrackIds();
     final queued = [
       for (final row in await _repo.rowsInState(DownloadState.queued,
-          limit: slots + _waitingForServer.length + held.length))
+          limit:
+              slots + _waitingForServer.length + held.length + stopped.length))
         if (!_waitingForServer.contains(row.trackId) &&
-            !held.contains(row.trackId))
+            !held.contains(row.trackId) &&
+            !stopped.contains(row.trackId))
           row
     ].take(slots).toList();
     if (queued.isEmpty) {
@@ -453,10 +467,16 @@ class DownloadManager {
         await _onComplete(trackId, update.relativePath);
       case TransferStatus.failed:
         _inFlight.remove(trackId);
+        // The Stop cancelled this transfer and the song waits for Resume: a word that comes late (the transfer failed in the very moment it was
+        // cancelled) is not a failed song with a wait, and it deletes nothing (not the half of a refresh either).
+        if (await _isStopped(trackId)) return;
         await _onAttemptEnded(trackId, update.error ?? 'Download failed',
             reportedPath: update.relativePath);
       case TransferStatus.canceled:
         _inFlight.remove(trackId);
+        // The acknowledgement of the Stop's own cancel is not a cancel from outside: the Stop is stored first and the row no longer says "downloading",
+        // so the branch below would not see it either; this is the second layer that stays right if a row ever does.
+        if (await _isStopped(trackId)) return;
         // The manager cancels in one place, `_delete`, and deletes the row in the same pass (the update is handled after it): no row. A row that
         // still says "downloading" was cancelled by something else (the Cancel button of the downloader's card of an older build, a reset of the
         // downloader, an update the downloader kept while the app was closed), and no task is behind it any more. It is an attempt that ended, not a
@@ -590,10 +610,72 @@ class DownloadManager {
     await _pump();
   }
 
-  /// Retry failed rows now (user pressed "Try again").
+  /// Whether the person's Stop holds this song (every pin that wants it is stopped).
+  Future<bool> _isStopped(String trackId) async =>
+      (await _repo.heldTrackIds()).contains(trackId);
+
+  Future<void> _cancelQuietly(String taskId) async {
+    try {
+      await _transport.cancel(taskId);
+    } on Object catch (error) {
+      // The song is held and its answers are ignored, so a cancel that did not go through changes nothing here: a file that still finishes is kept.
+      Log.warn('downloads', 'could not cancel $taskId', error);
+    }
+  }
+
+  /// One step of the FIFO that hands its failure to the caller instead of breaking the chain behind it.
+  Future<void> _serialized(Future<void> Function() body) async {
+    Object? failure;
+    final step = _serial.then((_) async {
+      try {
+        await body();
+      } on Object catch (error, stack) {
+        Log.error('downloads', 'a step of the person failed', error, stack);
+        failure = error;
+      }
+    });
+    _serial = step;
+    await step;
+    final error = failure;
+    if (error != null) throw error;
+  }
+
+  /// THE PERSON'S STOP (N-39): the phone's copy of these pins stops and waits for [resume]. The files on the phone stay and play and NOTHING is
+  /// deleted (Remove is the one thing that deletes). In this order, inside the FIFO: the stop is stored in the pins and the songs it holds are put
+  /// out of the way (a song in flight goes back to the queue, a refresh in flight is the old copy again) and only then are their transfers
+  /// cancelled, so the downloader's acknowledgement is never read as a cancel from outside (PR 113's back-off, PB-F22). From then on no pass, restart,
+  /// sync, reconnection or passing of time starts, refreshes or tries again a song that every pin that wants it has stopped. Songs added to a stopped
+  /// list wait too. Stopping again changes nothing; the first moment is kept. It throws only when the stop could not be stored (nothing changed).
+  Future<void> stop(Iterable<PinKey> pins) {
+    final keys = pins.toList();
+    return _serialized(() async {
+      if (_disposed) return;
+      final held = await _repo.stopPins(keys);
+      for (final id in held) {
+        _estimates.remove(id);
+        if (_inFlight.remove(id)) await _cancelQuietly(_taskId(serverId, id));
+      }
+    });
+  }
+
+  /// Takes the Stop off these pins and plans again: the songs that were not on the phone are asked for, in their old order, and the ones added
+  /// while it was stopped follow them.
+  Future<void> resume(Iterable<PinKey> pins) {
+    final keys = pins.toList();
+    return _serialized(() async {
+      if (_disposed) return;
+      await _repo.clearStopped(keys);
+      await _reconcileOnce(false);
+    });
+  }
+
+  /// Retry failed rows now (user pressed "Try again"). A song of a download the person stopped is left as it is: it stays counted as one that did
+  /// not come, and Retry is back after Resume.
   Future<void> retryFailed() async {
+    final stopped = await _repo.heldTrackIds();
     final failed = await _repo.rowsInState(DownloadState.failed);
     for (final row in failed) {
+      if (stopped.contains(row.trackId)) continue;
       await _repo.markQueued(row.trackId);
     }
     await reconcile();

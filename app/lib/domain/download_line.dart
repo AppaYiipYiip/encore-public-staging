@@ -83,6 +83,7 @@ class DownloadFacts {
     this.serverKeeps = false,
     this.server,
     this.wait,
+    this.stopped = false,
   });
 
   /// Songs of this download that are on the phone / that it holds (the phone's own table).
@@ -104,6 +105,10 @@ class DownloadFacts {
 
   /// Why the phone cannot move, if it cannot.
   final PhoneWait? wait;
+
+  /// The person pressed Stop on this download (N-39): the files on the phone stay, the rest waits for Resume. It wins over [wait] (nothing would
+  /// move anyway), and a download that has every song is finished whatever it says.
+  final bool stopped;
 }
 
 @immutable
@@ -118,6 +123,9 @@ class DownloadLine {
     this.twoStages = false,
     this.stuck = false,
     this.starting = false,
+    this.stopped = false,
+    this.canStop = false,
+    this.stopping = false,
   }) : serverFraction = serverFraction ?? phoneFraction;
 
   /// The line itself.
@@ -148,11 +156,44 @@ class DownloadLine {
   /// The first moment: nobody has said how many songs there are or how far they are ("Getting ready to download"). The notification says "Starting…"
   /// with a bar that has no end yet (docs/design S-95).
   final bool starting;
+
+  /// The person's Stop holds this download (N-39, S-16 "stopped"): the line says "Stopped · ...", Resume stands where Stop stood, and there is no
+  /// Retry (it would send asks, which a stopped download does not).
+  final bool stopped;
+
+  /// Songs are still coming, so Stop is offered (S-16): also while the phone waits for a reason, with nothing on the phone yet, and while the server
+  /// rests; not on a finished download, not on one with only songs that did not come (it keeps its Retry), not on a stopped one (Resume stands there),
+  /// and not on the line a plain music server has always had.
+  final bool canStop;
+
+  /// The moment after Stop is pressed, while the transfers in flight are being cancelled ("Stopping…", S-16): no button, the bar where it was.
+  final bool stopping;
+
+  /// This line as it reads in the moment after Stop is pressed.
+  DownloadLine asStopping() => DownloadLine(
+        'Stopping…',
+        phoneFraction: phoneFraction,
+        serverFraction: serverFraction,
+        failed: failed,
+        twoStages: twoStages,
+        stopping: true,
+      );
 }
+
+/// What a song's row says when its transfer was cancelled by something that is not the manager (N-39, PR 113): the Cancel button of the downloader's
+/// own card of an older build, a reset of the downloader, an update the downloader kept while the app was closed. It is a recorded reason, never
+/// shown as it is: [phoneFailureWords] gives the person the sentence. (The person's own Stop records nothing of the kind: a stopped song is not a
+/// failure.)
+const String kDownloadStoppedReason = 'The download was stopped';
 
 /// Why the phone could not take a song, in plain words. [recorded] is what the downloader wrote down (an exception class, a path, an HTTP status): it
 /// is read to pick the sentence and is never shown.
 String phoneFailureWords(String? recorded) {
+  // A transfer that something else cut (docs/design S-16 "a song interrupted from outside"): it says it was cut, not that anything is wrong with the
+  // song. Matched on the constant, not on a copy of its words.
+  if (recorded == kDownloadStoppedReason) {
+    return 'Interrupted before it finished.';
+  }
   final raw = (recorded ?? '').toLowerCase();
   if (raw.contains('no longer on the server')) {
     return 'The server no longer has this song.';
@@ -199,7 +240,9 @@ DownloadLine _twoStages(DownloadFacts f) {
           canRetry: canRetry,
           twoStages: true,
           stuck: stuck,
-          starting: starting);
+          starting: starting,
+          // Songs are still coming unless only the ones that did not come are left (the row keeps its Retry).
+          canStop: !stuck);
 
   if (total > 0 && done >= total) {
     return DownloadLine('Downloaded • ${_songs(total)}',
@@ -210,12 +253,37 @@ DownloadLine _twoStages(DownloadFacts f) {
     return const DownloadLine('Nothing to download yet');
   }
 
+  // A stopped download (N-39, S-16 "stopped, files kept"): the phone's number first, what is kept; the server's half only while there are live
+  // numbers (no wait, the server said) and it does not have every song yet (it never reads "Stopped · Downloading to this phone"). Stopped wins over
+  // the phone's reason, and what did not come is still counted and named, with no Retry.
+  if (f.stopped) {
+    final live = s != null && f.wait == null;
+    final lost = (live ? s.failed : 0) + f.phoneFailed;
+    final settled = live && s.waiting == 0 && s.ready <= done + f.phoneFailed;
+    final kept =
+        total > 0 ? 'Stopped · $done of $total on this phone' : 'Stopped';
+    final String text;
+    if (live && lost > 0 && settled) {
+      text = '$kept · ${_songs(lost)} did not come';
+    } else if (live && !s.hasAll) {
+      text = '$kept · ${s.ready} ready on your server';
+    } else {
+      text = kept;
+    }
+    return DownloadLine(text,
+        phoneFraction: phone,
+        serverFraction: live ? tone : phone,
+        failed: lost,
+        twoStages: true,
+        stopped: true);
+  }
+
   // The phone's reason wins: the server's counts are stale while the phone cannot reach it, and one cause is told for the whole screen.
   final wait = f.wait;
   if (wait != null) {
     // What the server said about songs that did not come is as old as its counts: not told now, and no Retry that could not be sent.
     return DownloadLine('$done of $total on this phone · ${wait.words}',
-        phoneFraction: phone, twoStages: true);
+        phoneFraction: phone, twoStages: true, canStop: true);
   }
 
   // Everything that can come has come, and some did not: say so (the row offers Retry when asking again can help). "Settled" is told by the

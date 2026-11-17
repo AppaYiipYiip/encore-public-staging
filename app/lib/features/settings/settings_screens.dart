@@ -18,9 +18,11 @@ import '../common/format.dart';
 import '../downloads/download_line_providers.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/download_status.dart';
+import '../downloads/remove_download_dialog.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart' show requestPortalOfferedProvider;
-import '../instant/release_save.dart' show releaseSavesProvider;
+import '../instant/release_save.dart'
+    show releasePinStateProvider, releaseSavesProvider;
 import 'data_saver_line.dart' show DataSaverWords;
 import 'diagnostics_screen.dart';
 import 'failed_edits.dart';
@@ -580,6 +582,19 @@ class DownloadsSettingsScreen extends ConsumerWidget {
               tooltip: 'Remove download',
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () async {
+                final type = PinTargetType.values.asNameMap()[e.pin.targetType];
+                if (e.releaseId == null && type == null) return;
+                // Asks first, in the one question of S-96: this takes a whole download off the phone (N-39). Cancel changes nothing.
+                final state = e.releaseId != null
+                    ? ref.read(
+                        releasePinStateProvider(e.releaseRefIds.join(',')))
+                    : await ref
+                        .read(pinStateProvider((type!, e.pin.targetId)).future);
+                if (!context.mounted) return;
+                if (!await confirmRemoveDownload(context,
+                    name: e.title, state: state)) {
+                  return;
+                }
                 // A release is ONE entry (D-35): removing it takes all its songs off, through the record the phone wrote down.
                 if (e.releaseId != null) {
                   await ref
@@ -587,9 +602,7 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                       .removeDownload(e.releaseId!);
                   return;
                 }
-                final type = PinTargetType.values.asNameMap()[e.pin.targetType];
-                if (type == null) return;
-                await actions.unpin(type, e.pin.targetId);
+                await actions.unpin(type!, e.pin.targetId);
               },
             ),
           ),
