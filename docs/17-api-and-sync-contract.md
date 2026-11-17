@@ -89,7 +89,7 @@ A real response is a fixture: `app/test/fixtures/server/library-changes-with-pur
   and `GET playback`, so no event is ever needed to be correct (events only make things faster). The server ends a connection whose device is signed out, revoked,
   locked or removed: it closes the socket with code **4401** within a moment (built, S3 B5: `live.py` `Hub.end`), and the app takes 4401 as "token refused" (`31` CN-23).
 * Events (server → app): `library.changed {cursor}`, `playback.changed {state, rev}`, `device.takeover {by}`, `device.command
-  {command, rev}`, `device.state {dv, state}`, `import.progress {im, counts}`, `keep.progress {groups, youtube, serverTime}` (to the device that watches, `keep/watch`), `jam.state {…}`, `friend.request {…}`,
+  {command, rev}`, `device.state {dv, state}`, `import.progress {importId, state, total, matched, unmatched, pending, kept}` (flat, as the server sends it; pinned by `server/encore_server/tests/test_imports.py`; sent when a song of an import has been matched and when an import is stopped, **not** when the keeper stores a song: `kept` moves silently after the matching, so a client that shows it reads `GET imports` again, as the app does while an import is saving), `keep.progress {groups, youtube, serverTime}` (to the device that watches, `keep/watch`), `jam.state {…}`, `friend.request {…}`,
   `activity {…}`, `server.notice {code, message}`.
 * Messages from the app on the socket are only `device.state` reports and Jam clock pings; everything else goes through HTTP (one
   write path, idempotent, easy to retry).

@@ -734,6 +734,30 @@ class EncoreImport {
   final int createdAtMs;
 
   bool get isRunning => state == 'running';
+
+  /// The same import with the counts and the state the server has just pushed (`import.progress`).
+  EncoreImport withProgress({
+    required String state,
+    required int total,
+    required int matched,
+    required int unmatched,
+    required int pending,
+    required int kept,
+  }) =>
+      EncoreImport(
+        id: id,
+        name: name,
+        source: source,
+        state: state,
+        total: total,
+        matched: matched,
+        unmatched: unmatched,
+        pending: pending,
+        kept: kept,
+        playlistId: playlistId,
+        truncated: truncated,
+        createdAtMs: createdAtMs,
+      );
 }
 
 /// The answer to starting an import: the import, and the playlist it made.

@@ -117,6 +117,7 @@ class DownloadLine {
     this.canRetry = false,
     this.twoStages = false,
     this.stuck = false,
+    this.starting = false,
   }) : serverFraction = serverFraction ?? phoneFraction;
 
   /// The line itself.
@@ -143,6 +144,10 @@ class DownloadLine {
 
   /// Nothing more is coming: every song that can come has, and some did not. A control must not go on saying "downloading".
   final bool stuck;
+
+  /// The first moment: nobody has said how many songs there are or how far they are ("Getting ready to download"). The notification says "Starting…"
+  /// with a bar that has no end yet (docs/design S-95).
+  final bool starting;
 }
 
 /// Why the phone could not take a song, in plain words. [recorded] is what the downloader wrote down (an exception class, a path, an HTTP status): it
@@ -182,7 +187,10 @@ DownloadLine _twoStages(DownloadFacts f) {
   final tone = s == null ? phone : _max(phone, _fraction(s.ready, s.total));
 
   DownloadLine say(String text,
-          {double? server, bool complete = false, bool stuck = false}) =>
+          {double? server,
+          bool complete = false,
+          bool stuck = false,
+          bool starting = false}) =>
       DownloadLine(text,
           phoneFraction: phone,
           serverFraction: server ?? tone,
@@ -190,7 +198,8 @@ DownloadLine _twoStages(DownloadFacts f) {
           failed: failed,
           canRetry: canRetry,
           twoStages: true,
-          stuck: stuck);
+          stuck: stuck,
+          starting: starting);
 
   if (total > 0 && done >= total) {
     return DownloadLine('Downloaded • ${_songs(total)}',
@@ -225,9 +234,11 @@ DownloadLine _twoStages(DownloadFacts f) {
   }
 
   if (s == null) {
-    return say(done > 0
-        ? '$done of $total on this phone'
-        : 'Getting ready to download');
+    return say(
+        done > 0
+            ? '$done of $total on this phone'
+            : 'Getting ready to download',
+        starting: done == 0);
   }
 
   final until = s.restingUntil;
@@ -258,9 +269,11 @@ DownloadLine _legacy(DownloadFacts f) {
   final total = f.phoneTotal;
   final phone = _fraction(done, total);
   if (total == 0) {
-    return DownloadLine(f.confirmedEmpty
-        ? 'Nothing to download yet'
-        : 'Getting ready to download');
+    return DownloadLine(
+        f.confirmedEmpty
+            ? 'Nothing to download yet'
+            : 'Getting ready to download',
+        starting: !f.confirmedEmpty);
   }
   if (done >= total) {
     return DownloadLine('Downloaded • ${_songs(total)}',
@@ -271,7 +284,7 @@ DownloadLine _legacy(DownloadFacts f) {
         phoneFraction: phone, failed: f.phoneFailed, canRetry: true);
   }
   if (done == 0 && f.phoneActive == 0) {
-    return const DownloadLine('Getting ready to download');
+    return const DownloadLine('Getting ready to download', starting: true);
   }
   final words = f.wait?.legacyWords;
   return DownloadLine(

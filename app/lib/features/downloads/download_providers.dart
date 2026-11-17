@@ -84,6 +84,7 @@ class PinEntry {
     this.playlist,
     this.releaseId,
     this.releaseRefIds = const [],
+    this.songCount,
   });
 
   final PinRow pin;
@@ -94,6 +95,9 @@ class PinEntry {
   /// [releaseRefIds] the songs the phone wrote down, [releaseId] is `cat:<catalogue album id>`.
   final String? releaseId;
   final List<String> releaseRefIds;
+
+  /// How many songs the thing has, when the phone knows (a playlist or an album the sync has read, a release it wrote down), else `null`.
+  final int? songCount;
 
   /// The cover to draw (an album's, a playlist's own, an artist's picture), when there is one.
   final String? coverArt;
@@ -116,6 +120,26 @@ final pinEntriesProvider =
   // A release the person downloaded is ONE entry, not N loose songs (D-35): the songs the phone wrote down for it are taken out of the loose
   // track pins and shown once, with the release's own title and artist (so it also reads offline).
   final phone = await ref.watch(phoneReleasesProvider.future);
+  return buildPinEntries(db, pins, phone);
+});
+
+/// The same entries without the loose songs: what the card of the downloads follows (a song is never a card, and a person can pin thousands of them:
+/// one lookup of each on every change of the pins would be the app's slowest start).
+final downloadGroupEntriesProvider =
+    FutureProvider.autoDispose<List<PinEntry>>((ref) async {
+  final pins = await ref.watch(pinsProvider.future);
+  final db = ref.watch(databaseProvider);
+  final phone = await ref.watch(phoneReleasesProvider.future);
+  return buildPinEntries(db, pins, phone, songs: false);
+});
+
+/// What the person pinned, one entry for each thing (a release is ONE entry); [songs] `false` leaves out the loose songs.
+Future<List<PinEntry>> buildPinEntries(
+  AppDatabase db,
+  List<PinRow> pins,
+  Map<String, PhoneRelease> phone, {
+  bool songs = true,
+}) async {
   // A song can belong to more than one release (a single and the album that holds it): it is listed for each of them, so none of the
   // releases the person downloaded loses its entry.
   final released = <String, List<({String id, PhoneRelease release})>>{};
@@ -139,6 +163,8 @@ final pinEntriesProvider =
             artist: r.release.artist,
             releaseId: r.id,
             releaseRefIds: r.release.refIds,
+            songCount:
+                r.release.refIds.isEmpty ? null : r.release.refIds.length,
           ));
         }
       }
@@ -156,6 +182,7 @@ final pinEntriesProvider =
           kind: 'Playlist',
           coverArt: row?.coverArt,
           playlist: row,
+          songCount: (row?.songCount ?? 0) > 0 ? row!.songCount : null,
         ));
       case 'album':
         final row = await (db.select(db.albums)
@@ -168,6 +195,7 @@ final pinEntriesProvider =
           kind: 'Album',
           coverArt: row?.coverArt,
           artist: row?.artist,
+          songCount: (row?.songCount ?? 0) > 0 ? row!.songCount : null,
         ));
       case 'artist':
         final row = await (db.select(db.artists)
@@ -184,6 +212,8 @@ final pinEntriesProvider =
         entries
             .add(PinEntry(pin: pin, title: 'Liked Songs', kind: 'Collection'));
       default:
+        // A loose song is never a download card.
+        if (!songs) continue;
         final row = await (db.select(db.tracks)
               ..where((t) =>
                   t.serverId.equals(pin.serverId) & t.id.equals(pin.targetId)))
@@ -198,7 +228,7 @@ final pinEntriesProvider =
     }
   }
   return entries;
-});
+}
 
 // ---------------------------------------------------------------- manager
 

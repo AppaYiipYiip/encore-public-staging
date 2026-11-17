@@ -11,6 +11,7 @@ import '../design/theme.dart';
 import '../design/tokens.dart';
 import '../domain/invite_link.dart';
 import '../features/auth/login_problem.dart';
+import '../features/downloads/download_card_wiring.dart';
 import '../features/downloads/download_providers.dart';
 import '../features/downloads/keep_providers.dart';
 import '../features/downloads/lyrics_for_downloads.dart';
@@ -59,6 +60,8 @@ class EncoreApp extends ConsumerWidget {
     ref.watch(coverRefusalProvider);
     // Keeps pinned music in step with the server (starts after start-up).
     ref.watch(downloadManagerProvider);
+    // The one notification of the downloads and imports (docs/design S-95): live while the app is open, dated once it is left.
+    ref.watch(downloadCardProvider);
     // Tells the server what the phone's downloads are waiting for and listens for how it goes (P2-22). `listen`, not `watch`: every push of
     // progress would rebuild the whole app.
     ref.listen(keepProvider, (_, __) {});
