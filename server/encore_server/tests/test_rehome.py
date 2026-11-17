@@ -548,12 +548,19 @@ def test_an_untagged_arabic_file_stays_on_its_ref_unless_an_id_names_another(db:
 
     assert files(db) == {"nd-1": (stays,), "nd-2": (other,)}
     assert report.stayed_nameless == 1 and report.moved == 1 and report.new_refs == 0
+    assert worklist(db) == {stays}, (
+        "the ref whose file nobody could judge STAYS on the worklist; the one whose file an id named is released"
+    )
+    assert report.held_back == 1 and report.held_undecided == 1 and report.released == 1
     with db.read() as conn:
         assert conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0] == 3, "no ref was made for a nameless file"
 
 
-def test_a_file_with_no_usable_tags_stays_and_does_not_hold_its_ref_on_the_worklist_for_ever(db: Database) -> None:
-    """It cannot be judged by anything, so it stays where it is (what the code did before); keeping the ref on the worklist for it would hold its pairs back for ever."""
+def test_a_file_with_no_usable_tags_stays_and_so_does_its_ref_on_the_worklist(
+    db: Database, caplog: pytest.LogCaptureFixture
+) -> None:
+    """It cannot be judged by anything, so the file stays where it is (what the code did before) and its ref STAYS on the worklist: the ref's files may belong to other songs and
+    nobody could check, and merging identities on a file nobody could verify is what the `recheck_pending` hold exists to stop. The log says how many files and why."""
     ref = rid("sr", 1)
     bare = song("nd-1", "", "")
 
@@ -567,9 +574,64 @@ def test_a_file_with_no_usable_tags_stays_and_does_not_hold_its_ref_on_the_workl
     work = rehome.begin(db, described)
     assert work is not None
     work.page([bare])
-    report = work.finish(release=False)
+    with caplog.at_level(logging.INFO, logger=LOG):
+        report = work.finish(release=False)
 
-    assert files(db) == {"nd-1": (ref,)} and worklist(db) == set() and report.stayed_untagged == 1
+    assert files(db) == {"nd-1": (ref,)} and worklist(db) == {ref}
+    assert report.stayed_untagged == 1 and report.held_back == 1 and report.held_undecided == 1 and report.released == 0
+    assert ref in caplog.text and "could not be judged" in caplog.text
+
+
+def test_a_ref_held_for_a_file_that_could_not_be_judged_is_released_once_the_file_can_be_judged(db: Database) -> None:
+    """The Host tags the file (or removes it): the next pass judges it, and the ref leaves the worklist."""
+    ref = rid("sr", 1)
+    untagged = song("nd-1", "أغنية", "[Unknown Artist]")
+    tagged = song("nd-1", "أغنية", "فيروز", 200.0)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, ref, "أغنية", ["[Unknown Artist]"], old=False)
+        add_file(c, ref, "nd-1", song=untagged)
+
+    make_world(db, build)
+    listed(db, ref)
+    first = rehome.begin(db, described)
+    assert first is not None
+    first.page([untagged])
+    first.finish(release=False)
+    assert worklist(db) == {ref}
+
+    second = rehome.begin(db, described)
+    assert second is not None
+    second.page([tagged])
+    report = second.finish(release=False)
+
+    assert worklist(db) == set() and report.released == 1 and report.moved == 1, (
+        "the properly tagged file belongs to the song its tags name"
+    )
+    assert files(db)["nd-1"][0] != ref
+
+
+def test_the_pairs_held_for_a_ref_with_a_file_nobody_could_judge_stay_held(db: Database) -> None:
+    """Releasing such a ref would let `refmerge` merge identities on a file nobody could verify."""
+    keeper_ref, scan_ref = rid("sr", 1), rid("sr", 2)
+    nameless = song("nd-1", "أغنية", "[Unknown Artist]")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, keeper_ref, "أغنية", ["[Unknown Artist]"], old=False)
+        add_file(c, keeper_ref, "nd-1", source="youtube", added_at=10, song=nameless)
+        add_ref(c, scan_ref, "أغنية", ["[Unknown Artist]"], old=False)
+        add_file(c, scan_ref, "nd-1", added_at=20, song=nameless)
+
+    make_world(db, build)
+    listed(db, scan_ref)
+
+    report = link_library(db, Music([nameless]))
+
+    assert report.rehome is not None and report.rehome.held_undecided == 1 and worklist(db) == {scan_ref}
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM ref_merge").fetchone()[0] == 0
+        mergeable, held = refmerge.look(conn)
+    assert not mergeable and [h.reason for h in held] == ["recheck_pending"]
 
 
 def test_a_target_that_already_holds_the_same_file_keeps_one_row_and_the_wrong_holder_loses_its_row(db: Database) -> None:

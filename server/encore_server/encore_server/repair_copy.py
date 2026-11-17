@@ -12,7 +12,9 @@ as kept.)
    earlier attempt's copy. The repair that commits records the copy it used and clears the pending record ([mark_used], in the SAME transaction), so a copy a committed
    repair used is spent and a later real repair takes its own.
 2. **At the point of writing** ([require_copy]). Inside the write transaction and before the first write, the repair checks that the copy exists, is not empty and begins
-   like a SQLite database. Otherwise it writes nothing, logs ONE error line and the server goes on; the next attempt takes a new copy.
+   like a SQLite database (its first 16 bytes are the header `SQLite format 3` and a zero byte; [is_a_copy]). **That is all: it is not an integrity check of the copy's
+   contents** (nothing opens the copy or runs `PRAGMA integrity_check`; a copy cut short that still begins with the header passes; `Database.backup` is `VACUUM INTO`,
+   a whole new file or an error). Otherwise it writes nothing, logs ONE error line and the server goes on; the next attempt takes a new copy.
 
 Each repair has its OWN label and its own two settings: sharing them would reuse, or spend, another repair's copy.
 

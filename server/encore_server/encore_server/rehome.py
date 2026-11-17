@@ -36,12 +36,15 @@ order:
    `refs.touch_file` and `library.touch_ref_holders` tell the phones of both.
 3. **The placeholder artist** (`[Unknown Artist]`, the Host's untagged file) is judged by ids ONLY: `refs.find` returns nothing for that name on purpose, and nothing must
    never read as another song. When no id names another ref the file stays (an untagged Arabic file stays on its own ref).
-4. **A file whose tags give no usable title and artist** is not judged and stays (counted in the log). It does not keep its ref on the worklist: it can never be judged by
-   anything, and holding the ref back for it would hold its pairs back for ever.
+4. **A file whose tags give no usable title and artist** is not judged and stays (counted in the log).
 
-**The worklist and the hold.** At the end of a COMPLETE pass, a worklist ref is released (its row deleted) when every library row it holds is judged or gone (a file the
-listing does not have was pruned by the same pass). A pass that only adds (`prune=False`, the one after a scan) cannot say a file is gone: a ref with a file it could not see
-stays on the worklist, with a line that says so, and the hourly pass that prunes finishes the job. When rows were released, `refmerge.repair` runs in the SAME link, so a
+**A file that could not be judged keeps its ref ON the worklist** (points 3 and 4, and the unseen file below): the ref's files may belong to other songs and nobody could
+check, and merging identities on a file nobody could verify is exactly what the `recheck_pending` hold of `refmerge` exists to stop. The cost, stated: such a ref stays on the
+worklist, so `rekey_audit` says FAIL for it and N-36 cannot finish on that Host until the file can be judged (the Host tags it, or it is removed); the log says how many files and why.
+
+**The worklist and the hold.** At the end of a COMPLETE pass, a worklist ref is released (its row deleted) when every library row it holds was DECIDED (kept, or
+re-pointed elsewhere) or is gone (a file the listing does not have was pruned by the same pass). A pass that only adds (`prune=False`, the one after a scan) cannot say a file is
+gone: a ref with a file it could not see stays on the worklist, with a line that says so, and the hourly pass that prunes finishes the job; a ref with a file it could not judge stays too. When rows were released, `refmerge.repair` runs in the SAME link, so a
 pair that held one file with a worklist ref (held for `recheck_pending`) is judged by the normal rules now and not at the next restart. **`refmerge.repair` was written for
 the start-up, before any thread; it now also runs with live threads.** That is safe because it is one `BEGIN IMMEDIATE` transaction (every other writer waits for it) and
 every route reads a song id through `refs.canonical`; the cost is that a keeper job that holds the id of a merged-away ref in memory finds it gone when it finishes and
@@ -105,8 +108,9 @@ class Report:
     changed: int = 0
     #: Worklist rows the pass deleted: refs whose every library file is judged or gone.
     released: int = 0
-    #: Worklist refs with a library file the pass did not see (a pass that only adds): they stay on the worklist.
+    #: Worklist refs that stay on it: they hold a library file the pass did not see (a pass that only adds) or could not judge (`held_undecided` of them).
     held_back: int = 0
+    held_undecided: int = 0
     #: Worklist rows of refs that no longer exist.
     gone: int = 0
     failed: bool = False
@@ -171,6 +175,8 @@ class Rehome:
         for row in rows:
             self._by_nd.setdefault(row["navidrome_song_id"], []).append((row["id"], row["ref"]))
         self._judged: set[str] = set()
+        #: The files whose tags could not decide anything (no usable tags, or no artist name and no id): they stay where they are and their ref stays on the worklist.
+        self._undecided: set[str] = set()
         self._copy: Path | None = None
         self._logged = 0
         self.report = Report()
@@ -248,6 +254,9 @@ class Rehome:
         report.dropped += outcome.dropped
         report.changed += outcome.changed
         self._judged.update(file_id for file_id, *_ in verdicts)
+        self._undecided.update(
+            file_id for file_id, _ref, _song, verdict in verdicts if verdict.kind in (_STAY_UNTAGGED, _STAY_NAMELESS)
+        )
         for file_id, ref, target in moved:
             if self._logged < _LOG_MOVES:
                 log.info("rehome: file %s of song %s now belongs to song %s", file_id, ref, target)
@@ -288,9 +297,8 @@ class Rehome:
         verdict = self._decide(conn, ref, song)
         if verdict.kind != _MOVE or verdict.item is None:
             return True, ref, False, False
-        target = str(
-            refs.resolve(conn, verdict.item)["id"]
-        )  # the ref the tags name, or a new one: what a fresh scan would have done
+        # The ref the tags name, or a new one: what a fresh scan would have done.
+        target = str(refs.resolve(conn, verdict.item)["id"])
         twin = conn.execute(
             "SELECT id FROM song_file WHERE ref = ? AND id <> ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
             (target, file_id, row["navidrome_song_id"], row["path"]),
@@ -301,9 +309,8 @@ class Rehome:
             conn.execute("UPDATE song_file SET ref = ?, preferred = 0 WHERE id = ?", (target, file_id))
         refs.ensure_one_preferred(conn, target)
         refs.ensure_one_preferred(conn, ref)
-        refs.clear_missing(
-            conn, target
-        )  # the server has a file of that song now: whatever was remembered about its absence is void
+        # The server has a file of that song now: whatever was remembered about its absence is void.
+        refs.clear_missing(conn, target)
         for touched in (ref, target):
             refs.touch_file(conn, touched)
             library.touch_ref_holders(conn, touched)
@@ -320,35 +327,46 @@ class Rehome:
             self._summary()
             return report
         with self._db.tx() as conn:
-            kept_back: list[str] = []
+            kept_back: list[tuple[str, int, int]] = []
             for ref in self._listed:
                 if not refs.ref_exists(conn, ref):
                     conn.execute("DELETE FROM ref_recheck WHERE ref = ?", (ref,))
                     report.gone += 1
                     continue
-                # A library file that is on the ref now, was there before the pass began, and was not judged: the listing did not have it, and a pass that prunes would
-                # have removed its row by now. (A file attached since the pass began is the link's own, found by its tags.)
-                unseen = [
+                # The library files that are on the ref now and were there before the pass began (a file attached since is the link's own, found by its tags). Two reasons to
+                # keep the ref: one the listing did not have (not judged: a pass that prunes would have removed its row by now), and one the tags could not decide.
+                rows = [
                     r["id"]
                     for r in conn.execute(
                         "SELECT id FROM song_file WHERE ref = ? AND source = 'library' AND navidrome_song_id IS NOT NULL AND added_at < ?",
                         (ref, self._began),
                     )
-                    if r["id"] not in self._judged
                 ]
-                if unseen:
-                    kept_back.append(ref)
+                unseen = [file_id for file_id in rows if file_id not in self._judged]
+                undecided = [file_id for file_id in rows if file_id in self._undecided]
+                if unseen or undecided:
+                    kept_back.append((ref, len(unseen), len(undecided)))
                     continue
                 conn.execute("DELETE FROM ref_recheck WHERE ref = ?", (ref,))
                 report.released += 1
             report.held_back = len(kept_back)
+            report.held_undecided = sum(1 for _ref, _unseen, n_undecided in kept_back if n_undecided)
             if self._copy is not None:  # the pass completed: the copy it took is spent, and a later real pass takes its own
                 repair_copy.mark_used(conn, pending_key=BACKUP_PENDING_SETTING, used_key=BACKUP_USED_SETTING, copy=self._copy)
-        for ref in kept_back[:_LOG_MOVES]:
-            log.info(
-                "rehome: song %s stays on the worklist: a library file of it was not in the music server's listing of this pass",
-                ref,
-            )
+        for ref, n_unseen, n_undecided in kept_back[:_LOG_MOVES]:
+            if n_unseen:
+                log.info(
+                    "rehome: song %s stays on the worklist: %d of its library files were not in the music server's listing of this pass",
+                    ref,
+                    n_unseen,
+                )
+            if n_undecided:
+                log.info(
+                    "rehome: song %s stays on the worklist: %d of its library files could not be judged (no usable tags, or no artist name and no id), so the pairs held for it stay held "
+                    "until the files can be judged (the Host tags them)",
+                    ref,
+                    n_undecided,
+                )
         self._summary()
         if release and report.released:
             refmerge.repair(self._db)
@@ -360,7 +378,7 @@ class Rehome:
             log.info("rehome: and %d more files re-pointed", self._logged - _LOG_MOVES)
         log.info(
             "rehome: %d files judged by their tags: %d kept, %d files re-pointed to other songs (%d new songs made, %d rows dropped because the song already held the file), "
-            "%d stayed (no usable tags %d, no artist name and no id %d), %d changed hands meanwhile; %d songs released from the worklist, %d kept on it, %d no longer exist%s",
+            "%d stayed (no usable tags %d, no artist name and no id %d), %d changed hands meanwhile; %d songs released from the worklist, %d kept on it (%d for a file that could not be judged), %d no longer exist%s",
             r.judged,
             r.kept,
             r.moved,
@@ -372,6 +390,7 @@ class Rehome:
             r.changed,
             r.released,
             r.held_back,
+            r.held_undecided,
             r.gone,
             "; the pass failed, so the worklist is kept as it was" if r.failed else "",
         )

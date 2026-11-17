@@ -95,9 +95,27 @@ def test_every_p2_25_stop_gap_names_the_release_after_which_it_must_be_gone() ->
     assert not unreadable, "a marker without `; remove after X.Y.Z`: " + ", ".join(f"{m.file}:{m.line}" for m in unreadable)
 
 
+def written_in_pyproject() -> str:
+    text = (SERVER / "pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'^version\s*=\s*"(\d+\.\d+\.\d+)"', text, re.MULTILINE)
+    assert match, 'pyproject.toml has no version = "X.Y.Z"'
+    return match.group(1)
+
+
+def the_servers_version() -> str:
+    """The later of the two places the version is written, so a release that raises only one of them still rings the alarm (and the test below says they must agree)."""
+    return max(__version__, written_in_pyproject(), key=version_of)
+
+
+def test_the_two_places_the_servers_version_is_written_agree() -> None:
+    """`encore_server.__version__` (the `serverVersion` of `/info`) and `pyproject.toml` (the image's package): a release raises both, and the clock above reads the later one."""
+    assert __version__ == written_in_pyproject(), "raise the version in encore_server/__init__.py and in pyproject.toml together"
+
+
 def test_no_marked_piece_outlives_the_release_it_names() -> None:
-    late = expired(found(), __version__)
-    assert not late, message(late, __version__)
+    now = the_servers_version()
+    late = expired(found(), now)
+    assert not late, message(late, now)
 
 
 def test_the_alarm_can_ring_a_version_past_the_release_fails_every_marker_and_the_release_itself_does_not() -> None:
@@ -178,9 +196,7 @@ def test_the_piece_a_marker_stands_for_is_still_there_next_to_its_marker(name: s
     )
 
 
-def test_the_task_and_the_reminder_stay_visible_on_the_board() -> None:
-    """The removal trigger has a task (N-36) that names the markers, so `roadmap.py brief` and the board show it."""
+def test_the_task_stays_on_the_board() -> None:
+    """The removal trigger has a task, N-36 (its scope is in its board notes, which may be reworded freely), so `roadmap.py brief` and the board show it."""
     items = json.loads((REPO / "docs" / "roadmap" / "items.json").read_text(encoding="utf-8"))
-    note = items["N-36"]["note"]
-    assert "STOP-GAP(P2-25 one-shot-repair)" in note and "ref_recheck" in note and "rehome.py" in note
-    assert items["N-36"]["needs"] == [{"id": "P2-25", "mark": "d"}]
+    assert "N-36" in items and items["N-36"]["needs"] == [{"id": "P2-25", "mark": "d"}]

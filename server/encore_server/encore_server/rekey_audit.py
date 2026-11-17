@@ -70,7 +70,7 @@ class Audit:
             found.append(f"{self.degenerate_refs} refs hold a key with an empty artist or title part")
         if self.worklist:
             found.append(
-                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged"
+                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge (a file with no usable tags or no artist name keeps its ref here)"
             )
         if self.held_for_worklist:
             found.append(

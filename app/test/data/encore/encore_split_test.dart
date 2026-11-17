@@ -21,7 +21,7 @@ import '../../support/fake_encore_server.dart';
 /// what the same feed answers after it; written by `server/encore_server/tests/test_rehome.py`, which fails when the answer changes).
 ///
 /// The story: five Arabic and Russian files hung on ONE song, `sr_...01` ("كيفك إنت", whose preferred file was the Russian `nd-5`). So before the split the Arabic
-/// album lists no song at all and the Russian song sits under the wrong album (the symptom the owner saw: "1 song", and it was the Russian one). After it, the old
+/// album's song list is empty and the Russian song sits under the wrong album (the symptom the owner saw: "1 song", and it was the Russian one). After it, the old
 /// song names the file it kept and four new songs arrive, each with its own file.
 const _old = 'sr_00000000000000000000000001';
 const _fishes = 'sr_00000000000000000000000002';
@@ -73,7 +73,8 @@ void main() {
         ..where((t) => t.serverId.equals(serverId) & t.id.equals(id)))
       .getSingle();
 
-  /// What the album page lists: the very query it watches.
+  /// The song list of the album page: `AlbumScreen` reads `albumTracksProvider`, which is `LibraryRepository.watchAlbumTracks`, the query used here. (The album's own
+  /// row, its name and count, comes from the music server's album list, which this feed does not carry, so it is not what this proves.)
   Future<List<String>> album(String albumId) async => [
         for (final t in await LibraryRepository(db, serverId)
             .watchAlbumTracks(albumId)
@@ -129,7 +130,7 @@ void main() {
   // ------------------------------------------------------------------ before: the symptom
 
   test(
-      "BEFORE the split the Arabic album lists no song and the old song sits under the Russian album (what the owner saw)",
+      "BEFORE the split the song list of the Arabic album is empty and the old song sits under the Russian album (what the owner saw)",
       () async {
     await pullThe('library-files-before-split.json');
 
@@ -141,7 +142,7 @@ void main() {
   // ------------------------------------------------------------------ after: the split page
 
   test(
-      "after the split the Arabic album lists every one of its songs and the Russian album its two",
+      "after the split the song list of the Arabic album has every one of its songs and the Russian album its two",
       () async {
     await pullThe('library-files-before-split.json');
     await pullThe('library-files-after-split.json');
