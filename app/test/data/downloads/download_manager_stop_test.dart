@@ -180,6 +180,32 @@ void main() {
     });
 
     test(
+        "N-39: the second layer: a canceled for a song of a stopped download is no outside cancel even when its row still says downloading",
+        () async {
+      await pinAlbum();
+      await stopAlbum();
+      // The Stop puts the rows out of the way before it cancels, so no row says "downloading" for a stopped song today. A later change (a task id per
+      // attempt kept in the row, N-45) must not turn the word guard into the only thing standing: it is a layer of its own and is held here.
+      await (db.update(db.downloads)
+            ..where((d) => d.trackId.isIn(['t1', 't2'])))
+          .write(const DownloadsCompanion(
+              state: Value(DownloadState.downloading)));
+      transport.cancelFromOutside('t1');
+      transport.cancelFromOutside('t2');
+      await manager.settled();
+
+      await letEveryBackoffPass();
+
+      expect(transport.started.length, 4);
+      for (final id in ['t1', 't2']) {
+        final r = await row(id);
+        expect(r.state, isNot(DownloadState.failed));
+        expect(r.attempts, 0);
+        expect(r.lastError, isNull);
+      }
+    });
+
+    test(
         "N-39: a failure that arrives late for a song the Stop cancelled is not a failed song with a wait, and deletes nothing",
         () async {
       await pinAlbum();
@@ -501,6 +527,37 @@ void main() {
       for (var i = 1; i <= 5; i++) {
         expect((await row('t$i')).state, DownloadState.done);
       }
+    });
+  });
+
+  group("Resume keeps the order the songs were asked for", () {
+    test(
+        "N-39: the songs come back in the order they were first asked for, not in the order of their ids, and each song is asked for once",
+        () async {
+      // The songs are asked for one after the other with the phone off Wi-Fi, so their rows are made in this order and nothing starts yet.
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+      const order = ['t4', 't2', 't3', 't1'];
+      for (final id in order) {
+        await repo.pin(PinTargetType.track, id, quality: AudioQuality.high);
+        await manager.reconcile();
+      }
+      expect(transport.started, isEmpty);
+      policy = const DownloadPolicy(maxInFlight: 1);
+      await manager.reconcile();
+      expect(startOrder(), ['t4']);
+
+      final pins = [for (final id in order) (PinTargetType.track, id)];
+      await manager.stop(pins);
+      await manager.reconcile();
+      expect(startOrder(), ['t4'], reason: 'stopped: nothing starts');
+      await manager.resume(pins);
+      expect(startOrder(), ['t4', 't4']);
+      for (final id in ['t4', 't2', 't3']) {
+        transport.complete(id);
+        await manager.settled();
+      }
+
+      expect(startOrder(), ['t4', 't4', 't2', 't3', 't1']);
     });
   });
 

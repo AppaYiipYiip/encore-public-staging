@@ -128,6 +128,13 @@ class ReleaseSaver {
       };
 }
 
+/// How the saver pins one song of a release on the phone: told every song of the release, so that a song joining a release the person has stopped
+/// waits with the rest (N-39, `DownloadsRepository.pin`).
+Future<void> Function(String refId, List<String> release) pinInRelease(
+        DownloadActions actions) =>
+    (refId, release) =>
+        actions.pin(PinTargetType.track, refId, alongside: release);
+
 // ------------------------------------------------------------------------------------------ what the screen shows
 
 /// Where saving a release stands on this phone. `saved` only once the SERVER confirmed it (D-21).
@@ -197,8 +204,7 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
         return status != null && status.isReady ? status.track?.id : null;
       },
       save: api.saveRelease,
-      pin: (refId, release) =>
-          actions.pin(PinTargetType.track, refId, alongside: release),
+      pin: pinInRelease(actions),
       // Written down before the first pin: what the phone keeps after a restart is the phone's own record of this release (D-35).
       onSaved: store == null
           ? null

@@ -64,6 +64,38 @@ final keepGroupsProvider = Provider<List<KeepGroupKey>>((ref) {
   return sorted;
 });
 
+/// The downloads whose Stop (N-39) holds them: the phone watches them still (their line goes on telling the server's half) but sends no `keep/ask`
+/// for them, and Resume asks again.
+final stoppedKeepGroupsProvider = Provider<Set<KeepGroupKey>>((ref) {
+  final pins = ref.watch(pinsProvider).value ?? const [];
+  final releases = ref.watch(phoneReleasesProvider).value ?? const {};
+  final stopped = <KeepGroupKey>{};
+  final songs = <String, bool>{};
+  for (final pin in pins) {
+    final isStopped = pin.stoppedAtMs != null;
+    switch (pin.targetType) {
+      case 'playlist':
+        if (isStopped) stopped.add(KeepGroupKey('playlist', pin.targetId));
+      case 'liked':
+        if (isStopped) stopped.add(const KeepGroupKey('liked', kLikedPinId));
+      case 'track':
+        songs[pin.targetId] = isStopped;
+    }
+  }
+  // A release is a pin for each of its songs: it is stopped when every one of its songs that is pinned is (the rule of `releasePinStateProvider`).
+  for (final e in releases.entries) {
+    if (!e.value.download) continue;
+    final pinned = [
+      for (final id in e.value.refIds)
+        if (songs.containsKey(id)) songs[id]!
+    ];
+    if (pinned.isNotEmpty && pinned.every((s) => s)) {
+      stopped.add(KeepGroupKey('release', e.key, refs: e.value.refIds));
+    }
+  }
+  return stopped;
+});
+
 @immutable
 class KeepState {
   const KeepState({
@@ -190,6 +222,13 @@ class KeepController extends Notifier<KeepState> {
     ref.listen(keepGroupsProvider, (previous, next) {
       if (!_same(previous ?? const [], next)) _schedule();
     });
+    // Resume (N-39): a download that is no longer stopped is asked for again, also on this connection (it was asked before it was stopped, or never).
+    ref.listen(stoppedKeepGroupsProvider, (previous, next) {
+      final resumed = (previous ?? const <KeepGroupKey>{}).difference(next);
+      if (resumed.isEmpty) return;
+      _asked.removeAll(resumed);
+      _schedule();
+    });
     _schedule();
     return const KeepState();
   }
@@ -283,9 +322,15 @@ class KeepController extends Notifier<KeepState> {
     );
 
     if (!_hasAsk) return;
+    // A download the person stopped (N-39) is watched but sends no ask: its songs that the server still has to get are the server's, and what the
+    // phone has not asked for waits for Resume.
+    final stopped = ref.read(stoppedKeepGroupsProvider);
     final todo = [
       for (final g in groups)
-        if (!_asked.contains(g) && _askable(answered[g])) g
+        if (!_asked.contains(g) &&
+            !stopped.contains(g) &&
+            _askable(answered[g]))
+          g
     ];
     if (todo.isEmpty) return;
     _asked.addAll(todo);
