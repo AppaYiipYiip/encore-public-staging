@@ -1,0 +1,423 @@
+{
+ "recorded": "2026-11-16",
+ "path": "/album/676735071",
+ "params": {},
+ "answer": {
+  "id": 676735071,
+  "title": "The Darkest Place I've Ever Been",
+  "upc": "4056813943009",
+  "link": "https://www.deezer.com/album/676735071",
+  "cover": "https://api.deezer.com/album/676735071/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    },
+    {
+     "id": 155,
+     "name": "Hard Rock",
+     "picture": "https://api.deezer.com/genre/155/image",
+     "type": "genre"
+    },
+    {
+     "id": 464,
+     "name": "Metal",
+     "picture": "https://api.deezer.com/genre/464/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Arising Empire",
+  "nb_tracks": 11,
+  "duration": 2289,
+  "fans": 10319,
+  "release_date": "2025-04-18",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/676735071/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 9985838,
+    "name": "LANDMVRKS",
+    "link": "https://www.deezer.com/artist/9985838",
+    "picture": "https://api.deezer.com/artist/9985838/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 9985838,
+   "name": "LANDMVRKS",
+   "picture": "https://api.deezer.com/artist/9985838/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 3116792051,
+     "readable": true,
+     "title": "The Darkest Place I've Ever Been",
+     "title_short": "The Darkest Place I've Ever Been",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792051",
+     "duration": 207,
+     "rank": 562314,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792061,
+     "readable": true,
+     "title": "Creature",
+     "title_short": "Creature",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792061",
+     "duration": 225,
+     "rank": 615732,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792071,
+     "readable": true,
+     "title": "A Line in the Dust",
+     "title_short": "A Line in the Dust",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792071",
+     "duration": 235,
+     "rank": 584243,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792081,
+     "readable": true,
+     "title": "Blood Red",
+     "title_short": "Blood Red",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792081",
+     "duration": 209,
+     "rank": 652965,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792091,
+     "readable": true,
+     "title": "Sulfur",
+     "title_short": "Sulfur",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792091",
+     "duration": 206,
+     "rank": 576855,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792101,
+     "readable": true,
+     "title": "Sombre 16",
+     "title_short": "Sombre 16",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792101",
+     "duration": 70,
+     "rank": 429239,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792111,
+     "readable": true,
+     "title": "The Great Unknown",
+     "title_short": "The Great Unknown",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792111",
+     "duration": 187,
+     "rank": 554869,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792121,
+     "readable": true,
+     "title": "La Valse Du Temps",
+     "title_short": "La Valse Du Temps",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792121",
+     "duration": 326,
+     "rank": 619632,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792131,
+     "readable": true,
+     "title": "Deep Inferno",
+     "title_short": "Deep Inferno",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792131",
+     "duration": 212,
+     "rank": 517483,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792141,
+     "readable": true,
+     "title": "Requiem",
+     "title_short": "Requiem",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792141",
+     "duration": 240,
+     "rank": 484323,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3116792151,
+     "readable": true,
+     "title": "Funeral",
+     "title_short": "Funeral",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3116792151",
+     "duration": 172,
+     "rank": 480800,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 676735071,
+      "title": "The Darkest Place I've Ever Been",
+      "cover": "https://api.deezer.com/album/676735071/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/5f48684ab6633c208cee60ade670a678/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/676735071/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

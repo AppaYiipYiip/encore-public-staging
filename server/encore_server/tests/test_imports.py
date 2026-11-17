@@ -363,6 +363,18 @@ def test_progress_is_pushed_to_the_persons_devices(rig: Rig) -> None:
     assert any(e["type"] == "library.changed" for _, e in rig.events)
 
 
+def test_the_progress_event_has_the_flat_shape_the_contract_names(rig: Rig) -> None:
+    """docs/17 section 4: the app reads `importId` and the five counts straight off the event (P2-29), so the shape is pinned, not described."""
+    import_id = rig.imported()["import"]["id"]
+
+    rig.svc.scheduler.drain("background")
+
+    event = [e for _, e in rig.events if e["type"] == "import.progress"][-1]
+    assert set(event) == {"type", "importId", "state", "total", "matched", "unmatched", "pending", "kept"}
+    assert event["importId"] == import_id
+    assert all(isinstance(event[key], int) for key in ("total", "matched", "unmatched", "pending", "kept"))
+
+
 def test_a_retried_request_is_the_same_import(rig: Rig) -> None:
     body = {"id": new_id("im"), "playlistId": new_id("pl")}
 

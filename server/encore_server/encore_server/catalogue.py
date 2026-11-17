@@ -43,6 +43,7 @@ from .deezer import (
     DeezerClient,
     LookupUnavailable,
     NotInCatalogue,
+    Priority,
 )
 from .textnorm import fold, words
 
@@ -518,8 +519,19 @@ class Catalogue:
         *,
         budget: Budget,
         charge: Callable[[], object] | None,
+        priority: Priority = "interactive",
+        deadline_s: float = CALL_TIMEOUT_S,
     ) -> dict[str, Any]:
+        """One outside request through the cache and the single flight. [priority] is who is waiting at the gate and [deadline_s] how long the CALLER waits
+        in all (N-34 slice 1): they travel together, because a background request on a person's 2.5 s is "could not ask" for anything slower, and a
+        person's request must not be slower than the gate's order says. The defaults are the phone's (`interactive`, `CALL_TIMEOUT_S`) and every route
+        uses them.
+
+        **The flight is per priority.** One flight per cache key would make a person who opens an album the FOLLOWER of the background pass that asked for
+        the same album a moment before: they would wait for a request the gate serves after everybody else. Their own request goes out ahead of the
+        background work instead; the price is an occasional second request for the same thing, which is harmless (the cache keeps the newer answer)."""
         key = cache_key(kind, path, params)
+        flight_key = f"{priority}:{key}"
         while True:
             now = self._clock()
             entry = self.cache.get(key) if self.cache is not None else None
@@ -528,12 +540,12 @@ class Catalogue:
                     raise NotInCatalogue(path)
                 return entry.body  # type: ignore[no-any-return]
             with self._flights_lock:
-                flight = self._flights.get(key)
+                flight = self._flights.get(flight_key)
                 leader = flight is None
                 if flight is None:
-                    flight = self._flights[key] = _Flight()
+                    flight = self._flights[flight_key] = _Flight()
             if not leader:
-                flight.done.wait(timeout=2 * CALL_TIMEOUT_S)
+                flight.done.wait(timeout=2 * deadline_s)
                 if flight.abandoned:
                     continue
                 if flight.error is not None:
@@ -541,12 +553,27 @@ class Catalogue:
                 if not flight.done.is_set():
                     raise LookupUnavailable("the answer did not come in time")
                 return flight.body  # type: ignore[no-any-return]
-            return self._lead(flight, key, kind, path, params, trim, budget, charge, entry, now)
+            return self._lead(
+                flight,
+                key,
+                flight_key,
+                kind,
+                path,
+                params,
+                trim,
+                budget,
+                charge,
+                entry,
+                now,
+                priority=priority,
+                deadline_s=deadline_s,
+            )
 
     def _lead(
         self,
         flight: _Flight,
         key: str,
+        flight_key: str,
         kind: str,
         path: str,
         params: dict[str, Any],
@@ -555,11 +582,14 @@ class Catalogue:
         charge: Callable[[], object] | None,
         old: Entry | None,
         now: float,
+        *,
+        priority: Priority,
+        deadline_s: float,
     ) -> dict[str, Any]:
         try:
             if charge is not None:
                 charge()
-            body = trim(self.client.get(path, params, priority="interactive", budget=budget))
+            body = trim(self.client.get(path, params, priority=priority, budget=budget, wait_s=deadline_s))
         except NotInCatalogue as error:
             if self.cache is not None:
                 self.cache.put(key, kind, {}, now=now, ttl_s=EMPTY_TTL_S, absent=True)
@@ -582,7 +612,7 @@ class Catalogue:
             return body
         finally:
             with self._flights_lock:
-                self._flights.pop(key, None)
+                self._flights.pop(flight_key, None)
             flight.done.set()
 
     # ------------------------------------------------------------------ parts of one call, asked together
@@ -616,8 +646,13 @@ class Catalogue:
         trim: Callable[[object], dict[str, Any]],
         budget: Budget,
         charge: Callable[[], object] | None,
+        *,
+        priority: Priority = "interactive",
+        deadline_s: float = CALL_TIMEOUT_S,
     ) -> list[dict[str, Any]]:
-        body = self._fetch(kind, path, params, _listing(trim), budget=budget, charge=charge)
+        body = self._fetch(
+            kind, path, params, _listing(trim), budget=budget, charge=charge, priority=priority, deadline_s=deadline_s
+        )
         return [row for row in body.get("data", []) if isinstance(row, dict)]
 
     # ------------------------------------------------------------------ what the routes ask
@@ -687,29 +722,56 @@ class Catalogue:
             answer["unavailable"] = [name for name in ("popular", "releases") if name in got.unavailable]
         return answer
 
-    def album(self, album_id: str, *, charge: Callable[[], object] | None = None) -> dict[str, Any]:
-        """`{album, tracks, unavailable?}`: the album, then its songs (a missing album asks for no songs). At most 2 outside requests."""
+    def album(
+        self,
+        album_id: str,
+        *,
+        charge: Callable[[], object] | None = None,
+        priority: Priority = "interactive",
+        deadline_s: float = CALL_TIMEOUT_S,
+    ) -> dict[str, Any]:
+        """`{album, tracks, unavailable?}`: the album, then its songs (a missing album asks for no songs). At most 2 outside requests.
+
+        [priority] and [deadline_s] are the caller's (N-34 slice 1): a person's route keeps the defaults (`interactive`, the phone's 2.5 s); the album pass
+        asks `background` with a deadline of its own, and the song list gets what is LEFT of that deadline, never a fresh one. **The pass calls this
+        serially**: a long deadline parks one of the `workers` of the pool the routes share while it waits, so the pass must never ask in parallel."""
         budget = Budget(CEILING["album"])
         started = time.monotonic()
         first = self._gather(
             {
                 "album": lambda: self._fetch(
-                    "album", f"/album/{album_id}", {}, lambda body: trim_album(body), budget=budget, charge=charge
+                    "album",
+                    f"/album/{album_id}",
+                    {},
+                    lambda body: trim_album(body),
+                    budget=budget,
+                    charge=charge,
+                    priority=priority,
+                    deadline_s=deadline_s,
                 )
-            }
+            },
+            within=deadline_s,
         )
         if first.missing:
             raise NotInCatalogue(album_id)
         album = map_album(first.found.get("album"))
         if album is None:
             raise LookupUnavailable("the album could not be asked")
+        left = max(0.1, deadline_s - (time.monotonic() - started))
         second = self._gather(
             {
                 "tracks": lambda: self._listing(
-                    "album-tracks", f"/album/{album_id}/tracks", {"limit": ALBUM_TRACKS_LIMIT}, trim_track, budget, charge
+                    "album-tracks",
+                    f"/album/{album_id}/tracks",
+                    {"limit": ALBUM_TRACKS_LIMIT},
+                    trim_track,
+                    budget,
+                    charge,
+                    priority=priority,
+                    deadline_s=left,
                 )
             },
-            within=max(0.1, CALL_TIMEOUT_S - (time.monotonic() - started)),
+            within=left,
         )
         lead = album["artists"][0]["name"] if album["artists"] else None
         rows = second.found.get("tracks", [])

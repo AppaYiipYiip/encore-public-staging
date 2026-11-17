@@ -8,15 +8,17 @@ import '../../app/file_intake.dart';
 import '../../app/navigation.dart';
 import '../../app/providers.dart';
 import '../../core/client_id.dart';
-import '../../core/logger.dart';
 import '../../core/result.dart';
 import '../../data/encore/encore_models.dart';
 import '../../data/fetch/import_models.dart';
 import '../../design/tokens.dart';
+import '../../domain/download_card_words.dart';
 import '../../domain/import_file.dart';
 import '../../domain/import_link.dart';
 import '../common/format.dart';
 import '../settings/settings_page.dart';
+import 'import_started.dart';
+import 'import_watch.dart';
 
 /// The person's imports as the Encore server counts them, kept fresh while somebody looks: quickly while one runs, slowly otherwise.
 final encoreImportsProvider =
@@ -126,6 +128,8 @@ class _EncoreImportState extends ConsumerState<EncoreImportScreen> {
           _link.clear();
         });
         ref.invalidate(encoreImportsProvider);
+        // The card of the downloads follows it from now, and the phone's notification question is asked once (D-52).
+        importStarted(context, ref);
         final id = value.playlistId;
         if (id != null) await _show(id);
       case Err(:final failure):
@@ -212,16 +216,13 @@ class _EncoreImportState extends ConsumerState<EncoreImportScreen> {
       }
     });
     ref.invalidate(encoreImportsProvider);
+    if (made > 0) importStarted(context, ref);
     if (firstPlaylist != null) await _show(firstPlaylist);
   }
 
   Future<void> _stop(EncoreImport job) async {
-    final session = ref.read(sessionProvider).value;
-    if (session == null) return;
-    final stopped = await session.encore.stopImport(job.id);
-    if (stopped.isErr) {
-      Log.debug('import', 'could not stop ${job.id}: ${stopped.failureOrNull}');
-    }
+    // Through the watch: a stop pressed here leaves no card, a stop somewhere else does (docs/design S-95).
+    await ref.read(importWatchProvider.notifier).stop(job.id);
     ref.invalidate(encoreImportsProvider);
   }
 
@@ -353,7 +354,7 @@ String importSummary(EncoreImport job) {
   switch (job.state) {
     case 'running':
       final looked = job.matched + job.unmatched;
-      return 'Finding songs: $looked of ${job.total}$notFound';
+      return '${const DownloadCardWords().findingSongs(looked: looked, total: job.total)}$notFound';
     case 'stopped':
       return 'Stopped. $songs$notFound';
     case 'failed':

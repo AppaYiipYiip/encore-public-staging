@@ -7,7 +7,8 @@ was made with a fold that kept `a-z0-9` and DROPPED every other letter: two diff
 old fold's; the code now makes keys with the new one (`textnorm.py`), so a song described again would not find its own ref and would make a duplicate.
 
 **What this does, at every start, after the migrations and BEFORE `refmerge.repair` (so the tombstones that run writes carry new keys), before any thread.**
-The PLAN (a read, `plan`) runs at EVERY start: 0.07 s for 3,394 refs, 3.6 s for 200,000. Only when it finds something is anything written, and only then is a copy
+The PLAN (a read, `plan`) runs at EVERY start, and its cost is the cost of every start: 0.07 s for 3,394 refs, 3.4 s for 200,000 synthetic refs (the WHOLE repair, once, with
+its copy and its writes, is another number: 0.28 s and 8.3 s). Only when it finds something is anything written, and only then is a copy
 taken. What it finds depends on which start it is:
 
 * **The first one** (`setting.textnorm_revision` lower than `textnorm.TEXTNORM_REVISION`; 0 until now: a database that never had the setting was made by the old

@@ -1,0 +1,113 @@
+{
+ "recorded": "2026-11-16",
+ "path": "/album/524195422",
+ "params": {},
+ "answer": {
+  "id": 524195422,
+  "title": "Creature",
+  "upc": "4056813655261",
+  "link": "https://www.deezer.com/album/524195422",
+  "cover": "https://api.deezer.com/album/524195422/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    },
+    {
+     "id": 155,
+     "name": "Hard Rock",
+     "picture": "https://api.deezer.com/genre/155/image",
+     "type": "genre"
+    },
+    {
+     "id": 464,
+     "name": "Metal",
+     "picture": "https://api.deezer.com/genre/464/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Arising Empire",
+  "nb_tracks": 1,
+  "duration": 225,
+  "fans": 567,
+  "release_date": "2024-01-17",
+  "record_type": "single",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/524195422/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 9985838,
+    "name": "LANDMVRKS",
+    "link": "https://www.deezer.com/artist/9985838",
+    "picture": "https://api.deezer.com/artist/9985838/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 9985838,
+   "name": "LANDMVRKS",
+   "picture": "https://api.deezer.com/artist/9985838/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/e7e1c784c57c2a82775eb227650df791/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 2586602502,
+     "readable": true,
+     "title": "Creature",
+     "title_short": "Creature",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2586602502",
+     "duration": 225,
+     "rank": 337071,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 9985838,
+      "name": "LANDMVRKS",
+      "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 524195422,
+      "title": "Creature",
+      "cover": "https://api.deezer.com/album/524195422/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/9039022ab67518d30da559f1ef6dcaad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/524195422/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}
