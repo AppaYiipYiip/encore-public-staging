@@ -1,0 +1,12 @@
+{
+ "id": "20261117T200735Z-agent-bd60",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T20:07:35Z",
+ "type": "note",
+ "body": "LEAD, 17 Nov 2026 evening: P2-25 SLICE 4 = PR #118 (the rehome; builder done, independent review: approve with concerns; a FIX ROUND with a delta review is running, workflow wf_e4c18a27-5ea, before any merge). MY ANSWERS to the builder's questions (the owner is away; the advisor may overrule): (1) P2-25 stays TODO after slice 4 merges: the phone's own name matching (B-46) had no owner, so it is now ITEM N-46; P2-25 is marked built when N-46 is built or moot (P2-12 slice 8 removes the phone's name matching; D-51 holds that). (2) A file nobody can judge (no tags, or the placeholder artist with no id) keeps its ref on the worklist for good: ACCEPTED, with its cost written down: the pairs of that ref stay held on that Host until the file is tagged, and the visible reminder is the audit_stack check rekey FAIL that names the file. (3) refmerge.repair running with live threads in the same library link: accepted. (4) THE PRINCIPLE the fix round applies (the same as the N-34 best-of ruling): a wrong move is worse than none; a file is re-pointed only when its current ref does NOT also match it; when the current ref and another ref both plausibly match, the file stays, the ref stays on the worklist, one log line says why. (5) The next :main image carries slice 3 without slice 4 until #118 merges: nothing is deployed in the owner's test week, so this costs nothing yet; the release-candidate gate 4b needs both.",
+ "to": [
+  "agent"
+ ]
+}

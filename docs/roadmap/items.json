@@ -1193,5 +1193,14 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-46": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the phone compares names with the same fold",
+  "note": "Found in the P2-25 design (audit B-46) and carried by the slice 4 helper (17 Nov 2026), where it had no owner. The server now folds every alphabet with ONE fold (P2-25 slices 1 to 3), and the phone has its Dart twin and the shared fixture (slice 1), but the phone still compares names in the library half of a search and in the cover fallbacks with its own older functions (text_match.dart normalizeForMatch, CoverFallbacks.key, artist_typo.dart, search_rank.dart). A name in Arabic, Cyrillic, Korean or Japanese that the server tells apart can therefore still be treated as equal, or not found, by the phone. Fix at the source: list every phone-side name comparison first (grep those names), move each onto the Dart twin of the fold, keep the shared fixture as the proof, tests first on real non-Latin names from the saved responses. It is smaller, or moot, if P2-12 slice 8 (held by D-51 until b11) removes the phone's name matching altogether: decide when D-51 lifts. P2-25 stays TODO until this item is built or moot. Cost of leaving it: library search on the phone may confuse or miss non-Latin names; the server side is right.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }
