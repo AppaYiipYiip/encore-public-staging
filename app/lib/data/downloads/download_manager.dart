@@ -498,9 +498,23 @@ class DownloadManager {
   }
 
   Future<void> _onComplete(String trackId, String? reportedPath) async {
+    final rows = await _repo.rowsFor([trackId]);
+    // A song that has a copy on the phone (a refresh in flight, one waiting in the queue, or a song that is done) is only ever completed by a `.new`
+    // file. A completion that names another file is the copy that is on the phone, from the acknowledgement of an older task with the same id (item
+    // N-45): it is not about any transfer that runs, and it must neither check that copy against what the refresh asked for and delete it when it does
+    // not pass, nor record the refresh as made, nor give away the place of a transfer that still runs. Found on 17 Nov 2026 while looking for every
+    // other place that deletes, after the review's `.new` guard of `_onAttemptEnded`; a second layer that stays correct once a task id per attempt
+    // (N-45) keeps such words from arriving.
+    if (rows.isNotEmpty &&
+        _isRefresh(rows.first) &&
+        reportedPath != null &&
+        !reportedPath.endsWith('.new')) {
+      Log.warn('downloads',
+          'ignored a completion that names the copy on the phone, not the refresh of $trackId');
+      return;
+    }
     _inFlight.remove(trackId);
     final planned = _plannedPath.remove(trackId);
-    final rows = await _repo.rowsFor([trackId]);
     final track = await (_db.select(_db.tracks)
           ..where((t) => t.serverId.equals(serverId) & t.id.equals(trackId)))
         .getSingleOrNull();

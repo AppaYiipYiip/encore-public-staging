@@ -417,6 +417,208 @@ void main() {
     });
   });
 
+  // A word about the song's task that is not about the transfer in flight (the acknowledgement of an OLD task with the same id, see item N-45) can
+  // carry the path of the copy that is ON the phone. The manager must never delete that file because of such a word: it deletes the half-made `.new` file
+  // of a refresh and nothing else. These tests begin after a restart, or with a song that is done: only there is the manager's own plan of the `.new`
+  // path unknown, and only the path the update carries is left to decide (in a running app the planned path is deleted first and the guard is not reached).
+  group("a stale word that names the copy that is on the phone", () {
+    late String livePath; // relative, as an update carries it
+    late String oldPath; // absolute, as the row and the fake's files have it
+
+    // t1 is on the phone (5000 bytes), the server says the song changed, and the refresh is in flight at `.new`: the row is a refresh and `downloading`.
+    Future<void> refreshInFlight() async {
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      oldPath = (await row('t1')).localPath!;
+      livePath = transport.requestFor('t1').relativePath.replaceAll('.new', '');
+      expect(oldPath, '/app/$livePath');
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(audioKey: Value('key1-NEW')));
+      await manager.reconcile();
+      expect(transport.requestFor('t1').relativePath, '$livePath.new');
+      expect((await row('t1')).state, DownloadState.downloading);
+    }
+
+    // A new process whose downloader still runs the other three songs and hands over [replay].
+    Future<(FakeDownloadTransport, DownloadManager)> newProcess(
+        List<TransferUpdate> replay) async {
+      await manager.dispose();
+      final next = FakeDownloadTransport()
+        ..files[oldPath] = 5000
+        ..active = {taskOf('t2'), taskOf('t3'), taskOf('t4')}
+        ..replayOnResume.addAll(replay);
+      final fresh = newManager(next);
+      await fresh.start();
+      await fresh.settled();
+      return (next, fresh);
+    }
+
+    test(
+        "N-39: a replayed cancel that names the old copy deletes nothing and leaves the song done",
+        () async {
+      await refreshInFlight();
+      final (next, fresh) = await newProcess([
+        TransferUpdate(
+            taskId: taskOf('t1'),
+            status: TransferStatus.canceled,
+            relativePath: livePath),
+      ]);
+
+      expect(next.deleted, isNot(contains(oldPath)),
+          reason: 'the copy the person has was deleted by a stale word');
+      expect(next.files[oldPath], 5000);
+      final r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.localPath, oldPath);
+      expect(r.bytes, 5000);
+      await fresh.dispose();
+    });
+
+    test(
+        "N-39: a replayed failure that names the old copy deletes nothing and leaves the song done",
+        () async {
+      await refreshInFlight();
+      final (next, fresh) = await newProcess([
+        TransferUpdate(
+            taskId: taskOf('t1'),
+            status: TransferStatus.failed,
+            error: 'HTTP 500',
+            relativePath: livePath),
+      ]);
+
+      expect(next.deleted, isNot(contains(oldPath)),
+          reason: 'the copy the person has was deleted by a stale word');
+      expect(next.files[oldPath], 5000);
+      final r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.localPath, oldPath);
+      expect(r.bytes, 5000);
+      await fresh.dispose();
+    });
+
+    test(
+        "N-39: a late failure that names the copy of a song that is done deletes nothing",
+        () async {
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      final done = await row('t1');
+      expect(done.state, DownloadState.done);
+      final live = transport.requestFor('t1').relativePath;
+
+      transport.send(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.failed,
+          error: 'HTTP 500',
+          relativePath: live));
+      await manager.settled();
+
+      expect(transport.deleted, isEmpty,
+          reason: 'the copy the person has was deleted by a stale word');
+      expect(transport.files[done.localPath], 5000);
+      final r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.localPath, done.localPath);
+    });
+
+    // The same word as a completion: the manager checks the file the update names against what the refresh asked for, and deleted a file that did
+    // not pass, which was the copy the person has. Found on 17 Nov 2026 while looking for every other place that deletes (not in the review's list).
+    test(
+        "N-39: a completion that names the old copy, which does not pass the refresh's check, deletes nothing and the refresh goes on",
+        () async {
+      await refreshInFlight();
+      // The refresh asks for the original; the copy on the phone is a lower quality, smaller than the song the server has: the check "is it all
+      // there?" fails for it.
+      await (db.update(db.downloads)..where((d) => d.trackId.equals('t1')))
+          .write(const DownloadsCompanion(refreshQuality: Value('original')));
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(size: Value(30000)));
+
+      transport.send(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.complete,
+          relativePath: livePath));
+      await manager.settled();
+
+      expect(transport.deleted, isNot(contains(oldPath)),
+          reason: 'the copy the person has was deleted by a stale word');
+      expect(transport.files[oldPath], 5000);
+      final r = await row('t1');
+      expect(r.state, DownloadState.downloading,
+          reason: 'the refresh is still running: the stale word ended it');
+      expect(r.localPath, oldPath);
+      expect(manager.debugInFlight, contains('t1'),
+          reason: 'the place of a transfer that still runs was given away');
+    });
+
+    test(
+        "N-39: a completion that names the old copy deletes nothing either while the refresh waits in the queue (off Wi-Fi)",
+        () async {
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      oldPath = (await row('t1')).localPath!;
+      livePath = transport.requestFor('t1').relativePath;
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1'))).write(
+          const TracksCompanion(
+              audioKey: Value('key1-NEW'), size: Value(30000)));
+      policy = const DownloadPolicy(onWifi: false); // Wi-Fi only: it waits
+      await manager.reconcile();
+      var r = await row('t1');
+      expect(r.state, DownloadState.queued);
+      expect(r.localPath, oldPath);
+      await (db.update(db.downloads)..where((d) => d.trackId.equals('t1')))
+          .write(const DownloadsCompanion(refreshQuality: Value('original')));
+
+      transport.send(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.complete,
+          relativePath: livePath));
+      await manager.settled();
+
+      expect(transport.deleted, isNot(contains(oldPath)),
+          reason: 'the copy the person has was deleted by a stale word');
+      expect(transport.files[oldPath], 5000);
+      r = await row('t1');
+      expect(r.state, DownloadState.queued,
+          reason: 'the refresh waits: the stale word ended it');
+      expect(r.localPath, oldPath);
+    });
+
+    test(
+        "N-39: a completion that names the old copy and passes the check does not record the refresh as made, and the real completion still swaps the new file in",
+        () async {
+      await refreshInFlight();
+      final before = await row('t1');
+
+      transport.send(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.complete,
+          relativePath: livePath));
+      await manager.settled();
+
+      var r = await row('t1');
+      expect(r.state, DownloadState.downloading,
+          reason: 'the refresh is still running: the stale word ended it');
+      expect(r.quality, before.quality);
+      expect(manager.debugInFlight, contains('t1'));
+      expect(transport.renamed, isEmpty);
+
+      // The refresh finishes: its `.new` file replaces the old copy in one step.
+      transport.complete('t1', size: 6000);
+      await manager.settled();
+      r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.bytes, 6000);
+      expect(transport.renamed, [('$oldPath.new', oldPath)]);
+      expect(transport.files[oldPath], 6000);
+    });
+  });
+
   group("a cancel the manager asks for itself (the person removed the pin)",
       () {
     test(
