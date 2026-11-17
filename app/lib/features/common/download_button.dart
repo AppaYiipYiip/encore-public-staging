@@ -334,7 +334,9 @@ class _DownloadSheet extends StatelessWidget {
         (state.phase == PinPhase.attention ||
             (line != null && line!.failed > 0 && line!.canRetry));
     return SafeArea(
-      child: Padding(
+      // The rows can be taller than a small phone with large text (the sheet has a row more since N-39, and each row a line): it scrolls instead of
+      // running off the bottom.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
             Space.gutter, Space.lg, Space.gutter, Space.md),
         child: Column(
