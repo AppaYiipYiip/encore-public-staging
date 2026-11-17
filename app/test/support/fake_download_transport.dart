@@ -33,10 +33,21 @@ class FakeDownloadTransport implements DownloadTransport {
     active.add(request.taskId);
   }
 
+  /// Off by default (the older tests never saw an acknowledgement). On, [cancel] answers the way the real downloader does: `cancelTaskWithId` sends one
+  /// `canceled` update for a task it still knows, before it returns, and none for a task it does not know (a finished one, one never started)
+  /// (background_downloader 9.6.4, BDPlugin.kt `cancelActiveTaskWithId`).
+  bool acknowledgeCancels = false;
+
   @override
   Future<void> cancel(String taskId) async {
     canceled.add(taskId);
-    active.remove(taskId);
+    final known = active.remove(taskId);
+    if (acknowledgeCancels && known) {
+      _updates.add(TransferUpdate(
+        taskId: taskId,
+        status: TransferStatus.canceled,
+      ));
+    }
   }
 
   @override
@@ -80,7 +91,17 @@ class FakeDownloadTransport implements DownloadTransport {
   }
 
   @override
-  Future<void> resume() async => resumeCalls++;
+  Future<void> resume() async {
+    resumeCalls++;
+    // The downloader hands over what it kept while the app was not running and then returns, as the real one does: the updates are on their way (one
+    // microtask each), not yet handled, when the caller goes on.
+    for (final update in replayOnResume) {
+      scheduleMicrotask(() => _updates.add(update));
+    }
+  }
+
+  /// What the downloader kept for the app while it was not running (status updates it could not deliver): delivered by [resume].
+  final List<TransferUpdate> replayOnResume = [];
 
   // ------------------------------------------------------------ test control
 
@@ -98,6 +119,20 @@ class FakeDownloadTransport implements DownloadTransport {
       relativePath: req.relativePath,
     ));
   }
+
+  /// The task of [trackId] is cancelled by something that is not the manager (the Cancel button of the downloader's card of an older build, a reset of
+  /// the downloader): the manager never asked, and learns it only from this update.
+  void cancelFromOutside(String trackId) {
+    final req = requestFor(trackId);
+    active.remove(req.taskId);
+    _updates.add(TransferUpdate(
+      taskId: req.taskId,
+      status: TransferStatus.canceled,
+    ));
+  }
+
+  /// Any update the downloader could send, also for a task this fake never started.
+  void send(TransferUpdate update) => _updates.add(update);
 
   void fail(String trackId, [String error = 'HTTP 500']) {
     final req = requestFor(trackId);
