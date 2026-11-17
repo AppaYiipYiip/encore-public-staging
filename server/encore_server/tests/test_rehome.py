@@ -33,7 +33,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from encore_server import keyrepair, library, refmerge, refs, rehome, repair_copy
+from encore_server import keyrepair, library, refmerge, refs, rehome, repair_copy, textnorm
 from encore_server.db import Database
 from encore_server.navidrome import file_meta
 from encore_server.ref_janitor import AGE_MS, RefJanitor
@@ -287,6 +287,59 @@ def test_five_files_that_hung_on_one_song_hang_on_five_songs_after_one_link(old_
             found = refs.find(conn, refs.parse_item(described(song)))
             assert found is not None and (found["id"],) == holders[song["id"]], song["id"]
     assert report.rehome.moved == 4 and report.rehome.new_refs == 4
+
+
+# Every shape of the damage the old fold made, each as ONE ref that holds several files of different songs (the premise is asserted from the frozen old fold, not assumed):
+# fully non-Latin in four alphabets; a Latin artist with Latin start and different Arabic tails; two artists whose names differ only by a letter the old fold dropped.
+SHAPES: dict[str, list[tuple[str, str]]] = {
+    "fully non-Latin (Arabic, Cyrillic, Korean, Japanese)": [
+        ("فيروز", "كيفك إنت"),
+        ("فيروز", "نسّم علينا الهوا"),
+        ("فيروز", "حبيتك بالصيف"),
+        ("Кино", "Группа крови"),
+        ("Кино", "Звезда по имени Солнце"),
+        ("방탄소년단", "봄날"),
+        ("방탄소년단", "피 땀 눈물"),
+        ("宇多田ヒカル", "初恋"),
+        ("宇多田ヒカル", "夜に駆ける"),
+    ],
+    "a Latin artist, a Latin start and two different Arabic tails": [("Fairuz", "Habibi يا نور"), ("Fairuz", "Habibi يا قلبي")],
+    "two artists that differ only by a letter the old fold dropped": [("Łukasz", "Łódź"), ("Ukasz", "Odz")],
+}
+
+
+@pytest.mark.parametrize("shape", list(SHAPES))
+def test_every_shape_of_the_damage_is_split_into_one_ref_per_file_and_find_names_each_holder(db: Database, shape: str) -> None:
+    """The acceptance in four alphabets and two more shapes: several songs that shared ONE ref under the old fold, each with its own library file, hang on one ref each
+    after the repair, and `refs.find` on each file's tags names the ref that holds it (so a phone, the scan and the next pass agree)."""
+    songs = SHAPES[shape]
+    assert len({legacy.norm_key(artist, title) for artist, title in songs}) == 1, (
+        "the premise: the OLD fold made ONE key of them all"
+    )
+    glued = rid("sr", 1)
+    tags = [song(f"nd-{n}", title, artist, 200.0 + n) for n, (artist, title) in enumerate(songs, start=1)]
+    with db.tx() as c:
+        c.execute("INSERT INTO person (id, navidrome_user, display_name, created_at) VALUES (?,?,?,1)", (ME, "ana", "ana"))
+        add_ref(c, glued, songs[0][1], [songs[0][0]], duration_ms=200_000)
+        for n, tag in enumerate(tags, start=1):
+            add_file(c, glued, tag["id"], added_at=5000 + n, preferred=int(n == len(tags)), song=tag)
+        library.set_item(c, ME, "like", glued)
+    assert keyrepair.repair(db).ran is True and worklist(db) == {glued}
+    before = owned(db)
+
+    report = link_library(db, Music(tags))
+
+    assert report.rehome is not None and report.rehome.moved == len(songs) - 1 and report.rehome.failed is False
+    holders = files(db)
+    assert all(len(held) == 1 for held in holders.values())
+    assert len({held[0] for held in holders.values()}) == len(songs), "one song per file"
+    assert holders["nd-1"] == (glued,), "the song the ref was made for keeps its file"
+    with db.read() as conn:
+        for tag in tags:
+            found = refs.find(conn, refs.parse_item(described(tag)))
+            assert found is not None and (found["id"],) == holders[tag["id"]], tag["id"]
+    assert owned(db) == before, "the like stays on the ref that held it"
+    assert worklist(db) == set()
 
 
 def test_the_worklist_is_empty_and_a_second_pass_moves_nothing_and_leaves_one_row_per_file(old_world: Database) -> None:
@@ -709,6 +762,54 @@ def test_the_worklist_row_of_a_ref_that_is_gone_is_dropped_by_the_pass(db: Datab
     assert worklist(db) == set()
 
 
+def test_a_rehome_that_cannot_finish_never_stops_the_library_link_and_the_next_pass_finishes_it(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The scan did its work and committed it; a failure at the end of the rehome is one ERROR line, the worklist is kept, and the next pass finishes the job."""
+    real = rehome.Rehome.finish
+
+    def broken(self: rehome.Rehome, *, release: bool = True) -> rehome.Report:
+        raise RuntimeError("the database is busy")
+
+    monkeypatch.setattr(rehome.Rehome, "finish", broken)
+    with caplog.at_level(logging.ERROR, logger="encore_server.scanner"):
+        report = one_pass(old_world)
+
+    assert report.complete is True and report.linked == 7 and report.rehome is None
+    assert "could not finish its pass" in caplog.text and worklist(old_world) == {R}
+    monkeypatch.setattr(rehome.Rehome, "finish", real)
+
+    again = one_pass(old_world)
+
+    assert again.rehome is not None and again.rehome.released == 1 and worklist(old_world) == set()
+    assert len({held[0] for held in files(old_world).values()}) == 7
+
+
+def test_a_rehome_that_cannot_start_never_stops_the_library_link(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def broken(db: Database, describe: Any) -> None:
+        raise RuntimeError("no worklist today")
+
+    monkeypatch.setattr(rehome, "begin", broken)
+    before = files(old_world)
+    with caplog.at_level(logging.ERROR, logger="encore_server.scanner"):
+        report = one_pass(old_world)
+
+    assert report.complete is True and report.linked == 7 and report.rehome is None
+    assert "could not start" in caplog.text and worklist(old_world) == {R} and files(old_world) == before
+
+
+def test_a_python_whose_unicode_is_not_the_pin_is_a_refusal_the_rehome_does_not_swallow(
+    old_world: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Not a failure to log and go on from: this Python must not write a key at all (the server does not start on it either)."""
+    monkeypatch.setattr(textnorm.unicodedata, "unidata_version", "15.1.0")
+
+    with pytest.raises(textnorm.UnicodeVersionError):
+        one_pass(old_world)
+
+
 def test_the_hold_of_refmerge_is_released_in_the_same_link_and_the_pair_merges_by_the_normal_rules(
     db: Database, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -944,8 +1045,10 @@ def test_a_library_file_is_only_ever_re_pointed_the_disk_is_untouched(
     before = tree(music)
     assert len(before) == 7
 
+    # The listing names each file by its ABSOLUTE path here, so that a rehome that tried to do anything to "the file of the song" would reach the real file.
+    songs = [{**s, "path": str(music / s["path"])} for s in listing()]
     with music_folder_is_read_only(music, monkeypatch) as attempts:
-        report = one_pass(old_world)
+        report = one_pass(old_world, songs)
 
     assert report.rehome is not None and report.rehome.moved == 4, "the pass really ran under the guard"
     assert attempts == []

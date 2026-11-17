@@ -154,7 +154,12 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
     report.pruned = _prune(db, seen_ids, began) if prune else 0
     if rehomer is not None:
         # After the prune: a file the listing did not have is gone by now, so its ref is not waited for.
-        report.rehome = rehomer.finish()
+        try:
+            report.rehome = rehomer.finish()
+        except Exception:  # noqa: BLE001 - the scan did its work and committed it; the worklist is kept and the next pass tries again
+            log.exception(
+                "the rehome of files glued onto the wrong song could not finish its pass; the library link itself is done and the worklist is kept"
+            )
     return report
 
 

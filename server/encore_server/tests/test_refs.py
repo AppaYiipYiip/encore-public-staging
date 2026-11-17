@@ -610,8 +610,12 @@ def test_matches_is_only_the_strongest_tier_an_id_beats_a_ref_that_merely_has_th
     by_isrc = resolve(db, title="Habibi (the catalogue title)", artists=["Fairuz"], durationMs=200000, isrc="QZ1234567890")
     with db.read() as conn:
         item = _described(title="Habibi", artists=["Fairuz"], durationMs=200000, isrc="QZ1234567890")
-        assert [row["id"] for row in refs.matches(conn, item)] == [by_isrc["id"]], "the ISRC names one recording; the name does not count beside it"
-        assert [row["id"] for row in refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))] == [by_name["id"]]
+        assert [row["id"] for row in refs.matches(conn, item)] == [by_isrc["id"]], (
+            "the ISRC names one recording; the name does not count beside it"
+        )
+        assert [row["id"] for row in refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))] == [
+            by_name["id"]
+        ]
 
 
 def test_matches_holds_every_live_ref_of_the_name_tier_so_two_refs_of_one_song_are_both_answers(db: Database) -> None:
@@ -625,7 +629,9 @@ def test_matches_holds_every_live_ref_of_the_name_tier_so_two_refs_of_one_song_a
         answers = refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))
         assert [row["id"] for row in answers] == [f"sr_{1:026d}", f"sr_{2:026d}"]
         assert refs.find(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))["id"] == answers[0]["id"]  # type: ignore[index]
-        assert refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=260000)) == [], "a length 60 s off is another recording"
+        assert refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=260000)) == [], (
+            "a length 60 s off is another recording"
+        )
 
 
 def test_a_nameless_description_matches_by_ids_only(db: Database) -> None:
@@ -635,7 +641,9 @@ def test_a_nameless_description_matches_by_ids_only(db: Database) -> None:
         assert len(refs.matches(conn, _described(title="Song", artists=["[Unknown Artist]"], isrc="GBAYE0701234"))) == 1
 
 
-def test_ensure_one_preferred_picks_the_newest_when_a_ref_has_none_or_several_and_leaves_a_ref_without_files_alone(db: Database) -> None:
+def test_ensure_one_preferred_picks_the_newest_when_a_ref_has_none_or_several_and_leaves_a_ref_without_files_alone(
+    db: Database,
+) -> None:
     ref = str(resolve(db)["id"])
     with db.tx() as conn:
         for n, (preferred, added) in enumerate(((0, 10), (0, 30), (0, 20)), start=1):
@@ -644,7 +652,9 @@ def test_ensure_one_preferred_picks_the_newest_when_a_ref_has_none_or_several_an
                 (f"sf_{n:026d}", ref, f"nd-{n}", preferred, added),
             )
         refs.ensure_one_preferred(conn, ref)
-        assert [r["id"] for r in conn.execute("SELECT id FROM song_file WHERE ref = ? AND preferred = 1", (ref,))] == [f"sf_{2:026d}"]
+        assert [r["id"] for r in conn.execute("SELECT id FROM song_file WHERE ref = ? AND preferred = 1", (ref,))] == [
+            f"sf_{2:026d}"
+        ]
         conn.execute("UPDATE song_file SET preferred = 1 WHERE ref = ?", (ref,))
         refs.ensure_one_preferred(conn, ref)
         assert conn.execute("SELECT COUNT(*) FROM song_file WHERE ref = ? AND preferred = 1", (ref,)).fetchone()[0] == 1

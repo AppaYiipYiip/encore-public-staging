@@ -3,7 +3,7 @@ which is a property of text, not a fold).
 
 It exists so that a test can build a database the way the OLD code built it (the stored keys, the damage of audit B-37) and prove what the rekey does to it, and so that
 a test can prove that a key made of ASCII did not change. It is a literal copy of `textnorm.ascii_fold`, `norm_title`, `norm_artist`, `version_signature`,
-`mentions_version` and `refs.norm_key` as they were on main `95d1293`: do not "improve" it. Marked `STOP-GAP(P2-25 one-shot-repair)`: it goes with the repair
+`mentions_version` and `refs.norm_key` as they were on main `95d1293`: do not "improve" it. Marked `STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0)`: it goes with the repair
 (N-36), when the worklist table is empty on every install the project knows.
 """
 

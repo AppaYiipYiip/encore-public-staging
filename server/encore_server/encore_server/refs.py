@@ -58,7 +58,7 @@ def key_is_degenerate(key: str | None) -> bool:
 def recheck_pending(conn: sqlite3.Connection, ref_id: str) -> bool:
     """Is this ref on the worklist of the one-time key repair (`ref_recheck`, P2-25 slice 3)? Its files may belong to OTHER songs (the old fold glued them on),
     so a repair that moves a file or merges identities by a file (`refmerge`, N-34's refile) must leave it alone until the rehome of slice 4 has judged them.
-    STOP-GAP(P2-25 one-shot-repair): goes with the worklist (N-36)."""
+    STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): goes with the worklist (N-36)."""
     return conn.execute("SELECT 1 FROM ref_recheck WHERE ref = ?", (ref_id,)).fetchone() is not None
 
 

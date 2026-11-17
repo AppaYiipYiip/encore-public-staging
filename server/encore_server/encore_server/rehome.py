@@ -55,7 +55,7 @@ nothing is written and ONE error line says so; at most `repair_copy.KEEP_COPIES`
 **What the log says**: counts and a few ref ids, never a title (a title is a person's data): the first `_LOG_MOVES` moves with the ids of the file and of both songs, then
 a count.
 
-STOP-GAP(P2-25 one-shot-repair, until 0.2.0): the whole module is a ONE-TIME repair of data the old fold made. It goes with the worklist when the worklist is empty on every
+STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the whole module is a ONE-TIME repair of data the old fold made. It goes with the worklist when the worklist is empty on every
 install the project knows and one release has passed (N-36); the rekey, the revision and the plan at every start stay.
 """
 
@@ -220,9 +220,8 @@ class Rehome:
         if moves:
             copy = self._copy_taken()
             with self._db.tx() as conn:
-                repair_copy.require_copy(
-                    copy
-                )  # the second layer: before the first write of this transaction, and so of every chunk
+                # The second layer: before the first write of this transaction, and so of every chunk.
+                repair_copy.require_copy(copy)
                 for file_id, ref, song in moves:
                     result = self._move(conn, file_id, ref, song)
                     if result is None:

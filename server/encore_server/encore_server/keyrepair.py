@@ -34,7 +34,7 @@ It is idempotent (a start that finds nothing writes nothing), it rolls back whol
 **never stops the server**: a failed repair is tried again at the next start, and logs ONE ERROR line per start. Until it has run, the cost is that a non-Latin song
 described again may make a duplicate ref, which the by-file merge folds later; the ERROR line says so.
 
-**The copy** (`Database.backup`, `Database.prune_backups`). The invariant: **a repair never writes without a copy it can be undone from** (the tombstone keys it
+**The copy** (`Database.backup`, `Database.prune_backups`; the rules below are now written ONCE in `repair_copy.py`, which `rehome.py` shares, with its own label and settings). The invariant: **a repair never writes without a copy it can be undone from** (the tombstone keys it
 nulls and the pictures it voids come back from nothing else). It holds in two layers, and neither depends on the ORDER of the copies, because the order is not
 trustworthy: a copy's name is the LOCAL time of the clock that made it, a clock goes back (the end of daylight saving time repeats an hour, a time sync steps it,
 somebody sets it), and a file's modification time comes from the same clock. (The first version ordered the copies by their names: with three copies named in the future
@@ -63,8 +63,9 @@ failure). `tests/test_unicode_pin.py` guards the image, the workflow, `requires-
 judge (`ref_recheck`). The rewrite never renames, moves, retags or deletes a file: it touches no file of the Host's music at all. (The only files it ever deletes are its
 own surplus copies of the database, and it asks `Database` to do that.)
 
-STOP-GAP(P2-25 one-shot-repair): `_lost_by_old_fold`, the worklist and the voided covers are a ONE-TIME repair of data the old fold made. They go when the worklist is
-empty on every install the project knows and one release has passed (N-36). The rewrite itself, the revision in `setting`, the plan at every start and the guard are
+STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): `_lost_by_old_fold`, the worklist and the voided covers are a ONE-TIME repair of data the old fold made. They go when the
+worklist is empty on every install the project knows and one release has passed (N-36; `tests/test_stopgap_expiry.py` fails when the release in the marker has passed, and
+`python docs/evidence/scripts/audit_stack.py check rekey` reads whether the worklist is empty). The rewrite itself, the revision in `setting`, the plan at every start and the guard are
 permanent: every later change of the fold is the same mechanism with a higher `TEXTNORM_REVISION`.
 """
 
@@ -104,7 +105,7 @@ def _lost_by_old_fold(text: str) -> bool:
     `Beyoncé`, `BTS`, `Don’t Stop`. It is a property of the text, so it needs no copy of the old fold, and it is decided from the ref's own title and artist,
     not from its stored key (`fairuz|habibi|` is not empty and is still damaged). It guards against a WRONG attachment; a miss it cannot make. A ref whose text
     survived but whose stored key has an empty segment is the other reason a ref is suspect (`plan`).
-    STOP-GAP(P2-25 one-shot-repair): removed with the worklist (N-36)."""
+    STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): removed with the worklist (N-36)."""
     seen = False
     for ch in unicodedata.normalize("NFKD", text or ""):
         if unicodedata.category(ch)[0] in "LN":
@@ -286,13 +287,15 @@ def _apply(conn: sqlite3.Connection, work: Plan, report: Report) -> None:
     conn.executemany("UPDATE song_ref SET norm_key = ? WHERE id = ?", [(new, ref) for ref, _old, new in work.rekeys])
     report.rekeyed = len(work.rekeys)
     report.suspect = len(work.suspect)
-    for ref in sorted(work.worklist):  # STOP-GAP(P2-25 one-shot-repair): the worklist, until N-36
+    for ref in sorted(work.worklist):  # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the worklist, until N-36
         conn.execute("INSERT OR IGNORE INTO ref_recheck (ref, at) VALUES (?, ?)", (ref, at))
     report.worklist = len(work.worklist)
     # A tombstone's key cannot be recomputed (it stores no title or artist): one with an empty segment can never be found again, the others stay (dead weight).
     conn.executemany("UPDATE ref_merge SET norm_key = NULL WHERE old_id = ?", [(old,) for old in work.tombstones])
     report.tombstones_nulled = len(work.tombstones)
-    for ref in work.covers:  # STOP-GAP(P2-25 one-shot-repair): the pictures the broken fold matched, until N-36
+    for (
+        ref
+    ) in work.covers:  # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the pictures the broken fold matched, until N-36
         conn.execute("UPDATE song_ref SET cover_url = NULL, cover_tried_at = NULL WHERE id = ?", (ref,))
         library.touch_ref_holders(conn, ref)
         if conn.execute("SELECT 1 FROM song_file WHERE ref = ?", (ref,)).fetchone() is not None:

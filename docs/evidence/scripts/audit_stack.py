@@ -10,6 +10,7 @@ with a small tagged library in three alphabets, and the end-to-end checks of the
     python docs/evidence/scripts/audit_stack.py check authz          a member made by invitation tries the owner's playlists and the owner-only routes (wanted: refused or harmless, all PASS)
     python docs/evidence/scripts/audit_stack.py check homedoor       [B-56] the music server's own web page and API through the gateway when the visitor's address is hidden (wanted: 404 unless the Host switched it on)
     python docs/evidence/scripts/audit_stack.py check transient      [B-38] YouTube unreachable: what happens to a liked song? (wanted: a wait with Retry, not 'no copy')
+    python docs/evidence/scripts/audit_stack.py check rekey          [B-37, P2-25] the one-time repair of other alphabets: stored keys current, worklist empty, no pair held back for it (reads only; --db FILE audits a COPY of encore.db instead of the stack, with --python of the server's 3.12 venv)
     python docs/evidence/scripts/audit_stack.py connections          established connections to the server (count them with the app on screen and in the background, B-45)
     python docs/evidence/scripts/audit_stack.py down                 stop the stack (the folder is left; delete it by hand)
 
@@ -22,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import secrets
 import shutil
 import subprocess
@@ -50,8 +52,8 @@ TRACKS = [
 ]
 
 
-def run(*args: str, cwd: Path | None = None, stdin: str | None = None, check: bool = False) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, cwd=cwd, input=stdin, capture_output=True, text=True, encoding="utf-8", errors="replace", check=check)
+def run(*args: str, cwd: Path | None = None, stdin: str | None = None, check: bool = False, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, cwd=cwd, input=stdin, capture_output=True, text=True, encoding="utf-8", errors="replace", check=check, env=env)
 
 
 def compose(stack: Path, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -361,6 +363,24 @@ def check_transient(stack: Path) -> None:
     print("wanted: still waiting, or failed with Retry offered ->", "PASS" if group["retryable"] else "FAIL")
 
 
+def check_rekey(stack: Path, db_file: Path | None = None, python: str | None = None) -> None:
+    """[B-37, P2-25 slice 4] Is the one-time repair of songs in other alphabets done? The counting is `encore_server.rekey_audit` (the server's own module, tested there; this only
+    runs it and prints what it says): against the stack's database inside the image (build it from this checkout: `up --rebuild`), or, with `--db`, against a COPY of encore.db
+    on this machine with the server's Python 3.12 (`--python`: the keys are a function of the Unicode data of the Python, so another Python is refused, never guessed at).
+    It reads only. Wanted after one start and one library pass: keys current, worklist empty, no pair held back for it. Run it on a copy of the owner's real database before
+    the release that carries P2-25 (docs/tasks/RELEASE-CANDIDATE.md, 4b)."""
+    if db_file is not None:
+        env = {**os.environ, "PYTHONPATH": str(REPO / "server" / "encore_server")}
+        done = run(python or sys.executable, "-X", "utf8", "-m", "encore_server.rekey_audit", "--db", str(db_file), env=env)
+    else:
+        done = compose(stack, "exec", "-T", "encore-server", "python", "-m", "encore_server.rekey_audit", "--db", "/data/encore.db")
+    print(done.stdout.rstrip())
+    if done.returncode not in (0, 1) and done.stderr.strip():
+        print(done.stderr.strip()[-600:])
+    verdict = {0: "PASS", 1: "FAIL"}.get(done.returncode, "NOT RUN (it did not look: see above)")
+    print("wanted: the repair is done (keys current, worklist empty, no pair held back for it) ->", verdict)
+
+
 def connections(stack: Path) -> None:
     code = (
         "n=0\nfor f in ('/proc/net/tcp','/proc/net/tcp6'):\n    for line in open(f).read().splitlines()[1:]:\n"
@@ -372,7 +392,9 @@ def connections(stack: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["up", "check", "connections", "down"])
-    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke", "authz", "homedoor"])
+    parser.add_argument("which", nargs="?", choices=["library", "outage", "badsig", "prune", "transient", "revoke", "authz", "homedoor", "rekey"])
+    parser.add_argument("--db", type=Path, help="check rekey: audit this COPY of encore.db instead of the stack's database")
+    parser.add_argument("--python", help="check rekey with --db: the server's Python 3.12 (default: this one)")
     parser.add_argument("--dir", type=Path, default=Path(tempfile.gettempdir()) / "encore-audit-stack")
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
@@ -382,5 +404,7 @@ if __name__ == "__main__":
         connections(args.dir)
     elif args.command == "down":
         compose(args.dir, "down")
+    elif args.which == "rekey":
+        check_rekey(args.dir, args.db, args.python)
     else:
         {"library": check_library, "outage": check_outage, "badsig": check_badsig, "prune": check_prune, "transient": check_transient, "revoke": check_revoke, "authz": check_authz, "homedoor": check_homedoor}[args.which or "library"](args.dir)
