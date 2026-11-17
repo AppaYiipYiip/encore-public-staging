@@ -77,7 +77,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import library, refs, textnorm
+from . import library, refs, repair_copy, textnorm
 from .db import Database
 from .ids import now_ms
 
@@ -91,11 +91,8 @@ BACKUP_USED_SETTING = "textnorm_backup_used"
 #: The name of the copy an attempt took and has not yet committed with: written in its own committed write right after the copy is taken (the rewrite may roll back),
 #: cleared by the repair that commits. It is the ONLY copy a later start reuses: the order of the names says nothing about which attempt a file belongs to.
 BACKUP_PENDING_SETTING = "textnorm_backup_pending"
-#: How a SQLite database file begins (what `VACUUM INTO` writes): a file that does not is not a copy to undo a repair from.
-_SQLITE_MAGIC = b"SQLite format 3\x00"
-#: How many copies of the stored keys are kept. Three: the one just taken and the one the last COMMITTED repair used (the prune never removes either, whatever their names
-#: say), and one spare (the newest of the others by name, which a clock that went back can get wrong: then an older spare is kept). A rollback loop can never cost more disk.
-KEEP_COPIES = 3
+#: How many copies of the stored keys are kept (the rule, and why three, is in `repair_copy.py`, which `rehome.py` shares).
+KEEP_COPIES = repair_copy.KEEP_COPIES
 #: The picture hosts of the catalogue whose hit the broken fold matched to every song with the same (empty) name. The HOSTNAME decides, not a substring.
 _DEEZER_HOSTS = ("dzcdn.net", "deezer.com")
 
@@ -205,51 +202,23 @@ def _write_revision(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (REVISION_SETTING, str(textnorm.TEXTNORM_REVISION)))
 
 
-class CopyMissing(RuntimeError):
-    """The copy a repair was to rely on is not there, or is not a database, at the moment it comes to write: the repair does not run."""
-
-
-def _is_a_copy(path: Path) -> bool:
-    """Is this something a repair can be undone from? It is there, it is not empty and it begins like a SQLite database (reading its first bytes covers all three: a
-    missing file cannot be opened, an empty one has no first bytes, junk does not begin like a database). Never raises (a file that cannot be read is not one)."""
-    try:
-        with path.open("rb") as handle:
-            return handle.read(len(_SQLITE_MAGIC)) == _SQLITE_MAGIC
-    except OSError:
-        return False
-
-
-def _setting(conn: sqlite3.Connection, key: str) -> str | None:
-    row = conn.execute("SELECT value FROM setting WHERE key = ?", (key,)).fetchone()
-    return None if row is None else str(row["value"])
+CopyMissing = repair_copy.CopyMissing
+_is_a_copy = repair_copy.is_a_copy
 
 
 def _copy_for_this_repair(db: Database) -> Path:
-    """The copy of the database this repair is backed by: the one an earlier attempt of THIS repair recorded, while it is still there; else a new one (and the pile pruned,
-    with this copy and the last committed repair's named as the ones that stay). See the module's docstring: the order of the names is never what chooses."""
-    with db.read() as conn:
-        pending = _setting(conn, BACKUP_PENDING_SETTING)
-        spent = _setting(conn, BACKUP_USED_SETTING)
-    if pending and pending != spent:
-        earlier = db.backups / Path(pending).name  # a name from the table, never a path out of the folder
-        if _is_a_copy(earlier):
-            log.info(
-                "key rewrite: the copy an earlier attempt took, before the rewrite that did not finish, is used again: %s",
-                earlier,
-            )
-            return earlier
-        log.warning("key rewrite: the copy an earlier attempt took is gone or is not a database, so a new one is taken")
-    copy = db.backup(_BACKUP_LABEL)
-    with db.tx() as conn:  # its own committed write: the rewrite below may roll back, the record of its copy must not
-        conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_PENDING_SETTING, copy.name))
-    try:
-        db.prune_backups(_BACKUP_LABEL, KEEP_COPIES, protect=[copy, *([spent] if spent else [])])
-    except OSError:
-        log.warning(
-            "key rewrite: the oldest copies of the stored keys could not be removed (the copy just taken is kept)", exc_info=True
-        )
-    log.info("key rewrite: a copy of the database before the rewrite is kept at %s", copy)
-    return copy
+    """The copy of the database this repair is backed by (`repair_copy.copy_for_repair`: the copy an earlier attempt recorded, else a new one with the pile pruned and
+    the two copies that must stay named). The order of the names is never what chooses. Kept under this name because `repair` calls it and the tests replace it."""
+    return repair_copy.copy_for_repair(
+        db,
+        label=_BACKUP_LABEL,
+        pending_key=BACKUP_PENDING_SETTING,
+        used_key=BACKUP_USED_SETTING,
+        log=log,
+        what="key rewrite",
+        noun="rewrite",
+        keep=KEEP_COPIES,
+    )
 
 
 def repair(db: Database) -> Report:
@@ -280,8 +249,7 @@ def repair(db: Database) -> Report:
             _apply(conn, plan(conn, one_shot=first), report)
             if first:
                 _write_revision(conn)
-            conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_USED_SETTING, report.backup.name))
-            conn.execute("DELETE FROM setting WHERE key = ?", (BACKUP_PENDING_SETTING,))
+            repair_copy.mark_used(conn, pending_key=BACKUP_PENDING_SETTING, used_key=BACKUP_USED_SETTING, copy=report.backup)
         report.ran = True
         log.info(
             "key rewrite (%s): revision %d, %d of %d keys rewritten, %d refs the old fold damaged, %d refs on the worklist for the library link, %d tombstone keys "

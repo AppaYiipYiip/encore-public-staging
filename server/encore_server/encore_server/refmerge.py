@@ -403,11 +403,7 @@ def _merge_files(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
             conn.execute(f"UPDATE song_file SET {assignments} WHERE id = ?", (*updates.values(), ours["id"]))  # noqa: S608 - column names from the schema
         conn.execute("DELETE FROM song_file WHERE id = ?", (theirs["id"],))
     # One copy is the preferred one: the survivor's own, or the newest when it had none.
-    rows = conn.execute(
-        "SELECT id, preferred FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC", (survivor,)
-    ).fetchall()
-    if rows and sum(row["preferred"] for row in rows) != 1:
-        conn.execute("UPDATE song_file SET preferred = (id = ?) WHERE ref = ?", (rows[0]["id"], survivor))
+    refs.ensure_one_preferred(conn, survivor)
 
 
 def _load_meta(text: str | None) -> dict[str, Any]:

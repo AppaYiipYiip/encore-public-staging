@@ -564,3 +564,88 @@ def test_the_two_siblings_of_survives_fold_whole(db: Database) -> None:
         assert refs.recheck_pending(conn, str(ref["id"])) is False
         conn.execute("INSERT INTO ref_recheck (ref, at) VALUES (?, 1)", (ref["id"],))
         assert refs.recheck_pending(conn, str(ref["id"])) is True
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# P2-25 slice 4: `find` is the first of `candidates`, and `matches` is every ref of the FIRST tier of evidence (what the rehome asks: "is THIS ref one of the answers")
+
+
+def _described(**song: object) -> dict[str, object]:
+    return refs.parse_item({"title": "Weird Fishes / Arpeggi", "artists": ["Radiohead"], "durationMs": 318000, **song})
+
+
+def test_find_is_the_first_candidate_on_every_tier_of_evidence(db: Database) -> None:
+    """`find` was rebuilt on `candidates` so that there is ONE definition of which ref a description names: the strongest evidence first, then the oldest ref."""
+    first = resolve(db, isrc="GBAYE0701234", videoId="bgsmr7t8zGE")
+    twin = resolve(db, title="Other", artists=["Anybody"], durationMs=100000)
+    with db.read() as conn:
+        for item in (
+            _described(isrc="GBAYE0701234"),  # live ids
+            _described(videoId="bgsmr7t8zGE"),
+            _described(),  # the name
+            _described(title="Other", artists=["Anybody"], durationMs=101000),
+            _described(title="Nobody has this", artists=["Nobody"]),  # nothing
+        ):
+            candidates = [(tier, row["id"]) for tier, row in refs.candidates(conn, item)]
+            found = refs.find(conn, item)
+            assert (found["id"] if found is not None else None) == (candidates[0][1] if candidates else None)
+    assert first["id"] != twin["id"]
+
+
+def test_the_tiers_come_strongest_first_and_a_merged_ref_is_a_tier_of_its_own(db: Database) -> None:
+    live = resolve(db, isrc="GBAYE0701234")
+    with db.tx() as conn:  # a ref that was merged into `live`, with its own key and ISRC
+        conn.execute(
+            "INSERT INTO ref_merge (old_id, into_id, at, norm_key, isrc, duration_ms) VALUES ('sr_gone', ?, 1, ?, 'GBAYE0709999', 318000)",
+            (live["id"], refs.norm_key("Radiohead", "Weird Fishes / Arpeggi")),
+        )
+    with db.read() as conn:
+        tiers = [tier for tier, _row in refs.candidates(conn, _described(isrc="GBAYE0701234"))]
+        assert tiers == [refs.TIER_IDS, refs.TIER_NAME, refs.TIER_MERGED_NAME]
+        assert [tier for tier, _ in refs.candidates(conn, _described(isrc="GBAYE0709999"))][:1] == [refs.TIER_MERGED_IDS]
+
+
+def test_matches_is_only_the_strongest_tier_an_id_beats_a_ref_that_merely_has_the_same_name(db: Database) -> None:
+    by_name = resolve(db, title="Habibi", artists=["Fairuz"], durationMs=200000)
+    by_isrc = resolve(db, title="Habibi (the catalogue title)", artists=["Fairuz"], durationMs=200000, isrc="QZ1234567890")
+    with db.read() as conn:
+        item = _described(title="Habibi", artists=["Fairuz"], durationMs=200000, isrc="QZ1234567890")
+        assert [row["id"] for row in refs.matches(conn, item)] == [by_isrc["id"]], "the ISRC names one recording; the name does not count beside it"
+        assert [row["id"] for row in refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))] == [by_name["id"]]
+
+
+def test_matches_holds_every_live_ref_of_the_name_tier_so_two_refs_of_one_song_are_both_answers(db: Database) -> None:
+    with db.tx() as conn:
+        for n in (1, 2):
+            conn.execute(
+                "INSERT INTO song_ref (id, title, artists, duration_ms, norm_key, created_at) VALUES (?,?,?,?,?,?)",
+                (f"sr_{n:026d}", "Habibi", '["Fairuz"]', 200000, refs.norm_key("Fairuz", "Habibi"), n),
+            )
+    with db.read() as conn:
+        answers = refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))
+        assert [row["id"] for row in answers] == [f"sr_{1:026d}", f"sr_{2:026d}"]
+        assert refs.find(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=200000))["id"] == answers[0]["id"]  # type: ignore[index]
+        assert refs.matches(conn, _described(title="Habibi", artists=["Fairuz"], durationMs=260000)) == [], "a length 60 s off is another recording"
+
+
+def test_a_nameless_description_matches_by_ids_only(db: Database) -> None:
+    resolve(db, title="Song", artists=["[Unknown Artist]"], isrc="GBAYE0701234")
+    with db.read() as conn:
+        assert refs.matches(conn, _described(title="Song", artists=["[Unknown Artist]"])) == [], "no id, no name: nothing"
+        assert len(refs.matches(conn, _described(title="Song", artists=["[Unknown Artist]"], isrc="GBAYE0701234"))) == 1
+
+
+def test_ensure_one_preferred_picks_the_newest_when_a_ref_has_none_or_several_and_leaves_a_ref_without_files_alone(db: Database) -> None:
+    ref = str(resolve(db)["id"])
+    with db.tx() as conn:
+        for n, (preferred, added) in enumerate(((0, 10), (0, 30), (0, 20)), start=1):
+            conn.execute(
+                "INSERT INTO song_file (id, ref, navidrome_song_id, source, preferred, added_at) VALUES (?,?,?,'library',?,?)",
+                (f"sf_{n:026d}", ref, f"nd-{n}", preferred, added),
+            )
+        refs.ensure_one_preferred(conn, ref)
+        assert [r["id"] for r in conn.execute("SELECT id FROM song_file WHERE ref = ? AND preferred = 1", (ref,))] == [f"sf_{2:026d}"]
+        conn.execute("UPDATE song_file SET preferred = 1 WHERE ref = ?", (ref,))
+        refs.ensure_one_preferred(conn, ref)
+        assert conn.execute("SELECT COUNT(*) FROM song_file WHERE ref = ? AND preferred = 1", (ref,)).fetchone()[0] == 1
+        refs.ensure_one_preferred(conn, "sr_no_files")  # nothing to do, nothing raised

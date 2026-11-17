@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any
 
 from . import missing
@@ -238,39 +238,69 @@ def _find_merged(conn: sqlite3.Connection, column: str, value: str) -> sqlite3.R
     return None
 
 
-def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
-    """The ref a described song already has, or `None`.
+#: The kinds of evidence [candidates] yields, strongest first: the ids of live refs, the ids of merged ones, the artist + title + length of live refs, then of merged ones.
+TIER_IDS = "ids"
+TIER_MERGED_IDS = "merged ids"
+TIER_NAME = "name"
+TIER_MERGED_NAME = "merged name"
 
-    A ref that was merged into another (N-11) is still found, as the survivor: the same song described the way the deleted ref was (the music server's
-    tags list the artists as one string and the length a few seconds off) must not make the duplicate again. The order is the strength of the
-    evidence: the ids of live refs, the ids of merged ones, then the artist + title + length of live refs, then of merged ones.
 
-    **A song whose artist is the placeholder for "nobody" ("Unknown Artist", N-26) is found by its ids and by nothing else**: the name of two different
-    nameless songs is the same string, so matching it would put the second song on the first one's ref, with the first one's audio, for good."""
+def candidates(conn: sqlite3.Connection, item: dict[str, Any]) -> Iterator[tuple[str, sqlite3.Row]]:
+    """Every ref a described song may be, as `(tier of evidence, the ref)`, the strongest evidence first, lazily (a caller that takes only the first does only the
+    queries up to it). **This is the ONE definition of "which ref does this description name"**: [find] is its first row, and the rehome of P2-25 slice 4 asks for all
+    the refs of the first tier (`matches`) so that it never has a second copy of the rule.
+
+    A ref that was merged into another (N-11) is still found, as the survivor: the same song described the way the deleted ref was (the music server's tags list the
+    artists as one string and the length a few seconds off) must not make the duplicate again. The order is the strength of the evidence: the ids of live refs, the ids
+    of merged ones, then the artist + title + length of live refs, then of merged ones.
+
+    **A song whose artist is the placeholder for "nobody" ("Unknown Artist", N-26) is found by its ids and by nothing else**: the name of two different nameless songs
+    is the same string, so matching it would put the second song on the first one's ref, with the first one's audio, for good."""
     ids = (("isrc", item["isrc"]), ("deezer_id", item["deezer_id"]), ("ytm_video_id", item["ytm_video_id"]))
     for column, value in ids:
         if value:
             row = conn.execute(f"SELECT * FROM song_ref WHERE {column} = ?", (value,)).fetchone()  # noqa: S608 - fixed column names
             if row is not None:
-                return row  # type: ignore[no-any-return]
+                yield TIER_IDS, row
     for column, value in ids:
         if value:
             merged = _find_merged(conn, column, value)
             if merged is not None:
-                return merged
+                yield TIER_MERGED_IDS, merged
     if is_unknown_artist(item["artists"][0]):
-        return None  # no name to go by (the live refs and the tombstones below are both read by name)
+        return  # no name to go by (the live refs and the tombstones below are both read by name)
     key = norm_key(item["artists"][0], item["title"])
     for row in conn.execute("SELECT * FROM song_ref WHERE norm_key = ? ORDER BY created_at", (key,)):
         if _compatible(row, item["duration_ms"]):
-            return row  # type: ignore[no-any-return]
+            yield TIER_NAME, row
     # The length is compared with the DELETED ref's own (kept in `ref_merge`), not with the survivor's, which may be seconds off.
     for gone in conn.execute("SELECT into_id, duration_ms FROM ref_merge WHERE norm_key = ? ORDER BY seq", (key,)):
         if _compatible(gone, item["duration_ms"]):
             survivor = _survivor(conn, gone["into_id"])
             if survivor is not None:
-                return survivor
+                yield TIER_MERGED_NAME, survivor
+
+
+def find(conn: sqlite3.Connection, item: dict[str, Any]) -> sqlite3.Row | None:
+    """The ref a described song already has, or `None`: the first of [candidates] (the strongest evidence, then the oldest ref)."""
+    for _tier, row in candidates(conn, item):
+        return row
     return None
+
+
+def matches(conn: sqlite3.Connection, item: dict[str, Any]) -> list[sqlite3.Row]:
+    """Every ref of the FIRST tier of evidence that names this description (`[]` when none does): `find` answers the first of them. When the strongest evidence is an
+    id, only the refs that id names count (a ref that merely has the same name is not this recording); when it is the name, every live ref with that name and a
+    compatible length counts (two refs of one song are two answers, neither is wrong). Used to ask "is THIS ref one of the answers" (P2-25 slice 4)."""
+    answers: list[sqlite3.Row] = []
+    first: str | None = None
+    for tier, row in candidates(conn, item):
+        if first is None:
+            first = tier
+        elif tier != first:
+            break
+        answers.append(row)
+    return answers
 
 
 def lead_artist(artists: object) -> str:
@@ -526,6 +556,16 @@ def file_holders(conn: sqlite3.Connection, song_ids: Sequence[str]) -> dict[str,
         ):
             holders.setdefault(row["navidrome_song_id"], row)
     return holders
+
+
+def ensure_one_preferred(conn: sqlite3.Connection, ref_id: str) -> None:
+    """A ref that holds any file has exactly ONE preferred one: the one it has, or the newest when it has none or several (the rule of a merge, `refmerge`, and of a
+    file that moves to another song, `rehome`). A ref with no file is left alone."""
+    rows = conn.execute(
+        "SELECT id, preferred FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC", (ref_id,)
+    ).fetchall()
+    if rows and sum(row["preferred"] for row in rows) != 1:
+        conn.execute("UPDATE song_file SET preferred = (id = ?) WHERE ref = ?", (rows[0]["id"], ref_id))
 
 
 def touch_file(conn: sqlite3.Connection, ref_id: str) -> int:
