@@ -8,38 +8,19 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/logger.dart';
 import 'download_transport.dart';
 
-/// What the notification says when the phone's queue of files has emptied. It must be true at ANY such moment, and "Downloads finished" is not: the queue
-/// is fed a few files at a time and the server's stage overlaps the phone's, so it can empty while the server still holds most of a playlist (docs/33
-/// PB-38). The notification covers only the phone's stage; how the whole download is going is shown in the app (docs/design S-16).
-const TaskNotification kDownloadsQueueEmptiedNotification = TaskNotification(
-  'Some of your music is ready offline',
-  'Open Encore to see how your downloads are going',
-);
-
-/// [DownloadTransport] on `background_downloader` (WorkManager on Android):
-/// transfers continue with the app in the background, survive process death,
-/// honour "Wi-Fi only" at the OS level and show one grouped notification.
+/// [DownloadTransport] on `background_downloader` (WorkManager on Android): the transfers are handed to the operating system, honour "Wi-Fi only" there,
+/// and are carried on by it for the files already handed over.
+///
+/// **It posts no notification of its own** (docs/33 PB-38, docs/design S-95, P2-29): no group card is configured, so none exists. The one card of a
+/// download is the app's (`DownloadCardPresenter`): it says both stages, which a card of the phone's stage alone could not.
+///
+/// **What survives the app being killed is only the files already handed over** (at most `DownloadPolicy.maxInFlight`, four; read in the code of the
+/// downloader and of the manager, not run): the manager that feeds the downloader lives in the app's own process, and nothing else starts it (the
+/// periodic job syncs and never runs it). The rest waits for the app to be opened again. Board item N-40 ("A download keeps going after you close the
+/// app") is the proper fix; until it is built nothing here may say that downloads carry on with the app closed (audit row B-135 is about the sentence that used to be here).
 class BackgroundDownloaderTransport implements DownloadTransport {
   BackgroundDownloaderTransport({this.group = 'encore-downloads'}) {
-    final downloader = FileDownloader();
-    downloader.configureNotificationForGroup(
-      group,
-      // The queue is fed a few files at a time (gentle on the server), so
-      // "of N" would only ever show what is enqueued right now, not what
-      // the user pinned: count what is done instead.
-      running: const TaskNotification(
-        'Downloading music',
-        '{numFinished} songs downloaded so far',
-      ),
-      complete: kDownloadsQueueEmptiedNotification,
-      error: const TaskNotification(
-        'Some downloads did not finish',
-        '{numFailed} songs will be retried',
-      ),
-      progressBar: false,
-      groupNotificationId: 'encore-downloads',
-    );
-    _sub = downloader.updates.listen(_forward);
+    _sub = FileDownloader().updates.listen(_forward);
   }
 
   final String group;
@@ -98,9 +79,11 @@ class BackgroundDownloaderTransport implements DownloadTransport {
   Future<Set<String>> activeTaskIds() async =>
       (await FileDownloader().allTaskIds(group: group)).toSet();
 
-  // No notification permission is asked for here (ADR-R44, AUDIT F29): nothing reaches the phone's notification area unless the person
-  // switched it on in Settings > Notifications. A download runs without the permission; its progress notification shows only when the
-  // person has allowed notifications for Encore.
+  // This transport asks for no permission and posts no notification (see the class comment). A download runs with or without the phone's notification
+  // permission; the card that shows it is the app's own (`DownloadCardPresenter`) and is posted only when that permission is granted (D-52: asked once,
+  // at the first Download or Import; below Android 13 there is none to ask, so the card is posted unless Encore's notifications were switched off in
+  // Android's own settings). ADR-R44's "nothing is posted by default" is about NEWS (the opt-in categories of Settings > Notifications); the card of
+  // the downloads is the exception D-52 made.
   @override
   Future<void> start(TransferRequest request) async {
     final relativeDir = p.dirname(request.relativePath);
