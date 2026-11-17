@@ -67,8 +67,16 @@ def track(title: str, artist: str, picture: str = PICTURE, **extra: Any) -> dict
             [track("Kiss", "Prince & The Revolution", OTHER), track("Kiss", "Prince", PICTURE)],
             PICTURE,
         ),
-        # Names that fold to nothing (not written in Latin letters) are never equal to each other.
-        ("박광현", "노래", [track("노래", "박광현")], None),
+        # A name in another alphabet is itself (P2-25: before, every name outside ASCII folded to nothing and nothing was never equal to nothing, so a Korean,
+        # Arabic or Russian artist could not be given a picture at all); two DIFFERENT names of one alphabet are never equal to each other.
+        ("박광현", "노래", [track("노래", "박광현")], PICTURE),
+        ("박광현", "노래", [track("노래", "김광석")], None),
+        ("فيروز", "سألوني الناس", [track("سَأَلُونِي النَّاس", "فَيْرُوز")], PICTURE),
+        ("فيروز", "سألوني الناس", [track("سألوني الناس", "ام كلثوم")], None),
+        ("Кино", "Группа крови", [track("Группа крови", "Кино")], PICTURE),
+        ("Кино", "Группа крови", [track("Звезда по имени Солнце", "Кино")], None),
+        ("!!!", "Me and Giuliani", [track("Me and Giuliani", "!!!")], PICTURE),
+        ("!!!", "Me and Giuliani", [track("Me and Giuliani", "???")], None),
         ("Mac Miller", "", [track("", "Mac Miller")], None),
     ],
 )

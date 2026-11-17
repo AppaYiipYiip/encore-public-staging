@@ -12,7 +12,10 @@ file row was attached FIRST (the keeper's, which carries the proper description)
 
 * the two refs name different source items (their `ytm_video_id` differ, or their ISRC or Deezer id): two recordings, and the keeper's habit of
   handing a file to a second ref (`keeper/keeper.py`, a separate fix) is what put them on one file;
-* a playlist holds both: merging would put the song twice into that playlist, a visible change to a person's own list nobody asked for.
+* a playlist holds both: merging would put the song twice into that playlist, a visible change to a person's own list nobody asked for;
+* either ref is on the worklist of the key repair (`ref_recheck`, P2-25 slice 3, reason `recheck_pending`): the old fold may have glued the file onto the wrong song,
+  so "they share a file" is not yet evidence that they are one song, and merging identities on its strength would put one song's likes on another. Checked LAST, so
+  a pair held for this reason is one that would otherwise have merged. STOP-GAP(P2-25 one-shot-repair): goes with the worklist (N-36).
 
 **Everything a person has follows the song**: likes (a person who liked both keeps the earlier date), playlist entries (removed ones too), plays,
 import rows, the work the server still means to do, the songs of a saved release, the saved queue (its ids are rewritten in place: the index of
@@ -98,7 +101,7 @@ class Merged:
 class Held:
     survivor: str
     loser: str
-    #: `different_source_video`, `different_isrc`, `different_deezer_id` or `same_playlist`.
+    #: `different_source_video`, `different_isrc`, `different_deezer_id`, `same_playlist` or `recheck_pending`.
     reason: str
 
 
@@ -163,7 +166,11 @@ def _hold_reason(conn: sqlite3.Connection, survivor: sqlite3.Row, loser: sqlite3
         " WHERE a.ref = ? AND b.ref = ? AND a.deleted_at IS NULL AND b.deleted_at IS NULL AND p.deleted_at IS NULL LIMIT 1",
         (survivor["id"], loser["id"]),
     ).fetchone()
-    return "same_playlist" if both is not None else None
+    if both is not None:
+        return "same_playlist"
+    if refs.recheck_pending(conn, survivor["id"]) or refs.recheck_pending(conn, loser["id"]):
+        return "recheck_pending"
+    return None
 
 
 def _row(conn: sqlite3.Connection, ref_id: str) -> sqlite3.Row:
@@ -271,9 +278,21 @@ def _merge_pair(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
 
     # What is left of the loser: the way to find the survivor again (its id, and what it was called). A survivor merged away before takes its
     # tombstones along, so `into_id` always names a live ref.
+    # The title and the lead artist too (decision D10): the key cannot be derived back from itself, so the NEXT change of the fold needs the names to rewrite it.
     conn.execute(
-        "INSERT INTO ref_merge (old_id, into_id, at, norm_key, isrc, deezer_id, ytm_video_id, duration_ms) VALUES (?,?,?,?,?,?,?,?)",
-        (loser, survivor, now_ms(), gone["norm_key"], gone["isrc"], gone["deezer_id"], gone["ytm_video_id"], gone["duration_ms"]),
+        "INSERT INTO ref_merge (old_id, into_id, at, norm_key, isrc, deezer_id, ytm_video_id, duration_ms, title, artist) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            loser,
+            survivor,
+            now_ms(),
+            gone["norm_key"],
+            gone["isrc"],
+            gone["deezer_id"],
+            gone["ytm_video_id"],
+            gone["duration_ms"],
+            gone["title"],
+            refs.lead_artist(gone["artists"]),
+        ),
     )
     conn.execute("UPDATE ref_merge SET into_id = ? WHERE into_id = ?", (survivor, loser))
 

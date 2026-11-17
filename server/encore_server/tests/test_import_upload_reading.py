@@ -25,7 +25,7 @@ from encore_server.imports import uploads
 from encore_server.imports.readers import Track, read_playlist, split_artist_title
 from encore_server.imports.uploads import read_declared, read_official_video, read_upload
 from encore_server.keeper.placement import plan_placement
-from encore_server.textnorm import UNKNOWN_ARTIST, ascii_fold
+from encore_server.textnorm import UNKNOWN_ARTIST, norm_artist
 
 # =========================================================================== part 1: the rule, pure
 
@@ -201,12 +201,13 @@ def test_a_name_in_any_alphabet_is_compared_as_a_name(title: str, uploader: str,
     assert upload(title, uploader) == expected
 
 
-def test_B37_the_servers_ascii_fold_still_turns_a_name_in_another_alphabet_into_nothing() -> None:
-    """PIN (audit B-37, P2-25): `textnorm.ascii_fold` is the matcher's fold and it still keeps only a-z0-9, so an Arabic name folds to "". The reading
-    of an upload does NOT rely on it (the test above compares names by their letters in any alphabet); this pin exists so that the day P2-25 replaces the
-    fold, `uploads._name_key` is replaced by the same function in the same change, and this test is deleted with it."""
-    assert ascii_fold("فيروز") == ""
-    assert ascii_fold("Кино") == ""
+def test_B37_the_servers_fold_and_the_readers_name_key_see_a_name_in_another_alphabet_the_same_way() -> None:
+    """Audit B-37 / P2-25 slice 2. This was a PIN: `textnorm.ascii_fold` kept a-z0-9 only, so an Arabic name folded to "" while `uploads._name_key` compared names
+    by their letters in any alphabet on its own, and the day the server got one fold the reader's own was to be replaced by it in the same change. It has been:
+    the reader's key is the shared fold, so the two cannot disagree."""
+    assert norm_artist("فيروز") == "فيروز" and norm_artist("Кино") == "кино"
+    assert uploads._name_key("فَيْرُوز") == uploads._name_key("فيروز") == "فيروز"
+    assert uploads._name_key("Кино") == "кино"
 
 
 # --------------------------------------------------------------------------- the other two kinds

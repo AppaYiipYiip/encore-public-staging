@@ -2,7 +2,9 @@
 name = "encore-server"
 version = "0.1.0"
 description = "The Encore server: one program for a person's music library, playback state, imports and streaming (docs/04)."
-requires-python = ">=3.12"
+# Exactly Python 3.12, on purpose (P2-25): the song keys are pinned to Unicode 15.0.0 = Python 3.12 = the image (`python:3.12-slim`), and the server refuses to start on any
+# other (`textnorm.require_pinned_unicode`). To move: image, server.yml, this line and `textnorm.UNICODE_VERSION` together (tests/test_unicode_pin.py; docs/18, "the Unicode pin").
+requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
 dependencies = [
   "fastapi>=0.115",
@@ -27,7 +29,9 @@ testpaths = ["tests"]
 # `pytest` (not `python -m pytest`) does not put the project folder on the path, and the tests import each other as `tests.<name>`.
 pythonpath = ["."]
 addopts = "-q -m 'not integration'"
-markers = ["integration: needs a real Navidrome (tests/integration/compose.yaml)"]
+markers = [
+  "integration: needs a real Navidrome (tests/integration/compose.yaml)",
+]
 
 [tool.ruff]
 line-length = 130

@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import pytest
 from fastapi.testclient import TestClient
 
-from encore_server import deezer
+from encore_server import deezer, textnorm
 from encore_server.api import create_app
 from encore_server.auth import subsonic_token
 from encore_server.config import Settings
@@ -39,6 +39,17 @@ def creds(user: str, password: str | None = None) -> dict[str, str]:
     """The Subsonic query a legacy app sends."""
     salt = "salt1234"
     return {"u": user, "t": subsonic_token(password or f"pw-{user}", salt), "s": salt}
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """The whole run stops BEFORE the first test on a Python whose Unicode is not the pin (`textnorm.UNICODE_VERSION`, Python 3.12, the image's): a stored key is a
+    function of the Unicode data of the interpreter, so nobody tests on another one by accident, and the message says which Python to use (the same text the
+    server prints when it refuses to start). There is no override: a suite that passes on another Unicode proves nothing about the image. `tests/test_unicode_pin.py`
+    tests this hook."""
+    try:
+        textnorm.require_pinned_unicode()
+    except textnorm.UnicodeVersionError as refusal:
+        pytest.exit(f"{refusal}", returncode=4)
 
 
 @pytest.fixture()

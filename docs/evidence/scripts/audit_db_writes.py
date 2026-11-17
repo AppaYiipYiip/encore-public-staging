@@ -1,7 +1,7 @@
 """What does one small database write cost on this server, and where does the time go? (6 Nov 2026; audit B-10 family, P3-29)
 
     docker run --rm -v <repo>/docs/evidence/scripts:/s:ro -w /app --entrypoint python encore-server:local /s/audit_db_writes.py
-    C:/dev/venv-encore-server/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_db_writes.py --server server/encore_server
+    C:/dev/venv-encore-server-312/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_db_writes.py --server server/encore_server
 
 It writes 2,000 likes four ways and prints writes a second for each. SQLite is the server's database; the question this answers is whether the waits seen with
 twenty people (docs/evidence/README.md#e02) are SQLite's limit or the way the server uses it. Measured 6 Nov 2026 in the server image (Linux):

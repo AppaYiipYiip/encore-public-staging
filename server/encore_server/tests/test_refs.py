@@ -481,3 +481,86 @@ def test_the_order_of_pictures_is_the_cover_then_the_sources_thumbnail_then_the_
     assert both["coverUrl"] == COVER
     assert thumb_only["coverUrl"] == THUMB
     assert resolve(db, title="No video")["coverUrl"] is None, "no video, no thumbnail"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# P2-25 slices 2 and 3 (audit B-37): songs in any alphabet are told apart, and the same song described twice is one ref
+
+
+def _count(db: Database) -> int:
+    with db.read() as conn:
+        return int(conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0])
+
+
+def test_two_different_arabic_songs_of_one_length_are_two_refs(db: Database) -> None:
+    """Before: both were the key `||`, so the second description found the first ref and was answered with it (the owner's two Fairuz songs became one)."""
+    first = resolve(db, title="سألوني الناس", artists=["فيروز"], durationMs=240000)
+    second = resolve(db, title="نسّم علينا الهوا", artists=["فيروز"], durationMs=240500)
+    assert first["id"] != second["id"]
+    assert _count(db) == 2
+
+
+def test_the_same_arabic_song_with_and_without_its_vowel_marks_is_one_ref(db: Database) -> None:
+    plain = resolve(db, title="سألوني الناس", artists=["فيروز"], durationMs=240000)
+    marked = resolve(db, title="سَأَلُونِي النَّاس", artists=["فيروز"], durationMs=240000)
+    assert marked["id"] == plain["id"]
+
+
+def test_a_latin_artist_with_two_arabic_titles_that_start_the_same_has_two_refs(db: Database) -> None:
+    """Before: `fairuz|habibi|` for both (the Arabic words dropped), a key that is not even empty."""
+    a = resolve(db, title="Habibi يا نور", artists=["Fairuz"], durationMs=200000)
+    b = resolve(db, title="Habibi يا قمر", artists=["Fairuz"], durationMs=200000)
+    assert a["id"] != b["id"]
+
+
+def test_two_arabic_artists_with_one_latin_title_have_two_refs(db: Database) -> None:
+    a = resolve(db, title="Habibi", artists=["فيروز"], durationMs=200000)
+    b = resolve(db, title="Habibi", artists=["ام كلثوم"], durationMs=200000)
+    assert a["id"] != b["id"]
+
+
+@pytest.mark.parametrize(
+    ("title", "again"),
+    [
+        ("Straße", "Strasse"),
+        ("Şımarık", "Simarik"),
+        ("Łódź", "Lodz"),
+        ("Hyperballad ø", "Hyperballad o"),
+        ("Nguyễn Thị", "Nguyen Thi"),
+        ("Don\u2019t Stop", "Don't Stop"),
+    ],
+)
+def test_the_same_song_in_extended_latin_or_with_a_curly_apostrophe_is_one_ref(db: Database, title: str, again: str) -> None:
+    assert resolve(db, title=title, artists=["Artist"])["id"] == resolve(db, title=again, artists=["Artist"])["id"]
+
+
+def test_two_songs_that_differ_only_by_an_extended_latin_letter_are_two_refs(db: Database) -> None:
+    """Before: the letter was DROPPED, so `Łukasz` and `Ukasz` were both `ukasz`."""
+    assert resolve(db, title="Song", artists=["Łukasz"])["id"] != resolve(db, title="Song", artists=["Ukasz"])["id"]
+
+
+def test_the_key_a_new_ref_is_stored_under_is_the_new_one(db: Database) -> None:
+    ref = resolve(db, title="سألوني الناس", artists=["فيروز"])
+    with db.read() as conn:
+        key = conn.execute("SELECT norm_key FROM song_ref WHERE id = ?", (ref["id"],)).fetchone()[0]
+    assert key == "فيروز|سالوني الناس|"
+
+
+def test_a_symbol_only_artist_is_found_again_but_not_confused_with_another(db: Database) -> None:
+    """`!!!` the band: its words are empty, the key's fallback keeps it apart from `???` (and from every other name)."""
+    a = resolve(db, title="Me and Giuliani", artists=["!!!"], durationMs=200000)
+    assert resolve(db, title="Me and Giuliani", artists=["!!!"], durationMs=200000)["id"] == a["id"]
+    assert resolve(db, title="Me and Giuliani", artists=["???"], durationMs=200000)["id"] != a["id"]
+
+
+def test_the_two_siblings_of_survives_fold_whole(db: Database) -> None:
+    assert refs.key_is_degenerate("||") and refs.key_is_degenerate("fairuz||") and refs.key_is_degenerate("|habibi|")
+    assert not refs.key_is_degenerate("abba|dancing queen|")
+    assert not refs.key_is_degenerate("abba|dancing queen|live"), (
+        "the version segment is allowed to be empty and is never looked at"
+    )
+    ref = resolve(db)
+    with db.tx() as conn:
+        assert refs.recheck_pending(conn, str(ref["id"])) is False
+        conn.execute("INSERT INTO ref_recheck (ref, at) VALUES (?, 1)", (ref["id"],))
+        assert refs.recheck_pending(conn, str(ref["id"])) is True

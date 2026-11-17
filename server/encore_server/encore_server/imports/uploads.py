@@ -22,12 +22,12 @@ title, because it says which recording this is (`clean_title`, unchanged).
 from __future__ import annotations
 
 import re
-import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..artist_basis import CHANNEL, DECLARED, TITLE, UNKNOWN
-from ..textnorm import artist_parts, mentions_version
+from ..textnorm import artist_parts, fold, mentions_version
+from ..textnorm import words as fold_words
 
 # --------------------------------------------------------------------------- reading text apart
 
@@ -89,10 +89,10 @@ def plain_name(name: str) -> str:
 
 
 def _name_key(text: str) -> str:
-    """A name as its letters and digits, in any alphabet: decomposed (NFKD), case-folded, and everything that is not a letter or a digit dropped (spaces,
-    punctuation and the accents and vowel marks that decomposition splits off). (The server's own `textnorm.ascii_fold` keeps a-z0-9 only, so an Arabic or
-    Cyrillic name is the empty string there, audit B-37 / P2-25; when P2-25 gives the server one fold, this is replaced by it in the same change.)"""
-    return "".join(char.casefold() for char in unicodedata.normalize("NFKD", text or "") if char.isalnum())
+    """A name as its letters and digits, in any alphabet, joined: the SHARED fold of the server (`textnorm.fold`, P2-25: case, width and compatibility forms, the
+    decorating accents and vowel marks, `ø ł ı ß` and the Arabic and Persian variants) and then everything that is not a letter or a digit dropped. (This
+    module kept a fold of its own for the length of N-26, because the server's was ASCII only; its comment promised the replacement in the same change.)"""
+    return "".join(fold_words(fold(text or "")))
 
 
 def _channel_key(channel: str) -> str:
@@ -104,15 +104,9 @@ def _channel_key(channel: str) -> str:
 
 
 def _words(text: str) -> str:
-    """The words of a text in any alphabet, one space between them: case-folded, the accents and vowel marks that decomposition splits off dropped (not
-    turned into a gap: "Mötley" stays one word), every other mark a gap."""
-    kept = []
-    for char in unicodedata.normalize("NFKD", text or ""):
-        if char.isalnum():
-            kept.append(char.casefold())
-        elif not unicodedata.category(char).startswith("M"):
-            kept.append(" ")
-    return " ".join("".join(kept).split())
+    """The words of a text in any alphabet, one space between them (the shared fold: "Mötley" stays one word, a Hindi word keeps its vowel signs, every other
+    mark is a gap)."""
+    return " ".join(fold_words(fold(text or "")))
 
 
 def _mentions(name: str, text: str) -> bool:

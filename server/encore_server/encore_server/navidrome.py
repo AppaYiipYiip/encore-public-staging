@@ -16,7 +16,7 @@ import httpx
 
 from .auth import subsonic_token
 from .sources.youtube.stream import Upstream
-from .textnorm import artist_parts, norm_artist, norm_title, ratio, version_signature
+from .textnorm import artist_key, artist_parts, ratio, title_key, version_signature
 
 log = logging.getLogger("encore_server.navidrome")
 
@@ -223,18 +223,21 @@ def pick_song(
             path = str(s.get("path") or "").replace("\\", "/").lower()
             if path and (path == want or path.endswith("/" + want)):
                 return str(s.get("id"))
-    wanted_title, wanted_artist, wanted_version = norm_title(title), norm_artist(artist), version_signature(title)
+    # The keys, not the bare words: a title or an artist that folds to nothing (`!!!`, a song called "Audio") is still itself (P2-25), and a title in any alphabet is
+    # compared by what it says (before, every Arabic title was `''` and any two were "the same", saved only by the size of the very file that was just kept).
+    wanted_title, wanted_artist, wanted_version = title_key(title), artist_key(artist), version_signature(title)
+    wanted_album = title_key(album) if album else None
     best: tuple[float, str] | None = None
     for s in songs:
         found_title = str(s.get("title") or "")
-        if norm_title(found_title) != wanted_title or version_signature(found_title) != wanted_version:
+        if title_key(found_title) != wanted_title or version_signature(found_title) != wanted_version:
             continue
         listed_artists = [*artist_names(str(s.get("artist") or "")), *artist_names(str(s.get("albumArtist") or ""))]
-        closeness = max((ratio(wanted_artist, norm_artist(name)) for name in listed_artists), default=0.0)
+        closeness = max((ratio(wanted_artist, artist_key(name)) for name in listed_artists), default=0.0)
         same_file = size is not None and s.get("size") == size  # the same number of bytes: the very file that was just kept
         if closeness < 0.8 and not same_file:
             continue
-        score = closeness + (0.2 if album and norm_title(str(s.get("album") or "")) == norm_title(album) else 0.0)
+        score = closeness + (0.2 if wanted_album and title_key(str(s.get("album") or "")) == wanted_album else 0.0)
         if same_file:
             score += 1.0
         if best is None or score > best[0]:

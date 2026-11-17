@@ -18,7 +18,7 @@ from .artist_basis import BASES, NOT_PERFORMERS, is_known_basis
 from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
-from .textnorm import is_unknown_artist, norm_artist, norm_title, version_signature
+from .textnorm import artist_key, is_unknown_artist, title_key, version_signature
 
 #: Two recordings with the same normalised name are the same song when their lengths differ by no more than this.
 DURATION_TOLERANCE_MS = 3000
@@ -38,9 +38,28 @@ def is_placeholder_album(value: object) -> bool:
 
 def norm_key(artist: str, title: str) -> str:
     """The artist and the title as people would compare them, and *which version it is*: "Fade Into You" and
-    "Fade Into You (The Avener Rework)" are two songs even though only a bracket tells them apart."""
+    "Fade Into You (The Avener Rework)" are two songs even though only a bracket tells them apart.
+
+    **The key is `artist|title|version` in ANY alphabet and no artist or title part of it is empty while there is something to read** (P2-25, audit B-37): the
+    fold keeps the letters of every script (`textnorm.fold`), and a part with no word at all (a song called "Audio", a band called `!!!`) falls back to its
+    own text, so two different songs never share a key because they were both "nothing". The version part is empty for most songs. A key made of ASCII letters,
+    digits and punctuation is what it always was, except a part that used to be empty."""
     version = " ".join(sorted(version_signature(title)))
-    return f"{norm_artist(artist)}|{norm_title(title)}|{version}"
+    return f"{artist_key(artist)}|{title_key(title)}|{version}"
+
+
+def key_is_degenerate(key: str | None) -> bool:
+    """Is the artist or the title segment of a stored key EMPTY? The cheap sign of damage by the old fold (`||`, `fairuz||`, `|habibi|`): no key the fold makes
+    now has one. The version segment is empty in nearly every key and is never looked at. A key that is not three segments is damaged too."""
+    parts = (key or "").split("|")
+    return len(parts) != 3 or not parts[0] or not parts[1]
+
+
+def recheck_pending(conn: sqlite3.Connection, ref_id: str) -> bool:
+    """Is this ref on the worklist of the one-time key repair (`ref_recheck`, P2-25 slice 3)? Its files may belong to OTHER songs (the old fold glued them on),
+    so a repair that moves a file or merges identities by a file (`refmerge`, N-34's refile) must leave it alone until the rehome of slice 4 has judged them.
+    STOP-GAP(P2-25 one-shot-repair): goes with the worklist (N-36)."""
+    return conn.execute("SELECT 1 FROM ref_recheck WHERE ref = ?", (ref_id,)).fetchone() is not None
 
 
 def _clean(value: object, limit: int = _TEXT_LIMIT) -> str | None:
@@ -264,6 +283,13 @@ def lead_artist(artists: object) -> str:
     return str(artists[0]) if isinstance(artists, list) and artists else ""
 
 
+def _same_artist(a: str, b: str) -> bool:
+    """The same artist as the name key compares them: the keys are equal and say something (two names that fold to nothing are never "the same": `!!!` is
+    not `???`, and before P2-25 every two non-Latin artists were `'' == ''`)."""
+    key = artist_key(a)
+    return bool(key) and key == artist_key(b)
+
+
 def facts_to_fill(
     *,
     have_basis: str | None,
@@ -296,7 +322,7 @@ def facts_to_fill(
     if (
         basis is not None
         and have_basis is None
-        and norm_artist(have_artist) == norm_artist(artist)
+        and _same_artist(have_artist, artist)
         and (basis not in NOT_PERFORMERS or same_video)
     ):
         updates["artist_basis"] = basis
