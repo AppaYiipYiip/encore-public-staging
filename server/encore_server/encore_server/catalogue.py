@@ -33,7 +33,6 @@ import re
 import sqlite3
 import threading
 import time
-import unicodedata
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -46,6 +45,7 @@ from .deezer import (
     NotInCatalogue,
     Priority,
 )
+from .textnorm import fold, words
 
 log = logging.getLogger("encore_server.catalogue")
 
@@ -412,32 +412,10 @@ def _is_empty(body: Any) -> bool:
 
 # ------------------------------------------------------------------------------------------------------------------ releases: editions folded
 
-#: The phone's own folding of a title for "is it the same release" (`app/lib/domain/text_match.dart`, `normalizeForMatch`), ported letter for letter so
-#: a list of releases folds as it did on the phone. It keeps every script (`\p{L}`, `\p{N}`): an Arabic or a Russian title is not folded to nothing
-#: (B-37 is the server's `textnorm`, which this does NOT use), and a title that folds to nothing is never merged with another.
-_FOLD = {
-    **{c: "a" for c in "àáâãäåā"},
-    **{c: "c" for c in "çćč"},
-    **{c: "e" for c in "èéêëēęě"},
-    **{c: "i" for c in "ìíîïī"},
-    **{c: "n" for c in "ñńň"},
-    **{c: "o" for c in "òóôõöøō"},
-    **{c: "u" for c in "ùúûüūů"},
-    **{c: "y" for c in "ýÿ"},
-    **{c: "s" for c in "šś"},
-    "ß": "ss",
-    **{c: "z" for c in "žźż"},
-    "ł": "l",
-    "đ": "d",
-    "ð": "d",
-    "þ": "th",
-    "æ": "ae",
-    "œ": "oe",
-    "’": "'",
-    "‘": "'",
-    "“": '"',
-    "”": '"',
-}
+#: How a title is folded for "is it the same release" is the SHARED fold of the server (`textnorm.fold`, P2-25). It was a letter-for-letter port of the phone's own
+#: table (`app/lib/domain/text_match.dart`, `normalizeForMatch`), which is a second copy of the same idea (the bug class of audit B-37: five copies of one table
+#: that drift); now the phone's twin of the fold (`app/lib/domain/text_fold.dart`) and this are generated from and tested against one fixture. What stays HERE is
+#: the edition-suffix rule below, the `&` and the leading "the": the loose layer a release needs on top of the identity fold.
 _EDITION_SUFFIX = re.compile(
     r"\s*[(\[]?\s*(?:\d{4}\s+)?(?:remaster(?:ed)?(?: (?:version|edition))?|"
     r"deluxe(?: edition)?|"
@@ -450,16 +428,14 @@ _EDITION_SUFFIX = re.compile(
 
 
 def release_key(title: str) -> str:
-    """What two titles must share to be one release: no case, no edition suffix ("Deluxe Edition", "Remastered 2011"), the accents of the listed
-    letters, no punctuation, no leading "the". Empty when the title holds no letter or digit at all (the caller never merges on an empty key)."""
-    text = title.strip().lower()
+    """What two titles must share to be one release: no case, no edition suffix ("Deluxe Edition", "Remastered 2011"), the accents and the letters of the
+    shared fold (any alphabet), no punctuation, no leading "the". Empty when the title holds no letter or digit at all (the caller never merges on an empty key)."""
+    text = fold(title.strip())
     previous = None
     while previous != text:
         previous = text
         text = _EDITION_SUFFIX.sub("", text, count=1)
-    text = "".join(_FOLD.get(ch, ch) for ch in text).replace("&", " and ")
-    text = "".join(ch if unicodedata.category(ch)[0] in "LN" or ch.isspace() else " " for ch in text)
-    text = " ".join(text.split())
+    text = " ".join(words(text.replace("&", " and ")))
     return text[4:] if text.startswith("the ") else text
 
 

@@ -3,7 +3,7 @@
 the real scheduler. Nothing is sent anywhere, no Docker: YouTube, the music server and the picture look-up (the keeper asks Deezer for a cover on every
 keep; without the stub below, a run of this script would send hundreds of searches there, as its first three runs did) are replaced.
 
-    C:/dev/venv-encore-server/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_people.py [--people 20] [--seconds 20] [--server server/encore_server]
+    C:/dev/venv-encore-server-312/Scripts/python.exe -X utf8 docs/evidence/scripts/audit_people.py [--people 20] [--seconds 20] [--server server/encore_server]
 
 Every check prints PASS or FAIL with what was measured, and the register row it proves or reopens. A fix is done when its line says PASS. The script
 speaks only the server's HTTP API (docs/17), so it is also what any other client (a tablet, a TV, a browser) has to be able to rely on.

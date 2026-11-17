@@ -167,7 +167,7 @@ where YouTube is slow or blocked. The source module must protect the Host's addr
 | Upload speed | 0.5 Mbit/s → 1 Gbit/s | Away-from-home streams transcode to Opus 96–128 kbps by default; the wizard measures upload and says how many listeners it supports |
 | Address | home, CGNAT, VPS, blocked | §5; Funnel works behind CGNAT |
 | Country | YouTube allowed/blocked; songs geo-blocked | reachability test; "not available in your country" per song; Deezer search uses the server's country |
-| Language | English first; Arabic, French, Spanish…; non-Latin titles | All matching uses Unicode-normalised text (already in `textnorm.py`); UI strings in one file from day one so translations are a later drop-in; RTL layout tested on one screen per release |
+| Language | English first; Arabic, French, Spanish…; non-Latin titles | All matching uses one Unicode-normalised fold for every alphabet (`textnorm.py`; built in P2-25 slices 2 and 3, not walked; before it the server folded to ASCII and dropped every other letter, audit B-37); UI strings in one file from day one so translations are a later drop-in; RTL layout tested on one screen per release |
 
 ## 7. Installing and updating (what a Host experiences) (ADR-R7)
 

@@ -406,6 +406,31 @@ def test_a_live_verdict_keeps_the_ref_for_its_window_and_an_expired_one_does_not
     )
 
 
+def test_an_arabic_not_found_of_the_old_matcher_no_longer_keeps_its_ref(world: Database) -> None:
+    """P2-25 slice 2: until the fold was fixed an exact Arabic result was REJECTED, so every non-Latin song earned a `not_found`. `MATCHER_REVISION` 2 voids those
+    answers, and the janitor (which reads the same constants) sees them as not live: a ref kept alive only by one is retired, one with a current verdict stays."""
+    assert MATCHER_REVISION >= 2
+    with world.tx() as conn:
+        old = add_ref(conn, 1, title="سألوني الناس", **verdict(HOUR, rev=1))
+        current = add_ref(conn, 2, title="سألوني الناس", **verdict(HOUR, rev=MATCHER_REVISION))
+    janitor(world).run_once()
+    assert refs_left(world) == {current}, f"{old} was kept alive only by an answer the old matcher gave"
+
+
+def test_a_retired_ref_leaves_no_row_on_the_key_repairs_worklist_and_being_on_it_keeps_nothing_alive(world: Database) -> None:
+    """P2-25 slice 3: `ref_recheck` has no foreign key (a worklist is not a reason to keep a ref), so the janitor drops the row of every ref it retires."""
+    with world.tx() as conn:
+        listed = add_ref(conn, 1)
+        kept = add_ref(conn, 2)
+        _song_file(conn, kept)
+        for ref in (listed, kept):
+            conn.execute("INSERT INTO ref_recheck (ref, at) VALUES (?, 1)", (ref,))
+    janitor(world).run_once()
+    assert refs_left(world) == {kept}, "the one with a file stays; being on the worklist saved the other from nothing"
+    with world.read() as conn:
+        assert {r["ref"] for r in conn.execute("SELECT ref FROM ref_recheck")} == {kept}
+
+
 def test_the_sql_and_missing_standing_of_never_disagree_about_what_is_live(world: Database) -> None:
     """ONE definition of 'a live verdict': the SQL is built from `missing`'s own constants, and this walks the boundaries of every part of it against
     `missing.standing_of` itself, so a change in either one that the other does not follow fails here."""

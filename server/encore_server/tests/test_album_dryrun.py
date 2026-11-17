@@ -82,7 +82,8 @@ def answers_folder(tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def library(db: Database, tmp_path: Path) -> Database:
-    """The songs of a small library: three the recordings know, a twin of one of them, an Arabic one, one nobody recorded, and the ones that are NOT asked."""
+    """The songs of a small library: three the recordings know, a twin of one of them, an Arabic one (asked since P2-25 slices 2 and 3: the fold keeps its letters, and
+    nobody recorded its search), one whose title has no letter or digit (the one kind of name still refused), one nobody recorded, and the ones that are NOT asked."""
     make_ref(db, "Not Kept", "Someone Else", 202_000)  # made FIRST: only "the ones with a kept file first" puts it last
     # the ref's own ISRC is the catalogue's: it is the song's own, never "another ref's" (a pair)
     make_ref(db, "Requiem", "LANDMVRKS", 240_000, kept="Encore/LANDMVRKS/Singles/Requiem.opus", isrc="DEYO62400324")
@@ -98,6 +99,9 @@ def library(db: Database, tmp_path: Path) -> Database:
     )
     make_ref(db, "Comfortably Numb", "Pink Floyd", 382_000, kept="Encore/Pink Floyd/Singles/Comfortably Numb.opus")
     make_ref(db, "كيفك إنت", "فيروز", 209_000, kept="Encore/x/Singles/a.opus")
+    make_ref(
+        db, "🎵", "Quiet Band", 200_000, kept="Encore/x/Singles/e.opus"
+    )  # no letter and no digit: the fold has nothing to compare (still refused)
     make_ref(db, "A Song Nobody Recorded", "Nobody At All", 200_000, kept="Encore/y/Singles/b.opus")
     make_ref(db, "Has An Id", "Someone", 200_000, kept="Encore/z/Singles/c.opus", deezerId="999")
     make_ref(db, "Has An Album", "Someone", 201_000, kept="Encore/z/Singles/d.opus", album="Their Album")
@@ -152,11 +156,12 @@ def test_who_is_asked_the_kept_songs_with_no_album_and_no_id_first_and_what_thei
             ("LANDMVRKS", "Creature"),
             ("Pink Floyd", "Comfortably Numb"),
             ("فيروز", "كيفك إنت"),
+            ("Quiet Band", "🎵"),
             ("Nobody At All", "A Song Nobody Recorded"),
             ("Mazzy Star", "Fade Into You"),
             ("Somebody Quiet", "No Length"),
         ], "a ref with an album, with a catalogue id, with no kept file or only a file of the Host's own library is not asked"
-        assert [e.length_from for e in kept] == ["listing"] * 6 + ["none"], (
+        assert [e.length_from for e in kept] == ["listing"] * 7 + ["none"], (
             "a copy holds no file: the import's listing is all there is"
         )
         everyone = entries(conn, kept_only=False)
@@ -213,7 +218,9 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
         "Requiem240000": ("matched", "matched"),
         "Creature225000": ("held", "twin_held"),  # the twin already holds this song on this album
         "Comfortably Numb382000": ("matched", "matched"),
-        "كيفك إنت209000": ("unsupported", "artist_not_comparable"),
+        # asked: the name survives the fold whole now (it was refused as "artist_not_comparable" before P2-25 slices 2 and 3); nobody recorded its search
+        "كيفك إنت209000": ("unavailable", "search_not_asked"),
+        "🎵200000": ("unsupported", "title_not_comparable"),  # NOT asked: no letter and no digit
         "A Song Nobody Recorded200000": (
             "unavailable",
             "search_not_asked",
@@ -230,7 +237,9 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
     # the best-of's song list was never recorded and is not needed (The Wall is chosen), so it is "could not ask" for a song that did not need it
     assert (
         sorted(transport.not_recorded)
-        == ["album_12114262_tracks", "album_319814", "search_track_nobody_at_all_a_song_nobody_recorded"]
+        # `search_track_` is the Arabic song's search: the answer file is named by an ASCII-only slug of the query, which is EMPTY for any query without a Latin
+        # letter, so every such search would share this one name (a hole of N-34 slice 1's dry run that P2-25 slices 2 and 3 make reachable: the lead has it)
+        == ["album_12114262_tracks", "album_319814", "search_track_", "search_track_nobody_at_all_a_song_nobody_recorded"]
         and transport.asked == 0
     )
 
@@ -257,7 +266,7 @@ def test_the_report_names_every_section_the_lead_reads(library: Database, tmp_pa
         "all five lengths are the listing's: the report says it is not the file's histogram"
     )
     assert re.search(r"matched\s+matched\s+\(remembered\)", text) and re.search(
-        r"unsupported\s+artist_not_comparable\s+\(never remembered\)", text
+        r"unsupported\s+title_not_comparable\s+\(never remembered\)", text
     )
     assert re.search(r"unavailable\s+search_not_asked\s+\(never remembered\)", text)
     assert re.search(r"unavailable\s+release_not_asked\s+\(never remembered\)", text)
@@ -389,7 +398,7 @@ def test_the_command_writes_nothing_to_the_database_and_prints_the_report(librar
         out=printed.append,
     )
     assert code == 0
-    assert "".join(printed) == target.read_text(encoding="utf-8") and "7 songs through the matcher" in target.read_text(
+    assert "".join(printed) == target.read_text(encoding="utf-8") and "8 songs through the matcher" in target.read_text(
         encoding="utf-8"
     )
     assert hashlib.sha256(database.read_bytes()).hexdigest() == before, "the database file is not changed by a byte"
@@ -405,7 +414,7 @@ def test_a_console_that_cannot_show_a_name_gets_its_escape_and_the_run_still_end
     assert main(["--db", str(tmp_path / "data" / "encore.db"), "--answers", str(answers_folder(tmp_path))]) == 0
     console.flush()
     shown = console.buffer.getvalue().decode("cp1252")  # type: ignore[attr-defined]
-    assert r"\u0643" in shown and "7 songs through the matcher" in shown
+    assert r"\u0643" in shown and "8 songs through the matcher" in shown
 
 
 @pytest.mark.parametrize(
@@ -585,7 +594,7 @@ def test_the_flags_all_limit_and_music_root_reach_the_selection(library: Databas
     ):
         assert main([*base, *extra], out=texts[name].append) == 0
     got = {name: "".join(parts) for name, parts in texts.items()}
-    assert "7 songs through" in got["plain"] and "9 songs through" in got["all"] and "2 songs through" in got["limit"]
+    assert "8 songs through" in got["plain"] and "10 songs through" in got["all"] and "2 songs through" in got["limit"]
     assert re.search(r"1\s+file\n", got["root"]) and "NO row used a file's length" not in got["root"], (
         "one kept file was read: the histogram can say so"
     )

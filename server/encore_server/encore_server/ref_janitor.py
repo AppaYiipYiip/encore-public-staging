@@ -102,6 +102,10 @@ NOT_POINTERS: dict[tuple[str, str], str] = {
     ): "The id of a ref that no longer exists: the tombstone clients fold the old id through; never deleted by the janitor.",
     ("song_file", "navidrome_song_id"): "The music server's own song id for the file, not a song ref.",
     (
+        "ref_recheck",
+        "ref",
+    ): "The worklist of the one-time key repair (P2-25 slice 3): a worklist is not a reason to keep a ref, and the janitor drops the row of a ref it retires (no foreign key).",
+    (
         "ref_gone",
         "ref_id",
     ): "The id of a ref the janitor already retired (the tombstone phones are told about): it names nothing that still exists, so it keeps nothing.",
@@ -175,6 +179,8 @@ class RefJanitor:
                 conn.executemany("INSERT OR IGNORE INTO ref_gone (ref_id, at) VALUES (?, ?)", [(ref, now) for ref in chunk])
                 # `file_log` has no foreign key, so nothing else would remove the log of a retired ref (slice 2e): the same transaction.
                 conn.execute(f"DELETE FROM file_log WHERE ref IN ({marks})", tuple(chunk))
+                # The worklist of the key repair has no foreign key either (P2-25): a retired ref leaves no row on it. STOP-GAP(P2-25 one-shot-repair): until N-36.
+                conn.execute(f"DELETE FROM ref_recheck WHERE ref IN ({marks})", tuple(chunk))
                 # work_item (and work_item_person) go by their cascade: the rows left are over, the pointer clause counted only the active ones.
                 conn.execute(f"DELETE FROM song_ref WHERE id IN ({marks})", tuple(chunk))
         if ids:

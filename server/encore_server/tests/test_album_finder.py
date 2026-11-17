@@ -40,6 +40,7 @@ from encore_server.album_finder import (
 from encore_server.catalogue import Cache, Catalogue, release_key
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
+from encore_server.textnorm import survives_fold_whole
 from tests.catalogue_fakes import RecordedDeezer, recorded, searches
 
 # ------------------------------------------------------------------------------------------------------------------ the recorded data
@@ -101,12 +102,6 @@ def reasons(verdict_hits: Any) -> dict[str, str]:
 @pytest.mark.parametrize(
     ("artist", "title", "why"),
     [
-        ("فيروز", "كيفك إنت", "artist_not_comparable"),
-        ("Кино", "Группа крови", "artist_not_comparable"),
-        ("Pink Floyd", "Группа крови", "title_not_comparable"),
-        ("Fairuz", "Habibi يا نور", "title_not_comparable"),
-        ("Łukasz", "Song", "artist_not_comparable"),
-        ("Rammstein", "Straße", "title_not_comparable"),
         ("Pink Floyd", "Audio", "title_not_comparable"),  # a title that is all noise folds to nothing
         ("Pink Floyd", "???", "title_not_comparable"),
         (
@@ -145,7 +140,20 @@ def test_nothing_is_asked_about_a_song_that_was_refused_even_when_the_hits_would
 
 
 @pytest.mark.parametrize(
-    ("artist", "title"), [("Björk", "Army of Me"), ("Beyoncé", "Halo"), ("Sigur Rós", "Hoppípolla"), ("Ke$ha", "Tik Tok")]
+    ("artist", "title"),
+    [
+        ("Björk", "Army of Me"),
+        ("Beyoncé", "Halo"),
+        ("Sigur Rós", "Hoppípolla"),
+        ("Ke$ha", "Tik Tok"),
+        # refused while the fold lost every letter outside a-z (era 0, B-37); asked since P2-25 slices 2 and 3, where the key keeps them
+        ("فيروز", "كيفك إنت"),
+        ("Кино", "Группа крови"),
+        ("Pink Floyd", "Группа крови"),
+        ("Fairuz", "Habibi يا نور"),
+        ("Łukasz", "Song"),
+        ("Rammstein", "Straße"),
+    ],
 )
 def test_names_the_fold_keeps_whole_are_asked(artist: str, title: str) -> None:
     assert refusal(Song(artist, title, 200_000)) is None
@@ -173,58 +181,137 @@ def test_the_remembered_outcomes_are_exactly_the_facts() -> None:
         assert Verdict(outcome, "x").remember is remembered, outcome  # type: ignore[arg-type]
 
 
-# ------------------------------------------------------------------------------------------------------------------ the two Arabic rows
+# ------------------------------------------------------------------------------------------------------------------ the Arabic rows (P2-25 slices 2 and 3: era 1)
+# These rows were written for era 0, where `survives_fold_whole` was false for every Arabic name and the skip rule alone refused them (the premise they pinned was
+# "both fold to '||'"). From the merge of P2-25 slices 2 and 3 every name below survives the fold WHOLE, so no guard is what holds them: the rows assert the rule
+# that holds now, the one the new fold makes true: two different songs are two different keys, and a hit is the song only when the artist AND the key are equal.
 
 
-ARABIC_A, ARABIC_B = "كيفك إنت", "حبيبي"
+ARABIC_A, ARABIC_B, ARABIC_C = "كيفك إنت", "حبيبي", "سألوني الناس"
+
+
+def arabic_hit(title: str, *, artist: str = "فيروز", duration: int = 209) -> dict[str, Any]:
+    """DERIVED: the recorded Fairuz row ("Kifak Inta", 209 s, on "Fairuz Chillout Classics") with its artist and title changed to Arabic names. Nothing else is
+    changed: the length, the album and the id are the recording's."""
+    hit = copy.deepcopy(hits("fairuz kifak inta")[1])
+    assert hit["artist"]["name"] == "Fairuz" and hit["title"] == "Kifak Inta"
+    hit.update(title=title, duration=duration, artist={"id": hit["artist"]["id"], "name": artist})
+    return hit
+
+
+def test_the_arabic_names_of_these_rows_all_survive_the_fold_whole_so_no_guard_holds_them() -> None:
+    """The premise of every row below, stated once: with the new fold the names are not refused, they are compared."""
+    for name in ("فيروز", ARABIC_A, ARABIC_B, ARABIC_C, "Fairuz", "Habibi", "Habibi يا نور", "Habibi يا قمر", "Fairuz فيروز"):
+        assert survives_fold_whole(name), name
+    for title in (ARABIC_A, ARABIC_B, ARABIC_C):
+        assert refusal(Song("فيروز", title, 209_000)) is None, "step 0 asks about the song: it is the key that decides"
+    for title in ("Habibi", "Habibi يا نور", "Habibi يا قمر"):
+        assert refusal(Song("Fairuz", title, 200_000)) is None
 
 
 def test_two_different_arabic_songs_and_one_deezer_hit_neither_gets_an_album() -> None:
-    """The row the whole dependency on P2-25 is for. Both songs fold to the same key (`'||'`), so without the rule the one hit would be "both" of them.
-    The hit is the recorded Fairuz row (Latin names, 209 s); the albums are the recorded ones: nothing here may decide, store or ask."""
-    fairuz = hits("fairuz kifak inta")
-    assert refs.norm_key("فيروز", ARABIC_A) == refs.norm_key("فيروز", ARABIC_B) == "||", (
-        "the premise: the key is the same for two different songs"
+    """The row the whole dependency on P2-25 is for, and the rule that holds it now: the keys of two different Arabic songs of one artist are two keys (under the
+    old fold both were `'||'`, which is also the key of the one hit). The hit is a THIRD Arabic song of the same artist and the same length: it is neither of them,
+    and the only thing that says so is that its key differs from both keys. Nothing here may decide, store or ask."""
+    keys = {refs.norm_key("فيروز", ARABIC_A), refs.norm_key("فيروز", ARABIC_B), refs.norm_key("فيروز", ARABIC_C)}
+    assert len(keys) == 3 and "" not in {part for key in keys for part in key.split("|")[:2]}, (
+        "the premise: three songs, three non-empty keys"
     )
+    third = arabic_hit(ARABIC_C)
     for title in (ARABIC_A, ARABIC_B):
         song = Song("فيروز", title, 209_000)
+        assert [v.reason for v in judge_hits(song, [third])] == ["title_or_version"], title  # the artist is equal; the KEY is not
+        verdict = choose_release(song, [third], albums(WALL))
+        assert (verdict.outcome, verdict.match) == ("none", None), title
+        assert wanted_albums(song, [third]) == []
+
+
+def test_the_recorded_latin_hit_is_not_either_of_two_arabic_songs() -> None:
+    """The same two songs against the recorded Latin row (Fairuz, "Kifak Inta", 209 s): the fold does not transliterate, so an Arabic name and its Latin
+    spelling are different names and neither song gets the album (a miss, never a wrong stamp; N-16 measures what else could be done)."""
+    fairuz = hits("fairuz kifak inta")
+    latin = refs.norm_key("Fairuz", "Kifak Inta")
+    for title in (ARABIC_A, ARABIC_B):
+        assert refs.norm_key("فيروز", title) != latin
+        song = Song("فيروز", title, 209_000)
+        assert judge_hits(song, fairuz[1:2])[0].reason == "artist"
         verdict = choose_release(song, fairuz, albums(WALL))
-        assert (verdict.outcome, verdict.match, verdict.remember) == ("unsupported", None, False), title
+        assert (verdict.outcome, verdict.match) == ("none", None), title
         assert wanted_albums(song, fairuz) == []
 
 
-def test_habibi_and_two_different_arabic_words_the_key_is_not_empty_so_only_the_rule_stops_it() -> None:
-    """ "Fairuz - Habibi <Arabic A>" and "<Arabic B>", one hit "Habibi" (the recorded Fairuz row with its title changed: DERIVED)."""
+def test_an_arabic_hit_is_the_song_it_is_named_for_and_not_the_other_arabic_song() -> None:
+    """The control that proves the rows above are the equality rule and not a refusal: the hit NAMED as song A is song A (same recording, the recorded album), and the
+    other Arabic song of the same artist and the same length is not it."""
+    named_a = arabic_hit(ARABIC_A)
+    assert [v.reason for v in judge_hits(Song("فيروز", ARABIC_A, 209_000), [named_a])] == ["same_recording"]
+    assert wanted_albums(Song("فيروز", ARABIC_A, 209_000), [named_a]) == ["9950862"]
+    other = Song("فيروز", ARABIC_B, 209_000)
+    assert [v.reason for v in judge_hits(other, [named_a])] == ["title_or_version"]
+    assert wanted_albums(other, [named_a]) == []
+    vowelled = arabic_hit(
+        "كَيْفَكْ إِنْتَ"
+    )  # the same song written with the vowel marks: the fold removes them on purpose, so it is the same key
+    assert [v.reason for v in judge_hits(Song("فيروز", ARABIC_A, 209_000), [vowelled])] == ["same_recording"]
+
+
+def test_habibi_and_two_different_arabic_words_are_three_keys_and_none_matches_the_latin_hit() -> None:
+    """ "Fairuz - Habibi <Arabic A>" and "<Arabic B>", one hit "Habibi" (the recorded Fairuz row with its title changed: DERIVED). Under the old fold all three were
+    `fairuz|habibi|`; now they are three keys, and neither song is the hit."""
     hit = copy.deepcopy(hits("fairuz kifak inta")[1])
     assert hit["artist"]["name"] == "Fairuz"
     hit.update(title="Habibi", duration=200)
     one, other = "Habibi يا نور", "Habibi يا قمر"
-    assert (
-        refs.norm_key("Fairuz", one) == refs.norm_key("Fairuz", other) == refs.norm_key("Fairuz", "Habibi") == "fairuz|habibi|"
-    ), "the premise: the key is NOT empty, and it is the Latin hit's key too"
+    keys = [refs.norm_key("Fairuz", title) for title in (one, other, "Habibi")]
+    assert len(set(keys)) == 3 and keys[2] == "fairuz|habibi|", (
+        "the premise: three different keys, and the Latin hit's is not either Arabic one"
+    )
+    assert [v.reason for v in judge_hits(Song("Fairuz", "Habibi", 200_000), [hit])] == ["same_recording"], (
+        "the control: the Latin song IS the hit"
+    )
     for title in (one, other):
-        verdict = choose_release(Song("Fairuz", title, 200_000), [hit], albums(WALL))
-        assert (verdict.outcome, verdict.reason, verdict.match, verdict.remember) == (
-            "unsupported",
-            "title_not_comparable",
-            None,
-            False,
-        ), title
+        song = Song("Fairuz", title, 200_000)
+        assert [v.reason for v in judge_hits(song, [hit])] == ["title_or_version"], title
+        verdict = choose_release(song, [hit], albums(WALL))
+        assert (verdict.outcome, verdict.match) == ("none", None), title
+        assert wanted_albums(song, [hit]) == []
 
 
 def test_a_latin_song_is_not_matched_with_a_hit_whose_title_only_starts_in_latin() -> None:
-    """The same hole from the other side: the library's "Habibi" against the hit "Habibi <Arabic>" (DERIVED from the recorded row) folds to `habibi`
-    twice. The rule covers the strings that are COMPARED, so it covers the hit's."""
+    """The same from the other side: the library's "Habibi" against the hit "Habibi <Arabic>" (DERIVED from the recorded row): two keys, so no match. The hit's
+    artist "Fairuz فيروز" is not "Fairuz" either (it was a skip-rule row under the old fold; it is an artist mismatch now)."""
     hit = copy.deepcopy(hits("fairuz kifak inta")[1])
     hit.update(title="Habibi يا نور", duration=200)
     song = Song("Fairuz", "Habibi", 200_000)
-    assert refs.norm_key("Fairuz", "Habibi") == refs.norm_key("Fairuz", "Habibi يا نور"), "the premise"
-    assert [v.reason for v in judge_hits(song, [hit])] == ["skip_rule"]
+    assert refs.norm_key("Fairuz", "Habibi") != refs.norm_key("Fairuz", "Habibi يا نور"), "the premise"
+    assert [v.reason for v in judge_hits(song, [hit])] == ["title_or_version"]
     assert choose_release(song, [hit], albums(WALL)).outcome == "none"
     hit.update(title="Habibi", artist={"id": 1, "name": "Fairuz فيروز"})
-    assert [v.reason for v in judge_hits(song, [hit])] == ["skip_rule"], (
-        "an artist that folds to the library's but does not survive the fold"
-    )
+    assert [v.reason for v in judge_hits(song, [hit])] == ["artist"]
+
+
+@pytest.mark.parametrize(
+    ("name", "what"),
+    [
+        ("🎵", "an emoji only"),
+        ("♪♪", "music notes only"),
+        ("ـــ", "a tatweel only: removed on purpose, so nothing is left to compare"),
+        ("ً", "a lone Arabic vowel mark"),
+        ("???", "punctuation only"),
+    ],
+)
+def test_a_name_with_no_letter_or_digit_still_cannot_be_compared_safely(name: str, what: str) -> None:
+    """The era-1 rule keeps its one job: a name that holds no letter and no digit identifies nothing, so it is refused whichever alphabet the rest of the song
+    is in, and not remembered (`textnorm.survives_fold_whole`, P2-25 design part 4)."""
+    assert not survives_fold_whole(name), what
+    for song, why in (
+        (Song("فيروز", name, 209_000), "title_not_comparable"),
+        (Song(name, "حبيبي", 209_000), "artist_not_comparable"),
+    ):
+        assert refusal(song) == ("unsupported", why), (name, what)
+        verdict = choose_release(song, hits("fairuz kifak inta"), albums(WALL))
+        assert (verdict.outcome, verdict.reason, verdict.remember) == ("unsupported", why, False)
+        assert wanted_albums(song, hits("fairuz kifak inta")) == []
 
 
 # ------------------------------------------------------------------------------------------------------------------ steps 1 and 2: the same recording

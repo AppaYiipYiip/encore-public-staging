@@ -24,8 +24,9 @@ from typing import Any
 
 import pytest
 
+from encore_server import textnorm
 from encore_server.imports.uploads import read_upload
-from encore_server.textnorm import ascii_fold
+from tests import legacy_fold as legacy
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 CORPUS = json.loads((FIXTURES / "n26_upload_corpus.json").read_text(encoding="utf-8"))
@@ -113,12 +114,11 @@ def test_every_recorded_upload_is_judged_in_the_corpus() -> None:
 # --------------------------------------------------------------------------- other alphabets (audit B-37 / P2-25)
 
 
-def test_P2_25_a_name_in_another_alphabet_is_read_right_although_the_servers_fold_is_blind_to_it() -> None:
-    """PIN (audit B-37, task P2-25; not fixed here): the server's own `textnorm.ascii_fold` keeps a-z0-9 only, so an Arabic, Russian or Japanese name folds
-    to the empty string. The reader of uploads does not use it (it compares names by their letters in any alphabet), and the corpus has non-Latin rows that are
-    right TODAY: this test proves the rows exist and that the fold is still blind to their artists. The day P2-25 gives the server one Unicode fold, this test
-    is deleted with `uploads._name_key` and the rows stay."""
-    non_latin = [row for row in of("negative") if row["artist"] and not ascii_fold(row["artist"]).strip()]
+def test_P2_25_a_name_in_another_alphabet_is_read_right_and_the_servers_fold_now_sees_it() -> None:
+    """Audit B-37 / P2-25 slice 2: the server's fold used to keep a-z0-9 only, so an Arabic, Russian or Japanese name folded to the empty string, and this test
+    PINNED that (the reader of uploads compared names by their letters in any alphabet on its own). The corpus has non-Latin rows that are right; this proves the
+    rows exist (the six scripts, picked by what the FROZEN old fold lost) and that the shared fold now gives every one of those artists a key of its own."""
+    non_latin = [row for row in of("negative") if row["artist"] and not legacy.ascii_fold(row["artist"]).strip()]
     scripts = {
         "arabic": any("؀" <= ch <= "ۿ" for row in non_latin for ch in row["artist"]),
         "cyrillic": any("Ѐ" <= ch <= "ӿ" for row in non_latin for ch in row["artist"]),
@@ -128,7 +128,10 @@ def test_P2_25_a_name_in_another_alphabet_is_read_right_although_the_servers_fol
         "hebrew": any("֐" <= ch <= "׿" for row in non_latin for ch in row["artist"]),
     }
     assert all(scripts.values()), scripts
-    assert ascii_fold("فيروز").strip() == ""  # Arabic: the old trap, still there
+    assert legacy.ascii_fold("فيروز").strip() == ""  # Arabic: the old trap, frozen in tests/legacy_fold.py
+    for row in non_latin:
+        assert textnorm.norm_artist(row["artist"]), row["id"]
+    assert textnorm.norm_artist("فيروز") == "فيروز" and textnorm.norm_artist("Кино") != textnorm.norm_artist("Любэ")
 
 
 # --------------------------------------------------------------------------- why the live-credit shape is NOT read (decided: left to N-28)
