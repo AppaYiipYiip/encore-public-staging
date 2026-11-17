@@ -1,0 +1,12 @@
+{
+ "id": "20261117T190602Z-agent-7f46",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T19:06:02Z",
+ "type": "note",
+ "body": "TRAIL 16-17 Nov 2026 (lead), part 1 of 2: WHAT WAS MERGED, in order. The owner was away both days; the frozen test pair (app build 160 + server sha-62cf7f0 on VM 108) was never touched; nothing is walked. 16 Nov morning (earlier session): #104 P2-25 slice 1 (95d1293), #108, #109 (N-31 janitor half proven on a copy of VM 108's database aged 100 days). 17 Nov: #107 P2-29 the one download/import card S-95, built not walked (615e8b2); #111 N-34 slice 1: the album matcher, the priority and deadline plumbing, the dry-run tool (a830fac); #110 P2-25 slices 2+3: every server call site on the one fold, keyrepair at start-up with its own backup, the ref_recheck worklist, the refmerge hold, migration 0018, and the server REFUSES TO START on any Python but 3.12; audit B-136 filed (3c4b700); #113 N-39 premise proved and fixed at the download manager: a cancel the manager did not ask for ends the attempt with a back-off, N-39 stays todo (de8993b); #115 N-34 slice 1 clean-up: dead era-0 guards out, one fixture name for any alphabet (add7b6e); #112 items N-42..N-45 and the lead's rulings (63ebc7e); #116 the advisor's best-of ruling (e8fa2d6); #114 design: the N-39 Stop that keeps files, the Remove confirmation, the N-42 card frames (af0ef6e). IN FLIGHT at 19:00 UTC 17 Nov: the N-39 STOP BUILD (worktree wt-n39s, branch task/N-39-stop-keeps-files) and P2-25 SLICE 4, the rehome (wt-p225s4, branch task/P2-25-slice4-rehome); each inside a workflow with an independent reviewer and a fixer after the builder. THE PROCESS every PR went through: builder helper, then an independent read-only reviewer (it mutates the code in a throwaway worktree to see tests fail), then a fixer for blockers, then my own re-check, then merge_chain3.sh one PR at a time. Reviews found real defects BEFORE merge: a hold test that could not fail and a backup a clock step could prune away (#110), a CHANGELOG claim the matcher could not keep (#111), an untested deletion guard (#113), a progress bar that could drop and an import polled for ever (#107). I re-ran the P2-25 repair myself on a fresh copy of the real database on its final head: 40 keys change, 16 suspect, 0 on the worklist, 8 covers voided; one repair copy that passes the SQLite integrity check; a second start writes nothing.",
+ "to": [
+  "agent"
+ ]
+}
