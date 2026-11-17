@@ -1,0 +1,265 @@
+{
+ "recorded": "2026-11-16",
+ "path": "/album/676735071/tracks",
+ "params": {
+  "limit": 100
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 3116792051,
+    "readable": true,
+    "title": "The Darkest Place I've Ever Been",
+    "title_short": "The Darkest Place I've Ever Been",
+    "title_version": "",
+    "isrc": "DEYO62400318",
+    "link": "https://www.deezer.com/track/3116792051",
+    "duration": 207,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 562314,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792061,
+    "readable": true,
+    "title": "Creature",
+    "title_short": "Creature",
+    "title_version": "",
+    "isrc": "DEYO62300153",
+    "link": "https://www.deezer.com/track/3116792061",
+    "duration": 225,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 615732,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792071,
+    "readable": true,
+    "title": "A Line in the Dust",
+    "title_short": "A Line in the Dust",
+    "title_version": "",
+    "isrc": "DEYO62400319",
+    "link": "https://www.deezer.com/track/3116792071",
+    "duration": 235,
+    "track_position": 3,
+    "disk_number": 1,
+    "rank": 584243,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792081,
+    "readable": true,
+    "title": "Blood Red",
+    "title_short": "Blood Red",
+    "title_version": "",
+    "isrc": "DEYO62400320",
+    "link": "https://www.deezer.com/track/3116792081",
+    "duration": 209,
+    "track_position": 4,
+    "disk_number": 1,
+    "rank": 652965,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792091,
+    "readable": true,
+    "title": "Sulfur",
+    "title_short": "Sulfur",
+    "title_version": "",
+    "isrc": "DEYO62400316",
+    "link": "https://www.deezer.com/track/3116792091",
+    "duration": 206,
+    "track_position": 5,
+    "disk_number": 1,
+    "rank": 576855,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792101,
+    "readable": true,
+    "title": "Sombre 16",
+    "title_short": "Sombre 16",
+    "title_version": "",
+    "isrc": "DEYO62400317",
+    "link": "https://www.deezer.com/track/3116792101",
+    "duration": 70,
+    "track_position": 6,
+    "disk_number": 1,
+    "rank": 429239,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792111,
+    "readable": true,
+    "title": "The Great Unknown",
+    "title_short": "The Great Unknown",
+    "title_version": "",
+    "isrc": "DEYO62400321",
+    "link": "https://www.deezer.com/track/3116792111",
+    "duration": 187,
+    "track_position": 7,
+    "disk_number": 1,
+    "rank": 554869,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792121,
+    "readable": true,
+    "title": "La Valse Du Temps",
+    "title_short": "La Valse Du Temps",
+    "title_version": "",
+    "isrc": "DEYO62400322",
+    "link": "https://www.deezer.com/track/3116792121",
+    "duration": 326,
+    "track_position": 8,
+    "disk_number": 1,
+    "rank": 619632,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792131,
+    "readable": true,
+    "title": "Deep Inferno",
+    "title_short": "Deep Inferno",
+    "title_version": "",
+    "isrc": "DEYO62400323",
+    "link": "https://www.deezer.com/track/3116792131",
+    "duration": 212,
+    "track_position": 9,
+    "disk_number": 1,
+    "rank": 517483,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792141,
+    "readable": true,
+    "title": "Requiem",
+    "title_short": "Requiem",
+    "title_version": "",
+    "isrc": "DEYO62400324",
+    "link": "https://www.deezer.com/track/3116792141",
+    "duration": 240,
+    "track_position": 10,
+    "disk_number": 1,
+    "rank": 484323,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 3116792151,
+    "readable": true,
+    "title": "Funeral",
+    "title_short": "Funeral",
+    "title_version": "",
+    "isrc": "DEYO62400325",
+    "link": "https://www.deezer.com/track/3116792151",
+    "duration": 172,
+    "track_position": 11,
+    "disk_number": 1,
+    "rank": 480800,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 9985838,
+     "name": "LANDMVRKS",
+     "tracklist": "https://api.deezer.com/artist/9985838/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 11
+ }
+}

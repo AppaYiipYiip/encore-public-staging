@@ -28,6 +28,11 @@ NO_DATA = {"error": {"type": "DataException", "message": "no data", "code": 800}
 QUOTA = {"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}}
 
 
+def slug(text: str) -> str:
+    """The file name of a recorded search (`tools/record_catalogue_fixtures.py n34 search`): lower case, every run of other characters one underscore."""
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
+
+
 def recorded(name: str) -> dict[str, Any]:
     return json.loads((RECORDED / f"{name}.json").read_text(encoding="utf-8"))["answer"]  # type: ignore[no-any-return]
 
@@ -68,9 +73,12 @@ class RecordedDeezer:
         return httpx.Response(200, json=self.answer(request.url.path, dict(request.url.params)))
 
     def answer(self, path: str, params: dict[str, str]) -> Any:
-        if (
-            path == "/search"
-        ):  # the plain search the finders use: songs, as the recorded searches list them (the query is matched without its case)
+        if path == "/search":
+            # The plain search the finders use. First the N-34 recordings (the whole raw answer of `search_tracks`, asked with that very query), then
+            # the songs of the 20 recorded searches (matched without the query's case).
+            named = RECORDED / f"search_track_{slug(params.get('q', ''))}.json"
+            if named.exists():
+                return recorded(named.stem)
             row = searches().get(params.get("q", "").lower())
             songs = row["track"] if row else []
             return {"data": songs[: int(params.get("limit", "8"))], "total": len(songs)}
@@ -98,4 +106,15 @@ class RecordedDeezer:
         for pattern, name in known.items():
             if re.fullmatch(pattern, path):
                 return recorded(name)
+        # The N-34 recordings (16 Nov 2026): an album, its songs, an artist's releases, by the id in the file's name.
+        if match := re.fullmatch(r"/(album|artist)/(\d+)(/tracks|/albums)?", path):
+            kind, ident, tail = match.groups()
+            names = {
+                ("album", None): f"album_{ident}",
+                ("album", "/tracks"): f"album_{ident}_tracks",
+                ("artist", "/albums"): f"artist_albums_{ident}",
+            }
+            stem = names.get((kind, tail))
+            if stem and (RECORDED / f"{stem}.json").exists():
+                return recorded(stem)
         return NO_DATA  # Deezer answers HTTP 200 with this for a thing that does not exist

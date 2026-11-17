@@ -381,19 +381,24 @@ def installed() -> DeezerClient | None:
 _installed: DeezerClient | None = None
 
 
-def search_tracks(artist: str, title: str, *, client: httpx.Client | None = None, limit: int = 8) -> list[dict[str, Any]]:
+def search_tracks(
+    artist: str, title: str, *, client: httpx.Client | None = None, limit: int = 8, wait_s: float | None = None
+) -> list[dict[str, Any]]:
     """The recordings the catalogue lists for "artist title" (a plain search: its field search finds nothing for many real songs), best first.
 
     An empty list means the catalogue answered and knows none. [LookupUnavailable] means it did not answer in a way that can be trusted.
 
     This is what the cover finder, the artist finder and the keeper's cover call: a *background* turn at the installed gate, so one budget covers the
     whole server. A caller that brings a client of its own (the finders' tests) is asked through that client, once, with a gate of its own that nobody
-    else shares, so a refusal given to a test can never rest the gate of another."""
+    else shares, so a refusal given to a test can never rest the gate of another.
+
+    [wait_s] is how long the caller waits for its TURN at the gate; `None` is a background turn's own patience (`BACKGROUND_WAIT_S`, 120 s), which is right
+    for a pass and wrong for a keep that a person is waiting behind (N-34 slice 3 asks with a short one)."""
     asking = DeezerClient(Gate(background_gap_s=0.0), client) if client is not None else _installed
     if asking is None:
         raise CatalogueOff("no catalogue is set up in this process")
     try:
-        body = asking.get("/search", {"q": f"{artist} {title}", "limit": limit}, priority="background")
+        body = asking.get("/search", {"q": f"{artist} {title}", "limit": limit}, priority="background", wait_s=wait_s)
     except NotInCatalogue as error:
         raise LookupUnavailable("an unexpected 'no data' answer to a search") from error
     data = body.get("data")
