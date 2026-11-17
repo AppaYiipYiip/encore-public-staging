@@ -84,7 +84,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 18 | N-39 | A download you cancel stays cancelled | M | todo | none | 10 to 19 |
 | 19 | N-45 | Behind the scenes: a late answer cannot end a new download attempt | M | todo | none | 10 to 21 |
 | 20 | N-40 | A download keeps going after you close the app | L | todo | none | 12 to 25 |
-| 21 | N-42 | The download card tells you when an import fails or stops elsewhere | S | todo | none | 13 to 26 |
+| 21 | N-42 | The download card tells you when an import stops elsewhere or finishes late | S | todo | none | 13 to 26 |
 | 22 | N-43 | Behind the scenes: an import tells the phone about each saved song | M | todo | none | 14 to 27 |
 | 23 | N-44 | Behind the scenes: a wrong song from the artist's channel is not accepted | M | todo | P2-25 | 15 to 29 |
 | 24 | P1-26 | An imported song without a picture shows YouTube's thumbnail, not a letter | S | built | none | 15 to 29 |
