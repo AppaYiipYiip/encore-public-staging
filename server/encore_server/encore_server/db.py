@@ -11,7 +11,7 @@ import re
 import shutil
 import sqlite3
 import time
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, suppress
 from importlib import resources
 from pathlib import Path
@@ -152,23 +152,71 @@ class Database:
 
     def backup(self, label: str) -> Path:
         """A whole copy of the database in the backups folder (`encore-<label>-<time>.db`), made with `VACUUM INTO` (a consistent copy taken under a read lock).
-        Returns where it is. It is kept: nothing here deletes it. A migration takes one named after the version; the repair of merged refs takes
-        its own, named for what it is about to do (`refmerge.py`)."""
+        Returns where it is. It is kept: `backup` itself never deletes anything (a repair that takes copies at every start prunes its own label with
+        [prune_backups]). A migration takes one named after the version; the repair of merged refs takes its own, named for what it is about to do
+        (`refmerge.py`), and so does the repair of stored keys (`keyrepair.py`)."""
         self.backups.mkdir(parents=True, exist_ok=True)
         stem = f"encore-{label}-{time.strftime('%Y%m%d-%H%M%S')}"
-        target = self.backups / f"{stem}.db"
-        for again in range(
-            2, 100
-        ):  # two copies in one second (a restart loop) never overwrite or refuse each other: VACUUM INTO will not write over a file
-            if not target.exists():
-                break
-            target = self.backups / f"{stem}-{again}.db"
+        # Two copies in one second (a restart loop) never overwrite or refuse each other (VACUUM INTO will not write over a file), and the suffix always goes ABOVE the
+        # ones that exist, never into a gap a pruned copy left: [copies] orders by (time, suffix), so a new copy must sort after every copy of its second.
+        same_second = [
+            int(match.group(1) or 1)
+            for path in self.backups.glob(f"{stem}*.db")
+            if (match := re.fullmatch(rf"{re.escape(stem)}(?:-(\d+))?\.db", path.name))
+        ]
+        again = max(same_second, default=0) + 1
+        if again >= 1000:
+            raise OSError(f"{again - 1} copies of the database were made in one second: something is looping")
+        target = self.backups / (f"{stem}.db" if again == 1 else f"{stem}-{again}.db")
         source = self.connect()
         try:
             source.execute("VACUUM INTO ?", (str(target),))
         finally:
             source.close()
         return target
+
+    def copies(self, label: str) -> list[Path]:
+        """The copies [backup] made under exactly this label, OLDEST FIRST by their names (a folder that does not exist has none): the time in the name, then the
+        `-2`, `-3`... of copies made in one second (as text `x-2.db` sorts before `x.db`, and `x-10.db` before `x-2.db`).
+
+        **This order is a hint and nothing that must hold may depend on it.** The time in a name is the LOCAL time of the clock that made the copy, and a clock goes
+        back: the end of daylight saving time repeats an hour, a time sync steps it, somebody sets it. A file's modification time is no better (the operating system stamps
+        it from the same clock), and there is no sequence number in a name (names are the format docs/15 and docs/18 describe, shared with the migration and merge copies).
+        So the only ordering use is [prune_backups]'s choice of WHICH surplus copy goes first, and a wrong choice there costs a spare copy, never the one a caller
+        relies on: the caller names that one, and it is not a candidate."""
+        pattern = re.compile(rf"^encore-{re.escape(label)}-(\d{{8}}-\d{{6}})(?:-(\d+))?\.db$")
+        found: list[tuple[str, int, Path]] = []
+        if self.backups.is_dir():
+            for path in self.backups.iterdir():
+                match = pattern.match(path.name)
+                if match and path.is_file():
+                    found.append((match.group(1), int(match.group(2) or 1), path))
+        return [path for _stamp, _again, path in sorted(found)]
+
+    def prune_backups(self, label: str, keep: int, *, protect: Iterable[Path | str]) -> list[Path]:
+        """Removes copies of this label (and of no other label: a migration's copy and the merge's are never touched) until at most `keep` are left; returns the ones it
+        removed. For a repair that takes a copy at every start it finds something to do: the cap that keeps a restart loop from filling the disk.
+
+        **`protect` is required: the copies that must stay, whatever their names say** (the copy the caller has just taken and is about to rely on, and the one its last
+        committed repair used). A protected copy is never a candidate and counts inside `keep`; more protected copies than `keep` are all kept. The rest go OLDEST FIRST
+        by [copies]'s order, which a clock that went back can get wrong: then a spare copy goes before another, and nothing else. (This used to take only `keep`, ordered
+        by the names alone: with three copies named in the future the copy taken just now was the OLDEST of four, was removed, and the repair that had taken it went on
+        with a path that did not exist.) A protected copy that is not there is not an error here: whether the caller can rely on it is the caller's check."""
+        if keep < 1:
+            raise ValueError("keep at least one copy: the copy a repair just took is the one it needs")
+        names = {Path(item).name for item in protect}
+        if not names:
+            raise ValueError(
+                "name the copy that must stay: a prune that is not told which copy the caller relies on is the prune that removed it"
+            )
+        present = self.copies(label)
+        spared = [path for path in present if path.name in names]
+        candidates = [path for path in present if path.name not in names]
+        room = max(keep - len(spared), 0)
+        removed = candidates[: len(candidates) - room] if len(candidates) > room else []
+        for path in removed:
+            path.unlink(missing_ok=True)
+        return removed
 
     def _restore(self, backup: Path | None) -> None:
         if backup is None:

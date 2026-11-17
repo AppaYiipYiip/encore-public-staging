@@ -343,7 +343,20 @@ def test_every_column_that_holds_a_song_id_is_one_the_repair_knows(db: Database)
 def test_the_ref_merge_table_has_the_columns_the_design_names(db: Database) -> None:
     with db.read() as conn:
         columns = [r["name"] for r in conn.execute("PRAGMA table_info(ref_merge)")]
-    assert columns == ["seq", "old_id", "into_id", "at", "norm_key", "isrc", "deezer_id", "ytm_video_id", "duration_ms"]
+    # `title` and `artist` (migration 0018, P2-25, decision D10) are written by the merge from now on so that the next fold can rewrite a tombstone's key
+    assert columns == [
+        "seq",
+        "old_id",
+        "into_id",
+        "at",
+        "norm_key",
+        "isrc",
+        "deezer_id",
+        "ytm_video_id",
+        "duration_ms",
+        "title",
+        "artist",
+    ]
 
 
 @pytest.mark.parametrize(

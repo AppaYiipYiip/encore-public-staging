@@ -10,8 +10,11 @@
 
 **What the report is for.** (1) The histogram of (the song's length minus the catalogue's length) over the songs that have a hit of the same artist,
 title and version: the number `album_finder.TOLERANCE_MS` is frozen from (it starts as an UNMEASURED 3 s). (2) Every hit rejected ONLY by the tolerance.
-(3) Every release type seen, every song with more than one candidate release, every held pair, every song that cannot be asked (an alphabet the fold
-loses, no length). (4) Every match, so that the reader can look for a wrong album.
+(3) Every release type seen, every song with more than one candidate release, every held pair, every song that cannot be asked (a name with no letter
+or digit in it, no length). (4) Every match, so that the reader can look for a wrong album.
+
+**The names of the saved answers** are `fixture_names.fixture_name`'s, the one function the recorder and the tests use too: a search is named by a hash of
+its FULL query, so a library in any alphabet is safe (two Arabic songs are two files; a replay never answers a song with another song's answer).
 
 **The length of the song.** The matcher compares the length of the KEPT FILE (the import's listing is 1 to 12 s off: N-11). A copy of the database holds no
 file, so without `--music-root` the length is `song_ref.duration_ms`, the listing's, and the report says so on every histogram: a histogram made from
@@ -26,11 +29,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sqlite3
 import sys
 from collections import Counter
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -44,6 +46,7 @@ from .album_finder import RefHoldings, Song, Verdict, choose_release, refusal, w
 from .artist_basis import performer_clause
 from .catalogue import Cache, Catalogue
 from .deezer import DeezerClient, Gate, LookupUnavailable, NotInCatalogue
+from .fixture_names import fixture_name
 
 #: What the dry run waits for one album (the album and its songs) and for one search: a background turn's patience, not a person's.
 ALBUM_DEADLINE_S = 30.0
@@ -55,26 +58,6 @@ _BAR = 40
 
 
 # ------------------------------------------------------------------------------------------------------------------ the catalogue source
-
-
-def _slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-
-
-def fixture_name(path: str, params: Mapping[str, Any]) -> str | None:
-    """The file an outside request's answer is saved in and replayed from: the names `tools/record_catalogue_fixtures.py n34` writes into
-    `tests/fixtures/deezer/` (`{recorded, path, params, answer}`). `None` for a request this tool never saves."""
-    if path == "/search":
-        query = str(params.get("q") or "")
-        return f"search_track_{_slug(query)}" if query else None
-    for pattern, name in (
-        (r"/album/(\d+)", "album_{}"),
-        (r"/album/(\d+)/tracks", "album_{}_tracks"),
-        (r"/artist/(\d+)/albums", "artist_albums_{}"),
-    ):
-        if match := re.fullmatch(pattern, path):
-            return name.format(match[1])
-    return None
 
 
 def _scrub(value: Any) -> Any:
