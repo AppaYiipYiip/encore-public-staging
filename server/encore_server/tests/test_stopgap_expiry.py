@@ -175,7 +175,9 @@ def test_the_inventory_of_marked_pieces_is_the_scan_of_the_markers() -> None:
     assert actual == {name: set(files) for name, files in INVENTORY.items()}, (
         "a marker was added or removed: a new stop-gap needs a line in INVENTORY (and a task and a trigger); a removed one is N-36 and edits INVENTORY with it"
     )
-    assert not [m for m in markers if m.name == "skip-rule"], "the guards of album_finder.py were removed with #115: a skip-rule marker is a guard that came back"
+    assert not [m for m in markers if m.name == "skip-rule"], (
+        "the guards of album_finder.py were removed with #115: a skip-rule marker is a guard that came back"
+    )
 
 
 @pytest.mark.parametrize(("name", "file", "piece"), [(n, f, p) for n, files in INVENTORY.items() for f, p in files.items()])
