@@ -328,6 +328,95 @@ void main() {
     });
   });
 
+  group("what the replay at the start must not break", () {
+    test(
+        "N-39: a replayed song that finished or was cancelled does not start more songs than the limit allows: nothing is pumped until the start has counted what still runs",
+        () async {
+      for (var i = 5; i <= 8; i++) {
+        await db.into(db.tracks).insert(TracksCompanion.insert(
+              serverId: serverId,
+              id: 't$i',
+              title: 'Song $i',
+              albumId: const Value('al1'),
+              suffix: const Value('flac'),
+              bitRate: const Value(900),
+              audioKey: Value('key$i'),
+            ));
+      }
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      expect(transport.started.length, 4,
+          reason: 't1 to t4 in flight, t5 to t8 queued');
+      final path1 = transport.requestFor('t1').relativePath;
+      await manager.dispose(); // the process ends
+
+      // While the app was closed: t1 finished, t2 was cancelled, t3 and t4 are still running in the downloader.
+      final next = FakeDownloadTransport()
+        ..files['/app/$path1'] = 4096
+        ..active = {taskOf('t3'), taskOf('t4')}
+        ..replayOnResume.addAll([
+          TransferUpdate(
+            taskId: taskOf('t1'),
+            status: TransferStatus.complete,
+            relativePath: path1,
+          ),
+          TransferUpdate(taskId: taskOf('t2'), status: TransferStatus.canceled),
+        ]);
+      final fresh = newManager(next);
+      await fresh.start();
+      expect(next.started, isEmpty,
+          reason:
+              'the start only counts; nothing is started before it is done');
+      await fresh.reconcile();
+      await fresh.settled();
+
+      expect(fresh.debugInFlight.length, lessThanOrEqualTo(4),
+          reason: 'the limit that keeps a home server gentle');
+      expect(fresh.debugInFlight, {'t3', 't4', 't5', 't6'});
+      expect(next.started.map((r) => r.taskId.split(':').last), ['t5', 't6'],
+          reason: 'two places were free: four slots, t3 and t4 still run');
+      expect((await row('t1')).state, DownloadState.done);
+      expect((await row('t2')).state, DownloadState.failed);
+      await fresh.dispose();
+    });
+
+    test(
+        "N-39: a refresh cancelled while the app was closed leaves the old copy and the half-made new file is deleted, though the new process never planned it",
+        () async {
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      final oldPath = (await row('t1')).localPath!;
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(audioKey: Value('key1-NEW')));
+      await manager.reconcile();
+      final partial = transport.requestFor('t1').relativePath;
+      expect(partial, endsWith('.opus.new'));
+      await manager.dispose(); // the process ends mid-refresh
+
+      final next = FakeDownloadTransport()
+        ..files['/app/$partial'] = 100
+        ..active = {taskOf('t2'), taskOf('t3'), taskOf('t4')}
+        ..replayOnResume.add(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.canceled,
+          relativePath: partial,
+        ));
+      final fresh = newManager(next);
+      await fresh.start();
+      await fresh.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.done,
+          reason: 'the copy on the phone is still the song');
+      expect(r.localPath, oldPath);
+      expect(next.deleted, ['/app/$partial'],
+          reason: 'only the half-made new file goes, never the old copy');
+      await fresh.dispose();
+    });
+  });
+
   group("a cancel the manager asks for itself (the person removed the pin)",
       () {
     test(
