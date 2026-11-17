@@ -1,0 +1,12 @@
+{
+ "id": "20261117T190603Z-agent-3aac",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T19:06:03Z",
+ "type": "note",
+ "body": "TRAIL 16-17 Nov 2026 (lead), part 2 of 2: RULINGS, DECISIONS, TRAPS, SAFETY NET. ADVISOR (asked at each decision point; it was overloaded once and I proceeded alone, then asked again): at most TWO code PRs wait, one merge chain at a time, merge in dependency order; the server refuses to start on a wrong Python (the image is python:3.12-slim = Unicode 15.0.0, no override); the key-repair plan runs at every start and writes and backs up only when it finds changes; N-34 best-of: a stamped album is effectively permanent, so whatever the matcher cannot justify lands in a RE-ASKABLE outcome, a measured single-to-album window decides, the discography lookup is a later round; download code order = the Stop, then N-45, then N-40; N-34 slice 2 waits for P2-25 slice 4. LEAD DECISIONS ON THE OWNER'S BEHALF (PROPOSED, changeable): D1 the stall is one sentence on the import page and no stalled card; D2 a Download Stop leaves one result card; D3 Stop on a merged import line stops only the phone copy; D4 no failed-import card (the server never writes failed); D5 the system time stamp dates a stopped card. NEW BOARD ITEMS: N-42 the card frames, N-43 an import tells the phone about each saved song so the 10 s asking can go, N-44 the YouTube scorer takes another song of the artist's channel (audit B-136), N-45 a task id per download attempt. TRAPS: python -I ignores PYTHONPATH (it silently tests main's code); the old 3.13 venv is refused, use C:/dev/venv-encore-server-312; PowerShell 5.1 shows UTF-8 as mojibake without -Encoding utf8 and anything piped into a native command gets a byte-order mark (use git commit -F file); never a bash heredoc in PowerShell; roadmap.py update and done take no --role; the merge chain's resolver can duplicate audit rows (check after a chain); a PR title is the squash title (#110 kept the word DRAFT). WAITS: the live Deezer dry run (about 1,500 requests from the home address) waits for the end of the owner's test week (about 23 Nov); VM 108 and the A35 stay frozen until then. SAFETY NET against a sudden power-off: every 10 minutes scripts/session-17nov/trail_snapshot.ps1 writes a resume report to local/trail/state-latest.txt and copies every in-flight worktree's uncommitted files to local/trail/snapshots/; after a shutdown read that report, then NEXT.md part H, the bullet RESUME RUNBOOK AFTER A SUDDEN SHUTDOWN.",
+ "to": [
+  "agent"
+ ]
+}
