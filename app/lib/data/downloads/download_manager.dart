@@ -31,6 +31,10 @@ class SongNotKeptYet implements Exception {
   String toString() => 'The server does not keep this song yet';
 }
 
+/// What a song's row says when its transfer was cancelled by something that is not the manager (N-39). It is a recorded reason, never shown as it
+/// is: `phoneFailureWords` gives the person the plain sentence every song the phone could not take gets.
+const String kDownloadStoppedReason = 'The download was stopped';
+
 /// Policy the manager reads each time it schedules work.
 @immutable
 class DownloadPolicy {
@@ -146,6 +150,10 @@ class DownloadManager {
   Future<void> start() async {
     _updates = _transport.updates.listen(_enqueueUpdate);
     await _transport.resume();
+    // What the downloader kept while the app was not running (a finished file, a cancel pressed on a card of an older build) is handled first: it
+    // says why a row's task is gone, and the rows whose task is gone with no word at all are only then put back in the queue (N-39: a cancelled song
+    // was started again by the next start of the app).
+    await settled();
     // Rows left "downloading" by a previous run whose task is gone go back
     // to the queue.
     final active = await _transport.activeTaskIds();
@@ -432,26 +440,39 @@ class DownloadManager {
         await _onComplete(trackId, update.relativePath);
       case TransferStatus.failed:
         _inFlight.remove(trackId);
-        final reason = update.error ?? 'Download failed';
-        final rows = await _repo.rowsFor([trackId]);
-        if (rows.isNotEmpty && _isRefresh(rows.first)) {
-          // A refresh that did not arrive (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone playable:
-          // it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
-          final partial = _plannedPath.remove(trackId);
-          if (partial != null) {
-            await _transport.deleteFile(await _transport.absolutePath(partial));
-          }
-          await _giveUp(trackId, true, reason);
-        } else {
-          await _repo.markFailed(trackId, reason);
-          await _pump();
-        }
+        await _onAttemptEnded(trackId, update.error ?? 'Download failed');
       case TransferStatus.canceled:
         _inFlight.remove(trackId);
+        // The manager cancels in one place, `_delete`, and deletes the row in the same pass (the update is handled after it): no row. A row that
+        // still says "downloading" was cancelled by something else (the Cancel button of the downloader's card of an older build, a reset of the
+        // downloader, an update the downloader kept while the app was closed), and no task is behind it any more. It is an attempt that ended, not a
+        // download that never does: it was forgotten here, so the pin and the card waited for ever, the place stayed empty and the next start of the
+        // app started the song again at once (N-39, audit row B-134). It is a failed attempt with its back-off: not started again at once, not in a
+        // loop, and "Try again" starts it now. A row in any other state is waiting for nothing: a stale word changes nothing.
+        final rows = await _repo.rowsFor([trackId]);
+        if (rows.isNotEmpty && rows.first.state == DownloadState.downloading) {
+          await _onAttemptEnded(trackId, kDownloadStoppedReason);
+        }
       case TransferStatus.enqueued:
       case TransferStatus.running:
       case TransferStatus.paused:
         break;
+    }
+  }
+
+  /// A transfer that ended without a file. A refresh (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone
+  /// playable: it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
+  Future<void> _onAttemptEnded(String trackId, String reason) async {
+    final rows = await _repo.rowsFor([trackId]);
+    if (rows.isNotEmpty && _isRefresh(rows.first)) {
+      final partial = _plannedPath.remove(trackId);
+      if (partial != null) {
+        await _transport.deleteFile(await _transport.absolutePath(partial));
+      }
+      await _giveUp(trackId, true, reason);
+    } else {
+      await _repo.markFailed(trackId, reason);
+      await _pump();
     }
   }
 

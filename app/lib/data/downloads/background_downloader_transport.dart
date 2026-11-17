@@ -70,6 +70,10 @@ class BackgroundDownloaderTransport implements DownloadTransport {
     try {
       await FileDownloader().trackTasks();
       await FileDownloader().resumeFromBackground();
+      // The replayed updates reach `FileDownloader().updates` and then [updates] through scheduled events (read in background_downloader 9.6.4,
+      // `retrieveLocallyStoredData`): one turn of the event loop lets them all through before this returns (the contract of
+      // [DownloadTransport.resume]).
+      await Future<void>.delayed(Duration.zero);
     } on Object catch (error) {
       Log.warn('downloads', 'resume from background failed', error);
     }
