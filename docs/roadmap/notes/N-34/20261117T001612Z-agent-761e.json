@@ -1,0 +1,12 @@
+{
+ "id": "20261117T001612Z-agent-761e",
+ "item": "N-34",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T00:16:12Z",
+ "type": "note",
+ "body": "LEAD, 17 Nov 2026: PR #111 (slice 1) is MERGED (a830fac). A DECISION IS OWED BEFORE SLICE 2 STORES A STAMP (found by the independent review of #111, confirmed by the builder): a best-of or compilation by the SAME artist that Deezer types as album becomes the song's permanent album when the original is absent from the hits, and it beats an original that came out only as a single (rule: an album or an EP beats a single whatever the dates). The recorded record_types cannot mark a compilation (step 0 found no compilation or live value; Legend Remixed and the Legacy sets are all album). OPTIONS for the advisor, to be ruled BEFORE slice 2 is built: (a) accept: the song is filed under the best-of when that is all the catalogue offers, and the dry-run report says how many songs depend on it; (b) ask the artist's discography (artist albums, cached 7 days) and prefer the earliest release among ALL albums of the artist that hold the recording, so a best-of never beats an earlier album; (c) a title heuristic (Greatest Hits, Best Of, Collection) as a SECOND layer only, never the rule (a best-of called Gold passes). LEAD'S LEAN: (b) with (c) as the second layer, and the dry run of slice 1 on the owner's library (the lead's decision, through the gate, from the Host's address, after the owner's test week) counts the songs that depend on it before anything is stored. ALSO: once P2-25 slices 2+3 (PR #110, era 1) are in main, the Arabic rows of tests/test_album_finder.py must assert the equality rule and not only the unsupported guard: the P2-25 helper owns that edit in its last round. Other review concerns, information only: the album song-list wait of a PERSON route now gets what is left of 2.5 s at the gate (the old value was None); the dry-run fixture slugs collide for queries that differ only in punctuation or non-ASCII; _id_order raises on a non-ASCII digit (use isascii); the docstring's record_type counts do not reproduce from the fixtures; the dry-run timing test may flake on a loaded machine.",
+ "to": [
+  "agent"
+ ]
+}

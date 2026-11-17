@@ -1,13 +1,12 @@
 """The expiry guard of the P2-25 stop-gaps (slice 4): a marked piece of code that has outlived its removal trigger FAILS the suite, so the reminder cannot be ignored.
 
-**The stop-gaps.** Two kinds, both written by P2-25 and both meant to go one release after the release that carries it (the owner's standing rule: a stop-gap says what it
-costs, has a removal trigger, a task and a visible reminder):
+**The stop-gap.** One kind is left, written by P2-25 and meant to go one release after the release that carries it (the owner's standing rule: a stop-gap says what it
+costs, has a removal trigger, a task and a visible reminder). (The second kind, `skip-rule`, the guards of N-34's `album_finder.py`, was removed on 17 Nov 2026 in the
+clean-up after slices 2 and 3, #115: nothing carries that marker now, and the inventory below fails if one comes back unlisted.)
 
 * `STOP-GAP(P2-25 one-shot-repair; ...)`: the worklist table, `rehome.py`, `keyrepair._lost_by_old_fold`, the `recheck_pending` hold of `refmerge`, the voided covers and
   `tests/legacy_fold.py`: a one-time repair of data the old text fold made. Trigger: the worklist is empty on every install the project knows (read with
   `audit_stack.py check rekey`, never assumed) and one release has passed. Task: board item N-36.
-* `STOP-GAP(P2-25 skip-rule; ...)`: the guards of N-34's `album_finder.py` that refuse a name that does not survive the fold whole. Since P2-25 slice 2 they are a second layer.
-  Task: N-36 as well.
 
 **What "a release has passed" means here, and its limit (said plainly).** The repository has no release yet (P5-06: `CHANGELOG.md` says "Unreleased", the version is 0.1.0, the
 image is tagged `v*` only for a release). The one machine-readable thing that moves at a release is the server's own version, `encore_server.__version__` (the `serverVersion` of
@@ -78,7 +77,7 @@ def message(late: list[Marker], current: str) -> str:
     return (
         f"The server is at version {current} and these stop-gaps of P2-25 were to be gone after the release that carries them:\n{where}\n"
         "Delete them: board item N-36 lists every piece (the worklist table with a migration that drops it, rehome.py, keyrepair._lost_by_old_fold, the recheck_pending hold, "
-        "tests/legacy_fold.py, the guards of album_finder.py) and their tests, and this inventory. Do it only when `python docs/evidence/scripts/audit_stack.py check rekey` "
+        "tests/legacy_fold.py) and their tests, and this inventory. Do it only when `python docs/evidence/scripts/audit_stack.py check rekey` "
         "says the worklist is empty on every install the project knows. If instead this is the FIRST release (the version was raised to the number it ships under), set "
         "`remove after` of every marker to that number. If the trigger has really not been met, move the release on AND write why in a board note on N-36. "
         "Never delete only the comment: the inventory in tests/test_stopgap_expiry.py fails then."
@@ -131,14 +130,14 @@ def test_the_alarm_can_ring_a_version_past_the_release_fails_every_marker_and_th
 
 
 def test_a_marker_that_names_no_release_counts_as_late_so_a_reminder_cannot_be_written_that_never_rings() -> None:
-    bare = [Marker("x.py", 1, "skip-rule", None)]
+    bare = [Marker("x.py", 1, "one-shot-repair", None)]
     assert expired(bare, "0.0.1") == bare
 
 
 @pytest.mark.parametrize(
     ("text", "release"),
     [
-        ("# STOP-GAP(P2-25 skip-rule; remove after 0.1.0): x", "0.1.0"),
+        ("# STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): x", "0.1.0"),
         ("STOP-GAP(P2-25 one-shot-repair): goes with the worklist (N-36).", None),
         ("STOP-GAP(P2-25 one-shot-repair; remove after soon)", None),
         ("STOP-GAP(P2-25 one-shot-repair; remove after 0.1)", None),
@@ -165,12 +164,7 @@ INVENTORY: dict[str, dict[str, str]] = {
         "encore_server/ref_janitor.py": "DELETE FROM ref_recheck",
         "tests/legacy_fold.py": "def norm_key(",
     },
-    "skip-rule": {
-        "encore_server/album_finder.py": "survives_fold_whole(",
-    },
 }
-#: How many call sites of `album_finder.py` carry the skip-rule marker: its docstring, `refusal`, the hit's names, the album artist.
-SKIP_RULE_SITES = 4
 
 
 def test_the_inventory_of_marked_pieces_is_the_scan_of_the_markers() -> None:
@@ -181,7 +175,7 @@ def test_the_inventory_of_marked_pieces_is_the_scan_of_the_markers() -> None:
     assert actual == {name: set(files) for name, files in INVENTORY.items()}, (
         "a marker was added or removed: a new stop-gap needs a line in INVENTORY (and a task and a trigger); a removed one is N-36 and edits INVENTORY with it"
     )
-    assert sum(1 for m in markers if m.file == "encore_server/album_finder.py") == SKIP_RULE_SITES
+    assert not [m for m in markers if m.name == "skip-rule"], "the guards of album_finder.py were removed with #115: a skip-rule marker is a guard that came back"
 
 
 @pytest.mark.parametrize(("name", "file", "piece"), [(n, f, p) for n, files in INVENTORY.items() for f, p in files.items()])

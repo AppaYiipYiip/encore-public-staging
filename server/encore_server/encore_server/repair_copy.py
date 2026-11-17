@@ -1,6 +1,6 @@
 """The copy of the database a repair relies on, written once for the repairs that need one (`keyrepair.py`, `rehome.py`; P2-25).
 
-**The invariant: a repair never writes without a copy it can be undone from.** It holds in two layers, and neither depends on the ORDER of the copies, because the
+**The invariant: a repair never writes without a copy it can be undone from, as far as a check at start-up can tell** (layer 2 below says what that check is and is not). It holds in two layers, and neither depends on the ORDER of the copies, because the
 order is not trustworthy: a copy's name is the LOCAL time of the clock that made it, a clock goes back (the end of daylight saving time repeats an hour, a time sync
 steps it, somebody sets it), and a file's modification time comes from the same clock. (The first version of the key repair ordered the copies by their names: with
 three copies named in the future the copy just taken was the OLDEST of four, the prune removed it, and the repair went on with a path that did not exist and logged it
