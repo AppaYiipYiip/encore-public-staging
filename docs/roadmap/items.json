@@ -1184,5 +1184,14 @@
    }
   ],
   "from": "agent"
+ },
+ "N-45": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a late answer cannot end a new download attempt",
+  "note": "Found by helper-n39 and the review of PR #113 (17 Nov 2026; the known limit of PB-F22). A download task is named from the song (enc:server:track), so a late acknowledgement of an OLD task with the same name can end a NEW attempt as failed (the song then waits 10 minutes before its next try; completion repairs it). It is reachable by switching a download off and on again inside the 400 ms debounce. Fix at the source: a task id per attempt, stored in the download row (a migration of the phone's database), so an answer is matched to the attempt that asked for it and a stale one is ignored. It touches DownloadManager.start() and the way a row is requeued after the process died, which is also the ground of N-40 (a download that keeps going after the app is closed): build it with or just before N-40. Cost of leaving it: rare, one wasted wait of 10 minutes per occurrence, never a lost file; it is recorded so it is not forgotten.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }
