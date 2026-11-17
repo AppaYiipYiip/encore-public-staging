@@ -93,13 +93,18 @@ Future<Uri> _url(
 ///
 /// What is proved here: `resume()` of the transport returns only after every update the downloader kept while the app was not running has been handed
 /// to the transport's `updates` (the contract the manager's start relies on: it handles those updates before it puts the rows whose task is gone back
-/// in the queue). The first two tests are red when the one turn of the event loop in `resume()` is taken out (the plugin hands an update on through
-/// two stream controllers, a microtask each: awaiting the plugin alone is not enough), when `resume()` does not wait for the plugin, and (the second)
-/// when one failing step skips the other. It is the guard of a plugin upgrade: the order is a property of the plugin's code.
+/// in the queue). Run in a throwaway copy with the code mutated: `resume()` that does not wait for the plugin (three tests red); the two steps of
+/// `resume()` under one `try` again, as before (only the failing-read test red: the updates the downloader kept were skipped); the one turn of the
+/// event loop taken out of `resume()` (only the contract test in the schedule where the plugin's last answer comes at once, red). That last result is
+/// the honest one: in 9.6.4 the plugin hands the status updates on through two stream controllers (a microtask each) and then makes one more round
+/// trip to the native side (the progress updates), which already gives the event loop its turn, so awaiting the plugin is enough today and the turn in
+/// `resume()` is a second layer for a plugin that would not. It is the guard of a plugin upgrade: the order is a property of the plugin's code.
 ///
 /// What is NOT proved here: the native side (Kotlin: what it stores while the app is dead, and what `popStatusUpdates` answers), the real timing of the
 /// platform channel, WorkManager, a notification of an older build. Those are read in the plugin's sources and are the walk row of docs/33 PB-F22.
-/// The second and third tests show the plugin's replay reaching a real manager and the harness seeing a start; they do not decide the order.
+/// The last two tests show the plugin's replay reaching a real manager (a cancel kept while the app was closed ends as a failed song and nothing is
+/// started) and the harness seeing a start (the control); they do not decide the order: the cancel file's tests do (`download_manager_cancel_test.dart`:
+/// without the manager's wait for the replay they are red, these are not, because the real channel's round trip of `allTasks` gives the queue time).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
