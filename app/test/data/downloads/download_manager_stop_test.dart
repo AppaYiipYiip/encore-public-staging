@@ -376,6 +376,10 @@ void main() {
 
       await letEveryBackoffPass();
       expect(startsOf('t1'), 2, reason: 'the refresh waits for Resume too');
+      expect((await row('t1')).state, DownloadState.done,
+          reason:
+              'a song of a stopped download is not set up for a refresh: its old copy is the song, and it plays');
+      expect(await repo.localPathFor('t1'), oldPath);
       await resumeAlbum();
       expect(startsOf('t1'), 3);
     });

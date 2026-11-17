@@ -115,9 +115,10 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
     // A Download the person stopped (N-39) stops only the phone copy: the import goes on, on its own Stop. The card is then the download's ("Prog snob
     // is stopped") and the import is a job of its own (its running words, its end card when it comes), not the words of this one.
     final finding = going && !line.stopped ? made : null;
-    if (made != null) {
-      (going && line.stopped ? beside : merged).add(made.id);
-    }
+    // For as long as the Download is stopped the import is a job of its own, whatever state it is in (running, saving, over): it is the import loop
+    // below that decides what it says and whether it is history. If it were merged away the moment it stopped "going", its job would drop off the
+    // list between two looks and its end card would never be posted.
+    if (made != null) (line.stopped ? beside : merged).add(made.id);
     final importing = finding != null;
     if (finding != null) songs = finding.total;
     if (songs < _kSmallestJob && !line.starting) continue;

@@ -1,6 +1,7 @@
 import 'package:encore/data/encore/encore_models.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/domain/download_card.dart';
+import 'package:encore/domain/download_card_words.dart';
 import 'package:encore/domain/download_line.dart';
 import 'package:encore/features/downloads/download_card_jobs.dart';
 import 'package:encore/features/downloads/download_line_providers.dart';
@@ -476,26 +477,82 @@ void main() {
       expect(import.importing, isTrue);
     });
 
-    test(
-        "N-39: an import that is already over is no job beside the stopped download",
-        () async {
-      final c = start(
-        line: stoppedLine,
-        phone:
-            const PinState(pinned: true, total: 217, done: 12, stopped: true),
-        imports: ImportWatchState(imports: [
-          _import('im_1',
-              playlistId: 'pl_1',
-              state: 'done',
-              matched: 217,
-              pending: 0,
-              kept: 217),
-        ]),
-      );
+    // The look that finds the import in this state, as the jobs the card follows (one container per look).
+    Future<List<CardJob>> look(EncoreImport import) async => jobs(start(
+          line: stoppedLine,
+          phone:
+              const PinState(pinned: true, total: 217, done: 12, stopped: true),
+          keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+          imports: ImportWatchState(imports: [import]),
+        ));
 
-      final found = await jobs(c);
-      expect(found, hasLength(1));
-      expect(found.single.kind, CardJobKind.download);
+    EncoreImport made(
+            {String state = 'running',
+            int matched = 0,
+            int pending = 100,
+            int kept = 0}) =>
+        _import('im_1',
+            playlistId: 'pl_1',
+            state: state,
+            matched: matched,
+            pending: pending,
+            kept: kept);
+
+    test(
+        "N-39: the import's own end card is posted when it ends beside the stopped download: ONE card, the import's, and none for the download again",
+        () async {
+      const words = DownloadCardWords();
+      final finding = await look(made(matched: 117, pending: 100));
+      final ready =
+          await look(made(state: 'done', matched: 217, pending: 0, kept: 217));
+
+      final results = resultsBetween(finding, ready, words);
+
+      expect(results, hasLength(1),
+          reason:
+              'the import running became the import ready: its end card, and nothing for the download that was stopped before');
+      expect(results.single.title, '“Prog snob” is ready');
+      expect(results.single.body, '217 of 217 songs are in your library now.');
+    });
+
+    test(
+        "N-39: the import stays a job of its own when it has found all its songs and the server is still saving them: it does not drop off the list between two looks",
+        () async {
+      final finding = await look(made(matched: 117, pending: 100));
+      final saving = await look(made(matched: 217, pending: 0, kept: 100));
+
+      final import = saving.firstWhere((j) => j.kind == CardJobKind.import);
+      expect(import.key,
+          finding.firstWhere((j) => j.kind == CardJobKind.import).key);
+      expect(import.phase, CardPhase.running);
+      expect(
+          resultsBetween(finding, saving, const DownloadCardWords()), isEmpty);
+    });
+
+    test(
+        "N-39: an import stopped on another device beside the stopped download says so, once",
+        () async {
+      final finding = await look(made(matched: 117, pending: 100));
+      final stopped =
+          await look(made(state: 'stopped', matched: 117, pending: 100));
+
+      final results =
+          resultsBetween(finding, stopped, const DownloadCardWords());
+
+      expect(results.map((r) => r.title), ['Import stopped']);
+    });
+
+    test(
+        "N-39: an import that was already over when the Download was stopped is no new card",
+        () async {
+      final over =
+          await look(made(state: 'done', matched: 217, pending: 0, kept: 217));
+
+      expect(over.where((j) => j.kind == CardJobKind.import).single.phase,
+          CardPhase.ready);
+      expect(resultsBetween(over, over, const DownloadCardWords()), isEmpty);
+      expect(
+          resultsBetween(const [], over, const DownloadCardWords()), isEmpty);
     });
   });
 
