@@ -1,0 +1,12 @@
+{
+ "id": "20261117T045512Z-agent-7f70",
+ "item": "N-34",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T04:55:12Z",
+ "type": "note",
+ "body": "LEAD, 17 Nov 2026 (PR #110 = P2-25 slices 2+3 is lifted and in the merge chain; its advisor-approved follow-ups for N-34): (1) FOR SLICE 2's SCOPE: with era 1 in main an Arabic song whose only catalogue hit is spelled in Latin letters (Deezer's transliteration) is now ASKED, finds no equal key and gets a REMEMBERED none (identity_outcome none). Slice 2's identity_rev retry (a better rule asks the none and held songs again) must cover it, and the dry-run report must count these songs apart (non-Latin song, only a Latin hit) so the lead can read how many songs the catalogue cannot place. (2) A SMALL FOLLOW-UP PR OF SLICE 1 (not slice 2; one helper, server only): remove the era-0 skip guards that are now dead code and the docstring and STOP-GAP comments of album_finder that are now false; key the dry-run fixtures by a hash of the FULL query in album_dryrun and tools/record_catalogue_fixtures (today every query with no Latin letter is named search_track_, so a live dry run on a non-Latin library replays the first Arabic answer to every later Arabic song: a --live run is NOT to be trusted until this is fixed, and the test that pins the name changes with it); _id_order must test isascii() before isdigit() (a superscript digit raises ValueError); the dry-run timing test must not flake on a loaded machine; the album_finder docstring's record_type counts must be re-counted from the fixtures; and docs/18's invariant sentence about the repair copy must say what layer 2 checks (the file exists, is not empty and starts with the SQLite header; it is not an integrity check). (3) Still owed before slice 2 stores a stamp: the ruling on a same-artist best-of typed album (the earlier lead note: options a, b, c).",
+ "to": [
+  "agent"
+ ]
+}

@@ -16,6 +16,8 @@ from typing import Any
 
 import httpx
 
+from encore_server.fixture_names import fixture_name
+
 HERE = Path(__file__).resolve().parent
 RECORDED = HERE / "fixtures" / "deezer"
 SEARCHES = HERE.parents[2] / "app" / "test" / "fixtures" / "deezer" / "search.json"
@@ -28,13 +30,15 @@ NO_DATA = {"error": {"type": "DataException", "message": "no data", "code": 800}
 QUOTA = {"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}}
 
 
-def slug(text: str) -> str:
-    """The file name of a recorded search (`tools/record_catalogue_fixtures.py n34 search`): lower case, every run of other characters one underscore."""
-    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-
-
 def recorded(name: str) -> dict[str, Any]:
     return json.loads((RECORDED / f"{name}.json").read_text(encoding="utf-8"))["answer"]  # type: ignore[no-any-return]
+
+
+def recorded_search(query: str) -> dict[str, Any]:
+    """The answer recorded for the plain `/search` of exactly this query (`tools/record_catalogue_fixtures.py n34 search`), found by the ONE naming function."""
+    name = fixture_name("/search", {"q": query})
+    assert name is not None, "a search with no query is never recorded"
+    return recorded(name)
 
 
 def searches() -> dict[str, dict[str, list[dict[str, Any]]]]:
@@ -76,9 +80,9 @@ class RecordedDeezer:
         if path == "/search":
             # The plain search the finders use. First the N-34 recordings (the whole raw answer of `search_tracks`, asked with that very query), then
             # the songs of the 20 recorded searches (matched without the query's case).
-            named = RECORDED / f"search_track_{slug(params.get('q', ''))}.json"
-            if named.exists():
-                return recorded(named.stem)
+            name = fixture_name("/search", params)
+            if name is not None and (RECORDED / f"{name}.json").exists():
+                return recorded(name)
             row = searches().get(params.get("q", "").lower())
             songs = row["track"] if row else []
             return {"data": songs[: int(params.get("limit", "8"))], "total": len(songs)}

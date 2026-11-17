@@ -24,14 +24,19 @@ refuses the 11th: the count is the file, not the operator's memory. It asks Deez
 import argparse
 import json
 import pathlib
-import re
 import sys
 import time
 import urllib.parse
 import urllib.request
 from datetime import UTC, date, datetime
 
-OUT = pathlib.Path(__file__).resolve().parents[1] / "server" / "encore_server" / "tests" / "fixtures" / "deezer"
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+OUT = ROOT / "server" / "encore_server" / "tests" / "fixtures" / "deezer"
+# The ONE function that names a recorded answer is the server package's own (`encore_server/fixture_names.py`, standard library only): the dry run replays by it and
+# the tests' fake finds by it, so a copy here would drift (it did: an ASCII-only copy named every non-Latin search `search_track_`).
+sys.path.insert(0, str(ROOT / "server" / "encore_server"))
+from encore_server.fixture_names import fixture_name  # noqa: E402
+
 DROP = {"preview", "share", "md5_image"}
 CHART_ROWS = {"tracks": 12}  # the songs chart is long and only its shape matters
 
@@ -136,10 +141,6 @@ def n34_ask(ledger: Ledger, path: str, **params):
     return data
 
 
-def _slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-
-
 def n34_main(argv: list[str], out: pathlib.Path = OUT) -> int:
     parser = argparse.ArgumentParser(prog="record_catalogue_fixtures.py n34", description="the N-34 step-0 recordings, at most 10 requests in all")
     parser.add_argument("kind", choices=("search", "album", "tracks", "artist-albums", "count"))
@@ -154,16 +155,20 @@ def n34_main(argv: list[str], out: pathlib.Path = OUT) -> int:
         return 2
     for item in args.what:
         if args.kind == "search":
-            name, path, params = f"search_track_{_slug(item)}", "/search", {"q": item, "limit": N34_SEARCH_LIMIT}
-        elif not item.isdigit():
+            path, params = "/search", {"q": item, "limit": N34_SEARCH_LIMIT}
+        elif not (item.isascii() and item.isdigit()):
             print(f"refused: {item!r} is not a Deezer id", file=sys.stderr)
             return 2
         elif args.kind == "album":
-            name, path, params = f"album_{item}", f"/album/{item}", {}
+            path, params = f"/album/{item}", {}
         elif args.kind == "tracks":
-            name, path, params = f"album_{item}_tracks", f"/album/{item}/tracks", {"limit": N34_TRACKS_LIMIT}
+            path, params = f"/album/{item}/tracks", {"limit": N34_TRACKS_LIMIT}
         else:
-            name, path, params = f"artist_albums_{item}", f"/artist/{item}/albums", {"limit": N34_RELEASES_LIMIT}
+            path, params = f"/artist/{item}/albums", {"limit": N34_RELEASES_LIMIT}
+        name = fixture_name(path, params)
+        if name is None:  # a search with an empty query: nothing to name, nothing to ask
+            print(f"refused: {item!r} has no name to save an answer under", file=sys.stderr)
+            return 2
         try:
             answer = n34_ask(ledger, path, **params)
         except CapSpent as error:

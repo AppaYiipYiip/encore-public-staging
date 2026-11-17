@@ -69,6 +69,9 @@ abstract interface class DownloadTransport {
   Future<void> rename(String from, String to);
 
   /// Called once at start-up: replay updates that arrived while the app was
-  /// not running.
+  /// not running (a finished file, a cancel pressed on a notification of an
+  /// older build). It completes only after every replayed update has been
+  /// handed to [updates]: the manager handles them before it decides what a
+  /// row whose task is gone means (N-39).
   Future<void> resume();
 }

@@ -732,9 +732,12 @@ class Catalogue:
     ) -> dict[str, Any]:
         """`{album, tracks, unavailable?}`: the album, then its songs (a missing album asks for no songs). At most 2 outside requests.
 
-        [priority] and [deadline_s] are the caller's (N-34 slice 1): a person's route keeps the defaults (`interactive`, the phone's 2.5 s); the album pass
-        asks `background` with a deadline of its own, and the song list gets what is LEFT of that deadline, never a fresh one. **The pass calls this
-        serially**: a long deadline parks one of the `workers` of the pool the routes share while it waits, so the pass must never ask in parallel."""
+        [priority] and [deadline_s] are the caller's (N-34 slice 1): a person's route keeps the defaults (`interactive`, the phone's 2.5 s) and they change
+        NOTHING for it; the album pass asks `background` with a deadline of its own. **Two waits, kept apart:** the CALLER waits for the song list only what
+        is left of the deadline (`within=left`: the call never takes longer than its deadline in all), while each outside REQUEST (and a follower of it) waits for
+        its turn as long as the whole deadline, which for a route is exactly what it always was (the gate's own interactive 2.5 s). An answer that comes after
+        the caller left still fills the cache (`_gather`). **The pass calls this serially**: a long deadline parks one of the `workers` of the pool the routes
+        share while it waits, so the pass must never ask in parallel."""
         budget = Budget(CEILING["album"])
         started = time.monotonic()
         first = self._gather(
@@ -768,7 +771,7 @@ class Catalogue:
                     budget,
                     charge,
                     priority=priority,
-                    deadline_s=left,
+                    deadline_s=deadline_s,  # the request keeps the whole deadline for its turn, as before slice 1; only the CALLER's wait below is what is left
                 )
             },
             within=left,
