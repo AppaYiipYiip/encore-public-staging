@@ -9,6 +9,7 @@ void main() {
   const titles = {'sr_1': 'Weird Fishes', 'sr_2': 'Nude', 'sr_3': 'Reckoner'};
 
   late List<String> events;
+  late List<List<String>> pinnedAlongside;
   late Map<String, String> keep; // by ref: the state the server answers with
   late Result<EncoreReleaseSave> Function() answer;
 
@@ -25,7 +26,10 @@ void main() {
           events.add('save $releaseId ${refIds.join(",")}');
           return answer();
         },
-        pin: (refId) async => events.add('pin $refId'),
+        pin: (refId, release) async {
+          events.add('pin $refId');
+          pinnedAlongside.add(release);
+        },
         onSaved: remember
             ? (refIds) async => events.add('remember ${refIds.join(",")}')
             : null,
@@ -37,6 +41,7 @@ void main() {
 
   setUp(() {
     events = [];
+    pinnedAlongside = [];
     keep = {for (final id in titles.keys) id: 'queued'};
     answer = () => Result.ok(EncoreReleaseSave(changed: true, keep: {
           for (final e in keep.entries) e.key: EncoreKeep(e.value),
@@ -74,6 +79,21 @@ void main() {
     expect(pins.every((i) => i > save), isTrue);
     expect(events.where((e) => e.startsWith('pin ')),
         ['pin sr_1', 'pin sr_2', 'pin sr_3']);
+  });
+
+  test(
+      "N-39: each pin is told every song of the release, so a song that joins a release the person has stopped waits with the rest",
+      () async {
+    await saver(unresolved: {'sr_2'})
+        .run(releaseId: 'cat:1', songs: songs, download: true);
+
+    expect(
+        pinnedAlongside,
+        [
+          ['sr_1', 'sr_3'],
+          ['sr_1', 'sr_3'],
+        ],
+        reason: 'the songs the server confirmed, as one release');
   });
 
   test(

@@ -503,6 +503,90 @@ void main() {
       }
     });
   });
+
+  group("a song that joins a stopped release later waits too", () {
+    // A catalogue release is a set of per-song pins, made one after the other (and the rest at the next start of the app if a kill came between):
+    // the songs that are not pinned yet when the Stop comes have no pin of their own to hold them.
+    const release = ['t1', 't2', 't3', 't4'];
+    Future<void> pinSong(String id,
+            {List<String> alongside = const []}) async =>
+        repo.pin(PinTargetType.track, id,
+            quality: AudioQuality.high, alongside: alongside);
+
+    test(
+        "N-39: pinned with the release's other songs while those are stopped, it is stopped too: no pass, restart or passing of time starts it, Resume brings it",
+        () async {
+      await pinSong('t1', alongside: release);
+      await pinSong('t2', alongside: release);
+      await manager.reconcile();
+      await manager.stop([
+        (PinTargetType.track, 't1'),
+        (PinTargetType.track, 't2'),
+      ]);
+
+      await pinSong('t3', alongside: release);
+      await pinSong('t4', alongside: release);
+      await manager.reconcile();
+      await letEveryBackoffPass();
+      expect([for (final id in release) startsOf(id)], [1, 1, 0, 0],
+          reason:
+              'the first two ran before the Stop; nothing started after it, the late songs included');
+      final pins = {for (final p in await repo.pins()) p.targetId: p};
+      expect(pins['t3']!.stoppedAtMs, isNotNull);
+      expect(pins['t4']!.stoppedAtMs, isNotNull);
+
+      // The app is closed and opened again: still nothing.
+      await manager.dispose();
+      final after = FakeDownloadTransport();
+      final second = newManager(after);
+      extra.add(second);
+      await second.start();
+      await second.reconcile();
+      expect(after.started, isEmpty);
+
+      await second.resume([
+        for (final id in release) (PinTargetType.track, id),
+      ]);
+      expect({
+        for (final r in after.started) r.taskId.split(':').last
+      }, {
+        't1',
+        't2',
+        't3',
+        't4'
+      }, reason: 'Resume asks for every song that is not on the phone');
+    });
+
+    test(
+        "N-39: a song the person asks for on its own is the person's own request: it starts at once and does not wait with the stopped release",
+        () async {
+      await pinSong('t1', alongside: release);
+      await manager.reconcile();
+      await manager.stop([(PinTargetType.track, 't1')]);
+
+      await pinSong('t3'); // the song menu's Download: no release around it
+      await manager.reconcile();
+
+      expect(startsOf('t3'), 1);
+      expect(
+          (await repo.pins())
+              .where((p) => p.targetId == 't3')
+              .single
+              .stoppedAtMs,
+          isNull);
+    });
+
+    test(
+        "N-39: a release that is not stopped is not slowed: its late songs start as before",
+        () async {
+      await pinSong('t1', alongside: release);
+      await manager.reconcile();
+      await pinSong('t3', alongside: release);
+      await manager.reconcile();
+
+      expect(startsOf('t3'), 1);
+    });
+  });
 }
 
 /// A transport that notes what the database says at the moment each task is cancelled.

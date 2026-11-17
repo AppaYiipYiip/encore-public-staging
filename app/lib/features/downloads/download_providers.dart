@@ -390,8 +390,10 @@ final downloadsWaitProvider = Provider<String?>((ref) {
 
 /// UI-facing commands.
 abstract interface class DownloadActions {
+  /// [alongside] is for a song pinned as a part of a catalogue release: the ids of all the songs of it, so that a song joining a release the person
+  /// has stopped (N-39) waits with the rest (see `DownloadsRepository.pin`).
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality});
+      {AudioQuality? quality, List<String> alongside = const []});
 
   /// Removes the pin *and* the files now (the user expects the space back).
   Future<void> unpin(PinTargetType type, String targetId);
@@ -429,8 +431,9 @@ class ManagerDownloadActions implements DownloadActions {
 
   @override
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality}) async {
-    await _repo?.pin(type, targetId, quality: quality ?? _defaultQuality());
+      {AudioQuality? quality, List<String> alongside = const []}) async {
+    await _repo?.pin(type, targetId,
+        quality: quality ?? _defaultQuality(), alongside: alongside);
     if (type == PinTargetType.playlist) {
       // Large smart playlists have no entries until asked for.
       try {

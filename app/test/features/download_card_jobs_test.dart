@@ -410,6 +410,95 @@ void main() {
     });
   });
 
+  group('a Download the person stopped (N-39)', () {
+    const stoppedLine = DownloadLine(
+        'Stopped · 12 of 217 on this phone · 40 ready on your server',
+        twoStages: true,
+        stopped: true);
+
+    test(
+        "N-39: the job is over as a Download that waits: S-16's line, and it is not running",
+        () async {
+      final c = start(
+        line: stoppedLine,
+        phone:
+            const PinState(pinned: true, total: 217, done: 12, stopped: true),
+        keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+      );
+
+      final job = (await jobs(c)).single;
+      expect(job.phase, CardPhase.stopped);
+      expect(job.running, isFalse);
+      expect(job.kind, CardJobKind.download);
+      expect(job.text, startsWith('Stopped · 12 of 217'));
+      expect([job.songs, job.onPhone], [217, 12]);
+      expect(job.starting, isFalse);
+    });
+
+    test(
+        "N-39: a download that has every song is finished, whatever the Stop says",
+        () async {
+      final c = start(
+        line: const DownloadLine('Downloaded • 217 songs', complete: true),
+        phone:
+            const PinState(pinned: true, total: 217, done: 217, stopped: true),
+      );
+
+      expect((await jobs(c)).single.phase, CardPhase.ready);
+    });
+
+    test(
+        "N-39: an import and the Download of its playlist: Stop stops only the phone copy, so the import goes on as a job of its own with its own end",
+        () async {
+      final c = start(
+        line: stoppedLine,
+        phone:
+            const PinState(pinned: true, total: 217, done: 12, stopped: true),
+        keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+        imports: ImportWatchState(imports: [
+          _import('im_1', playlistId: 'pl_1', matched: 117, pending: 100),
+        ]),
+      );
+
+      final found = await jobs(c);
+      expect(found, hasLength(2));
+      final download = found.firstWhere((j) => j.kind == CardJobKind.download);
+      final import = found.firstWhere((j) => j.kind == CardJobKind.import);
+      expect(download.phase, CardPhase.stopped);
+      expect(download.importing, isFalse,
+          reason: 'the card is the download\'s: it never says Finding songs');
+      expect(download.text, startsWith('Stopped'));
+      expect(import.phase, CardPhase.running,
+          reason: 'the import has its own Stop and goes on');
+      expect(import.key, isNot(download.key),
+          reason:
+              'one key per job: the stopped download\'s card and the import\'s end are two cards, not one replaced by the other');
+      expect(import.importing, isTrue);
+    });
+
+    test(
+        "N-39: an import that is already over is no job beside the stopped download",
+        () async {
+      final c = start(
+        line: stoppedLine,
+        phone:
+            const PinState(pinned: true, total: 217, done: 12, stopped: true),
+        imports: ImportWatchState(imports: [
+          _import('im_1',
+              playlistId: 'pl_1',
+              state: 'done',
+              matched: 217,
+              pending: 0,
+              kept: 217),
+        ]),
+      );
+
+      final found = await jobs(c);
+      expect(found, hasLength(1));
+      expect(found.single.kind, CardJobKind.download);
+    });
+  });
+
   group('a single song is no card, not even in its first second', () {
     const starting = DownloadLine('Getting ready to download', starting: true);
 

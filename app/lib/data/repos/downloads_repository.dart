@@ -312,21 +312,43 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
   Future<List<PinRow>> pins() =>
       (_db.select(_db.pins)..where((p) => p.serverId.equals(serverId))).get();
 
+  /// Pins one target. [alongside] is for a song that is pinned as a PART of a catalogue release, whose songs are one pin each: the ids of all the songs
+  /// of that release. If the person's Stop (N-39) holds any of the others, the new pin is made stopped, in the same write, so that it waits for Resume
+  /// with the rest instead of starting by itself (the saver pins the songs one after the other, and the next start of the app pins what a kill left
+  /// out). Without it the pin is the person's own, new request, and a Stop of an earlier one is over.
   Future<void> pin(
     PinTargetType type,
     String targetId, {
     AudioQuality quality = AudioQuality.original,
+    Iterable<String> alongside = const [],
   }) async {
     final id = type == PinTargetType.liked ? kLikedPinId : targetId;
-    await _db.into(_db.pins).insertOnConflictUpdate(PinsCompanion.insert(
-          serverId: serverId,
-          targetType: type.name,
-          targetId: id,
-          quality: Value(quality.id),
-          createdAtMs: _nowMs,
-          // Asking for it again is a new request: a Stop of an earlier one (N-39) is over.
-          stoppedAtMs: const Value(null),
-        ));
+    final others = alongside.where((s) => s != id).toList();
+    await _db.transaction(() async {
+      int? heldSince;
+      if (type == PinTargetType.track && others.isNotEmpty) {
+        final held = await (_db.select(_db.pins)
+              ..where((p) =>
+                  p.serverId.equals(serverId) &
+                  p.targetType.equals(PinTargetType.track.name) &
+                  p.targetId.isIn(others) &
+                  p.stoppedAtMs.isNotNull()))
+            .get();
+        for (final p in held) {
+          final at = p.stoppedAtMs!;
+          if (heldSince == null || at < heldSince) heldSince = at;
+        }
+      }
+      await _db.into(_db.pins).insertOnConflictUpdate(PinsCompanion.insert(
+            serverId: serverId,
+            targetType: type.name,
+            targetId: id,
+            quality: Value(quality.id),
+            createdAtMs: _nowMs,
+            // Asking for it again is a new request: a Stop of an earlier one (N-39) is over, unless this is a song joining a release that is stopped.
+            stoppedAtMs: Value(heldSince),
+          ));
+    });
   }
 
   Future<void> unpin(PinTargetType type, String targetId) async {

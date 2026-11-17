@@ -65,8 +65,9 @@ class ReleaseSaver {
   final Future<Result<EncoreReleaseSave>> Function(
       String releaseId, List<String> refIds) save;
 
-  /// Pins one song on the phone: it downloads when the server has it.
-  final Future<void> Function(String refId) pin;
+  /// Pins one song on the phone: it downloads when the server has it. [release] is every song of this release (a song that joins a release the person
+  /// has stopped waits with the rest, N-39).
+  final Future<void> Function(String refId, List<String> release) pin;
 
   /// Called once the server confirmed the save, **before the first song is pinned**: the phone writes down what it saved, so that an app that
   /// is killed in the middle of the pins can finish them when it starts again (D-35).
@@ -105,10 +106,11 @@ class ReleaseSaver {
         failed.add((title: r.title, reason: keep.reason));
       }
     }
-    await onSaved?.call([for (final r in resolved) r.ref]);
+    final release = [for (final r in resolved) r.ref];
+    await onSaved?.call(release);
     if (download) {
       for (final r in resolved) {
-        await pin(r.ref);
+        await pin(r.ref, release);
       }
     }
     return ReleaseOutcome(
@@ -195,7 +197,8 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
         return status != null && status.isReady ? status.track?.id : null;
       },
       save: api.saveRelease,
-      pin: (refId) => actions.pin(PinTargetType.track, refId),
+      pin: (refId, release) =>
+          actions.pin(PinTargetType.track, refId, alongside: release),
       // Written down before the first pin: what the phone keeps after a restart is the phone's own record of this release (D-35).
       onSaved: store == null
           ? null
@@ -309,7 +312,9 @@ class ReleaseSaves extends Notifier<Map<String, ReleaseState>> {
       if (!release.download) continue;
       for (final refId in release.refIds) {
         if (pinned.contains(refId)) continue;
-        await repo.pin(PinTargetType.track, refId, quality: quality);
+        // A song that joins a release the person has stopped waits with the rest (N-39): the Stop is not undone by the next start of the app.
+        await repo.pin(PinTargetType.track, refId,
+            quality: quality, alongside: release.refIds);
         count++;
       }
     }

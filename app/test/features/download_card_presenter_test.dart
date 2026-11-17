@@ -572,6 +572,52 @@ void main() {
       expect(sink.results, isEmpty);
       expect(sink.cancels, [kRunningCardId]);
     });
+
+    test(
+        "N-39: a Download the person stopped: the running card goes and ONE quiet card takes its place, once, with no button",
+        () async {
+      await presenter
+          .update(jobs: [_job('playlist:p1', 'Prog snob')], foreground: true);
+      final stopped = [
+        _job('playlist:p1', 'Prog snob',
+            text: 'Stopped · 12 of 217 on this phone',
+            phase: CardPhase.stopped),
+      ];
+      await presenter.update(jobs: stopped, foreground: true);
+      await presenter.update(jobs: stopped, foreground: true);
+      await presenter.update(jobs: stopped, foreground: false);
+
+      expect(sink.cancels, [kRunningCardId],
+          reason:
+              'the running card is taken away once; a stopped job runs nothing, in front or not');
+      expect(sink.results, hasLength(1));
+      final card = sink.results.single;
+      expect(card.spec.title, 'Prog snob is stopped');
+      expect(card.spec.body,
+          '12 of 217 stay on this phone. Resume continues from there.');
+      expect(card.id, resultCardId('playlist:p1'));
+      expect(card.timeoutAfter, isNull);
+      expect(card.spec.progress, isNull,
+          reason: 'a result card has no bar and no Stop to press');
+      expect(card.spec.dated, isFalse);
+      expect(sink.running.length, 1, reason: 'only the first running card');
+    });
+
+    test(
+        "N-39: a stopped download that is still stopped when the app comes back posts nothing, and Resume posts nothing",
+        () async {
+      final stopped = _job('playlist:p1', 'Prog snob',
+          text: 'Stopped · 12 of 217 on this phone', phase: CardPhase.stopped);
+      // The app starts with the download already stopped.
+      await presenter.update(jobs: [stopped], foreground: true);
+      expect(sink.posts, isEmpty);
+
+      await presenter
+          .update(jobs: [_job('playlist:p1', 'Prog snob')], foreground: true);
+      expect(sink.results, isEmpty,
+          reason: 'Resume ends nothing: the live card is back');
+      expect(sink.running, hasLength(1));
+    });
   });
 
   group('the card ends', () {

@@ -285,7 +285,7 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality}) async {}
+      {AudioQuality? quality, List<String> alongside = const []}) async {}
 
   @override
   Future<void> unpin(PinTargetType type, String targetId) async =>

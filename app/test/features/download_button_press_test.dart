@@ -65,7 +65,7 @@ class _SlowActions implements DownloadActions {
 
   @override
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality}) async {
+      {AudioQuality? quality, List<String> alongside = const []}) async {
     asked.add('${type.name}:$targetId');
     await finish.future;
   }
