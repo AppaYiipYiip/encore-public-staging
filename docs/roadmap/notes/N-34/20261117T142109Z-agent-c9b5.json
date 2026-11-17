@@ -1,0 +1,12 @@
+{
+ "id": "20261117T142109Z-agent-c9b5",
+ "item": "N-34",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-17T14:21:09Z",
+ "type": "note",
+ "body": "ADVISOR RULING on the best-of question (17 Nov 2026, asked by the lead; it SUPERSEDES the options a, b and c of the lead's earlier note; slice 2 builds it). THE PRINCIPLE: slice 2 writes an album only when the field is empty or the placeholder and never rewrites it, and slice 5 later moves files by ref.album, so a stamped album is effectively PERMANENT; a none or held outcome is asked again whenever identity_rev rises. So anything the matcher cannot justify on evidence must land in a RE-ASKABLE outcome, never in matched. THE CASES: (1) the only candidate is a SAME-ARTIST album (a best-of among them): ACCEPT it, it is a real release of the recording; title markers (Greatest Hits, Best Of, Collection) may only DOWNGRADE such a match to re-askable, never refuse it outright, and are never the rule (a best-of called Gold passes). (2) an ALBUM outranks an EARLIER SINGLE by type: this also covers every ordinary lead single, so holding all of them would leave most songs in Songs without an album: base it on a MEASUREMENT. Make that slice 2's step 0: from the tracked recordings and with NO network, measure the date gap between singles and the albums that carry the same recording; INSIDE the measured window the album wins; OUTSIDE it the outcome is re-askable (identity_outcome none or held, with a reason); if the recordings hold too few pairs to show the window, that case stays re-askable until the live dry run after the owner's test week (about 1,500 Deezer requests from the Host's home address are NOT worth the risk during the frozen week). (3) the DISCOGRAPHY lookup (option b: the artist's albums, a request per album for every artist) is NOT built now: it becomes a later identity_rev round only if the dry run shows a large unresolved remainder. ORDER: slice 2 waits for P2-25 slice 4 to merge (both edit the library link's errands and refs and may need a migration; migrate refuses duplicate numbers, so slice 2 takes the next free number after slice 4 lands). This note blocks nothing today.",
+ "to": [
+  "agent"
+ ]
+}
