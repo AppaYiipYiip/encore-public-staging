@@ -4,7 +4,7 @@
 Where the data comes from, said plainly because a matcher is only as good as the answers it is tested on:
 
 * The HITS are the recorded searches of `app/test/fixtures/deezer/search.json` (Comfortably Numb, Fade Into You, Hotel California, Weird Fishes,
-  Bohemian Rhapsody, Kifak Inta) and the two recorded in step 0 (`search_track_landmvrks_*`): the rows are the catalogue's, untouched.
+  Bohemian Rhapsody, Kifak Inta) and the two recorded in step 0 (the searches `LANDMVRKS Requiem` and `LANDMVRKS Creature`): the rows are the catalogue's, untouched.
 * The ALBUMS are `Catalogue.album()` over the recorded album and song-list answers (The Wall, the best-of, LANDMVRKS' album and single). Only four
   albums and three song lists were recorded (10 requests, `n34_requests.json`), so the rows for Fade Into You, Hotel California, Weird Fishes and
   Bohemian Rhapsody are tested at the level of the HIT VERDICTS, which is where the rule decides them.
@@ -18,6 +18,7 @@ import ast
 import copy
 import functools
 import inspect
+import json
 import socket
 from typing import Any
 
@@ -41,7 +42,7 @@ from encore_server.catalogue import Cache, Catalogue, release_key
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
 from encore_server.textnorm import survives_fold_whole
-from tests.catalogue_fakes import RecordedDeezer, recorded, searches
+from tests.catalogue_fakes import RECORDED, SEARCHES, RecordedDeezer, recorded, recorded_search, searches
 
 # ------------------------------------------------------------------------------------------------------------------ the recorded data
 
@@ -76,8 +77,8 @@ def derive(answer: dict[str, Any], **album: Any) -> dict[str, Any]:
 
 
 def creature_hit() -> dict[str, Any]:
-    """The search hit of the song on the ALBUM: the recorded `search_track_landmvrks_creature` row, untouched."""
-    return copy.deepcopy(recorded("search_track_landmvrks_creature")["data"][0])
+    """The search hit of the song on the ALBUM: the recorded search of `LANDMVRKS Creature`, its row untouched."""
+    return copy.deepcopy(recorded_search("LANDMVRKS Creature")["data"][0])
 
 
 def single_hit() -> dict[str, Any]:
@@ -314,6 +315,61 @@ def test_a_name_with_no_letter_or_digit_still_cannot_be_compared_safely(name: st
         assert wanted_albums(song, hits("fairuz kifak inta")) == []
 
 
+def test_step_zero_asks_the_one_definition_of_a_name_that_can_be_compared(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Step 0 is the song's own gate and it names the rule instead of copying it: `textnorm.survives_fold_whole` (P2-25 design, part 4). Today the word rules'
+    emptiness (`norm_artist`, `norm_title`) also refuses a name with no letter or digit, so the call decides nothing the second condition does not; it stays so
+    that a stricter definition of the one rule tomorrow refuses a song here without a change to this module. Stubbed, the rule's answer is what refuses."""
+    song = Song("Pink Floyd", "Comfortably Numb", 382_000)
+    assert refusal(song) is None
+    monkeypatch.setattr(album_finder, "survives_fold_whole", lambda text: text != "Comfortably Numb")
+    assert refusal(song) == ("unsupported", "title_not_comparable")
+    monkeypatch.setattr(album_finder, "survives_fold_whole", lambda text: text != "Pink Floyd")
+    assert refusal(song) == ("unsupported", "artist_not_comparable")
+    assert choose_release(song, hits("pink floyd comfortably numb"), albums(WALL, BEST_OF)).outcome == "unsupported"
+
+
+#: Hit names the era-1 fold holds no letter or digit of: nothing to compare, in any alphabet's company.
+NAMELESS = ["🎵", "♪♪", "???", "!!!", "—", "ـــ", "ً"]
+
+
+@pytest.mark.parametrize("nameless", NAMELESS)
+def test_a_hit_with_no_letter_or_digit_in_its_names_is_never_the_song_and_the_equality_rule_alone_says_so(
+    nameless: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The hit-side guard of era 0 ("the HIT's names must survive the fold whole too": under the old fold a hit "Habibi <Arabic>" was `habibi`, the same as the
+    library's "Habibi") is gone, because the rule it guarded is. A hit whose artist or title has nothing to compare is refused by the EQUALITY of the artist and of
+    the key (a song that step 0 let in has a letter or a digit in both), and that decides it whatever `survives_fold_whole` says: with the function replaced by
+    "always yes" the verdicts are the same, reason by reason. (Run on the old code the reasons were `skip_rule`.)"""
+    assert not survives_fold_whole(nameless)
+    wrong_artist = copy.deepcopy(creature_hit())
+    wrong_artist["artist"] = {"id": 1, "name": nameless}
+    wrong_title = copy.deepcopy(creature_hit())
+    wrong_title["title"] = nameless
+    both = copy.deepcopy(creature_hit())
+    both["artist"], both["title"] = {"id": 1, "name": nameless}, nameless
+    songs = [CREATURE, Song("فيروز", ARABIC_A, 225_000), Song(nameless + " x", "Creature", 225_000)]
+    seen: dict[str, list[list[str]]] = {}
+    for label, stub in (("real", None), ("always yes", lambda text: True)):
+        if stub is not None:
+            monkeypatch.setattr(album_finder, "survives_fold_whole", stub)
+        seen[label] = [[v.reason for v in judge_hits(song, [wrong_artist, wrong_title, both])] for song in songs]
+    assert seen["real"] == seen["always yes"], "a guard that decides something the equality does not is not dead"
+    assert seen["real"][0] == ["artist", "title_or_version", "artist"], "the equality rule: the artist first, then the key"
+    for song in songs:
+        found = [wrong_artist, wrong_title, both]
+        assert not any(v.accepted for v in judge_hits(song, found)), (song, nameless)
+        assert wanted_albums(song, found) == [] and choose_release(song, found, albums(ALBUM)).match is None
+
+
+def test_the_matcher_carries_no_era_0_stop_gap_and_keeps_the_one_that_is_still_true() -> None:
+    """The text of era 0 (the skip rule that refused every non-Latin name until P2-25 slice 2) was true once and is false now; a false sentence in a source file
+    tells the next reader a refusal exists that does not. The one stop-gap that IS still true is the tolerance's."""
+    source = inspect.getsource(album_finder)
+    for stale in ("STOP-GAP(P2-25", "era 0", "until P2-25", "skip_rule", "skip rule"):
+        assert stale not in source, stale
+    assert "STOP-GAP(N-34 tolerance)" in source
+
+
 # ------------------------------------------------------------------------------------------------------------------ steps 1 and 2: the same recording
 
 
@@ -447,14 +503,14 @@ def test_a_different_title_with_the_right_artist_and_length_is_not_the_song() ->
     [(243_000, "same_recording"), (243_001, "length"), (237_000, "same_recording"), (236_999, "length")],
 )
 def test_the_tolerance_is_three_thousand_milliseconds_inclusive(length_ms: int, reason: str) -> None:
-    requiem = copy.deepcopy(recorded("search_track_landmvrks_requiem")["data"])  # 240 s
+    requiem = copy.deepcopy(recorded_search("LANDMVRKS Requiem")["data"])  # 240 s
     (verdict,) = judge_hits(Song("LANDMVRKS", "Requiem", length_ms), requiem)
     assert verdict.reason == reason, (length_ms, verdict.delta_ms)
     assert verdict.delta_ms == length_ms - 240_000
 
 
 def test_the_tolerance_can_be_given_and_starts_as_the_servers_own_unmeasured_figure() -> None:
-    requiem = copy.deepcopy(recorded("search_track_landmvrks_requiem")["data"])
+    requiem = copy.deepcopy(recorded_search("LANDMVRKS Requiem")["data"])
     assert judge_hits(Song("LANDMVRKS", "Requiem", 244_000), requiem, tolerance_ms=4_000)[0].accepted
     assert not judge_hits(Song("LANDMVRKS", "Requiem", 244_001), requiem, tolerance_ms=4_000)[0].accepted
     assert album_finder.TOLERANCE_MS == refs.DURATION_TOLERANCE_MS == 3_000
@@ -547,6 +603,46 @@ def test_an_unknown_record_type_never_wins_even_when_it_is_the_earlier_release(u
     assert (alone.outcome, alone.reason, alone.match) == ("none", "no_eligible_release", None)
 
 
+def _recorded_release_types() -> tuple[dict[str, str], int]:
+    """Every release (by Deezer's id) in Deezer's REAL recorded answers, with its `record_type`, and how many files hold some: the answers of
+    `tests/fixtures/deezer/` and the 20 searches of `app/test/fixtures/deezer/search.json`. Not `app/test/fixtures/server/`: those are this server's own
+    mapped copies of the same releases (a different key, folded editions), so counting them would count the same releases twice."""
+    seen: dict[str, str] = {}
+    holders = 0
+
+    def walk(node: Any, found: dict[str, str]) -> None:
+        if isinstance(node, dict):
+            if isinstance(node.get("record_type"), str):
+                found[str(node.get("id"))] = node["record_type"]
+            for value in node.values():
+                walk(value, found)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value, found)
+
+    for path in (*sorted(RECORDED.glob("*.json")), SEARCHES):
+        found: dict[str, str] = {}
+        walk(json.loads(path.read_text(encoding="utf-8")), found)
+        holders += bool(found)
+        for ident, kind in found.items():
+            assert seen.setdefault(ident, kind) == kind, f"release {ident} has two types"
+    return seen, holders
+
+
+def test_the_record_types_of_every_recorded_release_are_the_ones_the_matcher_documents() -> None:
+    """The numbers in `album_finder`'s comment above `_FULL_RELEASE`. They were once 49 / 1 / 13, which no set of recordings reproduces (49 and 1 are the Bob
+    Marley list, 13 is LANDMVRKS' singles: two lists added up as if they were one). Recounted from ALL the tracked recordings; when someone records more,
+    this fails and the comment is rewritten with the new counts."""
+    seen, holders = _recorded_release_types()
+    counts = {kind: sum(1 for value in seen.values() if value == kind) for kind in sorted(set(seen.values()))}
+    assert counts == {"album": 114, "ep": 10, "single": 104}, counts
+    assert len(seen) == 228 and holders == 9, "228 releases in 8 answers of the server's folder and the 20 recorded searches"
+    assert set(counts) <= {"album", "ep", "single"}, (
+        "no compile, no live, no remix value was ever recorded: the matcher's `never wins` rule is untested on a real one"
+    )
+    assert not {"compile", "live"} & set(counts)
+
+
 def test_the_type_is_read_without_its_case() -> None:
     answer = derive(albums(ALBUM)[ALBUM], recordType="Album")
     assert choose_release(CREATURE, [creature_hit()], {ALBUM: answer}).outcome == "matched"
@@ -570,21 +666,47 @@ def test_the_earliest_release_date_beats_the_lowest_id() -> None:
     )
 
 
+def copy_as(album_id: str, track_id: str) -> dict[str, Any]:
+    """DERIVED: the recorded album answer of "The Darkest Place I've Ever Been" under another album id, with the track of the recorded hit (the album's second
+    track) under another track id."""
+    answer = copy.deepcopy(albums(ALBUM)[ALBUM])
+    answer["album"]["id"] = album_id
+    answer["tracks"][1]["id"] = track_id
+    return answer
+
+
 def test_with_the_same_type_and_date_the_lowest_id_wins_and_ids_are_compared_as_numbers() -> None:
     """DERIVED: the recorded album answer copied under the ids "9" and "10" (the text order would say "10") with the same type and date; the recorded
     hit put on each of them with its own track id."""
-
-    def copy_as(album_id: str, track_id: str) -> dict[str, Any]:
-        answer = copy.deepcopy(albums(ALBUM)[ALBUM])
-        answer["album"]["id"] = album_id
-        answer["tracks"][1]["id"] = track_id  # the song of the recorded hit is the album's second track
-        return answer
-
     hit_ten, hit_nine = creature_hit(), creature_hit()
     hit_ten.update(id=1, album={"id": 10, "title": "x"})
     hit_nine.update(id=2, album={"id": 9, "title": "x"})
     verdict = choose_release(CREATURE, [hit_ten, hit_nine], {"10": copy_as("10", "1"), "9": copy_as("9", "2")})
     assert verdict.match is not None and verdict.match.album_id == "9" and verdict.match.deezer_id == "2"
+
+
+@pytest.mark.parametrize("odd", ["²", "①", "⁹"])
+def test_an_id_with_a_digit_that_is_not_an_ascii_digit_sorts_after_the_numbers_and_never_raises(odd: str) -> None:
+    """`str.isdigit` is true for a superscript two, a circled one and a superscript nine, and `int()` refuses them (ValueError): the catalogue's ids are numbers
+    sent as text, but `catalogue._id` passes ANY text through, so an odd id reaches the order. It sorts after every number, as any other non-number does."""
+    assert odd.isdigit() and not odd.isdecimal(), "the premise: isdigit says yes where int() says no"
+    with pytest.raises(ValueError):
+        int(odd)
+    assert album_finder._id_order(odd) == (1, 0, odd)
+    assert album_finder._id_order("10") < album_finder._id_order(odd)
+    assert album_finder._id_order("9") < album_finder._id_order("10") < album_finder._id_order("a") < album_finder._id_order(odd)
+    # through the matcher: the album with the odd id and the one with the number are both candidates; the number wins, nothing raises
+    on_odd, on_ten = creature_hit(), creature_hit()
+    on_odd.update(id=1, album={"id": odd, "title": "x"})
+    on_ten.update(id=2, album={"id": 10, "title": "x"})
+    both = {odd: copy_as(odd, "1"), "10": copy_as("10", "2")}
+    verdict = choose_release(CREATURE, [on_odd, on_ten], both)
+    assert verdict.match is not None and (verdict.match.album_id, verdict.match.deezer_id) == ("10", "2")
+    # two hits on the SAME chosen album, the second with an odd track id: the numeric id is the hit
+    twin = creature_hit()
+    twin["id"] = odd
+    verdict = choose_release(CREATURE, [twin, creature_hit()], albums(ALBUM))
+    assert verdict.match is not None and verdict.match.deezer_id == "3116792061"
 
 
 def test_a_release_with_no_date_never_wins_earliest() -> None:

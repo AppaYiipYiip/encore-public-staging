@@ -16,7 +16,8 @@ from typing import Any
 
 import pytest
 
-from encore_server import catalogue, deezer
+from encore_server import catalogue, deezer, fixture_names
+from encore_server.fixture_names import search_name
 
 TOOL = Path(__file__).resolve().parents[3] / "tools" / "record_catalogue_fixtures.py"
 LEDGER = Path(__file__).resolve().parent / "fixtures" / "deezer" / "n34_requests.json"
@@ -128,20 +129,44 @@ def test_what_is_asked_is_what_the_servers_own_calls_ask(tool: ModuleType, tmp_p
         ("/album/7/tracks", {"limit": catalogue.ALBUM_TRACKS_LIMIT}),
         ("/artist/9/albums", {"limit": catalogue.RELEASES_LIMIT}),
     ]
-    assert sorted(p.name for p in tmp_path.glob("*.json")) == [
-        "album_7.json",
-        "album_7_tracks.json",
-        "artist_albums_9.json",
-        "n34_requests.json",
-        "search_track_landmvrks_requiem.json",
-    ]
+    assert sorted(p.name for p in tmp_path.glob("*.json")) == sorted(
+        [
+            "album_7.json",
+            "album_7_tracks.json",
+            "artist_albums_9.json",
+            "n34_requests.json",
+            f"{search_name('LANDMVRKS Requiem')}.json",
+        ]
+    )
+
+
+def test_the_recorder_names_an_answer_by_the_one_function_and_a_non_latin_search_gets_a_file_of_its_own(
+    tool: ModuleType, tmp_path: Path
+) -> None:
+    """The recorder had its own `_slug` (ASCII only): every non-Latin query was saved as `search_track_`, the second over the first. It now imports the server
+    package's function, the same object the dry run and the tests' fake use, so a recording is found by the name it was saved under."""
+    assert tool.fixture_name is fixture_names.fixture_name
+    assert not hasattr(tool, "_slug")
+    asked = Asked()
+    assert run(tool, tmp_path, asked, "search", "فيروز كيفك إنت", "فيروز حبيبي") == 0
+    names = sorted(p.name for p in tmp_path.glob("search_track_*.json"))
+    assert names == sorted([f"{search_name('فيروز كيفك إنت')}.json", f"{search_name('فيروز حبيبي')}.json"]) and len(names) == 2
+    assert len(asked.calls) == 2, "two queries, two requests, two files (the second used to overwrite the first)"
+
+
+def test_an_id_that_is_not_ascii_digits_is_refused_before_a_request_is_counted(tool: ModuleType, tmp_path: Path) -> None:
+    asked = Asked()
+    for odd in ("²", "٣", "1²"):
+        assert run(tool, tmp_path, asked, "album", odd) == 2, odd
+    assert asked.calls == [] and not (tmp_path / "n34_requests.json").exists(), "nothing asked, nothing counted against the leave"
 
 
 def test_a_recording_has_the_layout_of_the_others_and_no_signed_address(tool: ModuleType, tmp_path: Path) -> None:
     assert run(tool, tmp_path, Asked(), "search", "LANDMVRKS Creature") == 0
-    body = json.loads((tmp_path / "search_track_landmvrks_creature.json").read_text(encoding="utf-8"))
+    saved = tmp_path / f"{search_name('LANDMVRKS Creature')}.json"
+    body = json.loads(saved.read_text(encoding="utf-8"))
     assert sorted(body) == ["answer", "params", "path", "recorded"]
-    text = (tmp_path / "search_track_landmvrks_creature.json").read_text(encoding="utf-8")
+    text = saved.read_text(encoding="utf-8")
     assert "SECRET" not in text and "share" not in text and "preview" not in text
 
 

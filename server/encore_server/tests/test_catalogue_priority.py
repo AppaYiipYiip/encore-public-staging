@@ -5,8 +5,8 @@ the album pass of N-34 (650 songs): it would jump the queue in front of a person
 deadline, so anything slower came back as "could not ask" and stopped the pass. This file holds:
 
 * the DEFAULTS, which must not move: a route still asks `interactive` with 2.5 s, at every outside request and at the wait for the parts;
-* the new arguments reaching the gate (`priority`, and `wait_s` = the deadline) and the wait for the parts (`within`), the second song-list request getting
-  only what is left of the deadline;
+* the new arguments reaching the gate (`priority`, and `wait_s` = the deadline) and the wait for the parts (`within`: the caller waits for the song list what is
+  left of its deadline, each outside request keeps the whole deadline for its turn);
 * the single flight: **a person is never made to wait behind a background request for the same thing** (the flight is per priority), and a follower waits
   for its OWN deadline, not for the phone's;
 * `deezer.search_tracks(wait_s=)`: the keeper's short wait (N-34 slice 3) instead of the 120 s of a background turn.
@@ -42,7 +42,9 @@ class Spy:
     def __init__(self, cat: Catalogue) -> None:
         self.gets: list[dict[str, Any]] = []
         self.gathers: list[float | None] = []
-        real_get, real_gather = cat.client.get, cat._gather
+        #: the `deadline_s` each outside request was given by its caller: a follower of a request in flight waits twice it
+        self.deadlines: list[float | None] = []
+        real_get, real_gather, real_fetch = cat.client.get, cat._gather, cat._fetch
 
         def get(path: str, params: dict[str, Any] | None = None, **kw: Any) -> dict[str, Any]:
             self.gets.append({"path": path, **kw})
@@ -52,8 +54,13 @@ class Spy:
             self.gathers.append(within)
             return real_gather(jobs, within=within)
 
+        def fetch(*args: Any, **kw: Any) -> Any:
+            self.deadlines.append(kw.get("deadline_s"))
+            return real_fetch(*args, **kw)
+
         cat.client.get = get  # type: ignore[method-assign]
         cat._gather = gather  # type: ignore[method-assign]
+        cat._fetch = fetch  # type: ignore[method-assign]
 
 
 # ------------------------------------------------------------------------------------------------------------------ the defaults do not move
@@ -75,10 +82,10 @@ def test_a_route_still_asks_interactive_and_inside_two_and_a_half_seconds(rig: R
     assert spy.gets, "the route asked nothing (the recorded answer was cached?)"
     for call in spy.gets:
         assert call["priority"] == "interactive", call
-        # an album's song list gets what is left of the 2.5 s, never more
-        assert 0 < call["wait_s"] <= catalogue.CALL_TIMEOUT_S, call
-    longest = max(call["wait_s"] for call in spy.gets)
-    assert longest == catalogue.CALL_TIMEOUT_S == 2.5, "a call's own requests wait the phone's whole 2.5 s"
+        # EXACTLY what it was before slice 1: no `wait_s` (the gate's own interactive 2.5 s), and 2.5 s is what it is now. A song list that got "what is left of
+        # 2.5 s" was a change of a default that the slice said it did not make.
+        assert (deezer.INTERACTIVE_WAIT_S if call["wait_s"] is None else call["wait_s"]) == 2.5, call
+    assert spy.deadlines and all(deadline in (None, 2.5) for deadline in spy.deadlines), spy.deadlines
     waits = [catalogue.CALL_TIMEOUT_S if within is None else within for within in spy.gathers]  # `None` is "the phone's 2.5 s"
     assert waits and all(0 < within <= 2.5 for within in waits), spy.gathers
     assert waits[0] == 2.5, "the first wait for the parts of a call is the phone's whole 2.5 s"
@@ -94,24 +101,47 @@ def test_an_album_asked_in_the_background_arrives_at_the_gate_as_background_with
     assert [call["path"] for call in spy.gets] == [f"/album/{ALBUM_ID}", f"/album/{ALBUM_ID}/tracks"]
     assert [call["priority"] for call in spy.gets] == ["background", "background"]
     first, second = (call["wait_s"] for call in spy.gets)
-    assert first == 30.0, "the first request may wait for its turn at the gate as long as the caller's deadline"
-    assert 29.0 < second <= 30.0, "the song list gets what is left of the deadline, not the whole of it again"
-    assert spy.gathers[0] == 30.0 and 29.0 < spy.gathers[1] <= 30.0
+    assert first == second == 30.0, "each request may wait for its turn at the gate as long as the caller's whole deadline"
+    assert spy.gathers[0] == 30.0 and 29.0 < spy.gathers[1] <= 30.0, "and the caller waits for the song list what is left of it"
 
 
-def test_the_song_list_gets_only_what_is_left_of_the_deadline(rig: Rig) -> None:
-    """The second request of `album()` runs on the remainder (the flaw of the old code: the song list got `CALL_TIMEOUT_S - elapsed` of a clock the caller
-    never named). A first answer that takes 0.4 s of a 1 s deadline leaves the song list at most 0.6 s, both at the wait and at the gate."""
+def slow_album(rig: Rig) -> None:
+    """The first answer of an album takes 0.4 s: what is left of any deadline is less than the deadline when the song list is asked."""
 
     def slow(request: httpx.Request) -> httpx.Response:
         time.sleep(0.4)
         return httpx.Response(200, json=recorded("album"))
 
     rig.upstream.overrides[f"/album/{ALBUM_ID}"] = slow
+
+
+def test_the_caller_waits_for_the_song_list_only_what_is_left_of_its_deadline_and_the_request_keeps_the_whole_deadline(
+    rig: Rig,
+) -> None:
+    """Two different waits, kept apart. The CALLER waits for the parts of the call (`within`) for what is left of its deadline: a first answer that takes 0.4 s
+    of a 1 s deadline leaves the song list at most 0.6 s, and the call never takes longer than its deadline in all. The song-list REQUEST waits for its turn at the
+    gate, and a follower waits for the request, as long as the whole deadline, exactly as a person's route always did (see the next test): a slow answer that
+    comes after the caller left still fills the cache (`_gather`), and nothing in the caller's patience changes."""
+    slow_album(rig)
     spy = Spy(rig.catalogue)
     rig.catalogue.album(ALBUM_ID, deadline_s=1.0)
-    assert spy.gets[0]["wait_s"] == 1.0 and spy.gets[1]["wait_s"] <= 0.62, spy.gets
+    assert spy.gets[0]["wait_s"] == 1.0 and spy.gets[1]["wait_s"] == 1.0, spy.gets
+    assert spy.deadlines == [1.0, 1.0], "a follower of either request waits twice the deadline"
     assert spy.gathers[0] == 1.0 and spy.gathers[1] <= 0.62, spy.gathers
+
+
+def test_a_person_route_gives_the_song_list_the_phones_whole_wait_exactly_as_before_slice_1(rig: Rig) -> None:
+    """Slice 1 said that every route's defaults are unchanged. They were not: the song list of an album got `wait_s` = what was left of 2.5 s where the old code
+    passed none (the gate reads that as its own interactive 2.5 s), and a follower of that request waited twice what was left instead of 5 s. A first answer
+    that takes 0.4 s must change NOTHING for the song list: the same wait for its turn (2.5 s) and the same follower wait; only the caller's wait for the parts is
+    what is left of the 2.5 s, as it always was."""
+    slow_album(rig)
+    spy = Spy(rig.catalogue)
+    rig.ok(f"/catalogue/albums/{ALBUM_ID}")
+    assert [call["path"] for call in spy.gets] == [f"/album/{ALBUM_ID}", f"/album/{ALBUM_ID}/tracks"]
+    assert [(deezer.INTERACTIVE_WAIT_S if call["wait_s"] is None else call["wait_s"]) for call in spy.gets] == [2.5, 2.5]
+    assert [deadline in (None, 2.5) for deadline in spy.deadlines] == [True, True], spy.deadlines
+    assert spy.gathers[0] == 2.5 and 0 < spy.gathers[1] <= 2.1, "the caller's wait for the song list is what is left of its 2.5 s"
 
 
 def test_search_tracks_waits_for_its_turn_as_long_as_it_is_told_and_by_default_as_a_background_turn_does(

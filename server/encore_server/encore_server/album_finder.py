@@ -7,20 +7,20 @@ a song its place in the bucket and nothing else, and a better rule asks it again
 
 **The three calls** (the caller does the asking, so every outside request has one owner and this module has no network in it):
 
-* [judge_hits]: steps 0 to 2 over the hits of one search, one [HitVerdict] per hit with the REASON it was refused (`skip_rule`, `artist`,
-  `title_or_version`, `length`, ...). The dry-run report reads the same verdicts ("rejected only by the tolerance" is `reason == "length"`), so the rule
-  is written once.
+* [judge_hits]: steps 1 and 2 over the hits of one search, one [HitVerdict] per hit with the REASON it was refused (`artist`, `title_or_version`,
+  `length`, ...). The dry-run report reads the same verdicts ("rejected only by the tolerance" is `reason == "length"`), so the rule is written once.
 * [wanted_albums]: which albums the caller must ask the catalogue about (`Catalogue.album`: the album and its songs) before it can decide.
 * [choose_release]: all six steps. Its answer is an [Outcome]: `matched`, `none` and `held` are FACTS the catalogue's answer proves and are
   remembered; `unsupported`, `no_length` and `unavailable` ("could not ask") are not, and [Verdict.remember] says which (a test pins it, so a pass can
   never store the second kind: the day the fold is fixed those songs are simply asked).
 
-**The names go through the fold, so the fold's limits are the matcher's.** `textnorm` still folds every Arabic, Cyrillic or Korean name to nothing (audit
-B-37): two different songs by one Latin artist whose titles only START in Latin have the same key. So no name is compared unless
-`textnorm.survives_fold_whole` says it survives the fold whole (defined by P2-25 slice 1 and described ONCE, in the P2-25 design, part 4: never copied
-here), and that holds for the song AND for every hit it is compared with: a hit "Habibi <Arabic>" folds to `habibi` exactly as the library's "Habibi"
-does. Each call site is marked `STOP-GAP(P2-25 skip-rule)`: slice 2 of P2-25 makes the rule true for any text with a letter and these guards stop
-firing, with no change here.
+**The names go through the one fold, so its limits are the matcher's.** Since P2-25 slices 2 and 3 `textnorm` keeps the letters of every alphabet (audit
+B-37): two different Arabic songs are two different keys, and a hit is the song only when its artist AND its key (`refs.norm_key`: the artist, the title
+and the version) are equal. Nothing is transliterated, so an Arabic name and its Latin spelling are two names: a miss, never a wrong stamp. The one kind of
+name that is refused at step 0 is a name with NOTHING TO COMPARE: no letter and no digit after the fold (only symbols, emoji or marks:
+`textnorm.survives_fold_whole`, defined by P2-25 slice 1 and described ONCE, in the P2-25 design, part 4: never copied here), or nothing left once the
+word rules have taken their noise away (`VEVO`, a title that is only "Audio"). Only the SONG is asked for it: a hit with nothing to compare cannot have the
+song's artist and key, so the equality refuses it; a second test for the hit's names would decide nothing the equality does not (a test pins it).
 """
 
 from __future__ import annotations
@@ -50,11 +50,15 @@ Outcome = Literal["matched", "none", "held", "unsupported", "no_length", "unavai
 #: The outcomes that are FACTS about the song and the catalogue, and may be stored. The rest say "not asked": never stored (audit B-124).
 REMEMBERED: frozenset[Outcome] = frozenset({"matched", "none", "held"})
 
-HitReason = Literal["same_recording", "unreadable", "skip_rule", "artist", "title_or_version", "no_length", "length", "no_album"]
+HitReason = Literal["same_recording", "unreadable", "artist", "title_or_version", "no_length", "length", "no_album"]
 ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type"]
 
-#: `record_type`s seen in recorded answers: `album` 49 times, `ep` once, `single` 13 times (`tests/fixtures/deezer/`). **Any other value never wins**:
-#: the spellings that mark a compilation or a live record are not known, and a guess would be a wrong album.
+#: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
+#: 20 searches of `app/test/fixtures/deezer/search.json`; the server's own mapped copies in `app/test/fixtures/server/` are not counted, they are the same releases
+#: again): 228 distinct releases, `album` 114, `single` 104, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
+#: **The recordings hold no `compile` and no live or remix value: no release of them is marked a compilation or a live record**, so the type cannot tell a
+#: best-of from an album (Legend Remixed and the Legacy sets are `album`). **Any other value never wins**: the spellings that mark a compilation or a live
+#: record are not known, and a guess would be a wrong album.
 _FULL_RELEASE = frozenset({"album", "ep"})
 _SINGLE = "single"
 
@@ -204,10 +208,10 @@ class RefHoldings:
 
 
 def refusal(song: Song) -> tuple[Outcome, str] | None:
-    """Step 0. `None` when the song can be asked about, else the outcome and the reason. Neither refusal is remembered: the day P2-25 lands, or a length
-    is read, the song is simply asked."""
-    # STOP-GAP(P2-25 skip-rule): the fold still loses every non-Latin name (B-37). Price: those songs stay in the bucket, honestly named, until P2-25
-    # slice 2 makes `survives_fold_whole` true for them; removal trigger: that slice; reminder: the reason code and the report's count of them.
+    """Step 0. `None` when the song can be asked about, else the outcome and the reason. No refusal is remembered: a song that is given a length (or a name
+    with something in it) is simply asked."""
+    # A name with nothing to compare: no letter or digit after the fold (`survives_fold_whole`, the one definition: asked, so that a stricter definition
+    # tomorrow refuses a song here without a change to this module), or nothing left once the word rules removed their noise (`VEVO`, "Audio").
     if not survives_fold_whole(song.artist) or not norm_artist(song.artist):
         return "unsupported", "artist_not_comparable"
     if not survives_fold_whole(song.title) or not norm_title(song.title):
@@ -224,14 +228,17 @@ def refusal(song: Song) -> tuple[Outcome, str] | None:
 
 
 def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERANCE_MS) -> tuple[HitVerdict, ...]:
-    """One verdict per hit of a search (`deezer.search_tracks`: the raw rows). The tests, in order, and the first a hit fails is its reason:
+    """One verdict per hit of a search (`deezer.search_tracks`: the raw rows) for a song that step 0 let in. The tests, in order, and the first a hit fails is
+    its reason:
 
-    1. `skip_rule`: the HIT's artist and title must survive the fold whole too (a hit "Habibi <Arabic>" folds to `habibi`).
-    2. `artist`: the same `norm_artist`.
-    3. `title_or_version`: the same `refs.norm_key`, which is the artist, `norm_title` AND the version signature (`norm_title` strips brackets, so
+    1. `artist`: the same `norm_artist`.
+    2. `title_or_version`: the same `refs.norm_key`, which is the artist, `norm_title` AND the version signature (`norm_title` strips brackets, so
        "Comfortably Numb (Live)" and "Comfortably Numb" share it; the signatures are `{live}` and empty).
-    4. `length`: within [tolerance_ms] of the song's (a remaster is the same recording; an edit of 238 s against 292 s is not: both signatures are empty,
+    3. `length`: within [tolerance_ms] of the song's (a remaster is the same recording; an edit of 238 s against 292 s is not: both signatures are empty,
        only the length tells them apart).
+
+    A hit whose artist or title holds no letter and no digit has nothing to compare, and the equality refuses it at 1 or 2: the song has a letter or a digit in
+    both, so it has neither that artist nor that key.
     """
     want_artist, want_key = norm_artist(song.artist), refs.norm_key(song.artist, song.title)
     verdicts: list[HitVerdict] = []
@@ -246,10 +253,7 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
         delta = song.length_ms - length if song.length_ms is not None and length is not None else None
         fits = False
         reason: HitReason
-        # STOP-GAP(P2-25 skip-rule): the hit's own names, for the same reason as the song's (see `refusal`).
-        if not survives_fold_whole(name) or not survives_fold_whole(title):
-            reason = "skip_rule"
-        elif norm_artist(name) != want_artist:
+        if norm_artist(name) != want_artist:
             reason = "artist"
         elif refs.norm_key(name, title) != want_key:
             reason = "title_or_version"
@@ -293,7 +297,8 @@ def release_date(value: object) -> str | None:
 
 def _id_order(ident: str) -> tuple[int, int, str]:
     """Catalogue ids are numbers sent as text: the LOWEST id is the numerically lowest ("9" is lower than "10"); anything else sorts after them."""
-    return (0, int(ident), ident) if ident.isdigit() else (1, 0, ident)
+    # `isascii` first: a superscript two is `isdigit()` and `int()` raises on it, and `catalogue._id` passes any text through.
+    return (0, int(ident), ident) if ident.isascii() and ident.isdigit() else (1, 0, ident)
 
 
 @dataclass(frozen=True)
@@ -332,9 +337,9 @@ def _facts(album_id: str, answer: object) -> _Facts | None:
 
 def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
     """Step 3 (a) and (b): why this release can never be chosen, or `None`."""
-    # (a) The album artist is the song's first artist: a song on somebody else's album, a tribute, a compilation of many artists is a miss.
-    # STOP-GAP(P2-25 skip-rule): the album artist is compared by fold, so it must survive it too.
-    if not facts.artist or not survives_fold_whole(facts.artist) or norm_artist(facts.artist) != want_artist:
+    # (a) The album artist is the song's first artist: a song on somebody else's album, a tribute, a compilation of many artists is a miss. An album that names
+    # nobody, or whose artist has nothing to compare, is nobody's: the song's own artist has a letter or a digit (step 0), so the equality refuses it.
+    if not facts.artist or norm_artist(facts.artist) != want_artist:
         return "album_artist"
     # (b) The type: `album` and `ep` rank first, `single` after them, any other value (or none) never wins.
     if facts.record_type not in _FULL_RELEASE and facts.record_type != _SINGLE:

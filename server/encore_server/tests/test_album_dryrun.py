@@ -17,7 +17,6 @@ import shutil
 import socket
 import sqlite3
 import sys
-import time
 import wave
 from pathlib import Path
 from typing import Any
@@ -33,13 +32,13 @@ from encore_server.album_dryrun import (
     Row,
     entries,
     file_length_ms,
-    fixture_name,
     main,
     opened,
     run,
 )
 from encore_server.album_finder import HitVerdict, Song, Verdict
 from encore_server.db import Database
+from encore_server.fixture_names import fixture_name, search_name
 from tests.catalogue_fakes import QUOTA, RECORDED, searches
 
 # ------------------------------------------------------------------------------------------------------------------ a database and a folder of answers
@@ -134,9 +133,9 @@ def test_the_saved_answers_are_named_exactly_as_the_recorder_names_them() -> Non
         assert fixture_name(body["path"], body["params"]) == source.stem, source.name
         seen += 1
     assert seen >= 10, "the ten step-0 recordings"
-    assert fixture_name("/search", {"q": "Pink Floyd Comfortably Numb"}) == "search_track_pink_floyd_comfortably_numb"
-    assert fixture_name("/search", {"q": "(Hello) !"}) == "search_track_hello", (
-        "the ends are stripped as the recorder strips them"
+    assert fixture_name("/search", {"q": "Pink Floyd Comfortably Numb"}) == search_name("Pink Floyd Comfortably Numb")
+    assert fixture_name("/search", {"q": "(Hello) !"}) != fixture_name("/search", {"q": "Hello"}), (
+        "a query is named by ALL of it: these two were one file when only the Latin letters counted (the full rule: tests/test_fixture_names.py)"
     )
     assert (
         fixture_name("/search", {}) is None
@@ -237,9 +236,16 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
     # the best-of's song list was never recorded and is not needed (The Wall is chosen), so it is "could not ask" for a song that did not need it
     assert (
         sorted(transport.not_recorded)
-        # `search_track_` is the Arabic song's search: the answer file is named by an ASCII-only slug of the query, which is EMPTY for any query without a Latin
-        # letter, so every such search would share this one name (a hole of N-34 slice 1's dry run that P2-25 slices 2 and 3 make reachable: the lead has it)
-        == ["album_12114262_tracks", "album_319814", "search_track_", "search_track_nobody_at_all_a_song_nobody_recorded"]
+        # the Arabic song's search has a name of its own (the hash of its whole query): it used to be `search_track_`, the name of EVERY query without a Latin
+        # letter, so a live run replayed the first Arabic answer to all the others (tests/test_fixture_names.py)
+        == sorted(
+            [
+                "album_12114262_tracks",
+                "album_319814",
+                search_name("فيروز كيفك إنت"),
+                search_name("Nobody At All A Song Nobody Recorded"),
+            ]
+        )
         and transport.asked == 0
     )
 
@@ -492,14 +498,14 @@ def test_a_live_run_is_capped_saves_what_it_was_told_and_a_second_run_asks_nothi
     assert refused.status_code == 400 and first.spent and first.asked == 2 and len(network.requests) == 2, (
         "the third request is not made"
     )
-    saved = json.loads((folder / "search_track_pink_floyd_comfortably_numb.json").read_text(encoding="utf-8"))
+    saved = json.loads((folder / f"{search_name('Pink Floyd Comfortably Numb')}.json").read_text(encoding="utf-8"))
     assert saved["path"] == "/search" and saved["params"] == {"q": "Pink Floyd Comfortably Numb", "limit": "8"}
     assert (
         "preview" not in json.dumps(saved) and "SECRET" not in json.dumps(saved) and "share" not in saved["answer"]["data"][0]
     ), "signed addresses are taken out"
     assert sorted(path.name for path in folder.iterdir()) == [
         "album_12114248.json",
-        "search_track_pink_floyd_comfortably_numb.json",
+        f"{search_name('Pink Floyd Comfortably Numb')}.json",
     ]
     second, silent = AnswerTransport(folder, live=FakeNetwork(), max_requests=2), FakeNetwork()
     assert (
@@ -570,6 +576,25 @@ def test_a_live_run_stops_at_its_request_cap_and_says_so(library: Database, tmp_
     )
 
 
+def test_a_live_run_over_a_library_in_another_alphabet_asks_about_every_song_and_saves_one_answer_each(
+    db: Database, tmp_path: Path
+) -> None:
+    """The review's defect at the level of the command: three Arabic songs of one artist. Every one is asked (the fold keeps their letters since P2-25) and the
+    folder gets three answers; with the ASCII-only name of before, the first answer was saved as `search_track_` and replayed to the other two."""
+    for title in ("كيفك إنت", "حبيبي", "سألوني الناس"):
+        make_ref(db, title, "فيروز", 209_000, kept=f"Encore/f/Singles/{title}.opus")
+    network, printed = FakeNetwork(), []
+    code = main(
+        ["--db", str(tmp_path / "data" / "encore.db"), "--answers", str(tmp_path / "answers"), "--live", "--max-requests", "50"],
+        out=printed.append,
+        network=network,
+    )
+    assert code == 0 and len([url for url in network.requests if "/search" in url]) == 3, network.requests
+    saved = sorted(path.name for path in (tmp_path / "answers").glob("search_track_*.json"))
+    assert saved == sorted(f"{search_name(f'فيروز {title}')}.json" for title in ("كيفك إنت", "حبيبي", "سألوني الناس"))
+    assert "requests: asked 3" in "".join(printed)
+
+
 def test_a_run_that_ends_by_itself_says_nothing_of_stopping(library: Database, tmp_path: Path) -> None:
     printed: list[str] = []
     main(["--db", str(tmp_path / "data" / "encore.db"), "--answers", str(answers_folder(tmp_path))], out=printed.append)
@@ -619,19 +644,40 @@ def test_the_catalogue_is_asked_for_an_album_as_background_work_with_the_runs_ow
     assert seen[0]["wait_s"] == album_dryrun.ALBUM_DEADLINE_S and 0 < seen[1]["wait_s"] <= album_dryrun.ALBUM_DEADLINE_S
 
 
-def test_a_live_run_is_paced_by_the_servers_gate_and_a_replay_is_not(tmp_path: Path) -> None:
+class FakeTime:
+    """A clock the test owns: `sleep` moves it. A gate that paces its requests "waits" without the test waiting, and a gate that does not pace never sleeps."""
+
+    def __init__(self) -> None:
+        self.now = 1000.0
+        self.slept: list[float] = []
+
+    def clock(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.slept.append(seconds)
+        self.now += seconds
+
+
+def test_a_live_run_is_paced_by_the_servers_gate_and_a_replay_is_not(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The gate keeps 0.25 s between background requests (about 4 a second): a live run of 1,500 requests is 5 to 8 minutes and never a burst. A replay
-    asks nobody and is not slowed down."""
-    started = time.monotonic()
+    asks nobody and is not slowed down. Asserted on the WORK the gate does (the pauses it asks for, on a clock the test owns), not on the seconds a machine takes:
+    the first version said "under 0.5 s" and "at least 0.45 s", which a loaded machine can break."""
+    fake = FakeTime()
+    gate = album_dryrun.Gate
+    monkeypatch.setattr(album_dryrun, "Gate", lambda **kw: gate(**kw, clock=fake.clock, sleep=fake.sleep))
     with opened(answers_folder(tmp_path), live=False, max_requests=None) as replay:
         for _ in range(4):
             replay.search("LANDMVRKS", "Requiem")
-    assert time.monotonic() - started < 0.5
+    assert (replay.transport.replayed, replay.transport.asked) == (4, 0), "four answers served from the folder, nobody asked"
+    assert fake.slept == [] and fake.now == 1000.0, "a replay does not pause: not one request waited for a token or a gap"
     with opened(tmp_path / "live", live=True, max_requests=10, network=FakeNetwork()) as live:
-        started = time.monotonic()
         for query in ("one", "two", "three"):
             live.search("Artist", query)
-        assert time.monotonic() - started >= 0.45, "three requests are at least two gaps of 0.25 s apart"
+    assert (live.transport.asked, live.transport.replayed) == (3, 0)
+    assert fake.slept == [0.25, 0.25], (
+        "three background requests: the gap of 0.25 s before the second and before the third, and nothing else"
+    )
 
 
 def test_a_run_whose_last_song_met_the_rest_is_not_called_early(library: Database, tmp_path: Path) -> None:
