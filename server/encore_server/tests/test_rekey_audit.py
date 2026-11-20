@@ -69,6 +69,24 @@ def test_after_the_start_up_repair_the_keys_are_right_and_the_worklist_is_what_f
     assert [p for p in result.problems() if "worklist" in p], result.problems()
 
 
+def test_the_files_the_worklist_still_holds_are_named_by_ids_so_the_host_can_find_them(db: Database) -> None:
+    """The cost of a file nobody could judge is a ref that stays held; the visible reminder is this FAIL, so it must name the FILE (row id, the music server's id and the
+    song), not only count it, and never print a path or a title."""
+    seed_old_world(db)
+    keyrepair.repair(db)
+
+    result = look(db)
+    said: list[str] = []
+    rekey_audit.main(["--db", str(copy_of(db))], out=said.append)
+
+    assert len(result.worklist_file_ids) == 5
+    assert all(R in one and "nd-" in one for one in result.worklist_file_ids)
+    assert "the files still held:" in said[0] and result.worklist_file_ids[0] in said[0]
+    assert "FAIL" in said[0]
+    for leak in ("Collection/", ".opus", "كيفك", "فيروز"):
+        assert leak not in said[0]
+
+
 def test_a_pair_the_worklist_holds_back_is_counted_by_reason_and_named_by_its_two_ids(db: Database) -> None:
     seed_old_world(db)
     other = rid("sr", 9)

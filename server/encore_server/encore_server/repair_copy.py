@@ -103,3 +103,15 @@ def mark_used(conn: sqlite3.Connection, *, pending_key: str, used_key: str, copy
     """In the transaction that COMMITS the repair: this copy is spent (a later repair takes its own) and no attempt is pending."""
     conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (used_key, copy.name))
     conn.execute("DELETE FROM setting WHERE key = ?", (pending_key,))
+
+
+def settle(conn: sqlite3.Connection, *, pending_key: str, used_key: str, copy: Path | None) -> None:
+    """In the transaction that ENDS a complete pass of a repair that runs again and again (the rehome): the copy the pass relied on is spent ([mark_used]); and when it relied
+    on none (it found nothing to move) the copy of an earlier attempt that did NOT finish, if one is still pending, is spent instead: this pass is what finished that attempt,
+    and the record left standing would make the NEXT time the worklist is filled (a change of the fold) reuse a copy taken before the state of that day. The copy stays
+    protected from the prune (it is the last committed repair's) until a later repair takes its own. No copy and nothing pending: nothing to do."""
+    name = copy.name if copy is not None else setting(conn, pending_key)
+    if name is None:
+        return
+    conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (used_key, name))
+    conn.execute("DELETE FROM setting WHERE key = ?", (pending_key,))

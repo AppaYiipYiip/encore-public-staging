@@ -115,10 +115,14 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
                 report.seen += 1
                 item = described(song)
                 song_id = str(song.get("id") or "")
+                if song_id:
+                    # The music server HAS this file, whatever its tags are: it is "seen" even when nothing can be made of it. The prune below removes the row of a file the
+                    # music server no longer LISTS, not the row of one it lists with tags nobody can describe (it used to: the song lost its file and everybody was told to
+                    # stream it again, and the file of a worklist song vanished before the rehome could say it was never judged; P2-25 slice 4, review round).
+                    seen_ids.add(song_id)
                 if item is None or not song_id:
                     report.skipped += 1
                     continue
-                seen_ids.add(song_id)
                 owner = holders.get(song_id)
                 if owner is not None:
                     # The file is already some ref's: that is the ref, whatever the tags say (they are often poorer than the description the keeper
@@ -160,12 +164,27 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
             log.exception(
                 "the rehome of files glued onto the wrong song could not finish its pass; the library link itself is done and the worklist is kept"
             )
+    else:
+        _rehome_idle(
+            db
+        )  # no worklist to rehome: what the last pass left owing (the merge repair, the record of a copy nobody will use again) is paid now
     return report
 
 
+def _rehome_idle(db: Database) -> None:
+    """The end of a pass with no worklist (`rehome.idle`): never stops the link."""
+    try:
+        rehome.idle(db)
+    except Exception:  # noqa: BLE001 - the link goes on; what is owed stays owed and the next pass tries again
+        log.exception(
+            "what the rehome owes after its last pass could not be paid; the library link goes on and the next pass tries again"
+        )
+
+
 def _prune(db: Database, seen_ids: set[str], before: int) -> int:
-    """Files the music server no longer has: their rows go; the refs stay, so nothing a person has changes. Everybody who had the
-    song is told that it now has to be streamed again. A file attached after the pass began (the keeper, mid-scan) is left alone."""
+    """Files the music server no longer LISTS: their rows go; the refs stay, so nothing a person has changes. Everybody who had the song is told that it now has to be
+    streamed again. A file attached after the pass began (the keeper, mid-scan) is left alone. **A file the music server lists is never "gone", whatever its tags are**
+    (`seen_ids` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4)."""
     removed = 0
     with db.tx() as conn:
         for row in conn.execute(

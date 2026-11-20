@@ -303,6 +303,24 @@ def matches(conn: sqlite3.Connection, item: dict[str, Any]) -> list[sqlite3.Row]
     return answers
 
 
+def names_ref(conn: sqlite3.Connection, ref_id: str, item: dict[str, Any]) -> bool:
+    """Could this description be THIS ref's song, by ANY evidence: the ref is an answer of any tier of [candidates] (the strongest tier included: a ref that merely has the
+    same name is a plausible answer next to the ref an id names), or its own artist and title are the description's (`norm_key`) **whatever its length says**. The rehome of
+    P2-25 slice 4 asks this before it takes a file off a ref: when the file's own ref also fits the tags, the tags do not prove the file is in the wrong place, and a wrong
+    move is worse than none (it leaves the people who liked that ref with a song that has no file, and two refs that share no file are never merged).
+
+    The length is left out of the second test on purpose: a ref whose length was filled in after its file was attached (the catalogue's, a few seconds or a minute off) is
+    not an answer of `candidates` to the tags it was made from, and that is exactly the ref a file must not be moved away from on that ground alone. A ref whose key is the
+    description's may therefore be a different recording of the same song (a live version, a longer cut): the file stays and the ref is judged by nobody; its cost is
+    the rehome's (docs/18, "the rehome")."""
+    if any(str(row["id"]) == ref_id for _tier, row in candidates(conn, item)):
+        return True
+    if is_unknown_artist(item["artists"][0]):
+        return False  # no name to go by
+    row = conn.execute("SELECT norm_key FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
+    return row is not None and bool(row["norm_key"]) and row["norm_key"] == norm_key(item["artists"][0], item["title"])
+
+
 def lead_artist(artists: object) -> str:
     """The first artist of a stored (JSON) or described list of artists, as the name key reads it."""
     if isinstance(artists, str):

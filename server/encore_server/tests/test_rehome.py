@@ -503,13 +503,16 @@ def test_an_isrc_the_ref_holds_keeps_the_file_whatever_the_tags_say_of_the_title
     assert files(db) == {"nd-1": (ref,)} and report.moved == 0 and report.kept == 1
 
 
-def test_an_isrc_that_another_ref_holds_moves_the_file_there_even_when_the_name_matches(db: Database) -> None:
-    """The strongest evidence decides, and ONLY that tier counts: a ref that merely has the same name is not the recording the ISRC names."""
+def test_an_isrc_that_another_ref_holds_moves_the_file_there_when_the_current_ref_does_not_match_the_tags_too(
+    db: Database,
+) -> None:
+    """The glued-different-song case: the current ref is another song (its name is not the tags' name), the strongest evidence names a ref, so the file MOVES there. (Until
+    the review round of 20 Nov 2026 this test had a current ref that matched by name too and expected a move: the ambiguous case, below, which now stays.)"""
     wrong, right = rid("sr", 1), rid("sr", 2)
     tags = song("nd-1", "Habibi", "Fairuz", isrc=["QZ1234567890"])
 
     def build(c: sqlite3.Connection) -> None:
-        add_ref(c, wrong, "Habibi", ["Fairuz"], old=False)
+        add_ref(c, wrong, "كيفك إنت", ["فيروز"], old=False)  # another song, which the old fold glued this file onto
         add_ref(c, right, "Habibi (the other title the catalogue uses)", ["Fairuz"], old=False, isrc="QZ1234567890")
         add_file(c, wrong, "nd-1", song=tags)
 
@@ -910,7 +913,7 @@ def test_the_hold_of_refmerge_is_released_in_the_same_link_and_the_pair_merges_b
 def test_refmerge_is_not_run_when_the_pass_released_nothing(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
     """A pass that did not empty a worklist row has nothing to release: the merge repair (which logs every held pair) must not run every hour."""
     calls: list[int] = []
-    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1))
+    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
     without_last = [s for s in listing() if s["id"] != "nd-4"]
 
     one_pass(old_world, without_last, prune=False)
@@ -1028,6 +1031,685 @@ def test_the_pass_writes_nothing_when_its_copy_is_not_there_at_the_moment_of_wri
         "ONE line, not one per page"
     )
     assert report.rehome is not None and report.rehome.failed is True
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# a pass that failed (review round of 20 Nov 2026)
+
+A_REF, B_REF, Y_REF = rid("sr", 1), rid("sr", 2), rid("sr", 3)
+
+
+def a_kept_and_a_moving_song(db: Database) -> list[dict[str, Any]]:
+    """Two worklist songs on two pages: A's file is kept (page 1), B's file is Y's song (page 2: it moves). Returns the music server's listing."""
+    tags_a = song("nd-1", "كيفك إنت", "فيروز")
+    tags_b = song("nd-2", "حبيتك بالصيف", "فيروز")  # the tags of B's file name Y's song
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, A_REF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, A_REF, "nd-1", song=tags_a)
+        add_ref(c, B_REF, "نسّم علينا الهوا", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, B_REF, "nd-2", song=tags_b)
+        add_ref(c, Y_REF, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, A_REF, B_REF)
+    return [tags_a, tags_b]
+
+
+def test_a_pass_that_failed_after_the_copy_releases_nothing_spends_no_copy_and_runs_no_merge_and_the_next_pass_finishes(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The guard in `finish`: page 1 judged A's file (kept: A is DONE), page 2's chunk fails AFTER the copy was taken. A pass that failed must not release A (the worklist
+    is emptied only by a complete pass), must not spend the copy it relies on (the next pass reuses it) and must not run the merge repair; the next pass finishes the job."""
+    listing_ = a_kept_and_a_moving_song(db)
+    calls: list[int] = []
+    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    real = library.touch_ref_holders
+
+    def disk_full(conn: sqlite3.Connection, ref: str) -> None:
+        raise RuntimeError("the disk is full")
+
+    monkeypatch.setattr(library, "touch_ref_holders", disk_full)
+
+    report = link_library(db, Music(listing_), page=1)
+
+    assert report.complete is True and report.rehome is not None and report.rehome.failed is True
+    assert worklist(db) == {A_REF, B_REF}, "A was fully judged, and still stays: the pass did not complete"
+    (copy,) = copies(db)
+    assert setting(db, rehome.BACKUP_PENDING_SETTING) == copy.name, (
+        "the copy of the attempt that did not finish is still the pending one"
+    )
+    assert setting(db, rehome.BACKUP_USED_SETTING) is None, "and is not spent"
+    assert calls == [], "no merge repair after a failed pass"
+    assert files(db) == {"nd-1": (A_REF,), "nd-2": (B_REF,)}, "the chunk that failed changed nothing"
+
+    monkeypatch.setattr(library, "touch_ref_holders", real)
+    again = link_library(db, Music(listing_), page=1)
+
+    assert again.rehome is not None and again.rehome.failed is False and worklist(db) == set()
+    assert files(db) == {"nd-1": (A_REF,), "nd-2": (Y_REF,)}
+    assert copies(db) == [copy], "the same copy was used again"
+    assert setting(db, rehome.BACKUP_USED_SETTING) == copy.name and setting(db, rehome.BACKUP_PENDING_SETTING) is None
+    assert calls == [1], "the merge repair ran once, after the pass that finished"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# a wrong move is worse than none (review round of 20 Nov 2026, item 1)
+
+SELF, DUP, OTHER = rid("sr", 1), rid("sr", 2), rid("sr", 3)
+
+
+def own(c: sqlite3.Connection, how: str | None, ref: str) -> None:
+    """What a person did with a ref: a like, an entry of a playlist, a play (the three the people see)."""
+    if how == "like":
+        library.set_item(c, ME, "like", ref)
+    elif how == "entry":
+        c.execute("INSERT INTO playlist (id, owner, name, created_at, updated_at) VALUES (?,?,?,1,1)", (PLAYLIST, ME, "mine"))
+        c.execute(
+            "INSERT INTO playlist_entry (id, playlist, position, ref, added_by, at) VALUES (?,?,1,?,?,1)",
+            (rid("pe", 1), PLAYLIST, ref, ME),
+        )
+    elif how == "play":
+        c.execute("INSERT INTO play_event (id, person, ref, at, ms_played) VALUES (?,?,?,5,1000)", (rid("pv", 1), ME, ref))
+
+
+@pytest.mark.parametrize("how", [None, "like"])
+def test_a_file_stays_when_its_ref_matches_it_by_name_and_a_duplicate_by_its_isrc_and_the_ref_stays_on_the_worklist(
+    db: Database, caplog: pytest.LogCaptureFixture, how: str | None
+) -> None:
+    """THE REVIEW'S CASE. R (a like) holds the file; a duplicate X of the same song holds the ISRC the file's tags carry. The ids tier names only X, so the file used to be
+    re-pointed R -> X: R kept its like and had no file, and R and X share no file, so the merge by file never folds them: permanent for the person who liked R. A wrong
+    move is worse than none: the current ref ALSO matches (by name), so nothing moves, R stays on the worklist, and ONE line says why (ids only). [how] None: nobody owns R,
+    so ONLY the rule of this test can keep the file (the last-file rule of the tests below does not apply)."""
+    tags = song("nd-1", "كيفك إنت", "فيروز", isrc=["QZ1234567890"])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, DUP, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000, isrc="QZ1234567890")
+        own(c, how, SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+    before = owned(db)
+
+    with caplog.at_level(logging.INFO, logger=LOG):
+        report = link_library(db, Music([tags]))  # the real path: the hourly pass, with the prune
+
+    assert files(db) == {"nd-1": (SELF,)} and owned(db) == before, "nothing moved, nothing a person owns changed"
+    assert worklist(db) == {SELF}, "the ref is held"
+    assert report.rehome is not None and report.rehome.stayed_ambiguous == 1 and report.rehome.moved == 0
+    assert report.rehome.held_back == 1 and report.rehome.held_undecided == 1 and report.rehome.released == 0
+    assert copies(db) == [], "nothing was written, so no copy"
+    lines = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == LOG and r.getMessage().startswith("rehome: file") and "names it as well" in r.getMessage()
+    ]
+    assert len(lines) == 1 and SELF in lines[0] and DUP in lines[0], "ONE line, with both ref ids"
+    for title in ("كيفك", "فيروز"):
+        assert title not in caplog.text
+
+    again = link_library(db, Music([tags]))  # idempotent: the same answer, still nothing written
+
+    assert files(db) == {"nd-1": (SELF,)} and worklist(db) == {SELF} and copies(db) == []
+    assert again.rehome is not None and again.rehome.stayed_ambiguous == 1
+
+
+def test_a_file_whose_ref_matches_it_by_name_while_a_merged_ref_s_id_names_another_ref_also_stays(db: Database) -> None:
+    """`candidates` has four tiers; the rule is about every one of them: a ref that is a plausible answer in ANY tier is one the file may belong to."""
+    tags = song("nd-1", "كيفك إنت", "فيروز", isrc=["QZ1234567890"])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, DUP, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)  # another song
+        # the ISRC of the file belonged to a ref that was merged into DUP: the tags name DUP by a merged id (tier 2), SELF by name (tier 3)
+        c.execute(
+            "INSERT INTO ref_merge (old_id, into_id, at, isrc, norm_key, duration_ms) VALUES (?,?,1,?,?,?)",
+            (rid("sr", 50), DUP, "QZ1234567890", "gone||gone", 200_000),
+        )
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    report = link_library(db, Music([tags]))
+
+    assert files(db) == {"nd-1": (SELF,)} and worklist(db) == {SELF}
+    assert report.rehome is not None and report.rehome.stayed_ambiguous == 1
+
+
+def test_a_ref_that_absorbed_a_duplicate_under_the_tags_name_is_a_plausible_answer_too_so_the_file_stays(db: Database) -> None:
+    """The fourth tier of `candidates` on its own (the ref's OWN name is not the tags' name, only a tombstone's is): SELF is the survivor of a merged ref that had the tags'
+    name, so the description may be SELF's song, and an ISRC names another ref at the same time. Nobody owns SELF: only the rule of this test keeps the file."""
+    tags = song("nd-1", "كيفك إنت", "فيروز", isrc=["QZ1234567890"])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)  # the title SELF carries now is another one
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, DUP, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000, isrc="QZ1234567890")
+        c.execute(
+            "INSERT INTO ref_merge (old_id, into_id, at, norm_key, duration_ms) VALUES (?,?,1,?,?)",
+            (rid("sr", 50), SELF, refs.norm_key("فيروز", "كيفك إنت"), 200_000),
+        )
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    report = link_library(db, Music([tags]))
+
+    assert files(db) == {"nd-1": (SELF,)} and worklist(db) == {SELF}
+    assert report.rehome is not None and report.rehome.stayed_ambiguous == 1
+
+
+@pytest.mark.parametrize("other", ["a duplicate holds the ISRC", "nobody else"])
+def test_a_ref_whose_length_is_not_the_files_still_matches_it_by_name_so_the_file_stays(db: Database, other: str) -> None:
+    """The name tier of `candidates` compares the LENGTH (three seconds), and a ref whose length was filled in after its file was attached (the builder's limit (c)) is then
+    not an answer to the tags that name it: it was not in the plausible set, and the file moved off it. A ref whose own name is the tags' name is a ref the file may belong
+    to, whatever its length says: doubt keeps the file. Nobody owns the ref, so only this rule can keep it."""
+    tags = song("nd-1", "كيفك إنت", "فيروز", 260.0, isrc=["QZ1234567890"])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)  # 60 s off the file
+        add_file(c, SELF, "nd-1", song=tags)
+        if other == "a duplicate holds the ISRC":
+            add_ref(c, DUP, "كيفك إنت", ["فيروز"], old=False, duration_ms=260_000, isrc="QZ1234567890")
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    report = link_library(db, Music([tags]))
+
+    assert files(db) == {"nd-1": (SELF,)} and worklist(db) == {SELF}
+    assert report.rehome is not None and report.rehome.moved == 0 and report.rehome.stayed_ambiguous == 1
+
+
+@pytest.mark.parametrize("how", ["like", "entry", "play"])
+def test_the_last_file_of_a_song_a_person_owns_never_moves_and_its_ref_stays_on_the_worklist(
+    db: Database, caplog: pytest.LogCaptureFixture, how: str
+) -> None:
+    """The tags name ANOTHER song and the file is the only one the person's song has: a move would leave a like, an entry or a play on a song with no file (the review's
+    stranded person). It stays, the song stays on the worklist, one line says why."""
+    tags = song("nd-1", "حبيتك بالصيف", "فيروز")  # the tags name OTHER's song
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, OTHER, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        own(c, how, SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+    before = owned(db)
+
+    with caplog.at_level(logging.INFO, logger=LOG):
+        report = link_library(db, Music([tags]))
+
+    assert files(db) == {"nd-1": (SELF,)} and owned(db) == before
+    assert worklist(db) == {SELF} and copies(db) == []
+    assert report.rehome is not None and report.rehome.stayed_last_file == 1 and report.rehome.moved == 0
+    lines = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name == LOG and r.getMessage().startswith("rehome: file") and "last file" in r.getMessage()
+    ]
+    assert len(lines) == 1 and SELF in lines[0] and "كيفك" not in lines[0]
+
+
+def test_the_same_file_of_a_song_nobody_owns_moves_and_so_does_the_file_of_a_song_that_keeps_another_one(db: Database) -> None:
+    """The two controls of the test above: nobody owns the song (the janitor retires it later: the existing behaviour), or the song keeps a keeper's file after the move."""
+    free, owned_ref, target = rid("sr", 1), rid("sr", 2), rid("sr", 3)
+    tags_free = song("nd-1", "حبيتك بالصيف", "فيروز")
+    tags_owned = song("nd-2", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, free, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, free, "nd-1", song=tags_free)
+        add_ref(c, owned_ref, "نسّم علينا الهوا", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, owned_ref, "nd-2", song=tags_owned)
+        add_file(c, owned_ref, "nd-9", source="youtube", added_at=10, song=song("nd-9", "نسّم علينا الهوا", "فيروز"))
+        own(c, "like", owned_ref)
+        add_ref(c, target, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, free, owned_ref)
+
+    report = link_library(
+        db, Music([tags_free, tags_owned, song("nd-9", "نسّم علينا الهوا", "فيروز")])
+    )  # the keeper's file is listed too, or the prune takes it
+
+    assert files(db)["nd-1"] == (target,) and files(db)["nd-2"] == (target,) and files(db)["nd-9"] == (owned_ref,)
+    assert report.rehome is not None and report.rehome.moved == 2 and report.rehome.stayed_last_file == 0
+
+
+def test_the_check_of_the_last_file_reads_the_rows_of_the_transaction_so_the_second_of_two_moves_stays(db: Database) -> None:
+    """A song somebody owns holds two library files that both name other songs: the first may go (the song keeps the second), the second is then its LAST file and stays.
+    The count is read inside the write transaction, after the first move of the same chunk, not from what the pass read before."""
+    z1, z2 = rid("sr", 2), rid("sr", 3)
+    first = song("nd-1", "حبيتك بالصيف", "فيروز")
+    second = song("nd-2", "سألوني الناس", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=first)
+        add_file(c, SELF, "nd-2", song=second)
+        add_ref(c, z1, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        add_ref(c, z2, "سألوني الناس", ["فيروز"], old=False, duration_ms=200_000)
+        own(c, "like", SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    report = link_library(db, Music([first, second]))
+
+    assert files(db) == {"nd-1": (z1,), "nd-2": (SELF,)}
+    assert report.rehome is not None and report.rehome.moved == 1 and report.rehome.stayed_last_file == 1
+    assert worklist(db) == {SELF}
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the preferred file of a song that lost a file (review round, item 2)
+
+
+@pytest.mark.parametrize("preferred_before", ["the file that moves", "the file that is kept"])
+def test_after_a_move_the_old_song_prefers_a_file_judged_kept_never_the_newest_one_nobody_could_judge(
+    db: Database, preferred_before: str
+) -> None:
+    """The review's repro: R holds nd-1 (kept), nd-2 (the placeholder artist: nobody could judge it) and nd-3 (moves). `ensure_one_preferred` leaves R preferring the NEWEST
+    remaining row, nd-2. The kept file is on a LATER page than the move, so only the end of the pass knows it."""
+    other = rid("sr", 2)
+    kept = song("nd-1", "كيفك إنت", "فيروز")
+    nameless = song("nd-2", "أغنية", "[Unknown Artist]")
+    going = song("nd-3", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, preferred=int(preferred_before == "the file that is kept"), song=kept)
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", added_at=300, preferred=int(preferred_before == "the file that moves"), song=going)
+        add_ref(c, other, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        own(c, "like", SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    link_library(db, Music([going, nameless, kept]), page=2)  # the move is on page 1, the kept file on page 2
+
+    assert files(db) == {"nd-1": (SELF,), "nd-2": (SELF,), "nd-3": (other,)}
+    with db.read() as conn:
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+        assert [r["preferred"] for r in conn.execute("SELECT preferred FROM song_file WHERE ref = ?", (other,))] == [1]
+    assert preferred == ["nd-1"], "the file judged kept, not the newest"
+
+
+def test_after_a_move_the_old_song_prefers_the_keepers_file_over_a_file_nobody_could_judge(db: Database) -> None:
+    """A keeper's file is attached on purpose for the song's own description (never judged, never wrong by the tags): it counts as decided."""
+    other = rid("sr", 2)
+    nameless = song("nd-2", "أغنية", "[Unknown Artist]")
+    going = song("nd-3", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-4", source="youtube", added_at=100, song=song("nd-4", "كيفك إنت", "فيروز"))
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", added_at=300, preferred=1, song=going)
+        add_ref(c, other, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    link_library(
+        db, Music([going, nameless, song("nd-4", "كيفك إنت", "فيروز")])
+    )  # the keeper's file is listed too, or the prune takes it
+
+    with db.read() as conn:
+        (row,) = conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,)).fetchall()
+    assert row["navidrome_song_id"] == "nd-4"
+
+
+def test_the_preference_is_put_right_by_the_pass_that_completes_even_when_an_earlier_pass_made_the_move(db: Database) -> None:
+    """The move is committed by a pass that does NOT complete (the music server stops answering after page 1): the old song then prefers the newest row left, the one nobody
+    could judge. `ref_recheck.moved` is committed with the move, so the NEXT complete pass, which re-judges the whole song, still puts the preference right."""
+    other = rid("sr", 2)
+    kept = song("nd-1", "كيفك إنت", "فيروز")
+    nameless = song("nd-2", "أغنية", "[Unknown Artist]")
+    going = song("nd-3", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, preferred=0, song=kept)
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", added_at=300, preferred=1, song=going)
+        add_ref(c, other, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        own(c, "like", SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    cut = link_library(
+        db, Music([going, nameless], down_at=2), page=2
+    )  # page 1: the move and the nameless file; page 2: no answer
+
+    assert cut.complete is False and files(db)["nd-3"] == (other,)
+    assert worklist(db) == {SELF}
+
+    link_library(db, Music([going, nameless, kept]), page=2)
+
+    with db.read() as conn:
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert preferred == ["nd-1"]
+
+
+def test_the_phones_are_told_when_the_preferred_file_of_a_song_changes_at_the_end_of_the_pass(db: Database) -> None:
+    """The preferred file is what the files feed answers for the song: a change of it is a change the feed must carry."""
+    other = rid("sr", 2)
+    kept = song("nd-1", "كيفك إنت", "فيروز")
+    nameless = song("nd-2", "أغنية", "[Unknown Artist]")
+    going = song("nd-3", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, song=kept)
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", added_at=300, preferred=1, song=going)
+        add_ref(c, other, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+    with db.read() as conn:
+        top = conn.execute("SELECT COALESCE(MAX(seq), 0) FROM file_log").fetchone()[0]
+
+    link_library(db, Music([going, nameless, kept]), page=2)
+
+    with db.read() as conn:
+        touched = [r["ref"] for r in conn.execute("SELECT ref FROM file_log WHERE seq > ? ORDER BY seq", (top,))]
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert preferred == ["nd-1"] and touched.count(SELF) >= 2, (
+        "once for the file that left, once more for the preferred file that changed afterwards"
+    )
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the file the music server lists and cannot describe, through the real hourly pass (review round, item 3)
+
+
+def test_a_file_with_no_usable_tags_keeps_its_row_and_its_ref_stays_on_the_worklist_through_the_hourly_pass_that_prunes(
+    db: Database,
+) -> None:
+    """The real path (`link_library`, prune on): the music server LISTS the file, so it is not gone, however poor its tags are. It used to be pruned as 'gone' (it was never
+    in `seen_ids`) before the rehome looked at it, so its ref was released from the worklist: the opposite of what docs/18 says."""
+    ref = rid("sr", 1)
+    bare = song("nd-1", "", "")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, ref, "أغنية", ["فيروز"], old=False)
+        add_file(c, ref, "nd-1", song=bare)
+
+    make_world(db, build)
+    listed(db, ref)
+
+    report = link_library(db, Music([bare]))
+
+    assert report.pruned == 0 and report.skipped == 1
+    assert files(db) == {"nd-1": (ref,)}, "the file is still listed: its row stays"
+    assert worklist(db) == {ref}
+    assert report.rehome is not None and report.rehome.stayed_untagged == 1
+    assert report.rehome.held_undecided == 1 and report.rehome.released == 0
+
+
+def test_a_listed_file_the_scan_cannot_describe_keeps_its_row_whoever_holds_it_and_the_prune_still_removes_a_file_the_listing_lacks(
+    db: Database,
+) -> None:
+    """The prune is for files the music server NO LONGER HAS. Not on the worklist at all: a file the music server still lists with no usable tags keeps its row (the song
+    stays playable, and nobody is told it must be streamed again), and a file that is really gone still goes (the control that the change did not switch the prune off)."""
+    ref, gone_ref = rid("sr", 1), rid("sr", 2)
+    bare = song("nd-1", "", "")
+    lost = song("nd-2", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, ref, "أغنية", ["فيروز"], old=False)
+        add_file(c, ref, "nd-1", song=bare)
+        add_ref(c, gone_ref, "حبيتك بالصيف", ["فيروز"], old=False)
+        add_file(c, gone_ref, "nd-2", song=lost)
+
+    make_world(db, build)
+
+    report = link_library(db, Music([bare]))  # nd-2 is not listed any more
+
+    assert files(db) == {"nd-1": (ref,)}, "the listed file stays, the unlisted one is gone"
+    assert report.pruned == 1 and report.skipped == 1
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the pace of the release and the merge that is owed (review round, item 5)
+
+
+def five_kept_songs(db: Database) -> list[dict[str, Any]]:
+    words = ["كيفك", "حبيتك", "نسّم", "سألوني", "زهرة"]
+    tags = [song(f"nd-{n}", word, "فيروز") for n, word in enumerate(words, start=1)]
+
+    def build(c: sqlite3.Connection) -> None:
+        for n, (word, one) in enumerate(zip(words, tags, strict=True), start=1):
+            add_ref(c, rid("sr", n), word, ["فيروز"], old=False, duration_ms=200_000)
+            add_file(c, rid("sr", n), f"nd-{n}", song=one)
+
+    make_world(db, build)
+    listed(db, *(rid("sr", n) for n in range(1, 6)))
+    return tags
+
+
+@contextmanager
+def watching_transactions(monkeypatch: pytest.MonkeyPatch, *, cut_after: int | None = None) -> Iterator[list[int]]:
+    """How many rows of the worklist each write transaction removed (the ones that removed none are not listed); `cut_after`: raise right after the commit of the n-th of
+    them, as when the process dies between two chunks."""
+    sizes: list[int] = []
+    real = Database.tx
+
+    @contextmanager
+    def spy(self: Database) -> Iterator[sqlite3.Connection]:
+        with real(self) as conn:
+            before = conn.execute("SELECT COUNT(*) FROM ref_recheck").fetchone()[0]
+            yield conn
+            after = conn.execute("SELECT COUNT(*) FROM ref_recheck").fetchone()[0]
+        if before != after:
+            sizes.append(before - after)
+            if cut_after is not None and len(sizes) == cut_after:
+                raise RuntimeError("the process was killed here")
+
+    monkeypatch.setattr(Database, "tx", spy)
+    yield sizes
+
+
+def test_the_worklist_is_released_in_chunks_one_transaction_each(db: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The write lock is held for one chunk at a time (200,000 refs in one transaction held it for 3 s, measured), whatever the size of the worklist."""
+    tags = five_kept_songs(db)
+    monkeypatch.setattr(
+        rehome, "RELEASE_CHUNK", 2, raising=False
+    )  # (raising off: on the old code the test must fail by what it does, not by a missing name)
+
+    with watching_transactions(monkeypatch) as sizes:
+        report = link_library(db, Music(tags))
+
+    assert sizes == [2, 2, 1] and worklist(db) == set()
+    assert report.rehome is not None and report.rehome.released == 5
+
+
+def test_a_pass_cut_between_two_chunks_is_resumed_by_the_next_one_and_the_merge_it_owes_is_not_lost(
+    db: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The process dies right after the FIRST chunk was committed: two refs are released, three are not. The flag that says 'the pairs held for released refs have not been
+    judged yet' was written in the SAME transaction as that release, so it survives; the next pass finishes the worklist and then runs the merge repair (once)."""
+    tags = five_kept_songs(db)
+    calls: list[int] = []
+    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    monkeypatch.setattr(rehome, "RELEASE_CHUNK", 2, raising=False)
+
+    with watching_transactions(monkeypatch, cut_after=1) as sizes, caplog.at_level(logging.ERROR, logger="encore_server.scanner"):
+        report = link_library(db, Music(tags))
+
+    assert sizes == [2] and report.rehome is None and "could not finish its pass" in caplog.text
+    assert len(worklist(db)) == 3, "two refs are released, three are not"
+    assert calls == [], "the merge repair waits for the end of the worklist"
+    monkeypatch.undo()
+    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+
+    again = link_library(db, Music(tags))
+
+    assert again.rehome is not None and again.rehome.released == 3 and worklist(db) == set()
+    assert calls == [1], "the merge repair ran once, after the pass that emptied the worklist"
+    assert setting(db, rehome.MERGE_PENDING_SETTING) is None, "and the debt is paid"
+
+
+def test_the_merge_owed_is_written_in_the_same_transaction_as_the_first_release(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If the flag were written after the release, a process killed between the two would leave refs released and no memory that the pairs held for them were never judged."""
+    tags = five_kept_songs(db)
+    monkeypatch.setattr(refmerge, "repair", lambda database: refmerge.RepairReport())
+    monkeypatch.setattr(rehome, "RELEASE_CHUNK", 2, raising=False)
+
+    with watching_transactions(monkeypatch, cut_after=1):
+        link_library(db, Music(tags))
+
+    assert len(worklist(db)) == 3
+    assert setting(db, rehome.MERGE_PENDING_SETTING) is not None, (
+        "the merge is owed: the flag is committed with the first release"
+    )
+
+
+@pytest.mark.parametrize("how", ["returns failed", "raises"])
+def test_a_merge_repair_that_failed_after_the_worklist_was_emptied_is_retried_at_the_next_pass_and_then_not_again(
+    db: Database, monkeypatch: pytest.MonkeyPatch, how: str
+) -> None:
+    """`refmerge.repair` answers `failed` (it never raises); a raise is covered as well. The worklist is already empty, so the next pass has no rehome to run: the retry is
+    owed by a durable flag, and it clears only when the repair did not fail."""
+    keeper_ref, scan_ref = rid("sr", 1), rid("sr", 2)
+    tags = song("nd-1", "كيفك إنت", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, keeper_ref, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, keeper_ref, "nd-1", source="youtube", added_at=10, song=tags)
+        add_ref(c, scan_ref, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, scan_ref, "nd-1", added_at=20, song=tags)
+        library.set_item(c, ME, "like", scan_ref)
+
+    make_world(db, build)
+    listed(db, scan_ref)
+    real = refmerge.repair
+    calls: list[int] = []
+
+    def flaky(database: Database) -> refmerge.RepairReport:
+        calls.append(1)
+        if len(calls) == 1:
+            if how == "raises":
+                raise RuntimeError("the database is busy")
+            return refmerge.RepairReport(failed=True)
+        return real(database)
+
+    monkeypatch.setattr(refmerge, "repair", flaky)
+
+    first = link_library(db, Music([tags]))
+
+    assert first.rehome is not None and first.rehome.released == 1 and worklist(db) == set()
+    assert calls == [1]
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM ref_merge").fetchone()[0] == 0, "the repair failed: nothing is merged yet"
+
+    link_library(db, Music([tags]))  # the next pass: no worklist, no rehome, and still the retry
+
+    assert calls == [1, 1]
+    with db.read() as conn:
+        assert [(m["old_id"], m["into_id"]) for m in conn.execute("SELECT old_id, into_id FROM ref_merge")] == [
+            (scan_ref, keeper_ref)
+        ]
+    assert setting(db, rehome.MERGE_PENDING_SETTING) is None, "paid: the flag is clear"
+
+    link_library(db, Music([tags]))
+
+    assert calls == [1, 1], "and not again: the flag is clear"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# the record of a copy that nobody will use again (review round, item 6)
+
+
+def test_a_pass_that_finishes_with_nothing_to_move_spends_the_copy_of_the_failed_attempt_it_finishes(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed pass A leaves its copy as the pending one (the next attempt reuses it). When the next pass B finds nothing to move (the file was removed, or put right some
+    other way) it COMPLETES that attempt without taking or reusing a copy: the pending record must not stay, or a later fold change, which fills the worklist again, would reuse
+    this copy, taken before the state of that day."""
+    tags = song("nd-1", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, OTHER, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+    real = library.touch_ref_holders
+
+    def disk_full(conn: sqlite3.Connection, ref: str) -> None:
+        raise RuntimeError("the disk is full")
+
+    monkeypatch.setattr(library, "touch_ref_holders", disk_full)
+    failed = link_library(db, Music([tags]))
+    monkeypatch.setattr(library, "touch_ref_holders", real)
+    assert failed.rehome is not None and failed.rehome.failed is True
+    (first,) = copies(db)
+    assert setting(db, rehome.BACKUP_PENDING_SETTING) == first.name
+
+    finished = link_library(db, Music([]))  # the music server no longer lists the file: nothing to move, the pass completes
+
+    assert (
+        finished.rehome is not None and finished.rehome.failed is False and finished.rehome.moved == 0 and worklist(db) == set()
+    )
+    assert setting(db, rehome.BACKUP_PENDING_SETTING) is None and setting(db, rehome.BACKUP_USED_SETTING) == first.name
+
+    # a fold change fills the worklist again: a real pass takes its OWN copy
+    with db.tx() as c:
+        add_file(c, SELF, "nd-1", song=tags)
+        c.execute("INSERT INTO ref_recheck (ref, at) VALUES (?, 1)", (SELF,))
+    link_library(db, Music([tags]))
+
+    assert len(copies(db)) == 2 and first in copies(db), "a new copy, not the old one again"
+    assert files(db) == {"nd-1": (OTHER,)}
+
+
+def test_the_record_of_a_failed_attempt_is_spent_when_the_worklist_was_emptied_by_another_hand(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The janitor (or anything else) can empty the worklist after a failure: then no pass runs and nothing would ever clear the record."""
+    tags = song("nd-1", "حبيتك بالصيف", "فيروز")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, OTHER, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+    monkeypatch.setattr(library, "touch_ref_holders", lambda conn, ref: (_ for _ in ()).throw(RuntimeError("the disk is full")))
+    link_library(db, Music([tags]))
+    (first,) = copies(db)
+    assert setting(db, rehome.BACKUP_PENDING_SETTING) == first.name
+    monkeypatch.undo()
+    with db.tx() as c:
+        c.execute("DELETE FROM ref_recheck")  # what the janitor does for a ref it retires
+
+    link_library(db, Music([tags]))
+
+    assert setting(db, rehome.BACKUP_PENDING_SETTING) is None and setting(db, rehome.BACKUP_USED_SETTING) == first.name
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------

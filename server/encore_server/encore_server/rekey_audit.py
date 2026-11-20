@@ -8,7 +8,10 @@ repair writes nothing and this reads only.
 
 * the refs whose stored key is NOT what the fold makes now (the rewrite of `keyrepair.py` did not run, or an older image keyed a song after it): wanted 0;
 * the refs whose stored key has an empty artist or title part, and the tombstones whose key has (the old fold's `||`): wanted 0 of the refs;
-* the refs on the worklist `ref_recheck` and the library files they still hold (the rehome of `rehome.py` has not judged them): wanted 0;
+* the refs on the worklist `ref_recheck` and the library files they still hold (the rehome of `rehome.py` has not judged them, or could not: a file with no usable tags, the
+  placeholder artist with no id, a song that fits its tags as well as another, the last file of a song a person owns): wanted 0. **The files are named** (the row id, the music
+  server's own id and the song's id, five of them: ids only, no path and no title), because this FAIL is the visible reminder of a ref that stays held until its file is tagged
+  or removed (`rehome.py`, "the cost, stated"; the log of the pass says which of the reasons each one is);
 * the pairs of refs that hold one file and are held back by the merge repair, by reason, and how many of them for the worklist (`recheck_pending`): wanted 0 for the
   worklist (the other reasons are not failures: a pair with different YouTube ids is two recordings);
 * whether any pair can be merged right now and has not been (the merge runs at every start and after a pass that emptied the worklist).
@@ -49,6 +52,8 @@ class Audit:
     worklist: int = 0
     worklist_files: int = 0
     worklist_ids: list[str] = field(default_factory=list)
+    #: `file row id (the music server's id) of the song`, for the first few library files the worklist refs hold.
+    worklist_file_ids: list[str] = field(default_factory=list)
     held: Counter[str] = field(default_factory=Counter)
     held_for_worklist_ids: list[str] = field(default_factory=list)
     mergeable: bool = False
@@ -70,7 +75,8 @@ class Audit:
             found.append(f"{self.degenerate_refs} refs hold a key with an empty artist or title part")
         if self.worklist:
             found.append(
-                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge (a file with no usable tags or no artist name keeps its ref here)"
+                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge (no usable tags, no artist name and no id, "
+                "a song that fits the tags as well as another, or the last file of a song a person owns: the ref stays held until the file is tagged or removed)"
             )
         if self.held_for_worklist:
             found.append(
@@ -112,6 +118,13 @@ def audit(conn: sqlite3.Connection) -> Audit:
     result.worklist_files = conn.execute(
         "SELECT COUNT(*) FROM song_file WHERE source = 'library' AND ref IN (SELECT ref FROM ref_recheck)"
     ).fetchone()[0]
+    result.worklist_file_ids = [
+        f"{row[0]} ({row[1]}) of {row[2]}"
+        for row in conn.execute(
+            "SELECT id, navidrome_song_id, ref FROM song_file WHERE source = 'library' AND ref IN (SELECT ref FROM ref_recheck) ORDER BY ref, id LIMIT ?",
+            (_EXAMPLES,),
+        )
+    ]
     result.mergeable, held = refmerge.look(conn)
     result.held = Counter(pair.reason for pair in held)
     result.held_for_worklist_ids = [f"{pair.survivor}+{pair.loser}" for pair in held if pair.reason == "recheck_pending"][
@@ -138,6 +151,7 @@ def render(path: str, result: Audit) -> str:
         f"refs whose key has an empty artist or title part: {result.degenerate_refs} (wanted 0: {wanted(not result.degenerate_refs)}); tombstones: {result.degenerate_tombstones} (nulled by the repair, not a failure)",
         f"refs on the worklist: {result.worklist}, holding {result.worklist_files} library files (wanted 0: {wanted(not result.worklist)})"
         + (f"; e.g. {', '.join(result.worklist_ids)}" if result.worklist_ids else ""),
+        *([f"  the files still held: {'; '.join(result.worklist_file_ids)}"] if result.worklist_file_ids else []),
         f"pairs held back by the merge repair: {held}; for the worklist (recheck_pending): {result.held_for_worklist} (wanted 0: {wanted(not result.held_for_worklist)})"
         + (f"; e.g. {', '.join(result.held_for_worklist_ids)}" if result.held_for_worklist_ids else ""),
         f"pairs that can be merged now and are not: {'yes' if result.mergeable else 'no'} (wanted no: {wanted(not result.mergeable)})",
