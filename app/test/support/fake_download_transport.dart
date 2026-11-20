@@ -39,7 +39,7 @@ class FakeDownloadTransport implements DownloadTransport {
   bool acknowledgeCancels = false;
 
   @override
-  Future<void> cancel(String taskId) async {
+  Future<bool> cancel(String taskId) async {
     canceled.add(taskId);
     final known = active.remove(taskId);
     if (acknowledgeCancels && known) {
@@ -48,6 +48,7 @@ class FakeDownloadTransport implements DownloadTransport {
         status: TransferStatus.canceled,
       ));
     }
+    return known;
   }
 
   @override

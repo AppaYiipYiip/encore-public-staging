@@ -129,6 +129,15 @@ class DownloadManager {
   /// pass (a pin change, a finished sync, a finished transfer) asks again.
   final Set<String> _waitingForServer = <String>{};
 
+  /// For each task id, how many attempts the person's own Stop interrupted whose LAST word has not come yet (N-39, review of PR 119). The downloader
+  /// ends every task with exactly one word (`canceled` for a cancel that reached it; `failed` or `complete` when the transfer ended in the very moment
+  /// of the cancel), and it can arrive AFTER Resume has started the song again under the same task id: a word about the old attempt, read against a row
+  /// that says "downloading" for the new one. Without this it was read as a cancel from outside: the new transfer's row failed with a back-off, and the
+  /// place it gave away let another song start over the limit. A word spends one, the first that comes (see [_spendStoppedAttempt]); in memory only: a
+  /// word that outlives the process is replayed to a manager that starts with the row stopped, and the task id per attempt in the row (N-45) is what
+  /// would make this exact for good. Bounded: one entry per attempt that was in flight at a Stop, gone with its word.
+  final Map<String, int> _stoppedAttempts = {};
+
   static String _taskId(int serverId, String trackId) =>
       'enc:$serverId:$trackId';
 
@@ -171,7 +180,7 @@ class DownloadManager {
         final trackId = _trackIdOf(id);
         if (trackId != null && stopped.contains(trackId)) {
           active.remove(id);
-          await _cancelQuietly(id);
+          await _cancelForStop(id);
         }
       }
       final stuck = await _repo.rowsInState(DownloadState.downloading);
@@ -201,6 +210,7 @@ class DownloadManager {
 
   Future<void> dispose() async {
     _disposed = true;
+    _stoppedAttempts.clear();
     _debounce?.cancel();
     await _updates?.cancel();
     await _pins?.cancel();
@@ -279,8 +289,12 @@ class DownloadManager {
     List<String> trackIds,
     Map<String, DownloadRow> existing,
   ) async {
+    final suffixes = await _suffixesOf(trackIds);
     for (final id in trackIds) {
       await _transport.cancel(_taskId(serverId, id));
+      // The song is gone, so is the attempt of it the Stop interrupted: no word of it matters now, and one kept would shield the next attempt of the
+      // same task id from a real cancel.
+      _stoppedAttempts.remove(_taskId(serverId, id));
       _inFlight.remove(id);
       final path = existing[id]?.localPath;
       if (path != null) {
@@ -290,8 +304,60 @@ class DownloadManager {
           Log.warn('downloads', 'could not delete $path', error);
         }
       }
+      await _deleteRefreshLeftovers(id, copyPath: path, suffix: suffixes[id]);
     }
     await _repo.deleteRows(trackIds);
+  }
+
+  /// The source suffix of each of these songs (what a download of it at the original quality is named by).
+  Future<Map<String, String?>> _suffixesOf(List<String> trackIds) async {
+    final result = <String, String?>{};
+    for (var from = 0; from < trackIds.length; from += 500) {
+      final to = from + 500 > trackIds.length ? trackIds.length : from + 500;
+      final rows = await (_db.select(_db.tracks)
+            ..where((t) =>
+                t.serverId.equals(serverId) &
+                t.id.isIn(trackIds.sublist(from, to))))
+          .get();
+      for (final row in rows) {
+        result[row.id] = row.suffix;
+      }
+    }
+    return result;
+  }
+
+  /// REMOVE is the one path that deletes (N-39), so it takes the half-made `.new` file of a refresh too: a Stop that came in the middle of one leaves
+  /// it on the phone (a Stop deletes nothing), and nothing else would ever delete it. Only files of THIS song, only the names this manager can have
+  /// written: the one it planned in this process, the copy's own name with `.new`, and the name for each extension a transfer of the song is made
+  /// with (a refresh at another quality is named by another extension). After a restart the manager's plan is gone and the row no longer says
+  /// what the refresh asked for (a Stop ends it), so the names are worked out, not remembered; a name with no file behind it deletes nothing.
+  Future<void> _deleteRefreshLeftovers(String trackId,
+      {String? copyPath, String? suffix}) async {
+    final candidates = <String>{};
+    final planned = _plannedPath.remove(trackId);
+    if (planned != null && planned.endsWith('.new')) {
+      candidates.add(await _transport.absolutePath(planned));
+    }
+    // Only a song that has a copy can have a refresh in progress.
+    if (copyPath != null && copyPath.isNotEmpty) {
+      candidates.add('$copyPath.new');
+      final base = _relativeBase(trackId);
+      for (final ext in {
+        for (final q in AudioQuality.values)
+          q.fileExtension(sourceSuffix: suffix)
+      }) {
+        candidates.add(await _transport.absolutePath('$base.$ext.new'));
+      }
+    }
+    for (final file in candidates) {
+      try {
+        if (await _transport.fileSize(file) != null) {
+          await _transport.deleteFile(file);
+        }
+      } on Object catch (error) {
+        Log.warn('downloads', 'could not delete $file', error);
+      }
+    }
   }
 
   /// Starts queued rows, up to the in-flight budget and the storage guard.
@@ -455,17 +521,35 @@ class DownloadManager {
   String _relativeFor(
       DownloadRow row, String? sourceSuffix, AudioQuality quality) {
     final ext = quality.fileExtension(sourceSuffix: sourceSuffix);
-    final base = 'downloads/$serverId/${row.trackId}.$ext';
+    final base = '${_relativeBase(row.trackId)}.$ext';
     return _isRefresh(row) ? '$base.new' : base;
   }
+
+  /// The name of a song's file without its extension: one place for what a download writes and what Remove looks for.
+  String _relativeBase(String trackId) => 'downloads/$serverId/$trackId';
 
   Future<void> _onUpdate(TransferUpdate update) async {
     final trackId = _trackIdOf(update.taskId);
     if (trackId == null || _disposed) return;
     switch (update.status) {
       case TransferStatus.complete:
+        // The cancel lost the race to the file: this IS the last word of the attempt the Stop interrupted. A finished file is a song, never swallowed
+        // (a swallowed word that was the new attempt's own would leave its row "downloading" with no task, the bug N-39 is about): it is spent and
+        // handled as a completion. When Resume has started the song again since, the transfer that runs now (same task id) is work already done: it is
+        // cancelled the way the Stop cancels (its own last word is remembered and swallowed) BEFORE the completion hands its place to the next song,
+        // or the pump would start one song more than the limit beside it (measured in the stop test, and a place that was kept for it would never be
+        // given back: the completion of a song that already has its copy is ignored as a stale word). What else an old word can do to a newer attempt
+        // of the same id is N-45's (a task id per attempt in the row).
+        if (_spendStoppedAttempt(update.taskId) &&
+            _inFlight.contains(trackId)) {
+          await _cancelForStop(update.taskId);
+        }
         await _onComplete(trackId, update.relativePath);
       case TransferStatus.failed:
+        // FIRST layer, before anything is touched (the place of a transfer that runs is [_inFlight]'s): the transfer the Stop cancelled failed in the
+        // very moment of the cancel, and its last word is this one. It is not a failed song with a wait, deletes nothing, and a song Resume has
+        // started again since keeps its place and its row.
+        if (_spendStoppedAttempt(update.taskId)) return;
         _inFlight.remove(trackId);
         // The Stop cancelled this transfer and the song waits for Resume: a word that comes late (the transfer failed in the very moment it was
         // cancelled) is not a failed song with a wait, and it deletes nothing (not the half of a refresh either).
@@ -473,9 +557,14 @@ class DownloadManager {
         await _onAttemptEnded(trackId, update.error ?? 'Download failed',
             reportedPath: update.relativePath);
       case TransferStatus.canceled:
+        // FIRST layer, before anything is touched: the acknowledgement of the cancel the person's Stop sent is the last word of the attempt it
+        // interrupted. It may arrive after Resume has started the song again under the same task id: it is then no cancel from outside, and it must
+        // not give away the place of the transfer that runs (`_inFlight`) nor fail its row. Exactly one word is spent for each cancel sent.
+        if (_spendStoppedAttempt(update.taskId)) return;
         _inFlight.remove(trackId);
-        // The acknowledgement of the Stop's own cancel is not a cancel from outside: the Stop is stored first and the row no longer says "downloading",
-        // so the branch below would not see it either; this is the second layer that stays right if a row ever does.
+        // Second layer, for a word that is not the acknowledgement of a Stop's cancel (one of something else, or one after the memory above was
+        // spent): the Stop is stored first and the row no longer says "downloading", so the branch below would not see it either; this stays right
+        // if a row ever does.
         if (await _isStopped(trackId)) return;
         // The manager cancels in one place, `_delete`, and deletes the row in the same pass (the update is handled after it): no row. A row that
         // still says "downloading" was cancelled by something else (the Cancel button of the downloader's card of an older build, a reset of the
@@ -614,12 +703,38 @@ class DownloadManager {
   Future<bool> _isStopped(String trackId) async =>
       (await _repo.heldTrackIds()).contains(trackId);
 
-  Future<void> _cancelQuietly(String taskId) async {
+  /// Spends one of the Stop's memories of [taskId] (see [_stoppedAttempts]): `true` when the word that is being handled is the last word of an
+  /// attempt the Stop interrupted.
+  bool _spendStoppedAttempt(String taskId) {
+    final left = _stoppedAttempts[taskId];
+    if (left == null) return false;
+    if (left <= 1) {
+      _stoppedAttempts.remove(taskId);
+    } else {
+      _stoppedAttempts[taskId] = left - 1;
+    }
+    return true;
+  }
+
+  /// Cancels the transfer of a song the person's Stop holds and remembers that ONE last word of that attempt is still to come (see
+  /// [_stoppedAttempts]). Only called for a task that is believed to be in flight (a song in [_inFlight], a task the downloader still lists). The
+  /// memory is written BEFORE the cancel (the start of the app does not wait in the FIFO, so a word can be handled while the cancel is still on its
+  /// way) and is taken back when the downloader says it had no such task: nothing was sent, no word will come, and a memory kept for it would
+  /// swallow the next attempt's own failure and leave its row "downloading" with no task behind it. The same when the cancel itself fails: nobody
+  /// knows whether a word is coming, and a failed song with a wait (Retry is there) is the failure that can be seen and mended, a stuck row is not.
+  Future<void> _cancelForStop(String taskId) async {
+    final before = _stoppedAttempts[taskId] ?? 0;
+    _stoppedAttempts[taskId] = before + 1;
+    var promised = false;
     try {
-      await _transport.cancel(taskId);
+      promised = await _transport.cancel(taskId);
     } on Object catch (error) {
-      // The song is held and its answers are ignored, so a cancel that did not go through changes nothing here: a file that still finishes is kept.
+      // The song is held and its answers are ignored, so a cancel that did not go through changes nothing else here.
       Log.warn('downloads', 'could not cancel $taskId', error);
+    }
+    // Only our own memory is taken back: one that a word spent in the meantime is already gone (the count is back to what it was).
+    if (!promised && (_stoppedAttempts[taskId] ?? 0) > before) {
+      _spendStoppedAttempt(taskId);
     }
   }
 
@@ -653,7 +768,7 @@ class DownloadManager {
       final held = await _repo.stopPins(keys);
       for (final id in held) {
         _estimates.remove(id);
-        if (_inFlight.remove(id)) await _cancelQuietly(_taskId(serverId, id));
+        if (_inFlight.remove(id)) await _cancelForStop(_taskId(serverId, id));
       }
     });
   }
@@ -683,4 +798,8 @@ class DownloadManager {
 
   @visibleForTesting
   Set<String> get debugInFlight => Set.unmodifiable(_inFlight);
+
+  @visibleForTesting
+  Map<String, int> get debugStoppedAttempts =>
+      Map.unmodifiable(_stoppedAttempts);
 }

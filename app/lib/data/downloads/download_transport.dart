@@ -53,7 +53,11 @@ abstract interface class DownloadTransport {
   Future<Set<String>> activeTaskIds();
 
   Future<void> start(TransferRequest request);
-  Future<void> cancel(String taskId);
+
+  /// Cancels the task. Answers `true` when the downloader had it and the attempt ends with ONE last word that is still to come (`canceled`, or the
+  /// `complete` or `failed` of a transfer that ended in the very moment), and `false` when it knew no such task: then it sent nothing and no word
+  /// will come for this cancel (the Stop's memory of late words counts on it, see `DownloadManager.stop`).
+  Future<bool> cancel(String taskId);
 
   /// Absolute path for [relativePath].
   Future<String> absolutePath(String relativePath);

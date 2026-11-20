@@ -4,6 +4,7 @@ import 'package:encore/core/clock.dart';
 import 'package:encore/data/db/app_database.dart';
 import 'package:encore/data/downloads/download_manager.dart';
 import 'package:encore/data/downloads/download_planner.dart';
+import 'package:encore/data/downloads/download_transport.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/domain/audio_quality.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -164,10 +165,14 @@ void main() {
     });
 
     test(
-        "N-39: a cancel delivered for every task in flight by something else AFTER the Stop changes nothing either",
+        "N-39: a cancel delivered for every task in flight by something else AFTER the Stop's own acknowledgements changes nothing either",
         () async {
+      // The first `canceled` after a Stop is the Stop's own acknowledgement (one for each cancel it sent, see the group below): they come first here,
+      // so that what is delivered next is a word of something else.
+      transport.acknowledgeCancels = true;
       await pinAlbum();
       await stopAlbum();
+      await manager.settled();
       for (var i = 1; i <= 4; i++) {
         transport.cancelFromOutside('t$i');
       }
@@ -182,8 +187,12 @@ void main() {
     test(
         "N-39: the second layer: a canceled for a song of a stopped download is no outside cancel even when its row still says downloading",
         () async {
+      // The Stop's own acknowledgements come first (they are the first layer, and are held by the group below); what is delivered afterwards finds only
+      // the stopped song.
+      transport.acknowledgeCancels = true;
       await pinAlbum();
       await stopAlbum();
+      await manager.settled();
       // The Stop puts the rows out of the way before it cancels, so no row says "downloading" for a stopped song today. A later change (a task id per
       // attempt kept in the row, N-45) must not turn the word guard into the only thing standing: it is a layer of its own and is held here.
       await (db.update(db.downloads)
@@ -208,8 +217,12 @@ void main() {
     test(
         "N-39: a failure that arrives late for a song the Stop cancelled is not a failed song with a wait, and deletes nothing",
         () async {
+      // The cancel's own acknowledgement came first (a failure that is the only word of the cancelled attempt is the group below's); this one is a
+      // second word about a song that is stopped, and the stop is what keeps it out of the failures.
+      transport.acknowledgeCancels = true;
       await pinAlbum();
       await stopAlbum();
+      await manager.settled();
       for (var i = 1; i <= 4; i++) {
         transport.fail('t$i');
       }
@@ -299,6 +312,323 @@ void main() {
       expect(after.canceled, [taskOf('t1')]);
       expect(after.started, isEmpty);
       expect((await row('t1')).state, DownloadState.queued);
+    });
+  });
+
+  group("the Stop's own late word, after Resume (review of PR 119, pin 2)", () {
+    // The downloader answers a cancel with ONE word for the task: `canceled` (or, when the transfer ended in the very moment, `failed` or `complete`).
+    // It can arrive after Resume has started the song again under the SAME task id (enc:<server>:<track>): a word about the old attempt, about a row that
+    // says downloading for the new one. The manager keeps, in memory, how many attempts its own Stop interrupted whose last word has not come yet, for
+    // each task id, and spends one on the first word that arrives. These tests send the late word by hand (`acknowledgeCancels` stays off, so the word
+    // is not delivered inside the Stop's own step).
+    TransferUpdate word(String id, TransferStatus status, [String? error]) =>
+        TransferUpdate(taskId: taskOf(id), status: status, error: error);
+    void lateCancel(String id) =>
+        transport.send(word(id, TransferStatus.canceled));
+
+    test(
+        "N-39: the Stop's own cancel acknowledgement that comes AFTER Resume is not an outside cancel: the resumed transfers stay and no song starts over the limit",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      expect(startOrder(), ['t1', 't2']);
+      await stopAlbum();
+      await resumeAlbum();
+      expect(startOrder(), ['t1', 't2', 't1', 't2'],
+          reason: 'Resume asked for the two songs again, at the same limit');
+
+      lateCancel('t1');
+      lateCancel('t2');
+      await manager.settled();
+
+      for (final id in ['t1', 't2']) {
+        final r = await row(id);
+        expect(r.state, DownloadState.downloading,
+            reason: '$id was read as a failed song');
+        expect(r.attempts, 0, reason: '$id has a wait ahead of it');
+        expect(r.lastError, isNull);
+      }
+      expect(manager.debugInFlight, {'t1', 't2'},
+          reason: 'the place of a running transfer was given away');
+      expect(startOrder().length, 4,
+          reason: 'the freed place started another song over the limit');
+      expect(transport.active.length, lessThanOrEqualTo(2));
+      expect(manager.debugStoppedAttempts, isEmpty,
+          reason: 'what the manager remembers is spent with the words');
+    });
+
+    test(
+        "N-39: Stop, Resume, Stop, Resume with two late acknowledgements for each song: each is swallowed once, and the next canceled is an outside cancel",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      await stopAlbum();
+      await resumeAlbum();
+      await stopAlbum();
+      await resumeAlbum();
+      expect(startOrder().length, 6, reason: 'three attempts for each song');
+
+      for (final id in ['t1', 't2']) {
+        lateCancel(id);
+        lateCancel(id);
+      }
+      await manager.settled();
+
+      for (final id in ['t1', 't2']) {
+        expect((await row(id)).state, DownloadState.downloading);
+        expect((await row(id)).attempts, 0);
+      }
+      expect(manager.debugInFlight, {'t1', 't2'});
+      expect(startOrder().length, 6);
+      expect(manager.debugStoppedAttempts, isEmpty);
+
+      // A third word is not the answer to any cancel the manager sent: it is the outside cancel of PR 113.
+      lateCancel('t1');
+      await manager.settled();
+      final cut = await row('t1');
+      expect(cut.state, DownloadState.failed);
+      expect(cut.lastError, kDownloadStoppedReason);
+      expect(cut.attempts, 1);
+    });
+
+    test(
+        "N-39: the prompt acknowledgement spends what the Stop remembered, so a cancel from outside after Resume is still an outside cancel (PR 113)",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      transport.acknowledgeCancels = true;
+      await pinAlbum();
+      await stopAlbum();
+      await manager.settled();
+      expect(manager.debugStoppedAttempts, isEmpty,
+          reason: 'the acknowledgements arrived inside the Stop');
+      await resumeAlbum();
+
+      transport.cancelFromOutside('t1');
+      await manager.settled();
+
+      final cut = await row('t1');
+      expect(cut.state, DownloadState.failed);
+      expect(cut.lastError, kDownloadStoppedReason);
+      expect(cut.attempts, 1);
+      expect((await row('t2')).state, DownloadState.downloading);
+    });
+
+    test(
+        "N-39: only the songs the Stop cancelled have an acknowledgement coming: a canceled for another song of the same manager is an outside cancel",
+        () async {
+      await repo.pin(PinTargetType.track, 't1', quality: AudioQuality.high);
+      await repo.pin(PinTargetType.track, 't2', quality: AudioQuality.high);
+      await manager.reconcile();
+      const t1 = (PinTargetType.track, 't1');
+      await manager.stop([t1]);
+      await manager.resume([t1]);
+      expect(manager.debugStoppedAttempts.keys, [taskOf('t1')],
+          reason: 'one attempt of one song, not a flag for the download');
+
+      lateCancel('t2');
+      await manager.settled();
+      expect((await row('t2')).state, DownloadState.failed,
+          reason: 'nobody had cancelled t2: this is the cancel from outside');
+
+      lateCancel('t1');
+      await manager.settled();
+      expect((await row('t1')).state, DownloadState.downloading);
+      expect(manager.debugStoppedAttempts, isEmpty);
+    });
+
+    test(
+        "N-39: a Stop of songs that are not in flight leaves nothing to remember: no acknowledgement can come for a cancel that was never sent",
+        () async {
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+      await pinAlbum();
+      expect(transport.started, isEmpty);
+
+      await stopAlbum();
+      await stopAlbum();
+
+      expect(transport.canceled, isEmpty);
+      expect(manager.debugStoppedAttempts, isEmpty);
+    });
+
+    test(
+        "N-39: a failure that is the cancelled attempt's own last word, arriving after Resume, is swallowed once; the new attempt's real failure after it is a failed song",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      await stopAlbum();
+      await resumeAlbum();
+
+      transport.send(word('t1', TransferStatus.failed, 'HTTP 500'));
+      await manager.settled();
+      expect((await row('t1')).state, DownloadState.downloading);
+      expect((await row('t1')).attempts, 0);
+      expect(manager.debugInFlight, contains('t1'));
+      expect(startOrder().length, 4);
+
+      transport.send(word('t1', TransferStatus.failed, 'HTTP 500'));
+      await manager.settled();
+      expect((await row('t1')).state, DownloadState.failed,
+          reason: 'only ONE word was the old attempt\'s');
+      expect((await row('t1')).attempts, 1);
+    });
+
+    test(
+        "N-39: a cancel the downloader could not answer (it knew no such task) promises no word, so it is not remembered: the next real failure is a failed song",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      // The downloader lost its tasks (a process the system killed, a reset): a cancel finds nothing and no word will ever come for it. The manager
+      // still asked, and its rows still say the songs were in flight.
+      transport.active.clear();
+      await stopAlbum();
+      expect(transport.canceled.length, 2, reason: 'the manager did cancel');
+      expect(manager.debugStoppedAttempts, isEmpty,
+          reason:
+              'a memory kept for a word that never comes would swallow the next attempt\'s own failure');
+
+      await resumeAlbum();
+      transport.fail('t1');
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.failed,
+          reason:
+              'swallowed: the row would say downloading for ever, with no task behind it and its place held');
+      expect(r.attempts, 1);
+      expect(manager.debugInFlight, isNot(contains('t1')));
+    });
+
+    test(
+        "N-39: the finished file of the attempt the Stop interrupted, delivered after Resume, is kept as the song it is, the transfer Resume started for it is cancelled, and no song starts over the limit",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      final written = transport.requestFor('t1').relativePath;
+      await stopAlbum();
+      await resumeAlbum();
+      expect(startOrder(), ['t1', 't2', 't1', 't2']);
+      expect(transport.active.length, 2);
+
+      // The old attempt had finished the file in the very moment of the Stop; its word comes only now.
+      transport.files['/app/$written'] = 8000;
+      transport.send(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.complete,
+          relativePath: written));
+      await manager.settled();
+
+      expect((await row('t1')).state, DownloadState.done,
+          reason: 'a finished file is a song');
+      expect(transport.active, isNot(contains(taskOf('t1'))),
+          reason:
+              'the transfer Resume started for t1 is work already done: it is cancelled, not left to write the same file again');
+      expect(transport.active.length, lessThanOrEqualTo(2),
+          reason:
+              'the freed place started a song beside a transfer that still ran');
+      expect(startOrder().length, 5,
+          reason:
+              'the place t1 gave back went to the next song, once it was really free');
+      expect(manager.debugInFlight, {'t2', 't3'});
+      expect(transport.deleted, isEmpty);
+
+      // The cancel of that transfer has its one last word too: swallowed, and the song stays what it is.
+      lateCancel('t1');
+      await manager.settled();
+      expect((await row('t1')).state, DownloadState.done);
+      expect((await row('t1')).attempts, 0);
+      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))));
+    });
+
+    test(
+        "N-39: Remove ends the attempts too: what the Stop remembered of them is forgotten, so the same song asked for again is not shielded from a real cancel",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum();
+      await stopAlbum();
+      expect(manager.debugStoppedAttempts.keys, hasLength(2));
+
+      await repo.unpin(PinTargetType.album, 'al1');
+      await manager.reconcile(immediateRemoval: true);
+      expect(manager.debugStoppedAttempts, isEmpty,
+          reason:
+              'the songs are gone: no attempt of theirs has a word to come');
+
+      await pinAlbum();
+      expect(startsOf('t1'), 2);
+      transport.cancelFromOutside('t1');
+      await manager.settled();
+      final cut = await row('t1');
+      expect(cut.state, DownloadState.failed,
+          reason: 'a memory that outlived its song swallowed the cancel');
+      expect(cut.lastError, kDownloadStoppedReason);
+    });
+
+    test(
+        "N-39: a song that finished in the very moment of the Stop is kept as the file it is, and the Stop's memory of it is spent",
+        () async {
+      await pinAlbum();
+      await stopAlbum();
+      expect(manager.debugStoppedAttempts.keys, hasLength(4));
+
+      transport.complete('t1', size: 7000);
+      await manager.settled();
+
+      expect((await row('t1')).state, DownloadState.done);
+      expect((await row('t1')).bytes, 7000);
+      expect(manager.debugStoppedAttempts.keys, isNot(contains(taskOf('t1'))),
+          reason:
+              'a complete is the last word of the attempt: it is handled, not swallowed, and it spends the memory');
+      expect(transport.deleted, isEmpty);
+    });
+
+    test(
+        "N-39: a refresh that Resume started again keeps its half-made file when the Stop's late acknowledgement arrives",
+        () async {
+      await pinAlbum();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(audioKey: Value('key1-NEW')));
+      await manager.reconcile();
+      expect(transport.requestFor('t1').relativePath, endsWith('.opus.new'));
+      await stopAlbum();
+      await resumeAlbum();
+      expect(startsOf('t1'), 3,
+          reason: 'the first download, the refresh, and the refresh again');
+
+      lateCancel('t1');
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.downloading,
+          reason: 'the refresh Resume started is still running');
+      expect(r.refreshQuality, isNotNull);
+      expect(transport.deleted, isEmpty,
+          reason: 'the half-made file belongs to the transfer that is running');
+      expect(manager.debugInFlight, contains('t1'));
+    });
+
+    test(
+        "N-39: the start of the app that cancels a task a kill left running for a stopped song spends its acknowledgement too, when Resume comes first",
+        () async {
+      await pinAlbum();
+      await stopAlbum();
+      await manager.dispose();
+
+      final after = FakeDownloadTransport()..active = {taskOf('t1')};
+      final second = newManager(after);
+      extra.add(second);
+      await second.start();
+      expect(after.canceled, [taskOf('t1')]);
+      await second.resume([album]);
+      expect(
+          after.started.where((r) => r.taskId == taskOf('t1')), hasLength(1));
+
+      after.send(word('t1', TransferStatus.canceled));
+      await second.settled();
+
+      expect((await row('t1')).state, DownloadState.downloading);
+      expect((await row('t1')).attempts, 0);
     });
   });
 
@@ -493,10 +823,106 @@ void main() {
     });
   });
 
+  group("Remove also takes the half-made file of a refresh (review of PR 119)",
+      () {
+    // A refresh in flight at the Stop leaves its `.new` file on disk (a Stop deletes nothing). Remove is THE path that deletes, so it takes that file
+    // too, and only the files of the songs it removes, also after the app was closed in between (the stop is in the database; the manager's own plan
+    // of the path is not).
+    Future<(String, String)> refreshOneAndStop() async {
+      await pinAlbum();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      final copy = (await row('t1')).localPath!;
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(audioKey: Value('key1-NEW')));
+      await manager.reconcile();
+      final partial = '/app/${transport.requestFor('t1').relativePath}';
+      expect(partial, endsWith('.opus.new'));
+      transport.files[partial] = 1234;
+      await stopAlbum();
+      await manager.settled();
+      expect(transport.deleted, isEmpty, reason: 'a Stop deletes nothing');
+      expect(transport.files, contains(partial));
+      return (copy, partial);
+    }
+
+    test(
+        "N-39: Remove after a Stop that came in the middle of a refresh deletes the old copy and the half-made file, and nothing else",
+        () async {
+      final (copy, partial) = await refreshOneAndStop();
+
+      await repo.unpin(PinTargetType.album, 'al1');
+      await manager.reconcile(immediateRemoval: true);
+
+      expect(transport.deleted, unorderedEquals([copy, partial]));
+      expect(transport.files, isNot(contains(partial)));
+      expect(await repo.rowsFor(['t1', 't2', 't3', 't4']), isEmpty);
+    });
+
+    test(
+        "N-39: the same after the app was closed and opened again: the manager no longer knows the path, and finds the half-made file from what it could have written",
+        () async {
+      final (copy, partial) = await refreshOneAndStop();
+      // A refresh that asked for the original quality writes `.flac.new` (the source's own suffix), a different name from the copy's.
+      const other = '/app/downloads/1/t1.flac.new';
+      transport.files[other] = 99;
+      await manager.dispose();
+      final after = FakeDownloadTransport()..files.addAll(transport.files);
+      final second = newManager(after);
+      extra.add(second);
+      await second.start();
+      expect(after.deleted, isEmpty, reason: 'starting deletes nothing');
+
+      await repo.unpin(PinTargetType.album, 'al1');
+      await second.reconcile(immediateRemoval: true);
+
+      expect(after.deleted, unorderedEquals([copy, partial, other]));
+      expect(after.files, isEmpty);
+    });
+
+    test(
+        "N-39: only the files of the songs that are removed: a song another download keeps coming keeps its copy and its half-made file",
+        () async {
+      await db.into(db.playlists).insert(
+          PlaylistsCompanion.insert(serverId: serverId, id: 'p1', name: 'Mix'));
+      await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+          serverId: serverId, playlistId: 'p1', position: 0, trackId: 't2'));
+      await repo.pin(PinTargetType.playlist, 'p1', quality: AudioQuality.high);
+      await pinAlbum();
+      transport.complete('t1', size: 5000);
+      transport.complete('t2', size: 6000);
+      await manager.settled();
+      final copy1 = (await row('t1')).localPath!;
+      final copy2 = (await row('t2')).localPath!;
+      for (final id in ['t1', 't2']) {
+        await (db.update(db.tracks)..where((t) => t.id.equals(id)))
+            .write(TracksCompanion(audioKey: Value('$id-NEW')));
+      }
+      await manager.reconcile();
+      final partial1 = '/app/${transport.requestFor('t1').relativePath}';
+      final partial2 = '/app/${transport.requestFor('t2').relativePath}';
+      transport.files[partial1] = 1;
+      transport.files[partial2] = 2;
+
+      await stopAlbum();
+      await manager.reconcile();
+      expect(transport.deleted, isEmpty);
+      await repo.unpin(PinTargetType.album, 'al1');
+      await manager.reconcile(immediateRemoval: true);
+
+      expect(transport.deleted, unorderedEquals([copy1, partial1]));
+      expect(transport.files, contains(copy2));
+      expect(transport.files, contains(partial2));
+      expect((await row('t2')).state, isNot(DownloadState.failed));
+    });
+  });
+
   group("Resume puts the stopped songs back", () {
     test(
         "N-39: exactly the songs that were not on the phone, in their old order, none twice; a song added to the list while it was stopped waits and then comes last",
         () async {
+      // The downloader answers a cancel with its one last word, as the real one does: the completions below are the new attempts' own.
+      transport.acknowledgeCancels = true;
       policy = const DownloadPolicy(maxInFlight: 1);
       await pinAlbum();
       expect(startOrder(), ['t1']);
@@ -538,6 +964,7 @@ void main() {
     test(
         "N-39: the songs come back in the order they were first asked for, not in the order of their ids, and each song is asked for once",
         () async {
+      transport.acknowledgeCancels = true;
       // The songs are asked for one after the other with the phone off Wi-Fi, so their rows are made in this order and nothing starts yet.
       policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
       const order = ['t4', 't2', 't3', 't1'];
@@ -659,7 +1086,7 @@ class _OrderProbe extends FakeDownloadTransport {
   final List<int> stateWhenCancelled = [];
 
   @override
-  Future<void> cancel(String taskId) async {
+  Future<bool> cancel(String taskId) async {
     stoppedAtWhenCancelled
         .add((await db.select(db.pins).get()).single.stoppedAtMs);
     final id = taskId.split(':').last;
@@ -667,6 +1094,6 @@ class _OrderProbe extends FakeDownloadTransport {
               ..where((d) => d.trackId.equals(id)))
             .getSingle())
         .state);
-    await super.cancel(taskId);
+    return super.cancel(taskId);
   }
 }
