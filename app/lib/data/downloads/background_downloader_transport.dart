@@ -125,9 +125,10 @@ class BackgroundDownloaderTransport implements DownloadTransport {
   }
 
   @override
-  Future<void> cancel(String taskId) async {
-    await FileDownloader().cancelTaskWithId(taskId);
-  }
+  Future<bool> cancel(String taskId) =>
+      // `false` is "could not find the task to cancel" (BDPlugin.kt `cancelActiveTaskWithId`: no work behind the id, nothing is sent); `true` is a
+      // task it cancelled with its `canceled` update, or one that had already finished, whose own last word is on its way.
+      FileDownloader().cancelTaskWithId(taskId);
 
   @override
   Future<String> absolutePath(String relativePath) async =>

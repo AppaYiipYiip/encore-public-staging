@@ -12,6 +12,10 @@ enum PinTargetType { playlist, album, artist, liked, track }
 /// Id used for the single "Liked Songs" pin.
 const String kLikedPinId = 'liked';
 
+/// One pin as a person's Stop and Resume name it: its kind and its target id (a download is one pin, or, for a catalogue release, the pins of its
+/// songs).
+typedef PinKey = (PinTargetType, String);
+
 /// Where a pinned target is on its way to being fully offline.
 enum PinPhase {
   /// Not pinned.
@@ -25,6 +29,9 @@ enum PinPhase {
 
   /// Some files are on the phone, others still coming.
   downloading,
+
+  /// The person pressed Stop (N-39): what is on the phone stays and plays, the rest waits for Resume.
+  stopped,
 
   /// Every member is available offline.
   complete,
@@ -43,6 +50,7 @@ class PinState {
     this.failed = 0,
     this.bytes = 0,
     this.confirmedEmpty = false,
+    this.stopped = false,
   });
 
   static const PinState none = PinState();
@@ -58,10 +66,15 @@ class PinState {
   /// not synced, a release the server is still getting, a playlist whose entries were not fetched): only the first is "nothing to download".
   final bool confirmedEmpty;
 
+  /// The person's Stop holds this download (N-39). A download that has every song is complete whatever this says; one that is stopped is not
+  /// "downloading", not "waiting" and not "needs attention": what did not come is still counted, and Resume is the one thing it offers.
+  final bool stopped;
+
   PinPhase get phase {
     if (!pinned) return PinPhase.off;
     if (total == 0) return confirmedEmpty ? PinPhase.empty : PinPhase.preparing;
     if (done >= total) return PinPhase.complete;
+    if (stopped) return PinPhase.stopped;
     if (active == 0 && failed > 0) return PinPhase.attention;
     if (done == 0 && active == 0) return PinPhase.preparing;
     return PinPhase.downloading;
@@ -79,16 +92,25 @@ class PinState {
       other.active == active &&
       other.failed == failed &&
       other.bytes == bytes &&
-      other.confirmedEmpty == confirmedEmpty;
+      other.confirmedEmpty == confirmedEmpty &&
+      other.stopped == stopped;
 
   @override
-  int get hashCode =>
-      Object.hash(pinned, total, done, active, failed, bytes, confirmedEmpty);
+  int get hashCode => Object.hash(
+      pinned, total, done, active, failed, bytes, confirmedEmpty, stopped);
 
   @override
   String toString() => 'PinState($phase, $done/$total, active: $active, '
-      'failed: $failed)';
+      'failed: $failed${stopped ? ', stopped' : ''})';
 }
+
+/// When a catalogue release is STOPPED (N-39). A release is one pin for each of its songs, and the person's Stop flags every one of them in one write.
+/// It is stopped when ANY pinned song of it is (review of PR 119): a song the person asked for on its own afterwards (the track menu) is a new request,
+/// its pin is not stopped and it starts by itself, but the songs the Stop holds still wait for Resume, so the release must say Stopped and offer
+/// Resume (it used to show Stop with no Resume while they waited). [songStopped] has one entry for each song of the release that HAS a pin. ONE place:
+/// the line, the button and the card read it through `releasePinStateProvider`, the keep controller through `stoppedKeepGroupsProvider`.
+bool releaseIsStopped(Iterable<bool> songStopped) =>
+    songStopped.any((stopped) => stopped);
 
 /// A song the phone could not take, with what the downloader recorded (never shown as it is: see `phoneFailureWords`).
 @immutable
@@ -167,6 +189,9 @@ WITH m AS (${_membersSql(type)})
 SELECT
   (SELECT COUNT(*) FROM pins
      WHERE server_id = ?1 AND target_type = ?3 AND target_id = ?2) AS pinned,
+  (SELECT COUNT(*) FROM pins
+     WHERE server_id = ?1 AND target_type = ?3 AND target_id = ?2
+       AND stopped_at_ms IS NOT NULL) AS stopped,
   (SELECT COUNT(*) FROM m) AS total,
   (SELECT COUNT(*) FROM m JOIN downloads d
      ON d.server_id = ?1 AND d.track_id = m.id
@@ -202,6 +227,7 @@ SELECT
         .watchSingle()
         .map((row) => PinState(
               pinned: (row.read<int>('pinned')) > 0,
+              stopped: row.read<int>('stopped') > 0,
               total: row.read<int>('total'),
               done: row.read<int>('done'),
               active: row.read<int>('active'),
@@ -294,19 +320,43 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
   Future<List<PinRow>> pins() =>
       (_db.select(_db.pins)..where((p) => p.serverId.equals(serverId))).get();
 
+  /// Pins one target. [alongside] is for a song that is pinned as a PART of a catalogue release, whose songs are one pin each: the ids of all the songs
+  /// of that release. If the person's Stop (N-39) holds any of the others, the new pin is made stopped, in the same write, so that it waits for Resume
+  /// with the rest instead of starting by itself (the saver pins the songs one after the other, and the next start of the app pins what a kill left
+  /// out). Without it the pin is the person's own, new request, and a Stop of an earlier one is over.
   Future<void> pin(
     PinTargetType type,
     String targetId, {
     AudioQuality quality = AudioQuality.original,
+    Iterable<String> alongside = const [],
   }) async {
     final id = type == PinTargetType.liked ? kLikedPinId : targetId;
-    await _db.into(_db.pins).insertOnConflictUpdate(PinsCompanion.insert(
-          serverId: serverId,
-          targetType: type.name,
-          targetId: id,
-          quality: Value(quality.id),
-          createdAtMs: _nowMs,
-        ));
+    final others = alongside.where((s) => s != id).toList();
+    await _db.transaction(() async {
+      int? heldSince;
+      if (type == PinTargetType.track && others.isNotEmpty) {
+        final held = await (_db.select(_db.pins)
+              ..where((p) =>
+                  p.serverId.equals(serverId) &
+                  p.targetType.equals(PinTargetType.track.name) &
+                  p.targetId.isIn(others) &
+                  p.stoppedAtMs.isNotNull()))
+            .get();
+        for (final p in held) {
+          final at = p.stoppedAtMs!;
+          if (heldSince == null || at < heldSince) heldSince = at;
+        }
+      }
+      await _db.into(_db.pins).insertOnConflictUpdate(PinsCompanion.insert(
+            serverId: serverId,
+            targetType: type.name,
+            targetId: id,
+            quality: Value(quality.id),
+            createdAtMs: _nowMs,
+            // Asking for it again is a new request: a Stop of an earlier one (N-39) is over, unless this is a song joining a release that is stopped.
+            stoppedAtMs: Value(heldSince),
+          ));
+    });
   }
 
   Future<void> unpin(PinTargetType type, String targetId) async {
@@ -323,12 +373,105 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
   Future<void> unpinAll() =>
       (_db.delete(_db.pins)..where((p) => p.serverId.equals(serverId))).go();
 
+  // ------------------------------------------------------- the person's Stop (N-39)
+
+  String _pinIdOf(PinKey key) =>
+      key.$1 == PinTargetType.liked ? kLikedPinId : key.$2;
+
+  /// The songs the person's Stop holds back: the members of every pin that is stopped, except those a pin that goes on wants too (a song two
+  /// downloads share keeps coming for the one that is not stopped). Nothing is read when no pin is stopped.
+  Future<Set<String>> heldTrackIds() async {
+    final all = await pins();
+    final stopped = [
+      for (final p in all)
+        if (p.stoppedAtMs != null) p
+    ];
+    if (stopped.isEmpty) return const <String>{};
+    Future<Set<String>> membersOf(Iterable<PinRow> of) async {
+      final ids = <String>{};
+      for (final p in of) {
+        final type = PinTargetType.values.asNameMap()[p.targetType];
+        if (type != null) ids.addAll(await memberIds(type, p.targetId));
+      }
+      return ids;
+    }
+
+    final held = await membersOf(stopped);
+    held.removeAll(await membersOf([
+      for (final p in all)
+        if (p.stoppedAtMs == null) p
+    ]));
+    return held;
+  }
+
+  /// Stores the person's Stop in the pins and takes the songs it holds out of the way, in ONE step that comes before any transfer is cancelled:
+  /// a song that was being fetched goes back to the queue (an update keeps its place, so Resume finds the songs in their old order), a copy that
+  /// was being refreshed is the song again ("done", its old file), and a failed song stays failed and counted. Nothing is deleted. Answers the
+  /// songs that are held, for the caller to cancel their transfers.
+  Future<Set<String>> stopPins(Iterable<PinKey> keys) =>
+      _db.transaction(() async {
+        final now = _nowMs;
+        for (final key in keys) {
+          await (_db.update(_db.pins)
+                ..where((p) =>
+                    p.serverId.equals(serverId) &
+                    p.targetType.equals(key.$1.name) &
+                    p.targetId.equals(_pinIdOf(key)) &
+                    p.stoppedAtMs.isNull()))
+              .write(PinsCompanion(stoppedAtMs: Value(now)));
+        }
+        final held = await heldTrackIds();
+        final ids = held.toList();
+        for (var from = 0; from < ids.length; from += 500) {
+          final to = from + 500 > ids.length ? ids.length : from + 500;
+          final chunk = ids.sublist(from, to);
+          // A refresh in flight or waiting: the copy on the phone is the song, so the row says "done" again and the old file plays.
+          await (_db.update(_db.downloads)
+                ..where((d) =>
+                    d.serverId.equals(serverId) &
+                    d.trackId.isIn(chunk) &
+                    d.state.isIn(
+                        [DownloadState.queued, DownloadState.downloading]) &
+                    d.localPath.isNotNull() &
+                    d.localPath.equals('').not()))
+              .write(const DownloadsCompanion(
+            state: Value(DownloadState.done),
+            refreshQuality: Value(null),
+          ));
+          // A first download in flight: back to the queue, where nothing starts it while it is held.
+          await (_db.update(_db.downloads)
+                ..where((d) =>
+                    d.serverId.equals(serverId) &
+                    d.trackId.isIn(chunk) &
+                    d.state.equals(DownloadState.downloading)))
+              .write(
+                  const DownloadsCompanion(state: Value(DownloadState.queued)));
+        }
+        return held;
+      });
+
+  /// Takes the person's Stop off these pins (Resume). What was held is planned again by the next pass. EXACTLY the pins that are stopped are written: a
+  /// catalogue release is a pin for each song and Resume names them all, and a song the person asked for on its own meanwhile is not stopped and keeps
+  /// its row as it is (N-39, review of PR 119). One transaction, so the watchers hear of it once.
+  Future<void> clearStopped(Iterable<PinKey> keys) => _db.transaction(() async {
+        for (final key in keys) {
+          await (_db.update(_db.pins)
+                ..where((p) =>
+                    p.serverId.equals(serverId) &
+                    p.targetType.equals(key.$1.name) &
+                    p.targetId.equals(_pinIdOf(key)) &
+                    p.stoppedAtMs.isNotNull()))
+              .write(const PinsCompanion(stoppedAtMs: Value(null)));
+        }
+      });
+
   // ----------------------------------------------------------------- planning
 
   /// Union of the members of every pin, each at the best quality any pin
   /// asked for.
   Future<Map<String, DesiredDownload>> desired() async {
     final result = <String, DesiredDownload>{};
+    final held = await heldTrackIds();
     final pinRows = await pins();
     for (final pin in pinRows) {
       final type = PinTargetType.values.asNameMap()[pin.targetType];
@@ -355,6 +498,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           trackId: id,
           quality: best.id,
           audioKey: row.read<String?>('audio_key') ?? '',
+          held: held.contains(id),
         );
       }
     }
@@ -456,8 +600,12 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
       .get();
 
   Future<List<DownloadRow>> rowsInState(int state, {int? limit}) {
+    // In the order the rows were made: the order the songs were asked for, kept by a Stop and a Resume (an update keeps a row's place).
     final q = _db.select(_db.downloads)
-      ..where((d) => d.serverId.equals(serverId) & d.state.equals(state));
+      ..where((d) => d.serverId.equals(serverId) & d.state.equals(state))
+      ..orderBy([
+        (d) => OrderingTerm(expression: const CustomExpression<int>('rowid'))
+      ]);
     if (limit != null) q.limit(limit);
     return q.get();
   }

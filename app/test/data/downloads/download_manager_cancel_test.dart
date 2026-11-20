@@ -117,10 +117,14 @@ void main() {
     });
 
     test(
-        "N-39: the reason it records reads as the plain sentence of every other song the phone could not take, and no raw text",
+        "N-39: the reason it records is told as the drawn sentence (S-16 the reason of a song interrupted from outside), not as 'Could not be saved on this phone.' which is false for a song that was fine, and never as its raw text",
         () {
+      // Changed from 'Could not be saved on this phone.' when the sentence was drawn (17 Nov 2026): the recorded text is unchanged, only what the
+      // person reads is.
       expect(phoneFailureWords(kDownloadStoppedReason),
-          'Could not be saved on this phone.');
+          'Interrupted before it finished.');
+      expect(phoneFailureWords(kDownloadStoppedReason),
+          isNot(kDownloadStoppedReason));
     });
 
     test(

@@ -377,6 +377,42 @@ void main() {
       expect(await db.select(db.pins).get(), isEmpty);
     });
 
+    test(
+        "N-39: a kill in the middle of the pins, then the person's Stop: the next start pins the rest STOPPED, so the Stop is not undone by a restart",
+        () async {
+      await ReleaseStore(db, serverId).put('cat:1', release);
+      final repo = DownloadsRepository(db, serverId,
+          clock: FakeClock(DateTime.utc(2026, 10, 30, 21)));
+      await repo.pin(PinTargetType.track, 'sr_1');
+      await repo.stopPins([(PinTargetType.track, 'sr_1')]);
+
+      final count =
+          await restart().read(releaseSavesProvider.notifier).resume();
+
+      expect(count, 2);
+      final pins = {
+        for (final p in await db.select(db.pins).get()) p.targetId: p
+      };
+      expect(pins.keys, unorderedEquals(['sr_1', 'sr_2', 'sr_3']));
+      expect([
+        for (final p in pins.values) p.stoppedAtMs != null
+      ], everyElement(isTrue), reason: 'the whole release waits for Resume');
+    });
+
+    test(
+        "N-39: a release that is not stopped is pinned by the next start as it always was",
+        () async {
+      await ReleaseStore(db, serverId).put('cat:1', release);
+      await DownloadsRepository(db, serverId,
+              clock: FakeClock(DateTime.utc(2026, 10, 30, 21)))
+          .pin(PinTargetType.track, 'sr_1');
+
+      await restart().read(releaseSavesProvider.notifier).resume();
+
+      expect([for (final p in await db.select(db.pins).get()) p.stoppedAtMs],
+          everyElement(isNull));
+    });
+
     test('a person who took the download off is not given it back', () async {
       await ReleaseStore(db, serverId).put('cat:1', release);
       await restart()
@@ -402,9 +438,9 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality}) async {
+      {AudioQuality? quality, List<String> alongside = const []}) async {
     pinned.add(targetId);
-    await _repo.pin(type, targetId);
+    await _repo.pin(type, targetId, alongside: alongside);
   }
 
   @override
@@ -415,6 +451,12 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> retry() async {}
+
+  @override
+  Future<void> stop(List<PinKey> pins) async {}
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {}
 
   @override
   Future<void> removeAll() async {}

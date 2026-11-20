@@ -89,6 +89,47 @@ void main() {
     await closeApp(tester, app.db);
   });
 
+  testWidgets(
+      'N-39 (S-96): the trash button of one download asks first, in the one question of the sheet, and Cancel keeps it',
+      (tester) async {
+    final app = await pumpApp(tester, size: const Size(390, 1400));
+    for (final id in const ['al1', 'al3']) {
+      await app.db.into(app.db.pins).insert(PinsCompanion.insert(
+            serverId: app.serverId,
+            targetType: 'album',
+            targetId: id,
+            createdAtMs: 0,
+          ));
+    }
+    await open(tester, '/settings/downloads');
+    await tester.scrollUntilVisible(
+        find.byTooltip('Remove download').first, 200,
+        scrollable: find.byType(Scrollable).first);
+
+    await tester.tap(find.byTooltip('Remove download').first);
+    await settle(tester);
+
+    expect(find.textContaining('from this phone?'), findsOneWidget);
+    expect(
+        find.textContaining(
+            'Your music stays on your server and you can download it again.'),
+        findsOneWidget);
+    expect(await app.db.select(app.db.pins).get(), hasLength(2),
+        reason: 'nothing is removed before the answer');
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+    expect(await app.db.select(app.db.pins).get(), hasLength(2),
+        reason: 'Cancel changes nothing');
+
+    await tester.tap(find.byTooltip('Remove download').first);
+    await settle(tester);
+    await tester.tap(find.text('Remove'));
+    await settle(tester);
+    expect(await app.db.select(app.db.pins).get(), hasLength(1),
+        reason: 'only the one that was asked about');
+    await closeApp(tester, app.db);
+  });
+
   testWidgets('a paused queue explains itself, a healthy one stays silent',
       (tester) async {
     final app = await pumpApp(
