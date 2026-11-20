@@ -10,8 +10,8 @@ repair writes nothing and this reads only.
 * the refs whose stored key has an empty artist or title part, and the tombstones whose key has (the old fold's `||`): wanted 0 of the refs;
 * the refs on the worklist `ref_recheck` and the library files they still hold (the rehome of `rehome.py` has not judged them, or could not: a file with no usable tags, the
   placeholder artist with no id, a song that fits its tags as well as another, the last file of a song a person owns): wanted 0. **The files are named** (the row id, the music
-  server's own id and the song's id, five of them: ids only, no path and no title), because this FAIL is the visible reminder of a ref that stays held until its file is tagged
-  or removed (`rehome.py`, "the cost, stated"; the log of the pass says which of the reasons each one is);
+  server's own id and the song's id, five of them: ids only, no path and no title), because this FAIL is the visible reminder of a ref that stays held (tagging or removing the file frees it only for
+  the first reason; what frees each of the others, and that some can stay for good, is in `rehome.py`, "the cost, stated"; the log of the pass says which reason each one is);
 * the pairs of refs that hold one file and are held back by the merge repair, by reason, and how many of them for the worklist (`recheck_pending`): wanted 0 for the
   worklist (the other reasons are not failures: a pair with different YouTube ids is two recordings);
 * whether any pair can be merged right now and has not been (the merge runs at every start and after a pass that emptied the worklist).
@@ -76,7 +76,7 @@ class Audit:
         if self.worklist:
             found.append(
                 f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge (no usable tags, no artist name and no id, "
-                "a song that fits the tags as well as another, or the last file of a song a person owns: the ref stays held until the file is tagged or removed)"
+                "a song that fits the tags as well as another, or the last file of a song a person owns: the ref stays held; tagging frees only the first, docs/18 says what frees the others)"
             )
         if self.held_for_worklist:
             found.append(

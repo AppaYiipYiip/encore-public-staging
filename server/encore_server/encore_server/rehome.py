@@ -53,8 +53,12 @@ order:
 
 **A file that could not be judged, or safely moved, keeps its ref ON the worklist** (points 2, 3, 5 and 6, and the unseen file below): the ref's files may belong to other songs and
 nobody could check, and merging identities on a file nobody could verify is exactly what the `recheck_pending` hold of `refmerge` exists to stop. The cost, stated: such a ref stays on
-the worklist and every pair held for it stays held, so `rekey_audit` says FAIL for it, NAMING THE FILES (the visible reminder), and N-36 cannot finish on that Host until the file
-can be judged (the Host tags it, or it is removed); the log says how many files and why.
+the worklist and every pair held for it stays held, so `rekey_audit` says FAIL for it, NAMING THE FILES (the visible reminder). What lets it go depends on why: a file with no usable
+tags, or the placeholder artist with no id: the Host tags it or removes it; a song that fits the tags as well as another (R has no ISRC, X holds the one the tags carry): the file is
+removed or the ISRC taken out of its tags (tagging cannot help, the tags are already right, and R and X share no file, so `refmerge` never folds them: the ref can stay for good); the
+same name with another length: the song's stored length is corrected or the file is removed; the last file of a song a person owns: the song gains another file (the next pass then
+moves the wrong one) or nobody owns it any more. On a Host where that never happens N-36's trigger (the worklist empty on every install) never fires there; the log says how many
+files and why.
 
 **The worklist and the hold.** At the end of a COMPLETE pass, a worklist ref is released (its row deleted) when every library row it holds was DECIDED (kept, or
 re-pointed elsewhere) or is gone (a file the listing does not have was pruned by the same pass). A pass that only adds (`prune=False`, the one after a scan) cannot say a file is
@@ -426,9 +430,8 @@ class Rehome:
             report.released += released
         report.held_back = len(kept_back)
         report.held_undecided = sum(1 for _ref, _unseen, n_undecided in kept_back if n_undecided)
-        with (
-            self._db.tx() as conn
-        ):  # the pass completed: the copy it took (or the unfinished attempt's it finished) is spent, and a later real pass takes its own
+        # the pass completed: the copy it took (or the unfinished attempt's it finished) is spent, and a later real pass takes its own
+        with self._db.tx() as conn:
             repair_copy.settle(conn, pending_key=BACKUP_PENDING_SETTING, used_key=BACKUP_USED_SETTING, copy=self._copy)
         for ref, n_unseen, n_undecided in kept_back[:_LOG_MOVES]:
             if n_unseen:
@@ -440,7 +443,7 @@ class Rehome:
             if n_undecided:
                 log.info(
                     "rehome: song %s stays on the worklist: %d of its library files could not be judged (no usable tags, no artist name and no id, a song that fits the tags as "
-                    "well as another, or the last file of a song a person owns), so the pairs held for it stay held until the files can be judged (the Host tags them)",
+                    "well as another, or the last file of a song a person owns), so the pairs held for it stay held (what frees each reason is in docs/18: tagging frees only a file with no usable tags)",
                     ref,
                     n_undecided,
                 )
