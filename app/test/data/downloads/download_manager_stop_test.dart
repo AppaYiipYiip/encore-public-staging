@@ -750,6 +750,9 @@ void main() {
       final paths = {
         for (final id in ['t1', 't2']) id: (await row(id)).localPath!
       };
+      // What a refresh in flight at the Stop leaves on the disk: its half-made file. A Stop deletes nothing, not even that (only Remove does).
+      final partial = '${paths['t1']}.new';
+      transport.files[partial] = 1234;
 
       await stopAlbum();
       transport.fail('t3');
@@ -772,6 +775,9 @@ void main() {
         expect((await row(e.key)).state, DownloadState.done);
         expect((await row(e.key)).localPath, e.value);
       }
+      expect(after.files, contains(partial),
+          reason:
+              "the half-made file of a refresh is not for a Stop to delete");
 
       expect(after.started, isEmpty,
           reason: 'the restart and the pass of a week later started nothing');

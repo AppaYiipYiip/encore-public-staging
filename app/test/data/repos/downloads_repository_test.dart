@@ -387,12 +387,12 @@ void main() {
     });
   });
 
-  group('Resume writes only the pins that are stopped (N-39, review of PR 119)',
+  group("Resume writes only the pins that are stopped (N-39, review of PR 119)",
       () {
     // A catalogue release is one pin for each of its songs, and the person's Resume names every one of them. A song the person pinned on its own while
     // the release was stopped is not stopped (a new request of its own): taking the Stop off must leave its row alone and take it off the others.
     test(
-        'N-39: only the stopped pins are written, and the others keep their rows as they were',
+        "N-39: only the stopped pins are written, and the others keep their rows as they were",
         () async {
       for (final id in ['a1', 'a2', 'a3']) {
         await repo.pin(PinTargetType.track, id, alongside: ['a1', 'a2', 'a3']);

@@ -37,7 +37,7 @@ void main() {
   }
 
   test(
-      'N-39: a release is stopped when ANY of its pinned songs is held, also when one was asked for on its own afterwards',
+      "N-39: a release is stopped when ANY of its pinned songs is held, also when one was asked for on its own afterwards",
       () async {
     final state = await releaseOf({
       'sr_1': song(stopped: true),
@@ -62,7 +62,7 @@ void main() {
   });
 
   test(
-      'N-39: a release none of whose songs is stopped is not stopped, and a song that is not pinned does not make it one',
+      "N-39: a release none of whose songs is stopped is not stopped, and a song that is not pinned does not make it one",
       () async {
     final going = await releaseOf({
       'sr_1': song(),
@@ -81,7 +81,7 @@ void main() {
   });
 
   test(
-      'N-39: a release that has every song is complete, whatever a pin of it says',
+      "N-39: a release that has every song is complete, whatever a pin of it says",
       () async {
     final state = await releaseOf({
       'sr_1': song(done: 1, active: 0, stopped: true),

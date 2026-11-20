@@ -130,8 +130,9 @@ class DownloadManager {
   final Set<String> _waitingForServer = <String>{};
 
   /// For each task id, how many attempts the person's own Stop interrupted whose LAST word has not come yet (N-39, review of PR 119). The downloader
-  /// ends every task with exactly one word (`canceled` for a cancel that reached it; `failed` or `complete` when the transfer ended in the very moment
-  /// of the cancel), and it can arrive AFTER Resume has started the song again under the same task id: a word about the old attempt, read against a row
+  /// ends a task it cancels with a last word (`canceled` for a cancel that reached it; `failed` or `complete` when the transfer ended in the very moment
+  /// of the cancel; for an id that was cancelled before it may send more than one `canceled`, which the second layer absorbs while the song is stopped
+  /// and N-45 makes exact), and it can arrive AFTER Resume has started the song again under the same task id: a word about the old attempt, read against a row
   /// that says "downloading" for the new one. Without this it was read as a cancel from outside: the new transfer's row failed with a back-off, and the
   /// place it gave away let another song start over the limit. A word spends one, the first that comes (see [_spendStoppedAttempt]); in memory only: a
   /// word that outlives the process is replayed to a manager that starts with the row stopped, and the task id per attempt in the row (N-45) is what
@@ -716,7 +717,7 @@ class DownloadManager {
     return true;
   }
 
-  /// Cancels the transfer of a song the person's Stop holds and remembers that ONE last word of that attempt is still to come (see
+  /// Cancels the transfer of a song the person's Stop holds and remembers that a last word of that attempt is still to come (see
   /// [_stoppedAttempts]). Only called for a task that is believed to be in flight (a song in [_inFlight], a task the downloader still lists). The
   /// memory is written BEFORE the cancel (the start of the app does not wait in the FIFO, so a word can be handled while the cancel is still on its
   /// way) and is taken back when the downloader says it had no such task: nothing was sent, no word will come, and a memory kept for it would

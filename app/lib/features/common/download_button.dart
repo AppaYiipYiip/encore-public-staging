@@ -266,7 +266,7 @@ class DownloadButton extends ConsumerWidget {
     // pins do not know (the moment a catalogue release is still being saved) has no live source and is what it was.
     final ProviderListenable<PinState> live =
         download == _plainTarget && stateOverride != null
-            ? Provider<PinState>((_) => stateOverride!)
+            ? Provider.autoDispose<PinState>((_) => stateOverride!)
             : downloadPinStateProvider(download);
     final choice = await showEncoreSheet<_SheetChoice>(
       context: context,

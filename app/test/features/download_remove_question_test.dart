@@ -42,7 +42,7 @@ void main() {
       active: total - done,
       bytes: mb * 1048576);
 
-  group('the download button', () {
+  group("the download button", () {
     late _LivePin live;
     late _Actions actions;
     late ValueNotifier<bool> showButton;
@@ -86,7 +86,7 @@ void main() {
         'The $done songs on this phone (${formatBytes(mb * 1048576)}) are deleted, and the rest will not be downloaded.';
 
     testWidgets(
-        'N-39: songs that arrived while the sheet was open are in the question, not the number the sheet opened with',
+        "N-39: songs that arrived while the sheet was open are in the question, not the number the sheet opened with",
         (tester) async {
       await open(tester, state(12, mb: 340));
 
@@ -101,7 +101,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: the question follows the download while it is open: what is on the phone when the person answers is what it says',
+        "N-39: the question follows the download while it is open: what is on the phone when the person answers is what it says",
         (tester) async {
       await open(tester, state(12, mb: 340));
       await tester.tap(find.text('Remove download'));
@@ -124,7 +124,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: a download that finished while the sheet was open is asked about as a finished one (no "rest")',
+        "N-39: a download that finished while the sheet was open is asked about as a finished one (no \"rest\")",
         (tester) async {
       await open(tester, state(200, mb: 300));
 
@@ -141,7 +141,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: when the button is gone by the time Remove is chosen, the question is still asked and the answer still counts',
+        "N-39: when the button is gone by the time Remove is chosen, the question is still asked and the answer still counts",
         (tester) async {
       await open(tester, state(12, mb: 340));
 
@@ -160,7 +160,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: when the button is gone by the time Cancel is pressed, nothing is removed',
+        "N-39: when the button is gone by the time Cancel is pressed, nothing is removed",
         (tester) async {
       await open(tester, state(12, mb: 340));
       showButton.value = false;
@@ -176,7 +176,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: Stop chosen in the sheet still stops the download when the button is gone',
+        "N-39: Stop chosen in the sheet still stops the download when the button is gone",
         (tester) async {
       await open(tester, state(12, mb: 340));
       showButton.value = false;
@@ -191,9 +191,9 @@ void main() {
     });
   });
 
-  group('the trash button in Settings > Downloads and storage', () {
+  group("the trash button in Settings > Downloads and storage", () {
     testWidgets(
-        'N-39: songs that land while the question is open are in it when it is answered',
+        "N-39: songs that land while the question is open are in it when it is answered",
         (tester) async {
       final app = await pumpApp(tester, size: const Size(390, 1400));
       await app.db.into(app.db.pins).insert(PinsCompanion.insert(

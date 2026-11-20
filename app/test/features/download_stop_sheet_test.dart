@@ -281,7 +281,7 @@ void main() {
     });
 
     testWidgets(
-        'N-39: the screen-reader label of a stopped download is the same sentence with or without the server\'s half, and says only what is on the phone',
+        "N-39: the screen-reader label of a stopped download is the same sentence with or without the server half, and says only what is on the phone",
         (tester) async {
       actions = _Actions();
       await tester.pumpWidget(ProviderScope(
