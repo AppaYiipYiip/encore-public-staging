@@ -8,7 +8,8 @@ import '../../core/logger.dart';
 import '../../data/encore/encore_api.dart';
 import '../../data/encore/encore_live.dart';
 import '../../data/encore/encore_models.dart';
-import '../../data/repos/downloads_repository.dart' show kLikedPinId;
+import '../../data/repos/downloads_repository.dart'
+    show kLikedPinId, releaseIsStopped;
 import 'download_providers.dart';
 
 /// The server's side of the phone's downloads (P2-22 parts 2 and 4, docs/17 "Keep progress").
@@ -82,14 +83,15 @@ final stoppedKeepGroupsProvider = Provider<Set<KeepGroupKey>>((ref) {
         songs[pin.targetId] = isStopped;
     }
   }
-  // A release is a pin for each of its songs: it is stopped when every one of its songs that is pinned is (the rule of `releasePinStateProvider`).
+  // A release is a pin for each of its songs: it is stopped by the one rule of `releaseIsStopped` (the rule of `releasePinStateProvider`), so the phone
+  // sends no ask for a release whose line offers Resume.
   for (final e in releases.entries) {
     if (!e.value.download) continue;
     final pinned = [
       for (final id in e.value.refIds)
         if (songs.containsKey(id)) songs[id]!
     ];
-    if (pinned.isNotEmpty && pinned.every((s) => s)) {
+    if (releaseIsStopped(pinned)) {
       stopped.add(KeepGroupKey('release', e.key, refs: e.value.refIds));
     }
   }

@@ -25,6 +25,13 @@ class DownloadStopWords {
 
   String resumeCopies() => 'Copies the rest to this phone.';
 
+  // ---------------------------------------------------------------------------------------------------------------- the Download button
+
+  /// The name a screen reader gives the Download button of a stopped download, as drawn (S-17: `aria-label="Stopped, 12 of 220 on this phone. Tap for
+  /// options"`): ONE sentence, what the phone has and nothing of the server's half (the line under the title says that), never the line's own text.
+  String stoppedButton({required int onPhone, required int total}) =>
+      'Stopped, $onPhone of $total on this phone. Tap for options';
+
   String removeDownload() => 'Remove download';
 
   String removeAsksFirst() =>

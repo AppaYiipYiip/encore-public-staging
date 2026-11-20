@@ -958,6 +958,42 @@ void main() {
         expect((await row('t$i')).state, DownloadState.done);
       }
     });
+
+    test(
+        "N-39: Resume of a release one of whose songs was asked for on its own brings back exactly the songs the Stop held, in their old order, and does not start the other again",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 1);
+      transport.acknowledgeCancels = true;
+      const release = ['t1', 't2', 't3', 't4'];
+      for (final id in release) {
+        await repo.pin(PinTargetType.track, id,
+            quality: AudioQuality.high, alongside: release);
+      }
+      await manager.reconcile();
+      expect(startOrder(), ['t1']);
+      final keys = [for (final id in release) (PinTargetType.track, id)];
+      await manager.stop(keys);
+
+      // The person asks for t3 on its own (the track menu): a new request. It is not stopped, it goes on by itself, and the others still wait.
+      await repo.pin(PinTargetType.track, 't3', quality: AudioQuality.high);
+      await manager.reconcile();
+      expect(await repo.heldTrackIds(), {'t1', 't2', 't4'});
+      expect(startOrder(), ['t1', 't3']);
+
+      await manager.resume(keys);
+      expect(await repo.heldTrackIds(), isEmpty,
+          reason: 'every song the Stop held is released');
+      expect(startOrder(), ['t1', 't3'],
+          reason:
+              "the place is the one of t3 until it is done, and it is not started again");
+      for (final id in ['t3', 't1', 't2']) {
+        transport.complete(id);
+        await manager.settled();
+      }
+      expect(startOrder(), ['t1', 't3', 't1', 't2', 't4'],
+          reason: 'the held songs come back in their old order');
+      expect(startsOf('t3'), 1);
+    });
   });
 
   group("Resume keeps the order the songs were asked for", () {

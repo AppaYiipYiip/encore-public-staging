@@ -272,7 +272,48 @@ void main() {
       expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing,
           reason: 'it is not the ring that turns');
-      expect(find.bySemanticsLabel(RegExp(r'^Stopped\. .*Tap for options$')),
+      // Exactly the drawing's label (S-17: `aria-label="Stopped, 12 of 220 on this phone. Tap for options"`), with this test's numbers: a pattern here
+      // let "Stopped. Stopped · 12 of 217 on this phone · 40 ready on your server. Tap for options" through, which a screen reader reads twice.
+      expect(
+          find.bySemanticsLabel(
+              'Stopped, 12 of 217 on this phone. Tap for options'),
+          findsOneWidget);
+    });
+
+    testWidgets(
+        'N-39: the screen-reader label of a stopped download is the same sentence with or without the server\'s half, and says only what is on the phone',
+        (tester) async {
+      actions = _Actions();
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          downloadActionsProvider.overrideWithValue(actions),
+          downloadLineProvider.overrideWith((ref, t) => const DownloadLine(
+              'Stopped · 1 of 4 on this phone',
+              phoneFraction: 0.25,
+              twoStages: true,
+              stopped: true)),
+        ],
+        child: MaterialApp(
+          theme: buildEncoreTheme(EncoreColors.dark(),
+              brightness: Brightness.dark),
+          home: const Scaffold(
+            body: Center(
+              child: DownloadButton(
+                type: PinTargetType.playlist,
+                targetId: 'pl_1',
+                name: 'Prog snob',
+                stateOverride: PinState(
+                    pinned: true, total: 4, done: 1, active: 3, stopped: true),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      expect(
+          find.bySemanticsLabel(
+              'Stopped, 1 of 4 on this phone. Tap for options'),
           findsOneWidget);
     });
   });

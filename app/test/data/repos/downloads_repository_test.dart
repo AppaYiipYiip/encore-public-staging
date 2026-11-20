@@ -386,4 +386,56 @@ void main() {
       expect(songs, isEmpty);
     });
   });
+
+  group('Resume writes only the pins that are stopped (N-39, review of PR 119)',
+      () {
+    // A catalogue release is one pin for each of its songs, and the person's Resume names every one of them. A song the person pinned on its own while
+    // the release was stopped is not stopped (a new request of its own): taking the Stop off must leave its row alone and take it off the others.
+    test(
+        'N-39: only the stopped pins are written, and the others keep their rows as they were',
+        () async {
+      for (final id in ['a1', 'a2', 'a3']) {
+        await repo.pin(PinTargetType.track, id, alongside: ['a1', 'a2', 'a3']);
+      }
+      const keys = [
+        (PinTargetType.track, 'a1'),
+        (PinTargetType.track, 'a2'),
+        (PinTargetType.track, 'a3'),
+      ];
+      await repo.stopPins(keys);
+      // The person asks for a2 on its own: a new request, it is not stopped any more.
+      await repo.pin(PinTargetType.track, 'a2');
+      Future<List<int?>> flags() async => [
+            for (final id in ['a1', 'a2', 'a3'])
+              (await (db.select(db.pins)..where((p) => p.targetId.equals(id)))
+                      .getSingle())
+                  .stoppedAtMs
+          ];
+      expect((await flags()).map((f) => f != null), [true, false, true]);
+
+      final emissions = <int>[];
+      final sub = repo.watchPins().listen((pins) => emissions.add(pins.length));
+      await Future<void>.delayed(Duration.zero);
+      final before = emissions.length;
+      await repo.clearStopped(keys);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(await flags(), [null, null, null]);
+      expect(emissions.length - before, 1,
+          reason: 'one write for the two stopped pins, none for the other');
+      await sub.cancel();
+
+      // Nothing is stopped now: a Resume that is asked for again writes nothing at all.
+      final quiet = emissions.length;
+      final again = repo.watchPins().listen((_) => emissions.add(-1));
+      await Future<void>.delayed(Duration.zero);
+      final settled = emissions.length;
+      await repo.clearStopped(keys);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(emissions.length, settled,
+          reason: 'a pin that is not stopped is not written');
+      await again.cancel();
+      expect(quiet, greaterThan(0));
+    });
+  });
 }

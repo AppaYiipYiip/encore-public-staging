@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
@@ -74,7 +75,10 @@ class DownloadButton extends ConsumerWidget {
   /// The download as the line of the two stages names it, when it is not the plain pin of [type] and [targetId] (a catalogue release).
   final DownloadTarget? target;
 
-  DownloadTarget get _target => target ?? DownloadTarget.pin(type, targetId);
+  DownloadTarget get _target => target ?? _plainTarget;
+
+  /// The download as the plain pin of [type] and [targetId].
+  DownloadTarget get _plainTarget => DownloadTarget.pin(type, targetId);
 
   String get _pressKey => '${type.name}:$targetId';
 
@@ -134,7 +138,7 @@ class DownloadButton extends ConsumerWidget {
           Icons.pause_rounded,
           c.accent,
           null,
-          'Stopped. ${line != null && line.twoStages ? line.text : name}. Tap for options',
+          _words.stoppedButton(onPhone: state.done, total: state.total),
         ),
       PinPhase.complete => (
           Icons.arrow_downward_rounded,
@@ -251,19 +255,31 @@ class DownloadButton extends ConsumerWidget {
       return;
     }
 
+    // Everything the choice needs afterwards is taken NOW, before the sheet: this button, its context and its `ref` may be gone by the time the person
+    // chooses (the page it stood on was left while the sheet was open), and a choice made in the sheet must not vanish with it (review of PR 119).
+    final download = _target;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final stop = ref.read(stopDownloadProvider);
+    final resume = ref.read(resumeDownloadProvider);
+    final retry = ref.read(retryDownloadProvider);
+    // What the question reads while it is open: the download as it is then, not as it was when the sheet opened. A state handed in for a target the
+    // pins do not know (the moment a catalogue release is still being saved) has no live source and is what it was.
+    final ProviderListenable<PinState> live =
+        download == _plainTarget && stateOverride != null
+            ? Provider<PinState>((_) => stateOverride!)
+            : downloadPinStateProvider(download);
     final choice = await showEncoreSheet<_SheetChoice>(
       context: context,
       builder: (sheet) => _DownloadSheet(
           name: name,
           state: state,
           waiting: ref.read(downloadsWaitProvider),
-          line: ref.read(downloadLineProvider(_target))),
+          line: ref.read(downloadLineProvider(download))),
     );
     switch (choice) {
       case _SheetChoice.remove:
         // Remove is the one thing that deletes, and it always asks first (S-96): Cancel changes nothing.
-        if (!context.mounted) return;
-        if (!await confirmRemoveDownload(context, name: name, state: state)) {
+        if (!await confirmRemoveDownload(navigator, name: name, state: live)) {
           return;
         }
         String? note;
@@ -278,12 +294,12 @@ class DownloadButton extends ConsumerWidget {
               SnackBar(content: Text(note ?? 'Removed $name from this phone')));
       case _SheetChoice.stop:
         // Keeps every file that is on the phone; no question (it deletes nothing and Resume undoes it).
-        unawaited(ref.read(stopDownloadProvider)(_target));
+        unawaited(stop(download));
       case _SheetChoice.resume:
-        unawaited(ref.read(resumeDownloadProvider)(_target));
+        unawaited(resume(download));
       case _SheetChoice.retry:
         // The server again for the songs it failed to get, and the phone again for the files it could not take.
-        await ref.read(retryDownloadProvider)(_target);
+        await retry(download);
       case null:
         break;
     }

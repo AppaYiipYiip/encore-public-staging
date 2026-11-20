@@ -90,14 +90,22 @@ class DownloadTarget {
   int get hashCode => Object.hash(type, id, releaseRefIds.join(','));
 }
 
+/// The phone's own table for a download as it is NOW: a pin's live state, or a catalogue release's pins added up. What the line under a download starts
+/// from, and what the question before Remove reads when it is ASKED and keeps reading while it is open (S-96, N-39): a number that was true when a sheet
+/// opened is not true when the person answers.
+final downloadPinStateProvider =
+    Provider.autoDispose.family<PinState, DownloadTarget>((ref, target) {
+  return target.isRelease
+      ? ref.watch(releasePinStateProvider(target.releaseRefIds.join(',')))
+      : ref.watch(pinStateProvider((target.type!, target.id))).value ??
+          PinState.none;
+});
+
 /// The line under a download's title, the same on every screen: the phone's own table, what the server says about its stage, and why the phone waits.
 /// On a plain music server it is exactly the line the app has always shown. `null` when the person has not downloaded this.
 final downloadLineProvider =
     Provider.autoDispose.family<DownloadLine?, DownloadTarget>((ref, target) {
-  final PinState phone = target.isRelease
-      ? ref.watch(releasePinStateProvider(target.releaseRefIds.join(',')))
-      : ref.watch(pinStateProvider((target.type!, target.id))).value ??
-          PinState.none;
+  final PinState phone = ref.watch(downloadPinStateProvider(target));
   if (!phone.pinned) return null;
   final keep = ref.watch(keepProvider);
   final key = target.keepKey;

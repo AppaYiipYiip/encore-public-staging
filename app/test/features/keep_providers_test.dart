@@ -461,7 +461,7 @@ void main() {
     });
 
     test(
-        "N-39: a release is stopped when every pinned song of it is, and not when one still goes on",
+        "N-39: a release is stopped when ANY pinned song of it is held (the line offers Resume, so the phone sends no ask for it), and not when none is",
         () async {
       const release = PhoneRelease(
           refIds: ['sr_1', 'sr_2', 'sr_3'],
@@ -480,6 +480,17 @@ void main() {
       expect(
           await stoppedOf([
             pin('track', 'sr_1', stoppedAt: 5),
+            pin('track', 'sr_2', stoppedAt: 5),
+            pin('track', 'sr_3'),
+          ], releases: {
+            'cat:1': release
+          }),
+          {group},
+          reason:
+              'sr_3 was asked for on its own from the track menu and goes on; the other two still wait for Resume, and the line says Stopped');
+      expect(
+          await stoppedOf([
+            pin('track', 'sr_1'),
             pin('track', 'sr_2'),
           ], releases: {
             'cat:1': release

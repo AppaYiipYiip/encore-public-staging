@@ -104,6 +104,14 @@ class PinState {
       'failed: $failed${stopped ? ', stopped' : ''})';
 }
 
+/// When a catalogue release is STOPPED (N-39). A release is one pin for each of its songs, and the person's Stop flags every one of them in one write.
+/// It is stopped when ANY pinned song of it is (review of PR 119): a song the person asked for on its own afterwards (the track menu) is a new request,
+/// its pin is not stopped and it starts by itself, but the songs the Stop holds still wait for Resume, so the release must say Stopped and offer
+/// Resume (it used to show Stop with no Resume while they waited). [songStopped] has one entry for each song of the release that HAS a pin. ONE place:
+/// the line, the button and the card read it through `releasePinStateProvider`, the keep controller through `stoppedKeepGroupsProvider`.
+bool releaseIsStopped(Iterable<bool> songStopped) =>
+    songStopped.any((stopped) => stopped);
+
 /// A song the phone could not take, with what the downloader recorded (never shown as it is: see `phoneFailureWords`).
 @immutable
 class FailedSong {
@@ -442,17 +450,20 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
         return held;
       });
 
-  /// Takes the person's Stop off these pins (Resume). What was held is planned again by the next pass.
-  Future<void> clearStopped(Iterable<PinKey> keys) async {
-    for (final key in keys) {
-      await (_db.update(_db.pins)
-            ..where((p) =>
-                p.serverId.equals(serverId) &
-                p.targetType.equals(key.$1.name) &
-                p.targetId.equals(_pinIdOf(key))))
-          .write(const PinsCompanion(stoppedAtMs: Value(null)));
-    }
-  }
+  /// Takes the person's Stop off these pins (Resume). What was held is planned again by the next pass. EXACTLY the pins that are stopped are written: a
+  /// catalogue release is a pin for each song and Resume names them all, and a song the person asked for on its own meanwhile is not stopped and keeps
+  /// its row as it is (N-39, review of PR 119). One transaction, so the watchers hear of it once.
+  Future<void> clearStopped(Iterable<PinKey> keys) => _db.transaction(() async {
+        for (final key in keys) {
+          await (_db.update(_db.pins)
+                ..where((p) =>
+                    p.serverId.equals(serverId) &
+                    p.targetType.equals(key.$1.name) &
+                    p.targetId.equals(_pinIdOf(key)) &
+                    p.stoppedAtMs.isNotNull()))
+              .write(const PinsCompanion(stoppedAtMs: Value(null)));
+        }
+      });
 
   // ----------------------------------------------------------------- planning
 

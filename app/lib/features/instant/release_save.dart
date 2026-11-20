@@ -369,16 +369,13 @@ final releasePinStateProvider =
     Provider.autoDispose.family<PinState, String>((ref, joined) {
   var pinned = false;
   var total = 0, done = 0, active = 0, failed = 0, bytes = 0;
-  // A release is stopped when the person's Stop holds the pin of every song of it that is pinned (N-39: its Stop flags each of them).
-  var anyStopped = false, allStopped = true;
+  // A release is stopped by the one rule of `releaseIsStopped`: when ANY pinned song of it is held (N-39).
+  final pinnedSongStopped = <bool>[];
   for (final id in joined.isEmpty ? const <String>[] : joined.split(',')) {
     final s = ref.watch(pinStateProvider((PinTargetType.track, id))).value ??
         PinState.none;
     pinned = pinned || s.pinned;
-    if (s.pinned) {
-      anyStopped = anyStopped || s.stopped;
-      allStopped = allStopped && s.stopped;
-    }
+    if (s.pinned) pinnedSongStopped.add(s.stopped);
     total += s.total;
     done += s.done;
     active += s.active;
@@ -392,5 +389,5 @@ final releasePinStateProvider =
       active: active,
       failed: failed,
       bytes: bytes,
-      stopped: pinned && anyStopped && allStopped);
+      stopped: releaseIsStopped(pinnedSongStopped));
 });
