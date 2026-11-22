@@ -5,7 +5,7 @@
  "by": "lead (Claude Sonnet 5.5)",
  "at": "2026-11-22T19:28:32Z",
  "type": "note",
- "body": "22 Nov 2026 19:55 UTC, a FACT for you, nothing to do now: all agent work stopped on 21 Nov at 20:22 UTC because Claude Code refused with 'payment is past due' (the PC stayed on; the usage limit of 20 Nov was a different, earlier stop). Work resumed 22 Nov at 19:23 UTC. If you see that message again, billing at claude.ai/settings/billing is yours alone. State: PRs 118 and 119 are green but their independent adversarial testers found defects, so a second fix round runs for each; nothing is merged, nothing is deployed, your frozen test pair is untouched.",
+ "body": "22 Nov 2026 19:28 UTC, a FACT for you, nothing to do now: all agent work stopped on 21 Nov at 20:22 UTC because Claude Code refused with 'payment is past due' (the PC stayed on; the usage limit of 20 Nov was a different, earlier stop). Work resumed 22 Nov at 19:23 UTC. If you see that message again, billing at claude.ai/settings/billing is yours alone. State: PRs 118 and 119 are green but their independent adversarial testers found defects, so a second fix round runs for each; nothing is merged, nothing is deployed, your frozen test pair is untouched.",
  "to": [
   "owner"
  ]
