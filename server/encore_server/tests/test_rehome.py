@@ -666,26 +666,29 @@ def test_a_keepers_file_is_never_judged_or_moved(db: Database) -> None:
 
 
 def test_a_row_that_changed_hands_after_the_pass_began_is_left_alone(db: Database) -> None:
-    """Between the worklist being read and the page being judged another writer (the keeper, the merge) may have moved the row: the pass judges the row as it is NOW."""
-    first, second = rid("sr", 1), rid("sr", 2)
+    """Between the worklist being read and the verdict being applied another writer (the keeper, the merge) may have moved the row: the pass judged it where it READ it, and the
+    write transaction looks again. The other writer put it on a THIRD song (not the one the tags name), so a pass that acted on what it read would take it from there."""
+    first, second, third = rid("sr", 1), rid("sr", 2), rid("sr", 3)
     tags = song("nd-1", "نسّم علينا الهوا", "فيروز")
 
     def build(c: sqlite3.Connection) -> None:
         add_ref(c, first, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
         add_file(c, first, "nd-1", song=tags)
         add_ref(c, second, "نسّم علينا الهوا", ["فيروز"], old=False, duration_ms=200_000)
+        add_ref(c, third, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
 
     make_world(db, build)
     listed(db, first)
     work = rehome.begin(db, described, Listing.of([tags], began=now_ms()))
     assert work is not None
-    with db.tx() as c:  # somebody else re-pointed the file to its right ref in the meantime
-        c.execute("UPDATE song_file SET ref = ? WHERE navidrome_song_id = 'nd-1'", (second,))
+    with db.tx() as c:  # somebody else re-pointed the file in the meantime
+        c.execute("UPDATE song_file SET ref = ? WHERE navidrome_song_id = 'nd-1'", (third,))
 
     work.page([tags])
-    work.finish(release=False)
+    report = work.finish(release=False)
 
-    assert files(db) == {"nd-1": (second,)}
+    assert files(db) == {"nd-1": (third,)}, "left where the other writer put it"
+    assert report.changed == 1 and report.moved == 0
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------

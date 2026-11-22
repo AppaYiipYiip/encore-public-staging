@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 
-from encore_server import refs, rehome
+from encore_server import rehome
 from encore_server.db import Database
 from encore_server.ids import now_ms
 from encore_server.link_listing import Listing
@@ -165,6 +165,36 @@ def test_the_preferred_file_is_never_one_the_listing_lacks_in_a_pass_that_only_a
             for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
         ]
     assert preferred == ["nd-1"], "the file the song plays is one the music server lists"
+
+
+def test_the_song_that_lost_a_file_never_prefers_a_row_the_listing_lacks_even_when_no_file_of_it_was_judged_kept(
+    db: Database,
+) -> None:
+    """The provisional preference right after a move (`ensure_one_preferred`) is the one that stands when the end of the pass has no kept file to prefer: R holds a file nobody
+    could judge (nd-2), a row the listing lacks (nd-3, the newest) and the file that moves (nd-4). It must prefer nd-2, not the row that will be pruned."""
+    nameless = song("nd-2", K1[0], "[Unknown Artist]")
+    unlisted = song("nd-3", *K1)
+    moving = song("nd-4", *K2)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", added_at=300, song=unlisted)
+        add_file(c, SELF, "nd-4", added_at=400, preferred=1, song=moving)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    link_library(db, Music([nameless, moving]), prune=False)
+
+    assert files(db)["nd-4"] == (OTHER,)
+    with db.read() as conn:
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert preferred == ["nd-2"]
 
 
 def test_a_pass_that_finishes_what_a_killed_one_began_never_prefers_a_keepers_row_the_listing_lacks(
@@ -635,26 +665,83 @@ def test_the_outcome_of_one_pass_never_depends_on_the_size_of_a_page_or_the_orde
     assert outcomes[0][0] == {"nd-1": (SELF,), "nd-2": (OTHER,)}
 
 
-def test_the_rehome_does_not_use_a_ref_only_it_made_as_evidence_against_a_file_judged_before(db: Database) -> None:
-    """The ref a move makes carries the id of its file: another file of the song named by the SAME name whose own ref fits it by name is KEPT (judged against the state before the
-    move), not held for good because an id appeared meanwhile."""
+def made_id_world(db: Database) -> list[dict[str, Any]]:
+    """SELF (K1) keeps f2, whose tags carry the ISRC I; DUP holds f1 (K2, the same ISRC I), whose song does not exist: its move MAKES the song, with I; a third song holds f3
+    (another move). f2 fits SELF by name, and once the made song holds I the id names THAT song: SELF fits as well as another, not alone."""
     moving = song("nd-1", *K2, 200.0, isrc=["QZ1234567890"])
     sibling = song("nd-2", *K1, 200.0, isrc=["QZ1234567890"])
+    second = song("nd-3", *K4, 200.0)
 
     def build(c: sqlite3.Connection) -> None:
         add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
         add_file(c, SELF, "nd-2", added_at=300, song=sibling)
         add_ref(c, DUP, K3[0], [K3[1]], old=False, duration_ms=200_000)
         add_file(c, DUP, "nd-1", added_at=100, song=moving)
+        add_ref(c, rid("sr", 5), "x", ["y"], old=False, duration_ms=200_000)
+        add_file(c, rid("sr", 5), "nd-3", added_at=200, song=second)
+        add_ref(c, rid("sr", 6), K4[0], [K4[1]], old=False, duration_ms=200_000)
 
     make_world(db, build)
-    listed(db, SELF, DUP)
+    listed(db, SELF, DUP, rid("sr", 5))
+    return [moving, second, sibling]
 
-    link_library(
-        db, Music([moving, sibling]), page=1
-    )  # the file that makes the song is on the page BEFORE the file that is judged against it
 
-    assert worklist(db) == set(), "SELF fits its file by name: kept, released"
-    with db.read() as conn:
-        assert conn.execute("SELECT COUNT(*) FROM song_file WHERE ref = ?", (SELF,)).fetchone()[0] == 1
-        assert refs.ref_exists(conn, SELF)
+def test_a_song_a_move_made_with_an_id_is_evidence_against_a_file_kept_before_it_existed_in_the_same_pass_not_at_the_next_one(
+    db: Database,
+) -> None:
+    """The song a move makes carries the id of its file, so a kept file that carries the same id is named by THAT song, and its own song fits it only by name: it fits as well
+    as another and is held (a wrong move is worse than none). The first build saw it one pass later, and the pass that saw it wrote again (the preferred file of the song, and a
+    second look of the phones); the kept files that carry the id of a song a move made are judged again in the same pass."""
+    songs = made_id_world(db)
+
+    first = link_library(db, Music(songs))
+
+    assert worklist(db) == {SELF}, "SELF fits its file by name AND the made song holds its id: held, in this very pass"
+    assert first.rehome is not None and first.rehome.stayed_ambiguous == 1 and first.rehome.rounds == 2
+    state = digest(db)
+
+    link_library(db, Music(songs))
+
+    assert digest(db) == state and len(copies(db)) == 1, "the second pass writes nothing and takes no copy"
+
+
+def test_a_pass_killed_after_the_chunk_that_made_a_song_with_an_id_ends_where_the_uncut_pass_ends(
+    db: Database, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """The made song is real evidence for the pass that follows a kill as much as for the rest of the same pass: both hold SELF, with the same files (the claim that a killed pass
+    and the uncut one end alike holds only if both read the id the move wrote)."""
+    uncut = Database(tmp_path / "uncut" / "encore.db")
+    uncut.migrate()
+    songs = made_id_world(uncut)
+    link_library(uncut, Music(songs))
+
+    made_id_world(db)
+    monkeypatch.setattr(rehome, "CHUNK", 1)
+    real = rehome.Rehome._move  # noqa: SLF001
+    calls: list[str] = []
+
+    def dying(self: rehome.Rehome, conn: sqlite3.Connection, file_id: str, ref: str, described_: dict[str, Any] | None) -> Any:
+        calls.append(file_id)
+        if len(calls) == 2:
+            raise RuntimeError("the process was killed here")
+        return real(self, conn, file_id, ref, described_)
+
+    monkeypatch.setattr(rehome.Rehome, "_move", dying)
+    link_library(db, Music(songs))
+    monkeypatch.undo()
+    link_library(db, Music(songs))
+
+    def shape(database: Database) -> tuple[Any, ...]:
+        with database.read() as conn:
+            return (
+                sorted(
+                    (r["navidrome_song_id"], r["key"])
+                    for r in conn.execute(
+                        "SELECT f.navidrome_song_id, s.norm_key AS key FROM song_file f JOIN song_ref s ON s.id = f.ref"
+                    )
+                ),
+                sorted(r["ref"] for r in conn.execute("SELECT ref FROM ref_recheck")),
+            )
+
+    assert worklist(db) == worklist(uncut) == {SELF}
+    assert shape(db) == shape(uncut)

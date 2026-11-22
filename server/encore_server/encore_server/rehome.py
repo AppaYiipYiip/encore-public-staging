@@ -29,8 +29,9 @@ early (the music server stopped answering, the process died) decides and writes 
 already emptied only by a complete pass); and the pass keeps the tags of the worklist's files in memory until the listing is complete (about 330 bytes a file: 67 MB more than the 130 MB `begin()` already holds, 197 MB in all, at 200,000 worklist files, measured; a real worklist is the damaged refs only, thousands).
 
 A pass is **paced** (one write transaction per `CHUNK` moves applied and per `RELEASE_CHUNK` worklist rows released, never one for the library), **resumable** (each chunk
-commits; a pass killed between two chunks is finished by the next, which judges what the chunks left, and **ends where the uncut pass ends** because a move writes nothing a
-later decision reads; the worklist is emptied only by a COMPLETE pass), **idempotent** (a second pass over an unchanged catalogue writes nothing and takes no copy of the
+commits; a pass killed between two chunks is finished by the next, which judges what the chunks left, and **ends where the uncut pass ends** because a move writes no length and no id on a song
+that exists, and the one thing a move writes that a later decision reads, the id of a song it MAKES, is judged again in the same pass (below); the worklist is emptied only by a
+COMPLETE pass), **idempotent** (a second pass over an unchanged catalogue writes nothing and takes no copy of the
 database, proved on seeded random worlds by `tests/test_rehome_worlds.py`; the outcome does not depend on the page size or the order of the listing either) and **never stops the
 server or the scan** (a failure is one ERROR line and the link goes on without it).
 
@@ -67,10 +68,12 @@ order:
    (`scanner._prune` removes the rows of files the listing lacks), also on the real hourly pass.
 
 **Rounds.** The verdicts of a round are all read from the same state (the database after the scan of this pass and its prune, plus the moves of the rounds before); the
-moves of the round are applied oldest file first, in chunks, each move judged again inside its write transaction. Only two stays are judged again in the next round, because a
-move of the same pass can lift them: the last file of a song a person owns (a file has arrived on the song), and a file with the placeholder artist whose id now names a song (a
-song a move made carries the id of its own file). Every other verdict is final: a move cannot make a file that fits its song stop fitting it, and cannot give a file with no tags
-any. A file moves at most once in a pass, so the rounds end (at most as many as files plus one; typically two; `MAX_ROUNDS` is the second layer, with an ERROR line and the next
+moves of the round are applied oldest file first, in chunks, each move judged again inside its write transaction. Only these are judged again in the next round, because a
+move of the same pass can change them: the last file of a song a person owns (a file has arrived on the song); a file with the placeholder artist whose id now names a song (a
+song a move made carries the id of its own file); and a KEPT file, or one that already moved, whose tags carry the id of a song a move of the round made (the ids tier now names
+that song and its own song fits only by name: it fits as well as another, a stay, and for a moved file a hold on the song it went to, the verdict a pass that began after the move
+would give, which is what keeps a pass killed between two chunks and the uncut pass in step). Every other verdict is final: a move cannot make a file that fits its song stop
+fitting it by any other road, and cannot give a file with no tags any. A file moves at most once in a pass, so the rounds end (at most as many as files plus one; typically two; `MAX_ROUNDS` is the second layer, with an ERROR line and the next
 pass goes on).
 
 **A file that could not be judged, or safely moved, keeps its ref ON the worklist** (points 2, 3, 5 and 6, and the unseen file below): the ref's files may belong to other songs and
@@ -154,7 +157,10 @@ _CHANGED = "changed"
 #: Every verdict that leaves the file where it is because nobody could decide: the ref STAYS on the worklist for each of them.
 _UNDECIDED = (_STAY_UNTAGGED, _STAY_NAMELESS, _STAY_AMBIGUOUS, _STAY_LAST_FILE)
 #: The two stays that a move of the same pass can lift (a file arrives on the song; a song that did not exist is made and carries the id): they are judged again in the next
-#: round. Every other verdict is final: a move cannot make a file that fits its song stop fitting it, nor give a file with no tags any.
+#: round. **And a KEPT file, or a file already moved, whose tags carry the id of a song that a move made in the round**: the ids tier now names that song, its own song fits only by
+#: name, and the verdict becomes "fits as well as another" (a stay, and for a moved file a hold on the song it went to): the same verdict a pass that began after the move
+#: would give, which is what keeps a pass killed between two chunks and the uncut pass in step. Every other verdict is final: a move cannot make a file that fits its song stop
+#: fitting it by any other road, nor give a file with no tags any.
 _JUDGED_AGAIN = (_STAY_NAMELESS, _STAY_LAST_FILE)
 
 
@@ -252,6 +258,8 @@ class _Moved:
     answers: tuple[str, ...] = ()
     #: The song the file was on when it was judged (for the log).
     origin: str = ""
+    #: The ISRC of the song this move MADE (a file whose tags name no song makes one, with its own id), else `None`: what the next round judges the kept files by.
+    made_isrc: str | None = None
 
 
 Describe = Callable[[dict[str, Any]], dict[str, Any] | None]
@@ -315,6 +323,9 @@ class Rehome:
         self._tags: dict[str, tuple[str, dict[str, Any] | None]] = {}
         #: What became of each worklist file the pass judged.
         self._outcome: dict[str, _Moved] = {}
+        #: The files that moved and then turned out to fit their new song only as well as another (a song made in the same pass holds the id their tags carry): `{file id: (the
+        #: song it is on, the songs the tags name by evidence)}`. They stay moved; the song they are on is held like any other that fits as well as another.
+        self._contested: dict[str, tuple[str, tuple[str, ...]]] = {}
         self._judged: set[str] = set()
         #: The files whose tags could not decide anything (no usable tags, no artist name and no id, a song that fits as well, the last file of a song somebody owns): they
         #: stay where they are and their ref stays on the worklist.
@@ -353,7 +364,9 @@ class Rehome:
         before); the moves of the round are then applied in chunks, each move judged again inside its write transaction against the rows it sees (the second of two wrong
         files of a song somebody owns stays). What a move changes is decided in the SAME pass: a file that arrives on a liked song frees that song's other wrong file; a song
         a move makes carries the id of its file and names a nameless file of the same recording. The only stays that are judged again are those two kinds (`_JUDGED_AGAIN`):
-        a move cannot make a file that fits its song stop fitting it (the length and the ids of a song that exists are never written by a move, `refs.resolve_keeping_identity`), nor give a file with no tags any. A file moves at most once, so the rounds end; `MAX_ROUNDS` is the second layer."""
+        a move cannot make a file that fits its song stop fitting it by any other road (the length and the ids of a song that exists are never written by a move,
+        `refs.resolve_keeping_identity`; only a song a move MAKES brings a new id, and the kept files that carry that id are judged again too), nor give a file with no tags any.
+        A file moves at most once, so the rounds end; `MAX_ROUNDS` is the second layer."""
         todo = sorted(self._tags, key=lambda file_id: (self._added[file_id], file_id))
         rounds = 0
         while todo:
@@ -364,19 +377,46 @@ class Rehome:
                 )
                 break
             rounds += 1
-            moved = self._round(todo)
-            todo = [file_id for file_id in todo if self._outcome[file_id].kind in _JUDGED_AGAIN] if moved else []
+            moved, made = self._round(todo)
+            again = [file_id for file_id in todo if self._outcome[file_id].kind in _JUDGED_AGAIN] if moved else []
+            if made:
+                again += [
+                    file_id
+                    for file_id, result in self._outcome.items()
+                    if result.kind in (_KEEP, _MOVE) and file_id not in again and self._isrc_of(file_id) in made
+                ]
+            todo = sorted(again, key=lambda file_id: (self._added[file_id], file_id))
         self.report.rounds = rounds
 
-    def _round(self, todo: list[str]) -> int:
-        """One round over these files, oldest first: the number of files moved."""
+    def _isrc_of(self, file_id: str) -> str | None:
+        """The ISRC the tags of this worklist file carry, as the refs hold it (upper case, no dashes), or `None`."""
+        described = self._tags[file_id][1]
+        if described is None:
+            return None
+        try:
+            return refs.parse_item(described)["isrc"]  # type: ignore[no-any-return]
+        except ApiError:
+            return None
+
+    def _round(self, todo: list[str]) -> tuple[int, set[str]]:
+        """One round over these files, oldest first: the number of files moved, and the ISRCs of the songs the moves made."""
+        already = {file_id for file_id in todo if file_id in self._outcome and self._outcome[file_id].kind == _MOVE}
         with self._db.read() as conn:
-            verdicts = {file_id: self._decide(conn, file_id, *self._tags[file_id]) for file_id in todo}
+            verdicts = {}
+            for file_id in todo:
+                ref, described = self._tags[file_id]
+                if file_id in already:
+                    ref = self._outcome[file_id].target  # a file that moved is judged against the song it is on now
+                verdicts[file_id] = self._decide(conn, file_id, ref, described)
         for file_id, verdict in verdicts.items():
-            if verdict.kind != _MOVE:
+            if file_id in already:
+                if verdict.kind == _STAY_AMBIGUOUS:
+                    self._contested[file_id] = (self._outcome[file_id].target, verdict.answers)
+            elif verdict.kind != _MOVE:
                 self._outcome[file_id] = _Moved(verdict.kind, answers=verdict.answers, origin=self._tags[file_id][0])
-        moves = [file_id for file_id in todo if verdicts[file_id].kind == _MOVE]
+        moves = [file_id for file_id in todo if verdicts[file_id].kind == _MOVE and file_id not in already]
         moved = 0
+        made: set[str] = set()
         for start in range(0, len(moves), CHUNK):
             copy = self._copy_taken()
             results: dict[str, _Moved] = {}
@@ -391,10 +431,12 @@ class Rehome:
             for file_id, result in results.items():
                 if result.kind == _MOVE:
                     moved += 1
+                    if result.made_isrc:
+                        made.add(result.made_isrc)
                     if self._logged < _LOG_MOVES:
                         log.info("rehome: file %s of song %s now belongs to song %s", file_id, result.origin, result.target)
                     self._logged += 1
-        return moved
+        return moved, made
 
     def _decide(self, conn: sqlite3.Connection, file_id: str, ref: str, described: dict[str, Any] | None) -> _Verdict:
         """Keep, move or leave this file of [ref], judged by the song's tags (see the module's text). A read; `_move` asks it again inside its write transaction."""
@@ -436,7 +478,8 @@ class Rehome:
         if verdict.kind != _MOVE or verdict.item is None:
             return _Moved(verdict.kind, answers=verdict.answers, origin=ref)
         # The ref the tags name, or a new one: what a fresh scan would have done, except that a ref that exists keeps its length and its ids (what the next file is judged by).
-        target = str(refs.resolve_keeping_identity(conn, verdict.item)["id"])
+        target_ref = refs.resolve_keeping_identity(conn, verdict.item)
+        target = str(target_ref["id"])
         twin = conn.execute(
             "SELECT id FROM song_file WHERE ref = ? AND id <> ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
             (target, file_id, row["navidrome_song_id"], row["path"]),
@@ -454,7 +497,15 @@ class Rehome:
             refs.touch_file(conn, touched)
             library.touch_ref_holders(conn, touched)
         conn.execute("UPDATE ref_recheck SET moved = moved + 1 WHERE ref = ?", (ref,))
-        return _Moved(_MOVE, target=target, created=not verdict.answers, dropped=twin is not None, origin=ref)
+        made_here = not verdict.answers
+        return _Moved(
+            _MOVE,
+            target=target,
+            created=made_here,
+            dropped=twin is not None,
+            origin=ref,
+            made_isrc=str(target_ref["isrc"]) if made_here and target_ref["isrc"] else None,
+        )
 
     def _account(self) -> None:
         """What the pass came to, counted once per file from the final outcome of each (a stay of the first round that a later round moved is a move)."""
@@ -478,6 +529,18 @@ class Rehome:
                 stays += 1
             if result.kind in _UNDECIDED:
                 self._undecided.add(file_id)
+        for file_id, (target, answers) in self._contested.items():
+            if stays < _LOG_MOVES:
+                log.info(
+                    "rehome: file %s was re-pointed to song %s, which fits its tags as well as song %s (a song made in the same pass holds the id its tags carry): a wrong move is "
+                    "worse than none, so song %s stays on the worklist",
+                    file_id,
+                    target,
+                    ", ".join(answers),
+                    target,
+                )
+            stays += 1
+            self._undecided.add(file_id)
         self._judged = set(self._outcome)
         self._stays_logged = stays
 

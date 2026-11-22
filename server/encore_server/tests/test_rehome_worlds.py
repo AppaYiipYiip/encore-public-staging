@@ -11,7 +11,8 @@ What must hold, whatever the world:
    moves, and the files the prune removes in the same pass do not count as files it keeps).
 2. **Nothing a person owns changes.**
 3. **One pass is enough**: a second pass over an unchanged catalogue writes nothing and takes no copy of the database (`rehome.py`: "one state, rounds to a fixpoint").
-4. **The outcome does not depend on how the pass was read**: the page size, and a pass cut by the music server and resumed, end exactly where one uncut pass ends.
+4. **The outcome does not depend on how the pass was read**: the page size, a pass cut by the music server and resumed, and a pass KILLED between two chunks of moves and resumed
+   end exactly where one uncut pass ends.
 5. **At most one copy** of the database for the whole pass.
 """
 
@@ -26,7 +27,7 @@ from typing import Any
 
 import pytest
 
-from encore_server import library, refs
+from encore_server import library, refs, rehome
 from encore_server.db import Database
 from encore_server.scanner import link_library
 from tests.test_rehome import ME, Music, add_file, add_ref, rid, song
@@ -196,3 +197,22 @@ def test_the_invariants_of_the_rehome_hold_on_a_random_world(seed: int, template
     link_library(cut, Music(songs, down_at=2), page=2)
     link_library(cut, Music(songs), page=2)
     assert outcome(cut, w) == first, f"seed {seed}: a pass cut by the music server and resumed ends elsewhere than the uncut pass"
+    # ... and a pass KILLED between two chunks of moves (the second move raises, as when the process dies), then resumed
+    killed = fresh(template, tmp_path / "killed", w)
+    calls: list[str] = []
+    real = rehome.Rehome._move  # noqa: SLF001
+
+    def dying(self: rehome.Rehome, conn: sqlite3.Connection, file_id: str, ref: str, described: dict[str, Any] | None) -> Any:
+        calls.append(file_id)
+        if len(calls) == 2:
+            raise RuntimeError("the process was killed here")
+        return real(self, conn, file_id, ref, described)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(rehome, "CHUNK", 1)
+        patch.setattr(rehome.Rehome, "_move", dying)
+        link_library(killed, Music(songs), page=2)
+    link_library(killed, Music(songs), page=2)
+    assert outcome(killed, w) == first, (
+        f"seed {seed}: a pass killed between two chunks and resumed ends elsewhere than the uncut pass"
+    )
