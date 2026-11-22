@@ -776,8 +776,9 @@ class DownloadManager {
   }
 
   /// Cancels the transfer of a song the person's Stop holds and remembers that a last word of that attempt is still to come (see
-  /// [_stoppedAttempts]). Only called for a task that is believed to be in flight (a song in [_inFlight], a task the downloader still lists). The
-  /// memory is written BEFORE the cancel (the start of the app does not wait in the FIFO, so a word can be handled while the cancel is still on its
+  /// [_stoppedAttempts]). Called for a task that is believed to be in flight (a song in [_inFlight], a task the downloader still lists), and by
+  /// [_endedForHeldSong] for a task whose word just arrived and that may well be over: then the downloader answers that it has no such task, nothing is
+  /// sent and nothing stays owed. The memory is written BEFORE the cancel (the start of the app does not wait in the FIFO, so a word can be handled while the cancel is still on its
   /// way) and is taken back when the downloader says it had no such task: nothing was sent, no word will come, and a memory kept for it would
   /// swallow the next attempt's own failure and leave its row "downloading" with no task behind it. The same when the cancel itself fails: nobody
   /// knows whether a word is coming, and a failed song with a wait (Retry is there) is the failure that can be seen and mended, a stuck row is not.
