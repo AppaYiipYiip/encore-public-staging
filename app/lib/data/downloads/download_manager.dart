@@ -174,15 +174,18 @@ class DownloadManager {
       // Rows left "downloading" by a previous run whose task is gone go back
       // to the queue.
       final active = await _transport.activeTaskIds();
-      // A song the person stopped is never fetched: a task that a kill left running between the Stop being stored and its cancel is cancelled now
-      // (its answer finds a row that is not downloading and changes nothing).
+      // A song the person stopped is never fetched: a task that a kill left running for a song that is held (a kill between the Stop being stored and
+      // its cancel, or a song that became held after the Stop, see [_holdBackTransfers]) is cancelled now, and its row is put where a held song stands
+      // FIRST, so its answer finds a row that is not downloading and changes nothing (a refresh in flight is the old copy again, not a queued row).
       final stopped = await _repo.heldTrackIds();
-      for (final id in {...active}) {
-        final trackId = _trackIdOf(id);
-        if (trackId != null && stopped.contains(trackId)) {
-          active.remove(id);
-          await _cancelForStop(id);
-        }
+      final running = [
+        for (final id in active)
+          if (stopped.contains(_trackIdOf(id))) id
+      ];
+      await _repo.parkHeld([for (final id in running) _trackIdOf(id)!]);
+      for (final id in running) {
+        active.remove(id);
+        await _cancelForStop(id);
       }
       final stuck = await _repo.rowsInState(DownloadState.downloading);
       for (final row in stuck) {
@@ -366,6 +369,9 @@ class DownloadManager {
     // The pass that ends [start] hands the work out, once the tasks that still run are counted.
     if (_starting) return;
     final policy = _policy();
+    // THE INVARIANT comes before anything that can end the pass early (no connection, every place taken): a held song has no live transfer.
+    final stopped = await _repo.heldTrackIds();
+    await _holdBackTransfers(stopped);
     if (!policy.mayTransfer) return;
     final slots = policy.maxInFlight - _inFlight.length;
     if (slots <= 0) return;
@@ -382,7 +388,6 @@ class DownloadManager {
           };
     // Songs the person's Stop holds (N-39) are queued rows too, and nothing starts them: not this pass, not a restart, not a sync. They do not use
     // up the places, so the rows behind them still start.
-    final stopped = await _repo.heldTrackIds();
     final queued = [
       for (final row in await _repo.rowsInState(DownloadState.queued,
           limit:
@@ -507,6 +512,8 @@ class DownloadManager {
         // An upgrade is only ever fetched on Wi-Fi, whatever the person allowed for downloads: if the link changes mid-way it waits instead of
         // going on over mobile data at full quality.
         requiresWifi: policy.wifiOnly || upgrade,
+        // The downloader keeps it with the task and hands it back with the last word: what the file IS, whatever the row says by then.
+        qualityId: quality.id,
       ));
     } on SongNotKeptYet {
       _inFlight.remove(row.trackId);
@@ -545,16 +552,18 @@ class DownloadManager {
             _inFlight.contains(trackId)) {
           await _cancelForStop(update.taskId);
         }
-        await _onComplete(trackId, update.relativePath);
+        await _onComplete(trackId, update.relativePath,
+            qualityId: update.qualityId);
       case TransferStatus.failed:
         // FIRST layer, before anything is touched (the place of a transfer that runs is [_inFlight]'s): the transfer the Stop cancelled failed in the
         // very moment of the cancel, and its last word is this one. It is not a failed song with a wait, deletes nothing, and a song Resume has
         // started again since keeps its place and its row.
         if (_spendStoppedAttempt(update.taskId)) return;
         _inFlight.remove(trackId);
-        // The Stop cancelled this transfer and the song waits for Resume: a word that comes late (the transfer failed in the very moment it was
-        // cancelled) is not a failed song with a wait, and it deletes nothing (not the half of a refresh either).
-        if (await _isStopped(trackId)) return;
+        // The song waits for Resume and this transfer ended with nothing owed to our own Stop for it (the pass that would have cancelled it had not
+        // run yet, or the downloader had no such task when it did): not a failed song with a wait, and it deletes nothing (not the half of a refresh
+        // either). The row must not stay "downloading" with no task behind it: it goes where a held song stands, and Resume starts it.
+        if (await _isStopped(trackId)) return _endedForHeldSong(trackId);
         await _onAttemptEnded(trackId, update.error ?? 'Download failed',
             reportedPath: update.relativePath);
       case TransferStatus.canceled:
@@ -565,8 +574,8 @@ class DownloadManager {
         _inFlight.remove(trackId);
         // Second layer, for a word that is not the acknowledgement of a Stop's cancel (one of something else, or one after the memory above was
         // spent): the Stop is stored first and the row no longer says "downloading", so the branch below would not see it either; this stays right
-        // if a row ever does.
-        if (await _isStopped(trackId)) return;
+        // if a row ever does. It also catches a word that is not about any cancel of ours and reaches a song that is held (see [_endedForHeldSong]).
+        if (await _isStopped(trackId)) return _endedForHeldSong(trackId);
         // The manager cancels in one place, `_delete`, and deletes the row in the same pass (the update is handled after it): no row. A row that
         // still says "downloading" was cancelled by something else (the Cancel button of the downloader's card of an older build, a reset of the
         // downloader, an update the downloader kept while the app was closed), and no task is behind it any more. It is an attempt that ended, not a
@@ -607,7 +616,8 @@ class DownloadManager {
     }
   }
 
-  Future<void> _onComplete(String trackId, String? reportedPath) async {
+  Future<void> _onComplete(String trackId, String? reportedPath,
+      {String? qualityId}) async {
     final rows = await _repo.rowsFor([trackId]);
     // A song that has a copy on the phone (a refresh in flight, one waiting in the queue, or a song that is done) is only ever completed by a `.new`
     // file. A completion that names another file is the copy that is on the phone, from the acknowledgement of an older task with the same id (item
@@ -637,8 +647,12 @@ class DownloadManager {
       return;
     }
     final row = rows.first;
-    // The task knows where it wrote, even after the app was killed (B21).
-    final made = _transferQuality(row);
+    // The task knows where it wrote, even after the app was killed (B21), and what it was asked at: the downloader keeps both with the task. What a
+    // refresh made is what the FILE is. The row's own reading (`refreshQuality`, else `quality`) is only the fallback for a task handed over without
+    // one: by the time a refresh completes the row may no longer say what it was asked at (the person's Stop ended its intent, `refreshQuality` is null
+    // again), and the old copy's quality was recorded for the new file; the next pass planned the upgrade again and fetched it twice (N-39, review of PR
+    // 119, round 2).
+    final made = AudioQuality.byId(qualityId, fallback: _transferQuality(row));
     final relative =
         reportedPath ?? planned ?? _relativeFor(row, track?.suffix, made);
     final absolute = await _transport.absolutePath(relative);
@@ -704,6 +718,45 @@ class DownloadManager {
   Future<bool> _isStopped(String trackId) async =>
       (await _repo.heldTrackIds()).contains(trackId);
 
+  /// THE INVARIANT: A HELD SONG HAS NO LIVE TRANSFER (N-39, review of PR 119, round 2). The Stop cancels the transfers of the songs held AT ITS
+  /// MOMENT, but a song can become held later: its other pin goes away (a one-song Remove), it joins a stopped release, a sync takes it out of the
+  /// playlist that wanted it. Its transfer would then run for a song nothing wants fetched, and its last word (failed, canceled) would find a row nobody
+  /// ends. So every pass, the reconcile and the pump alike, ends such a transfer the way the Stop does: the row goes where a held song stands (stored
+  /// FIRST, so the cancel's answer never finds a row that says "downloading"), then the task is cancelled through the same counted path
+  /// ([_cancelForStop]: its own `canceled` is the one acknowledgement it owes, spent once). Runs before anything that can end the pass early.
+  Future<void> _holdBackTransfers(Set<String> held) async {
+    if (held.isEmpty || _inFlight.isEmpty) return;
+    final running = [
+      for (final id in _inFlight)
+        if (held.contains(id)) id
+    ];
+    if (running.isEmpty) return;
+    Log.info('downloads',
+        'held songs still had a transfer: ${running.length} cancelled');
+    await _repo.parkHeld(running);
+    await _cancelHeld(running);
+  }
+
+  /// Gives up the place of each of these songs that is in flight and cancels its transfer through the counted path (the Stop, and
+  /// [_holdBackTransfers]). The rows are already where a held song stands.
+  Future<void> _cancelHeld(Iterable<String> trackIds) async {
+    for (final id in trackIds) {
+      _estimates.remove(id);
+      if (_inFlight.remove(id)) await _cancelForStop(_taskId(serverId, id));
+    }
+  }
+
+  /// The last word of a transfer that ended for a song that is held, with nothing owed to our own Stop for it (the second layer under
+  /// [_holdBackTransfers]): the pass that cancels such a transfer had not run yet, or the downloader had no such task when it did (the transfer had
+  /// ended on its own: nothing was promised for that cancel). It is not a failed song with a wait and deletes nothing; the song waits for Resume, so the
+  /// row goes where a held song stands (not "downloading" with no task behind it, which nothing ends: the next start of the app was the only thing that
+  /// did), its place is free for the next song, and Resume starts it.
+  Future<void> _endedForHeldSong(String trackId) async {
+    _estimates.remove(trackId);
+    await _repo.parkHeld([trackId]);
+    await _pump();
+  }
+
   /// Spends one of the Stop's memories of [taskId] (see [_stoppedAttempts]): `true` when the word that is being handled is the last word of an
   /// attempt the Stop interrupted.
   bool _spendStoppedAttempt(String taskId) {
@@ -767,10 +820,7 @@ class DownloadManager {
     return _serialized(() async {
       if (_disposed) return;
       final held = await _repo.stopPins(keys);
-      for (final id in held) {
-        _estimates.remove(id);
-        if (_inFlight.remove(id)) await _cancelForStop(_taskId(serverId, id));
-      }
+      await _cancelHeld(held);
     });
   }
 

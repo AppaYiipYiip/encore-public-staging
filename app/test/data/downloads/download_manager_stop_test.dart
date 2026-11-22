@@ -1117,6 +1117,531 @@ void main() {
       expect(startsOf('t3'), 1);
     });
   });
+
+  group(
+      "a song that becomes held AFTER the Stop has no live transfer (review of PR 119, round 2, probe A)",
+      () {
+    // The Stop cancels the transfers of the songs held AT ITS MOMENT. A song can become held later: its other pin goes away (a one-song Remove), it joins a
+    // stopped release, a sync takes it out of the playlist that wanted it. Its transfer then runs for a song nothing wants fetched, and its last word
+    // (failed, canceled) used to be dropped by the "stopped" early return, which left the row "downloading" with no task behind it and its place given away
+    // (stuck until the next start of the app). The invariant: a held song has no live transfer, enforced in EVERY pass (reconcile and pump), through the
+    // same counted cancel as the Stop; and the second layer: a stray word of a held song puts the row where a held song stands.
+    TransferUpdate wordOf(String id, TransferStatus status, [String? error]) =>
+        TransferUpdate(taskId: taskOf(id), status: status, error: error);
+    Future<void> ownPin(String id) =>
+        repo.pin(PinTargetType.track, id, quality: AudioQuality.high);
+    Future<void> insertTrack(String id, {String? albumId}) =>
+        db.into(db.tracks).insert(TracksCompanion.insert(
+              serverId: serverId,
+              id: id,
+              title: 'Song $id',
+              albumId: Value(albumId),
+              suffix: const Value('flac'),
+              bitRate: const Value(900),
+              audioKey: Value('key$id'),
+            ));
+
+    /// Probe A's set-up: the album is pinned, t1 is pinned on its own too, the album is stopped: t1's own pin is not stopped, so t1 is not held and its
+    /// transfer goes on while the other three are cancelled.
+    Future<void> stoppedAlbumWhileT1RunsOnItsOwnPin() async {
+      await pinAlbum();
+      await ownPin('t1');
+      await stopAlbum();
+      expect(transport.canceled.toSet(),
+          {taskOf('t2'), taskOf('t3'), taskOf('t4')},
+          reason: 'the Stop cancels only the songs held at its moment');
+      expect(manager.debugInFlight, {'t1'});
+      expect((await row('t1')).state, DownloadState.downloading);
+    }
+
+    // A one-song Remove: the own pin goes, immediate removal. From here t1 is wanted only by the stopped album.
+    Future<void> removeOwnPinOfT1() => repo.unpin(PinTargetType.track, 't1');
+    Future<void> removeOwnPinAndPass() async {
+      await removeOwnPinOfT1();
+      await manager.reconcile(immediateRemoval: true);
+    }
+
+    void expectHeldAndWaiting(DownloadRow r) {
+      expect(r.state, DownloadState.queued,
+          reason:
+              'a held song waits for Resume: not "downloading" with no task behind it, not failed with a wait');
+      expect(r.attempts, 0, reason: 'no back-off');
+      expect(r.lastError, isNull);
+    }
+
+    final words = <String, void Function(String)>{
+      'failed': (id) => transport.fail(id),
+      'canceled': (id) => transport.cancelFromOutside(id),
+    };
+
+    for (final kind in ['failed', 'canceled']) {
+      test(
+          "N-39: the pass that finds t1 held cancels its transfer and puts its row back; the transfer's own $kind word afterwards changes nothing, and Resume starts it exactly once",
+          () async {
+        await stoppedAlbumWhileT1RunsOnItsOwnPin();
+
+        await removeOwnPinAndPass();
+
+        expect(await repo.heldTrackIds(), {'t1', 't2', 't3', 't4'});
+        expect(transport.canceled, contains(taskOf('t1')),
+            reason: 'a held song has no live transfer');
+        expect(transport.active, isEmpty);
+        expect(manager.debugInFlight, isEmpty);
+        expectHeldAndWaiting(await row('t1'));
+
+        words[kind]!('t1');
+        await manager.settled();
+
+        expectHeldAndWaiting(await row('t1'));
+        expect(manager.debugInFlight, isEmpty);
+        await letEveryBackoffPass();
+        expect(startsOf('t1'), 1,
+            reason: 'nothing started it again, not after any back-off step');
+        expect(transport.deleted, isEmpty, reason: 'a Stop deletes nothing');
+
+        await resumeAlbum();
+        expect(startsOf('t1'), 2, reason: 'Resume restarts it exactly once');
+        expect(manager.debugInFlight, {'t1', 't2', 't3', 't4'});
+        expect(transport.maxActive, lessThanOrEqualTo(4));
+      });
+
+      test(
+          "N-39: a $kind word that comes BEFORE the next pass, with nothing owed to the Stop, does not leave the row downloading with no task behind it: it is where a held song stands, its place is free, no back-off, nothing deleted",
+          () async {
+        await stoppedAlbumWhileT1RunsOnItsOwnPin();
+        await removeOwnPinOfT1(); // the pass has not run yet
+        expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))),
+            reason: 'the manager cancelled nothing of t1: no word is owed');
+
+        words[kind]!('t1');
+        await manager.settled();
+
+        expectHeldAndWaiting(await row('t1'));
+        expect(manager.debugInFlight, isEmpty,
+            reason: 'the place of a transfer that ended is free');
+        expect(transport.deleted, isEmpty);
+        await letEveryBackoffPass();
+        expect(startsOf('t1'), 1);
+
+        await resumeAlbum();
+        expect(startsOf('t1'), 2, reason: 'Resume restarts it exactly once');
+        expect(manager.debugInFlight, {'t1', 't2', 't3', 't4'});
+      });
+    }
+
+    test(
+        "N-39: the cancel the pass sent has its one acknowledgement, counted like the Stop's: it arrives after Resume started the song again and is swallowed, not read as an outside cancel",
+        () async {
+      await stoppedAlbumWhileT1RunsOnItsOwnPin();
+      await removeOwnPinAndPass();
+      expect(manager.debugStoppedAttempts, contains(taskOf('t1')));
+      await resumeAlbum();
+      expect(startsOf('t1'), 2);
+
+      transport.send(wordOf('t1', TransferStatus.canceled));
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.downloading,
+          reason: 'the resumed transfer was read as cancelled from outside');
+      expect(r.attempts, 0);
+      expect(r.lastError, isNull);
+      expect(manager.debugInFlight, contains('t1'));
+      expect(startsOf('t1'), 2);
+      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))));
+    });
+
+    test(
+        "N-39: the downloader no longer has the task when the pass cancels it: no word is owed for that cancel, and the word that arrives anyway is a held song's stray word",
+        () async {
+      await stoppedAlbumWhileT1RunsOnItsOwnPin();
+      transport.active
+          .remove(taskOf('t1')); // it ended; its last word is on its way
+
+      await removeOwnPinAndPass();
+      expect(transport.canceled, contains(taskOf('t1')));
+      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))),
+          reason: 'the cancel found nothing: no word will come FOR IT');
+      transport.send(wordOf('t1', TransferStatus.failed, 'HTTP 500'));
+      await manager.settled();
+
+      expectHeldAndWaiting(await row('t1'));
+      expect(manager.debugInFlight, isEmpty);
+      await resumeAlbum();
+      expect(startsOf('t1'), 2);
+    });
+
+    test(
+        "N-39: a finished file of a transfer whose song became held is the song: kept as it is, nothing deleted, nothing owed or left in memory",
+        () async {
+      await stoppedAlbumWhileT1RunsOnItsOwnPin();
+      await removeOwnPinOfT1();
+
+      transport.complete('t1', size: 6000);
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.done);
+      expect(r.bytes, 6000);
+      expect(r.attempts, 0);
+      expect(transport.deleted, isEmpty);
+      expect(manager.debugInFlight, isEmpty);
+      await manager.reconcile();
+      expect(transport.canceled, isNot(contains(taskOf('t1'))),
+          reason: 'it is on the phone: there is no transfer to cancel');
+      await resumeAlbum();
+      expect(startsOf('t1'), 1,
+          reason: 'a song that is on the phone is not asked again');
+    });
+
+    test(
+        "N-39: a finished file that arrives AFTER the pass cancelled the transfer (the cancel lost the race to the file) is kept as the song, and spends what the cancel left owed",
+        () async {
+      await stoppedAlbumWhileT1RunsOnItsOwnPin();
+      await removeOwnPinAndPass();
+      expect(manager.debugStoppedAttempts, contains(taskOf('t1')));
+
+      transport.complete('t1', size: 6000);
+      await manager.settled();
+
+      expect((await row('t1')).state, DownloadState.done);
+      expect((await row('t1')).bytes, 6000);
+      expect(transport.deleted, isEmpty);
+      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))));
+      expect(manager.debugInFlight, isEmpty);
+    });
+
+    test(
+        "N-39: the place a held song's transfer gave up goes to the song that waited, once and in the same pass; running transfers never exceed the limit",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await insertTrack('t5');
+      await insertTrack('t6');
+      await pinAlbum(); // t1 and t2 run
+      await ownPin('t1');
+      await stopAlbum(); // t2 is cancelled; t1 goes on on its own pin
+      await ownPin('t5');
+      await ownPin('t6');
+      await manager.reconcile();
+      expect(startOrder(), ['t1', 't2', 't5'],
+          reason: 'one place was free; t6 waits for the next');
+      expect(manager.debugInFlight, {'t1', 't5'});
+
+      await removeOwnPinAndPass();
+
+      expect(transport.canceled, contains(taskOf('t1')));
+      expect(startOrder(), ['t1', 't2', 't5', 't6'],
+          reason: 'the freed place started the waiting song, once');
+      expect(manager.debugInFlight, {'t5', 't6'});
+      expect(transport.active, {taskOf('t5'), taskOf('t6')});
+      expect(transport.maxActive, lessThanOrEqualTo(2));
+    });
+
+    test(
+        "N-39: the place of a transfer that ended in a stray word goes to the waiting song at once, once, and the limit holds",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await insertTrack('t5');
+      await insertTrack('t6');
+      await pinAlbum();
+      await ownPin('t1');
+      await stopAlbum();
+      await ownPin('t5');
+      await ownPin('t6');
+      await manager.reconcile();
+      expect(manager.debugInFlight, {'t1', 't5'});
+      await removeOwnPinOfT1(); // no pass yet
+
+      transport.fail('t1');
+      await manager.settled();
+
+      expectHeldAndWaiting(await row('t1'));
+      expect(startOrder(), ['t1', 't2', 't5', 't6'],
+          reason:
+              'the free place was used, not left empty until some later pass');
+      expect(manager.debugInFlight, {'t5', 't6'});
+      expect(transport.maxActive, lessThanOrEqualTo(2));
+      expect((await repo.rowsInState(DownloadState.downloading)).length, 2,
+          reason:
+              'a row stuck on "downloading" beside the two that run is one song over the limit');
+    });
+
+    test(
+        "N-39: the pass cancels a held song's transfer even when no song may be started now (off Wi-Fi)",
+        () async {
+      await stoppedAlbumWhileT1RunsOnItsOwnPin();
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+
+      await removeOwnPinAndPass();
+
+      expect(transport.canceled, contains(taskOf('t1')));
+      expect(transport.active, isEmpty);
+      expectHeldAndWaiting(await row('t1'));
+    });
+
+    test(
+        "N-39: the pass cancels held songs' transfers even when every place is taken (nothing could be started anyway)",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await pinAlbum(); // t1 and t2 run
+      await ownPin('t1');
+      await ownPin('t2');
+      await stopAlbum(); // t3 and t4 are held; t1 and t2 go on on their own pins
+      expect(transport.canceled, isEmpty);
+      await repo.unpin(PinTargetType.track, 't1');
+      await repo.unpin(PinTargetType.track, 't2');
+
+      await manager.reconcile(immediateRemoval: true);
+
+      expect(transport.canceled.toSet(), {taskOf('t1'), taskOf('t2')});
+      expect(transport.active, isEmpty);
+      expect(manager.debugInFlight, isEmpty);
+      expectHeldAndWaiting(await row('t1'));
+      expectHeldAndWaiting(await row('t2'));
+    });
+
+    test(
+        "N-39: a song that JOINS a stopped release while its transfer runs (its own pin is stamped stopped) is cancelled by the next pass, and Resume brings it back once",
+        () async {
+      const release = ['t1', 't2'];
+      for (final id in release) {
+        await repo.pin(PinTargetType.track, id,
+            quality: AudioQuality.high, alongside: release);
+      }
+      await ownPin('t3'); // asked for on its own: runs
+      await manager.reconcile();
+      expect(startOrder(), ['t1', 't2', 't3']);
+      await manager.stop([
+        (PinTargetType.track, 't1'),
+        (PinTargetType.track, 't2'),
+      ]);
+      expect(manager.debugInFlight, {'t3'});
+
+      // The song joins the stopped release: the upsert stamps its pin as stopped in the same write.
+      await repo.pin(PinTargetType.track, 't3',
+          quality: AudioQuality.high, alongside: release);
+      expect(await repo.heldTrackIds(), {'t1', 't2', 't3'});
+      await manager.reconcile();
+
+      expect(transport.canceled, contains(taskOf('t3')));
+      expect(transport.active, isEmpty);
+      expectHeldAndWaiting(await row('t3'));
+      transport.fail('t3');
+      await manager.settled();
+      expectHeldAndWaiting(await row('t3'));
+      await letEveryBackoffPass();
+      expect(startsOf('t3'), 1);
+
+      await manager.resume([
+        for (final id in ['t1', 't2', 't3']) (PinTargetType.track, id),
+      ]);
+      expect(startsOf('t3'), 2, reason: 'exactly once more');
+      expect(transport.deleted, isEmpty);
+    });
+
+    test(
+        "N-39: a sync that takes the song out of the playlist that wanted it leaves it held by the stopped album only: the next pass cancels its transfer",
+        () async {
+      await db.into(db.playlists).insert(
+          PlaylistsCompanion.insert(serverId: serverId, id: 'p1', name: 'Mix'));
+      await db.into(db.playlistEntries).insert(PlaylistEntriesCompanion.insert(
+          serverId: serverId, playlistId: 'p1', position: 0, trackId: 't4'));
+      await repo.pin(PinTargetType.playlist, 'p1', quality: AudioQuality.high);
+      await pinAlbum();
+      await stopAlbum();
+      expect(transport.canceled.toSet(),
+          {taskOf('t1'), taskOf('t2'), taskOf('t3')},
+          reason: 't4 is wanted by the playlist, which is not stopped');
+      expect(manager.debugInFlight, {'t4'});
+
+      // The sync rewrites the playlist: t4 is no longer in it.
+      await db.delete(db.playlistEntries).go();
+      await manager.reconcile();
+
+      expect(transport.canceled, contains(taskOf('t4')));
+      expect(transport.active, isEmpty);
+      expect(manager.debugInFlight, isEmpty);
+      expectHeldAndWaiting(await row('t4'));
+      transport.cancelFromOutside('t4');
+      await manager.settled();
+      expectHeldAndWaiting(await row('t4'));
+      await resumeAlbum();
+      expect(startsOf('t4'), 2);
+      expect(transport.deleted, isEmpty);
+    });
+
+    test(
+        "N-39: the next start of the app cancels the task of a song that became held after the Stop, and a refresh of it is the song again (its old copy plays), not a row waiting in the queue",
+        () async {
+      await pinAlbum();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      final oldPath = (await row('t1')).localPath!;
+      await (db.update(db.tracks)..where((t) => t.id.equals('t1')))
+          .write(const TracksCompanion(audioKey: Value('key1-NEW')));
+      await ownPin('t1');
+      await manager.reconcile();
+      expect(transport.requestFor('t1').relativePath, endsWith('.opus.new'));
+      await stopAlbum(); // t1 is not held: its own pin goes on
+      await removeOwnPinOfT1(); // and now it is, with its refresh still running
+      await manager.dispose(); // the app is killed before any pass
+
+      final after = FakeDownloadTransport()..active = {taskOf('t1')};
+      final second = newManager(after);
+      extra.add(second);
+      await second.start();
+
+      expect(after.canceled, [taskOf('t1')]);
+      expect(after.started, isEmpty);
+      final r = await row('t1');
+      expect(r.state, DownloadState.done,
+          reason: 'the copy on the phone is the song: it plays');
+      expect(r.localPath, oldPath);
+      expect(r.refreshQuality, isNull);
+      expect(after.deleted, isEmpty);
+    });
+  });
+
+  group(
+      "a finished refresh records the quality of the file that is on the disk (review of PR 119, round 2, probe B)",
+      () {
+    // A Data saver copy (Opus 48) of a song the person asked for at the original quality, made again at the original quality on Wi-Fi. The person's
+    // Stop ends the refresh (the row stops saying what it was asked at: its place in the row is `refreshQuality`) while its transfer can still finish in
+    // that very moment: the file is kept and swapped, and the row must say what the FILE is. It used to read the row's own intent (`quality`, the old
+    // copy's) and recorded Opus 48 for a FLAC file, and the next pass planned the upgrade again and fetched it a second time.
+    const underCap =
+        DownloadPolicy(wifiOnly: false, onWifi: false, dataSaver: true);
+    const wifiPolicy = DownloadPolicy(wifiOnly: true, onWifi: true);
+
+    Future<String> upgradeInFlight({bool ownPinOfT1 = false}) async {
+      policy = underCap;
+      await repo.pin(PinTargetType.album, 'al1',
+          quality: AudioQuality.original);
+      if (ownPinOfT1) {
+        await repo.pin(PinTargetType.track, 't1',
+            quality: AudioQuality.original);
+      }
+      await manager.reconcile();
+      transport.complete('t1', size: 5000);
+      await manager.settled();
+      expect((await row('t1')).quality, 'opus48');
+      final oldPath = (await row('t1')).localPath!;
+      policy = wifiPolicy;
+      await manager.reconcile();
+      expect(transport.requestFor('t1').relativePath, endsWith('.flac.new'));
+      expect((await row('t1')).refreshQuality, 'original');
+      return oldPath;
+    }
+
+    void expectTheFileIsWhatTheRowSays(DownloadRow r) {
+      expect(r.state, DownloadState.done, reason: r.lastError ?? '');
+      expect(r.quality, 'original',
+          reason:
+              'the file is the FLAC the refresh made, not the Opus 48 copy it replaced');
+      expect(r.localPath, '/app/downloads/$serverId/t1.flac');
+      expect(r.refreshQuality, isNull);
+    }
+
+    test(
+        "N-39: the Stop comes, then the refresh's file completes: the row records the original quality, and Resume does not fetch it a second time",
+        () async {
+      final oldPath = await upgradeInFlight();
+
+      await stopAlbum();
+      expect((await row('t1')).refreshQuality, isNull,
+          reason: 'the Stop ended the refresh: the old copy is the song again');
+      transport.complete('t1', size: 30 * 1024 * 1024);
+      await manager.settled();
+
+      expectTheFileIsWhatTheRowSays(await row('t1'));
+      expect(transport.deleted, [oldPath],
+          reason: 'only the copy the new file replaced');
+      await resumeAlbum();
+      expect(startsOf('t1'), 2,
+          reason: 'the first copy and the refresh: not a third download');
+    });
+
+    test(
+        "N-39: the same when the song became held after the Stop and the pass cancelled its refresh",
+        () async {
+      await upgradeInFlight(ownPinOfT1: true);
+      await stopAlbum(); // t1's own pin is not stopped: its refresh goes on
+      expect(manager.debugInFlight, {'t1'});
+      await repo.unpin(PinTargetType.track, 't1');
+      await manager.reconcile(immediateRemoval: true);
+      expect(transport.canceled, contains(taskOf('t1')));
+      expect((await row('t1')).refreshQuality, isNull);
+
+      transport.complete('t1', size: 30 * 1024 * 1024);
+      await manager.settled();
+
+      expectTheFileIsWhatTheRowSays(await row('t1'));
+      await resumeAlbum();
+      expect(startsOf('t1'), 2);
+    });
+
+    test(
+        "N-39: the same after the app was killed in between: the downloader hands the finished file back WITH the quality it was asked at, so a manager that never planned it records the right one",
+        () async {
+      await upgradeInFlight();
+      final written = transport.requestFor('t1').relativePath;
+      await stopAlbum();
+      await manager.dispose();
+
+      final after = FakeDownloadTransport()
+        ..files.addAll(transport.files)
+        ..files['/app/$written'] = 30 * 1024 * 1024
+        ..replayOnResume.add(TransferUpdate(
+          taskId: taskOf('t1'),
+          status: TransferStatus.complete,
+          relativePath: written,
+          qualityId: 'original',
+        ));
+      final second = newManager(after);
+      extra.add(second);
+      await second.start();
+
+      expectTheFileIsWhatTheRowSays(await row('t1'));
+      await second.resume([album]);
+      expect(after.started.where((r) => r.taskId == taskOf('t1')), isEmpty,
+          reason: 'the song is on the phone at the quality that was asked for');
+    });
+
+    test(
+        "N-39: a completion that names no quality (a task handed over before the downloader carried it) records the row's own reading, never a higher one than is proved",
+        () async {
+      await pinAlbum();
+      final req = transport.requestFor('t1');
+      transport.files['/app/${req.relativePath}'] = 4096;
+      transport.send(TransferUpdate(
+        taskId: req.taskId,
+        status: TransferStatus.complete,
+        relativePath: req.relativePath,
+      ));
+      await manager.settled();
+
+      expect((await row('t1')).state, DownloadState.done);
+      expect((await row('t1')).quality, 'opus160');
+    });
+
+    test(
+        "N-39: the quality the task carries is what the file is, whatever the row wants at that moment",
+        () async {
+      await pinAlbum();
+      final req = transport.requestFor('t1');
+      expect(req.qualityId, 'opus160');
+      transport.files['/app/${req.relativePath}'] = 4096;
+      transport.send(TransferUpdate(
+        taskId: req.taskId,
+        status: TransferStatus.complete,
+        relativePath: req.relativePath,
+        qualityId: 'opus96',
+      ));
+      await manager.settled();
+
+      expect((await row('t1')).quality, 'opus96');
+    });
+  });
 }
 
 /// A transport that notes what the database says at the moment each task is cancelled.

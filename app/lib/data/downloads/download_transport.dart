@@ -8,6 +8,7 @@ class TransferRequest {
     required this.url,
     required this.relativePath,
     this.requiresWifi = true,
+    this.qualityId,
   });
 
   /// Stable id (`enc:<server>:<track>`), also used to cancel.
@@ -17,6 +18,12 @@ class TransferRequest {
   /// Path under the app's private storage (`downloads/1/abc.opus`).
   final String relativePath;
   final bool requiresWifi;
+
+  /// What the file of this transfer is made at (`AudioQuality.id`). The downloader keeps it with the task and hands it back with every update of the
+  /// task ([TransferUpdate.qualityId]), also after the process was killed, as it does the path (B21). A completion records what the file IS, not what the
+  /// database says the song wants NOW: the person's Stop ends a refresh's intent (the row stops saying what it was asked at) while its transfer can still
+  /// finish (N-39, review of PR 119, round 2).
+  final String? qualityId;
 }
 
 enum TransferStatus { enqueued, running, complete, failed, canceled, paused }
@@ -29,6 +36,7 @@ class TransferUpdate {
     this.progress,
     this.error,
     this.relativePath,
+    this.qualityId,
   });
 
   final String taskId;
@@ -41,6 +49,10 @@ class TransferUpdate {
   /// Where the task writes (the platform remembers it across process death),
   /// so a completion that arrives after a restart still knows its file (B21).
   final String? relativePath;
+
+  /// What the file of the task is made at, as [TransferRequest.qualityId] asked (the platform keeps it with the task, like the path). `null` for a task
+  /// that was handed over without one (a build before this field) and for updates that carry no task data (progress).
+  final String? qualityId;
 }
 
 /// Platform file transfer (ADR-038). The manager owns *what* to download;

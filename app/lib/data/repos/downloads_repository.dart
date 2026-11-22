@@ -404,10 +404,8 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
     return held;
   }
 
-  /// Stores the person's Stop in the pins and takes the songs it holds out of the way, in ONE step that comes before any transfer is cancelled:
-  /// a song that was being fetched goes back to the queue (an update keeps its place, so Resume finds the songs in their old order), a copy that
-  /// was being refreshed is the song again ("done", its old file), and a failed song stays failed and counted. Nothing is deleted. Answers the
-  /// songs that are held, for the caller to cancel their transfers.
+  /// Stores the person's Stop in the pins and takes the songs it holds out of the way, in ONE step that comes before any transfer is cancelled
+  /// (see [parkHeld] for what "out of the way" is). Nothing is deleted. Answers the songs that are held, for the caller to cancel their transfers.
   Future<Set<String>> stopPins(Iterable<PinKey> keys) =>
       _db.transaction(() async {
         final now = _nowMs;
@@ -421,34 +419,45 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
               .write(PinsCompanion(stoppedAtMs: Value(now)));
         }
         final held = await heldTrackIds();
-        final ids = held.toList();
-        for (var from = 0; from < ids.length; from += 500) {
-          final to = from + 500 > ids.length ? ids.length : from + 500;
-          final chunk = ids.sublist(from, to);
-          // A refresh in flight or waiting: the copy on the phone is the song, so the row says "done" again and the old file plays.
-          await (_db.update(_db.downloads)
-                ..where((d) =>
-                    d.serverId.equals(serverId) &
-                    d.trackId.isIn(chunk) &
-                    d.state.isIn(
-                        [DownloadState.queued, DownloadState.downloading]) &
-                    d.localPath.isNotNull() &
-                    d.localPath.equals('').not()))
-              .write(const DownloadsCompanion(
-            state: Value(DownloadState.done),
-            refreshQuality: Value(null),
-          ));
-          // A first download in flight: back to the queue, where nothing starts it while it is held.
-          await (_db.update(_db.downloads)
-                ..where((d) =>
-                    d.serverId.equals(serverId) &
-                    d.trackId.isIn(chunk) &
-                    d.state.equals(DownloadState.downloading)))
-              .write(
-                  const DownloadsCompanion(state: Value(DownloadState.queued)));
-        }
+        await _parkRows(held);
         return held;
       });
+
+  /// Puts the rows of these songs where a held song stands, WITHOUT touching the pins or any file: a song that was being fetched goes back to the queue
+  /// (an update keeps its place, so Resume finds the songs in their old order), a copy that was being refreshed (in flight or waiting) is the song
+  /// again ("done", its old file plays, the refresh is over), and a failed or finished song stays as it is. The one place that knows this: the person's
+  /// Stop ([stopPins]), a pass that finds a song held whose transfer is still running, and the word of a transfer that ended for a held song (N-39,
+  /// review of PR 119, round 2). Called BEFORE the transfer is cancelled, so the cancel's answer never finds a row that says "downloading".
+  Future<void> parkHeld(Iterable<String> trackIds) =>
+      _db.transaction(() => _parkRows(trackIds));
+
+  Future<void> _parkRows(Iterable<String> trackIds) async {
+    final ids = trackIds.toList();
+    for (var from = 0; from < ids.length; from += 500) {
+      final to = from + 500 > ids.length ? ids.length : from + 500;
+      final chunk = ids.sublist(from, to);
+      // A refresh in flight or waiting: the copy on the phone is the song, so the row says "done" again and the old file plays.
+      await (_db.update(_db.downloads)
+            ..where((d) =>
+                d.serverId.equals(serverId) &
+                d.trackId.isIn(chunk) &
+                d.state
+                    .isIn([DownloadState.queued, DownloadState.downloading]) &
+                d.localPath.isNotNull() &
+                d.localPath.equals('').not()))
+          .write(const DownloadsCompanion(
+        state: Value(DownloadState.done),
+        refreshQuality: Value(null),
+      ));
+      // A first download in flight: back to the queue, where nothing starts it while it is held.
+      await (_db.update(_db.downloads)
+            ..where((d) =>
+                d.serverId.equals(serverId) &
+                d.trackId.isIn(chunk) &
+                d.state.equals(DownloadState.downloading)))
+          .write(const DownloadsCompanion(state: Value(DownloadState.queued)));
+    }
+  }
 
   /// Takes the person's Stop off these pins (Resume). What was held is planned again by the next pass. EXACTLY the pins that are stopped are written: a
   /// catalogue release is a pin for each song and Resume names them all, and a song the person asked for on its own meanwhile is not stopped and keeps
