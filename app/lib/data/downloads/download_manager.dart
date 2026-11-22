@@ -750,10 +750,15 @@ class DownloadManager {
   /// [_holdBackTransfers]): the pass that cancels such a transfer had not run yet, or the downloader had no such task when it did (the transfer had
   /// ended on its own: nothing was promised for that cancel). It is not a failed song with a wait and deletes nothing; the song waits for Resume, so the
   /// row goes where a held song stands (not "downloading" with no task behind it, which nothing ends: the next start of the app was the only thing that
-  /// did), its place is free for the next song, and Resume starts it.
+  /// did), its place is free for the next song, and Resume starts it. The word is not proof that the task is over: the downloader sends one `canceled`
+  /// for EVERY unfinished work it holds under a task id that was cancelled before (see `DownloadTransport.cancel`), and a word of an older attempt can
+  /// come while the newest still runs. So a transfer that is still live for the held song is cancelled here through the counted path before its place
+  /// goes to another song (nothing is sent, and nothing is owed, when the downloader has no such task): the place is never handed on while the task
+  /// still runs, which would put one transfer over the limit.
   Future<void> _endedForHeldSong(String trackId) async {
     _estimates.remove(trackId);
     await _repo.parkHeld([trackId]);
+    await _cancelForStop(_taskId(serverId, trackId));
     await _pump();
   }
 

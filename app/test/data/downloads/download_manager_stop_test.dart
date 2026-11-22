@@ -1367,6 +1367,34 @@ void main() {
     });
 
     test(
+        "N-39: a word nobody owed reaches a held song whose task is STILL running (the extra canceled the downloader sends for an id that was cancelled before): the transfer is cancelled, not left running beside the song that takes its place",
+        () async {
+      policy = const DownloadPolicy(maxInFlight: 2);
+      await insertTrack('t5');
+      await insertTrack('t6');
+      await pinAlbum();
+      await ownPin('t1');
+      await stopAlbum();
+      await ownPin('t5');
+      await ownPin('t6');
+      await manager.reconcile();
+      expect(manager.debugInFlight, {'t1', 't5'});
+      await removeOwnPinOfT1(); // t1 is held, no pass yet, its task runs
+
+      transport.send(wordOf('t1', TransferStatus.canceled));
+      await manager.settled();
+
+      expect(transport.active, isNot(contains(taskOf('t1'))),
+          reason:
+              'the place was handed to the next song while the held song still ran: one transfer over the limit');
+      expect(transport.maxActive, lessThanOrEqualTo(2));
+      expect(transport.active, {taskOf('t5'), taskOf('t6')});
+      expectHeldAndWaiting(await row('t1'));
+      expect(startOrder(), ['t1', 't2', 't5', 't6']);
+      expect(transport.deleted, isEmpty);
+    });
+
+    test(
         "N-39: the pass cancels a held song's transfer even when no song may be started now (off Wi-Fi)",
         () async {
       await stoppedAlbumWhileT1RunsOnItsOwnPin();
