@@ -14,13 +14,25 @@ second cannot see through a module it IS allowed to import, which is why the fir
 keeps the title the person saw, so no id disappears and there is no tombstone, no `ref_merge` row and no new feed (design part 8: the phone learns from the files feed it
 already reads, where `files_since` returns the CURRENT state of both refs).
 
-**Where it runs.** In the hourly library link (`scanner.link_library`), page by page, after the page's own link transaction has committed (a page's holders are read at
-the top of its link transaction and the scan re-attaches a file by the ref that holds it: judging first would let the scan add a second row for a file just moved).
-It cannot be a start-up step: `song_file.meta` holds no title or artist, the scan reads the tags anyway, and a start-up that waits for the music server is a start-up
-that does not start. A pass is **paced** (one write transaction per `CHUNK` songs judged and per `RELEASE_CHUNK` worklist rows released, never one for the library), **resumable** (each chunk
-commits; the worklist is emptied only by a COMPLETE pass, so a pass that stops, because the music server stopped answering or the process was killed, is simply done again,
-and one cut in the middle of the release is resumed by the next), **idempotent** (a second pass finds every file where its tags say) and **never stops the server or the scan**
-(a failure is one ERROR line and the link goes on without it).
+**Where it runs, and against what.** In the hourly library link (`scanner.link_library`). **The pages only NOTE the tags of the worklist's files; nothing is decided or
+written until the music server's whole listing has been read, linked (the scan's own transactions) and pruned, and then every file is judged against that ONE state** (second
+review round of PR #118, 22 Nov 2026). The adversarial tester proved that the first build decided page by page, each decision reading state that the same pass changes: (1) the
+last-file guard counted a row the prune removes later in the same pass, so a liked song kept its like and lost its only listed file to a move (audit probe 6: 28 of 1,500 random
+worlds); (2) a move FILLED the length or an id of the song it moved a file onto, and a sibling file of another length no longer fitted that song at the next pass: a hold only
+the rehome's own write made (seed 7073); (3) a file that arrived on a liked song freed that song's other wrong file only at the NEXT pass, and a song a move made named a
+nameless file by its id only at the next pass: a second pass that wrote again and took another copy of the database (22 of 500 worlds). One root, one fix: **what counts as a file
+the song keeps is what the listing of THIS pass leaves alive** (`link_listing.Listing.alive`: the music server lists its id, or the row was attached after the pass began, or it
+has no music server id: the same test `scanner._prune` removes rows by), **a move never writes the length or an id of a song that exists** (`refs.resolve_keeping_identity`),
+and **the stays that a move can lift are judged again in the same pass, round by round, until a round moves nothing** (below). It cannot be a start-up step: `song_file.meta`
+holds no title or artist, the scan reads the tags anyway, and a start-up that waits for the music server is a start-up that does not start. The costs, stated: a pass that stops
+early (the music server stopped answering, the process died) decides and writes nothing, so **a library whose listing never completes is never rehomed** (the worklist was
+already emptied only by a complete pass); and the pass keeps the tags of the worklist's files in memory until the listing is complete (about 330 bytes a file: 67 MB more than the 130 MB `begin()` already holds, 197 MB in all, at 200,000 worklist files, measured; a real worklist is the damaged refs only, thousands).
+
+A pass is **paced** (one write transaction per `CHUNK` moves applied and per `RELEASE_CHUNK` worklist rows released, never one for the library), **resumable** (each chunk
+commits; a pass killed between two chunks is finished by the next, which judges what the chunks left, and **ends where the uncut pass ends** because a move writes nothing a
+later decision reads; the worklist is emptied only by a COMPLETE pass), **idempotent** (a second pass over an unchanged catalogue writes nothing and takes no copy of the
+database, proved on seeded random worlds by `tests/test_rehome_worlds.py`; the outcome does not depend on the page size or the order of the listing either) and **never stops the
+server or the scan** (a failure is one ERROR line and the link goes on without it).
 
 **What is judged.** Every library row of a worklist ref (not only the one the scan's holder rule finds, which is the oldest row): a keeper's file (source `youtube` or
 `quality`) is never judged, because the keeper attached it on purpose for the ref's own description. The row is judged by the tags of the song the pass reads, in this
@@ -38,10 +50,13 @@ order:
    kept its like and had no file, and R and X share no file, so `refmerge` never folds them: permanent for the person who liked R. The length is left out of the second test on
    purpose (a length filled in later must not decide): the cost is that a longer cut of one song on one ref cannot be told apart and stays too.
 3. **Is it the LAST file of a song a person owns?** (`ref_janitor.owned_by_people`: the janitor's own `POINTERS` without the files.) A like, an entry or a play on a song with no file
-   is worse than one on a song with the wrong file, and nothing would ever put it right, so it STAYS, its ref stays on the worklist, one line says why. Asked inside the write
-   transaction, after the earlier moves of the same chunk (the second of two moves stays). A song nobody owns moves its last file (the janitor retires it later).
-4. **Otherwise it MOVES** (the tags name another song and this ref does not fit them): to the ref the tags name (an existing song) or to a new one (`refs.resolve` makes it, exactly
-   as a fresh scan would). The row moves with its id, `added_at`, `meta` and `source` (a delete and a re-attach would lose them and open a window in which the feed says
+   is worse than one on a song with the wrong file, and nothing would ever put it right, so it STAYS, its ref stays on the worklist, one line says why. **"Another file" is a file
+   the listing of this pass leaves alive** (`Listing.alive`): a row the prune removes in this pass is no file the song keeps (audit probe 6). Asked inside the write transaction,
+   after the earlier moves of the same chunk (the second of two moves stays), and again in the next round when a file has arrived on the song. A song nobody owns moves its last file
+   (the janitor retires it later).
+4. **Otherwise it MOVES** (the tags name another song and this ref does not fit them): to the ref the tags name (an existing song) or to a new one (`refs.resolve_keeping_identity`
+   makes it, as a fresh scan would, except that **a song that exists keeps its length and its ids**: they are what the next file is judged by; the rest of the file's description,
+   an album, a year, a track number, still fills a gap, and a song a move MAKES is described in full by its own file). The row moves with its id, `added_at`, `meta` and `source` (a delete and a re-attach would lose them and open a window in which the feed says
    `file: null` and a phone could drop a download); if the target already holds the same file (the keeper's row), the wrong holder's row is dropped and the target's stays; one
    preferred file per ref is restored on both (`refs.ensure_one_preferred`, the newest row when there is none or several; **at the end of the pass the old song prefers a file
    judged KEPT or a keeper's, never one that stayed only because nobody could judge it**: read from `ref_recheck.moved`, committed with each move); `refs.touch_file` and
@@ -50,6 +65,13 @@ order:
    never read as another song. When no id names another ref the file stays (an untagged Arabic file stays on its own ref).
 6. **A file whose tags give no usable title and artist** is not judged and stays (counted in the log). The music server LISTS it, so it is not gone: the prune keeps its row
    (`scanner._prune` removes the rows of files the listing lacks), also on the real hourly pass.
+
+**Rounds.** The verdicts of a round are all read from the same state (the database after the scan of this pass and its prune, plus the moves of the rounds before); the
+moves of the round are applied oldest file first, in chunks, each move judged again inside its write transaction. Only two stays are judged again in the next round, because a
+move of the same pass can lift them: the last file of a song a person owns (a file has arrived on the song), and a file with the placeholder artist whose id now names a song (a
+song a move made carries the id of its own file). Every other verdict is final: a move cannot make a file that fits its song stop fitting it, and cannot give a file with no tags
+any. A file moves at most once in a pass, so the rounds end (at most as many as files plus one; typically two; `MAX_ROUNDS` is the second layer, with an ERROR line and the next
+pass goes on).
 
 **A file that could not be judged, or safely moved, keeps its ref ON the worklist** (points 2, 3, 5 and 6, and the unseen file below): the ref's files may belong to other songs and
 nobody could check, and merging identities on a file nobody could verify is exactly what the `recheck_pending` hold of `refmerge` exists to stop. The cost, stated: such a ref stays on
@@ -63,8 +85,9 @@ files and why.
 **The worklist and the hold.** At the end of a COMPLETE pass, a worklist ref is released (its row deleted) when every library row it holds was DECIDED (kept, or
 re-pointed elsewhere) or is gone (a file the listing does not have was pruned by the same pass). A pass that only adds (`prune=False`, the one after a scan) cannot say a file is
 gone: a ref with a file it could not see stays on the worklist, with a line that says so, and the hourly pass that prunes finishes the job; a ref with a file it could not judge
-stays too. **The release is paced**: `RELEASE_CHUNK` rows per write transaction (200,000 refs in ONE held the write lock for 1.1 s, measured on a quiet machine, 3.0 s on a busy one; now at most
-6 ms, 400 times; the price: the whole release takes 6.7 s instead of 1.2 s, because every transaction opens its own connection), each read inside its transaction. **The merge it owes is a durable debt** (`MERGE_PENDING_SETTING`), written in the SAME transaction as the first release, cleared only when
+stays too. **The release is paced**: `RELEASE_CHUNK` rows per write transaction (`docs/18` has the measured figures, 200,000 synthetic refs, three runs on a machine that was NOT quiet: ONE
+transaction held the write lock for 4.7 s; a chunk of 500 holds it for a median of about 20 ms with its commit and at most 0.3 s, 400 times; the price: the whole release takes
+17 to 19 s instead of 5 s there (on a quiet machine 3.9 s, the lead's run, instead of 1.2 s, the first round's), because every transaction opens its own connection), each read inside its transaction. **The merge it owes is a durable debt** (`MERGE_PENDING_SETTING`), written in the SAME transaction as the first release, cleared only when
 `refmerge.repair` ran and did not fail: the pairs it held for `recheck_pending` are judged by the normal rules at the end of the pass, and when it failed, or the process died, or the
 worklist was already empty, the NEXT pass of the library link pays it (`pay_merge_debt`, from `idle` when there is no worklist), not only the next restart. **`refmerge.repair` was
 written for the start-up, before any thread; it now also runs with live threads.** That is safe because it is one `BEGIN IMMEDIATE` transaction (every other writer waits for it) and
@@ -519,10 +542,10 @@ class Rehome:
                 self._where(),
                 exc=True,
             )
+        self._account()  # what the pass did, counted also when it failed after some chunks had committed
         if report.failed:
             self._summary()
             return report
-        self._account()
         kept_back: list[tuple[str, int, int]] = []
         for start in range(0, len(self._listed), RELEASE_CHUNK):
             part = self._listed[start : start + RELEASE_CHUNK]

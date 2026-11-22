@@ -447,7 +447,9 @@ def resolve(
 def resolve_keeping_identity(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
     """[resolve] for a caller whose NEXT decision reads the length and the ids of a ref (`IDENTITY_COLUMNS`): a ref that is FOUND keeps them whatever the description says,
     and every other gap still fills; a ref that is MADE is described in full (it cannot disagree with anything). The rehome of P2-25 slice 4 re-points a file onto a song with
-    this, so that the move does not change what the next file of the same pass is judged by (`rehome.py`)."""
+    this, so that the move does not change what the next file of the same pass is judged by (`rehome.py`).
+    STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): its only caller is the rehome; it goes with it (N-36), and `IDENTITY_COLUMNS`, the `fill_identity` switch of `_enrich`
+    and `_resolve`, and the `alive` filter of `ensure_one_preferred` with it."""
     return _resolve(conn, raw, None, None, fill_identity=False)
 
 

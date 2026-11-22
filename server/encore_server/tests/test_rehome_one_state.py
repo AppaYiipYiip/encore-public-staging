@@ -26,7 +26,9 @@ import pytest
 
 from encore_server import refs, rehome
 from encore_server.db import Database
-from encore_server.scanner import link_library
+from encore_server.ids import now_ms
+from encore_server.link_listing import Listing
+from encore_server.scanner import described, link_library
 from tests.test_rehome import (
     DUP,
     LOG,
@@ -165,6 +167,131 @@ def test_the_preferred_file_is_never_one_the_listing_lacks_in_a_pass_that_only_a
     assert preferred == ["nd-1"], "the file the song plays is one the music server lists"
 
 
+def test_a_pass_that_finishes_what_a_killed_one_began_never_prefers_a_keepers_row_the_listing_lacks(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`_prefer_a_decided_file` runs for a song that lost a file to an EARLIER pass (`ref_recheck.moved`). A keeper's row is 'decided' by its source, so only the listing can say
+    that this one (not listed, in a pass that only adds: the row is still there) is gone: the song must not play it."""
+    third = rid("sr", 4)
+    kept = song("nd-1", *K1)
+    nameless = song("nd-2", K1[0], "[Unknown Artist]")
+    keeper_row = song("nd-3", *K1)
+    moving = song("nd-4", *K2)
+    second_move = song("nd-5", *K4)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, song=kept)
+        add_file(c, SELF, "nd-2", added_at=200, song=nameless)
+        add_file(c, SELF, "nd-3", source="youtube", added_at=300, song=keeper_row)
+        add_file(c, SELF, "nd-4", added_at=400, preferred=1, song=moving)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+        add_ref(c, third, K3[0], [K3[1]], old=False, duration_ms=200_000)
+        add_file(c, third, "nd-5", added_at=500, song=second_move)
+        add_ref(c, rid("sr", 5), K4[0], [K4[1]], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF, third)
+    songs = [kept, nameless, moving, second_move]  # the keeper's row nd-3 is not listed
+    monkeypatch.setattr(rehome, "CHUNK", 1)
+    real = rehome.Rehome._move  # noqa: SLF001
+    calls: list[str] = []
+
+    def dying(self: rehome.Rehome, conn: sqlite3.Connection, file_id: str, ref: str, described_: dict[str, Any] | None) -> Any:
+        calls.append(file_id)
+        if len(calls) == 2:
+            raise RuntimeError("the process was killed here")
+        return real(self, conn, file_id, ref, described_)
+
+    monkeypatch.setattr(rehome.Rehome, "_move", dying)
+    link_library(db, Music(songs), prune=False)
+    monkeypatch.undo()
+    assert files(db)["nd-4"] == (OTHER,) and files(db)["nd-5"] == (third,)
+
+    link_library(db, Music(songs), prune=False)
+
+    with db.read() as conn:
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert preferred == ["nd-1"]
+
+
+def test_the_target_of_a_move_prefers_a_file_the_listing_has_in_a_pass_that_only_adds(db: Database) -> None:
+    """The same rule for the song a file ARRIVES on: it holds the row u (newest, not listed, prefers nothing yet) and the file that moves onto it is older. The rule of
+    `ensure_one_preferred` (the newest when none is preferred) chose u, a row the next pass that prunes removes: the song would have played a file that is not there."""
+    moving = song("nd-1", *K1)
+    unlisted = song("nd-3", *K1)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-3", added_at=900, preferred=0, song=unlisted)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+        add_file(c, OTHER, "nd-1", added_at=100, song=moving)
+
+    make_world(db, build)
+    listed(db, OTHER)
+
+    link_library(db, Music([moving]), prune=False)
+
+    assert files(db)["nd-1"] == (SELF,)
+    with db.read() as conn:
+        preferred = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert preferred == ["nd-1"]
+
+
+@pytest.mark.parametrize("other_file", ["no music server id", "attached after the pass began"])
+def test_a_file_with_no_music_server_id_or_attached_since_the_pass_began_is_a_file_the_song_keeps(
+    db: Database, other_file: str
+) -> None:
+    """The prune leaves these rows alone, so the song keeps them: nd-1 is NOT its last file and moves. (Counting only the ids the listing holds would call them gone.)"""
+    wrong = song("nd-1", *K2)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, song=wrong)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+        own(c, "like", SELF)
+        c.execute(
+            "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta) VALUES (?,?,?,?,?,?,?,?,?,NULL)",
+            (
+                "sf_keeper",
+                SELF,
+                None if other_file == "no music server id" else "nd-9",
+                "Encore/keeper.opus",
+                "opus",
+                128,
+                "youtube",
+                0,
+                100 if other_file == "no music server id" else now_ms() + 3_600_000,
+            ),
+        )
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    report = link_library(db, Music([wrong]))
+
+    assert files(db)["nd-1"] == (OTHER,), "the song keeps the keeper's file, so the wrong one may go"
+    assert report.rehome is not None and report.rehome.moved == 1 and report.rehome.stayed_last_file == 0
+
+
+def test_a_listing_says_which_rows_are_alive() -> None:
+    """The one definition (`link_listing.Listing.alive`): the music server lists the id, or the row was attached after the pass began, or it has no music server id."""
+    listing_ = Listing.of([{"id": "nd-1"}, {"id": ""}, {"title": "no id"}], began=1000)
+    assert listing_.complete and listing_.seen == {"nd-1"}
+    assert listing_.alive("nd-1", 5) is True, "listed"
+    assert listing_.alive("nd-2", 5) is False, "not listed, and older than the pass: gone"
+    assert listing_.alive("nd-2", 1000) is True and listing_.alive("nd-2", 5000) is True, (
+        "attached since the pass began: the prune leaves it alone"
+    )
+    assert listing_.alive(None, 5) is True, "no music server id: the prune cannot remove it"
+
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
 # SEED 7073: the rehome never writes what the next decision reads (a ref's length and ids)
 
@@ -240,7 +367,9 @@ def test_a_pass_killed_between_two_chunks_of_moves_then_resumed_ends_where_the_u
     killed = link_library(db, Music(listing_))
     monkeypatch.undo()
 
-    assert killed.rehome is None or killed.rehome.failed
+    assert killed.rehome is not None and killed.rehome.failed and killed.rehome.moved == 1, (
+        "the report counts the chunk that committed"
+    )
     assert worklist(db) == {SELF, OTHER, rid("sr", 4)}, "a pass that failed released nothing"
     link_library(db, Music(listing_))
 
@@ -309,6 +438,56 @@ def test_two_files_that_move_to_the_same_new_song_make_one_song_and_the_report_c
 
     assert report.rehome is not None and report.rehome.moved == 2 and report.rehome.new_refs == 1
     assert files(db)["nd-1"] == files(db)["nd-2"]
+
+
+def test_which_of_two_wrong_files_of_an_owned_song_stays_does_not_depend_on_the_order_of_the_listing(tmp_path: Any) -> None:
+    """Two wrong files on a liked song that holds nothing else: one of them goes, the other is then the LAST file and stays. It is always the same one (the OLDEST goes: the
+    pass judges oldest first, whatever the order the music server lists them in)."""
+    outcomes = []
+    for n, order in enumerate((("nd-1", "nd-2"), ("nd-2", "nd-1"))):
+        db = Database(tmp_path / f"o{n}" / "encore.db")
+        db.migrate()
+        first, second = song("nd-1", *K2), song("nd-2", *K4)
+        z1, z2 = rid("sr", 4), rid("sr", 5)
+
+        def build(
+            c: sqlite3.Connection, first: dict[str, Any] = first, second: dict[str, Any] = second, z1: str = z1, z2: str = z2
+        ) -> None:
+            add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+            add_file(c, SELF, "nd-1", added_at=100, song=first)
+            add_file(c, SELF, "nd-2", added_at=200, song=second)
+            add_ref(c, z1, K2[0], [K2[1]], old=False, duration_ms=200_000)
+            add_ref(c, z2, K4[0], [K4[1]], old=False, duration_ms=200_000)
+            own(c, "like", SELF)
+
+        make_world(db, build)
+        listed(db, SELF)
+        by_id = {"nd-1": first, "nd-2": second}
+        link_library(db, Music([by_id[nd] for nd in order]))
+        outcomes.append(files(db))
+    assert outcomes[0] == outcomes[1] == {"nd-1": (rid("sr", 4),), "nd-2": (SELF,)}
+
+
+def test_the_rehome_refuses_to_decide_on_a_listing_that_is_not_complete(db: Database) -> None:
+    """The verdict of a file depends on the files the music server lists in the REST of the pass, so `finish` on a listing the pass did not finish reading is a mistake of the
+    caller, not a pass: it raises and writes nothing."""
+    tags = song("nd-1", *K2)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF)
+    work = rehome.begin(db, described, Listing(began=now_ms()))
+    assert work is not None
+    work.page([tags])
+
+    with pytest.raises(RuntimeError, match="not complete"):
+        work.finish()
+
+    assert files(db) == {"nd-1": (SELF,)} and worklist(db) == {SELF} and copies(db) == []
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
