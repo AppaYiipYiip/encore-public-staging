@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Any
 
 from . import missing
@@ -379,18 +379,32 @@ def facts_to_fill(
     return updates
 
 
+#: The columns `candidates` finds a ref by: its length (the name tier compares it) and its three ids. A description may fill them like any other gap (a scan, a phone), but
+#: a caller whose NEXT decision reads them must not write them itself (`resolve_keeping_identity`, the rehome).
+IDENTITY_COLUMNS = ("duration_ms", "isrc", "deezer_id", "ytm_video_id")
+
+
 def _enrich(
-    conn: sqlite3.Connection, row: sqlite3.Row, item: dict[str, Any], basis: str | None = None, uploader: str | None = None
+    conn: sqlite3.Connection,
+    row: sqlite3.Row,
+    item: dict[str, Any],
+    basis: str | None = None,
+    uploader: str | None = None,
+    *,
+    fill_identity: bool = True,
 ) -> sqlite3.Row:
     """What the ref lacked and this description knows is added (an id another ref already owns is never taken from it). The artist, the title and the
-    key are never rewritten (identity: likes, playlists and the kept file point at the ref); the facts only fill (`facts_to_fill`)."""
+    key are never rewritten (identity: likes, playlists and the kept file point at the ref); the facts only fill (`facts_to_fill`). With [fill_identity] off the length and the
+    ids (`IDENTITY_COLUMNS`) are left as they are: the rest still fills."""
     updates: dict[str, Any] = {}
     for column in ("album", "album_artist", "track_no", "disc_no", "year", "duration_ms", "mbid", "cover_url", "thumb_url"):
+        if column in IDENTITY_COLUMNS and not fill_identity:
+            continue
         if row[column] is None and item[column] is not None:
             if column == "album" and is_placeholder_album(item[column]):
                 continue  # "[Unknown Album]" says there is no album: a ref without one stays without (N-11)
             updates[column] = item[column]
-    for column in ("isrc", "deezer_id", "ytm_video_id"):
+    for column in ("isrc", "deezer_id", "ytm_video_id") if fill_identity else ():
         value = item[column]
         if value and row[column] is None:
             taken = conn.execute(f"SELECT 1 FROM song_ref WHERE {column} = ?", (value,)).fetchone()  # noqa: S608 - fixed column names
@@ -427,6 +441,19 @@ def resolve(
     [artist_basis] and [uploader] are how the importer read an upload (N-26, `imports/uploads.py`): see `artist_basis.py`. They are keyword arguments, **never
     part of the description** (`parse_item` is shared with phones: a client cannot mark itself `declared`). A new ref stores them; a ref found keeps its
     artist, title and key and takes a missing fact only by the rule of [facts_to_fill]. A basis nobody knows is a mistake of the importer and is refused."""
+    return _resolve(conn, raw, artist_basis, uploader, fill_identity=True)
+
+
+def resolve_keeping_identity(conn: sqlite3.Connection, raw: object) -> dict[str, Any]:
+    """[resolve] for a caller whose NEXT decision reads the length and the ids of a ref (`IDENTITY_COLUMNS`): a ref that is FOUND keeps them whatever the description says,
+    and every other gap still fills; a ref that is MADE is described in full (it cannot disagree with anything). The rehome of P2-25 slice 4 re-points a file onto a song with
+    this, so that the move does not change what the next file of the same pass is judged by (`rehome.py`)."""
+    return _resolve(conn, raw, None, None, fill_identity=False)
+
+
+def _resolve(
+    conn: sqlite3.Connection, raw: object, artist_basis: str | None, uploader: str | None, *, fill_identity: bool
+) -> dict[str, Any]:
     if artist_basis is not None and not is_known_basis(artist_basis):
         raise ValueError(f"unknown artist basis {artist_basis!r}; one of {', '.join(BASES)}")
     item = parse_item(raw)
@@ -467,7 +494,7 @@ def resolve(
         )
         row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
     else:
-        row = _enrich(conn, row, item, artist_basis, cleaned_uploader)
+        row = _enrich(conn, row, item, artist_basis, cleaned_uploader, fill_identity=fill_identity)
     return row_to_ref(conn, row)
 
 
@@ -576,12 +603,19 @@ def file_holders(conn: sqlite3.Connection, song_ids: Sequence[str]) -> dict[str,
     return holders
 
 
-def ensure_one_preferred(conn: sqlite3.Connection, ref_id: str) -> None:
+def ensure_one_preferred(
+    conn: sqlite3.Connection, ref_id: str, *, alive: Callable[[str | None, int], bool] | None = None
+) -> None:
     """A ref that holds any file has exactly ONE preferred one: the one it has, or the newest when it has none or several (the rule of a merge, `refmerge`, and of a
-    file that moves to another song, `rehome`). A ref with no file is left alone."""
+    file that moves to another song, `rehome`). A ref with no file is left alone. With [alive] (`link_listing.Listing.alive`: the music server's id and when the row was
+    added) only the files that pass the test are chosen from, so a pass that only adds never makes the song play a row the next pass that prunes removes; a ref with
+    no such file is left alone too."""
     rows = conn.execute(
-        "SELECT id, preferred FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC", (ref_id,)
+        "SELECT id, preferred, navidrome_song_id, added_at FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC",
+        (ref_id,),
     ).fetchall()
+    if alive is not None:
+        rows = [row for row in rows if alive(row["navidrome_song_id"], row["added_at"])]
     if rows and sum(row["preferred"] for row in rows) != 1:
         conn.execute("UPDATE song_file SET preferred = (id = ?) WHERE ref = ?", (rows[0]["id"], ref_id))
 

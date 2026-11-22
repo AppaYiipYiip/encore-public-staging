@@ -99,6 +99,7 @@ from . import library, refmerge, refs, repair_copy, textnorm
 from .db import Database
 from .errors import ApiError
 from .ids import now_ms
+from .link_listing import Listing
 from .ref_janitor import owned_by_people
 
 log = logging.getLogger("encore_server.rehome")
@@ -111,19 +112,68 @@ BACKUP_USED_SETTING = "rehome_backup_used"
 #: The merge repair this repair OWES: written in the same transaction as the first release of a worklist ref (the pairs `refmerge` held for it have not been judged by the
 #: normal rules yet), cleared only when `refmerge.repair` ran and did not fail. It is what lets the retry survive a restart, an unfinished pass and a failed repair.
 MERGE_PENDING_SETTING = "rehome_merge_owed"
-#: How many songs one write transaction judges at most: a pass over a library that collapsed on thousands of refs holds the database for a short time, many times.
+#: How many moves one write transaction applies at most: a pass over a library that collapsed on thousands of refs holds the database for a short time, many times.
 CHUNK = 100
-#: How many worklist rows one write transaction releases at most (each is read inside the transaction): a pass over 200,000 refs holds the write lock for at most 6 ms, 400 times,
-#: and not for 1.1 s once (3.0 s on a busy machine); the whole release takes 6.7 s instead of 1.2 s (measured, PR #118).
+#: How many worklist rows one write transaction releases at most (each is read inside the transaction): a pass over 200,000 refs holds the write lock for the time of one
+#: chunk, 500 rows, and not for the whole release at once (`docs/18`, "the rehome", has the measured figures).
 RELEASE_CHUNK = 500
+#: The rounds of one pass (see `Rehome._decide_and_apply`) end by themselves: a file moves at most once in a pass, so there are at most as many rounds as files plus one, and in
+#: practice two or three. This is the second layer: a pass that reaches it says so, writes what it has, and the next pass goes on.
+MAX_ROUNDS = 25
 #: How many moves, and how many stays, are written out one by one (each kind has its own budget); the rest are counted.
 _LOG_MOVES = 20
 
 _KEEP, _MOVE, _STAY_UNTAGGED, _STAY_NAMELESS = "keep", "move", "untagged", "nameless"
 #: The two stays of the review round (20 Nov 2026): the file's own ref fits its tags as well, or the ref is a person's and this is its last file.
 _STAY_AMBIGUOUS, _STAY_LAST_FILE = "ambiguous", "last_file"
+#: The row was not where the pass read it (another writer moved or removed it in between).
+_CHANGED = "changed"
 #: Every verdict that leaves the file where it is because nobody could decide: the ref STAYS on the worklist for each of them.
 _UNDECIDED = (_STAY_UNTAGGED, _STAY_NAMELESS, _STAY_AMBIGUOUS, _STAY_LAST_FILE)
+#: The two stays that a move of the same pass can lift (a file arrives on the song; a song that did not exist is made and carries the id): they are judged again in the next
+#: round. Every other verdict is final: a move cannot make a file that fits its song stop fitting it, nor give a file with no tags any.
+_JUDGED_AGAIN = (_STAY_NAMELESS, _STAY_LAST_FILE)
+
+
+@dataclass(frozen=True)
+class Hold:
+    """Why a song stays on the worklist although its files were all judged, and what lets it go. **The ONE table**: the log line of the pass, the audit's FAIL line
+    (`rekey_audit`) and the tests that pin them read it, so no sentence can say what the table does not; `docs/18` and the text of this module give the same table in
+    prose."""
+
+    kind: str
+    why: str
+    frees: str
+    #: Does tagging the file (giving it a title and an artist, or an id) free the song? (Checked against the behaviour by `tests/test_rehome_held_text.py`.)
+    tagging_frees: bool
+
+
+HOLDS: tuple[Hold, ...] = (
+    Hold(_STAY_UNTAGGED, "a file with no usable tags", "the Host tags the file or removes it", True),
+    Hold(
+        _STAY_NAMELESS,
+        "a file with the placeholder artist and no id",
+        "the Host tags the file (an artist name, or an id) or removes it",
+        True,
+    ),
+    Hold(
+        _STAY_AMBIGUOUS,
+        "a song that fits the file's tags as well as another song (or has the same name with another length)",
+        "the file is removed, or the id is taken out of its tags, or the song's stored length is corrected; the tags are already right, so tagging cannot help",
+        False,
+    ),
+    Hold(
+        _STAY_LAST_FILE,
+        "the last file of a song a person owns",
+        "the song gains another file (the next pass then moves the wrong one) or nobody owns it any more; tagging cannot help",
+        False,
+    ),
+)
+
+
+def what_frees() -> str:
+    """The sentence the log of the pass and the audit say of a song that stays held, built from [HOLDS]: for each reason, what lets the song go."""
+    return "; ".join(f"{hold.why}: {hold.frees}" for hold in HOLDS)
 
 
 @dataclass
@@ -152,6 +202,8 @@ class Report:
     held_undecided: int = 0
     #: Worklist rows of refs that no longer exist.
     gone: int = 0
+    #: How many times the pass read the verdicts of the files a move can lift a stay of (at least one: every file is judged once).
+    rounds: int = 0
     failed: bool = False
     #: The copy this pass relied on; `None` when nothing moved.
     backup: Path | None = None
@@ -167,13 +219,16 @@ class _Verdict:
 
 @dataclass(frozen=True)
 class _Moved:
-    """What `Rehome._move` did with one row, judged again inside the write transaction: `kind` is a verdict kind (`_MOVE`, or the one that kept the file after all)."""
+    """What became of one file: `kind` is a verdict kind (`_MOVE`, or the one that kept the file; `_CHANGED` for a row that was not where the pass read it). For a move the
+    song it went to, whether that song was made by it, and whether the row was dropped because the song already held the file."""
 
     kind: str
     target: str = ""
     created: bool = False
     dropped: bool = False
     answers: tuple[str, ...] = ()
+    #: The song the file was on when it was judged (for the log).
+    origin: str = ""
 
 
 Describe = Callable[[dict[str, Any]], dict[str, Any] | None]
@@ -192,16 +247,17 @@ def _copy_for_this_pass(db: Database) -> Path:
     )
 
 
-def begin(db: Database, describe: Describe) -> Rehome | None:
+def begin(db: Database, describe: Describe, listing: Listing) -> Rehome | None:
     """The judge of one library pass, or `None` when the worklist is empty (every install after the repair and every new library: the pass costs one query).
-    [describe] is `scanner.described` (given, not imported: the scanner imports this module)."""
+    [describe] is `scanner.described` (given, not imported: the scanner imports this module). [listing] is what the pass reads (`link_listing.Listing`): it is REQUIRED, because
+    what counts as a file the song keeps is the listing's call and a default that counted every row would bring back the stranded like of audit probe 6."""
     textnorm.require_pinned_unicode()
     with db.read() as conn:
         listed = [row["ref"] for row in conn.execute("SELECT ref FROM ref_recheck ORDER BY ref")]
         if not listed:
             return None
         rows = conn.execute(
-            "SELECT id, ref, navidrome_song_id FROM song_file WHERE source = 'library' AND navidrome_song_id IS NOT NULL"
+            "SELECT id, ref, navidrome_song_id, added_at FROM song_file WHERE source = 'library' AND navidrome_song_id IS NOT NULL"
             " AND ref IN (SELECT ref FROM ref_recheck)"
         ).fetchall()
     log.info(
@@ -209,57 +265,54 @@ def begin(db: Database, describe: Describe) -> Rehome | None:
         len(listed),
         len(rows),
     )
-    return Rehome(db, describe, listed, rows, began=now_ms())
+    return Rehome(db, describe, listed, rows, listing)
 
 
 class Rehome:
-    """One library pass's judge: [page] for every page of the music server's songs (after the page was linked), then [finish] at the end of a complete pass."""
+    """One library pass's judge: [page] for every page of the music server's songs (it only notes what the listing says), then [finish] at the end of a COMPLETE pass (it
+    decides, moves and releases)."""
 
-    def __init__(self, db: Database, describe: Describe, listed: list[str], rows: Sequence[sqlite3.Row], *, began: int) -> None:
+    def __init__(
+        self, db: Database, describe: Describe, listed: list[str], rows: Sequence[sqlite3.Row], listing: Listing
+    ) -> None:
         self._db = db
         self._describe = describe
         self._listed = listed
-        self._began = began
+        self._listing = listing
+        self._began = listing.began
         #: The library rows of the worklist refs as they were when the pass began: `{music server id: [(file row id, ref)]}` (two refs may hold one file).
         self._by_nd: dict[str, list[tuple[str, str]]] = {}
+        #: When each of those rows was added: the order the pass judges them in (the oldest first), which is the same whatever the order of the listing.
+        self._added: dict[str, int] = {}
         for row in rows:
             self._by_nd.setdefault(row["navidrome_song_id"], []).append((row["id"], row["ref"]))
+            self._added[row["id"]] = row["added_at"]
+        #: What the listing said of each worklist file, in the scan's words (`described`, `None` for tags nobody can use): `{file row id: (the ref it is on, its tags)}`. Held in
+        #: memory until the listing is complete (about the size of one song's tags per worklist file, measured in docs/18).
+        self._tags: dict[str, tuple[str, dict[str, Any] | None]] = {}
+        #: What became of each worklist file the pass judged.
+        self._outcome: dict[str, _Moved] = {}
         self._judged: set[str] = set()
-        #: The files whose tags could not decide anything (no usable tags, or no artist name and no id): they stay where they are and their ref stays on the worklist.
+        #: The files whose tags could not decide anything (no usable tags, no artist name and no id, a song that fits as well, the last file of a song somebody owns): they
+        #: stay where they are and their ref stays on the worklist.
         self._undecided: set[str] = set()
         self._copy: Path | None = None
         self._logged = 0
-        self._logged_stays = 0
+        self._stays_logged = 0
         self.report = Report()
 
     # ------------------------------------------------------------------------------------------------------------------ a page
 
     def page(self, songs: Sequence[dict[str, Any]]) -> None:
-        """Judges the worklist files among these songs. Never raises: a failure is one ERROR line, the rest of the pass is skipped and the worklist is kept."""
-        if self.report.failed or not self._by_nd:
+        """Notes what the music server says of the worklist files among these songs. **It decides nothing and writes nothing**: the verdict of a file depends on the files the
+        music server lists in the REST of the pass (the last-file guard counts only the files the listing has) and on the state the scan leaves, so it waits for the whole
+        listing (`finish`). A pass that stops early therefore decides nothing and writes nothing."""
+        if not self._by_nd:
             return
-        wanted: list[tuple[str, str, dict[str, Any]]] = []
         for song in songs:
             for file_id, ref in self._by_nd.get(str(song.get("id") or ""), ()):
-                if file_id not in self._judged:
-                    wanted.append((file_id, ref, song))
-        for start in range(0, len(wanted), CHUNK):
-            try:
-                self._chunk(wanted[start : start + CHUNK])
-            except repair_copy.CopyMissing as missing:  # nothing was written: the transaction rolled back before its first write
-                self._fail(
-                    "REFUSED and changed nothing: the copy of the database it was to rely on (%s) is not there, or is not a database, at the moment of writing, and a pass "
-                    "that cannot be undone from a copy does not run (the worklist is kept, and the next pass takes a new copy)",
-                    missing,
-                )
-                return
-            except Exception:  # noqa: BLE001 - the library link must go on whatever happens here; the chunk rolled back, the copy is kept
-                self._fail(
-                    "FAILED; the chunk it was in changed nothing and the worklist is kept (it is tried again at the next pass)%s",
-                    self._where(),
-                    exc=True,
-                )
-                return
+                if file_id not in self._tags:
+                    self._tags[file_id] = (ref, self._describe(song))
 
     def _where(self) -> str:
         return f"; the copy taken before it is {self._copy}" if self._copy else ""
@@ -268,89 +321,60 @@ class Rehome:
         self.report.failed = True
         log.error("rehome " + message, *args, exc_info=exc)
 
-    def _chunk(self, wanted: list[tuple[str, str, dict[str, Any]]]) -> None:
+    # ------------------------------------------------------------------------------------------------------------------ the decisions
+
+    def _decide_and_apply(self) -> None:
+        """Judges every worklist file the listing showed against ONE state, applies the moves, and judges again the stays a move may have lifted, until a round moves nothing.
+
+        **Round by round**: the verdicts of a round are all read from the same state (the database after the scan of this pass and its prune, plus the moves of the rounds
+        before); the moves of the round are then applied in chunks, each move judged again inside its write transaction against the rows it sees (the second of two wrong
+        files of a song somebody owns stays). What a move changes is decided in the SAME pass: a file that arrives on a liked song frees that song's other wrong file; a song
+        a move makes carries the id of its file and names a nameless file of the same recording. The only stays that are judged again are those two kinds (`_JUDGED_AGAIN`):
+        a move cannot make a file that fits its song stop fitting it (the length and the ids of a song that exists are never written by a move, `refs.resolve_keeping_identity`), nor give a file with no tags any. A file moves at most once, so the rounds end; `MAX_ROUNDS` is the second layer."""
+        todo = sorted(self._tags, key=lambda file_id: (self._added[file_id], file_id))
+        rounds = 0
+        while todo:
+            if rounds >= MAX_ROUNDS:
+                log.error(
+                    "rehome: stopped after %d rounds (rehome.MAX_ROUNDS); what is not decided stays where it is, its songs stay on the worklist and the next pass goes on",
+                    rounds,
+                )
+                break
+            rounds += 1
+            moved = self._round(todo)
+            todo = [file_id for file_id in todo if self._outcome[file_id].kind in _JUDGED_AGAIN] if moved else []
+        self.report.rounds = rounds
+
+    def _round(self, todo: list[str]) -> int:
+        """One round over these files, oldest first: the number of files moved."""
         with self._db.read() as conn:
-            verdicts = [(file_id, ref, song, self._decide(conn, file_id, ref, song)) for file_id, ref, song in wanted]
-        moves = [(file_id, ref, song) for file_id, ref, song, verdict in verdicts if verdict.kind == _MOVE]
-        #: What each file of the chunk came to: the verdict of the read, and for the files that were judged again in the write transaction below, what that came to.
-        final: dict[str, _Moved | None] = {
-            file_id: _Moved(verdict.kind, answers=verdict.answers)
-            for file_id, _ref, _song, verdict in verdicts
-            if verdict.kind != _MOVE
-        }
-        if moves:
+            verdicts = {file_id: self._decide(conn, file_id, *self._tags[file_id]) for file_id in todo}
+        for file_id, verdict in verdicts.items():
+            if verdict.kind != _MOVE:
+                self._outcome[file_id] = _Moved(verdict.kind, answers=verdict.answers, origin=self._tags[file_id][0])
+        moves = [file_id for file_id in todo if verdicts[file_id].kind == _MOVE]
+        moved = 0
+        for start in range(0, len(moves), CHUNK):
             copy = self._copy_taken()
+            results: dict[str, _Moved] = {}
             with self._db.tx() as conn:
                 # The second layer: before the first write of this transaction, and so of every chunk.
                 repair_copy.require_copy(copy)
-                for file_id, ref, song in moves:
-                    final[file_id] = self._move(conn, file_id, ref, song)
-        # committed: now (and only now) the pass has done this much
-        report = self.report
-        refs_of = {file_id: ref for file_id, ref, _song, _verdict in verdicts}
-        for file_id, result in final.items():
-            if result is None:
-                report.changed += 1
-                continue
-            if result.kind == _MOVE:
-                report.moved += 1
-                report.new_refs += int(result.created)
-                report.dropped += int(result.dropped)
-                if self._logged < _LOG_MOVES:
-                    log.info("rehome: file %s of song %s now belongs to song %s", file_id, refs_of[file_id], result.target)
-                self._logged += 1
-                continue
-            report.kept += result.kind == _KEEP
-            report.stayed_nameless += result.kind == _STAY_NAMELESS
-            report.stayed_untagged += result.kind == _STAY_UNTAGGED
-            report.stayed_ambiguous += result.kind == _STAY_AMBIGUOUS
-            report.stayed_last_file += result.kind == _STAY_LAST_FILE
-            if result.kind in (_STAY_AMBIGUOUS, _STAY_LAST_FILE):
-                self._say_why_it_stays(file_id, refs_of[file_id], result)
-            if result.kind in _UNDECIDED:
-                self._undecided.add(file_id)
-        report.judged += len(verdicts)
-        self._judged.update(file_id for file_id, *_ in verdicts)
+                for file_id in moves[start : start + CHUNK]:
+                    ref, described = self._tags[file_id]
+                    results[file_id] = self._move(conn, file_id, ref, described)
+            # committed: now (and only now) the pass has done this much
+            self._outcome.update(results)
+            for file_id, result in results.items():
+                if result.kind == _MOVE:
+                    moved += 1
+                    if self._logged < _LOG_MOVES:
+                        log.info("rehome: file %s of song %s now belongs to song %s", file_id, result.origin, result.target)
+                    self._logged += 1
+        return moved
 
-    def _say_why_it_stays(self, file_id: str, ref: str, result: _Moved) -> None:
-        """ONE line for a file the pass leaves where it is for a reason a Host can act on (ids only: a title is a person's data); the first `_LOG_MOVES`, then a count."""
-        if self._logged_stays < _LOG_MOVES:
-            if result.kind == _STAY_LAST_FILE:
-                log.info(
-                    "rehome: file %s stays on song %s although the tags name another song: it is the last file of a song a person owns (a like, an entry, a play, a saved release "
-                    "or the queue), and a song with no file is worse than a song with the wrong one; the song stays on the worklist",
-                    file_id,
-                    ref,
-                )
-            elif result.answers:
-                log.info(
-                    "rehome: file %s stays on song %s: the tags name song %s, but song %s names it as well (its own id or name), and a wrong move is worse than none; the song "
-                    "stays on the worklist",
-                    file_id,
-                    ref,
-                    ", ".join(result.answers),
-                    ref,
-                )
-            else:
-                log.info(
-                    "rehome: file %s stays on song %s: its artist and title are the tags' and only its length differs (another recording of the song, or a length filled in "
-                    "later), and a wrong move is worse than none; the song stays on the worklist",
-                    file_id,
-                    ref,
-                )
-        self._logged_stays += 1
-
-    def _copy_taken(self) -> Path:
-        if self._copy is None:
-            self._copy = _copy_for_this_pass(self._db)
-            self.report.backup = self._copy
-        return self._copy
-
-    # ------------------------------------------------------------------------------------------------------------------ one file
-
-    def _decide(self, conn: sqlite3.Connection, file_id: str, ref: str, song: dict[str, Any]) -> _Verdict:
+    def _decide(self, conn: sqlite3.Connection, file_id: str, ref: str, described: dict[str, Any] | None) -> _Verdict:
         """Keep, move or leave this file of [ref], judged by the song's tags (see the module's text). A read; `_move` asks it again inside its write transaction."""
-        described = self._describe(song)
         if described is None:
             return _Verdict(_STAY_UNTAGGED)
         try:
@@ -367,23 +391,29 @@ class Rehome:
                 _STAY_AMBIGUOUS, answers=answers
             )  # the ref fits the tags too: the tags do not prove the file is in the wrong place
         # A song a person owns never loses its LAST file to a move: their like, entry or play would stay on a song with no file, and two songs that share no file are never
-        # merged, so nothing would ever put it right. Asked again inside the write transaction, after the earlier moves of the same chunk (the second of two files stays).
-        if conn.execute(
-            "SELECT 1 FROM song_file WHERE ref = ? AND id <> ? LIMIT 1", (ref, file_id)
-        ).fetchone() is None and owned_by_people(conn, ref):
+        # merged, so nothing would ever put it right. "Another file" is a file this pass keeps (`Listing.alive`: a row the prune of this pass removes is not one), asked
+        # again inside the write transaction, after the earlier moves of the same chunk (the second of two wrong files stays).
+        if not self._keeps_another_file(conn, ref, file_id) and owned_by_people(conn, ref):
             return _Verdict(_STAY_LAST_FILE)
         return _Verdict(_MOVE, described, answers)
 
-    def _move(self, conn: sqlite3.Connection, file_id: str, ref: str, song: dict[str, Any]) -> _Moved | None:
-        """Re-points one row, judged again against the state this transaction sees. `None`: the row is not where the pass read it."""
+    def _keeps_another_file(self, conn: sqlite3.Connection, ref: str, file_id: str) -> bool:
+        """Does [ref] hold a file other than [file_id] that this pass leaves alive?"""
+        return any(
+            self._listing.alive(row["navidrome_song_id"], row["added_at"])
+            for row in conn.execute("SELECT navidrome_song_id, added_at FROM song_file WHERE ref = ? AND id <> ?", (ref, file_id))
+        )
+
+    def _move(self, conn: sqlite3.Connection, file_id: str, ref: str, described: dict[str, Any] | None) -> _Moved:
+        """Re-points one row, judged again against the state this transaction sees. `_CHANGED`: the row is not where the pass read it."""
         row = conn.execute("SELECT id, ref, source, navidrome_song_id, path FROM song_file WHERE id = ?", (file_id,)).fetchone()
         if row is None or row["ref"] != ref or row["source"] != "library":
-            return None
-        verdict = self._decide(conn, file_id, ref, song)
+            return _Moved(_CHANGED, origin=ref)
+        verdict = self._decide(conn, file_id, ref, described)
         if verdict.kind != _MOVE or verdict.item is None:
-            return _Moved(verdict.kind, answers=verdict.answers)
-        # The ref the tags name, or a new one: what a fresh scan would have done.
-        target = str(refs.resolve(conn, verdict.item)["id"])
+            return _Moved(verdict.kind, answers=verdict.answers, origin=ref)
+        # The ref the tags name, or a new one: what a fresh scan would have done, except that a ref that exists keeps its length and its ids (what the next file is judged by).
+        target = str(refs.resolve_keeping_identity(conn, verdict.item)["id"])
         twin = conn.execute(
             "SELECT id FROM song_file WHERE ref = ? AND id <> ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
             (target, file_id, row["navidrome_song_id"], row["path"]),
@@ -392,29 +422,107 @@ class Rehome:
             conn.execute("DELETE FROM song_file WHERE id = ?", (file_id,))
         else:
             conn.execute("UPDATE song_file SET ref = ?, preferred = 0 WHERE id = ?", (target, file_id))
-        refs.ensure_one_preferred(conn, target)
-        refs.ensure_one_preferred(
-            conn, ref
-        )  # provisional for the old song: the end of the pass prefers a file judged kept (`_prefer_a_decided_file`)
+        refs.ensure_one_preferred(conn, target, alive=self._listing.alive)
+        # provisional for the old song: the end of the pass prefers a file judged kept (`_prefer_a_decided_file`)
+        refs.ensure_one_preferred(conn, ref, alive=self._listing.alive)
         # The server has a file of that song now: whatever was remembered about its absence is void.
         refs.clear_missing(conn, target)
         for touched in (ref, target):
             refs.touch_file(conn, touched)
             library.touch_ref_holders(conn, touched)
         conn.execute("UPDATE ref_recheck SET moved = moved + 1 WHERE ref = ?", (ref,))
-        return _Moved(_MOVE, target=target, created=not verdict.answers, dropped=twin is not None)
+        return _Moved(_MOVE, target=target, created=not verdict.answers, dropped=twin is not None, origin=ref)
+
+    def _account(self) -> None:
+        """What the pass came to, counted once per file from the final outcome of each (a stay of the first round that a later round moved is a move)."""
+        report = self.report
+        stays = 0
+        for file_id, result in self._outcome.items():
+            report.judged += 1
+            if result.kind == _MOVE:
+                report.moved += 1
+                report.new_refs += int(result.created)
+                report.dropped += int(result.dropped)
+                continue
+            report.kept += result.kind == _KEEP
+            report.stayed_nameless += result.kind == _STAY_NAMELESS
+            report.stayed_untagged += result.kind == _STAY_UNTAGGED
+            report.stayed_ambiguous += result.kind == _STAY_AMBIGUOUS
+            report.stayed_last_file += result.kind == _STAY_LAST_FILE
+            report.changed += result.kind == _CHANGED
+            if result.kind in (_STAY_AMBIGUOUS, _STAY_LAST_FILE):
+                self._say_why_it_stays(file_id, stays, result)
+                stays += 1
+            if result.kind in _UNDECIDED:
+                self._undecided.add(file_id)
+        self._judged = set(self._outcome)
+        self._stays_logged = stays
+
+    def _say_why_it_stays(self, file_id: str, number: int, result: _Moved) -> None:
+        """ONE line for a file the pass leaves where it is for a reason a Host can act on (ids only: a title is a person's data); the first `_LOG_MOVES`, then a count."""
+        if number >= _LOG_MOVES:
+            return
+        ref = result.origin
+        if result.kind == _STAY_LAST_FILE:
+            log.info(
+                "rehome: file %s stays on song %s although the tags name another song: it is the last file of a song a person owns (a like, an entry, a play, a saved release "
+                "or the queue), and a song with no file is worse than a song with the wrong one; the song stays on the worklist",
+                file_id,
+                ref,
+            )
+        elif result.answers:
+            log.info(
+                "rehome: file %s stays on song %s: the tags name song %s, but song %s names it as well (its own id or name), and a wrong move is worse than none; the song "
+                "stays on the worklist",
+                file_id,
+                ref,
+                ", ".join(result.answers),
+                ref,
+            )
+        else:
+            log.info(
+                "rehome: file %s stays on song %s: its artist and title are the tags' and only its length differs (another recording of the song, or a length filled in "
+                "later), and a wrong move is worse than none; the song stays on the worklist",
+                file_id,
+                ref,
+            )
+
+    def _copy_taken(self) -> Path:
+        if self._copy is None:
+            self._copy = _copy_for_this_pass(self._db)
+            self.report.backup = self._copy
+        return self._copy
 
     # ------------------------------------------------------------------------------------------------------------------ the end of a complete pass
 
     def finish(self, *, release: bool = True) -> Report:
-        """The end of a COMPLETE pass: the worklist rows of the refs whose every library file is judged or gone are deleted, `RELEASE_CHUNK` at a time (one write transaction
-        each, so the write lock is never held for the whole worklist; a pass cut between two chunks is resumed by the next one), and (with [release]) the pairs `refmerge`
-        held for them are judged by the normal rules now. **A pass that failed deletes nothing, spends nothing and merges nothing**: the worklist is emptied only by a
-        complete pass."""
+        """The end of a COMPLETE pass: **everything is decided here**, against the state the listing and the scan of this pass leave, then the worklist rows of the refs whose
+        every library file is judged or gone are deleted, `RELEASE_CHUNK` at a time (one write transaction each, so the write lock is never held for the whole worklist; a
+        pass cut between two chunks is resumed by the next one), and (with [release]) the pairs `refmerge` held for them are judged by the normal rules now. **A pass that failed
+        deletes nothing, spends nothing and merges nothing**: the worklist is emptied only by a complete pass."""
+        if not self._listing.complete:
+            raise RuntimeError(
+                "the rehome decides only after the whole listing of the music server has been read; this pass is not complete"
+            )
         report = self.report
+        try:
+            self._decide_and_apply()
+        except repair_copy.CopyMissing as missing:  # nothing was written: the transaction rolled back before its first write
+            self._fail(
+                "REFUSED and changed nothing in that chunk: the copy of the database it was to rely on (%s) is not there, or is not a database, at the moment of writing, "
+                "and a pass that cannot be undone from a copy does not run (the worklist is kept, and the next pass takes a new copy)",
+                missing,
+            )
+        except Exception:  # noqa: BLE001 - the library link must go on whatever happens here; the chunk rolled back, the copy is kept
+            self._fail(
+                "FAILED; the chunk it was in changed nothing and the worklist is kept (it is tried again at the next pass)%s",
+                self._where(),
+                exc=True,
+            )
         if report.failed:
             self._summary()
             return report
+        self._account()
         kept_back: list[tuple[str, int, int]] = []
         for start in range(0, len(self._listed), RELEASE_CHUNK):
             part = self._listed[start : start + RELEASE_CHUNK]
@@ -442,10 +550,10 @@ class Rehome:
                 )
             if n_undecided:
                 log.info(
-                    "rehome: song %s stays on the worklist: %d of its library files could not be judged (no usable tags, no artist name and no id, a song that fits the tags as "
-                    "well as another, or the last file of a song a person owns), so the pairs held for it stay held (what frees each reason is in docs/18: tagging frees only a file with no usable tags)",
+                    "rehome: song %s stays on the worklist: %d of its library files could not be judged or safely moved, so the pairs held for it stay held. What lets it go: %s",
                     ref,
                     n_undecided,
+                    what_frees(),
                 )
         self._summary()
         if release:
@@ -485,15 +593,19 @@ class Rehome:
         return gone, released
 
     def _prefer_a_decided_file(self, conn: sqlite3.Connection, ref: str) -> None:
-        """A song that lost a file to a move prefers a file that was JUDGED KEPT (or a keeper's), never one that stayed only because nobody could judge it: the move leaves
-        the preference on the newest row left (`refs.ensure_one_preferred`, the merge's rule too, unchanged), which can be a file with no usable tags or the placeholder
-        artist, and that is the file the phone would play. Read from `ref_recheck.moved`, which is committed with each move, so a pass that failed after a move is made
-        right by the next complete one. The phones are told when the preferred file changes (the files feed answers with it)."""
+        """A song that lost a file to a move prefers a file that was JUDGED KEPT (or a keeper's), never one that stayed only because nobody could judge it, and never one the
+        listing of this pass lacks: the move leaves the preference on the newest row left (`refs.ensure_one_preferred`, the merge's rule too, unchanged), which can be a file
+        with no usable tags or the placeholder artist, and that is the file the phone would play. Read from `ref_recheck.moved`, which is committed with each move, so a pass
+        that failed after a move is made right by the next complete one. The phones are told when the preferred file changes (the files feed answers with it)."""
         rows = conn.execute(
             "SELECT id, source, navidrome_song_id, added_at, preferred FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC",
             (ref,),
         ).fetchall()
-        decided = [row for row in rows if not self._nobody_could_judge(row)]
+        decided = [
+            row
+            for row in rows
+            if self._listing.alive(row["navidrome_song_id"], row["added_at"]) and not self._nobody_could_judge(row)
+        ]
         if not decided:
             return  # no file to prefer on that ground: the rule of `ensure_one_preferred` stands
         chosen = decided[0]["id"]  # the one it has when that is decided, else the newest decided
@@ -513,13 +625,14 @@ class Rehome:
         r = self.report
         if self._logged > _LOG_MOVES:
             log.info("rehome: and %d more files re-pointed", self._logged - _LOG_MOVES)
-        if self._logged_stays > _LOG_MOVES:
-            log.info("rehome: and %d more files stay where they are for a reason given above", self._logged_stays - _LOG_MOVES)
+        if self._stays_logged > _LOG_MOVES:
+            log.info("rehome: and %d more files stay where they are for a reason given above", self._stays_logged - _LOG_MOVES)
         log.info(
-            "rehome: %d files judged by their tags: %d kept, %d files re-pointed to other songs (%d new songs made, %d rows dropped because the song already held the file), "
+            "rehome: %d files judged by their tags in %d rounds: %d kept, %d files re-pointed to other songs (%d new songs made, %d rows dropped because the song already held the file), "
             "%d stayed (no usable tags %d, no artist name and no id %d, the song fits the tags as well as another %d, the last file of a song a person owns %d), "
             "%d changed hands meanwhile; %d songs released from the worklist, %d kept on it (%d for a file that could not be judged), %d no longer exist%s",
             r.judged,
+            r.rounds,
             r.kept,
             r.moved,
             r.new_refs,

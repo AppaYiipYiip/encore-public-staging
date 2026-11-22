@@ -35,6 +35,8 @@ from fastapi.testclient import TestClient
 
 from encore_server import keyrepair, library, refmerge, refs, rehome, repair_copy, textnorm
 from encore_server.db import Database
+from encore_server.ids import now_ms
+from encore_server.link_listing import Listing
 from encore_server.navidrome import file_meta
 from encore_server.ref_janitor import AGE_MS, RefJanitor
 from encore_server.scanner import LinkReport, described, link_library
@@ -245,6 +247,14 @@ def one_pass(db: Database, songs: list[dict[str, Any]] | None = None, **kwargs: 
     return link_library(db, Music(songs if songs is not None else listing()), **kwargs)
 
 
+def judge(db: Database, songs: list[dict[str, Any]], *, release: bool = False) -> rehome.Report:
+    """What a pass does with this COMPLETE listing in hand: begin, note the page, finish (the rehome decides only at the end of a complete listing, `rehome.py`)."""
+    work = rehome.begin(db, described, Listing.of(songs, began=now_ms()))
+    assert work is not None
+    work.page(songs)
+    return work.finish(release=release)
+
+
 def copies(db: Database) -> list[Path]:
     return db.copies("before-rehome")
 
@@ -401,10 +411,7 @@ def test_nothing_a_person_owns_moves_and_the_old_ref_keeps_its_id_and_its_first_
     with old_world.read() as conn:
         title = conn.execute("SELECT title FROM song_ref WHERE id = ?", (R,)).fetchone()["title"]
 
-    work = rehome.begin(old_world, described)
-    assert work is not None
-    work.page(listing())
-    work.finish(release=False)
+    judge(old_world, listing())
 
     assert owned(old_world) == before
     assert len({ref for ref in files(old_world).values()}) == 7, "and the split did happen"
@@ -474,10 +481,7 @@ def test_a_ref_that_matches_the_tags_keeps_the_file_even_when_an_older_ref_match
     with db.read() as conn:
         assert refs.find(conn, refs.parse_item(described(tags)))["id"] == older, "find answers the older ref"  # type: ignore[index]
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    work.finish(release=False)
+    judge(db, [tags])
 
     assert files(db) == {"nd-1": (younger,)}
     assert worklist(db) == set()
@@ -495,10 +499,7 @@ def test_an_isrc_the_ref_holds_keeps_the_file_whatever_the_tags_say_of_the_title
     make_world(db, build)
     listed(db, ref)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    report = work.finish(release=False)
+    report = judge(db, [tags])
 
     assert files(db) == {"nd-1": (ref,)} and report.moved == 0 and report.kept == 1
 
@@ -519,10 +520,7 @@ def test_an_isrc_that_another_ref_holds_moves_the_file_there_when_the_current_re
     make_world(db, build)
     listed(db, wrong)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    work.finish(release=False)
+    judge(db, [tags])
 
     assert files(db) == {"nd-1": (right,)}
 
@@ -544,10 +542,7 @@ def test_an_untagged_arabic_file_stays_on_its_ref_unless_an_id_names_another(db:
     make_world(db, build)
     listed(db, stays, goes)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([plain, named])
-    report = work.finish(release=False)
+    report = judge(db, [plain, named])
 
     assert files(db) == {"nd-1": (stays,), "nd-2": (other,)}
     assert report.stayed_nameless == 1 and report.moved == 1 and report.new_refs == 0
@@ -574,11 +569,8 @@ def test_a_file_with_no_usable_tags_stays_and_so_does_its_ref_on_the_worklist(
     make_world(db, build)
     listed(db, ref)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([bare])
     with caplog.at_level(logging.INFO, logger=LOG):
-        report = work.finish(release=False)
+        report = judge(db, [bare])
 
     assert files(db) == {"nd-1": (ref,)} and worklist(db) == {ref}
     assert report.stayed_untagged == 1 and report.held_back == 1 and report.held_undecided == 1 and report.released == 0
@@ -597,16 +589,10 @@ def test_a_ref_held_for_a_file_that_could_not_be_judged_is_released_once_the_fil
 
     make_world(db, build)
     listed(db, ref)
-    first = rehome.begin(db, described)
-    assert first is not None
-    first.page([untagged])
-    first.finish(release=False)
+    judge(db, [untagged])
     assert worklist(db) == {ref}
 
-    second = rehome.begin(db, described)
-    assert second is not None
-    second.page([tagged])
-    report = second.finish(release=False)
+    report = judge(db, [tagged])
 
     assert worklist(db) == set() and report.released == 1 and report.moved == 1, (
         "the properly tagged file belongs to the song its tags name"
@@ -651,10 +637,7 @@ def test_a_target_that_already_holds_the_same_file_keeps_one_row_and_the_wrong_h
     make_world(db, build)
     listed(db, wrong)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    report = work.finish(release=False)
+    report = judge(db, [tags])
 
     assert files(db) == {"nd-1": (right,)}
     with db.read() as conn:
@@ -677,10 +660,7 @@ def test_a_keepers_file_is_never_judged_or_moved(db: Database) -> None:
     make_world(db, build)
     listed(db, ref)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([library_tags, kept_tags, song("nd-3", "نسّم علينا الهوا", "فيروز")])
-    work.finish(release=False)
+    judge(db, [library_tags, kept_tags, song("nd-3", "نسّم علينا الهوا", "فيروز")])
 
     assert files(db) == {"nd-1": (ref,), "nd-2": (ref,), "nd-3": (ref,)}
 
@@ -697,7 +677,7 @@ def test_a_row_that_changed_hands_after_the_pass_began_is_left_alone(db: Databas
 
     make_world(db, build)
     listed(db, first)
-    work = rehome.begin(db, described)
+    work = rehome.begin(db, described, Listing.of([tags], began=now_ms()))
     assert work is not None
     with db.tx() as c:  # somebody else re-pointed the file to its right ref in the meantime
         c.execute("UPDATE song_file SET ref = ? WHERE navidrome_song_id = 'nd-1'", (second,))
@@ -744,10 +724,7 @@ def test_a_ref_that_lost_its_only_file_says_file_null_and_the_janitor_retires_it
     make_world(db, build)
     listed(db, left)
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    work.finish(release=False)
+    judge(db, [tags])
 
     with db.read() as conn:
         page = library.files_since(conn, 0)
@@ -765,27 +742,26 @@ def test_a_ref_that_lost_its_only_file_says_file_null_and_the_janitor_retires_it
 # the complete pass, the worklist and the hold of refmerge
 
 
-def test_an_incomplete_pass_keeps_the_worklist_and_the_next_one_finishes_it_with_the_same_copy(old_world: Database) -> None:
-    """The music server stops answering in the middle of the pass: what was moved stays moved (each page is its own transaction), the worklist is kept, and the NEXT pass
-    reuses the copy this one took, finishes the work, and then the worklist is empty. One copy for the whole job."""
-    music = Music(listing(), down_at=2)
+def test_an_incomplete_pass_decides_and_writes_nothing_and_the_next_complete_one_does_the_whole_job_with_one_copy(
+    old_world: Database,
+) -> None:
+    """The music server stops answering in the middle of the pass: the verdict of a file depends on the files the music server lists in the REST of the pass, so nothing was
+    decided: no file moved, no copy taken, no record of an attempt, the worklist kept. The NEXT complete pass does the whole job with ONE copy (the second review round:
+    the first build moved the files of the pages it had read, and the next pass found a world it had changed itself)."""
+    first = link_library(old_world, Music(listing(), down_at=2), page=3)
 
-    first = link_library(old_world, music, page=3)
-
-    assert first.complete is False
+    assert first.complete is False and first.rehome is None
     assert worklist(old_world) == {R}, "an incomplete pass empties nothing"
-    assert len(copies(old_world)) == 1
-    pending = setting(old_world, rehome.BACKUP_PENDING_SETTING)
-    assert pending == copies(old_world)[0].name and setting(old_world, rehome.BACKUP_USED_SETTING) is None
-    assert len({r for nd, (r,) in files(old_world).items() if nd in ("nd-1", "nd-2", "nd-3")}) == 3, (
-        "the first page was judged and committed"
+    assert copies(old_world) == [] and setting(old_world, rehome.BACKUP_PENDING_SETTING) is None
+    assert {r for nd, (r,) in files(old_world).items() if nd in ("nd-1", "nd-2", "nd-3", "nd-4", "nd-5")} == {R}, (
+        "and moves nothing"
     )
 
     second = link_library(old_world, Music(listing()), page=3)
 
     assert second.complete is True and worklist(old_world) == set()
-    assert len(copies(old_world)) == 1, "the copy of the attempt that did not finish was used again"
-    assert setting(old_world, rehome.BACKUP_USED_SETTING) == pending, "the pass that finished spent it"
+    assert len(copies(old_world)) == 1
+    assert setting(old_world, rehome.BACKUP_USED_SETTING) == copies(old_world)[0].name
     assert setting(old_world, rehome.BACKUP_PENDING_SETTING) is None
     assert len({r for nd, (r,) in files(old_world).items() if nd != "nd-6" and nd != "nd-7"}) == 5
 
@@ -819,10 +795,7 @@ def test_the_worklist_row_of_a_ref_that_is_gone_is_dropped_by_the_pass(db: Datab
     make_world(db, build)
     listed(db, ref, rid("sr", 99))
 
-    work = rehome.begin(db, described)
-    assert work is not None
-    work.page([tags])
-    work.finish(release=False)
+    judge(db, [tags])
 
     assert worklist(db) == set()
 
@@ -1370,13 +1343,16 @@ def test_after_a_move_the_old_song_prefers_the_keepers_file_over_a_file_nobody_c
     assert row["navidrome_song_id"] == "nd-4"
 
 
-def test_the_preference_is_put_right_by_the_pass_that_completes_even_when_an_earlier_pass_made_the_move(db: Database) -> None:
-    """The move is committed by a pass that does NOT complete (the music server stops answering after page 1): the old song then prefers the newest row left, the one nobody
-    could judge. `ref_recheck.moved` is committed with the move, so the NEXT complete pass, which re-judges the whole song, still puts the preference right."""
-    other = rid("sr", 2)
+def test_the_preference_is_put_right_by_the_pass_that_completes_even_when_an_earlier_pass_made_the_move(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The move is committed by a pass that FAILS after its first chunk (the process dies, or a later chunk raises): the old song then prefers the newest row left, the one
+    nobody could judge. `ref_recheck.moved` is committed with the move, so the NEXT complete pass, which re-judges the whole song, still puts the preference right."""
+    other, third, fourth = rid("sr", 2), rid("sr", 3), rid("sr", 4)
     kept = song("nd-1", "كيفك إنت", "فيروز")
     nameless = song("nd-2", "أغنية", "[Unknown Artist]")
     going = song("nd-3", "حبيتك بالصيف", "فيروز")
+    second_move = song("nd-4", "سألوني الناس", "فيروز")
 
     def build(c: sqlite3.Connection) -> None:
         add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
@@ -1384,19 +1360,34 @@ def test_the_preference_is_put_right_by_the_pass_that_completes_even_when_an_ear
         add_file(c, SELF, "nd-2", added_at=200, song=nameless)
         add_file(c, SELF, "nd-3", added_at=300, preferred=1, song=going)
         add_ref(c, other, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        add_ref(c, third, "نسّم علينا الهوا", ["فيروز"], old=False, duration_ms=200_000)
+        add_file(c, third, "nd-4", added_at=400, song=second_move)
+        add_ref(c, fourth, "سألوني الناس", ["فيروز"], old=False, duration_ms=200_000)
         own(c, "like", SELF)
 
     make_world(db, build)
-    listed(db, SELF)
+    listed(db, SELF, third)
+    songs = [going, nameless, kept, second_move]
+    monkeypatch.setattr(rehome, "CHUNK", 1)
+    real = rehome.Rehome._move  # noqa: SLF001
+    calls: list[str] = []
 
-    cut = link_library(
-        db, Music([going, nameless], down_at=2), page=2
-    )  # page 1: the move and the nameless file; page 2: no answer
+    def dying(self: rehome.Rehome, conn: sqlite3.Connection, file_id: str, ref: str, described_: dict[str, Any] | None) -> Any:
+        calls.append(file_id)
+        if len(calls) == 2:
+            raise RuntimeError("the process was killed here")
+        return real(self, conn, file_id, ref, described_)
 
-    assert cut.complete is False and files(db)["nd-3"] == (other,)
-    assert worklist(db) == {SELF}
+    monkeypatch.setattr(rehome.Rehome, "_move", dying)
 
-    link_library(db, Music([going, nameless, kept]), page=2)
+    killed = link_library(db, Music(songs))
+
+    assert killed.rehome is not None and killed.rehome.failed
+    assert files(db)["nd-3"] == (other,) and files(db)["nd-4"] == (third,), "the first chunk is committed, the second is not"
+    assert worklist(db) == {SELF, third}
+    monkeypatch.undo()
+
+    link_library(db, Music(songs))
 
     with db.read() as conn:
         preferred = [
@@ -1541,6 +1532,31 @@ def test_the_worklist_is_released_in_chunks_one_transaction_each(db: Database, m
 
     assert sizes == [2, 2, 1] and worklist(db) == set()
     assert report.rehome is not None and report.rehome.released == 5
+
+
+def test_the_production_chunk_is_500_and_a_worklist_of_1001_refs_is_released_in_500_500_1_with_no_help_from_the_test(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The pin of the PRODUCTION value. Every test above sets a small chunk by hand, so the mutant `RELEASE_CHUNK = 10**9` (one transaction for the whole worklist: 3 s of write
+    lock measured at 200,000 refs, and the test of the round-1 pace stays green) survived them. Nothing is patched here: 1,001 refs, each with the one file that is its own."""
+    assert rehome.RELEASE_CHUNK == 500
+    songs: list[dict[str, Any]] = []
+
+    def build(c: sqlite3.Connection) -> None:
+        for n in range(1, 1002):
+            tags = song(f"nd-{n}", f"song {n}", "فيروز")
+            add_ref(c, rid("sr", n), f"song {n}", ["فيروز"], old=False, duration_ms=200_000)
+            add_file(c, rid("sr", n), f"nd-{n}", song=tags)
+            songs.append(tags)
+
+    make_world(db, build)
+    listed(db, *(rid("sr", n) for n in range(1, 1002)))
+
+    with watching_transactions(monkeypatch) as sizes:
+        report = link_library(db, Music(songs))
+
+    assert sizes == [500, 500, 1], "the write lock is held for 500 rows at most, 1,001 rows take three transactions"
+    assert report.rehome is not None and report.rehome.released == 1001 and worklist(db) == set()
 
 
 def test_a_pass_cut_between_two_chunks_is_resumed_by_the_next_one_and_the_merge_it_owes_is_not_lost(

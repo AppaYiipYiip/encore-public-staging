@@ -8,10 +8,10 @@ repair writes nothing and this reads only.
 
 * the refs whose stored key is NOT what the fold makes now (the rewrite of `keyrepair.py` did not run, or an older image keyed a song after it): wanted 0;
 * the refs whose stored key has an empty artist or title part, and the tombstones whose key has (the old fold's `||`): wanted 0 of the refs;
-* the refs on the worklist `ref_recheck` and the library files they still hold (the rehome of `rehome.py` has not judged them, or could not: a file with no usable tags, the
-  placeholder artist with no id, a song that fits its tags as well as another, the last file of a song a person owns): wanted 0. **The files are named** (the row id, the music
-  server's own id and the song's id, five of them: ids only, no path and no title), because this FAIL is the visible reminder of a ref that stays held (tagging or removing the file frees it only for
-  the first reason; what frees each of the others, and that some can stay for good, is in `rehome.py`, "the cost, stated"; the log of the pass says which reason each one is);
+* the refs on the worklist `ref_recheck` and the library files they still hold (the rehome of `rehome.py` has not judged them, or could not judge or safely move them: wanted 0).
+  **The files are named** (the row id, the music server's own id and the song's id, five of them: ids only, no path and no title), because this FAIL is the visible reminder of a
+  ref that stays held. Why a ref stays held, and what lets each one go, is the table `rehome.HOLDS` (the line below prints it: it is the one place that says it, and
+  `tests/test_rehome_held_text.py` checks it against what the pass does); the log of the pass says which reason each ref has;
 * the pairs of refs that hold one file and are held back by the merge repair, by reason, and how many of them for the worklist (`recheck_pending`): wanted 0 for the
   worklist (the other reasons are not failures: a pair with different YouTube ids is two recordings);
 * whether any pair can be merged right now and has not been (the merge runs at every start and after a pass that emptied the worklist).
@@ -33,7 +33,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import keyrepair, refmerge, refs, textnorm
+from . import keyrepair, refmerge, refs, rehome, textnorm
 from .db import Database
 
 #: How many ids of each kind are written out; the rest are counted.
@@ -75,8 +75,8 @@ class Audit:
             found.append(f"{self.degenerate_refs} refs hold a key with an empty artist or title part")
         if self.worklist:
             found.append(
-                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge (no usable tags, no artist name and no id, "
-                "a song that fits the tags as well as another, or the last file of a song a person owns: the ref stays held; tagging frees only the first, docs/18 says what frees the others)"
+                f"{self.worklist} refs are still on the worklist, holding {self.worklist_files} library files the rehome has not judged or could not judge or safely move, so "
+                f"the pairs held for them stay held. What lets each one go: {rehome.what_frees()}"
             )
         if self.held_for_worklist:
             found.append(

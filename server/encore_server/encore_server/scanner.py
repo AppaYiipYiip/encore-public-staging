@@ -23,6 +23,7 @@ from . import library, refs, rehome, textnorm
 from .db import Database
 from .errors import ApiError
 from .ids import now_ms
+from .link_listing import Listing
 from .link_plan import LinkPlan
 from .navidrome import file_meta
 
@@ -80,11 +81,11 @@ def described(song: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def _begin_rehome(db: Database) -> rehome.Rehome | None:
+def _begin_rehome(db: Database, listing: Listing) -> rehome.Rehome | None:
     """The judge of the files the old text fold glued onto the wrong song, or `None` (an empty worklist, which is every install after the repair, or a failure to start:
     the library link itself must never stop for it)."""
     try:
-        return rehome.begin(db, described)
+        return rehome.begin(db, described, listing)
     except textnorm.UnicodeVersionError:
         raise  # a refusal, not a failure: this Python must not write a key at all
     except Exception:  # noqa: BLE001 - the link goes on without the rehome; the worklist is untouched and the next pass tries again
@@ -96,14 +97,14 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
     """One pass over the music server's songs. Safe to run again at any time (nothing is created twice). With [prune] off it only ever adds: no file row
     is removed, whatever the music server answers (the pass after a scan, P3-35: a scan of a disk that is not mounted finishes with no songs).
 
-    **The rehome (P2-25 slice 4, `rehome.py`)** rides on the same pass: while the worklist of the key repair (`ref_recheck`) is not empty, every page, AFTER its own link
-    transaction has committed (the holders above are read at its top, and the scan re-attaches a file by the ref that holds it), is also judged by its tags and the
-    files that belong to another song are re-pointed; at the end of a COMPLETE pass the refs that are done leave the worklist. It only re-points `song_file` rows."""
+    **The rehome (P2-25 slice 4, `rehome.py`)** rides on the same pass: while the worklist of the key repair (`ref_recheck`) is not empty, every page only NOTES what the
+    music server says of the worklist's files; **nothing is decided or written until the whole listing has been read, linked and pruned** (a pass that stops early, because the
+    music server stopped answering or the process died, decides nothing), and then every file is judged against that one state, the files that belong to another song are
+    re-pointed and the refs that are done leave the worklist. It only re-points `song_file` rows."""
     report = LinkReport()
-    began = now_ms()
-    seen_ids: set[str] = set()
+    listing = Listing(began=now_ms())
     offset = 0
-    rehomer = _begin_rehome(db)
+    rehomer = _begin_rehome(db, listing)
     while True:
         songs = navidrome.songs(offset, page)
         if songs is None:
@@ -119,7 +120,7 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
                     # The music server HAS this file, whatever its tags are: it is "seen" even when nothing can be made of it. The prune below removes the row of a file the
                     # music server no longer LISTS, not the row of one it lists with tags nobody can describe (it used to: the song lost its file and everybody was told to
                     # stream it again, and the file of a worklist song vanished before the rehome could say it was never judged; P2-25 slice 4, review round).
-                    seen_ids.add(song_id)
+                    listing.add(song_id)
                 if item is None or not song_id:
                     report.skipped += 1
                     continue
@@ -150,12 +151,13 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
                 )
                 report.linked += 1
         if rehomer is not None:
-            rehomer.page(songs)
+            rehomer.page(songs)  # notes, decides nothing: see `rehome.py`
         if len(songs) < page:
             break
         offset += len(songs)
     report.complete = True
-    report.pruned = _prune(db, seen_ids, began) if prune else 0
+    listing.complete = True
+    report.pruned = _prune(db, listing) if prune else 0
     if rehomer is not None:
         # After the prune: a file the listing did not have is gone by now, so its ref is not waited for.
         try:
@@ -181,16 +183,18 @@ def _rehome_idle(db: Database) -> None:
         )
 
 
-def _prune(db: Database, seen_ids: set[str], before: int) -> int:
+def _prune(db: Database, listing: Listing) -> int:
     """Files the music server no longer LISTS: their rows go; the refs stay, so nothing a person has changes. Everybody who had the song is told that it now has to be
     streamed again. A file attached after the pass began (the keeper, mid-scan) is left alone. **A file the music server lists is never "gone", whatever its tags are**
-    (`seen_ids` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4)."""
+    (`listing` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4). What
+    stays is what `Listing.alive` says: the same test the rehome counts files by."""
     removed = 0
     with db.tx() as conn:
         for row in conn.execute(
-            "SELECT id, ref, navidrome_song_id FROM song_file WHERE navidrome_song_id IS NOT NULL AND added_at < ?", (before,)
+            "SELECT id, ref, navidrome_song_id, added_at FROM song_file WHERE navidrome_song_id IS NOT NULL AND added_at < ?",
+            (listing.began,),
         ).fetchall():
-            if row["navidrome_song_id"] in seen_ids:
+            if listing.alive(row["navidrome_song_id"], row["added_at"]):
                 continue
             conn.execute("DELETE FROM song_file WHERE id = ?", (row["id"],))
             # The newest remaining copy (if any) becomes the preferred one.
