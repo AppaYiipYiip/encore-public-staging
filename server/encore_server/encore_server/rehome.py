@@ -533,7 +533,7 @@ class Rehome:
             if stays < _LOG_MOVES:
                 log.info(
                     "rehome: file %s was re-pointed to song %s, which fits its tags as well as song %s (a song made in the same pass holds the id its tags carry): a wrong move is "
-                    "worse than none, so song %s stays on the worklist",
+                    "worse than none, so song %s is held: when it is on the worklist it stays there",
                     file_id,
                     target,
                     ", ".join(answers),
