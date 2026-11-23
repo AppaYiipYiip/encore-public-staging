@@ -197,11 +197,10 @@ def _prune(db: Database, listing: Listing) -> int:
             if listing.alive(row["navidrome_song_id"], row["added_at"]):
                 continue
             conn.execute("DELETE FROM song_file WHERE id = ?", (row["id"],))
-            # The newest remaining copy (if any) becomes the preferred one.
-            conn.execute(
-                "UPDATE song_file SET preferred = 1 WHERE id = (SELECT id FROM song_file WHERE ref = ? ORDER BY added_at DESC LIMIT 1)",
-                (row["ref"],),
-            )
+            # A song keeps exactly ONE preferred file: the one it has, or the newest remaining copy when the preferred one was the file that went (`refs.ensure_one_preferred`,
+            # the one definition: the statement this replaces gave the newest copy the flag WITHOUT taking it from the one that had it, so a song with three files that lost
+            # a copy that was not the preferred one had two).
+            refs.ensure_one_preferred(conn, row["ref"])
             refs.touch_file(conn, row["ref"])
             library.touch_ref_holders(conn, row["ref"])
             removed += 1

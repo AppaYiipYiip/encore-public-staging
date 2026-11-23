@@ -1,0 +1,12 @@
+{
+ "id": "20261123T202529Z-agent-c909",
+ "item": "_board",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-23T20:25:29Z",
+ "type": "note",
+ "body": "23 Nov 2026 ~22:00 UTC, the owner's two messages (he is AFK again) and the advisor's ruling, for the next session. HIS WORDS, 1: 'remind the advisor that a real phone is connected for testing. when ready install the apk on it and test things around. continue. im back to being afk'. 2: 'tell the advisor that some work needs to be put also on the server side of things aswell.' THE ADVISOR'S RULING: this lifts the 'A35 untouched' rule of his test week FOR THE LEAD ONLY (helpers, reviewers and builders keep 'no adb, no device, no deploy' in their prompts). ORDER: (1) finish #118 round 3, push, re-review (SendMessage to the same reviewer and attacker), merge; (2) NEVER deploy a server image before #118 merges (the :main image carries slice 3 without slice 4 until then; RELEASE-CANDIDATE 4b forbids it); (3) THEN the release-candidate pair = the server image and the APK from the SAME merge commit: re-run the brief and read section 3b first (his test-week reports come first); VM 108: start it as the memory note says, find it by MAC, copy its database first (keep the sha), log the change and its undo, audit_stack check rekey read-only, deploy the merge commit's image, run the check again after the first hourly pass (the rehome's first run on real data); A35 (serial RFCX8184C2V): record the installed version first, the new APK's versionCode must be above 160 and signed like build 160 (a signature mismatch forces an uninstall that wipes his data: STOP and ask the advisor, never uninstall), install with --user 0 and keep ONE Encore, walk the built items in order.json order (N-19, N-20, N-11, N-21, N-22, P1-07, then N-39), mark walked ONLY what was walked on that pair, with evidence; (4) 'server side work' = the pair above and the roadmap's next builds: read order.json for N-23 (search finds the band with a wrong letter, todo, size M) and N-45; if N-23 ranks higher and is server-side, build it next, N-45 follows; ONE builder agent at a time and none while the reviewer and attacker run.",
+ "to": [
+  "agent"
+ ]
+}

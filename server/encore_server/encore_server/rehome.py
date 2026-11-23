@@ -146,6 +146,8 @@ RELEASE_CHUNK = 500
 #: The rounds of one pass (see `Rehome._decide_and_apply`) end by themselves: a file moves at most once in a pass, so there are at most as many rounds as files plus one, and in
 #: practice two or three. This is the second layer: a pass that reaches it says so, writes what it has, and the next pass goes on.
 MAX_ROUNDS = 25
+#: How many music server ids one query of `Rehome.page` asks for (the arrivals of a page): far below SQLite's limit on the number of parameters.
+_ARRIVAL_IDS = 400
 #: How many moves, and how many stays, are written out one by one (each kind has its own budget); the rest are counted.
 _LOG_MOVES = 20
 
@@ -188,7 +190,7 @@ HOLDS: tuple[Hold, ...] = (
     Hold(
         _STAY_AMBIGUOUS,
         "a song that fits the file's tags as well as another song (or has the same name with another length)",
-        "the file is removed, or the id is taken out of its tags, or the song's stored length is corrected; the tags are already right, so tagging cannot help",
+        "the file is removed; or, when another song holds an id the tags carry, that id is taken out of the tags; or, when only the length differs, the song's stored length is corrected; the tags are already right, so tagging cannot help",
         False,
     ),
     Hold(
@@ -312,6 +314,10 @@ class Rehome:
         self._listed = listed
         self._listing = listing
         self._began = listing.began
+        self._on_worklist = set(listed)
+        #: The library files the scan of THIS pass attached to a worklist ref (their rows are newer than the pass): noted by `page` and judged like every other file of the pass,
+        #: or the pass would end differently from one that is cut and resumed (that one reads them as rows that were there before it began).
+        self._arrived: set[str] = set()
         #: The library rows of the worklist refs as they were when the pass began: `{music server id: [(file row id, ref)]}` (two refs may hold one file).
         self._by_nd: dict[str, list[tuple[str, str]]] = {}
         #: When each of those rows was added: the order the pass judges them in (the oldest first), which is the same whatever the order of the listing.
@@ -341,13 +347,36 @@ class Rehome:
     def page(self, songs: Sequence[dict[str, Any]]) -> None:
         """Notes what the music server says of the worklist files among these songs. **It decides nothing and writes nothing**: the verdict of a file depends on the files the
         music server lists in the REST of the pass (the last-file guard counts only the files the listing has) and on the state the scan leaves, so it waits for the whole
-        listing (`finish`). A pass that stops early therefore decides nothing and writes nothing."""
-        if not self._by_nd:
-            return
-        for song in songs:
-            for file_id, ref in self._by_nd.get(str(song.get("id") or ""), ()):
+        listing (`finish`). A pass that stops early therefore decides nothing and writes nothing.
+
+        **Arrivals.** The scan has just linked this page: a file it attached to a worklist ref in this very pass has a row newer than the pass, which `begin` could not read, and
+        it is judged like every other file of the pass (the pass that begins after a cut reads it as a row that was there)."""
+        by_id = {str(song.get("id")): song for song in songs if song.get("id")}
+        for nd, song in by_id.items():
+            for file_id, ref in self._by_nd.get(nd, ()):
                 if file_id not in self._tags:
                     self._tags[file_id] = (ref, self._describe(song))
+        if not by_id:
+            return
+        found: list[sqlite3.Row] = []
+        with self._db.read() as conn:
+            ids = list(by_id)
+            for start in range(0, len(ids), _ARRIVAL_IDS):
+                part = ids[start : start + _ARRIVAL_IDS]
+                found += conn.execute(
+                    "SELECT id, ref, navidrome_song_id, added_at FROM song_file WHERE source = 'library' AND added_at >= ? AND navidrome_song_id IN ("
+                    + ",".join("?" * len(part))
+                    + ")",
+                    (self._began, *part),
+                ).fetchall()
+        for row in found:
+            file_id, ref = row["id"], row["ref"]
+            if ref not in self._on_worklist or file_id in self._tags:
+                continue
+            self._by_nd.setdefault(row["navidrome_song_id"], []).append((file_id, ref))
+            self._added[file_id] = row["added_at"]
+            self._arrived.add(file_id)
+            self._tags[file_id] = (ref, self._describe(by_id[row["navidrome_song_id"]]))
 
     def _where(self) -> str:
         return f"; the copy taken before it is {self._copy}" if self._copy else ""
@@ -376,6 +405,9 @@ class Rehome:
                     "rehome: stopped after %d rounds (rehome.MAX_ROUNDS); what is not decided stays where it is, its songs stay on the worklist and the next pass goes on",
                     rounds,
                 )
+                self._undecided.update(
+                    todo
+                )  # what is still queued for another look is undecided: its song stays on the worklist, as the line above says
                 break
             rounds += 1
             moved, made = self._round(todo)
@@ -667,9 +699,10 @@ class Rehome:
             rows = [
                 r["id"]
                 for r in conn.execute(
-                    "SELECT id FROM song_file WHERE ref = ? AND source = 'library' AND navidrome_song_id IS NOT NULL AND added_at < ?",
-                    (ref, self._began),
+                    "SELECT id, added_at FROM song_file WHERE ref = ? AND source = 'library' AND navidrome_song_id IS NOT NULL",
+                    (ref,),
                 )
+                if r["added_at"] < self._began or r["id"] in self._arrived
             ]
             listed = conn.execute(
                 "SELECT moved FROM ref_recheck WHERE ref = ?", (ref,)
@@ -710,7 +743,11 @@ class Rehome:
 
     def _nobody_could_judge(self, row: sqlite3.Row) -> bool:
         """A library file this pass read at its start that the tags could not decide, or that it never saw (a keeper's file and a file attached since are not)."""
-        if row["source"] != "library" or row["navidrome_song_id"] is None or row["added_at"] >= self._began:
+        if (
+            row["source"] != "library"
+            or row["navidrome_song_id"] is None
+            or (row["added_at"] >= self._began and row["id"] not in self._arrived)
+        ):
             return False
         return bool(row["id"] in self._undecided or row["id"] not in self._judged)
 

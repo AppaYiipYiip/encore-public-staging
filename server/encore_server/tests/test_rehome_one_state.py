@@ -858,3 +858,173 @@ def test_a_pass_that_moves_nothing_judges_every_file_once_and_never_reaches_the_
     assert report.rehome is not None and report.rehome.stayed_last_file == 1 and report.rehome.moved == 0
     assert report.rehome.rounds == 1, "nothing moved, so nothing was lifted: one round"
     assert not [r for r in caplog.records if r.name == LOG and r.levelno >= logging.ERROR], "no cap line"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# Third review (23 Nov 2026), the adversarial tester's blocker "arrival": a file the SCAN attaches to a worklist ref DURING the pass
+
+ARRIVAL_ISRC = "QZ0000000001"
+
+
+def arrival_world(db: Database, *, held_by_untagged: bool, shared_with: bool) -> list[dict[str, Any]]:
+    """SELF (K1, with an ISRC of its own) holds f1 (its own tags: kept) and f3 (tags K2 and the ISRC X: it MOVES and MAKES a song carrying X). The music server also lists nx-1
+    (K1 and the ISRC X) that has no row yet: the scan of this very pass attaches it to SELF by its name (SELF has an ISRC already, so nothing is filled). Judged in the SAME pass it
+    names the made song by its id and SELF only as one more candidate: it fits as well as another. With [held_by_untagged] f2 (no tags) holds SELF on the worklist whatever
+    else happens; with [shared_with] a second song DUP that is not on the worklist holds the same music server file as f1 (their pair is held while SELF is on the worklist)."""
+    own = song("nd-1", *K1, 200.0)
+    wrong = song("nd-3", *K2, 200.0, isrc=[ARRIVAL_ISRC])
+    arriving = song("nd-9", *K1, 200.0, isrc=[ARRIVAL_ISRC])
+    bare = song("nd-2", "", "")
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000, isrc="QZ0000000009")
+        add_file(c, SELF, "nd-1", added_at=100, song=own)
+        add_file(c, SELF, "nd-3", added_at=300, song=wrong)
+        if held_by_untagged:
+            add_file(c, SELF, "nd-2", added_at=200, song=bare)
+        if shared_with:
+            add_ref(c, DUP, K1[0], [K1[1]], old=False, duration_ms=200_000)
+            add_file(c, DUP, "nd-1", added_at=400, song=own)
+
+    make_world(db, build)
+    listed(db, SELF)
+    return [own, wrong, arriving] + ([bare] if held_by_untagged else [])
+
+
+def test_a_file_the_scan_attaches_during_the_pass_to_a_worklist_ref_is_judged_in_that_pass_so_the_second_pass_writes_nothing(
+    db: Database,
+) -> None:
+    songs = arrival_world(db, held_by_untagged=True, shared_with=False)
+
+    first = link_library(db, Music(songs))
+
+    assert first.rehome is not None and first.rehome.judged == 4, (
+        "f1, f2, f3 and the file that arrived: four files judged in THIS pass"
+    )
+    assert first.rehome.stayed_ambiguous == 1 and worklist(db) == {SELF}
+    state = digest(db)
+
+    link_library(db, Music(songs))
+
+    assert digest(db) == state and len(copies(db)) == 1, "the second pass writes nothing and takes no copy"
+
+
+def test_a_pass_cut_after_its_moves_ends_where_the_uncut_pass_ends_when_a_file_arrived_during_it(
+    db: Database, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    uncut = Database(tmp_path / "uncut" / "encore.db")
+    uncut.migrate()
+    songs = arrival_world(uncut, held_by_untagged=False, shared_with=True)
+    link_library(uncut, Music(songs))
+
+    arrival_world(db, held_by_untagged=False, shared_with=True)
+    real = rehome.Rehome._release  # noqa: SLF001
+    calls: list[int] = []
+
+    def killed(self: rehome.Rehome, conn: sqlite3.Connection, part: Any, kept_back: Any) -> Any:
+        calls.append(1)
+        raise RuntimeError("the process was killed here: the moves are committed, the release is not")
+
+    monkeypatch.setattr(rehome.Rehome, "_release", killed)
+    link_library(db, Music(songs))
+    monkeypatch.setattr(rehome.Rehome, "_release", real)
+    link_library(db, Music(songs))
+
+    def shape(database: Database) -> tuple[Any, ...]:
+        with database.read() as conn:
+            return (
+                sorted(
+                    (r["navidrome_song_id"], r["key"])
+                    for r in conn.execute(
+                        "SELECT f.navidrome_song_id, s.norm_key AS key FROM song_file f JOIN song_ref s ON s.id = f.ref"
+                    )
+                ),
+                sorted(r["ref"] for r in conn.execute("SELECT ref FROM ref_recheck")),
+                conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0],
+                conn.execute("SELECT COUNT(*) FROM ref_merge").fetchone()[0],
+            )
+
+    assert calls, "the cut happened"
+    assert worklist(db) == worklist(uncut) == {SELF}, "the file that arrived fits as well as the made song: held, in both"
+    assert shape(db) == shape(uncut)
+
+
+def cap_world(db: Database) -> list[dict[str, Any]]:
+    """DUP (K3, on the worklist) holds f1 whose tags are K2 and the ISRC X: it MOVES and MAKES a song carrying X. SELF (K1, on the worklist) holds f2, tagged K1 and the same X:
+    SELF names it by its name, so it is KEPT in the first round, and once the made song holds X the file fits SELF only as well as another: the second round holds SELF. A third song
+    TWIN (K1, not on the worklist) holds the same music server file as SELF: their pair is held while SELF is on the worklist and merges the moment SELF leaves it."""
+    moving = song("nd-1", *K2, 200.0, isrc=[ARRIVAL_ISRC])
+    kept = song("nd-2", *K1, 200.0, isrc=[ARRIVAL_ISRC])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, DUP, K3[0], [K3[1]], old=False, duration_ms=200_000)
+        add_file(c, DUP, "nd-1", added_at=100, song=moving)
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-2", added_at=200, song=kept)
+        add_ref(c, rid("sr", 7), K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, rid("sr", 7), "nd-2", added_at=300, song=kept)
+
+    make_world(db, build)
+    listed(db, SELF, DUP)
+    return [moving, kept]
+
+
+def test_when_the_cap_on_rounds_stops_a_pass_the_files_still_queued_for_another_look_hold_their_songs(
+    db: Database, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, tmp_path: Any
+) -> None:
+    """The ERROR line of the cap says that what is not decided stays where it is and its songs stay on the worklist. A kept file waiting to be judged again IS undecided: the cap
+    must not release its song (and merge the pair held for it) where the uncut pass would hold it."""
+    uncut = Database(tmp_path / "uncut" / "encore.db")
+    uncut.migrate()
+    songs = cap_world(uncut)
+    link_library(uncut, Music(songs))
+    assert worklist(uncut) == {SELF}
+
+    cap_world(db)
+    monkeypatch.setattr(rehome, "MAX_ROUNDS", 1)
+    with caplog.at_level(logging.ERROR, logger=LOG):
+        capped = link_library(db, Music(songs))
+
+    assert any("stopped after 1 rounds" in r.getMessage() for r in caplog.records if r.name == LOG)
+    assert capped.rehome is not None and worklist(db) == {SELF}, (
+        "the song of a file still queued for another look stays on the worklist"
+    )
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM ref_merge").fetchone()[0] == 0, "and the pair held for it is not merged"
+
+    monkeypatch.undo()
+    link_library(db, Music(songs))
+    assert worklist(db) == worklist(uncut) == {SELF}
+
+
+def test_a_pass_that_only_adds_moves_a_file_onto_a_song_and_the_next_pass_that_prunes_leaves_one_preferred_file(
+    db: Database,
+) -> None:
+    """SELF holds A (listed, preferred) and D (a file the music server no longer lists). DUP holds B, whose tags name SELF: the pass after a scan (it only adds) moves B onto
+    SELF and keeps B's own date, newer than A's. The next pass removes D and used to give 'the newest remaining copy' (B) the preferred flag without taking it from A."""
+    own_a = song("nd-1", *K1, 200.0)
+    dead = song("nd-2", *K1, 200.0)
+    moving = song("nd-3", *K1, 200.0)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, preferred=1, song=own_a)
+        add_file(c, SELF, "nd-2", added_at=150, song=dead)
+        add_ref(c, DUP, K3[0], [K3[1]], old=False, duration_ms=200_000)
+        add_file(c, DUP, "nd-3", added_at=400, song=moving)
+
+    make_world(db, build)
+    listed(db, DUP)
+    songs = [own_a, moving]
+
+    adding = link_library(db, Music(songs), prune=False)
+    assert adding.rehome is not None and adding.rehome.moved == 1
+    pruning = link_library(db, Music(songs))
+
+    assert pruning.pruned == 1
+    with db.read() as conn:
+        flagged = [
+            r["navidrome_song_id"]
+            for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
+        ]
+    assert flagged == ["nd-1"], "one preferred file, the one the song had"
