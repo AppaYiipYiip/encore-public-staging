@@ -544,6 +544,124 @@ void main() {
       expect(resultsBetween(before, const [], words), isEmpty);
     });
 
+    // N-39 (S-95 "A download was stopped"): a Download's Stop is a pause that waits for the person, so it leaves ONE result card in S-16's words.
+    group('a Download the person stopped (N-39)', () {
+      CardJob stopped({int onPhone = 12, int songs = 217}) =>
+          download('playlist:p1', 'Prog snob', 'x',
+              songs: songs, onPhone: onPhone, phase: CardPhase.stopped);
+
+      test(
+          "N-39: the running card ends and ONE card says what is kept and that Resume continues, in the words drawn",
+          () {
+        final results = resultsBetween(before, [stopped()], words);
+
+        expect(results, hasLength(1));
+        expect(results.single.title, 'Prog snob is stopped');
+        expect(results.single.body,
+            '12 of 217 stay on this phone. Resume continues from there.');
+        expect(results.single.route, '/library/downloaded',
+            reason: 'the tap opens Downloaded, where Resume stands');
+      });
+
+      test(
+          "N-39: it is not an import's card: a stopped download never says the rest were not fetched",
+          () {
+        final result = resultsBetween(before, [stopped()], words).single;
+
+        expect(result.title, isNot('Import stopped'));
+        expect(result.body, isNot(contains('library')));
+        expect(result.body, isNot(contains('not fetched')));
+      });
+
+      test(
+          "N-39: it names no clock time and no live count, so it stays true when it freezes",
+          () {
+        final result = resultsBetween(before, [stopped()], words).single;
+
+        expect('${result.title} ${result.body}', isNot(matches(r'\d:\d\d')));
+        expect(result.body, isNot(contains('ready on your server')));
+        expect(result.body, isNot(contains('Downloading')));
+      });
+
+      test(
+          "N-39: posted once: a download that was already stopped when the app opened, or that stays stopped, makes no card",
+          () {
+        expect(resultsBetween(const [], [stopped()], words), isEmpty,
+            reason: 'not posted again at the next start of the app');
+        expect(resultsBetween([stopped()], [stopped()], words), isEmpty);
+        expect(resultsBetween([stopped()], const [], words), isEmpty,
+            reason: 'Remove after a Stop leaves no card either');
+      });
+
+      test(
+          "N-39: Resume makes the job run again and posts nothing; a second Stop is a second card",
+          () {
+        final running = download('playlist:p1', 'Prog snob', 'x');
+
+        expect(resultsBetween([stopped()], [running], words), isEmpty);
+        expect(resultsBetween([running], [stopped(onPhone: 80)], words),
+            hasLength(1));
+      });
+
+      test(
+          "N-39: several downloads: each stopped one leaves its own card, the others go on",
+          () {
+        final other = download('playlist:p2', 'Workout', 'x');
+        final results = resultsBetween(
+          [before.single, other],
+          [
+            stopped(),
+            download('playlist:p3', 'Third', 'x', phase: CardPhase.stopped),
+            other
+          ],
+          words,
+        );
+
+        expect(results.map((r) => r.title), ['Prog snob is stopped']);
+        final both = resultsBetween(
+          [
+            before.single,
+            download('playlist:p3', 'Third', 'x'),
+          ],
+          [
+            stopped(),
+            download('playlist:p3', 'Third', 'x', phase: CardPhase.stopped),
+          ],
+          words,
+        );
+        expect(both.map((r) => r.title),
+            ['Prog snob is stopped', 'Third is stopped']);
+        expect(both.map((r) => resultCardId(r.key)).toSet(), hasLength(2),
+            reason: 'one card of its own per job');
+      });
+
+      test("N-39: the words choose their plural inside the sentence", () {
+        expect(words.downloadStoppedBody(onPhone: 1, total: 217),
+            '1 of 217 stays on this phone. Resume continues from there.');
+        expect(words.downloadStoppedBody(onPhone: 0, total: 217),
+            '0 of 217 stay on this phone. Resume continues from there.');
+        expect(words.downloadStoppedTitle(name: 'Prog snob'),
+            'Prog snob is stopped');
+      });
+
+      test(
+          "N-39: a stopped job is no part of the live card, the dated card or the bar",
+          () {
+        final live = download('playlist:p2', 'Workout', 'x');
+        expect(liveCard([stopped()], words), isNull);
+        expect(datedCard([stopped()], DateTime(2026, 11, 17, 9, 41), words),
+            isNull,
+            reason: 'its phone copy is paused: nothing of it is saving');
+        // The card with only a stopped job left ENDS: the next card starts from zero.
+        final bar = CardBar();
+        expect(bar.apply([live, before.single]), greaterThan(0));
+        expect(bar.apply([stopped()]), 0);
+        // With another job still running, the live card is that job's alone.
+        expect(
+            liveCard([stopped(), live], words)!.title, 'Downloading Workout');
+      });
+    });
+
     test('a liked-songs import says so in the words the app already has', () {
       CardJob liked(CardPhase p) => CardJob(
             key: 'import:l',

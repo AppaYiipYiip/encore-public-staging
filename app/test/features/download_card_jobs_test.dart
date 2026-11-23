@@ -1,6 +1,7 @@
 import 'package:encore/data/encore/encore_models.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/domain/download_card.dart';
+import 'package:encore/domain/download_card_words.dart';
 import 'package:encore/domain/download_line.dart';
 import 'package:encore/features/downloads/download_card_jobs.dart';
 import 'package:encore/features/downloads/download_line_providers.dart';
@@ -407,6 +408,151 @@ void main() {
       final after = (await jobs(c2)).single;
       expect(after.importing, isFalse);
       expect(after.text, '12 of 217 on this phone · 40 ready on your server');
+    });
+  });
+
+  group('a Download the person stopped (N-39)', () {
+    const stoppedLine = DownloadLine(
+        'Stopped · 12 of 217 on this phone · 40 ready on your server',
+        twoStages: true,
+        stopped: true);
+
+    test(
+        "N-39: the job is over as a Download that waits: S-16's line, and it is not running",
+        () async {
+      final c = start(
+        line: stoppedLine,
+        phone:
+            const PinState(pinned: true, total: 217, done: 12, stopped: true),
+        keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+      );
+
+      final job = (await jobs(c)).single;
+      expect(job.phase, CardPhase.stopped);
+      expect(job.running, isFalse);
+      expect(job.kind, CardJobKind.download);
+      expect(job.text, startsWith('Stopped · 12 of 217'));
+      expect([job.songs, job.onPhone], [217, 12]);
+      expect(job.starting, isFalse);
+    });
+
+    test(
+        "N-39: a download that has every song is finished, whatever the Stop says",
+        () async {
+      final c = start(
+        line: const DownloadLine('Downloaded • 217 songs', complete: true),
+        phone:
+            const PinState(pinned: true, total: 217, done: 217, stopped: true),
+      );
+
+      expect((await jobs(c)).single.phase, CardPhase.ready);
+    });
+
+    test(
+        "N-39: an import and the Download of its playlist: Stop stops only the phone copy, so the import goes on as a job of its own with its own end",
+        () async {
+      final c = start(
+        line: stoppedLine,
+        phone:
+            const PinState(pinned: true, total: 217, done: 12, stopped: true),
+        keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+        imports: ImportWatchState(imports: [
+          _import('im_1', playlistId: 'pl_1', matched: 117, pending: 100),
+        ]),
+      );
+
+      final found = await jobs(c);
+      expect(found, hasLength(2));
+      final download = found.firstWhere((j) => j.kind == CardJobKind.download);
+      final import = found.firstWhere((j) => j.kind == CardJobKind.import);
+      expect(download.phase, CardPhase.stopped);
+      expect(download.importing, isFalse,
+          reason: 'the card is the download\'s: it never says Finding songs');
+      expect(download.text, startsWith('Stopped'));
+      expect(import.phase, CardPhase.running,
+          reason: 'the import has its own Stop and goes on');
+      expect(import.key, isNot(download.key),
+          reason:
+              'one key per job: the stopped download\'s card and the import\'s end are two cards, not one replaced by the other');
+      expect(import.importing, isTrue);
+    });
+
+    // The look that finds the import in this state, as the jobs the card follows (one container per look).
+    Future<List<CardJob>> look(EncoreImport import) async => jobs(start(
+          line: stoppedLine,
+          phone:
+              const PinState(pinned: true, total: 217, done: 12, stopped: true),
+          keep: keepWith([_group('playlist', 'pl_1', ready: 40, queued: 177)]),
+          imports: ImportWatchState(imports: [import]),
+        ));
+
+    EncoreImport made(
+            {String state = 'running',
+            int matched = 0,
+            int pending = 100,
+            int kept = 0}) =>
+        _import('im_1',
+            playlistId: 'pl_1',
+            state: state,
+            matched: matched,
+            pending: pending,
+            kept: kept);
+
+    test(
+        "N-39: the import's own end card is posted when it ends beside the stopped download: ONE card, the import's, and none for the download again",
+        () async {
+      const words = DownloadCardWords();
+      final finding = await look(made(matched: 117, pending: 100));
+      final ready =
+          await look(made(state: 'done', matched: 217, pending: 0, kept: 217));
+
+      final results = resultsBetween(finding, ready, words);
+
+      expect(results, hasLength(1),
+          reason:
+              'the import running became the import ready: its end card, and nothing for the download that was stopped before');
+      expect(results.single.title, '“Prog snob” is ready');
+      expect(results.single.body, '217 of 217 songs are in your library now.');
+    });
+
+    test(
+        "N-39: the import stays a job of its own when it has found all its songs and the server is still saving them: it does not drop off the list between two looks",
+        () async {
+      final finding = await look(made(matched: 117, pending: 100));
+      final saving = await look(made(matched: 217, pending: 0, kept: 100));
+
+      final import = saving.firstWhere((j) => j.kind == CardJobKind.import);
+      expect(import.key,
+          finding.firstWhere((j) => j.kind == CardJobKind.import).key);
+      expect(import.phase, CardPhase.running);
+      expect(
+          resultsBetween(finding, saving, const DownloadCardWords()), isEmpty);
+    });
+
+    test(
+        "N-39: an import stopped on another device beside the stopped download says so, once",
+        () async {
+      final finding = await look(made(matched: 117, pending: 100));
+      final stopped =
+          await look(made(state: 'stopped', matched: 117, pending: 100));
+
+      final results =
+          resultsBetween(finding, stopped, const DownloadCardWords());
+
+      expect(results.map((r) => r.title), ['Import stopped']);
+    });
+
+    test(
+        "N-39: an import that was already over when the Download was stopped is no new card",
+        () async {
+      final over =
+          await look(made(state: 'done', matched: 217, pending: 0, kept: 217));
+
+      expect(over.where((j) => j.kind == CardJobKind.import).single.phase,
+          CardPhase.ready);
+      expect(resultsBetween(over, over, const DownloadCardWords()), isEmpty);
+      expect(
+          resultsBetween(const [], over, const DownloadCardWords()), isEmpty);
     });
   });
 

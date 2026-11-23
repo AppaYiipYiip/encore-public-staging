@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
 import '../../domain/download_line.dart';
+import '../../domain/download_stop_words.dart';
 import '../downloads/download_line_providers.dart';
 import '../downloads/download_notifications_prompt.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/download_status.dart';
+import '../downloads/remove_download_dialog.dart';
 import 'encore_sheet.dart';
 import 'format.dart';
 
@@ -33,8 +36,8 @@ class _JustPressed extends Notifier<bool> {
 /// Spotify-style "Download" toggle for an album / playlist / liked songs.
 ///
 /// States: outline arrow (off) -> progress ring (downloading) -> filled
-/// accent circle (complete) -> warning (needs attention). Tapping an active
-/// toggle asks before throwing the files away.
+/// accent circle (complete) -> warning (needs attention); a solid ring with a pause mark while the person's Stop holds the download (S-17, N-39).
+/// Tapping an active toggle opens the download's sheet (S-96): Stop keeps the files, Remove asks before throwing them away.
 class DownloadButton extends ConsumerWidget {
   const DownloadButton({
     super.key,
@@ -72,7 +75,10 @@ class DownloadButton extends ConsumerWidget {
   /// The download as the line of the two stages names it, when it is not the plain pin of [type] and [targetId] (a catalogue release).
   final DownloadTarget? target;
 
-  DownloadTarget get _target => target ?? DownloadTarget.pin(type, targetId);
+  DownloadTarget get _target => target ?? _plainTarget;
+
+  /// The download as the plain pin of [type] and [targetId].
+  DownloadTarget get _plainTarget => DownloadTarget.pin(type, targetId);
 
   String get _pressKey => '${type.name}:$targetId';
 
@@ -128,6 +134,12 @@ class DownloadButton extends ConsumerWidget {
           null,
           'Nothing to download yet. Songs you add to $name will download',
         ),
+      PinPhase.stopped => (
+          Icons.pause_rounded,
+          c.accent,
+          null,
+          _words.stoppedButton(onPhone: state.done, total: state.total),
+        ),
       PinPhase.complete => (
           Icons.arrow_downward_rounded,
           c.onAccent,
@@ -167,8 +179,14 @@ class DownloadButton extends ConsumerWidget {
                       color: fill,
                       border: fill == null
                           ? Border.all(
-                              color: busy ? c.outline : c.onBgMuted,
-                              width: 1.6,
+                              // The stopped download's ring is solid and in the accent: not the ring that turns, not the plain outline of
+                              // "not downloaded" (the ring is what makes the pause mark the download's and not the player's).
+                              color: phase == PinPhase.stopped
+                                  ? c.accent
+                                  : busy
+                                      ? c.outline
+                                      : c.onBgMuted,
+                              width: phase == PinPhase.stopped ? 2.4 : 1.6,
                             )
                           : null,
                     ),
@@ -237,34 +255,64 @@ class DownloadButton extends ConsumerWidget {
       return;
     }
 
-    final remove = await showEncoreSheet<bool>(
+    // Everything the choice needs afterwards is taken NOW, before the sheet: this button, its context and its `ref` may be gone by the time the person
+    // chooses (the page it stood on was left while the sheet was open), and a choice made in the sheet must not vanish with it (review of PR 119).
+    final download = _target;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final stop = ref.read(stopDownloadProvider);
+    final resume = ref.read(resumeDownloadProvider);
+    final retry = ref.read(retryDownloadProvider);
+    // What the question reads while it is open: the download as it is then, not as it was when the sheet opened. A state handed in for a target the
+    // pins do not know (the moment a catalogue release is still being saved) has no live source and is what it was.
+    final ProviderListenable<PinState> live =
+        download == _plainTarget && stateOverride != null
+            ? Provider.autoDispose<PinState>((_) => stateOverride!)
+            : downloadPinStateProvider(download);
+    final choice = await showEncoreSheet<_SheetChoice>(
       context: context,
-      builder: (sheet) => _RemoveSheet(
+      builder: (sheet) => _DownloadSheet(
           name: name,
           state: state,
           waiting: ref.read(downloadsWaitProvider),
-          line: ref.read(downloadLineProvider(_target))),
+          line: ref.read(downloadLineProvider(download))),
     );
-    if (remove == true) {
-      String? note;
-      if (onRemove != null) {
-        note = await onRemove!();
-      } else {
-        await actions.unpin(type, targetId);
-      }
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-            SnackBar(content: Text(note ?? 'Removed $name from this phone')));
-    } else if (remove == false) {
-      // The server again for the songs it failed to get, and the phone again for the files it could not take.
-      await ref.read(retryDownloadProvider)(_target);
+    switch (choice) {
+      case _SheetChoice.remove:
+        // Remove is the one thing that deletes, and it always asks first (S-96): Cancel changes nothing.
+        if (!await confirmRemoveDownload(navigator, name: name, state: live)) {
+          return;
+        }
+        String? note;
+        if (onRemove != null) {
+          note = await onRemove!();
+        } else {
+          await actions.unpin(type, targetId);
+        }
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+              SnackBar(content: Text(note ?? 'Removed $name from this phone')));
+      case _SheetChoice.stop:
+        // Keeps every file that is on the phone; no question (it deletes nothing and Resume undoes it).
+        unawaited(stop(download));
+      case _SheetChoice.resume:
+        unawaited(resume(download));
+      case _SheetChoice.retry:
+        // The server again for the songs it failed to get, and the phone again for the files it could not take.
+        await retry(download);
+      case null:
+        break;
     }
   }
 }
 
-class _RemoveSheet extends StatelessWidget {
-  const _RemoveSheet(
+/// What a row of the sheet asks for.
+enum _SheetChoice { retry, stop, resume, remove }
+
+const DownloadStopWords _words = DownloadStopWords();
+
+class _DownloadSheet extends StatelessWidget {
+  const _DownloadSheet(
       {required this.name, required this.state, this.waiting, this.line});
 
   final String name;
@@ -287,15 +335,24 @@ class _RemoveSheet extends StatelessWidget {
             PinPhase.empty => 'Nothing to download yet',
             PinPhase.complete => 'Downloaded',
             PinPhase.attention => 'Some songs could not be downloaded',
+            PinPhase.stopped => 'Stopped - ${state.done} of ${state.total}',
             _ => waiting == null
                 ? 'Downloading ${state.done} of ${state.total}'
                 : '$waiting - ${state.done} of ${state.total}',
           };
+    // A stopped download sends no asks, so there is no "Try again now" until Resume (S-96 "stopped").
+    final isStopped = state.phase == PinPhase.stopped;
+    // Stop is offered while songs are coming (the line says so): not on a finished download, not on one with only songs that did not come, and not
+    // on the line a plain music server has always had (no Stop is drawn for it).
+    final canStop = !isStopped && line != null && line!.canStop;
     // Asking again is offered for what the phone could not take and for what the server could not get.
-    final canTryAgain = state.phase == PinPhase.attention ||
-        (line != null && line!.failed > 0 && line!.canRetry);
+    final canTryAgain = !isStopped &&
+        (state.phase == PinPhase.attention ||
+            (line != null && line!.failed > 0 && line!.canRetry));
     return SafeArea(
-      child: Padding(
+      // The rows can be taller than a small phone with large text (the sheet has a row more since N-39, and each row a line): it scrolls instead of
+      // running off the bottom.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
             Space.gutter, Space.lg, Space.gutter, Space.md),
         child: Column(
@@ -319,22 +376,32 @@ class _RemoveSheet extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.refresh_rounded),
                 title: const Text('Try again now'),
-                onTap: () => Navigator.of(context).pop(false),
+                onTap: () => Navigator.of(context).pop(_SheetChoice.retry),
+              ),
+            if (canStop)
+              ListTile(
+                leading: const Icon(Icons.stop_circle_outlined),
+                title: Text(_words.stop()),
+                subtitle: Text(_words.stopKeeps(onPhone: state.done)),
+                onTap: () => Navigator.of(context).pop(_SheetChoice.stop),
+              ),
+            if (isStopped)
+              ListTile(
+                leading: const Icon(Icons.play_circle_outline_rounded),
+                title: Text(_words.resume()),
+                subtitle: Text(_words.resumeCopies()),
+                onTap: () => Navigator.of(context).pop(_SheetChoice.resume),
               ),
             ListTile(
               leading: Icon(Icons.delete_outline_rounded, color: c.danger),
-              title: Text(
-                state.phase == PinPhase.complete ||
-                        state.phase == PinPhase.empty
-                    ? 'Remove download'
-                    : 'Stop and remove download',
-                style: TextStyle(color: c.danger),
-              ),
-              onTap: () => Navigator.of(context).pop(true),
+              title: Text(_words.removeDownload(),
+                  style: TextStyle(color: c.danger)),
+              subtitle: Text(_words.removeAsksFirst()),
+              onTap: () => Navigator.of(context).pop(_SheetChoice.remove),
             ),
             ListTile(
               leading: const Icon(Icons.close_rounded),
-              title: const Text('Keep downloaded'),
+              title: Text(_words.keepDownloaded()),
               onTap: () => Navigator.of(context).pop(),
             ),
           ],

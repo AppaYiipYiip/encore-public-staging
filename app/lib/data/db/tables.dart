@@ -240,6 +240,12 @@ class Pins extends Table {
   TextColumn get quality => text().withDefault(const Constant('original'))();
   IntColumn get createdAtMs => integer()();
 
+  /// Set (v9) while the person's own Stop (N-39) holds this download: the phone's copy waits for Resume. It is the manager's INTENT, stored here and
+  /// not in memory, so that a kill, a restart of the phone and the next day find the download as the person left it: stopped, nothing moving. The
+  /// files already on the phone stay and play; the songs this pin alone wants are neither started nor refreshed nor tried again while it is set,
+  /// and songs added to the list later wait too. Resume clears it. `null` = not stopped; the value is when the Stop was pressed.
+  IntColumn get stoppedAtMs => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {serverId, targetType, targetId};
 }

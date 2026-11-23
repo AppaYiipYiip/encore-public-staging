@@ -82,6 +82,9 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
   final jobs = <CardJob>[];
   final merged = <String>{};
 
+  /// Imports that go on beside a Download the person stopped (N-39): a job of their own, with a key of their own.
+  final beside = <String>{};
+
   for (final t in targets) {
     // One song is seconds long and nobody wants a card for it: not even for the first second, "Starting...", that would be gone a moment later.
     if ((t.knownSongs ?? _kSmallestJob) < _kSmallestJob) continue;
@@ -101,17 +104,21 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
 
     // An import that made this playlist and is still going is the same job, its words first.
     final made = t.playlistId == null ? null : importOf[t.playlistId];
-    if (made != null) merged.add(made.id);
     // A stuck import (the server says running, nothing has changed for half an hour) lends the Download nothing: it is a Download again.
     // KNOWN GAP (docs/33 PB-43 (i)): an import stopped on another device while this Download goes on leaves no "Import stopped" card: the one job
     // is the Download, and its line is the download's. Removal trigger: a frame for it drawn in S-95.
-    final finding = made != null &&
-            made.state != 'stopped' &&
-            made.state != 'failed' &&
-            made.pending > 0 &&
-            !watch.stalled.contains(made.id)
-        ? made
-        : null;
+    final going = made != null &&
+        made.state != 'stopped' &&
+        made.state != 'failed' &&
+        made.pending > 0 &&
+        !watch.stalled.contains(made.id);
+    // A Download the person stopped (N-39) stops only the phone copy: the import goes on, on its own Stop. The card is then the download's ("Prog snob
+    // is stopped") and the import is a job of its own (its running words, its end card when it comes), not the words of this one.
+    final finding = going && !line.stopped ? made : null;
+    // For as long as the Download is stopped the import is a job of its own, whatever state it is in (running, saving, over): it is the import loop
+    // below that decides what it says and whether it is history. If it were merged away the moment it stopped "going", its job would drop off the
+    // list between two looks and its end card would never be posted.
+    if (made != null) (line.stopped ? beside : merged).add(made.id);
     final importing = finding != null;
     if (finding != null) songs = finding.total;
     if (songs < _kSmallestJob && !line.starting) continue;
@@ -130,9 +137,11 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
       failed: line.failed,
       phase: line.complete
           ? CardPhase.ready
-          : line.stuck
-              ? CardPhase.partly
-              : CardPhase.running,
+          : line.stopped
+              ? CardPhase.stopped
+              : line.stuck
+                  ? CardPhase.partly
+                  : CardPhase.running,
       starting: line.starting && !importing,
       saving: saving || importing,
       importing: importing,
@@ -147,7 +156,7 @@ final downloadCardJobsProvider = Provider<List<CardJob>>((ref) {
     // KNOWN GAP (docs/33 PB-43 (ii)): a failed import is dropped here, so its running card goes away with no word and no result card (the import
     // page still says it failed). Removal trigger: a frame for it drawn in S-95.
     if (i.state == 'failed' || i.total < _kSmallestJob) continue;
-    final job = _importJob(i, watch, keep, now);
+    final job = _importJob(i, watch, keep, now, ownKey: beside.contains(i.id));
     if (job != null) jobs.add(job);
   }
   return jobs;
@@ -157,8 +166,9 @@ CardJob? _importJob(
   EncoreImport i,
   ImportWatchState watch,
   KeepState keep,
-  DateTime now,
-) {
+  DateTime now, {
+  bool ownKey = false,
+}) {
   // A stuck import is not followed: it is ABSENT (not "over": that would be a result card saying it is ready, which it is not). Its card, if one was
   // on screen, goes away; the import page still says what the server says, and a change brings the card back.
   if (watch.stalled.contains(i.id)) return null;
@@ -203,7 +213,11 @@ CardJob? _importJob(
   return CardJob(
     // The key of the playlist when it has one, the same key the Download of that playlist has: pressing Download on a playlist that is still
     // being imported must not look like another job (the bar would start again, and the card of its end would be two).
-    key: playlist == null ? 'import:${i.id}' : 'pin:playlist:$playlist',
+    // The one exception: beside a Download that the person stopped (N-39) it is its own job, so that the stopped download's card and the import's end
+    // are two cards and not one replaced by the other.
+    key: playlist == null || ownKey
+        ? 'import:${i.id}'
+        : 'pin:playlist:$playlist',
     name: i.name,
     kind: CardJobKind.import,
     text: text,

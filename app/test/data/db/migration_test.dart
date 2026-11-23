@@ -42,7 +42,8 @@ void main() {
     ]);
   });
 
-  for (final from in const [1, 2, 3, 4, 5, 6, 7]) {
+  // Every shipped version before the current one (v8 is in the list since N-39: its step to v9 adds the stopped mark of a pin).
+  for (final from in const [1, 2, 3, 4, 5, 6, 7, 8]) {
     test('v$from upgrades to the current schema and keeps its rows', () async {
       final schema = await verifier.schemaAt(from);
 
@@ -54,6 +55,9 @@ void main() {
             "local_path, bytes, updated_at_ms) VALUES (1, 'old', 2, '/x/old', 99, 5)")
         ..execute('INSERT INTO outbox (server_id, kind, payload_json, '
             "created_at_ms) VALUES (1, 'star', '{}', 7)")
+        // A download the person asked for before the upgrade (v9 gives it a stopped mark, empty).
+        ..execute('INSERT INTO pins (server_id, target_type, target_id, '
+            "created_at_ms) VALUES (1, 'playlist', 'p1', 9)")
         // One playlist whose songs were stored, one whose songs never were.
         ..execute('INSERT INTO playlists (server_id, id, name, song_count, '
             'changed_at_ms, entries_fetched_at_ms) '
@@ -73,6 +77,13 @@ void main() {
       expect(downloads.single.quality, 'original',
           reason:
               'the quality the copy was made at is not changed by the upgrade');
+
+      final pins = await db.select(db.pins).get();
+      expect(pins.single.targetId, 'p1');
+      expect(pins.single.stoppedAtMs, isNull,
+          reason:
+              'v9 (N-39): a download made before the upgrade is not stopped, so nothing that was coming is held back by the upgrade');
+      expect(pins.single.createdAtMs, 9);
 
       final queued = await db.select(db.outbox).get();
       expect(queued.single.kind, 'star');
