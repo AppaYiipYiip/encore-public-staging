@@ -42,15 +42,14 @@ from typing import Any
 import httpx
 
 from . import album_finder, deezer, refs
-from .album_finder import RefHoldings, Song, Verdict, choose_release, refusal, wanted_albums
+from .album_finder import RefHoldings, Song, Verdict
+from .album_pass import ALBUM_DEADLINE_S, SEARCH_WAIT_S
 from .artist_basis import performer_clause
 from .catalogue import Cache, Catalogue
-from .deezer import DeezerClient, Gate, LookupUnavailable, NotInCatalogue
+from .deezer import DeezerClient, Gate
 from .fixture_names import fixture_name
+from .keeper.tagging import file_length_ms
 
-#: What the dry run waits for one album (the album and its songs) and for one search: a background turn's patience, not a person's.
-ALBUM_DEADLINE_S = 30.0
-SEARCH_WAIT_S = 30.0
 #: Fields the recorder (`tools/record_catalogue_fixtures.py`) takes out of an answer before it is saved: signed addresses and share links.
 _DROP = frozenset({"preview", "share", "md5_image"})
 #: The width of a bar of the histogram.
@@ -174,18 +173,6 @@ class Entry:
     length_from: str
 
 
-def file_length_ms(path: Path) -> int | None:
-    """The length of an audio file in milliseconds, or `None` (no such file, a format `mutagen` cannot read, `mutagen` not installed)."""
-    try:
-        import mutagen
-
-        audio = mutagen.File(str(path))
-        length = float(audio.info.length) if audio is not None and audio.info is not None else 0.0
-    except Exception:  # noqa: BLE001 - any unreadable file is "no length", never a crash of a report
-        return None
-    return round(length * 1000) if length > 0 else None
-
-
 def entries(
     conn: sqlite3.Connection, *, kept_only: bool = True, limit: int | None = None, music_root: Path | None = None
 ) -> list[Entry]:
@@ -229,6 +216,7 @@ def run(
     album: Callable[[str], dict[str, Any]],
     *,
     tolerance_ms: int = album_finder.TOLERANCE_MS,
+    single_window_days: int | None = album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
     stop: Callable[[], bool] = lambda: False,
 ) -> list[Row]:
     """Every song through the matcher, exactly as slice 2's pass will ask: the search, then each album the same-recording hits are on (serially), then
@@ -236,7 +224,7 @@ def run(
     [stop] is asked after each song (the request cap of a live run)."""
     rows: list[Row] = []
     for item in items:
-        rows.append(Row(item, _decide(conn, item, search, album, tolerance_ms)))
+        rows.append(Row(item, _decide(conn, item, search, album, tolerance_ms, single_window_days)))
         if stop():
             break
     return rows
@@ -248,21 +236,12 @@ def _decide(
     search: Callable[[str, str], list[dict[str, Any]]],
     album: Callable[[str], dict[str, Any]],
     tolerance_ms: int,
+    single_window_days: int | None,
 ) -> Verdict:
-    song = item.song
-    if refusal(song) is not None:
-        return choose_release(song, [], {})
-    try:
-        found = search(song.artist, song.title)
-    except LookupUnavailable as error:
-        return Verdict("unavailable", "search_not_asked", detail=str(error))
-    answers: dict[str, dict[str, Any] | None] = {}
-    for album_id in wanted_albums(song, found, tolerance_ms=tolerance_ms):
-        try:
-            answers[album_id] = album(album_id)
-        except (LookupUnavailable, NotInCatalogue):
-            continue  # `choose_release` reads an album that is not in the mapping as "could not ask"
-    return choose_release(song, found, answers, RefHoldings(conn, item.ref_id), tolerance_ms=tolerance_ms)
+    """The very function the album pass asks with (`album_finder.decide`): what this report counts is what the pass will write."""
+    return album_finder.decide(
+        item.song, search, album, RefHoldings(conn, item.ref_id), tolerance_ms=tolerance_ms, single_window_days=single_window_days
+    )
 
 
 # ------------------------------------------------------------------------------------------------------------------ the report
@@ -291,8 +270,28 @@ class Report:
     tolerance_ms: int
     requests: dict[str, int] = field(default_factory=dict)
     examples: int = 25
+    #: The window of `album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS` this run used (`None`: not frozen).
+    single_window_days: int | None = None
     #: Why the run ended before the last song (`Source.stop_reason`), or `None`.
     stopped: str | None = None
+
+    def single_gaps(self) -> list[tuple[Row, int]]:
+        """The days between an EARLIER single and the album or EP that carries the same recording, one per such single, over every song that has both among the releases
+        its same-recording hits are on (the same recording by artist, title, version and length: not by ISRC, which the report does not see). THIS is what
+        `album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS` is frozen from."""
+        gaps: list[tuple[Row, int]] = []
+        for row in self.rows:
+            chosen = next(
+                (rel for rel in row.verdict.releases if rel.reason == "chosen" and rel.record_type in ("album", "ep")), None
+            )
+            if chosen is None:
+                continue
+            for rel in row.verdict.releases:
+                if rel.record_type == "single" and rel.reason in ("outranked", "chosen"):
+                    gap = album_finder._gap_days(rel.release_date, chosen.release_date)
+                    if gap is not None and gap >= 0:
+                        gaps.append((row, gap))
+        return gaps
 
     def best_deltas(self) -> dict[str, list[tuple[Row, int]]]:
         """Per length source, per song: the delta of the hit of the same artist, title and version that is NEAREST in length (the song's own
@@ -312,6 +311,15 @@ class Report:
             f"STOP-GAP: the tolerance is {self.tolerance_ms} ms and it is UNMEASURED for a kept FILE against the catalogue "
             f"(album_finder.TOLERANCE_MS, N-34). This report is what it is frozen from, if the lengths below come from FILES."
         )
+        window = (
+            f"{self.single_window_days} days"
+            if self.single_window_days is not None
+            else "NOT FROZEN: every song whose recording came out first as a single and later on an album is `single_before_album`, re-askable"
+        )
+        say(
+            f"STOP-GAP: the single-before-album window is {window} (album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS, N-34, the advisor's ruling "
+            f"of 17 Nov 2026). The section 'single-before-album gaps' below is what it is frozen from."
+        )
         say(f"N-34 slice 1 dry run: {total} songs through the matcher, nothing written. {datetime.now(UTC):%Y-%m-%d %H:%M} UTC")
         if self.stopped:
             say(f"STOPPED EARLY: {self.stopped}; the songs after this point were not asked.")
@@ -322,6 +330,54 @@ class Report:
         for (outcome, reason), count in sorted(outcomes.items(), key=lambda item: (-item[1], item[0])):
             remembered = "remembered" if outcome in album_finder.REMEMBERED else "never remembered"
             say(f"  {count:5d}  {outcome:11s} {reason:24s} ({remembered})")
+        say("")
+        say(
+            "== songs the catalogue could not place, by cause (re-askable: asked again after 7 days and when the rule gets better)"
+        )
+        causes = Counter(row.verdict.reason for row in self.rows if row.verdict.outcome == "none")
+        meaning = {
+            "latin_spelling_only": "a non-Latin song whose only catalogue hits are spelled in Latin letters (counted apart)",
+            "single_before_album": "an album carries it and an EARLIER single too: the album wins only inside the window",
+            "compilation_title": "the only release's title says it is a compilation (Greatest Hits, Best Of, Collection ...)",
+            "no_same_recording": "no hit is this recording (artist, title, version and length)",
+            "no_album_on_hit": "the hit names no album",
+            "no_eligible_release": "no release of the hits is by the song's artist and an album, EP or single",
+        }
+        for cause, count in sorted(causes.items(), key=lambda item: (-item[1], item[0])):
+            say(f"  {count:5d}  {cause:20s} {meaning.get(cause, '')}")
+        if not causes:
+            say("  (none)")
+        spelled = [row for row in self.rows if row.verdict.reason == "latin_spelling_only"]
+        say(f"  non-Latin songs with only Latin-spelled hits: {len(spelled)} of {len(self.rows)}")
+        for row in spelled[: min(self.examples, 10)]:
+            first = next((hit for hit in row.verdict.hits if hit.reason != "unreadable"), None)
+            say(f"    {_name(row.entry)}  catalogue says: {(first.artist + ' - ' + first.title)[:40] if first else '?'}")
+        withheld = [row for row in self.rows if row.verdict.withheld is not None]
+        say(f"  withheld (what the old rule would have written; NOT written): {len(withheld)}")
+        for row in withheld[: min(self.examples, 10)]:
+            wanted = row.verdict.withheld
+            assert wanted is not None
+            say(
+                f"    {_name(row.entry)}  {row.verdict.reason}: would be {wanted.album[:30]} ({wanted.record_type}, {wanted.release_date or 'no date'})  {row.verdict.detail[:70]}"
+            )
+        say("")
+        say(
+            "== single-before-album gaps: days between the earlier single and the album that carries the same recording (the window is frozen from THIS, over many artists)"
+        )
+        gaps = self.single_gaps()
+        if not gaps:
+            say("  (no song had both a single and an album among its same-recording hits)")
+        else:
+            days = sorted(gap for _, gap in gaps)
+            say(
+                f"  {len(days)} pairs, {len({row.entry.ref_id for row, _ in gaps})} songs; min {days[0]}, median {days[len(days) // 2]}, max {days[-1]} days"
+            )
+            edges = (30, 90, 180, 365, 730, 1460, 3650)
+            for index in range(len(edges) + 1):
+                low = 0 if index == 0 else edges[index - 1]
+                high = None if index == len(edges) else edges[index]
+                n = sum(1 for gap in days if gap >= low and (high is None or gap < high))
+                say(f"    {low:5d} .. {'inf' if high is None else high:>5} days {n:5d} {'#' * min(n, _BAR)}")
         say("")
         say("== where the song's length came from (the tolerance must be frozen from `file`)")
         sources = Counter(row.entry.length_from for row in self.rows)
@@ -430,6 +486,12 @@ def main(
     parser.add_argument("--limit", type=int, help="only the first N songs")
     parser.add_argument("--all", action="store_true", help="also the songs nobody kept a file of")
     parser.add_argument("--tolerance-ms", type=int, default=album_finder.TOLERANCE_MS)
+    parser.add_argument(
+        "--single-window-days",
+        type=int,
+        default=album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
+        help="how many days an album may come after an earlier single and still be the song's album (default: not frozen)",
+    )
     parser.add_argument("--examples", type=int, default=25, help="how many examples of each kind to print")
     parser.add_argument("--out", type=Path, help="also write the report to this file")
     args = parser.parse_args(argv)
@@ -451,14 +513,27 @@ def main(
                     why.append(reason)
                 return bool(why)
 
-            rows = run(conn, items, source.search, source.album, tolerance_ms=args.tolerance_ms, stop=stop)
+            rows = run(
+                conn,
+                items,
+                source.search,
+                source.album,
+                tolerance_ms=args.tolerance_ms,
+                single_window_days=args.single_window_days,
+                stop=stop,
+            )
             requests = {
                 "asked": source.transport.asked,
                 "replayed": source.transport.replayed,
                 "not recorded": len(source.transport.not_recorded),
             }
             report = Report(
-                rows, args.tolerance_ms, requests, args.examples, stopped=why[0] if why and len(rows) < len(items) else None
+                rows,
+                args.tolerance_ms,
+                requests,
+                args.examples,
+                single_window_days=args.single_window_days,
+                stopped=why[0] if why and len(rows) < len(items) else None,
             )
         text = report.render()
     finally:

@@ -76,7 +76,7 @@ def message(late: list[Marker], current: str) -> str:
     where = "\n".join(f"  {m.file}:{m.line}  STOP-GAP(P2-25 {m.name}), remove after {m.release}" for m in late)
     return (
         f"The server is at version {current} and these stop-gaps of P2-25 were to be gone after the release that carries them:\n{where}\n"
-        "Delete them: board item N-36 lists every piece (the worklist table with a migration that drops it, rehome.py, keyrepair._lost_by_old_fold, the recheck_pending hold, "
+        "Delete them: board item N-36 lists every piece (the worklist table with a migration that drops it, rehome.py, keyrepair._lost_by_old_fold, the recheck_pending hold of refmerge and the two calls of album_pass.py, "
         "tests/legacy_fold.py) and their tests, and this inventory. Do it only when `python docs/evidence/scripts/audit_stack.py check rekey` "
         "says the worklist is empty on every install the project knows. If instead this is the FIRST release (the version was raised to the number it ships under), set "
         "`remove after` of every marker to that number. If the trigger has really not been met, move the release on AND write why in a board note on N-36. "
@@ -160,6 +160,7 @@ INVENTORY: dict[str, dict[str, str]] = {
         "encore_server/keyrepair.py": "def _lost_by_old_fold(",
         "encore_server/rehome.py": "class Rehome:",
         "encore_server/refs.py": "def recheck_pending(",
+        "encore_server/album_pass.py": "refs.recheck_pending(",
         "encore_server/refmerge.py": '"recheck_pending"',
         "encore_server/ref_janitor.py": "DELETE FROM ref_recheck",
         "tests/legacy_fold.py": "def norm_key(",

@@ -28,13 +28,14 @@ from __future__ import annotations
 import re
 import sqlite3
 import unicodedata
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Any, Literal, Protocol
 
 from . import refs
 from .catalogue import map_track, release_key
+from .deezer import LookupUnavailable, NotInCatalogue
 from .textnorm import fold, is_unknown_artist, norm_artist, norm_title, survives_fold_whole, words
 
 #: How far a song's length may be from the catalogue's for the two to be the same recording, in milliseconds. It starts as the one number the server
@@ -458,6 +459,33 @@ def _held(match: Match, own_key: str, release: str, holdings: Holdings) -> str |
     if holdings.twin_held(own_key, release):
         return "twin_held"
     return None
+
+
+def decide(
+    song: Song,
+    search: Callable[[str, str], list[dict[str, Any]]],
+    album: Callable[[str], dict[str, Any]],
+    holdings: Holdings = NO_HOLDINGS,
+    *,
+    tolerance_ms: int = TOLERANCE_MS,
+    single_window_days: int | None = SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
+) -> Verdict:
+    """ASK and decide, the one function the album pass and its dry run share, so that what the report counts is what the pass will write: the search, then each album the
+    same-recording hits are on (serially), then [choose_release]. [search] and [album] are the caller's (this module opens no connection: the pass gives the gate's, a test
+    gives a fake). A search or an album that could not be asked is `unavailable`, never `none`: a "no" is a fact about the catalogue."""
+    if refusal(song) is not None:
+        return choose_release(song, [], {})
+    try:
+        found = search(song.artist, song.title)
+    except LookupUnavailable as error:
+        return Verdict("unavailable", "search_not_asked", detail=str(error))
+    answers: dict[str, Mapping[str, Any] | None] = {}
+    for album_id in wanted_albums(song, found, tolerance_ms=tolerance_ms):
+        try:
+            answers[album_id] = album(album_id)
+        except (LookupUnavailable, NotInCatalogue):
+            continue  # `choose_release` reads an album that is not in the mapping as "could not ask"
+    return choose_release(song, found, answers, holdings, tolerance_ms=tolerance_ms, single_window_days=single_window_days)
 
 
 def choose_release(

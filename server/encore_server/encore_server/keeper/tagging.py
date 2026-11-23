@@ -168,3 +168,16 @@ def write_tags(
     if _with_mutagen(path, tags, cover):
         return True
     return _with_ffmpeg(path, tags, runner, ffmpeg)
+
+
+def file_length_ms(path: Path) -> int | None:
+    """The length of an audio file in milliseconds, or `None` (no such file, a format `mutagen` cannot read, `mutagen` not installed). Reads only: the album pass (N-34
+    slice 2) and its dry run compare a kept FILE's own length with the catalogue's, because the import's listing is 1 to 12 s off (N-11)."""
+    try:
+        import mutagen
+
+        audio = mutagen.File(str(path))
+        length = float(audio.info.length) if audio is not None and audio.info is not None else 0.0
+    except Exception:  # noqa: BLE001 - any unreadable file is "no length", never a crash of a pass
+        return None
+    return round(length * 1000) if length > 0 else None
