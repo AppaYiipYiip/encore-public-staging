@@ -34,6 +34,20 @@ final phoneWaitProvider = Provider<PhoneWait?>((ref) {
   };
 });
 
+/// The downloads whose Stop was pressed and has not finished yet (the transfers in flight are being cancelled): their line says "Stopping…" (S-16). It is
+/// only the moment between the press and the answer; the stop itself is stored in the phone's database, not here.
+final stoppingProvider =
+    NotifierProvider<StoppingDownloads, Set<String>>(StoppingDownloads.new);
+
+class StoppingDownloads extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const {};
+
+  void begin(String key) => state = {...state, key};
+
+  void end(String key) => state = {...state}..remove(key);
+}
+
 /// What a download is, for the line under its title: something the person pinned (a playlist, the liked songs, an album, a song) or a catalogue
 /// release (`cat:<id>`, whose songs the phone pinned one by one).
 @immutable
@@ -47,6 +61,14 @@ class DownloadTarget {
   final List<String> releaseRefIds;
 
   bool get isRelease => type == null;
+
+  /// The same download is the same key from one moment to the next (what "Stopping…" is remembered by).
+  String get key => isRelease ? 'release:$id' : 'pin:${type!.name}:$id';
+
+  /// The pins this download is: its own pin, or, for a catalogue release, the pins of its songs. What a person's Stop and Resume name (N-39).
+  List<PinKey> get pins => isRelease
+      ? [for (final song in releaseRefIds) (PinTargetType.track, song)]
+      : [(type!, id)];
 
   /// The download as the server names it, or `null` for what the server does not keep on the person's behalf (an album or artist of the person's own
   /// music, a loose song).
@@ -68,24 +90,35 @@ class DownloadTarget {
   int get hashCode => Object.hash(type, id, releaseRefIds.join(','));
 }
 
+/// The phone's own table for a download as it is NOW: a pin's live state, or a catalogue release's pins added up. What the line under a download starts
+/// from, and what the question before Remove reads when it is ASKED and keeps reading while it is open (S-96, N-39): a number that was true when a sheet
+/// opened is not true when the person answers.
+final downloadPinStateProvider =
+    Provider.autoDispose.family<PinState, DownloadTarget>((ref, target) {
+  return target.isRelease
+      ? ref.watch(releasePinStateProvider(target.releaseRefIds.join(',')))
+      : ref.watch(pinStateProvider((target.type!, target.id))).value ??
+          PinState.none;
+});
+
 /// The line under a download's title, the same on every screen: the phone's own table, what the server says about its stage, and why the phone waits.
 /// On a plain music server it is exactly the line the app has always shown. `null` when the person has not downloaded this.
 final downloadLineProvider =
     Provider.autoDispose.family<DownloadLine?, DownloadTarget>((ref, target) {
-  final PinState phone = target.isRelease
-      ? ref.watch(releasePinStateProvider(target.releaseRefIds.join(',')))
-      : ref.watch(pinStateProvider((target.type!, target.id))).value ??
-          PinState.none;
+  final PinState phone = ref.watch(downloadPinStateProvider(target));
   if (!phone.pinned) return null;
   final keep = ref.watch(keepProvider);
   final key = target.keepKey;
   final group = key == null ? null : keep.of(key);
-  return describeDownload(DownloadFacts(
+  final stopping =
+      ref.watch(stoppingProvider.select((s) => s.contains(target.key)));
+  final line = describeDownload(DownloadFacts(
     phoneDone: phone.done,
     phoneTotal: phone.total,
     phoneActive: phone.active,
     phoneFailed: phone.failed,
     confirmedEmpty: phone.confirmedEmpty,
+    stopped: phone.stopped,
     serverKeeps: keep.supported && key != null,
     wait: ref.watch(phoneWaitProvider),
     server: group == null
@@ -100,4 +133,6 @@ final downloadLineProvider =
             restingUntil: keep.restingUntil,
           ),
   ));
+  // The moment after Stop is pressed: the bar where it was, no button, nothing red (S-16 "Stopping…"). A download that is finished has nothing to stop.
+  return stopping && line.canStop ? line.asStopping() : line;
 });

@@ -69,7 +69,8 @@ class _MemoryStorage implements PersistentStorage {
   Future<void> initialize() async {}
 }
 
-DownloadTask _task(int serverId, String trackId) => DownloadTask(
+DownloadTask _task(int serverId, String trackId, {String metaData = ''}) =>
+    DownloadTask(
       taskId: 'enc:$serverId:$trackId',
       url: 'https://srv/get?id=$trackId',
       filename: '$trackId.opus',
@@ -77,6 +78,7 @@ DownloadTask _task(int serverId, String trackId) => DownloadTask(
       baseDirectory: BaseDirectory.applicationSupport,
       group: _group,
       updates: Updates.status,
+      metaData: metaData,
     );
 
 Future<Uri> _url(
@@ -109,6 +111,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final calls = <String>[]; // every call the plugin makes to the native side
+  final enqueued = <Map<String, dynamic>>[]; // the task json of each 'enqueue'
   final storage = _MemoryStorage();
   late Directory appDir;
   var stored =
@@ -147,6 +150,8 @@ void main() {
         case 'allTasks':
           return [for (final t in running) jsonEncode(t.toJson())];
         case 'enqueue':
+          enqueued.add(jsonDecode((call.arguments as List).first as String)
+              as Map<String, dynamic>);
           return true;
         default:
           return null;
@@ -172,6 +177,7 @@ void main() {
 
   setUp(() async {
     calls.clear();
+    enqueued.clear();
     storage.records.clear();
     storage.failReading = false;
     stored = {};
@@ -256,6 +262,57 @@ void main() {
           'one failing step skipped the replay, and the next start put the cancelled song back in the queue',
     );
     await sub.cancel();
+  });
+
+  test(
+      "N-39: the quality a task was handed over with comes back with every update of it, also one the downloader kept while the app was closed; a task without one gives none",
+      () async {
+    // What the manager records when a refresh completes is what the FILE is (review of PR 119, round 2): the downloader keeps it with the task, as it keeps
+    // the path (B21), so a completion replayed to a manager that never planned the transfer still knows it.
+    stored = {
+      'enc:$serverId:t1': jsonEncode(TaskStatusUpdate(
+              _task(serverId, 't1', metaData: 'original'), TaskStatus.complete)
+          .toJson()),
+      'enc:$serverId:t2': jsonEncode(
+          TaskStatusUpdate(_task(serverId, 't2'), TaskStatus.complete)
+              .toJson()),
+    };
+    final seen = <TransferUpdate>[];
+    final sub = transport.updates.listen(seen.add);
+
+    await transport.resume();
+
+    expect([
+      for (final u in seen) (u.taskId.split(':').last, u.qualityId)
+    ], [
+      ('t1', 'original'),
+      ('t2', null),
+    ]);
+    await sub.cancel();
+  });
+
+  test(
+      "N-39: the transport hands the quality of a transfer to the downloader with the task, and none for a request that names none",
+      () async {
+    final uri = Uri.parse('https://srv/get?id=t1');
+    await transport.start(TransferRequest(
+      taskId: 'enc:$serverId:t1',
+      url: uri,
+      relativePath: 'downloads/$serverId/t1.flac.new',
+      qualityId: 'original',
+    ));
+    await transport.start(TransferRequest(
+      taskId: 'enc:$serverId:t2',
+      url: uri,
+      relativePath: 'downloads/$serverId/t2.opus',
+    ));
+
+    expect([
+      for (final t in enqueued) (t['taskId'], t['metaData'])
+    ], [
+      ('enc:$serverId:t1', 'original'),
+      ('enc:$serverId:t2', ''),
+    ]);
   });
 
   // The process that ended had handed four songs to the downloader; a new process starts a manager on the real transport.

@@ -1,5 +1,8 @@
 import 'package:encore/core/result.dart';
 import 'package:encore/data/encore/encore_models.dart';
+import 'package:encore/data/repos/downloads_repository.dart';
+import 'package:encore/domain/audio_quality.dart';
+import 'package:encore/features/downloads/download_providers.dart';
 import 'package:encore/features/instant/release_save.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +12,7 @@ void main() {
   const titles = {'sr_1': 'Weird Fishes', 'sr_2': 'Nude', 'sr_3': 'Reckoner'};
 
   late List<String> events;
+  late List<List<String>> pinnedAlongside;
   late Map<String, String> keep; // by ref: the state the server answers with
   late Result<EncoreReleaseSave> Function() answer;
 
@@ -25,7 +29,10 @@ void main() {
           events.add('save $releaseId ${refIds.join(",")}');
           return answer();
         },
-        pin: (refId) async => events.add('pin $refId'),
+        pin: (refId, release) async {
+          events.add('pin $refId');
+          pinnedAlongside.add(release);
+        },
         onSaved: remember
             ? (refIds) async => events.add('remember ${refIds.join(",")}')
             : null,
@@ -37,6 +44,7 @@ void main() {
 
   setUp(() {
     events = [];
+    pinnedAlongside = [];
     keep = {for (final id in titles.keys) id: 'queued'};
     answer = () => Result.ok(EncoreReleaseSave(changed: true, keep: {
           for (final e in keep.entries) e.key: EncoreKeep(e.value),
@@ -74,6 +82,34 @@ void main() {
     expect(pins.every((i) => i > save), isTrue);
     expect(events.where((e) => e.startsWith('pin ')),
         ['pin sr_1', 'pin sr_2', 'pin sr_3']);
+  });
+
+  test(
+      "N-39: the screen's saver pins each song as a track pin that is told the whole release",
+      () async {
+    final actions = _RecordingActions();
+
+    await pinInRelease(actions)('sr_2', ['sr_1', 'sr_2', 'sr_3']);
+
+    expect(actions.pins, hasLength(1));
+    expect(actions.pins.single.$1, PinTargetType.track);
+    expect(actions.pins.single.$2, 'sr_2');
+    expect(actions.pins.single.$3, ['sr_1', 'sr_2', 'sr_3']);
+  });
+
+  test(
+      "N-39: each pin is told every song of the release, so a song that joins a release the person has stopped waits with the rest",
+      () async {
+    await saver(unresolved: {'sr_2'})
+        .run(releaseId: 'cat:1', songs: songs, download: true);
+
+    expect(
+        pinnedAlongside,
+        [
+          ['sr_1', 'sr_3'],
+          ['sr_1', 'sr_3'],
+        ],
+        reason: 'the songs the server confirmed, as one release');
   });
 
   test(
@@ -173,4 +209,30 @@ void main() {
     expect(
         outcome.problem, "Couldn't get any of these songs. Nothing was saved.");
   });
+}
+
+/// The download actions as the saver's wiring sees them: what was pinned, and with which songs alongside.
+class _RecordingActions implements DownloadActions {
+  final List<(PinTargetType, String, List<String>)> pins = [];
+
+  @override
+  Future<void> pin(PinTargetType type, String targetId,
+      {AudioQuality? quality, List<String> alongside = const []}) async {
+    pins.add((type, targetId, alongside));
+  }
+
+  @override
+  Future<void> unpin(PinTargetType type, String targetId) async {}
+
+  @override
+  Future<void> retry() async {}
+
+  @override
+  Future<void> stop(List<PinKey> pins) async {}
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {}
+
+  @override
+  Future<void> removeAll() async {}
 }

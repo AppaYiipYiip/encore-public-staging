@@ -181,6 +181,7 @@ class _CatalogueDownloadButton extends ConsumerWidget {
     } else {
       state = PinState.none;
     }
+    final saves = ref.read(releaseSavesProvider.notifier);
     return DownloadButton(
       type: PinTargetType.album,
       targetId: releaseId,
@@ -193,11 +194,9 @@ class _CatalogueDownloadButton extends ConsumerWidget {
       onPin: () => ref.read(releaseSavesProvider.notifier).save(
           releaseId, tracks,
           download: true, title: album.title, artist: album.artistName),
+      // The notifier is taken now: this is called after the sheet and the question, when the page (and its `ref`) may be gone.
       onRemove: () async => releaseRemovedNote(
-          album.title,
-          await ref
-              .read(releaseSavesProvider.notifier)
-              .removeDownload(releaseId)),
+          album.title, await saves.removeDownload(releaseId)),
     );
   }
 

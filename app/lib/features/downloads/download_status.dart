@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logger.dart';
 import '../../data/encore/encore_models.dart';
 import '../../data/repos/downloads_repository.dart';
 import '../../design/tokens.dart';
@@ -53,40 +56,72 @@ final retryDownloadProvider =
   };
 });
 
-/// The bar under a download's line: filled = on the phone, lighter = ready on the server (docs/design S-16).
+/// What Stop does: stores the person's Stop and waits until the transfers in flight are cancelled ("Stopping…" is what the line says meanwhile). When the
+/// stop cannot be stored the line goes back to what it was and its Stop, with no sentence (S-16): nothing was lost.
+final stopDownloadProvider =
+    Provider<Future<void> Function(DownloadTarget target)>((ref) {
+  return (target) async {
+    final stopping = ref.read(stoppingProvider.notifier)..begin(target.key);
+    try {
+      await ref.read(downloadActionsProvider).stop(target.pins);
+    } on Object catch (error) {
+      Log.warn('downloads', 'the stop could not be stored', error);
+    } finally {
+      stopping.end(target.key);
+    }
+  };
+});
+
+/// What Resume does: takes the Stop off the download; the songs that were not on the phone are asked for again, and the server is asked again too
+/// (`keep/ask`, see `KeepController`).
+final resumeDownloadProvider =
+    Provider<Future<void> Function(DownloadTarget target)>((ref) {
+  return (target) => ref.read(downloadActionsProvider).resume(target.pins);
+});
+
+/// The bar under a download's line: filled = on the phone, lighter = ready on the server (docs/design S-16). A stopped download's bar is grey, not the
+/// accent and not amber (amber is a wait); in the moment after Stop is pressed the bar stays where it was, dimmed.
 class DownloadBar extends StatelessWidget {
   const DownloadBar({
     super.key,
     required this.phoneFraction,
     required this.serverFraction,
+    this.stopped = false,
+    this.dimmed = false,
   });
 
   final double phoneFraction;
   final double serverFraction;
+  final bool stopped;
+  final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final tone = stopped ? c.onBgMuted : c.accent;
     return ExcludeSemantics(
-      child: SizedBox(
-        height: 3,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ColoredBox(color: c.outline.withValues(alpha: 0.6)),
-              FractionallySizedBox(
-                alignment: AlignmentDirectional.centerStart,
-                widthFactor: serverFraction.clamp(0.0, 1.0),
-                child: ColoredBox(color: c.accent.withValues(alpha: 0.35)),
-              ),
-              FractionallySizedBox(
-                alignment: AlignmentDirectional.centerStart,
-                widthFactor: phoneFraction.clamp(0.0, 1.0),
-                child: ColoredBox(color: c.accent),
-              ),
-            ],
+      child: Opacity(
+        opacity: dimmed ? 0.5 : 1,
+        child: SizedBox(
+          height: 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(color: c.outline.withValues(alpha: 0.6)),
+                FractionallySizedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: serverFraction.clamp(0.0, 1.0),
+                  child: ColoredBox(color: tone.withValues(alpha: 0.35)),
+                ),
+                FractionallySizedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: phoneFraction.clamp(0.0, 1.0),
+                  child: ColoredBox(color: tone),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -141,7 +176,9 @@ class DownloadStatus extends ConsumerWidget {
             const SizedBox(height: Space.xs),
             DownloadBar(
                 phoneFraction: line.phoneFraction,
-                serverFraction: line.serverFraction),
+                serverFraction: line.serverFraction,
+                stopped: line.stopped,
+                dimmed: line.stopping),
             // Retry never stands alone (owner, 7 Nov 2026: "a download that has no failed, or at least I can't tell it failed, why does it have a
             // Retry button"): while songs are still coming the line speaks of progress only, so the failures are told on their own line, whether or not
             // the names follow.
@@ -149,16 +186,46 @@ class DownloadStatus extends ConsumerWidget {
               Text(
                   '${line.failed == 1 ? '1 song' : '${line.failed} songs'} did not come',
                   style: style),
-            if (line.failed > 0 && line.canRetry)
+            // Stop stands where Retry stands (S-16): under the line and the bar, in every place the status is drawn. Resume takes Stop's place on a
+            // stopped download, which has no Retry (it would send asks, which a stopped download does not).
+            if (line.canStop ||
+                line.stopped ||
+                (line.failed > 0 && line.canRetry))
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: TextButton(
-                  onPressed: () => ref.read(retryDownloadProvider)(target),
-                  child: Semantics(
-                    label: 'Retry the songs that did not come',
-                    excludeSemantics: true,
-                    child: const Text('Retry'),
-                  ),
+                child: Wrap(
+                  children: [
+                    if (line.canStop)
+                      TextButton(
+                        onPressed: () =>
+                            unawaited(ref.read(stopDownloadProvider)(target)),
+                        child: Semantics(
+                          label: 'Stop the download',
+                          excludeSemantics: true,
+                          child: const Text('Stop'),
+                        ),
+                      ),
+                    if (line.stopped)
+                      TextButton(
+                        onPressed: () =>
+                            unawaited(ref.read(resumeDownloadProvider)(target)),
+                        child: Semantics(
+                          label: 'Resume the download',
+                          excludeSemantics: true,
+                          child: const Text('Resume'),
+                        ),
+                      ),
+                    if (line.failed > 0 && line.canRetry)
+                      TextButton(
+                        onPressed: () =>
+                            ref.read(retryDownloadProvider)(target),
+                        child: Semantics(
+                          label: 'Retry the songs that did not come',
+                          excludeSemantics: true,
+                          child: const Text('Retry'),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             for (final f in failures.take(namedFailures))

@@ -19,7 +19,8 @@ enum CardPhase {
   /// Over, but some songs did not come.
   partly,
 
-  /// An import somebody stopped (another device, or the server).
+  /// An import somebody stopped (another device, or the server), or a Download the person stopped on this phone (N-39: its files stay, Resume
+  /// continues). The two say different things, told by [CardJob.kind].
   stopped,
 }
 
@@ -416,6 +417,17 @@ CardResult? _resultOf(CardJob job, DownloadCardWords words) {
         route: kDownloadsRoute,
       );
     case CardPhase.stopped:
+      // A Download the person stopped (N-39): a pause that waits for Resume, in S-16's words (what is kept), tapping to Downloaded where Resume
+      // stands. An import that something else stopped is final: "the rest were not fetched".
+      if (!isImport) {
+        return CardResult(
+          key: job.key,
+          title: words.downloadStoppedTitle(name: job.name),
+          body:
+              words.downloadStoppedBody(onPhone: job.onPhone, total: job.songs),
+          route: kDownloadsRoute,
+        );
+      }
       return CardResult(
         key: job.key,
         title: words.importStoppedTitle(),

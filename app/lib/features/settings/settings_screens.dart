@@ -18,6 +18,7 @@ import '../common/format.dart';
 import '../downloads/download_line_providers.dart';
 import '../downloads/download_providers.dart';
 import '../downloads/download_status.dart';
+import '../downloads/remove_download_dialog.dart';
 import '../downloads/storage_widgets.dart';
 import '../instant/instant_controller.dart' show requestPortalOfferedProvider;
 import '../instant/release_save.dart' show releaseSavesProvider;
@@ -580,16 +581,26 @@ class DownloadsSettingsScreen extends ConsumerWidget {
               tooltip: 'Remove download',
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () async {
-                // A release is ONE entry (D-35): removing it takes all its songs off, through the record the phone wrote down.
-                if (e.releaseId != null) {
-                  await ref
-                      .read(releaseSavesProvider.notifier)
-                      .removeDownload(e.releaseId!);
+                final type = PinTargetType.values.asNameMap()[e.pin.targetType];
+                if (e.releaseId == null && type == null) return;
+                // Asks first, in the one question of S-96: this takes a whole download off the phone (N-39). Cancel changes nothing. The question
+                // reads the download as it is while it is open, and what the answer needs is taken now: this screen may be gone when it comes.
+                final download = e.releaseId != null
+                    ? DownloadTarget.release(e.releaseId!, e.releaseRefIds)
+                    : DownloadTarget.pin(type!, e.pin.targetId);
+                final saves = ref.read(releaseSavesProvider.notifier);
+                if (!await confirmRemoveDownload(
+                    Navigator.of(context, rootNavigator: true),
+                    name: e.title,
+                    state: downloadPinStateProvider(download))) {
                   return;
                 }
-                final type = PinTargetType.values.asNameMap()[e.pin.targetType];
-                if (type == null) return;
-                await actions.unpin(type, e.pin.targetId);
+                // A release is ONE entry (D-35): removing it takes all its songs off, through the record the phone wrote down.
+                if (e.releaseId != null) {
+                  await saves.removeDownload(e.releaseId!);
+                  return;
+                }
+                await actions.unpin(type!, e.pin.targetId);
               },
             ),
           ),

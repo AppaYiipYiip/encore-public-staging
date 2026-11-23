@@ -3,9 +3,13 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:encore/core/logger.dart';
+import 'package:encore/data/db/app_database.dart' show PinRow;
 import 'package:encore/data/encore/encore_api.dart';
 import 'package:encore/data/encore/encore_live.dart';
 import 'package:encore/data/encore/encore_models.dart';
+import 'package:encore/data/repos/release_store.dart';
+import 'package:encore/features/downloads/download_providers.dart'
+    show phoneReleasesProvider, pinsProvider;
 import 'package:encore/features/downloads/keep_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -24,6 +28,17 @@ class _Groups extends Notifier<List<KeepGroupKey>> {
 
 final _groupsProvider =
     NotifierProvider<_Groups, List<KeepGroupKey>>(_Groups.new);
+
+/// The downloads the person has stopped (N-39), changeable: Stop and Resume.
+class _Stopped extends Notifier<Set<KeepGroupKey>> {
+  @override
+  Set<KeepGroupKey> build() => const {};
+
+  void set(Set<KeepGroupKey> groups) => state = groups;
+}
+
+final _stoppedProvider =
+    NotifierProvider<_Stopped, Set<KeepGroupKey>>(_Stopped.new);
 
 /// The server this phone is on, changeable: the session of another server or a new sign-in.
 class _Api extends Notifier<EncoreApi?> {
@@ -106,6 +121,8 @@ void main() {
         keepEventsProvider.overrideWithValue(events.stream),
         keepConnectionProvider.overrideWithValue(connection.stream),
         keepGroupsProvider.overrideWith((ref) => ref.watch(_groupsProvider)),
+        stoppedKeepGroupsProvider
+            .overrideWith((ref) => ref.watch(_stoppedProvider)),
         keepDebounceProvider.overrideWithValue(Duration.zero),
       ];
 
@@ -337,6 +354,150 @@ void main() {
       expect(server.keepAsks, hasLength(1),
           reason:
               'a song nobody fetched is asked for; one whose keep failed is not tried by the server, only by Retry');
+    });
+  });
+
+  group('a download the person stopped (N-39)', () {
+    test(
+        "N-39: a stopped download is watched but not asked for, on this connection or the next; songs the server still has to get stay the server's",
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 4, queued: 6);
+      final c = start([playlist]);
+      c.read(_stoppedProvider.notifier).set({playlist});
+
+      await until(() => c.read(keepProvider).answered);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(server.keepWatches, isNotEmpty,
+          reason: "the line goes on telling the server half");
+      expect(c.read(keepProvider).of(playlist)?.queued, 6);
+      expect(server.keepAsks, isEmpty,
+          reason: 'a stopped download asks nothing');
+
+      connection.add(false);
+      connection.add(true);
+      await until(() => server.keepWatches.length >= 2);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(server.keepAsks, isEmpty, reason: 'not at a reconnection either');
+    });
+
+    test(
+        "N-39: a download that was asked for before the Stop is not asked again while stopped, and Resume asks for it again at once",
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 4, queued: 6);
+      final c = start([playlist]);
+      await until(() => server.keepAsks.isNotEmpty);
+      expect(server.keepAsks, hasLength(1));
+
+      c.read(_stoppedProvider.notifier).set({playlist});
+      c.read(keepProvider.notifier).refresh();
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(server.keepAsks, hasLength(1),
+          reason: 'stopped: no ask, however it is looked at');
+
+      c.read(_stoppedProvider.notifier).set(const {});
+      await until(() => server.keepAsks.length >= 2);
+      expect(server.keepAsks, hasLength(2),
+          reason: 'Resume sends keep/ask again, on the same connection');
+      expect(server.keepAsks.last, ['playlist:pl_1']);
+    });
+
+    test(
+        "N-39: only the stopped download is held back: the others are asked as before",
+        () async {
+      server.keepGroups['playlist:pl_1'] =
+          groupJson('playlist', 'pl_1', ready: 4, queued: 6);
+      server.keepGroups['liked:liked'] =
+          groupJson('liked', 'liked', ready: 1, queued: 9);
+      final c = start([playlist, liked]);
+      c.read(_stoppedProvider.notifier).set({playlist});
+
+      await until(() => server.keepAsks.isNotEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(server.keepAsks, [
+        ['liked:liked']
+      ]);
+    });
+  });
+
+  group('which downloads are stopped (N-39)', () {
+    PinRow pin(String type, String id, {int? stoppedAt}) => PinRow(
+        serverId: 1,
+        targetType: type,
+        targetId: id,
+        quality: 'original',
+        createdAtMs: 0,
+        stoppedAtMs: stoppedAt);
+
+    Future<Set<KeepGroupKey>> stoppedOf(List<PinRow> pins,
+        {Map<String, PhoneRelease> releases = const {}}) async {
+      final c = ProviderContainer(overrides: [
+        pinsProvider.overrideWith((ref) => Stream.value(pins)),
+        phoneReleasesProvider.overrideWith((ref) => Stream.value(releases)),
+      ]);
+      addTearDown(c.dispose);
+      c.listen(pinsProvider, (_, __) {});
+      c.listen(phoneReleasesProvider, (_, __) {});
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      return c.read(stoppedKeepGroupsProvider);
+    }
+
+    test(
+        "N-39: a playlist or the liked songs is stopped when its pin is; one that is not, is not",
+        () async {
+      expect(
+          await stoppedOf([
+            pin('playlist', 'pl_1', stoppedAt: 5),
+            pin('playlist', 'pl_2'),
+            pin('liked', 'liked', stoppedAt: 7),
+            pin('album', 'al_1', stoppedAt: 9),
+          ]),
+          {playlist, liked},
+          reason:
+              "an album is not kept by the server for the person: it is no group");
+      expect(await stoppedOf([pin('playlist', 'pl_1')]), isEmpty);
+    });
+
+    test(
+        "N-39: a release is stopped when ANY pinned song of it is held (the line offers Resume, so the phone sends no ask for it), and not when none is",
+        () async {
+      const release = PhoneRelease(
+          refIds: ['sr_1', 'sr_2', 'sr_3'],
+          download: true,
+          title: 'In Rainbows');
+      const group = KeepGroupKey('release', 'cat:1');
+      expect(
+          await stoppedOf([
+            pin('track', 'sr_1', stoppedAt: 5),
+            pin('track', 'sr_2', stoppedAt: 5),
+          ], releases: {
+            'cat:1': release
+          }),
+          {group},
+          reason: 'sr_3 is not pinned yet: it waits with the rest');
+      expect(
+          await stoppedOf([
+            pin('track', 'sr_1', stoppedAt: 5),
+            pin('track', 'sr_2', stoppedAt: 5),
+            pin('track', 'sr_3'),
+          ], releases: {
+            'cat:1': release
+          }),
+          {group},
+          reason:
+              'sr_3 was asked for on its own from the track menu and goes on; the other two still wait for Resume, and the line says Stopped');
+      expect(
+          await stoppedOf([
+            pin('track', 'sr_1'),
+            pin('track', 'sr_2'),
+          ], releases: {
+            'cat:1': release
+          }),
+          isEmpty);
+      expect(await stoppedOf(const [], releases: {'cat:1': release}), isEmpty,
+          reason: 'nothing pinned is nothing stopped');
     });
   });
 

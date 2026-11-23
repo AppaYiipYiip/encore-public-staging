@@ -18,6 +18,9 @@ class FakeDownloadTransport implements DownloadTransport {
   Set<String> active = {};
   int resumeCalls = 0;
 
+  /// The most tasks that were ever running at once (what a limit on transfers is held to).
+  int maxActive = 0;
+
   final StreamController<TransferUpdate> _updates =
       StreamController<TransferUpdate>.broadcast(sync: true);
 
@@ -31,6 +34,7 @@ class FakeDownloadTransport implements DownloadTransport {
   Future<void> start(TransferRequest request) async {
     started.add(request);
     active.add(request.taskId);
+    if (active.length > maxActive) maxActive = active.length;
   }
 
   /// Off by default (the older tests never saw an acknowledgement). On, [cancel] answers the way the real downloader does: `cancelTaskWithId` sends one
@@ -39,7 +43,7 @@ class FakeDownloadTransport implements DownloadTransport {
   bool acknowledgeCancels = false;
 
   @override
-  Future<void> cancel(String taskId) async {
+  Future<bool> cancel(String taskId) async {
     canceled.add(taskId);
     final known = active.remove(taskId);
     if (acknowledgeCancels && known) {
@@ -48,6 +52,7 @@ class FakeDownloadTransport implements DownloadTransport {
         status: TransferStatus.canceled,
       ));
     }
+    return known;
   }
 
   @override
@@ -117,6 +122,8 @@ class FakeDownloadTransport implements DownloadTransport {
       status: TransferStatus.complete,
       progress: 1,
       relativePath: req.relativePath,
+      // The downloader hands the task's own data back with its last word.
+      qualityId: req.qualityId,
     ));
   }
 
