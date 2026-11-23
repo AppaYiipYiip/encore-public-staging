@@ -11,10 +11,11 @@ import json
 import re
 import sqlite3
 from collections.abc import Callable, Iterable, Iterator, Sequence
-from typing import Any
+from typing import Any, Protocol
 
 from . import missing
 from .artist_basis import BASES, NOT_PERFORMERS, is_known_basis
+from .catalogue import release_key
 from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
@@ -377,6 +378,75 @@ def facts_to_fill(
     if uploader and have_uploader is None and same_video:
         updates["uploader"] = uploader
     return updates
+
+
+class ReleaseFacts(Protocol):
+    """What the catalogue said of the release a song is on and of the song's place on it (`album_finder.Match` is one): the shape `release_facts_to_fill` reads."""
+
+    @property
+    def deezer_id(self) -> str: ...
+
+    @property
+    def isrc(self) -> str | None: ...
+
+    @property
+    def album(self) -> str: ...
+
+    @property
+    def year(self) -> int | None: ...
+
+    @property
+    def track_no(self) -> int | None: ...
+
+    @property
+    def disc_no(self) -> int | None: ...
+
+    @property
+    def cover(self) -> str | None: ...
+
+
+def release_facts_to_fill(conn: sqlite3.Connection, row: sqlite3.Row, found: ReleaseFacts) -> dict[str, Any]:
+    """The columns of a song's row the catalogue's RELEASE may FILL, as `{column: value}` (N-34 slice 2): ONE rule for the album pass, the keeper's new keeps
+    (slice 3) and the repair (slice 5), next to [facts_to_fill].
+
+    **Fill only, never rewrite**: a song's identity is its id (likes, playlist entries and the kept file point at it), and a stamped album is effectively
+    permanent (the repair files the song by it). So a column is written only where the row has none: the album when it has none or the music server's
+    placeholder (`is_placeholder_album`), the track number, the disc, the year, the picture (only the catalogue's own host: `cover_url_ok`), and the two ids
+    (`isrc`, `deezer_id`) only when no OTHER song holds them (the unique indexes would refuse the write; `album_finder` already says HELD for such a pair, this
+    is the second layer).
+
+    **Nothing of another release.** A row that already has a REAL album is the song of THAT release: the album is its own (an import gave it), and the track
+    number, the year and the picture of the catalogue's release would describe another one, so when the two albums are not one release (`catalogue.release_key`:
+    a deluxe edition is its original) NOTHING is written, ids included: the row never said it was this recording. The title, the artists, the key and the
+    album artist are never written."""
+    have = row["album"]
+    placeholder = is_placeholder_album(have)
+    if not placeholder and release_key(str(have)) != release_key(found.album):
+        return {}
+    updates: dict[str, Any] = {}
+    if placeholder:
+        album = _clean(found.album)
+        if album is not None:
+            updates["album"] = album
+    for column, value in (("track_no", found.track_no), ("disc_no", found.disc_no), ("year", found.year)):
+        if value is not None and row[column] is None:
+            updates[column] = value
+    if row["cover_url"] is None and cover_url_ok(found.cover):
+        updates["cover_url"] = found.cover
+    for column, ident in (("deezer_id", found.deezer_id), ("isrc", found.isrc)):
+        if ident and row[column] is None:
+            taken = conn.execute(f"SELECT 1 FROM song_ref WHERE {column} = ? AND id != ?", (ident, row["id"])).fetchone()  # noqa: S608 - fixed column names
+            if taken is None:
+                updates[column] = ident
+    return updates
+
+
+def forget_placeholder_album(row: sqlite3.Row) -> dict[str, Any]:
+    """`{"album": None}` for a row whose album is the music server's placeholder (`[Unknown Album]`) or blank, else nothing. The 595 literals on the owner's server
+    were written by the library scan before the N-11 guard; the placeholder says "no album" and so does NULL, and the album pass writes NULL for every song it
+    asks about, found or not (the phones are told by the caller). A real album, an album that merely STARTS like the placeholder, and NULL are left alone."""
+    have = row["album"]
+    return {"album": None} if isinstance(have, str) and is_placeholder_album(have) else {}
 
 
 #: The columns `candidates` finds a ref by: its length (the name tier compares it) and its three ids. A description may fill them like any other gap (a scan, a phone), but
