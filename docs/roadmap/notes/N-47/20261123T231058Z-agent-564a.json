@@ -1,0 +1,12 @@
+{
+ "id": "20261123T231058Z-agent-564a",
+ "item": "N-47",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-23T23:10:58Z",
+ "type": "note",
+ "body": "23 Nov 2026, the minimal case and the proof method for N-47 (audit B-138), from the adversarial tester of PR #118 (its report, round 3). THE DEFECT: refmerge.repair merges two refs that share ONLY a file row the music server no longer lists. An ADD-ONLY pass (the pass after a scan, prune=False) followed by a PRUNING pass merges the pair; a pruning pass alone does not; the start-up refmerge.repair on the fresh state merges the same pair, so it is older than the rehome (the rehome only pays the merge debt after an add-only pass). refmerge does not apply link_listing.Listing.alive. A like or a playlist entry on the merged-away ref moves to the survivor, and a merge cannot be undone. THE CASES: seeds 322012 and 305044 of the tester's HEAVY generator (2-6 arrivals, many tombstones; its files are in the session scratchpad attacker-p225s4-round3-probes/ and were saved to local/rescued-23nov/). FIX AT THE SOURCE: refmerge counts a shared file only when the pass leaves it alive (Listing.alive: the music server lists its id, or the row was attached after the pass began, or it has no music server id), the one definition scanner._prune and the rehome already share; the merge repair takes the listing of the pass it runs in (a pass that only adds cannot say a file is gone: then it does not merge on that file). TEST FIRST: the two seeds as hand-built worlds (two refs, one shared file that the pass lacks, an add-only pass then a pruning pass: no merge), red on main, plus the control that a LISTED shared file still merges; a mutant that drops the alive test must be red. Server only; fakes only; ONE migration at most, none expected. Then check docs/18 and the merge repair's text for sentences that count dead rows.",
+ "to": [
+  "agent"
+ ]
+}

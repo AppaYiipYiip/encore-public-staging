@@ -1202,5 +1202,14 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-47": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: two songs are merged only on a file the music server still lists",
+  "note": "Found by the adversarial tester of PR #118 (23 Nov 2026; audit B-138, old code): refmerge.repair merges two refs that share only a file row the music server no longer lists, and a merge cannot be undone (a like on the merged-away ref moves to the survivor). An add-only pass followed by a pruning pass merges such a pair; a pruning pass alone does not; the start-up repair on the fresh state merges the same pair, so the defect is older than the rehome (which only pays the merge debt after an add-only pass). Fix at the source: refmerge counts a shared file only when the pass leaves it alive (link_listing.Listing.alive, the one definition the prune and the rehome already share), a recorded case from the tester's seeds 322012 and 305044 first (its probes: local/rescued-23nov/attacker-p225s4-round3-probes/, not in the repository; the board note of P2-25 of 23 Nov has the minimal case). Cost of leaving it: rare, silent, and irreversible. Server only.",
+  "proposal": true,
+  "size": "M",
+  "needs": [],
+  "from": "agent"
  }
 }
