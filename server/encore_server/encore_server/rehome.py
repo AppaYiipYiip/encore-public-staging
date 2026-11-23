@@ -694,7 +694,7 @@ class Rehome:
                 conn.execute("DELETE FROM ref_recheck WHERE ref = ?", (ref,))
                 gone += 1
                 continue
-            # The library files that are on the ref now and were there before the pass began (a file attached since is the link's own, found by its tags). Two reasons to
+            # The library files that are on the ref now and were there before the pass began, and the files the scan attached to it DURING the pass, which `page` noted (`_arrived`) and the pass judged like the others (a file attached since by any other writer is the link's own, found by its tags, and is not waited for). Two reasons to
             # keep the ref: one the listing did not have (not judged: a pass that prunes would have removed its row by now), and one the tags could not decide.
             rows = [
                 r["id"]
@@ -742,7 +742,7 @@ class Rehome:
         library.touch_ref_holders(conn, ref)
 
     def _nobody_could_judge(self, row: sqlite3.Row) -> bool:
-        """A library file this pass read at its start that the tags could not decide, or that it never saw (a keeper's file and a file attached since are not)."""
+        """A library file this pass read at its start, or that its scan attached during it (`_arrived`), that the tags could not decide, or that it never saw (a keeper's file and any other file attached since are not)."""
         if (
             row["source"] != "library"
             or row["navidrome_song_id"] is None

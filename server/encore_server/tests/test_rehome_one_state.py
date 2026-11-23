@@ -1028,3 +1028,39 @@ def test_a_pass_that_only_adds_moves_a_file_onto_a_song_and_the_next_pass_that_p
             for r in conn.execute("SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1", (SELF,))
         ]
     assert flagged == ["nd-1"], "one preferred file, the one the song had"
+
+
+def test_the_arrivals_of_a_page_are_found_in_every_chunk_of_ids_the_page_is_asked_in(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`Rehome.page` asks the database for the arrivals of a page `_ARRIVAL_IDS` ids at a time (a page is 500 songs, so every full page is two chunks in production): the file that
+    arrived is the THIRD song of its page here, and the ids are asked one at a time. The independent reviewer's mutant (only the first chunk is asked) kept every earlier test green."""
+    monkeypatch.setattr(rehome, "_ARRIVAL_IDS", 1)
+    songs = arrival_world(db, held_by_untagged=True, shared_with=False)
+
+    first = link_library(db, Music(songs), page=500)
+
+    assert first.rehome is not None and first.rehome.judged == 4, (
+        "f1, f2, f3 and the file that arrived (the third song of its page)"
+    )
+    state = digest(db)
+    link_library(db, Music(songs), page=500)
+    assert digest(db) == state and len(copies(db)) == 1, "the second pass writes nothing"
+
+
+def test_a_file_the_scan_attaches_to_a_song_that_is_not_on_the_worklist_is_not_judged_by_the_rehome(db: Database) -> None:
+    """A new file of a song that is not on the worklist is the scan's own, found by its tags: the rehome must not read, hold in memory and judge every new row of a big scan."""
+    songs = arrival_world(db, held_by_untagged=True, shared_with=False)
+    with db.tx() as conn:
+        add_ref(conn, DUP, K3[0], [K3[1]], old=False, duration_ms=200_000)
+    songs.append(song("nd-8", *K3, 200.0))
+
+    first = link_library(db, Music(songs))
+
+    with db.read() as conn:
+        assert conn.execute("SELECT ref FROM song_file WHERE navidrome_song_id = 'nd-8'").fetchone()["ref"] == DUP, (
+            "the scan attached it to its own song"
+        )
+    assert first.rehome is not None and first.rehome.judged == 4, (
+        "the files of the worklist songs only: the new file of a song that is not on it is not judged"
+    )
