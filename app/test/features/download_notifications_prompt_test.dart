@@ -207,7 +207,7 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> pin(PinTargetType type, String targetId,
-      {AudioQuality? quality}) async {
+      {AudioQuality? quality, List<String> alongside = const []}) async {
     pinned.add('${type.name}:$targetId');
   }
 
@@ -216,6 +216,12 @@ class _Actions implements DownloadActions {
 
   @override
   Future<void> retry() async {}
+
+  @override
+  Future<void> stop(List<PinKey> pins) async {}
+
+  @override
+  Future<void> resume(List<PinKey> pins) async {}
 
   @override
   Future<void> removeAll() async {}

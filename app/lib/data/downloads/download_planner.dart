@@ -9,6 +9,7 @@ class DesiredDownload {
     required this.trackId,
     required this.quality,
     this.audioKey = '',
+    this.held = false,
   });
 
   final String trackId;
@@ -18,6 +19,10 @@ class DesiredDownload {
 
   /// Current `Tracks.audioKey` (empty when unknown).
   final String audioKey;
+
+  /// Every pin that wants this song is stopped by the person (N-39): the song stays desired, so it is never orphaned and its file is never deleted, but
+  /// it is not queued, refreshed or tried again until a pin that wants it goes on.
+  final bool held;
 }
 
 /// The set of changes needed to make local files match what is pinned.
@@ -105,7 +110,8 @@ DownloadPlan planDownloads({
     final want = entry.value;
     final row = existing[id];
     if (row == null) {
-      toQueue.add(id);
+      // A song added to a stopped download waits for Resume: no row is made for it.
+      if (!want.held) toQueue.add(id);
       continue;
     }
     if (row.orphanedAtMs != null) toRescue.add(id);
@@ -122,9 +128,13 @@ DownloadPlan planDownloads({
             nowMs - row.updatedAtMs >= backoffMs(row.attempts);
         final upgrade = upgradeCapped &&
             wasLoweredByDataSaver(madeAt: row.quality, wanted: want.quality);
-        if ((changed || upgrade) && mayTry) toRefresh.add(id);
+        if ((changed || upgrade) && mayTry && !want.held) toRefresh.add(id);
       case DownloadState.failed:
-        if (nowMs - row.updatedAtMs >= backoffMs(row.attempts)) toQueue.add(id);
+        // A held song that did not come stays failed and counted (S-16: "7 of 10 on this phone · 3 songs did not come"); Resume lets the back-off
+        // do its work again.
+        if (!want.held && nowMs - row.updatedAtMs >= backoffMs(row.attempts)) {
+          toQueue.add(id);
+        }
       case DownloadState.queued:
       case DownloadState.downloading:
         break;

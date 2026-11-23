@@ -71,6 +71,17 @@ class DownloadCardWords {
           1
       ? '$name: 1 song stays in your library. The rest were not fetched.'
       : '$name: $kept songs stay in your library. The rest were not fetched.';
+
+  // ------------------------------------------------------------------------------------------- a Download the person stopped (N-39)
+
+  /// The card of a Download that the person stopped (S-95 "A download was stopped"). It is a pause that waits, so it says what is kept and that
+  /// Resume continues; it names no clock time and no live count, so it stays true when it freezes.
+  String downloadStoppedTitle({required String name}) => '$name is stopped';
+
+  String downloadStoppedBody({required int onPhone, required int total}) =>
+      onPhone == 1
+          ? '1 of $total stays on this phone. Resume continues from there.'
+          : '$onPhone of $total stay on this phone. Resume continues from there.';
 }
 
 /// "9:03", "21:05": the hour as it is, the minutes with two digits (the drawing's clock).

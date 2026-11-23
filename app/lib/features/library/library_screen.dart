@@ -518,7 +518,10 @@ class _EntryArt extends ConsumerWidget {
 /// Whether a download the person chose can be used now: a phone without a connection plays only what is on it.
 bool _usableNow(PinState s, {required bool offline}) => switch (s.phase) {
       PinPhase.complete || PinPhase.empty => true,
-      PinPhase.downloading || PinPhase.attention => !offline || s.done > 0,
+      PinPhase.downloading ||
+      PinPhase.attention ||
+      PinPhase.stopped =>
+        !offline || s.done > 0,
       PinPhase.preparing || PinPhase.off => !offline,
     };
 

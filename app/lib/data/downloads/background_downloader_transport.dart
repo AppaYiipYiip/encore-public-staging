@@ -52,6 +52,8 @@ class BackgroundDownloaderTransport implements DownloadTransport {
               ? 'The server no longer has this file'
               : exception?.description,
           relativePath: p.posix.join(task.directory, task.filename),
+          // Kept with the task like the path, so a word replayed after a restart still says what the file is made at.
+          qualityId: task.metaData.isEmpty ? null : task.metaData,
         ));
       case TaskProgressUpdate(:final progress, :final task):
         _updates.add(TransferUpdate(
@@ -113,6 +115,9 @@ class BackgroundDownloaderTransport implements DownloadTransport {
       retries: 2,
       allowPause: false,
       displayName: name,
+      // The quality the file is made at rides with the task (the downloader hands the task back with every update, also one kept while the app was not
+      // running) and is read back as [TransferUpdate.qualityId]. No notification is posted, so the `{metaData}` of a notification text is not in play.
+      metaData: request.qualityId ?? '',
     );
     final ok = await FileDownloader().enqueue(task);
     if (!ok) {
@@ -125,9 +130,10 @@ class BackgroundDownloaderTransport implements DownloadTransport {
   }
 
   @override
-  Future<void> cancel(String taskId) async {
-    await FileDownloader().cancelTaskWithId(taskId);
-  }
+  Future<bool> cancel(String taskId) =>
+      // `false` is "could not find the task to cancel" (BDPlugin.kt `cancelActiveTaskWithId`: no work behind the id, nothing is sent); `true` is a
+      // task it cancelled with its `canceled` update, or one that had already finished, whose own last word is on its way.
+      FileDownloader().cancelTaskWithId(taskId);
 
   @override
   Future<String> absolutePath(String relativePath) async =>

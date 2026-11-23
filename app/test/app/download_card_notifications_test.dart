@@ -131,6 +131,35 @@ void main() {
     expect(d['importance'], Importance.low.value);
   });
 
+  test(
+      "N-39: no card has a button, not even the card of a Download that was stopped: a card outside the app cannot act, Resume stands in Downloaded",
+      () async {
+    await notifications.post(const CardPost(
+      id: kRunningCardId,
+      kind: CardKind.running,
+      spec: live,
+      timeoutAfter: Duration(minutes: 3),
+    ));
+    await notifications.post(CardPost(
+      id: resultCardId('pin:playlist:p1'),
+      kind: CardKind.result,
+      spec: const CardSpec(
+          title: 'Prog snob is stopped',
+          body: '12 of 217 stay on this phone. Resume continues from there.'),
+    ));
+
+    for (final i in [0, 1]) {
+      expect(details(i)['actions'], anyOf(isNull, isEmpty),
+          reason: 'card $i has an action button');
+    }
+    final stopped = details(1);
+    expect(stopped['autoCancel'], isTrue);
+    expect(stopped['silent'], isTrue);
+    expect(stopped['timeoutAfter'], isNull);
+    expect(stopped['showProgress'], isFalse);
+    expect(stopped['channelId'], kDownloadsChannelId);
+  });
+
   test('the same id replaces the card in place', () async {
     await notifications.post(
         const CardPost(id: kRunningCardId, kind: CardKind.running, spec: live));
