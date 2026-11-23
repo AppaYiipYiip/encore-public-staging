@@ -640,3 +640,43 @@ def test_a_music_server_that_is_down_is_asked_about_its_scan_without_a_log_line_
         assert caplog.records == []
         assert client.scan_status() is None
         assert len(caplog.records) == 1
+
+
+def preferred_of(db: Database, ref: str) -> list[str | None]:
+    with db.read() as conn:
+        return [
+            r["navidrome_song_id"]
+            for r in conn.execute(
+                "SELECT navidrome_song_id FROM song_file WHERE ref = ? AND preferred = 1 ORDER BY navidrome_song_id", (ref,)
+            )
+        ]
+
+
+def test_the_prune_leaves_exactly_one_preferred_file_when_it_removes_a_file_that_was_not_the_preferred_one(db: Database) -> None:
+    """A song with three files (say a FLAC, an MP3 and a copy that was deleted): the preferred one is the first that was linked. The prune removes the deleted copy and gave
+    'the newest remaining copy' the preferred flag WITHOUT taking it from the one that had it: two preferred rows, and the song played the newer one (found by the adversarial
+    tester of PR 118 on the code of main; the statement is older than the rehome)."""
+    link_library(db, FakeLibrary([entry(1), entry(2), entry(3)]))
+    with db.tx() as conn:
+        first = conn.execute("SELECT ref FROM song_file WHERE navidrome_song_id = 'nd-1'").fetchone()["ref"]
+        conn.execute("UPDATE song_file SET ref = ?, preferred = 0, added_at = 300 WHERE navidrome_song_id = 'nd-2'", (first,))
+        conn.execute("UPDATE song_file SET ref = ?, preferred = 0, added_at = 50 WHERE navidrome_song_id = 'nd-3'", (first,))
+        conn.execute("UPDATE song_file SET preferred = 1, added_at = 100 WHERE navidrome_song_id = 'nd-1'")
+
+    report = link_library(db, FakeLibrary([entry(1), entry(2)]))  # nd-3 is gone from the music server
+
+    assert report.pruned == 1
+    assert preferred_of(db, first) == ["nd-1"], "the song keeps the preferred file it had, and only one"
+
+
+def test_the_prune_gives_the_preferred_flag_to_the_newest_remaining_file_when_it_removes_the_preferred_one(db: Database) -> None:
+    link_library(db, FakeLibrary([entry(1), entry(2), entry(3)]))
+    with db.tx() as conn:
+        first = conn.execute("SELECT ref FROM song_file WHERE navidrome_song_id = 'nd-1'").fetchone()["ref"]
+        conn.execute("UPDATE song_file SET ref = ?, preferred = 0, added_at = 300 WHERE navidrome_song_id = 'nd-2'", (first,))
+        conn.execute("UPDATE song_file SET ref = ?, preferred = 0, added_at = 200 WHERE navidrome_song_id = 'nd-3'", (first,))
+        conn.execute("UPDATE song_file SET preferred = 1, added_at = 100 WHERE navidrome_song_id = 'nd-1'")
+
+    link_library(db, FakeLibrary([entry(2), entry(3)]))  # the preferred file is the one that is gone
+
+    assert preferred_of(db, first) == ["nd-2"], "the newest remaining file becomes the preferred one"

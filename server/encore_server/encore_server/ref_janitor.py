@@ -38,6 +38,7 @@ comparison is a test and not a hope.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from collections.abc import Callable, Iterator, Sequence
 from typing import Any
 
@@ -74,6 +75,19 @@ POINTERS: dict[str, str] = {
     # The age counts from the last change of the files too: a library file the music server lost an hour ago is not a song nobody wanted.
     "recent_file_change": "SELECT 1 FROM file_log WHERE file_log.ref = r.id AND file_log.at >= :cutoff",
 }
+
+#: The clauses of `POINTERS` that are NOT somebody's choice: the ref's own files and how long ago they changed. Every other clause is a person's like, entry, play, saved
+#: release, requested work, playing song, queue, or the survivor of a merge that their older ids resolve to (see [owned_by_people]).
+NOT_A_PERSONS = frozenset({"song_file", "recent_file_change"})
+
+
+def owned_by_people(conn: sqlite3.Connection, ref_id: str) -> bool:
+    """Does a person own this song: does anything of theirs point at it? The rehome (P2-25 slice 4) never takes the last file off such a song. **This is `POINTERS` without
+    the files** (read when called), not a second list: a table that is added there and names a person's thing is owned here with no other change (the test of the schema
+    comparison, above, is what keeps `POINTERS` complete)."""
+    owned = " OR ".join(f"EXISTS ({sql})" for key, sql in POINTERS.items() if key not in NOT_A_PERSONS)
+    return conn.execute(f"SELECT 1 FROM song_ref r WHERE r.id = ? AND ({owned})", (ref_id,)).fetchone() is not None  # noqa: S608 - the clauses are constants of this module
+
 
 #: The columns that name a ref through a foreign key (one list with the merge's: `refmerge` re-points exactly these, the janitor reads exactly these).
 FOREIGN_KEY_POINTERS = FOREIGN_KEY_COLUMNS
@@ -179,7 +193,7 @@ class RefJanitor:
                 conn.executemany("INSERT OR IGNORE INTO ref_gone (ref_id, at) VALUES (?, ?)", [(ref, now) for ref in chunk])
                 # `file_log` has no foreign key, so nothing else would remove the log of a retired ref (slice 2e): the same transaction.
                 conn.execute(f"DELETE FROM file_log WHERE ref IN ({marks})", tuple(chunk))
-                # The worklist of the key repair has no foreign key either (P2-25): a retired ref leaves no row on it. STOP-GAP(P2-25 one-shot-repair): until N-36.
+                # The worklist of the key repair has no foreign key either (P2-25): a retired ref leaves no row on it. STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): until N-36.
                 conn.execute(f"DELETE FROM ref_recheck WHERE ref IN ({marks})", tuple(chunk))
                 # work_item (and work_item_person) go by their cascade: the rows left are over, the pointer clause counted only the active ones.
                 conn.execute(f"DELETE FROM song_ref WHERE id IN ({marks})", tuple(chunk))

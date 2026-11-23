@@ -1,0 +1,105 @@
+{
+  "refs": [
+    {
+      "id": "sr_00000000000000000000000001",
+      "title": "كيفك إنت",
+      "artists": [
+        "فيروز"
+      ],
+      "album": "كيفك إنت",
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": 10000,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000010000000000005",
+        "navidromeSongId": "nd-5",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {
+          "albumId": "al-Группа крови",
+          "bitRate": 128,
+          "size": 5000,
+          "suffix": "opus"
+        }
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000002",
+      "title": "Weird Fishes",
+      "artists": [
+        "Radiohead"
+      ],
+      "album": "In Rainbows",
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": 14000,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000020000000000006",
+        "navidromeSongId": "nd-6",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {
+          "albumId": "al-In Rainbows",
+          "bitRate": 128,
+          "size": 6000,
+          "suffix": "opus"
+        }
+      }
+    },
+    {
+      "id": "sr_00000000000000000000000003",
+      "title": "Reckoner",
+      "artists": [
+        "Radiohead"
+      ],
+      "album": "In Rainbows",
+      "albumArtist": null,
+      "trackNo": null,
+      "discNo": null,
+      "year": null,
+      "durationMs": 18000,
+      "isrc": null,
+      "mbid": null,
+      "deezerId": null,
+      "videoId": null,
+      "coverUrl": null,
+      "explicit": false,
+      "file": {
+        "id": "sf_00000000000030000000000007",
+        "navidromeSongId": "nd-7",
+        "codec": "opus",
+        "bitrateKbps": 128,
+        "meta": {
+          "albumId": "al-In Rainbows",
+          "bitRate": 128,
+          "size": 7000,
+          "suffix": "opus"
+        }
+      }
+    }
+  ],
+  "cursor": "3",
+  "more": false,
+  "merges": [],
+  "mergesCursor": "0",
+  "mergesMore": false,
+  "gone": [],
+  "goneCursor": "0",
+  "goneMore": false
+}

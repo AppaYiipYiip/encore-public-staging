@@ -15,7 +15,7 @@ file row was attached FIRST (the keeper's, which carries the proper description)
 * a playlist holds both: merging would put the song twice into that playlist, a visible change to a person's own list nobody asked for;
 * either ref is on the worklist of the key repair (`ref_recheck`, P2-25 slice 3, reason `recheck_pending`): the old fold may have glued the file onto the wrong song,
   so "they share a file" is not yet evidence that they are one song, and merging identities on its strength would put one song's likes on another. Checked LAST, so
-  a pair held for this reason is one that would otherwise have merged. STOP-GAP(P2-25 one-shot-repair): goes with the worklist (N-36).
+  a pair held for this reason is one that would otherwise have merged. STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): goes with the worklist (N-36).
 
 **Everything a person has follows the song**: likes (a person who liked both keeps the earlier date), playlist entries (removed ones too), plays,
 import rows, the work the server still means to do, the songs of a saved release, the saved queue (its ids are rewritten in place: the index of
@@ -191,6 +191,12 @@ def _is_there_anything_to_merge(conn: sqlite3.Connection) -> tuple[bool, list[He
             else:
                 held.append(Held(survivor, loser, reason))
     return mergeable, held
+
+
+def look(conn: sqlite3.Connection) -> tuple[bool, list[Held]]:
+    """The public form of the read the repair starts with (a look that changes nothing): whether any loser may be merged right now, and the pairs that are held, each
+    with its reason. `rekey_audit.py` reads it to count the pairs the worklist holds back."""
+    return _is_there_anything_to_merge(conn)
 
 
 # ------------------------------------------------------------------------------------------------------------------ the repair
@@ -403,11 +409,7 @@ def _merge_files(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
             conn.execute(f"UPDATE song_file SET {assignments} WHERE id = ?", (*updates.values(), ours["id"]))  # noqa: S608 - column names from the schema
         conn.execute("DELETE FROM song_file WHERE id = ?", (theirs["id"],))
     # One copy is the preferred one: the survivor's own, or the newest when it had none.
-    rows = conn.execute(
-        "SELECT id, preferred FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC, rowid DESC", (survivor,)
-    ).fetchall()
-    if rows and sum(row["preferred"] for row in rows) != 1:
-        conn.execute("UPDATE song_file SET preferred = (id = ?) WHERE ref = ?", (rows[0]["id"], survivor))
+    refs.ensure_one_preferred(conn, survivor)
 
 
 def _load_meta(text: str | None) -> dict[str, Any]:

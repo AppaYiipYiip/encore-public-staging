@@ -34,7 +34,7 @@ It is idempotent (a start that finds nothing writes nothing), it rolls back whol
 **never stops the server**: a failed repair is tried again at the next start, and logs ONE ERROR line per start. Until it has run, the cost is that a non-Latin song
 described again may make a duplicate ref, which the by-file merge folds later; the ERROR line says so.
 
-**The copy** (`Database.backup`, `Database.prune_backups`). The invariant: **a repair never writes without a copy it can be undone from, as far as a check at start-up can tell** (the tombstone keys it
+**The copy** (`Database.backup`, `Database.prune_backups`; the rules below are now written ONCE in `repair_copy.py`, which `rehome.py` shares, with its own label and settings). The invariant: **a repair never writes without a copy it can be undone from, as far as a check at start-up can tell** (the tombstone keys it
 nulls and the pictures it voids come back from nothing else). It holds in two layers, and neither depends on the ORDER of the copies, because the order is not
 trustworthy: a copy's name is the LOCAL time of the clock that made it, a clock goes back (the end of daylight saving time repeats an hour, a time sync steps it,
 somebody sets it), and a file's modification time comes from the same clock. (The first version ordered the copies by their names: with three copies named in the future
@@ -65,8 +65,9 @@ failure). `tests/test_unicode_pin.py` guards the image, the workflow, `requires-
 judge (`ref_recheck`). The rewrite never renames, moves, retags or deletes a file: it touches no file of the Host's music at all. (The only files it ever deletes are its
 own surplus copies of the database, and it asks `Database` to do that.)
 
-STOP-GAP(P2-25 one-shot-repair): `_lost_by_old_fold`, the worklist and the voided covers are a ONE-TIME repair of data the old fold made. They go when the worklist is
-empty on every install the project knows and one release has passed (N-36). The rewrite itself, the revision in `setting`, the plan at every start and the guard are
+STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): `_lost_by_old_fold`, the worklist and the voided covers are a ONE-TIME repair of data the old fold made. They go when the
+worklist is empty on every install the project knows and one release has passed (N-36; `tests/test_stopgap_expiry.py` fails when the release in the marker has passed, and
+`python docs/evidence/scripts/audit_stack.py check rekey` reads whether the worklist is empty). The rewrite itself, the revision in `setting`, the plan at every start and the guard are
 permanent: every later change of the fold is the same mechanism with a higher `TEXTNORM_REVISION`.
 """
 
@@ -79,7 +80,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import library, refs, textnorm
+from . import library, refs, repair_copy, textnorm
 from .db import Database
 from .ids import now_ms
 
@@ -93,11 +94,8 @@ BACKUP_USED_SETTING = "textnorm_backup_used"
 #: The name of the copy an attempt took and has not yet committed with: written in its own committed write right after the copy is taken (the rewrite may roll back),
 #: cleared by the repair that commits. It is the ONLY copy a later start reuses: the order of the names says nothing about which attempt a file belongs to.
 BACKUP_PENDING_SETTING = "textnorm_backup_pending"
-#: How a SQLite database file begins (what `VACUUM INTO` writes): a file that does not is not a copy to undo a repair from.
-_SQLITE_MAGIC = b"SQLite format 3\x00"
-#: How many copies of the stored keys are kept. Three: the one just taken and the one the last COMMITTED repair used (the prune never removes either, whatever their names
-#: say), and one spare (the newest of the others by name, which a clock that went back can get wrong: then an older spare is kept). A rollback loop can never cost more disk.
-KEEP_COPIES = 3
+#: How many copies of the stored keys are kept (the rule, and why three, is in `repair_copy.py`, which `rehome.py` shares).
+KEEP_COPIES = repair_copy.KEEP_COPIES
 #: The picture hosts of the catalogue whose hit the broken fold matched to every song with the same (empty) name. The HOSTNAME decides, not a substring.
 _DEEZER_HOSTS = ("dzcdn.net", "deezer.com")
 
@@ -109,7 +107,7 @@ def _lost_by_old_fold(text: str) -> bool:
     `Beyoncé`, `BTS`, `Don’t Stop`. It is a property of the text, so it needs no copy of the old fold, and it is decided from the ref's own title and artist,
     not from its stored key (`fairuz|habibi|` is not empty and is still damaged). It guards against a WRONG attachment; a miss it cannot make. A ref whose text
     survived but whose stored key has an empty segment is the other reason a ref is suspect (`plan`).
-    STOP-GAP(P2-25 one-shot-repair): removed with the worklist (N-36)."""
+    STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): removed with the worklist (N-36)."""
     seen = False
     for ch in unicodedata.normalize("NFKD", text or ""):
         if unicodedata.category(ch)[0] in "LN":
@@ -207,51 +205,23 @@ def _write_revision(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (REVISION_SETTING, str(textnorm.TEXTNORM_REVISION)))
 
 
-class CopyMissing(RuntimeError):
-    """The copy a repair was to rely on is not there, or is not a database, at the moment it comes to write: the repair does not run."""
-
-
-def _is_a_copy(path: Path) -> bool:
-    """Is this something a repair can be undone from? It is there, it is not empty and it begins like a SQLite database (reading its first bytes covers all three: a
-    missing file cannot be opened, an empty one has no first bytes, junk does not begin like a database). Never raises (a file that cannot be read is not one)."""
-    try:
-        with path.open("rb") as handle:
-            return handle.read(len(_SQLITE_MAGIC)) == _SQLITE_MAGIC
-    except OSError:
-        return False
-
-
-def _setting(conn: sqlite3.Connection, key: str) -> str | None:
-    row = conn.execute("SELECT value FROM setting WHERE key = ?", (key,)).fetchone()
-    return None if row is None else str(row["value"])
+CopyMissing = repair_copy.CopyMissing
+_is_a_copy = repair_copy.is_a_copy
 
 
 def _copy_for_this_repair(db: Database) -> Path:
-    """The copy of the database this repair is backed by: the one an earlier attempt of THIS repair recorded, while it is still there; else a new one (and the pile pruned,
-    with this copy and the last committed repair's named as the ones that stay). See the module's docstring: the order of the names is never what chooses."""
-    with db.read() as conn:
-        pending = _setting(conn, BACKUP_PENDING_SETTING)
-        spent = _setting(conn, BACKUP_USED_SETTING)
-    if pending and pending != spent:
-        earlier = db.backups / Path(pending).name  # a name from the table, never a path out of the folder
-        if _is_a_copy(earlier):
-            log.info(
-                "key rewrite: the copy an earlier attempt took, before the rewrite that did not finish, is used again: %s",
-                earlier,
-            )
-            return earlier
-        log.warning("key rewrite: the copy an earlier attempt took is gone or is not a database, so a new one is taken")
-    copy = db.backup(_BACKUP_LABEL)
-    with db.tx() as conn:  # its own committed write: the rewrite below may roll back, the record of its copy must not
-        conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_PENDING_SETTING, copy.name))
-    try:
-        db.prune_backups(_BACKUP_LABEL, KEEP_COPIES, protect=[copy, *([spent] if spent else [])])
-    except OSError:
-        log.warning(
-            "key rewrite: the oldest copies of the stored keys could not be removed (the copy just taken is kept)", exc_info=True
-        )
-    log.info("key rewrite: a copy of the database before the rewrite is kept at %s", copy)
-    return copy
+    """The copy of the database this repair is backed by (`repair_copy.copy_for_repair`: the copy an earlier attempt recorded, else a new one with the pile pruned and
+    the two copies that must stay named). The order of the names is never what chooses. Kept under this name because `repair` calls it and the tests replace it."""
+    return repair_copy.copy_for_repair(
+        db,
+        label=_BACKUP_LABEL,
+        pending_key=BACKUP_PENDING_SETTING,
+        used_key=BACKUP_USED_SETTING,
+        log=log,
+        what="key rewrite",
+        noun="rewrite",
+        keep=KEEP_COPIES,
+    )
 
 
 def repair(db: Database) -> Report:
@@ -282,8 +252,7 @@ def repair(db: Database) -> Report:
             _apply(conn, plan(conn, one_shot=first), report)
             if first:
                 _write_revision(conn)
-            conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (BACKUP_USED_SETTING, report.backup.name))
-            conn.execute("DELETE FROM setting WHERE key = ?", (BACKUP_PENDING_SETTING,))
+            repair_copy.mark_used(conn, pending_key=BACKUP_PENDING_SETTING, used_key=BACKUP_USED_SETTING, copy=report.backup)
         report.ran = True
         log.info(
             "key rewrite (%s): revision %d, %d of %d keys rewritten, %d refs the old fold damaged, %d refs on the worklist for the library link, %d tombstone keys "
@@ -320,13 +289,14 @@ def _apply(conn: sqlite3.Connection, work: Plan, report: Report) -> None:
     conn.executemany("UPDATE song_ref SET norm_key = ? WHERE id = ?", [(new, ref) for ref, _old, new in work.rekeys])
     report.rekeyed = len(work.rekeys)
     report.suspect = len(work.suspect)
-    for ref in sorted(work.worklist):  # STOP-GAP(P2-25 one-shot-repair): the worklist, until N-36
+    for ref in sorted(work.worklist):  # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the worklist, until N-36
         conn.execute("INSERT OR IGNORE INTO ref_recheck (ref, at) VALUES (?, ?)", (ref, at))
     report.worklist = len(work.worklist)
     # A tombstone's key cannot be recomputed (it stores no title or artist): one with an empty segment can never be found again, the others stay (dead weight).
     conn.executemany("UPDATE ref_merge SET norm_key = NULL WHERE old_id = ?", [(old,) for old in work.tombstones])
     report.tombstones_nulled = len(work.tombstones)
-    for ref in work.covers:  # STOP-GAP(P2-25 one-shot-repair): the pictures the broken fold matched, until N-36
+    # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the pictures the broken fold matched, until N-36
+    for ref in work.covers:
         conn.execute("UPDATE song_ref SET cover_url = NULL, cover_tried_at = NULL WHERE id = ?", (ref,))
         library.touch_ref_holders(conn, ref)
         if conn.execute("SELECT 1 FROM song_file WHERE ref = ?", (ref,)).fetchone() is not None:
