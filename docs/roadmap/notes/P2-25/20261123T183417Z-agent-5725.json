@@ -1,0 +1,12 @@
+{
+ "id": "20261123T183417Z-agent-5725",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-23T18:34:17Z",
+ "type": "note",
+ "body": "23 Nov 2026 ~18:35 UTC, a YES/NO QUESTION for you (reply in chat; nothing else to do, nothing of yours was touched: your frozen test pair, VM 108 and the A35 are as they were, nothing is deployed).\n\nWHERE THINGS STAND, in plain words:\n1. The Stop that keeps your files (N-39, PR #119) is now MERGED into the main code. It is not on your phone or server: it is built, not walked.\n2. The stop of 22 Nov at 21:08 UTC was the 5-hour usage allowance running out. It was NOT billing and NOT a shutdown (the note below, written 22 Nov, is about the earlier stop of 21 Nov, which was billing). Work was idle until 23 Nov ~18:15 UTC.\n3. The repair for songs glued to the wrong entry (P2-25 slice 4, PR #118) is finished and its tests pass, but it has NOT had the independent check the first two rounds had: a separate reviewer and a separate tester who try to break it. Both earlier testers found a real fault after a reviewer had approved, so I will not merge it without that check.\n\nTHE QUESTION: may I start ONE reviewer and ONE tester for #118, and after that ONE builder for the next phone item, N-45 (the phone tells an old download attempt from a new one, so a late answer can never end a new download)? Each uses your Claude usage allowance, one at a time, and a limit stop is possible again. Reply yes or no in chat. If you say nothing, nothing starts and nothing is lost: #118 simply waits unmerged.",
+ "to": [
+  "owner"
+ ]
+}
