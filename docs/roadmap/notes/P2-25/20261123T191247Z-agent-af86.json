@@ -1,0 +1,12 @@
+{
+ "id": "20261123T191247Z-agent-af86",
+ "item": "P2-25",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-23T19:12:47Z",
+ "type": "note",
+ "body": "23 Nov 2026 ~19:00 UTC, the owner's answer and the advisor's ruling (information for the next session). I asked the owner by a board note and in chat whether I may start one reviewer and one tester for PR 118 and later one builder for N-45. His reply, word for word: 'never wait for me, im afk. always check with advisor not me. and also you have a roadmap to guide you. continue. im afk'. THE ADVISOR'S RULING: that is the go. Start ONE delta reviewer and ONE adversarial tester for #118 now, in parallel as one stage (range 12a232a..HEAD, read-only reviewer, attacker only in its own detached worktree); a proved failing probe is a blocker and gets a narrow fix round from wt-p225s4; reviewer approves and no proved probe: merge_chain3.sh 118 (it updates the branch, main moved, and waits for CI incl. verify), then check audit rows B-133..B-136 once; then N-45 builder (precondition #119 merged is true; add the #119 attacker's two concerns, probe C and the seeds 1356/2411, as costs that need red-then-green tests). ONE heavy run at a time, at most two code PRs waiting. The frozen-pair rules stay: VM 108, the A35 and any deploy untouched until a note says his test week is over.",
+ "to": [
+  "agent"
+ ]
+}

@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 
-from encore_server import rehome
+from encore_server import refs, rehome
 from encore_server.db import Database
 from encore_server.ids import now_ms
 from encore_server.link_listing import Listing
@@ -745,3 +745,116 @@ def test_a_pass_killed_after_the_chunk_that_made_a_song_with_an_id_ends_where_th
 
     assert worklist(db) == worklist(uncut) == {SELF}
     assert shape(db) == shape(uncut)
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# Third review (23 Nov 2026): a song a move makes BY NAME is evidence against a kept file too, and a pass that moves nothing judges every file once
+
+
+def made_by_name_world(db: Database) -> list[dict[str, Any]]:
+    """SELF (its own name is another one) is the survivor of a merged ref whose tombstone says K1 and 200 s. SELF keeps f2 (K1, 202.9 s): only the TOMBSTONE names SELF
+    (the fourth tier of `candidates`), no live ref has that name, so f2 is KEPT. DUP's file f1 (K1, 205.5 s) is five seconds off the tombstone: nothing names a ref for it,
+    it MOVES and MAKES a song by NAME (no id on either file). That song is now a LIVE name match for f2 (2.6 s off) and a live name outranks a tombstone: SELF fits f2 only
+    as well as another. A third song holds f3 (another move) so that a pass can be cut between two moves."""
+    moving = song("nd-1", *K1, 205.5)
+    sibling = song("nd-2", *K1, 202.9)
+    second = song("nd-3", *K4, 200.0)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K2[0], [K2[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-2", added_at=300, song=sibling)
+        c.execute(
+            "INSERT INTO ref_merge (old_id, into_id, at, norm_key, duration_ms) VALUES (?,?,1,?,?)",
+            (rid("sr", 50), SELF, refs.norm_key(K1[1], K1[0]), 200_000),
+        )
+        add_ref(c, DUP, K3[0], [K3[1]], old=False, duration_ms=200_000)
+        add_file(c, DUP, "nd-1", added_at=100, song=moving)
+        add_ref(c, rid("sr", 5), "x", ["y"], old=False, duration_ms=200_000)
+        add_file(c, rid("sr", 5), "nd-3", added_at=200, song=second)
+        add_ref(c, rid("sr", 6), K4[0], [K4[1]], old=False, duration_ms=200_000)
+
+    make_world(db, build)
+    listed(db, SELF, DUP, rid("sr", 5))
+    return [moving, second, sibling]
+
+
+def test_a_song_a_move_made_by_name_is_evidence_against_a_file_kept_on_a_tombstone_in_the_same_pass_not_at_the_next_one(
+    db: Database,
+) -> None:
+    """The made song carries no id, so the re-judging that looks for the id of a made song never saw it; the kept file is judged again whenever the made song is among ITS
+    candidates, by any evidence. A pass that begins after the move (a cut and resumed one) holds SELF: so does the uncut pass."""
+    songs = made_by_name_world(db)
+
+    first = link_library(db, Music(songs))
+
+    assert first.rehome is not None and first.rehome.stayed_ambiguous == 1 and first.rehome.rounds == 2
+    assert worklist(db) == {SELF}, "SELF fits f2 as well as the made song does: held, in this very pass"
+    state = digest(db)
+
+    link_library(db, Music(songs))
+
+    assert digest(db) == state and len(copies(db)) == 1, "the second pass writes nothing and takes no copy"
+
+
+def test_a_pass_killed_after_the_chunk_that_made_a_song_by_name_ends_where_the_uncut_pass_ends(
+    db: Database, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    uncut = Database(tmp_path / "uncut" / "encore.db")
+    uncut.migrate()
+    songs = made_by_name_world(uncut)
+    link_library(uncut, Music(songs))
+
+    made_by_name_world(db)
+    monkeypatch.setattr(rehome, "CHUNK", 1)
+    real = rehome.Rehome._move  # noqa: SLF001
+    calls: list[str] = []
+
+    def dying(self: rehome.Rehome, conn: sqlite3.Connection, file_id: str, ref: str, described_: dict[str, Any] | None) -> Any:
+        calls.append(file_id)
+        if len(calls) == 2:
+            raise RuntimeError("the process was killed here")
+        return real(self, conn, file_id, ref, described_)
+
+    monkeypatch.setattr(rehome.Rehome, "_move", dying)
+    link_library(db, Music(songs))
+    monkeypatch.undo()
+    link_library(db, Music(songs))
+
+    def shape(database: Database) -> tuple[Any, ...]:
+        with database.read() as conn:
+            return (
+                sorted(
+                    (r["navidrome_song_id"], r["key"])
+                    for r in conn.execute(
+                        "SELECT f.navidrome_song_id, s.norm_key AS key FROM song_file f JOIN song_ref s ON s.id = f.ref"
+                    )
+                ),
+                sorted(r["ref"] for r in conn.execute("SELECT ref FROM ref_recheck")),
+            )
+
+    assert worklist(db) == worklist(uncut) == {SELF}
+    assert shape(db) == shape(uncut)
+
+
+def test_a_pass_that_moves_nothing_judges_every_file_once_and_never_reaches_the_cap_on_rounds(
+    db: Database, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Judging the stays again is worth a round only when a move could have lifted one. A liked song with ONE wrong file stays (the last file of a song a person owns) and
+    nothing moves: one round, and no ERROR line about the cap on every hourly pass of a Host whose ref is held for good."""
+    wrong = song("nd-1", *K2)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", added_at=100, song=wrong)
+        add_ref(c, OTHER, K2[0], [K2[1]], old=False, duration_ms=200_000)
+        own(c, "like", SELF)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    with caplog.at_level(logging.ERROR, logger=LOG):
+        report = link_library(db, Music([wrong]))
+
+    assert report.rehome is not None and report.rehome.stayed_last_file == 1 and report.rehome.moved == 0
+    assert report.rehome.rounds == 1, "nothing moved, so nothing was lifted: one round"
+    assert not [r for r in caplog.records if r.name == LOG and r.levelno >= logging.ERROR], "no cap line"

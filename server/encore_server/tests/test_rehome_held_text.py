@@ -162,3 +162,50 @@ def test_no_sentence_of_the_code_says_that_tagging_frees_only_the_first_reason()
         text = Path(module.__file__).read_text(encoding="utf-8")
         assert "tagging frees only" not in text, module.__name__
         assert "only for the first reason" not in text, module.__name__
+
+
+def test_a_placeholder_artist_file_that_carries_an_id_no_song_holds_is_held_and_tagging_an_artist_name_frees_it(
+    db: Database,
+) -> None:
+    """The row says the ids name no song: that is also the file that HAS an id nobody holds (an id of its own cannot name a song that does not carry it)."""
+    other_isrc = "QZ9999999999"
+    tags = song("nd-1", K1[0], "[Unknown Artist]", isrc=[other_isrc])
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)
+        add_file(c, SELF, "nd-1", song=tags)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    held = link_library(db, Music([tags]))
+
+    assert worklist(db) == {SELF} and held.rehome is not None and held.rehome.stayed_nameless == 1
+
+    link_library(db, Music([song("nd-1", *K1, isrc=[other_isrc])]))
+
+    assert worklist(db) == set(), "the Host tagged an artist name: the file is its song's, as the table says"
+
+
+def test_the_remedy_the_table_names_for_the_same_name_with_another_length_frees_it(db: Database) -> None:
+    """The ambiguous row also holds a ref whose own name is the tags' name and whose stored length is not the file's; its remedy there is the length corrected."""
+    tags = song("nd-1", *K1, 260.0)
+
+    def build(c: sqlite3.Connection) -> None:
+        add_ref(c, SELF, K1[0], [K1[1]], old=False, duration_ms=200_000)  # 60 s off the file
+        add_file(c, SELF, "nd-1", song=tags)
+
+    make_world(db, build)
+    listed(db, SELF)
+
+    held = link_library(db, Music([tags]))
+
+    assert worklist(db) == {SELF} and held.rehome is not None and held.rehome.stayed_ambiguous == 1
+    link_library(db, Music([tags]))
+    assert worklist(db) == {SELF}, "tagging the file again changes nothing: the tags were right"
+
+    with db.tx() as conn:
+        conn.execute("UPDATE song_ref SET duration_ms = 260000 WHERE id = ?", (SELF,))
+    link_library(db, Music([tags]))
+
+    assert worklist(db) == set(), "the song's stored length corrected: it fits the file and the pass releases it"
