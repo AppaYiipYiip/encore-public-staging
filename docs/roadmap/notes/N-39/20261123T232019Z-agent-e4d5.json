@@ -1,0 +1,12 @@
+{
+ "id": "20261123T232019Z-agent-e4d5",
+ "item": "N-39",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-23T23:20:19Z",
+ "type": "note",
+ "body": "23 Nov 2026 ~23:20 UTC, ADDENDUM to the first real-phone check (A35, APK build 161 + server image sha-27d4383 on VM 108; the lead; nothing marked walked: the guide's clean install is still missing). N-39, THE STOP, checked on the phone with the '00s Hip Hop playlist (189 songs, files already on the server): (1) Remove download on it, through the question (Remove confirmed on purpose: the music stays on the server); the page then offers Download. (2) Download started: '17 of 189', '23 of 189 on this phone . 188 ready on your server' and a 'Stop the download' button. (3) Stop pressed at 40: the page says 'Stopped . 40 of 189 on this phone . 188 ready on your server' and offers 'Resume the download'; 12 s later still 40 (the 40 files were kept, nothing went on). (4) The app process was killed (am force-stop: pid gone; a recents swipe did NOT kill it, the app keeps its pid 4388) and reopened (new pid 13312): the playlist still says 'Stopped . 40 of 189', 10 s later still 40: a restart starts nothing that was stopped. (5) Resume: '52 of 189' after 8 s, '66' after 18 s: it CONTINUED from 40, no restart from 0; it ended at '188 of 189 on this phone . 1 song did not come', the state before the test (the one failure says why in words). So N-39's Stop, its cold restart and its Resume work on the real phone on the pair; the question before Remove was checked earlier (Cancel changes nothing). NOT done: N-11 (one song, one entry) is still not walked (it needs the five held pairs and a covers/artists look: left for a pass with the owner's help or a clean install); the walk of the Stop with a download of a song the server must fetch first (YouTube) was not tried on purpose (no flood). PITFALL met: Samsung recents swipe does not kill the app; use am force-stop for a cold start.",
+ "to": [
+  "agent"
+ ]
+}
