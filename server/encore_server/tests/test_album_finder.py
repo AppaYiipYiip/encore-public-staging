@@ -585,10 +585,12 @@ def test_an_album_beats_an_earlier_single_inside_the_window() -> None:
     assert {r.album_id: r.reason for r in verdict.releases} == {SINGLE: "outranked", ALBUM: "chosen"}
 
 
-def test_a_single_is_its_own_release_when_nothing_else_carries_the_recording() -> None:
+def test_a_single_is_what_the_matcher_chooses_when_nothing_else_carries_the_recording_and_the_rule_then_withholds_it() -> None:
+    """CHANGED by the advisor's ruling after the live dry run (`test_album_single_only.py`): the matcher still CHOOSES the single (its facts are `withheld`, for the report), and
+    slice 2 never stamps it: `none`/`single_only`."""
     verdict = choose_release(CREATURE, [single_hit()], albums(SINGLE))
-    match = verdict.match
-    assert verdict.outcome == "matched" and match is not None
+    match = verdict.withheld
+    assert (verdict.outcome, verdict.reason, verdict.match) == ("none", "single_only", None) and match is not None
     assert (match.album_id, match.album, match.record_type, match.track_no, match.deezer_id, match.isrc) == (
         SINGLE,
         "Creature",
@@ -617,7 +619,9 @@ def test_an_unknown_record_type_never_wins_even_when_it_is_the_earlier_release(u
     """DERIVED: the album's answer with a `recordType` nobody has seen and an EARLIER date than the single's."""
     both = {ALBUM: derive(albums(ALBUM)[ALBUM], recordType=unknown, releaseDate="2020-01-01"), SINGLE: albums(SINGLE)[SINGLE]}
     verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both)
-    assert verdict.match is not None and verdict.match.album_id == SINGLE
+    assert verdict.withheld is not None and verdict.withheld.album_id == SINGLE and verdict.reason == "single_only", (
+        "the single is all that is left, and it is not stamped"
+    )
     assert {r.album_id: r.reason for r in verdict.releases} == {ALBUM: "record_type", SINGLE: "chosen"}
     alone = choose_release(CREATURE, [creature_hit()], {ALBUM: both[ALBUM]})
     assert (alone.outcome, alone.reason, alone.match) == ("none", "no_eligible_release", None)
@@ -655,9 +659,9 @@ def test_the_record_types_of_every_recorded_release_are_the_ones_the_matcher_doc
     this fails and the comment is rewritten with the new counts."""
     seen, holders = _recorded_release_types()
     counts = {kind: sum(1 for value in seen.values() if value == kind) for kind in sorted(set(seen.values()))}
-    assert counts == {"album": 116, "ep": 10, "single": 104}, counts
-    assert len(seen) == 230 and holders == 12, (
-        "230 releases in 11 answers of the server's folder (8 of step 0 and 3 of the live dry run of 24 Nov 2026: Ja Rule live and studio, Opeth remixed) and the 20 recorded searches"
+    assert counts == {"album": 116, "ep": 10, "single": 106}, counts
+    assert len(seen) == 232 and holders == 14, (
+        "232 releases in 13 answers of the server's folder (8 of step 0 and 5 of the live dry run of 24 Nov 2026: Ja Rule live and studio, Opeth remixed, two singles) and the 20 recorded searches"
     )
     assert set(counts) <= {"album", "ep", "single"}, (
         "no compile, no live, no remix value was ever recorded: the matcher's `never wins` rule is untested on a real one"
@@ -766,7 +770,7 @@ def test_the_album_artist_must_be_the_songs_first_artist() -> None:
             SINGLE: albums(SINGLE)[SINGLE],
         }
         verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both)
-        assert verdict.match is not None and verdict.match.album_id == SINGLE, other
+        assert verdict.withheld is not None and verdict.withheld.album_id == SINGLE and verdict.reason == "single_only", other
         assert {r.album_id: r.reason for r in verdict.releases} == {ALBUM: "album_artist", SINGLE: "chosen"}, other
     no_artist = derive(albums(ALBUM)[ALBUM], artists=[])
     assert choose_release(CREATURE, [creature_hit()], {ALBUM: no_artist}).reason == "no_eligible_release"

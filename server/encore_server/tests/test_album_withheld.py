@@ -184,11 +184,12 @@ def test_a_gap_that_cannot_be_measured_is_never_inside_the_window(
     assert (verdict.outcome, verdict.reason) == ("none", "single_before_album"), what
 
 
-def test_a_song_with_only_a_single_among_the_hits_is_still_its_own_release_whatever_the_window() -> None:
-    """Decision 3 of the design is unchanged: a single is a release of one song, only when no album or EP carries the recording."""
+def test_a_song_with_only_a_single_among_the_hits_is_not_stamped_whatever_the_window() -> None:
+    """CHANGED by the advisor's ruling after the live dry run (`test_album_single_only.py`): decision 3 of the design (a single is a release of one song) is superseded for slice
+    2: a stamp is permanent and a later round asks only none and held, so a single is never stamped: `none`/`single_only`, re-askable."""
     for window in (None, 0):
         verdict = choose_release(CREATURE, [single_hit()], albums(SINGLE), single_window_days=window)
-        assert verdict.outcome == "matched" and verdict.match is not None and verdict.match.single
+        assert (verdict.outcome, verdict.reason, verdict.match) == ("none", "single_only", None)
 
 
 def test_the_recorded_searches_of_requiem_and_creature_list_only_the_album_so_both_match_whatever_the_window() -> None:
@@ -457,6 +458,7 @@ def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_th
         1: "90e3395504ceed7b",
         2: "fff965fa74e495fb",
         3: "8d639d3ea5098204",
+        4: "8d639d3ea5098204",  # the single rule is code, not data: the pinned data is the same as for 3
     }  # 1 = the state of PR 125 as first pushed (never stamped anywhere)
     assert album_finder.IDENTITY_REVISION in known, "a new revision needs its line here"
     assert known[album_finder.IDENTITY_REVISION] == fingerprint, (

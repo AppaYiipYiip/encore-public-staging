@@ -289,6 +289,9 @@ class AlbumFinder:
                 if refs.is_placeholder_album(verdict.match.album):
                     # The second layer of `release_placeholder`: no album and no id are written for a release called `Unknown Album`, whatever the verdict said.
                     outcome, reason, updates = "none", "release_placeholder", refs.forget_placeholder_album(row)
+                elif verdict.match.single:
+                    # The second layer of `single_only`: slice 2 never stamps a single, whatever the verdict said (a stamp is permanent and a later round asks only none and held).
+                    outcome, reason, updates = "none", "single_only", refs.forget_placeholder_album(row)
                 elif "album" not in updates:
                     outcome, reason, updates = "none", "nothing_to_fill", refs.forget_placeholder_album(row)
                 elif (

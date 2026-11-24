@@ -200,12 +200,12 @@ def test_the_report_names_the_new_cause_and_the_isrc_cause() -> None:
 
 def test_the_revision_was_raised_because_the_rule_changed() -> None:
     """Nothing was stamped anywhere with revision 1 (the live dry run writes nothing), so raising it costs nothing: the first pass on a real server asks every song under revision 2."""
-    assert album_finder.IDENTITY_REVISION == 3
+    assert album_finder.IDENTITY_REVISION >= 2, "the revision only goes up (the latest is pinned in test_album_single_only.py)"
 
 
 def test_every_answer_the_live_dry_run_ledger_names_is_here_and_is_the_answer_to_its_own_request() -> None:
     ledger = json.loads((RECORDED / "n34_dryrun_24nov.json").read_text(encoding="utf-8"))
-    assert len(ledger["files"]) == 8 and len(set(ledger["files"])) == 8
+    assert len(ledger["files"]) == 14 and len(set(ledger["files"])) == 14
     for name in ledger["files"]:
         body = json.loads((RECORDED / f"{name}.json").read_text(encoding="utf-8"))
         assert fixture_name(body["path"], body["params"]) == name, f"{name} is not named by the one rule for what it answers"

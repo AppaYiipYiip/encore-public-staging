@@ -1,0 +1,132 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/72512",
+ "params": {},
+ "answer": {
+  "id": 72512,
+  "title": "Buy U A Drank (Shawty Snappin')",
+  "upc": "888880163202",
+  "link": "https://www.deezer.com/album/72512",
+  "cover": "https://api.deezer.com/album/72512/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 165,
+  "genres": {
+   "data": [
+    {
+     "id": 165,
+     "name": "R&B",
+     "picture": "https://api.deezer.com/genre/165/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Jive",
+  "nb_tracks": 2,
+  "duration": 472,
+  "fans": 1948,
+  "release_date": "2007-06-04",
+  "record_type": "single",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/72512/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 323,
+    "name": "T-Pain",
+    "link": "https://www.deezer.com/artist/323",
+    "picture": "https://api.deezer.com/artist/323/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 323,
+   "name": "T-Pain",
+   "picture": "https://api.deezer.com/artist/323/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3ca1402cee3996233fd2ebc944407181/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 552315,
+     "readable": true,
+     "title": "Buy U a Drank (Shawty Snappin') (feat. Yung Joc)",
+     "title_short": "Buy U a Drank (Shawty Snappin') (feat. Yung Joc)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/552315",
+     "duration": 229,
+     "rank": 676094,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 323,
+      "name": "T-Pain",
+      "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72512,
+      "title": "Buy U A Drank (Shawty Snappin')",
+      "cover": "https://api.deezer.com/album/72512/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72512/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 552317,
+     "readable": true,
+     "title": "Calm The Fuck Doun",
+     "title_short": "Calm The Fuck Doun",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/552317",
+     "duration": 243,
+     "rank": 162773,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 323,
+      "name": "T-Pain",
+      "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72512,
+      "title": "Buy U A Drank (Shawty Snappin')",
+      "cover": "https://api.deezer.com/album/72512/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0567c179ee607ad48556a6d8eb7ac00d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72512/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

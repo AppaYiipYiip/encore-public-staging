@@ -1,0 +1,101 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/362957",
+ "params": {},
+ "answer": {
+  "id": 362957,
+  "title": "What's Luv? (feat. Ashanti)",
+  "upc": "075678525568",
+  "link": "https://www.deezer.com/album/362957",
+  "cover": "https://api.deezer.com/album/362957/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Razor & Tie",
+  "nb_tracks": 1,
+  "duration": 231,
+  "fans": 6480,
+  "release_date": "2002-02-05",
+  "record_type": "single",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/362957/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 3,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 3813,
+    "name": "Fat Joe",
+    "link": "https://www.deezer.com/artist/3813",
+    "picture": "https://api.deezer.com/artist/3813/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/3813/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 3813,
+   "name": "Fat Joe",
+   "picture": "https://api.deezer.com/artist/3813/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7ee24fafbb40a4748da87f1b71c8d152/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/3813/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 3886133,
+     "readable": true,
+     "title": "What's Luv? (feat. Ashanti)",
+     "title_short": "What's Luv? (feat. Ashanti)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3886133",
+     "duration": 231,
+     "rank": 703637,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3813,
+      "name": "Fat Joe",
+      "tracklist": "https://api.deezer.com/artist/3813/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 362957,
+      "title": "What's Luv? (feat. Ashanti)",
+      "cover": "https://api.deezer.com/album/362957/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/475b53e5d0960c8b47481933568bbba8/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/362957/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

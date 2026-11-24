@@ -46,10 +46,10 @@ def test_a_release_called_unknown_album_is_never_chosen_it_is_a_re_askable_none(
 
 
 def test_another_release_is_taken_over_one_called_unknown_album() -> None:
-    """DERIVED: the recorded album and single of Creature, the album re-titled; the single is the song's release."""
+    """DERIVED: the recorded album of Creature re-titled and its single typed EP (slice 2 never stamps a single); the EP is the song's release."""
     from tests.test_album_finder import SINGLE, single_hit
 
-    both = {ALBUM: with_title("[Unknown Album]")[ALBUM], SINGLE: albums(SINGLE)[SINGLE]}
+    both = {ALBUM: with_title("[Unknown Album]")[ALBUM], SINGLE: derive(albums(SINGLE)[SINGLE], recordType="ep")}
     verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both, single_window_days=None)
     assert verdict.outcome == "matched" and verdict.match is not None and verdict.match.album_id == SINGLE
 
@@ -164,7 +164,7 @@ def test_the_track_title_carries_the_same_marks_through_the_version_signature(tr
 
 
 def test_the_revision_was_raised_for_the_new_marks_and_the_placeholder_rule() -> None:
-    assert album_finder.IDENTITY_REVISION == 3
+    assert album_finder.IDENTITY_REVISION >= 3, "the revision only goes up (the latest is pinned in test_album_single_only.py)"
 
 
 # ------------------------------------------------------------------------------------------------------------------ 3. a huge id, an unexpected exception

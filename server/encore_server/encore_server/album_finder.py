@@ -62,7 +62,8 @@ TOLERANCE_MS = refs.DURATION_TOLERANCE_MS
 #: lower is asked again at once (`album_pass`); a `matched` song is never asked (it has its ids).
 #: 2: the release-title version rule (`release_markers`), `isrc_differs` and the marker `retrospective`, from the review of PR 125 and the live dry run. Nothing was stamped with 1.
 #: 3: the marks Unplugged, Re-recorded and the possessive Version, and a release called `Unknown Album` refused (the adversarial tester). Nothing was stamped with 2.
-IDENTITY_REVISION = 3
+#: 4: slice 2 never stamps a single (`single_only`, the advisor's ruling after the live dry run). Nothing was stamped with 3.
+IDENTITY_REVISION = 4
 
 #: How many days an ALBUM may come after the SINGLE that carries the same recording and still be the song's album (a lead single comes out before its album).
 #: Inside it the album wins; outside it, or when the two dates cannot be compared, the song is `none` with the reason `single_before_album`, which is asked again.
@@ -112,7 +113,7 @@ ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type", "r
 
 #: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
 #: 20 searches of `app/test/fixtures/deezer/search.json`; the server's own mapped copies in `app/test/fixtures/server/` are not counted, they are the same releases
-#: again; plus the 3 answers of the live dry run of 24 Nov 2026 that the tests need): 230 distinct releases, `album` 116, `single` 104, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
+#: again; plus the 5 answers of the live dry run of 24 Nov 2026 that the tests need): 232 distinct releases, `album` 116, `single` 106, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
 #: **The recordings hold no `compile` and no live or remix value: no release of them is marked a compilation or a live record**, so the type cannot tell a
 #: best-of from an album (Legend Remixed and the Legacy sets are `album`). **Any other value never wins**: the spellings that mark a compilation or a live
 #: record are not known, and a guess would be a wrong album.
@@ -691,6 +692,20 @@ def choose_release(
             hits=verdicts,
             releases=releases,
             detail=f"the song holds {own}, the catalogue's entry {match.isrc}",
+            withheld=match,
+        )
+    # SLICE 2 NEVER STAMPS A SINGLE (the advisor's ruling after the live dry run of 24 Nov 2026, where 40 of 150 stamps were singles and two of them album tracks: `What's Luv?`,
+    # `Buy U A Drank`). A stamp is PERMANENT and the later rounds (the artist's discography, a better rule) only ask `none` and `held` again, so a single stamped here can never be
+    # corrected; and the eight hits of a search cannot prove that no album carries the recording. The song is a re-askable `none`. EPs stay accepted; an album that wins over an
+    # earlier single is decided above (the window). **The cost is a delay**: the song stays in "Songs without an album" until the discography round, whose first measured target
+    # these songs are.
+    if release.record_type == _SINGLE:
+        return Verdict(
+            "none",
+            "single_only",
+            hits=verdicts,
+            releases=releases,
+            detail=f"the only release of the hits is the single {release.album_id}",
             withheld=match,
         )
     withhold: tuple[str, str] | None = None
