@@ -60,6 +60,18 @@ AlbumAsk = Callable[[str], dict[str, Any]]
 _IDENTITY_COLUMNS = frozenset({"identity_tried_at", "identity_rev", "identity_outcome", "identity_reason"})
 
 
+def length_of(music_dir: Path | None, kept: str | None, listed_ms: object) -> int | None:
+    """A song's length for the comparison with the catalogue's: the kept FILE's own when the music folder is known and the file can be read (the import's listing is 1 to 12 s
+    off: N-11; a path that leaves the folder is never read), else the ref's own `duration_ms`, else `None`. ONE rule for the album pass and the cover finder."""
+    if music_dir is not None and kept:
+        path = music_dir / kept
+        if inside(music_dir, path):
+            from_file = file_length_ms(path)
+            if from_file:
+                return from_file
+    return int(listed_ms) if isinstance(listed_ms, int) and listed_ms > 0 else None
+
+
 def search_the_catalogue(artist: str, title: str) -> list[dict[str, Any]]:
     """The one search of the pass: the installed catalogue, as a background turn. (A module function, so the tests of the app put their own in: none of them may ask the real
     catalogue.)"""
@@ -178,16 +190,6 @@ class AlbumFinder:
             wanted.append(row)
         return wanted
 
-    def _length(self, row: sqlite3.Row) -> int | None:
-        """The kept FILE's own length when the music folder is known and the file can be read (the import's listing is 1 to 12 s off: N-11), else the ref's own."""
-        if self._music is not None and row["kept"]:
-            path = self._music / row["kept"]
-            if inside(self._music, path):
-                from_file = file_length_ms(path)
-                if from_file:
-                    return from_file
-        return int(row["duration_ms"]) if row["duration_ms"] else None
-
     # ------------------------------------------------------------------------------------------------------------ the pass
 
     def run_once(self) -> AlbumReport:
@@ -196,7 +198,7 @@ class AlbumFinder:
             rows = self._wanting(conn, report)
         started = self._clock()
         for row in rows:
-            song = Song(refs.lead_artist(row["artists"]), row["title"], self._length(row))
+            song = Song(refs.lead_artist(row["artists"]), row["title"], length_of(self._music, row["kept"], row["duration_ms"]))
             if album_finder.refusal(song) is not None:
                 # No request, nothing remembered ("not asked"); the song was examined, so its placeholder literal is forgotten.
                 report.refused += 1

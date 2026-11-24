@@ -103,6 +103,7 @@ class Rig:
         self.cover_breaks = False
         self.cover_unavailable = False
         self.cover_asked: list[tuple[str, str, str | None]] = []
+        self.cover_lengths: list[int | None] = []
 
         def write_tags(path: Path, tags: Tags, cover: bytes | None = None) -> bool:
             self.tagged.append((path.suffix, tags, cover))
@@ -127,8 +128,9 @@ class Rig:
             clock=lambda: self.now,
         )
 
-    def find_cover(self, artist: str, title: str, album: str | None) -> str | None:
+    def find_cover(self, artist: str, title: str, album: str | None, *, length_ms: int | None = None) -> str | None:
         self.cover_asked.append((artist, title, album))
+        self.cover_lengths.append(length_ms)
         if self.cover_unavailable:
             raise LookupUnavailable("the catalogue is resting")
         if self.cover_breaks:
@@ -199,7 +201,7 @@ def test_n26_the_real_look_up_through_the_gate_sends_nothing_out_for_a_channel_w
     deezer.install(DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport())))
     rig.keeper._find_cover = deezer_lookup  # the production look-up (api.py passes it), in the place of the fake the rig has
 
-    rig.keep(rig.make_ref(title="Blinding Lights", artists=["The Weeknd"], album="After Hours", basis=basis))
+    rig.keep(rig.make_ref(title="Blinding Lights", artists=["The Weeknd"], album="After Hours", basis=basis, durationMs=200_000))
 
     assert upstream.paths() == paths
 
@@ -248,6 +250,18 @@ def test_a_song_that_came_without_a_picture_gets_the_catalogues_in_its_file_and_
     assert rig.cover_asked == [("Radiohead", "Weird Fishes / Arpeggi", "In Rainbows")]
     assert rig.tagged[0][2] == b"cover-bytes"
     assert rig.ref(ref)["coverUrl"] == "https://cdn.dzcdn.net/found.jpg"
+
+
+def test_the_keeper_gives_the_picture_lookup_the_length_the_ref_has_and_a_song_with_none_is_not_looked_up(rig: Rig) -> None:
+    """N-34 slice 2 (audit B-133): the look-up compares the version and the length, so the keeper's call passes the ref's length (the import's listing; slice 3 reads the
+    kept file's own). The production look-up asks no request for a song with no length: the keep goes on, with no catalogue picture."""
+    rig.keep(rig.make_ref(durationMs=215_000))
+    assert rig.cover_lengths == [215_000]
+    upstream = RecordedDeezer()
+    deezer.install(DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport())))
+    rig.keeper._find_cover = deezer_lookup
+    rig.keep(rig.make_ref(title="Blinding Lights", artists=["The Weeknd"], album="After Hours", durationMs=None))
+    assert upstream.paths() == [], "no length: no request"
 
 
 def test_a_song_that_has_a_picture_is_not_looked_up(rig: Rig) -> None:

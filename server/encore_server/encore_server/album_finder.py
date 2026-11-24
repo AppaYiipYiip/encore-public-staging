@@ -136,6 +136,10 @@ class HitVerdict:
     #: The artist, the title and the version all agree (the length is the only thing left to say): `reason` is `length`, `no_length`, `no_album` or
     #: `same_recording`.
     name_fits: bool
+    #: The title and the picture of the album the hit is on, as the catalogue's search row carries them (`None` when it carries none): what the cover finder takes
+    #: from an ACCEPTED hit.
+    album_title: str | None = None
+    cover: str | None = None
 
     @property
     def accepted(self) -> bool:
@@ -315,7 +319,19 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
                 reason = "no_album"
             else:
                 reason = "same_recording"
-        verdicts.append(HitVerdict(track["id"], name, title, album_id, reason, delta, fits))
+        verdicts.append(
+            HitVerdict(
+                track["id"],
+                name,
+                title,
+                album_id,
+                reason,
+                delta,
+                fits,
+                track["album"]["title"] if track["album"] else None,
+                track["cover"],
+            )
+        )
     return tuple(verdicts)
 
 

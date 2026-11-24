@@ -4,6 +4,10 @@ The app shows a song's picture from its ref (`coverUrl`), so a picture found her
 look-up is the catalogue's public search (Deezer), a few songs a second, once per album where the album is known; a song the catalogue
 knows nothing for is not asked about again for a week. A catalogue that could not be asked (down, throttled) is not "knows nothing": the pass
 stops and nothing is remembered (audit B-124).
+
+**It asks through the matcher of the album pass** (N-34 slice 2, audit B-133): a hit is the song only when the artist, the title AND the version agree and the length is
+within the tolerance (`album_finder.judge_hits`), so a live upload is not given a studio album's picture and the other way round; a name with nothing to compare or a song
+with no length is not looked up at all. A song the album pass matched has its picture from that identity (the release's cover, written by the pass) and is not asked here.
 """
 
 from __future__ import annotations
@@ -19,15 +23,17 @@ from typing import Any, Protocol
 
 import httpx
 
-from . import library, refs
+from . import album_finder, library, refs
+from .album_pass import length_of
 from .artist_basis import performer_clause
+from .catalogue import release_key
 from .db import Database
 from .deezer import LookupUnavailable, search_tracks
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
 from .keeper.placement import inside
-from .textnorm import artist_key, is_unknown_artist, title_key
+from .textnorm import artist_key, is_unknown_artist
 
 log = logging.getLogger("encore_server.cover_finder")
 
@@ -36,36 +42,33 @@ RETRY_AFTER_MS = 7 * 24 * 3600 * 1000
 
 
 class Lookup(Protocol):
-    def __call__(self, artist: str, title: str, album: str | None) -> str | None:
+    def __call__(self, artist: str, title: str, album: str | None, *, length_ms: int | None = None) -> str | None:
         """The picture's address, or `None` (the catalogue knows no such song). Raises [LookupUnavailable] when it could not be asked."""
         ...
 
 
-def deezer_lookup(artist: str, title: str, album: str | None, *, client: httpx.Client | None = None) -> str | None:
+def deezer_lookup(
+    artist: str, title: str, album: str | None, *, length_ms: int | None = None, client: httpx.Client | None = None
+) -> str | None:
     """The picture of the album this recording is on, from the catalogue; `None` when it is not sure which song it is.
 
-    A plain search (the catalogue's field search finds nothing for many real songs), and then only a hit whose artist and title are the
-    ones asked for counts. Raises [LookupUnavailable] when the catalogue could not be asked (so nothing is remembered about the song)."""
-    found = search_tracks(artist, title, client=client)
-    # The keys of the shared fold (P2-25, audit B-133): before, every name outside ASCII folded to `''` and `'' == ''`, so ONE hit was the cover of every Arabic song
-    # (and the cover stored for one album went to every other Arabic album of the pass). A blank name or title is nothing and matches nothing.
-    want_artist, want_title = artist_key(artist), title_key(title)
-    if not want_artist or not want_title:
+    A plain search (the catalogue's field search finds nothing for many real songs), and then only a hit the MATCHER of the album pass accepts counts: the same artist, the same
+    title AND version (`refs.norm_key`) and a length within the tolerance of [length_ms] (`album_finder.judge_hits`, audit B-133: "Nude" and "Nude (Live)" used to be one song here, and
+    so were an edit and the album cut). A name with nothing to compare, an artist that is nobody, or a song with no length is not looked up at all: no request, `None`.
+    Among the accepted hits the album the song is on wins (one release: a deluxe edition is its original), else the first. Raises [LookupUnavailable] when the catalogue could not be
+    asked (so nothing is remembered about the song)."""
+    song = album_finder.Song(artist, title, length_ms)
+    if album_finder.refusal(song) is not None:
         return None
-    wanted_album = title_key(album) if album else None
+    found = search_tracks(artist, title, client=client)
+    wanted_album = release_key(album) if album else None
     best: tuple[int, str] | None = None
-    for hit in found:
-        hit_artist = artist_key(str((hit.get("artist") or {}).get("name", "")))
-        hit_title = title_key(str(hit.get("title", "")))
-        if hit_artist != want_artist or hit_title != want_title:
+    for verdict in album_finder.judge_hits(song, found):
+        if not verdict.accepted or not isinstance(verdict.cover, str) or not cover_url_ok(verdict.cover):
             continue
-        cover = hit.get("album") or {}
-        url = cover.get("cover_xl") or cover.get("cover_big")
-        if not isinstance(url, str) or not cover_url_ok(url):
-            continue
-        score = 2 if wanted_album and title_key(str(cover.get("title", ""))) == wanted_album else 1
+        score = 2 if wanted_album and verdict.album_title and release_key(verdict.album_title) == wanted_album else 1
         if best is None or score > best[0]:
-            best = (score, url)
+            best = (score, verdict.cover)
     return best[1] if best else None
 
 
@@ -103,10 +106,16 @@ class CoverFinder:
     def _wanting(self, conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
         """Songs somebody has (a like, a playlist entry) or the server keeps, without a picture, kept ones and liked ones first. **Never a song whose artist
         is a channel's name or nobody's** (N-26: `channel`, `unknown`): the name of an uploader is not asked about at the catalogue from the Host's address.
-        The cost, written down: an upload on a band's own channel loses a catalogue cover until N-28 names its artist, and keeps its video's thumbnail."""
+        The cost, written down: an upload on a band's own channel loses a catalogue cover until N-28 names its artist, and keeps its video's thumbnail.
+        **Never a song the album pass matched** (`identity_outcome = 'matched'`): its picture is the identity's, written by the pass from the chosen release; a by-name search
+        here could only pick another release's picture. The kept file's path and the ref's length come with the row: the comparison is by length (`album_finder.judge_hits`)."""
         return conn.execute(
-            "SELECT r.id, r.title, r.artists, r.album, r.album_artist FROM song_ref r"
+            "SELECT r.id, r.title, r.artists, r.album, r.album_artist, r.duration_ms,"
+            " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
+            "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
+            " FROM song_ref r"
             " WHERE r.cover_url IS NULL AND (r.cover_tried_at IS NULL OR r.cover_tried_at < ?)"
+            " AND (r.identity_outcome IS NULL OR r.identity_outcome != 'matched')"
             f" AND {performer_clause('r.artist_basis')}"
             " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
             "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
@@ -152,12 +161,15 @@ class CoverFinder:
                 self._store(row["id"], None)
                 continue
             album = row["album"]
-            key = (artist_key(row["album_artist"] or artists[0]), title_key(album)) if album else None
+            # One question per RELEASE (`release_key`: a deluxe edition is its original, but "In Rainbows (Live)" is another release: `title_key` strips every bracket).
+            key = (artist_key(row["album_artist"] or artists[0]), release_key(album)) if album else None
             url = by_album.get(key) if key is not None else None
             if url is None:
                 report.looked += 1
                 try:
-                    url = self._lookup(artists[0], row["title"], album)
+                    url = self._lookup(
+                        artists[0], row["title"], album, length_ms=length_of(self._music, row["kept"], row["duration_ms"])
+                    )
                 except LookupUnavailable as error:
                     # Not "no picture": the catalogue did not answer. Nothing is stored for this song or the rest, and the next pass asks again.
                     log.info("the catalogue could not be asked (%s); the pass stops", error)
