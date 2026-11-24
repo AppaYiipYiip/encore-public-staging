@@ -1,0 +1,13 @@
+{
+ "origin": "The live dry run of PR 125 (head b8c2ad6) on 24 Nov 2026, 03:42 to 03:47 UTC, from VM 108's address over a read-only copy of its database, the kept files read from the music folder: 672 songs, 985 requests asked and 37 replayed. The lead ran it (`python -m encore_server.album_dryrun --live`) and saved every answer; the 985 are in local/n34-dryrun-24nov/answers/. ONLY the answers the tests need are tracked here (the song of the owner's library whose stamp was a live album, and its control), copied byte for byte; the ten requests of step 0 stay in n34_requests.json, whose count the recorder's tests pin.",
+ "files": [
+  "search_track_ja_rule_always_on_time_7801b175051e4590",
+  "search_track_opeth_to_rid_the_disease_remixed_4d6eba6d2684cb17",
+  "album_11552538",
+  "album_11552538_tracks",
+  "album_85606442",
+  "album_85606442_tracks",
+  "album_11539892",
+  "album_11539892_tracks"
+ ]
+}

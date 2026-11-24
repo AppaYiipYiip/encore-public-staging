@@ -1,0 +1,640 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/11552538",
+ "params": {},
+ "answer": {
+  "id": 11552538,
+  "title": "Ja Rule: 2005 (Live)",
+  "upc": "8718011402257",
+  "link": "https://www.deezer.com/album/11552538",
+  "cover": "https://api.deezer.com/album/11552538/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 132,
+  "genres": {
+   "data": [
+    {
+     "id": 132,
+     "name": "Pop",
+     "picture": "https://api.deezer.com/genre/132/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Charly Records",
+  "nb_tracks": 19,
+  "duration": 2977,
+  "fans": 4106,
+  "release_date": "2006-01-01",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/11552538/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 6,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 138,
+    "name": "Ja Rule",
+    "link": "https://www.deezer.com/artist/138",
+    "picture": "https://api.deezer.com/artist/138/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 138,
+   "name": "Ja Rule",
+   "picture": "https://api.deezer.com/artist/138/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 111114680,
+     "readable": true,
+     "title": "Holla, Holla",
+     "title_short": "Holla, Holla",
+     "link": "https://www.deezer.com/track/111114680",
+     "duration": 110,
+     "rank": 123724,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114682,
+     "readable": true,
+     "title": "Livin' It Up",
+     "title_short": "Livin' It Up",
+     "link": "https://www.deezer.com/track/111114682",
+     "duration": 226,
+     "rank": 150101,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114684,
+     "readable": true,
+     "title": "Between Me And You",
+     "title_short": "Between Me And You",
+     "link": "https://www.deezer.com/track/111114684",
+     "duration": 139,
+     "rank": 118127,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114686,
+     "readable": true,
+     "title": "Put It On Me",
+     "title_short": "Put It On Me",
+     "link": "https://www.deezer.com/track/111114686",
+     "duration": 280,
+     "rank": 106543,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114688,
+     "readable": true,
+     "title": "Down Ass Chick (A.k.a. Down Ass Bitch)",
+     "title_short": "Down Ass Chick (A.k.a. Down Ass Bitch)",
+     "link": "https://www.deezer.com/track/111114688",
+     "duration": 126,
+     "rank": 126133,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114690,
+     "readable": true,
+     "title": "Down 4 You",
+     "title_short": "Down 4 You",
+     "link": "https://www.deezer.com/track/111114690",
+     "duration": 122,
+     "rank": 184724,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114692,
+     "readable": true,
+     "title": "Can I Get A",
+     "title_short": "Can I Get A",
+     "link": "https://www.deezer.com/track/111114692",
+     "duration": 54,
+     "rank": 61874,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114694,
+     "readable": true,
+     "title": "Murder Reigns",
+     "title_short": "Murder Reigns",
+     "link": "https://www.deezer.com/track/111114694",
+     "duration": 148,
+     "rank": 113215,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114696,
+     "readable": true,
+     "title": "Mesmerize",
+     "title_short": "Mesmerize",
+     "link": "https://www.deezer.com/track/111114696",
+     "duration": 141,
+     "rank": 52965,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114698,
+     "readable": true,
+     "title": "I Cry",
+     "title_short": "I Cry",
+     "link": "https://www.deezer.com/track/111114698",
+     "duration": 137,
+     "rank": 26044,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114700,
+     "readable": true,
+     "title": "So Much Pain",
+     "title_short": "So Much Pain",
+     "link": "https://www.deezer.com/track/111114700",
+     "duration": 279,
+     "rank": 41094,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114702,
+     "readable": true,
+     "title": "The Crown",
+     "title_short": "The Crown",
+     "link": "https://www.deezer.com/track/111114702",
+     "duration": 45,
+     "rank": 33430,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114704,
+     "readable": true,
+     "title": "Clap Back",
+     "title_short": "Clap Back",
+     "link": "https://www.deezer.com/track/111114704",
+     "duration": 150,
+     "rank": 37169,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114706,
+     "readable": true,
+     "title": "Ain't It Funny",
+     "title_short": "Ain't It Funny",
+     "link": "https://www.deezer.com/track/111114706",
+     "duration": 51,
+     "rank": 63835,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114708,
+     "readable": true,
+     "title": "I'm Real",
+     "title_short": "I'm Real",
+     "link": "https://www.deezer.com/track/111114708",
+     "duration": 145,
+     "rank": 123085,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114710,
+     "readable": true,
+     "title": "Thug Lovin'",
+     "title_short": "Thug Lovin'",
+     "link": "https://www.deezer.com/track/111114710",
+     "duration": 245,
+     "rank": 53827,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114712,
+     "readable": true,
+     "title": "Always On Time",
+     "title_short": "Always On Time",
+     "link": "https://www.deezer.com/track/111114712",
+     "duration": 245,
+     "rank": 157493,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114714,
+     "readable": true,
+     "title": "Wonderful",
+     "title_short": "Wonderful",
+     "link": "https://www.deezer.com/track/111114714",
+     "duration": 214,
+     "rank": 116192,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 111114716,
+     "readable": true,
+     "title": "New York",
+     "title_short": "New York",
+     "link": "https://www.deezer.com/track/111114716",
+     "duration": 120,
+     "rank": 18592,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 11552538,
+      "title": "Ja Rule: 2005 (Live)",
+      "cover": "https://api.deezer.com/album/11552538/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2144382cf69e4951fc974def7cdda600/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/11552538/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

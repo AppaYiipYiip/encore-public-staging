@@ -378,11 +378,11 @@ def test_a_hit_with_no_letter_or_digit_in_its_names_is_never_the_song_and_the_eq
 
 def test_the_matcher_carries_no_era_0_stop_gap_and_keeps_the_one_that_is_still_true() -> None:
     """The text of era 0 (the skip rule that refused every non-Latin name until P2-25 slice 2) was true once and is false now; a false sentence in a source file
-    tells the next reader a refusal exists that does not. The one stop-gap that IS still true is the tolerance's."""
+    tells the next reader a refusal exists that does not. The stop-gaps that ARE still true are the window's and the compilation markers'."""
     source = inspect.getsource(album_finder)
     for stale in ("STOP-GAP(P2-25", "era 0", "until P2-25", "skip_rule", "skip rule"):
         assert stale not in source, stale
-    assert "STOP-GAP(N-34 tolerance)" in source
+    assert "STOP-GAP(N-34 single window)" in source and "STOP-GAP(N-34 compilation markers)" in source
 
 
 # ------------------------------------------------------------------------------------------------------------------ steps 1 and 2: the same recording
@@ -524,16 +524,18 @@ def test_the_tolerance_is_three_thousand_milliseconds_inclusive(length_ms: int, 
     assert verdict.delta_ms == length_ms - 240_000
 
 
-def test_the_tolerance_can_be_given_and_starts_as_the_servers_own_unmeasured_figure() -> None:
+def test_the_tolerance_can_be_given_and_is_the_servers_own_figure_measured_and_kept() -> None:
     requiem = copy.deepcopy(recorded_search("LANDMVRKS Requiem")["data"])
     assert judge_hits(Song("LANDMVRKS", "Requiem", 244_000), requiem, tolerance_ms=4_000)[0].accepted
     assert not judge_hits(Song("LANDMVRKS", "Requiem", 244_001), requiem, tolerance_ms=4_000)[0].accepted
     assert album_finder.TOLERANCE_MS == refs.DURATION_TOLERANCE_MS == 3_000
     source = inspect.getsource(album_finder)
     assert "TOLERANCE_MS = refs.DURATION_TOLERANCE_MS" in source, "imported from the one place, never copied"
-    assert "UNMEASURED" in source and "STOP-GAP(N-34 tolerance)" in source, (
-        "the stop-gap keeps its price and its removal trigger in the code"
-    )
+    assert (
+        "MEASURED on 24 Nov 2026 and KEPT at 3 s" in source
+        and "UNMEASURED" not in source
+        and "STOP-GAP(N-34 tolerance)" not in source
+    ), "the measurement, its numbers and the price stay beside the constant; it is a decision now, not a stop-gap"
 
 
 def test_a_hit_with_no_length_or_no_artist_is_never_the_same_recording() -> None:
@@ -653,8 +655,10 @@ def test_the_record_types_of_every_recorded_release_are_the_ones_the_matcher_doc
     this fails and the comment is rewritten with the new counts."""
     seen, holders = _recorded_release_types()
     counts = {kind: sum(1 for value in seen.values() if value == kind) for kind in sorted(set(seen.values()))}
-    assert counts == {"album": 114, "ep": 10, "single": 104}, counts
-    assert len(seen) == 228 and holders == 9, "228 releases in 8 answers of the server's folder and the 20 recorded searches"
+    assert counts == {"album": 116, "ep": 10, "single": 104}, counts
+    assert len(seen) == 230 and holders == 12, (
+        "230 releases in 11 answers of the server's folder (8 of step 0 and 3 of the live dry run of 24 Nov 2026: Ja Rule live and studio, Opeth remixed) and the 20 recorded searches"
+    )
     assert set(counts) <= {"album", "ep", "single"}, (
         "no compile, no live, no remix value was ever recorded: the matcher's `never wins` rule is untested on a real one"
     )

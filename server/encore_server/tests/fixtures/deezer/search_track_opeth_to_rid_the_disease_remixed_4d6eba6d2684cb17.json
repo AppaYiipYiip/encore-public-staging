@@ -1,0 +1,51 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/search",
+ "params": {
+  "q": "Opeth To Rid the Disease (Remixed)",
+  "limit": "8"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 110958628,
+    "readable": true,
+    "title": "To Rid the Disease (Remixed)",
+    "title_short": "To Rid the Disease",
+    "title_version": "(Remixed)",
+    "isrc": "GBCKC1500062",
+    "link": "https://www.deezer.com/track/110958628",
+    "duration": 381,
+    "rank": 96621,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 2814,
+     "name": "Opeth",
+     "link": "https://www.deezer.com/artist/2814",
+     "picture": "https://api.deezer.com/artist/2814/image",
+     "picture_small": "https://cdn-images.dzcdn.net/images/artist/ee95a92e9a5ed5c8b905f3e61bbc26f9/56x56-000000-80-0-0.jpg",
+     "picture_medium": "https://cdn-images.dzcdn.net/images/artist/ee95a92e9a5ed5c8b905f3e61bbc26f9/250x250-000000-80-0-0.jpg",
+     "picture_big": "https://cdn-images.dzcdn.net/images/artist/ee95a92e9a5ed5c8b905f3e61bbc26f9/500x500-000000-80-0-0.jpg",
+     "picture_xl": "https://cdn-images.dzcdn.net/images/artist/ee95a92e9a5ed5c8b905f3e61bbc26f9/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/artist/2814/top?limit=50",
+     "type": "artist"
+    },
+    "album": {
+     "id": 11539892,
+     "title": "Deliverance & Damnation Remixed",
+     "cover": "https://api.deezer.com/album/11539892/image",
+     "cover_small": "https://cdn-images.dzcdn.net/images/cover/e873882b3eabc2277b9d2b892b7aabcd/56x56-000000-80-0-0.jpg",
+     "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e873882b3eabc2277b9d2b892b7aabcd/250x250-000000-80-0-0.jpg",
+     "cover_big": "https://cdn-images.dzcdn.net/images/cover/e873882b3eabc2277b9d2b892b7aabcd/500x500-000000-80-0-0.jpg",
+     "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e873882b3eabc2277b9d2b892b7aabcd/1000x1000-000000-80-0-0.jpg",
+     "tracklist": "https://api.deezer.com/album/11539892/tracks",
+     "type": "album"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 1
+ }
+}

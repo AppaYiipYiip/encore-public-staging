@@ -1,0 +1,597 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/85606442",
+ "params": {},
+ "answer": {
+  "id": 85606442,
+  "title": "Pain Is Love",
+  "upc": "602577027833",
+  "link": "https://www.deezer.com/album/85606442",
+  "cover": "https://api.deezer.com/album/85606442/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 165,
+  "genres": {
+   "data": [
+    {
+     "id": 165,
+     "name": "R&B",
+     "picture": "https://api.deezer.com/genre/165/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Def Jam Recordings",
+  "nb_tracks": 17,
+  "duration": 3992,
+  "fans": 10623,
+  "release_date": "2019-02-01",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/85606442/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 138,
+    "name": "Ja Rule",
+    "link": "https://www.deezer.com/artist/138",
+    "picture": "https://api.deezer.com/artist/138/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 138,
+   "name": "Ja Rule",
+   "picture": "https://api.deezer.com/artist/138/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 623714302,
+     "readable": true,
+     "title": "Pain Is Love (Skit)",
+     "title_short": "Pain Is Love (Skit)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714302",
+     "duration": 77,
+     "rank": 238365,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714312,
+     "readable": true,
+     "title": "Dial M For Murder",
+     "title_short": "Dial M For Murder",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714312",
+     "duration": 213,
+     "rank": 292771,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714322,
+     "readable": true,
+     "title": "Livin' It Up",
+     "title_short": "Livin' It Up",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714322",
+     "duration": 257,
+     "rank": 590778,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714332,
+     "readable": true,
+     "title": "The Inc.",
+     "title_short": "The Inc.",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714332",
+     "duration": 237,
+     "rank": 244632,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714342,
+     "readable": true,
+     "title": "Always On Time",
+     "title_short": "Always On Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714342",
+     "duration": 243,
+     "rank": 815257,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714352,
+     "readable": true,
+     "title": "Down Ass Bitch",
+     "title_short": "Down Ass Bitch",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714352",
+     "duration": 331,
+     "rank": 523105,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714362,
+     "readable": true,
+     "title": "Never Again",
+     "title_short": "Never Again",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714362",
+     "duration": 259,
+     "rank": 309290,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714372,
+     "readable": true,
+     "title": "Worldwide Gangsta",
+     "title_short": "Worldwide Gangsta",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714372",
+     "duration": 200,
+     "rank": 192613,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714382,
+     "readable": true,
+     "title": "Leo (Skit)",
+     "title_short": "Leo (Skit)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714382",
+     "duration": 139,
+     "rank": 194030,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714392,
+     "readable": false,
+     "title": "I'm Real (Murder Remix)",
+     "title_short": "I'm Real",
+     "title_version": "(Murder Remix)",
+     "link": "https://www.deezer.com/track/623714392",
+     "duration": 253,
+     "rank": 21229,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714402,
+     "readable": true,
+     "title": "Smokin' and Ridin'",
+     "title_short": "Smokin' and Ridin'",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714402",
+     "duration": 291,
+     "rank": 319566,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714412,
+     "readable": true,
+     "title": "X",
+     "title_short": "X",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714412",
+     "duration": 302,
+     "rank": 223235,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714422,
+     "readable": true,
+     "title": "Big Remo (Skit)",
+     "title_short": "Big Remo (Skit)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714422",
+     "duration": 20,
+     "rank": 22401,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714432,
+     "readable": true,
+     "title": "Lost Little Girl",
+     "title_short": "Lost Little Girl",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714432",
+     "duration": 300,
+     "rank": 153595,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714442,
+     "readable": true,
+     "title": "So Much Pain",
+     "title_short": "So Much Pain",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714442",
+     "duration": 303,
+     "rank": 288271,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714452,
+     "readable": true,
+     "title": "Pain Is Love",
+     "title_short": "Pain Is Love",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714452",
+     "duration": 304,
+     "rank": 192112,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 623714462,
+     "readable": true,
+     "title": "Put It On Me",
+     "title_short": "Put It On Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/623714462",
+     "duration": 263,
+     "rank": 498240,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 85606442,
+      "title": "Pain Is Love",
+      "cover": "https://api.deezer.com/album/85606442/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e53c97b776972eded1bcdae421cf7e0d/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/85606442/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

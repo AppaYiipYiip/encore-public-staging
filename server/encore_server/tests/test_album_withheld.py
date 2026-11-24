@@ -26,7 +26,7 @@ import pytest
 
 from encore_server import album_finder
 from encore_server.album_finder import Song, choose_release
-from encore_server.textnorm import TEXTNORM_REVISION, title_key
+from encore_server.textnorm import TEXTNORM_REVISION, VERSION_WORDS, title_key
 from tests.catalogue_fakes import RECORDED, recorded, recorded_search
 from tests.test_album_finder import (
     ALBUM,
@@ -285,6 +285,8 @@ def test_a_same_artist_best_of_that_says_nothing_of_it_in_its_title_is_accepted_
         "Grandes Éxitos: Greatest Hits",
         "Best-Of",
         "The Best Of: 1990-2000",
+        "With Arms Wide Open: A Retrospective",
+        "Retrospective",
     ],
 )
 def test_a_title_that_says_it_is_a_compilation_downgrades_a_match_to_re_askable(title: str) -> None:
@@ -433,7 +435,7 @@ def albums_for_arabic_hit(hit: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_the_songs_again() -> None:
     """`identity_rev` makes a `none` or `held` song asked again when the rule gets better; it only works if the revision rises WITH the rule. What is pinned here, hashed beside the
-    revision it belongs to: the tolerance, the single window, the compilation markers, the types that win and the fold's own revision (`textnorm.TEXTNORM_REVISION`: a change of the
+    revision it belongs to: the tolerance, the single window, the compilation markers, the types that win, the version words of the release-title rule and the fold's own revision (`textnorm.TEXTNORM_REVISION`: a change of the
     fold changes which keys are equal, and that decided most `none` answers). Change one (freeze the window, widen the tolerance, add a marker) and this fails until `IDENTITY_REVISION`
     is raised and the new line is added, so the songs are asked again by the very change that could give them another answer. **What it cannot see** is a change of the rule's CODE (a new
     step, a new reason): that raises the revision by hand (said on `IDENTITY_REVISION`), and the 7 days' wait is the net under a forgotten bump."""
@@ -444,11 +446,13 @@ def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_th
             "markers": list(album_finder.COMPILATION_MARKERS),
             "full": sorted(album_finder._FULL_RELEASE),
             "textnorm_revision": TEXTNORM_REVISION,
+            "version_words": list(VERSION_WORDS),
+            "version_forms": album_finder._VERSION_FORMS,
         },
         sort_keys=True,
     )
     fingerprint = hashlib.sha256(state.encode()).hexdigest()[:16]
-    known = {1: "90e3395504ceed7b"}
+    known = {1: "90e3395504ceed7b", 2: "fff965fa74e495fb"}  # 1 = the state of PR 125 as first pushed (never stamped anywhere)
     assert album_finder.IDENTITY_REVISION in known, "a new revision needs its line here"
     assert known[album_finder.IDENTITY_REVISION] == fingerprint, (
         f"the rule changed without a new IDENTITY_REVISION: raise it and add `{album_finder.IDENTITY_REVISION + 1}: {fingerprint!r}` (state: {state})"

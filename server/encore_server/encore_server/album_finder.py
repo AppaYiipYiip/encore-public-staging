@@ -44,25 +44,24 @@ from typing import Any, Literal, Protocol
 from . import refs
 from .catalogue import map_track, release_key
 from .deezer import LookupUnavailable, NotInCatalogue
-from .textnorm import fold, is_unknown_artist, norm_artist, norm_title, survives_fold_whole, words
+from .textnorm import fold, is_unknown_artist, mentions_version, norm_artist, norm_title, survives_fold_whole, words
 
 #: How far a song's length may be from the catalogue's for the two to be the same recording, in milliseconds. It starts as the one number the server
 #: already uses for "the same recording" (`refs.DURATION_TOLERANCE_MS`, imported, never copied).
 #:
-#: **STOP-GAP(N-34 tolerance): UNMEASURED for this use.** 3 s is the figure for two descriptions of one song, not for a YouTube upload against the
-#: catalogue's studio length (N-11 found an import's listing 1 to 12 s off the music server's own length of the same file). Price: a tolerance too
-#: tight only makes misses (`none`, asked again after a better rule or 7 days); one too loose would write a permanent wrong id. Removal trigger: the lead
-#: reads the dry run (`python -m encore_server.album_dryrun`) over the REAL files and the REAL catalogue, and this constant is frozen from its
-#: histogram; until then the report prints this sentence on its first line. **Slice 2 could not freeze it** (the tracked recordings hold the catalogue's lengths and
-#: no kept file: the quantity it needs, a file's length against the catalogue's, was never recorded), so the trigger moved on: the live dry run with `--music-root`,
-#: read by the lead after the owner's test week; the task is N-34 itself (it stays todo until then).
+#: **MEASURED on 24 Nov 2026 and KEPT at 3 s.** The live dry run (672 songs of VM 108's library, the kept FILES read from disk, the real catalogue) found 404 songs with a
+#: hit of the same artist, title and version: 161 (40 percent) within 3 s of the catalogue's length, 243 outside, in a smooth tail with NO cliff (the bins 3 to 4 s, 4 to 5 s and
+#: 5 to 10 s hold 14, 10 and 29 songs). There is no better edge in the data, so 3 s stays as the conservative one. Price: a tolerance this tight only makes misses (243 songs
+#: with a hit of their name stay a re-askable `none`); one too loose would write a permanent wrong id. It is a decision, not a stop-gap: the report prints it on its first
+#: line, and a different library may be read the same way (`--tolerance-ms`).
 TOLERANCE_MS = refs.DURATION_TOLERANCE_MS
 
 #: The revision of the rule as a whole. Raised BY HAND when the rule's code changes (a new step, a new reason); the plain data that decides a verdict (`TOLERANCE_MS`, the single
 #: window, the compilation markers, the types that win, `textnorm.TEXTNORM_REVISION`) is pinned with it in `tests/test_album_withheld.py`, so a change to one of THOSE cannot land
 #: without this rising. A `none` or `held` song whose `identity_rev` is
 #: lower is asked again at once (`album_pass`); a `matched` song is never asked (it has its ids).
-IDENTITY_REVISION = 1
+#: 2: the release-title version rule (`release_markers`), `isrc_differs` and the marker `retrospective`, from the review of PR 125 and the live dry run. Nothing was stamped with 1.
+IDENTITY_REVISION = 2
 
 #: How many days an ALBUM may come after the SINGLE that carries the same recording and still be the song's album (a lead single comes out before its album).
 #: Inside it the album wins; outside it, or when the two dates cannot be compared, the song is `none` with the reason `single_before_album`, which is asked again.
@@ -96,6 +95,7 @@ COMPILATION_MARKERS: tuple[str, ...] = (
     "anthology",
     "definitive",
     "ultimate",
+    "retrospective",
     "hits",
 )
 
@@ -107,11 +107,11 @@ REMEMBERED: frozenset[Outcome] = frozenset({"matched", "none", "held"})
 HitReason = Literal[
     "same_recording", "unreadable", "artist", "title_or_version", "isrc_differs", "no_length", "length", "no_album"
 ]
-ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type"]
+ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type", "release_version"]
 
 #: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
 #: 20 searches of `app/test/fixtures/deezer/search.json`; the server's own mapped copies in `app/test/fixtures/server/` are not counted, they are the same releases
-#: again): 228 distinct releases, `album` 114, `single` 104, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
+#: again; plus the 3 answers of the live dry run of 24 Nov 2026 that the tests need): 230 distinct releases, `album` 116, `single` 104, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
 #: **The recordings hold no `compile` and no live or remix value: no release of them is marked a compilation or a live record**, so the type cannot tell a
 #: best-of from an album (Legend Remixed and the Legacy sets are `album`). **Any other value never wins**: the spellings that mark a compilation or a live
 #: record are not known, and a guess would be a wrong album.
@@ -424,7 +424,28 @@ def _facts(album_id: str, answer: object) -> _Facts | None:
     )
 
 
-def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
+#: The forms of a version word that a release title can carry and `textnorm.mentions_version` (whole words of `VERSION_WORDS`) does not see: "Remixed", "The Remixes".
+_VERSION_FORMS = {
+    "remixed": "remix",
+    "remixes": "remix",
+    "demos": "demo",
+    "covers": "cover",
+    "instrumentals": "instrumental",
+    "mashups": "mashup",
+    "medleys": "medley",
+}
+
+
+def release_markers(title: str) -> frozenset[str]:
+    """The version marks a RELEASE's title carries: the server's one list of "versions that are not what was asked for unless the request says so" (`textnorm.VERSION_WORDS`:
+    live, remix, acoustic, demo, instrumental, karaoke, cover ...), as whole words, and the plural and past forms a title uses ("Remixed", "The Remixes"). **The labels that say which
+    PRINTING it is, not which recording, are not marks** (Remastered, Deluxe, Bonus or Expanded Edition, Explicit, Clean, Radio Edit, a year): they are not in the list."""
+    found = set(mentions_version(title))
+    found |= {_VERSION_FORMS[token] for token in words(fold(title or "")) if token in _VERSION_FORMS}
+    return frozenset(found)
+
+
+def _why_not(facts: _Facts, want_artist: str, song_marks: frozenset[str] = frozenset()) -> ReleaseReason | None:
     """Step 3 (a) and (b): why this release can never be chosen, or `None`."""
     # (a) The album artist is the song's first artist: a song on somebody else's album, a tribute, a compilation of many artists is a miss. An album that names
     # nobody, or whose artist has nothing to compare, is nobody's: the song's own artist has a letter or a digit (step 0), so the equality refuses it.
@@ -433,6 +454,10 @@ def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
     # (b) The type: `album` and `ep` rank first, `single` after them, any other value (or none) never wins.
     if facts.record_type not in _FULL_RELEASE and facts.record_type != _SINGLE:
         return "record_type"
+    # (c) The version: a release whose own title says live, remix, acoustic ... when the song's title does not is the release of ANOTHER recording of that name. The hit's title is
+    # held to the same marks (`refs.norm_key`'s version signature); without this a studio song was stamped with a live album, the earliest of its two releases (the live dry run).
+    if release_markers(facts.title) - song_marks:
+        return "release_version"
     return None
 
 
@@ -578,7 +603,8 @@ def choose_release(
     known = {ident: found for ident, found in facts.items() if found is not None}
 
     want_artist = norm_artist(song.artist)
-    refused_why = {ident: _why_not(found, want_artist) for ident, found in known.items()}
+    song_marks = release_markers(song.title)
+    refused_why = {ident: _why_not(found, want_artist, song_marks) for ident, found in known.items()}
     eligible = [ident for ident in ids if refused_why[ident] is None]
 
     def judged(chosen: str | None) -> tuple[ReleaseVerdict, ...]:
@@ -595,7 +621,12 @@ def choose_release(
         )
 
     if not eligible:
-        return Verdict("none", "no_eligible_release", hits=verdicts, releases=judged(None))
+        # Named when the version was what refused a release: the song is on a live or remix release of its name only, the one case a better rule or another recording of the
+        # catalogue may turn into a stamp.
+        why = (
+            "release_version_mismatch" if any(refused_why[ident] == "release_version" for ident in ids) else "no_eligible_release"
+        )
+        return Verdict("none", why, hits=verdicts, releases=judged(None))
     chosen = min(eligible, key=lambda ident: _order(known[ident]))
     releases = judged(chosen)
     release, answer = known[chosen], albums[chosen]

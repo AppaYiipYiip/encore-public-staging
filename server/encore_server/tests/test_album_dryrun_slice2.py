@@ -35,7 +35,11 @@ def lines(report: Report) -> list[str]:
 
 def test_the_first_lines_say_that_the_window_is_not_frozen_and_what_it_is_frozen_from() -> None:
     first = lines(Report([], 3000))
-    assert first[0].startswith("STOP-GAP: the tolerance is 3000 ms")
+    assert first[0].startswith("TOLERANCE: 3000 ms") and "161 within 3 s and 243 outside" in first[0]
+    assert Report([], 4000).render().splitlines()[0].startswith("TOLERANCE: this run asks with 4000 ms"), (
+        "another figure is said to be another figure"
+    )
+    assert "about 30" in first[1] and "301 days" in first[1], "the removal trigger of the window is written on the report"
     assert first[1].startswith("STOP-GAP: the single-before-album window is NOT FROZEN"), first[1]
     assert "single-before-album gaps" in first[1]
     frozen = lines(Report([], 3000, single_window_days=500))

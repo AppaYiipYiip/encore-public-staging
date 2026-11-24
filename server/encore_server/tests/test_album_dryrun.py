@@ -266,8 +266,8 @@ def test_the_report_names_every_section_the_lead_reads(library: Database, tmp_pa
     rows, transport = run_library(library, tmp_path)
     text = Report(rows, album_finder.TOLERANCE_MS, {"asked": 0, "replayed": transport.replayed}).render()
     first = text.splitlines()[0]
-    assert first.startswith("STOP-GAP") and "UNMEASURED" in first and "3000 ms" in first, (
-        "the stop-gap is the first thing the reader sees"
+    assert first.startswith("TOLERANCE: 3000 ms") and "MEASURED on 24 Nov 2026 and KEPT" in first and "UNMEASURED" not in first, (
+        "the measured state of the tolerance is the first thing the reader sees"
     )
     for section in (
         "== outcomes",

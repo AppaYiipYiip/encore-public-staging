@@ -11,7 +11,7 @@
     python -m encore_server.album_dryrun --db copy.db --answers answers --live --max-requests 2000 --music-root /path/to/music
 
 **What the report is for.** (1) The histogram of (the song's length minus the catalogue's length) over the songs that have a hit of the same artist,
-title and version: the number `album_finder.TOLERANCE_MS` is frozen from (it starts as an UNMEASURED 3 s). (2) Every hit rejected ONLY by the tolerance.
+title and version: the number `album_finder.TOLERANCE_MS` was read from (measured on 24 Nov 2026 over 672 songs and their kept files, and KEPT at 3 s: see the constant). (2) Every hit rejected ONLY by the tolerance.
 (3) Every release type seen, every song with more than one candidate release, every held pair, every song that cannot be asked (a name with no letter
 or digit in it, no length). (4) Every match, so that the reader can look for a wrong album.
 
@@ -309,10 +309,16 @@ class Report:
         lines: list[str] = []
         say = lines.append
         total = len(self.rows)
-        say(
-            f"STOP-GAP: the tolerance is {self.tolerance_ms} ms and it is UNMEASURED for a kept FILE against the catalogue "
-            f"(album_finder.TOLERANCE_MS, N-34). This report is what it is frozen from, if the lengths below come from FILES."
-        )
+        if self.tolerance_ms == album_finder.TOLERANCE_MS:
+            say(
+                f"TOLERANCE: {self.tolerance_ms} ms (album_finder.TOLERANCE_MS, N-34), MEASURED on 24 Nov 2026 and KEPT: the live dry run over 672 songs and their kept FILES found 404 songs "
+                f"with a hit of the same artist, title and version, 161 within 3 s and 243 outside, in a smooth tail with NO cliff (the bins 3 to 4 s, 4 to 5 s and 5 to 10 s held 14, 10 and 29 "
+                f"songs), so 3 s stays as the conservative edge. Price: misses only. The histogram below is THIS run's own."
+            )
+        else:
+            say(
+                f"TOLERANCE: this run asks with {self.tolerance_ms} ms (--tolerance-ms); the server keeps {album_finder.TOLERANCE_MS} ms (album_finder.TOLERANCE_MS, measured on 24 Nov 2026 and kept)."
+            )
         window = (
             f"{self.single_window_days} days"
             if self.single_window_days is not None
@@ -320,7 +326,8 @@ class Report:
         )
         say(
             f"STOP-GAP: the single-before-album window is {window} (album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS, N-34, the advisor's ruling "
-            f"of 17 Nov 2026). The section 'single-before-album gaps' below is what it is frozen from."
+            f"of 17 Nov 2026). Removal trigger: a dry run over a library that holds enough single/album pairs to show a window (about 30; the lead decides): the live run of 24 Nov 2026 "
+            f"over 672 songs found 1 (301 days). The section 'single-before-album gaps' below is what it is frozen from."
         )
         say(f"N-34 slice 1 dry run: {total} songs through the matcher, nothing written. {datetime.now(UTC):%Y-%m-%d %H:%M} UTC")
         if self.stopped:
@@ -344,6 +351,8 @@ class Report:
             "no_same_recording": "no hit is this recording (artist, title, version and length)",
             "no_album_on_hit": "the hit names no album",
             "no_eligible_release": "no release of the hits is by the song's artist and an album, EP or single",
+            "release_version_mismatch": "the only releases are live, remix or other-version records of a song that is not",
+            "isrc_differs": "the names agree and the catalogue's ISRC is another recording's",
         }
         for cause, count in sorted(causes.items(), key=lambda item: (-item[1], item[0])):
             say(f"  {count:5d}  {cause:20s} {meaning.get(cause, '')}")
