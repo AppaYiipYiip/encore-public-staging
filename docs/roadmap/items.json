@@ -1211,5 +1211,19 @@
   "size": "M",
   "needs": [],
   "from": "agent"
+ },
+ "N-48": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: songs left at a single get their real album from the artist's discography",
+  "note": "The follow-up that N-34 slice 2 (PR #125) leaves on purpose (the advisor's ruling of 24 Nov 2026, after the live dry run of 672 songs on VM 108's library): slice 2 never stamps a SINGLE (a song whose only same-recording release is a single is a re-askable none/single_only: 40 of the 150 first stamps were singles, and two of them were album tracks) and accepts a sole same-artist compilation only when its title does not say so. A stamped album is permanent and a later round re-asks only none and held, so the search's eight hits cannot be trusted to prove that no album carries the recording. The remedy is the artist's DISCOGRAPHY: ask the catalogue for the artist's albums (a request per album, for every artist) and look for the recording there, as a new identity_rev round whose first measured target is the songs left at single_only and compilation_title; it is also the removal trigger of the compilation-marker and single stop-gaps in the design (docs/tasks/P2-songs-as-references.md). Measure first (a dry run over the same library: how many of the 40 find an album, how many requests), server only, fakes and recorded answers for the tests; a live run only by the lead.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "N-34",
+    "mark": "b"
+   }
+  ],
+  "from": "agent"
  }
 }
