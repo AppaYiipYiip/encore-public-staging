@@ -148,8 +148,10 @@ def test_the_saved_answers_are_named_exactly_as_the_recorder_names_them() -> Non
 
 
 def test_who_is_asked_the_kept_songs_with_no_album_and_no_id_first_and_what_their_length_is(library: Database) -> None:
+    """Since the review of PR 125 the selection is `album_pass.wanting`, the pass's own (`test_album_selection.py`): a song somebody has or the server keeps ANY file of is asked
+    (the Host's own file included), `kept_only` is the dry run's filter on top."""
     with open_copy(library) as conn:
-        kept = entries(conn)
+        kept = entries(conn, kept_only=True)
         assert [(e.song.artist, e.song.title) for e in kept] == [
             ("LANDMVRKS", "Requiem"),
             ("LANDMVRKS", "Creature"),
@@ -163,8 +165,13 @@ def test_who_is_asked_the_kept_songs_with_no_album_and_no_id_first_and_what_thei
         assert [e.length_from for e in kept] == ["listing"] * 7 + ["none"], (
             "a copy holds no file: the import's listing is all there is"
         )
-        everyone = entries(conn, kept_only=False)
-        assert [e.song.title for e in everyone][-2:] == ["Not Kept", "Hosts Own File"] and len(everyone) == len(kept) + 2
+        everyone = entries(conn)
+        assert [e.song.title for e in everyone][-1:] == ["Hosts Own File"] and len(everyone) == len(kept) + 1, (
+            "the Host's own file: the pass asks it too"
+        )
+        assert "Not Kept" not in [e.song.title for e in everyone], (
+            "nobody has it and the server keeps no file of it: the pass does not ask it"
+        )
         assert len(entries(conn, limit=2)) == 2
 
 
@@ -226,6 +233,10 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
         ),  # NOT "none": nobody recorded what the catalogue says
         "Fade Into You292000": ("unavailable", "release_not_asked"),
         "No LengthNone": ("no_length", "no_length"),
+        "Hosts Own File203000": (
+            "unavailable",
+            "search_not_asked",
+        ),  # a song of the Host's own library with no album: the pass asks it too
     }
     matched = {row.entry.song.title: row.verdict.match for row in rows if row.verdict.match}
     assert matched["Requiem"] is not None and matched["Requiem"].album == "The Darkest Place I've Ever Been"
@@ -244,6 +255,7 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
                 "album_319814",
                 search_name("فيروز كيفك إنت"),
                 search_name("Nobody At All A Song Nobody Recorded"),
+                search_name("Someone Hosts Own File"),
             ]
         )
         and transport.asked == 0
@@ -404,7 +416,7 @@ def test_the_command_writes_nothing_to_the_database_and_prints_the_report(librar
         out=printed.append,
     )
     assert code == 0
-    assert "".join(printed) == target.read_text(encoding="utf-8") and "8 songs through the matcher" in target.read_text(
+    assert "".join(printed) == target.read_text(encoding="utf-8") and "9 songs through the matcher" in target.read_text(
         encoding="utf-8"
     )
     assert hashlib.sha256(database.read_bytes()).hexdigest() == before, "the database file is not changed by a byte"
@@ -420,7 +432,7 @@ def test_a_console_that_cannot_show_a_name_gets_its_escape_and_the_run_still_end
     assert main(["--db", str(tmp_path / "data" / "encore.db"), "--answers", str(answers_folder(tmp_path))]) == 0
     console.flush()
     shown = console.buffer.getvalue().decode("cp1252")  # type: ignore[attr-defined]
-    assert r"\u0643" in shown and "8 songs through the matcher" in shown
+    assert r"\u0643" in shown and "9 songs through the matcher" in shown
 
 
 @pytest.mark.parametrize(
@@ -601,7 +613,7 @@ def test_a_run_that_ends_by_itself_says_nothing_of_stopping(library: Database, t
     assert "STOPPED EARLY" not in "".join(printed)
 
 
-def test_the_flags_all_limit_and_music_root_reach_the_selection(library: Database, tmp_path: Path) -> None:
+def test_the_flags_kept_only_limit_and_music_root_reach_the_selection(library: Database, tmp_path: Path) -> None:
     kept = tmp_path / "music" / "Encore" / "LANDMVRKS" / "Singles" / "Requiem.opus"
     kept.parent.mkdir(parents=True)
     with wave.open(str(kept), "wb") as out:
@@ -610,16 +622,16 @@ def test_the_flags_all_limit_and_music_root_reach_the_selection(library: Databas
         out.setframerate(8000)
         out.writeframes(b"\x00\x00" * 12_000)
     base = ["--db", str(tmp_path / "data" / "encore.db"), "--answers", str(answers_folder(tmp_path))]
-    texts: dict[str, list[str]] = {name: [] for name in ("plain", "all", "limit", "root")}
+    texts: dict[str, list[str]] = {name: [] for name in ("plain", "kept_only", "limit", "root")}
     for name, extra in (
         ("plain", []),
-        ("all", ["--all"]),
+        ("kept_only", ["--kept-only"]),
         ("limit", ["--limit", "2"]),
         ("root", ["--music-root", str(tmp_path / "music")]),
     ):
         assert main([*base, *extra], out=texts[name].append) == 0
     got = {name: "".join(parts) for name, parts in texts.items()}
-    assert "8 songs through" in got["plain"] and "10 songs through" in got["all"] and "2 songs through" in got["limit"]
+    assert "9 songs through" in got["plain"] and "8 songs through" in got["kept_only"] and "2 songs through" in got["limit"]
     assert re.search(r"1\s+file\n", got["root"]) and "NO row used a file's length" not in got["root"], (
         "one kept file was read: the histogram can say so"
     )

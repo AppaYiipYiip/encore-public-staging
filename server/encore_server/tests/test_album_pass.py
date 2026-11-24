@@ -642,6 +642,36 @@ def test_a_single_is_re_askable_while_the_window_is_not_frozen_and_no_stamp_is_w
     assert after["album"] is None and after["deezer_id"] is None and after["track_no"] is None
 
 
+def test_a_song_the_rule_withheld_is_asked_again_after_seven_days_and_when_the_rule_gets_better(
+    pdb: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The re-ask is what makes `single_before_album` and `compilation_title` safe (review of PR 125, the lead's point 3c): the song is not stamped, it is asked again by the retry
+    rule, after 7 days or at once when `IDENTITY_REVISION` rises (a frozen window, a better list of markers)."""
+    single = make_ref(pdb, "Creature", "LANDMVRKS", 225_000)
+    marked = make_ref(pdb, "Comfortably Numb", "Pink Floyd", 382_000)
+    only = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
+    catalogue = Catalogue(
+        {("LANDMVRKS", "Creature"): [single_hit(), creature_hit()], ("Pink Floyd", "Comfortably Numb"): only},
+        {**albums(ALBUM, SINGLE), BEST_OF: best_of_answer()},
+    )
+    finder(pdb, catalogue, now=NOW).run_once()
+    assert (row_of(pdb, single)["identity_reason"], row_of(pdb, marked)["identity_reason"]) == (
+        "single_before_album",
+        "compilation_title",
+    )
+    assert len(catalogue.searched) == 2
+
+    finder(pdb, catalogue, now=NOW + 7 * DAY_MS - 1).run_once()
+    assert len(catalogue.searched) == 2, "a week is not over"
+    finder(pdb, catalogue, now=NOW + 7 * DAY_MS).run_once()
+    assert len(catalogue.searched) == 4, "after 7 days both are asked again"
+
+    monkeypatch.setattr(album_finder, "IDENTITY_REVISION", album_finder.IDENTITY_REVISION + 1)
+    finder(pdb, catalogue, now=NOW + 7 * DAY_MS).run_once()
+    assert len(catalogue.searched) == 6, "and at once when the rule gets better"
+    assert row_of(pdb, single)["identity_rev"] == row_of(pdb, marked)["identity_rev"] == album_finder.IDENTITY_REVISION
+
+
 def test_a_best_of_whose_title_says_so_is_re_askable_and_no_stamp_is_written(pdb: Database) -> None:
     only = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
     marked = make_ref(pdb, "Comfortably Numb", "Pink Floyd", 382_000)

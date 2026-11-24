@@ -173,6 +173,11 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
     monkeypatch.setattr("encore_server.cover_finder.deezer_lookup", nobody)
     monkeypatch.setattr("encore_server.api.deezer_lookup", nobody)
 
+    def nobody_by_id(deezer_id: str, *, client: object = None) -> None:
+        return None
+
+    monkeypatch.setattr("encore_server.cover_finder.deezer_picture_by_id", nobody_by_id)
+
     # The album pass (N-34 slice 2) of an app made in a test asks nobody either: its catalogue "cannot be asked", so it stores nothing and stops. A test about the pass
     # gives its own search and album functions.
     def unreachable(artist: str, title: str) -> list[dict[str, object]]:

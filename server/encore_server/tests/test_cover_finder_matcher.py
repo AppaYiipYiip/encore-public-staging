@@ -20,8 +20,9 @@ import httpx
 import pytest
 
 from encore_server import refs
-from encore_server.cover_finder import CoverFinder, deezer_lookup
+from encore_server.cover_finder import CoverFinder, deezer_lookup, deezer_picture_by_id
 from encore_server.db import Database
+from encore_server.deezer import LookupUnavailable
 from tests.test_cover_finder import PICTURE, client_for, cover_of, database, liked
 
 STUDIO = "https://cdn.dzcdn.net/studio.jpg"
@@ -233,3 +234,92 @@ def test_two_songs_of_one_album_are_still_one_question_when_the_album_is_found(t
     CoverFinder(db, spy, sleep=lambda _: None).run_once()
     assert len(spy.calls) == 1, "a deluxe edition is the same release (`catalogue.release_key`): one question"
     assert [cover_of(db, ref) for ref in ids] == [PICTURE, PICTURE]
+
+
+# ------------------------------------------------------------------------------------------------------------------ a song that holds a catalogue id gets its picture BY ID
+# (the lead's review of PR 125, point 3b: the finder skips names and songs it cannot compare, but a song that HOLDS an id is not a name to compare: the id names the very
+# release it was described on. There was no such path before this review: the finder only searched by name, and a ref described from the catalogue arrives with its picture.)
+
+
+def track_row(album_cover: str = STUDIO) -> dict[str, Any]:
+    return {
+        "id": 3116792061,
+        "title": "Creature",
+        "album": {"id": 676735071, "title": "The Darkest Place", "cover_xl": album_cover},
+    }
+
+
+def test_the_picture_by_id_is_the_cover_of_the_album_the_id_is_on() -> None:
+    served = Counting(track_row())
+    assert deezer_picture_by_id("3116792061", client=served.client) == STUDIO
+    assert served.requests == 1
+
+
+def test_the_picture_by_id_takes_no_other_host_and_no_odd_id() -> None:
+    assert deezer_picture_by_id("3116792061", client=client_for(track_row("https://evil.example/x.jpg"))) is None
+    served = Counting(track_row())
+    for odd in ("", "abc", "12/../34", "1" * 40, "12 34"):
+        assert deezer_picture_by_id(odd, client=served.client) is None
+    assert served.requests == 0, "an id that is not digits is never put into a path"
+
+
+def test_the_picture_by_id_says_it_could_not_ask_and_an_unknown_id_is_no_picture() -> None:
+    with pytest.raises(LookupUnavailable):
+        deezer_picture_by_id("3116792061", client=client_for({}, 503))
+    no_data = {"error": {"type": "DataException", "message": "no data", "code": 800}}
+    assert deezer_picture_by_id("3116792061", client=client_for(no_data)) is None
+
+
+class ById:
+    def __init__(self, picture: str | None = STUDIO, *, down: bool = False) -> None:
+        self.asked: list[str] = []
+        self.picture, self.down = picture, down
+
+    def __call__(self, deezer_id: str) -> str | None:
+        self.asked.append(deezer_id)
+        if self.down:
+            raise LookupUnavailable("the catalogue rests this server")
+        return self.picture
+
+
+def with_id(db: Database, ref: str, deezer_id: str = "3116792061") -> None:
+    with db.tx() as conn:
+        conn.execute("UPDATE song_ref SET deezer_id = ? WHERE id = ?", (deezer_id, ref))
+
+
+def test_a_song_that_holds_an_id_gets_its_picture_by_that_id_and_is_not_searched_by_name(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    ref = liked(db, "Nude", length_ms=215_000)
+    with_id(db, ref)
+    by_id, by_name = ById(), Spy()
+    CoverFinder(db, by_name, by_id=by_id, sleep=lambda _: None).run_once()
+    assert by_id.asked == ["3116792061"] and by_name.calls == []
+    assert cover_of(db, ref) == STUDIO
+
+
+def test_a_song_whose_id_the_catalogue_does_not_know_falls_back_to_the_name_and_a_song_with_no_id_is_never_asked_by_id(
+    tmp_path: Path,
+) -> None:
+    db = database(tmp_path)
+    holder = liked(db, "Nude", length_ms=215_000)
+    with_id(db, holder)
+    plain = liked(db, "Reckoner", album="Other", length_ms=215_000)
+    by_id, by_name = ById(None), Spy(PICTURE)
+    CoverFinder(db, by_name, by_id=by_id, sleep=lambda _: None).run_once()
+    assert by_id.asked == ["3116792061"], "only the song that holds an id"
+    assert sorted(call[0] for call in by_name.calls) == ["Nude", "Reckoner"], "the name is the fallback"
+    assert cover_of(db, holder) == PICTURE and cover_of(db, plain) == PICTURE
+
+
+def test_a_catalogue_that_cannot_be_asked_by_id_stops_the_pass_and_stores_nothing(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    ref = liked(db, "Nude", length_ms=215_000)
+    with_id(db, ref)
+    by_name = Spy()
+    report = CoverFinder(db, by_name, by_id=ById(down=True), sleep=lambda _: None).run_once()
+    assert report.complete is False and by_name.calls == []
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_tried_at FROM song_ref WHERE id = ?", (ref,)).fetchone()[0] is None, (
+            "an outage is not a miss"
+        )
+    assert cover_of(db, ref) is None

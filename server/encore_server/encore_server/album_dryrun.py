@@ -1,7 +1,7 @@
 """N-34 slice 1: the DRY RUN of the album matcher. It writes nothing, anywhere: it reads a COPY of the database, asks a catalogue source, runs
 `album_finder.decide` on every song and prints a report. The lead reads the report before an image that holds the album pass (slice 2) runs on a server.
 
-**What the report shares with the pass, and what it does not.** It DECIDES with the very function the pass asks with (`album_finder.decide`: one verdict per song, the same rule). It does not SELECT the same songs: [entries] (1) does not leave out a ref on the P2-25 worklist (`ref_recheck`), which the pass skips, (2) leaves out the songs with no kept file unless `--all` is given (the pass also asks the songs somebody liked or put in a playlist), and (3) ignores the stored identity (`identity_outcome`, `identity_rev`, `identity_tried_at`: a copy that the pass has already run over reports the songs it left asked-for again, and a matched song is out of it only because it has its `deezer_id`).
+**What the report shares with the pass, and what it does not.** It DECIDES with the very function the pass asks with (`album_finder.decide`: one verdict per song, the same rule). It SELECTS the same songs too: [entries] is `album_pass.wanting`, the ONE function (the worklist, the likes and playlist entries, the order, the retry rule of 7 days and of `IDENTITY_REVISION`; a review fix of PR 125, pinned by `tests/test_album_selection.py`); the dry run adds only its limit, `--kept-only` and the file lengths of `--music-root`.
 
     # Replay recorded answers (no request is made; a song whose answers were not recorded is "not asked", never "the catalogue knows none"):
     python -m encore_server.album_dryrun --db copy.db --answers server/encore_server/tests/fixtures/deezer
@@ -43,13 +43,13 @@ from typing import Any
 
 import httpx
 
-from . import album_finder, deezer, refs
+from . import album_finder, album_pass, deezer, refs
 from .album_finder import RefHoldings, Song, Verdict
 from .album_pass import ALBUM_DEADLINE_S, SEARCH_WAIT_S
-from .artist_basis import performer_clause
 from .catalogue import Cache, Catalogue
 from .deezer import DeezerClient, Gate
 from .fixture_names import fixture_name
+from .ids import now_ms
 from .keeper.tagging import file_length_ms
 
 #: Fields the recorder (`tools/record_catalogue_fixtures.py`) takes out of an answer before it is saved: signed addresses and share links.
@@ -176,27 +176,27 @@ class Entry:
 
 
 def entries(
-    conn: sqlite3.Connection, *, kept_only: bool = True, limit: int | None = None, music_root: Path | None = None
+    conn: sqlite3.Connection,
+    *,
+    kept_only: bool = False,
+    limit: int | None = None,
+    music_root: Path | None = None,
+    now: int | None = None,
 ) -> list[Entry]:
-    """The songs slice 2 will ask about (design, "Who is asked"): refs whose album is NULL or the placeholder, with no `deezer_id`, whose artist is a
-    performer or unknown (`artist_basis.performer_clause`), the ones with a kept file first. [kept_only] leaves out those nobody kept a file of."""
-    rows = conn.execute(
-        f"SELECT r.id, r.title, r.artists, r.album, r.duration_ms, "  # noqa: S608 - the clause is built from a fixed list
-        f"(SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL "
-        f" ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept "
-        f"FROM song_ref r WHERE r.deezer_id IS NULL AND {performer_clause('r.artist_basis')} "
-        f"ORDER BY (kept IS NULL), r.created_at, r.id"
-    ).fetchall()
+    """The songs the pass will ask about: **`album_pass.wanting`, the ONE selection** (review of PR 125: reading this report must predict what the pass stamps). On top of it the
+    dry run has only its own: [kept_only] leaves out those nobody kept a file of (the pass asks them too), [limit], and the kept file's own length when [music_root] is given.
+    [now] is the clock of the retry rule (a `none` of the last 7 days is not asked again)."""
+    rows = album_pass.wanting(conn, now=now_ms() if now is None else now)
     out: list[Entry] = []
     for row in rows:
-        if not refs.is_placeholder_album(row["album"]) or (kept_only and row["kept"] is None):
+        if kept_only and row["kept"] is None:
             continue
         length, source = row["duration_ms"], "listing" if row["duration_ms"] else "none"
         if music_root is not None and row["kept"]:
             from_file = file_length_ms(music_root / row["kept"])
             if from_file is not None:
                 length, source = from_file, "file"
-        out.append(Entry(row["id"], Song(refs.lead_artist(row["artists"]), row["title"], length), source))
+        out.append(Entry(row["id"], Song(refs.lead_artist(row["artists"]), row["title"], length, row["isrc"]), source))
         if limit is not None and len(out) >= limit:
             break
     return out
@@ -486,7 +486,9 @@ def main(
     parser.add_argument("--max-requests", type=int, help="the most outside requests a --live run may make")
     parser.add_argument("--music-root", type=Path, help="the music server's folder: the kept files' own lengths are read from it")
     parser.add_argument("--limit", type=int, help="only the first N songs")
-    parser.add_argument("--all", action="store_true", help="also the songs nobody kept a file of")
+    parser.add_argument(
+        "--kept-only", action="store_true", help="leave out the songs nobody kept a file of (the pass asks them too)"
+    )
     parser.add_argument("--tolerance-ms", type=int, default=album_finder.TOLERANCE_MS)
     parser.add_argument(
         "--single-window-days",
@@ -506,7 +508,7 @@ def main(
     conn = sqlite3.connect(f"{args.db.resolve().as_uri()}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     try:
-        items = entries(conn, kept_only=not args.all, limit=args.limit, music_root=args.music_root)
+        items = entries(conn, kept_only=args.kept_only, limit=args.limit, music_root=args.music_root)
         with opened(args.answers, live=args.live, max_requests=args.max_requests, network=network) as source:
             why: list[str] = []
 

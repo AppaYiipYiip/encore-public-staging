@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 import time
 from collections.abc import Callable
@@ -28,7 +29,7 @@ from .album_pass import length_of
 from .artist_basis import performer_clause
 from .catalogue import release_key
 from .db import Database
-from .deezer import LookupUnavailable, search_tracks
+from .deezer import LookupUnavailable, NotInCatalogue, search_tracks, track_by_id
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover
 from .keeper.keeper import KEPT_FOLDER
@@ -72,6 +73,21 @@ def deezer_lookup(
     return best[1] if best else None
 
 
+def deezer_picture_by_id(deezer_id: str, *, client: httpx.Client | None = None) -> str | None:
+    """The picture of the album a catalogue id is on, by the id itself: a song that HOLDS an id is not a name to compare, the id names the very release it was described on
+    (review of PR 125). `None` when the id is not digits (it goes into a path: nothing is asked), the catalogue knows no such recording or the picture is not on its host.
+    Raises [LookupUnavailable] when the catalogue could not be asked."""
+    if not re.fullmatch(r"\d{1,20}", deezer_id or ""):
+        return None
+    try:
+        row = track_by_id(deezer_id, client=client)
+    except NotInCatalogue:
+        return None
+    album = row.get("album") if isinstance(row, dict) else None
+    url = (album.get("cover_xl") or album.get("cover_big")) if isinstance(album, dict) else None
+    return url if isinstance(url, str) and cover_url_ok(url) else None
+
+
 @dataclass
 class CoverReport:
     looked: int = 0
@@ -91,6 +107,7 @@ class CoverFinder:
         music_dir: Path | None = None,
         fetch: Callable[[str | None], bytes | None] = fetch_cover,
         after: Callable[[], object] | None = None,
+        by_id: Callable[[str], str | None] | None = None,
     ) -> None:
         self._music = music_dir
         self._fetch = fetch
@@ -99,6 +116,7 @@ class CoverFinder:
         self._db = db
         # Looked up when the finder is made, not when this module is loaded, so a test can put its own in (B27).
         self._lookup: Lookup = lookup if lookup is not None else deezer_lookup
+        self._by_id = by_id if by_id is not None else deezer_picture_by_id
         self._per_pass = per_pass
         self._pause = pause_s
         self._sleep = sleep
@@ -110,7 +128,7 @@ class CoverFinder:
         **Never a song the album pass matched** (`identity_outcome = 'matched'`): its picture is the identity's, written by the pass from the chosen release; a by-name search
         here could only pick another release's picture. The kept file's path and the ref's length come with the row: the comparison is by length (`album_finder.judge_hits`)."""
         return conn.execute(
-            "SELECT r.id, r.title, r.artists, r.album, r.album_artist, r.duration_ms,"
+            "SELECT r.id, r.title, r.artists, r.album, r.album_artist, r.duration_ms, r.deezer_id,"
             " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
             "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
             " FROM song_ref r"
@@ -163,7 +181,22 @@ class CoverFinder:
             album = row["album"]
             # One question per RELEASE (`release_key`: a deluxe edition is its original, but "In Rainbows (Live)" is another release: `title_key` strips every bracket).
             key = (artist_key(row["album_artist"] or artists[0]), release_key(album)) if album else None
-            url = by_album.get(key) if key is not None else None
+            url = None
+            if row["deezer_id"]:
+                # A song that HOLDS a catalogue id gets the picture of the very release the id is on, by the id (review of PR 125); the name is the fallback.
+                report.looked += 1
+                try:
+                    url = self._by_id(str(row["deezer_id"]))
+                except LookupUnavailable as error:
+                    log.info("the catalogue could not be asked (%s); the pass stops", error)
+                    report.looked -= 1
+                    report.complete = False
+                    break
+                self._sleep(self._pause)
+                if url and key is not None:
+                    by_album[key] = url
+            if url is None and key is not None:
+                url = by_album.get(key)
             if url is None:
                 report.looked += 1
                 try:

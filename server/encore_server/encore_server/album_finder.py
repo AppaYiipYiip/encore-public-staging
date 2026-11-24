@@ -104,7 +104,9 @@ Outcome = Literal["matched", "none", "held", "unsupported", "no_length", "unavai
 #: The outcomes that are FACTS about the song and the catalogue, and may be stored. The rest say "not asked": never stored (audit B-124).
 REMEMBERED: frozenset[Outcome] = frozenset({"matched", "none", "held"})
 
-HitReason = Literal["same_recording", "unreadable", "artist", "title_or_version", "no_length", "length", "no_album"]
+HitReason = Literal[
+    "same_recording", "unreadable", "artist", "title_or_version", "isrc_differs", "no_length", "length", "no_album"
+]
 ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type"]
 
 #: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
@@ -129,6 +131,15 @@ class Song:
     artist: str
     title: str
     length_ms: int | None
+    #: The song's own ISRC (`song_ref.isrc`), `None` when it holds none. COUNTER-EVIDENCE only: a recording has one ISRC, so a catalogue entry that carries ANOTHER one is not
+    #: this recording (`isrc_differs`); an equal one, or none on either side, changes nothing (nothing is matched BY it here: the pass fills the ids afterwards).
+    isrc: str | None = None
+
+
+def _isrc(value: object) -> str | None:
+    """An ISRC as the catalogue's mapping writes it (`catalogue.map_track`: upper case, no hyphens), or `None`."""
+    text = str(value).replace("-", "").replace(" ", "").upper() if value else ""
+    return text or None
 
 
 @dataclass(frozen=True)
@@ -301,7 +312,7 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
     A hit whose artist or title holds no letter and no digit has nothing to compare, and the equality refuses it at 1 or 2: the song has a letter or a digit in
     both, so it has neither that artist nor that key.
     """
-    want_artist, want_key = norm_artist(song.artist), refs.norm_key(song.artist, song.title)
+    want_artist, want_key, want_isrc = norm_artist(song.artist), refs.norm_key(song.artist, song.title), _isrc(song.isrc)
     verdicts: list[HitVerdict] = []
     for row in hits:
         track = map_track(row)
@@ -318,6 +329,11 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
             reason = "artist"
         elif refs.norm_key(name, title) != want_key:
             reason = "title_or_version"
+        elif want_isrc and track["isrc"] and track["isrc"] != want_isrc:
+            # The names agree and the ISRCs do not: another recording (a remaster, a re-recording) of the same name. The search row seldom carries an ISRC; the chosen release's
+            # song list does, and `choose_release` asks the same question there.
+            fits = True
+            reason = "isrc_differs"
         else:
             fits = True
             if delta is None:
@@ -548,6 +564,8 @@ def choose_release(
     if not accepted:
         if any(hit.reason == "no_album" for hit in verdicts):
             reason = "no_album_on_hit"
+        elif any(hit.reason == "isrc_differs" for hit in verdicts):
+            reason = "isrc_differs"  # the names agree and the catalogue's own ISRC says it is another recording: counter-evidence, told apart from a plain miss
         else:
             reason = "latin_spelling_only" if _latin_spelling_only(song, verdicts) else "no_same_recording"
         return Verdict("none", reason, hits=verdicts)
@@ -605,6 +623,17 @@ def choose_release(
         disc_no=track.get("discNo"),
         cover=release.cover,
     )
+    # COUNTER-EVIDENCE comes first (review of PR 125): the song holds an ISRC and the catalogue's entry on the chosen release carries another one, so it is not this
+    # recording and a permanent stamp would be a wrong one. Re-askable, with what would have been written, like every withheld answer.
+    if (own := _isrc(song.isrc)) and match.isrc and _isrc(match.isrc) != own:
+        return Verdict(
+            "none",
+            "isrc_differs",
+            hits=verdicts,
+            releases=releases,
+            detail=f"the song holds {own}, the catalogue's entry {match.isrc}",
+            withheld=match,
+        )
     withhold: tuple[str, str] | None = None
     if release.record_type in _FULL_RELEASE:
         earlier = _single_before(

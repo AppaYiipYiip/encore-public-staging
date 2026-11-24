@@ -96,6 +96,41 @@ class AlbumReport:
     stopped: str | None = None
 
 
+def wanting(conn: sqlite3.Connection, *, now: int, report: AlbumReport | None = None) -> list[sqlite3.Row]:
+    """THE selection of the songs the catalogue is asked about, the ONE function the album pass and its dry run (`album_dryrun.entries`) both call, so that reading the dry run
+    predicts what the pass will ask and stamp (review of PR 125; a test runs both over one database and compares them). The songs whose album is NULL or the placeholder, with no
+    catalogue id, whose artist is a performer or unknown (`artist_basis.performer_clause`: never a channel's name or nobody's, N-26), that somebody has (a like, a playlist entry)
+    or the server keeps, and that were never asked, or were answered `none` or `held` by an older rule or more than 7 days before [now]. Songs with a kept file first, then the
+    order they were made in. A song that is on the P2-25 worklist is left out and counted in [report]: its file, and so its length and its name, may belong to another song until
+    the rehome has judged it, and a stamp is permanent. Reads only."""
+    rows = conn.execute(
+        "SELECT r.id, r.title, r.artists, r.album, r.duration_ms, r.isrc,"
+        " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
+        "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
+        " FROM song_ref r WHERE r.deezer_id IS NULL"
+        " AND (r.album IS NULL OR TRIM(r.album) = '' OR LOWER(r.album) LIKE '%unknown album%')"
+        f" AND {performer_clause('r.artist_basis')}"
+        " AND (r.identity_outcome IS NULL OR (r.identity_outcome IN ('none', 'held')"
+        "  AND (r.identity_rev IS NULL OR r.identity_rev < ? OR r.identity_tried_at IS NULL OR r.identity_tried_at <= ?)))"
+        " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
+        "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
+        "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL))"
+        " ORDER BY (kept IS NULL), r.created_at, r.id",
+        (album_finder.IDENTITY_REVISION, now - RETRY_AFTER_MS),
+    ).fetchall()
+    wanted: list[sqlite3.Row] = []
+    for row in rows:
+        if not refs.is_placeholder_album(row["album"]):
+            continue  # the SQL prefilter is a superset of "no album or the placeholder"
+        # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the worklist is the one-time repair of other alphabets (N-36 removes `refs.recheck_pending` and BOTH calls to it in this file).
+        if refs.recheck_pending(conn, row["id"]):
+            if report is not None:
+                report.skipped += 1
+            continue
+        wanted.append(row)
+    return wanted
+
+
 class _DbHoldings:
     """What the OTHER refs hold (step 5), read from the database one short question at a time: a pass that waits on the network must not hold a read open while it does."""
 
@@ -157,48 +192,20 @@ class AlbumFinder:
             **options,
         )
 
-    # ------------------------------------------------------------------------------------------------------------ who is asked
-
-    def _wanting(self, conn: sqlite3.Connection, report: AlbumReport) -> list[sqlite3.Row]:
-        """The songs whose album is NULL or the placeholder, with no catalogue id, whose artist is a performer or unknown (`artist_basis.performer_clause`: never a channel's
-        name or nobody's, N-26), that somebody has (a like, a playlist entry) or the server keeps, and that were never asked, or were answered `none` or `held` by an older
-        rule or more than 7 days ago. Songs with a kept file first. A song that is on the P2-25 worklist is left out and counted: its file, and so its length and its name,
-        may belong to another song until the rehome has judged it, and a stamp is permanent."""
-        rows = conn.execute(
-            "SELECT r.id, r.title, r.artists, r.album, r.duration_ms,"
-            " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
-            "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
-            " FROM song_ref r WHERE r.deezer_id IS NULL"
-            " AND (r.album IS NULL OR TRIM(r.album) = '' OR LOWER(r.album) LIKE '%unknown album%')"
-            f" AND {performer_clause('r.artist_basis')}"
-            " AND (r.identity_outcome IS NULL OR (r.identity_outcome IN ('none', 'held')"
-            "  AND (r.identity_rev IS NULL OR r.identity_rev < ? OR r.identity_tried_at IS NULL OR r.identity_tried_at <= ?)))"
-            " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
-            "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
-            "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL))"
-            " ORDER BY (kept IS NULL), r.created_at, r.id",
-            (album_finder.IDENTITY_REVISION, self._now() - RETRY_AFTER_MS),
-        ).fetchall()
-        wanted: list[sqlite3.Row] = []
-        for row in rows:
-            if not refs.is_placeholder_album(row["album"]):
-                continue  # the SQL prefilter is a superset of "no album or the placeholder"
-            # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the worklist is the one-time repair of other alphabets (N-36 removes `refs.recheck_pending` and BOTH calls to it in this file).
-            if refs.recheck_pending(conn, row["id"]):
-                report.skipped += 1
-                continue
-            wanted.append(row)
-        return wanted
-
     # ------------------------------------------------------------------------------------------------------------ the pass
 
     def run_once(self) -> AlbumReport:
         report = AlbumReport()
         with self._db.read() as conn:
-            rows = self._wanting(conn, report)
+            rows = wanting(conn, now=self._now(), report=report)
         started = self._clock()
         for row in rows:
-            song = Song(refs.lead_artist(row["artists"]), row["title"], length_of(self._music, row["kept"], row["duration_ms"]))
+            song = Song(
+                refs.lead_artist(row["artists"]),
+                row["title"],
+                length_of(self._music, row["kept"], row["duration_ms"]),
+                row["isrc"],
+            )
             if album_finder.refusal(song) is not None:
                 # No request, nothing remembered ("not asked"); the song was examined, so its placeholder literal is forgotten.
                 report.refused += 1
@@ -253,6 +260,13 @@ class AlbumFinder:
                 # The second layer of step 5: an id that another song took since the matcher read the database is a pair, not a stamp.
                 if "album" not in updates:
                     outcome, reason, updates = "none", "nothing_to_fill", refs.forget_placeholder_album(row)
+                elif (
+                    row["isrc"]
+                    and verdict.match.isrc
+                    and album_finder._isrc(row["isrc"]) != album_finder._isrc(verdict.match.isrc)
+                ):
+                    # The row may have gained an ISRC since it was read (a phone described the song, a scan read its tags): another recording's ISRC is counter-evidence.
+                    outcome, reason, updates = "none", "isrc_differs", refs.forget_placeholder_album(row)
                 elif verdict.match.deezer_id and "deezer_id" not in updates:
                     outcome, reason, updates = "held", "deezer_id_held", refs.forget_placeholder_album(row)
                 elif verdict.match.isrc and row["isrc"] is None and "isrc" not in updates:
