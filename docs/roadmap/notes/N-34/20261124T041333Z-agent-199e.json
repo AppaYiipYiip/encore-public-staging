@@ -1,0 +1,12 @@
+{
+ "id": "20261124T041333Z-agent-199e",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34s2 (Claude Sonnet 5.5)",
+ "at": "2026-11-24T04:13:33Z",
+ "type": "note",
+ "body": "N-34 SLICE 2, THE LIVE DRY RUN OF 24 NOV READ AND ANSWERED (helper-n34s2; PR 125; server only; built, not walked; item stays todo; nothing run live, no VM touched).\n\nTHE RUN (lead, head b8c2ad6, 672 songs, 650 lengths from kept files): 509 none/no_same_recording, 150 matched (96 album, 40 single, 14 ep), 6 compilation_title, 4 no_eligible_release, 2 held, 1 single_before_album; non-Latin with only Latin hits: 0; types seen: album, single, ep only.\n\nFROZEN: THE TOLERANCE, 3 s KEPT. 404 songs have a same-artist/title/version hit: 161 (40 percent) within 3 s, 243 outside, smooth tail, NO cliff (bins 3-4, 4-5, 5-10 s: 14, 10, 29). No better edge exists, so 3 s stays as the conservative edge; price: misses only. It is a decision, no stop-gap: the constant, the report header (first line) and docs 18, the design table, 4b, CHANGELOG and audit B-133 now say so.\nNOT FROZEN: THE SINGLE WINDOW. One pair in 672 songs (301 days) cannot show a window; it stays a named stop-gap, re-askable. Removal trigger: a dry run over a library with enough single/album pairs (about 30; the lead decides); task: the next dry run. The report header prints it.\n\nFIXED: (1) RELEASE-TITLE VERSION RULE: Ja Rule - Always On Time was stamped with the live album Ja Rule: 2005 (Live). release_markers (the servers VERSION_WORDS and plural/past forms) now refuses a release whose title carries a mark the songs title does not (release_version): the other release is chosen (Pain Is Love) or none/release_version_mismatch. Real answers of the run are tracked (8 files, ledger n34_dryrun_24nov.json); control: Opeth remix song takes its remix release; Remastered, Deluxe, Explicit, Clean, Radio Edit stay ignored; mutants red. (2) Creed was stamped with A Retrospective: retrospective joins the markers. (3) IDENTITY_REVISION 2, pinned with the version words too.\nOTHER CLASSES: the 150 stamps and 158 release answers were read: no other-artist, tribute, cover or karaoke stamp (the album-artist rule refused 5). ACCEPTED and left (17 Nov ruling): same-artist compilations or re-records that say nothing in their title and are the sole candidate (OutKast Big Boi & Dre Present, Papa Roach 20/20). REMEDY if they matter: the artists discography (option b).\n\nExpected over the same data: 149 matched, 7 compilation_title (not re-run). Tests and the whole suite: see the PR.",
+ "to": [
+  "agent"
+ ]
+}
