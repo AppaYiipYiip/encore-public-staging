@@ -189,8 +189,9 @@ def entries(
     """The songs the pass will ask about: **`album_pass.wanting`, the ONE selection** (review of PR 125: reading this report must predict what the pass stamps). On top of it the
     dry run has only its own: [kept_only] leaves out those nobody kept a file of (the pass asks them too), [limit], and the kept file's own length when [music_root] is given.
     [now] is the clock of the retry rule (a `none` of the last 7 days is not asked again). [new_keeps_only] keeps the songs the music server has no file of: the songs a NEW
-    keep would be about (the keeper asks the same question of one of them with `album_pass.wanting(ref_id=...)`: this is that selection, filtered)."""
-    rows = album_pass.wanting(conn, now=now_ms() if now is None else now)
+    keep would be about (the keeper asks the same question of one of them with `album_pass.wanting(ref_id=...)`: this is that selection, filtered, and widened by the songs that have a keep
+    waiting, which the keeper asks too: a song played on two days has no like)."""
+    rows = album_pass.wanting(conn, now=now_ms() if now is None else now, being_kept=new_keeps_only)
     out: list[Entry] = []
     for row in rows:
         if kept_only and row["kept"] is None:
@@ -251,7 +252,8 @@ def run(
 def new_keep_path(conn: sqlite3.Connection, item: Entry, verdict: Verdict, music_root: Path | None) -> str:
     """Where a keep of this song would file its file: the keeper's own planner (`plan_for_ref`) over the ref the keep would have. A `matched` verdict fills the album, the track and
     the disc exactly as the write rule does (`refs.release_facts_to_fill`, read only here); every other answer that is a fact, and a song that was only examined, forgets the
-    placeholder literal, so the song goes to Singles; a catalogue that could not be asked writes nothing, so the song is filed under what it has today."""
+    placeholder literal, so the song goes to Singles; a catalogue that could not be asked writes nothing, so the song is filed under the album it has (the planner reads the
+    placeholder as no album)."""
     row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (item.ref_id,)).fetchone()
     ref: dict[str, Any] = {
         "title": row["title"],
@@ -268,8 +270,6 @@ def new_keep_path(conn: sqlite3.Connection, item: Entry, verdict: Verdict, music
             "trackNo": facts.get("track_no", ref["trackNo"]),
             "discNo": facts.get("disc_no", ref["discNo"]),
         }
-    elif verdict.outcome != "unavailable":
-        ref["album"] = None if refs.is_placeholder_album(ref["album"]) else ref["album"]
     base = music_root if music_root is not None else Path("music")
     return plan_for_ref(base / "Encore", ref).path.relative_to(base).as_posix()
 

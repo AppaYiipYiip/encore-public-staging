@@ -60,6 +60,25 @@ def test_the_new_keeps_mode_selects_only_songs_the_music_server_has_no_file_of(p
     assert {e.ref_id for e in only_new} <= selected, "never a song the pass would not ask"
 
 
+def test_a_song_a_keep_is_waiting_for_is_a_new_keep_even_when_nobody_likes_it(pdb: Database) -> None:
+    """A song played on two days is kept with no like and no playlist entry (`test_keep_triggers`): the keeper asks its album, so the report must show it, though the pass
+    (which asks songs somebody has or the server keeps) would not."""
+    waiting = make_ref(pdb, "Creature", "LANDMVRKS", FILE_LENGTH_MS, album=None, kept=None)
+    finished = make_ref(pdb, "Requiem", "LANDMVRKS", 250_000, album=None, kept=None)
+    with pdb.tx() as conn:
+        for item, ref, state in (("wk_1", waiting, "queued"), ("wk_2", finished, "done")):
+            conn.execute(
+                "INSERT INTO work_item (id, kind, ref, priority, state, attempts, next_try_at, created_at, updated_at) VALUES (?, 'keep', ?, 4, ?, 0, 0, 0, 0)",
+                (item, ref, state),
+            )
+    conn = open_copy(pdb)
+    assert waiting not in {e.ref_id for e in album_dryrun.entries(conn, now=test_album_pass.NOW)}, (
+        "the pass asks nobody that nobody has"
+    )
+    in_the_mode = {e.ref_id for e in album_dryrun.entries(conn, new_keeps_only=True, now=test_album_pass.NOW)}
+    assert in_the_mode == {waiting}, "a keep that is queued or running counts; a finished one does not"
+
+
 def test_the_report_names_the_folder_each_new_keep_would_be_filed_under(pdb: Database, tmp_path: Path) -> None:
     ids = a_library(pdb)
     conn = open_copy(pdb)

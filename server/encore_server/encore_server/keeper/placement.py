@@ -15,7 +15,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..textnorm import UNKNOWN_ARTIST, fold, norm_title, safe_path_part, title_key, version_signature, words
+from ..textnorm import (
+    UNKNOWN_ARTIST,
+    fold,
+    is_placeholder_album,
+    norm_title,
+    safe_path_part,
+    title_key,
+    version_signature,
+    words,
+)
 
 AUDIO_SUFFIXES = {".opus", ".ogg", ".m4a", ".mp3", ".flac", ".aac", ".wav"}
 
@@ -97,11 +106,14 @@ def plan_placement(
 
 def plan_for_ref(root: Path, ref: dict[str, Any], suffix: str = ".opus") -> Placement:
     """Where the file of a song goes, planned from the song's ref (the API's shape: `artists`, `albumArtist`, `album`, `title`, `trackNo`, `discNo`). THE one function the keeper,
-    the dry run of the new keeps (N-34 slice 3: what a keep would be filed under) and the repair of the files already kept (slice 5) plan with. Nothing is created here."""
+    the dry run of the new keeps (N-34 slice 3: what a keep would be filed under) and the repair of the files already kept (slice 5) plan with. Nothing is created here.
+    **The music server's placeholder (`[Unknown Album]`) is no album**: it is never made a folder (`textnorm.is_placeholder_album`, the same definition the tags use): that folder IS the
+    bucket N-34 empties, and a song put in it once and in `Singles` the next time was saved twice (audit B-110's own example)."""
+    album = ref.get("album")
     return plan_placement(
         root,
         artist=ref.get("albumArtist") or ref["artists"][0],
-        album=ref.get("album"),
+        album=None if is_placeholder_album(album) else album,
         title=ref["title"],
         track=ref.get("trackNo"),
         disc=ref.get("discNo"),

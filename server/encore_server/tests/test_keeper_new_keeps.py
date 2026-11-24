@@ -17,17 +17,29 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
+from fastapi.testclient import TestClient
 
-from encore_server import album_finder, refs
+from encore_server import album_finder, album_pass, deezer, refs
 from encore_server.album_pass import KeepAnswer, KeepAsker
+from encore_server.album_pass import (
+    search_the_catalogue_for_keep as the_real_search,
+)  # bound before the autouse guard of conftest replaces it
+from encore_server.api import create_app
+from encore_server.catalogue import Cache
+from encore_server.catalogue import Catalogue as RealCatalogue
+from encore_server.config import Settings
 from encore_server.db import Database
+from encore_server.deezer import DeezerClient, Gate
 from encore_server.keeper.covers import write_folder_picture
 from encore_server.keeper.placement import plan_for_ref
 from encore_server.keeper.tagging import Tags, tags_of
-from tests.test_album_finder import SINGLE, albums, single_hit
+from tests.catalogue_fakes import RecordedDeezer
+from tests.conftest import FakeVerifier, creds, resolve
+from tests.test_album_finder import ALBUM, SINGLE, albums, derive, single_hit
 from tests.test_album_pass import Catalogue, landmvrks
-from tests.test_keeper import AUDIO, Rig
+from tests.test_keeper import AUDIO, FakeNavidrome, FakeSource, Rig, fake_ffmpeg
 
 ALBUM_TITLE = "The Darkest Place I've Ever Been"
 ALBUM_DIR = f"Encore/LANDMVRKS/{ALBUM_TITLE}"
@@ -52,7 +64,7 @@ class KeepRig(Rig):
             search=self._search,
             album=self._album,
             call_wait_s=10.0,
-            budget_s=30.0,
+            budget_s=10.0,
             clock=lambda: self.clock_now,
             now=lambda: NOW,
         )
@@ -231,6 +243,22 @@ def test_the_placeholder_literal_is_forgotten_and_never_reaches_the_tags_or_the_
     assert not any("Unknown Album" in p for p in krig.kept_paths())
 
 
+def test_the_placeholder_is_never_written_into_a_files_tags_or_folder_even_when_the_catalogue_cannot_be_asked(
+    krig: KeepRig,
+) -> None:
+    """Audit B-110's own example saved a song once in `Singles` and once in `[Unknown Album]`: the placeholder says "no album", so it is no folder and no tag (one definition,
+    `textnorm.is_placeholder_album`, in the planner and in the tag builder). The ref itself is untouched: nothing was asked, so nothing is forgotten."""
+    krig.catalogue = Catalogue(down=True)
+    ref = krig.creature(album="[Unknown Album]")
+    before = krig.row(ref)
+
+    krig.keep(ref)
+
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Singles/Creature.opus"]
+    assert krig.tagged[0][1].album is None
+    assert krig.row(ref) == before and before["album"] == "[Unknown Album]"
+
+
 # ------------------------------------------------------------------------------------------------------------------ rule 2: a catalogue that cannot be asked never blocks a keep
 
 
@@ -278,11 +306,11 @@ def test_an_album_answer_that_cannot_be_asked_does_not_stop_the_keep_either(krig
 
 
 def test_a_keep_asks_with_a_short_wait_and_a_spent_budget_is_could_not_ask(krig: KeepRig) -> None:
-    """The design: a short wait (10 s, not a pass's 120 s) and a budget of 30 s in all; a slow catalogue is an outage, never a `none`."""
+    """The design: a short wait (10 s, not a pass's 120 s) for the whole question, the search and the albums together; a slow catalogue is an outage, never a `none`."""
     hits = landmvrks().searches[("LANDMVRKS", "Creature")]
 
     def slow_search(artist: str, title: str) -> list[dict[str, Any]]:
-        krig.clock_now += 31.0  # it answered, but the keep's time is spent
+        krig.clock_now += 11.0  # it answered, but the keep's time is spent
         return hits
 
     krig.catalogue.search = slow_search  # type: ignore[method-assign]
@@ -300,12 +328,12 @@ def test_the_waits_shrink_with_the_budget(krig: KeepRig) -> None:
     hits = landmvrks().searches[("LANDMVRKS", "Creature")]
 
     def search(artist: str, title: str) -> list[dict[str, Any]]:
-        krig.clock_now += 25.0
+        krig.clock_now += 6.0
         return hits
 
     krig.catalogue.search = search  # type: ignore[method-assign]
     krig.keep(krig.creature())
-    assert krig.waits == [10.0, 5.0], "after 25 s only 5 of the 30 s are left for the album answer"
+    assert krig.waits == [10.0, 4.0], "after 6 s only 4 of the 10 s are left for the album answer"
 
 
 def test_an_exception_nobody_foresaw_in_the_album_question_never_stops_the_keep(
@@ -450,6 +478,19 @@ def test_tags_of_a_ref_is_the_one_builder_of_a_files_tags() -> None:
         mbid=None,
     )
     assert tags_of({"title": "T", "artists": ["A"]}).album is None
+
+
+@pytest.mark.parametrize("placeholder", ["[Unknown Album]", "Unknown Album", " [unknown album] ", "", None])
+def test_the_placeholder_album_is_no_album_in_the_tags_and_in_the_folder(tmp_path: Path, placeholder: str | None) -> None:
+    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "album": placeholder, "trackNo": None}
+    assert tags_of(ref).album is None
+    assert plan_for_ref(tmp_path, ref).path == tmp_path / "LANDMVRKS" / "Singles" / "Creature.opus"
+
+
+def test_an_album_that_only_starts_like_the_placeholder_is_a_real_album(tmp_path: Path) -> None:
+    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "album": "Unknown Album Part Two", "trackNo": None}
+    assert tags_of(ref).album == "Unknown Album Part Two"
+    assert plan_for_ref(tmp_path, ref).path == tmp_path / "LANDMVRKS" / "Unknown Album Part Two" / "Creature.opus"
 
 
 def test_plan_for_ref_is_the_one_planner_of_a_files_place(tmp_path: Path) -> None:
@@ -609,3 +650,104 @@ def test_a_keep_never_writes_or_deletes_anything_outside_the_servers_own_folder(
 
     assert {p: p.read_bytes() for p in (krig.music / "Albums").rglob("*") if p.is_file()} == before
     assert all(p.startswith("Encore/") for p in krig.kept_paths())
+
+
+# ------------------------------------------------------------------------------------------------------------------ a song the catalogue just placed is not looked up by name for a picture
+
+
+def test_a_song_the_catalogue_just_placed_whose_release_has_no_picture_is_not_looked_up_by_name_for_one(krig: KeepRig) -> None:
+    """A search by name could only pick ANOTHER release's picture for it: the cover finder asks the very release by its id later (slice 2), never by name."""
+    krig.cover_found = "https://cdn.dzcdn.net/another-release.jpg"
+    krig.catalogue = Catalogue(landmvrks().searches, {ALBUM: derive(albums(ALBUM)[ALBUM], cover=None)})
+    ref = krig.creature()
+
+    krig.keep(ref)
+
+    assert krig.row(ref)["identity_outcome"] == "matched" and krig.audio_paths() == [f"{ALBUM_DIR}/02 - Creature.opus"]
+    assert krig.cover_asked == [], "no picture look-up by name for a song the catalogue placed"
+    assert not any(p.endswith("cover.jpg") for p in krig.kept_paths())
+
+
+# ------------------------------------------------------------------------------------------------------------------ the real calls: through the gate, and through the app
+
+
+def test_a_keep_through_the_real_gate_files_the_song_under_its_album(
+    tmp_path: Path, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`KeepAsker.on` over the real catalogue code and the RECORDED answers of the catalogue: the search is `deezer.search_tracks` as a background turn with the keep's short wait,
+    the album is `Catalogue.album` as a background turn. (The conftest guard replaces the pass's search by one that cannot be asked; this test puts the real one back.)"""
+    upstream = RecordedDeezer()
+    client = DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport()))
+    deezer.install(client)
+    monkeypatch.setattr(album_pass, "search_the_catalogue_for_keep", the_real_search)
+    krig = KeepRig(tmp_path, db)
+    krig.keeper._identify = KeepAsker.on(db, RealCatalogue(client, Cache(None)), now=lambda: NOW)
+    ref = krig.creature()
+
+    krig.keep(ref)
+
+    assert krig.audio_paths() == [f"{ALBUM_DIR}/02 - Creature.opus"]
+    assert krig.row(ref)["identity_outcome"] == "matched"
+    assert upstream.paths()[0] == "/search" and any(path.startswith("/album/") for path in upstream.paths())
+
+
+def test_a_server_whose_catalogue_is_switched_off_keeps_without_a_request_and_without_an_album(
+    tmp_path: Path, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`ENCORE_CATALOGUE=0` through the real gate (`Gate(enabled=False)`, which `api._default_catalogue` builds from the setting), not a fake that fails: no request goes out, the keep
+    goes on exactly as before and nothing is remembered about the song."""
+    upstream = RecordedDeezer()
+    client = DeezerClient(Gate(enabled=False), httpx.Client(transport=upstream.transport()))
+    deezer.install(client)
+    monkeypatch.setattr(album_pass, "search_the_catalogue_for_keep", the_real_search)
+    krig = KeepRig(tmp_path, db)
+    krig.keeper._identify = KeepAsker.on(db, RealCatalogue(client, None), now=lambda: NOW)
+    ref = krig.creature()
+    before = krig.row(ref)
+
+    krig.keep(ref)
+
+    assert upstream.paths() == [], "no request is opened to the catalogue"
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Singles/Creature.opus"] and krig.row(ref) == before
+
+
+def test_the_app_asks_the_album_of_a_song_it_keeps(
+    tmp_path: Path, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without this a keeper that nothing wires would pass every test above. A like keeps the song in the background; the app's own keeper asks the (recorded) catalogue and files
+    it under its album."""
+
+    class Configured(FakeNavidrome):
+        configured = True
+
+    music = tmp_path / "music"
+    music.mkdir()
+    settings = Settings(
+        data_dir=tmp_path / "data",
+        music_dir=music,
+        navidrome_url="http://navidrome.invalid",
+        youtube=False,
+        workers=False,
+        min_free_gb=0.0,
+    )
+    monkeypatch.setattr("encore_server.keeper.keeper.run_command", fake_ffmpeg)
+    monkeypatch.setattr(
+        "encore_server.keeper.keeper.fetch_cover", lambda url: b"cover-bytes"
+    )  # the picture host is not reached from a test
+    monkeypatch.setattr(album_pass, "search_the_catalogue_for_keep", the_real_search)
+    upstream = RecordedDeezer()
+    catalogue = RealCatalogue(
+        DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport())), Cache(None)
+    )
+    app = create_app(settings, verifier=verifier, youtube=FakeSource(), navidrome=Configured(music), catalogue=catalogue)  # type: ignore[arg-type]
+    with TestClient(app) as client:
+        service = client.app.state.services  # type: ignore[attr-defined]
+        item = {"title": "Creature", "artists": ["LANDMVRKS"], "durationMs": FILE_LENGTH_MS}
+        ref = str(resolve(client, "marwa", item)[0]["id"])
+        assert client.put(f"/encore/api/v1/likes/{ref}", params=creds("marwa")).status_code == 200
+
+        service.scheduler.drain()
+
+    kept = sorted(p.relative_to(music).as_posix() for p in (music / "Encore").rglob("*.opus"))
+    assert kept == [f"{ALBUM_DIR}/02 - Creature.opus"]
+    assert upstream.paths()[0] == "/search"

@@ -16,7 +16,7 @@ the search, the albums the same-recording hits are on, then the six steps) and w
   owner's server were written by the library scan before the N-11 guard. (A song the pass does not examine keeps what it has: a channel's or nobody's name, a song that has a
   catalogue id already, a song nobody has. Not done, and said.)
 
-**The pass writes no file** and moves none: the album folder, the tags and the folder picture are slices 3 and 5. A song's line on the phone names the album at once; its artist
+**The pass writes no file** and moves none: the album folder, the tags and the folder picture of a file are made by the keeper for a song being kept now (slice 3, `Keeper._identified`, which asks the pass's own question below: [KeepAsker]) and by the repair of the files already kept (slice 5). A song's line on the phone names the album at once; its artist
 page keeps showing the music server's own albums until the files are filed under them.
 
 The songs are asked ONE AT A TIME (the album answers serially: a long deadline parks one of the pool's workers the routes share), at the gate's own pace (background turns). A
@@ -124,7 +124,7 @@ class AlbumReport:
 
 
 def wanting(
-    conn: sqlite3.Connection, *, now: int, report: AlbumReport | None = None, ref_id: str | None = None
+    conn: sqlite3.Connection, *, now: int, report: AlbumReport | None = None, ref_id: str | None = None, being_kept: bool = False
 ) -> list[sqlite3.Row]:
     """THE selection of the songs the catalogue is asked about, the ONE function the album pass, its dry run (`album_dryrun.entries`) and the keeper's new keeps (N-34 slice 3,
     [ref_id]) all call, so that reading the dry run predicts what the pass will ask and stamp (review of PR 125; a test runs both over one database and compares them). The songs
@@ -135,12 +135,19 @@ def wanting(
 
     **[ref_id]** asks the same question of ONE song (a song being kept now): every rule above holds, and only the "somebody has it or the server keeps it" clause is dropped, because
     the keep itself is the server keeping it. A song a keep must not file under an album is therefore exactly a song the pass would not stamp (a real album, an id, a channel's
-    name, an answer of this rule from the last week). Each row also says whether the music server already has a file of the song (`linked`): a song it has none of is the
+    name, an answer of this rule from the last week). **[being_kept]** (the dry run's new-keeps mode) also takes the songs the server has a `keep` waiting or running for (a song
+    played on two days is kept without a like or a playlist entry): the keeper asks those too. Each row also says whether the music server already has a file of the song (`linked`): a song it has none of is the
     one a keep would fetch (the dry run's section on new keeps)."""
     holder = (
         " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
         "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
-        "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL))"
+        "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL)"
+        + (
+            "  OR EXISTS (SELECT 1 FROM work_item w WHERE w.ref = r.id AND w.kind = 'keep' AND w.state IN ('queued', 'running'))"
+            if being_kept
+            else ""
+        )
+        + ")"
         if ref_id is None
         else " AND r.id = ?"
     )
@@ -416,10 +423,12 @@ def log_pair(conn: sqlite3.Connection, ref_id: str, row: sqlite3.Row, verdict: V
 
 # ------------------------------------------------------------------------------------------------------------------ a new keep (N-34 slice 3)
 
-#: How long a keep waits for its turn at the gate and for one album answer, and in all for the catalogue. The design: a short wait ("`search_tracks` takes a `wait_s`, the 120 s
-#: default would stall a keep behind the repair's pass"); a keep that runs out of time is a keep without an album, exactly as before slice 3, and remembers nothing.
+#: How long a keep waits for the catalogue: the design's short wait ("one `background` turn with a short wait (10 s; `search_tracks` takes a `wait_s`, the 120 s default would
+#: stall a keep behind the repair's pass)"), for ONE call and in all for the whole question (the search and each album's answer share it). A keep that runs out of time is a
+#: keep without an album, exactly as before slice 3, and remembers nothing; the pass of slice 2 and the repair of slice 5 place the song later. PRICE, named: while the gate is busy
+#: (the hourly pass asks at the same pace) a keep may stay in `Singles` that a quieter moment would have filed under its album; a miss is re-askable, a wrong album is not.
 KEEP_CALL_WAIT_S = 10.0
-KEEP_BUDGET_S = 30.0
+KEEP_BUDGET_S = 10.0
 
 
 def search_the_catalogue_for_keep(artist: str, title: str, wait_s: float) -> list[dict[str, Any]]:
@@ -447,7 +456,8 @@ class KeepAsker:
     asked**: the keep goes on without an album, exactly as before slice 3, and the pass of slice 2 asks the song later. (The keeper also catches any other exception.)
 
     The calls are the caller's (`search(artist, title, wait_s)`, `album(id, wait_s)`: a test gives recorded ones; [on] gives the installed catalogue's, as background turns). Each call
-    waits at most [call_wait_s], and the whole question [budget_s]: the time left is what a call is given, and a call after the time is spent is "could not ask"."""
+    waits at most [call_wait_s], and the whole question [budget_s]: the time left is what a call is given, and a call after the time is spent is "could not ask". A keep is a
+    background job, but a person may be waiting for the file: the question never costs a keep more than its budget."""
 
     def __init__(
         self,

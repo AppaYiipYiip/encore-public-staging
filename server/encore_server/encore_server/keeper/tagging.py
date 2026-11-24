@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ..textnorm import is_placeholder_album
 from .process import Runner, run_command
 
 
@@ -44,12 +45,14 @@ class Tags:
 
 def tags_of(ref: dict[str, Any]) -> Tags:
     """The tags of a song's file, from the song's ref (the API's shape). THE one builder: the keeper tags a new file with it (N-34 slice 3) and the repair of the files already
-    kept (slice 5, N-26's artist rewrite) retags with it, so a file agrees with its ref by one definition."""
+    kept (slice 5, N-26's artist rewrite) retags with it, so a file agrees with its ref by one definition. **The music server's placeholder (`[Unknown Album]`) is no album** and
+    is never written into a file (`textnorm.is_placeholder_album`): a tag of that name makes the music server list the song in the very bucket N-34 empties."""
+    album = ref.get("album")
     return Tags(
         title=ref["title"],
         artist=", ".join(ref["artists"]),
         artists=tuple(ref["artists"]),
-        album=ref.get("album"),
+        album=None if is_placeholder_album(album) else album,
         album_artist=ref.get("albumArtist") or ref["artists"][0],
         track=ref.get("trackNo"),
         disc=ref.get("discNo"),
