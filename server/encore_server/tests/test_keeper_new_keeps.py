@@ -14,6 +14,7 @@ Every catalogue answer is a RECORDED one (`tests/test_album_pass.py`'s fake over
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -163,6 +164,17 @@ def test_a_song_with_no_length_at_all_is_not_asked_and_nothing_is_remembered(kri
     assert krig.catalogue.searched == []
     assert krig.audio_paths() == ["Encore/LANDMVRKS/Singles/Creature.opus"]
     assert krig.row(ref)["identity_outcome"] is None
+
+
+def test_a_song_with_nothing_to_ask_with_forgets_the_placeholder_and_remembers_nothing_else(krig: KeepRig) -> None:
+    """A song that was examined but cannot be asked about (no length): no request, no answer remembered, and the placeholder literal goes, as it does for the pass."""
+    krig.file_length = None
+    ref = krig.creature(duration=0, album="[Unknown Album]")
+    krig.keep(ref)
+    assert krig.catalogue.searched == []
+    row = krig.row(ref)
+    assert row["album"] is None and row["identity_outcome"] is None and row["identity_tried_at"] is None
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Singles/Creature.opus"]
 
 
 def test_the_picture_lookup_is_given_the_files_own_length_too(krig: KeepRig) -> None:
@@ -431,20 +443,35 @@ def test_a_picture_that_is_a_videos_thumbnail_is_embedded_but_never_becomes_the_
     assert not any(p.endswith("cover.jpg") for p in krig.kept_paths())
 
 
-def test_write_folder_picture_never_writes_outside_the_servers_folder_or_over_a_picture(tmp_path: Path) -> None:
+def test_write_folder_picture_never_writes_outside_the_servers_folder_or_over_a_picture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     root = tmp_path / "music" / "Encore"
     mine = root / "A" / "B"
     mine.mkdir(parents=True)
     hosts = tmp_path / "music" / "Albums" / "B"
     hosts.mkdir(parents=True)
+    assert write_folder_picture(root, mine / "x.opus", None) is False and list(mine.iterdir()) == [], (
+        "no picture, nothing written"
+    )
+    renamed: list[tuple[str, str]] = []
+    real_replace = os.replace
+
+    def recording_replace(src: Any, dst: Any) -> None:
+        renamed.append((Path(src).name, Path(dst).name))
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", recording_replace)  # `covers` renames with `os.replace`: the same module object
     assert write_folder_picture(root, mine / "x.opus", b"jpg") is True
+    assert renamed == [(".cover.jpg.part", "cover.jpg")], (
+        "written under a hidden name and renamed: a scan never reads half a picture"
+    )
     assert [p.name for p in mine.iterdir()] == ["cover.jpg"], "no half-written file is left"
     assert write_folder_picture(root, mine / "x.opus", b"other") is False and (mine / "cover.jpg").read_bytes() == b"jpg"
     assert write_folder_picture(root, hosts / "x.opus", b"jpg") is False and list(hosts.iterdir()) == [], (
         "the Host's folder is never written into"
     )
     assert write_folder_picture(root, root / ".." / "Albums" / "B" / "x.opus", b"jpg") is False
-    assert write_folder_picture(root, mine / "x.opus", None) is False
     (mine / "cover.jpg").unlink()
     (mine / "Folder.PNG").write_bytes(b"png")
     assert write_folder_picture(root, mine / "x.opus", b"jpg") is False, "a folder.* of any kind counts"
@@ -558,6 +585,18 @@ def test_b110_only_a_file_the_keeper_wrote_under_encore_is_taken_as_the_refs_own
         rows = {r["path"]: r["source"] for r in conn.execute("SELECT path, source FROM song_file WHERE ref = ?", (ref,))}
     assert rows["Artists/LANDMVRKS/Creature.opus"] == "library", "the Host's file is still the Host's"
     assert (krig.music / "Artists/LANDMVRKS/Creature.opus").read_bytes() == AUDIO
+
+
+def test_b110_a_row_of_the_hosts_library_is_not_a_kept_file_even_inside_the_servers_folder(krig: KeepRig) -> None:
+    """The source is a guard of its own (a scan can label a file under `Encore/` as library, and nothing but the keeper's own label says the keeper wrote it): such a file,
+    away from where the song would be placed now, is not the song's kept file, and the song is fetched."""
+    ref = krig.creature()
+    place(krig, "Encore/LANDMVRKS/Elsewhere/Creature.opus", ref=ref, source="library")
+    krig.keep(ref)
+    assert len(krig.source.asked) == 1
+    with krig.db.read() as conn:
+        sources = {r["path"]: r["source"] for r in conn.execute("SELECT path, source FROM song_file WHERE ref = ?", (ref,))}
+    assert sources["Encore/LANDMVRKS/Elsewhere/Creature.opus"] == "library", "and it stays the Host's row"
 
 
 def test_b110_a_path_that_leaves_the_server_folder_is_never_taken(krig: KeepRig) -> None:

@@ -173,7 +173,7 @@ def test_the_report_predicts_what_the_real_keeper_does_over_the_same_database(tm
         krig.catalogue.album,
         music_root=krig.music,
     )
-    planned = {row.entry.ref_id: row.keep_path for row in rows}
+    planned = {row.entry.ref_id: row.keep_path or "" for row in rows}
     assert set(planned) == {creature, unknown}
 
     krig.keep(creature)
