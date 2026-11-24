@@ -305,6 +305,11 @@ class AlbumFinder:
                     outcome, reason, updates = "held", "deezer_id_held", refs.forget_placeholder_album(row)
                 elif verdict.match.isrc and row["isrc"] is None and "isrc" not in updates:
                     outcome, reason, updates = "held", "isrc_held", refs.forget_placeholder_album(row)
+                elif album_finder.RefHoldings(conn, ref_id).twin_held(
+                    refs.norm_key(refs.lead_artist(row["artists"]), row["title"]), release_key(verdict.match.album)
+                ):
+                    # The third kind of pair (step 5), asked again as the matcher asked it: another ref of this song that already has this album was made after the matcher looked.
+                    outcome, reason, updates = "held", "twin_held", refs.forget_placeholder_album(row)
             else:
                 updates = refs.forget_placeholder_album(row)
             if outcome == "held":

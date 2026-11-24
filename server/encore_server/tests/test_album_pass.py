@@ -795,3 +795,36 @@ def test_the_app_runs_the_album_pass_as_an_errand_before_the_cover_finder_and_th
     )
     assert after["cover_url"], "the one search that found the album also gave the picture"
     assert row_of(services.db, pictureless)["identity_outcome"] is None, "a song with an album of its own is not asked"
+
+
+def test_a_twin_made_between_the_matchers_read_and_the_write_is_a_held_pair_not_a_stamp(
+    pdb: Database,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The second layer of step 5 for the third kind of pair (the first two are the ids): another ref of the same song that already has this album is made after the matcher
+    looked and before the write. The write transaction asks again (`RefHoldings.twin_held`, the matcher's own question), so the song is HELD, nothing is written, and the pair is
+    logged by ids: 'every hold has a second layer' is true."""
+    ref = make_ref(pdb, "Creature", "LANDMVRKS", 225_000)
+    original = album_pass._DbHoldings.twin_held
+    made: list[str] = []
+
+    def a_twin_appears(self: Any, norm_key: str, release: str) -> bool:
+        answer = original(self, norm_key, release)  # False: nobody holds this song on this album yet
+        made.append(make_ref(pdb, "Creature", "LANDMVRKS", 234_000, album="The Darkest Place I've Ever Been", kept=None))
+        return answer
+
+    monkeypatch.setattr(album_pass._DbHoldings, "twin_held", a_twin_appears)
+    with caplog.at_level(logging.INFO, logger="encore_server.album_pass"):
+        report = finder(pdb, landmvrks()).run_once()
+    after = row_of(pdb, ref)
+    assert (
+        after["identity_outcome"],
+        after["identity_reason"],
+        after["album"],
+        after["deezer_id"],
+        report.held,
+        report.matched,
+    ) == ("held", "twin_held", None, None, 1, 0)
+    lines = [r.getMessage() for r in caplog.records if "held pair" in r.getMessage()]
+    assert len(lines) == 1 and ref in lines[0] and made[0] in lines[0], lines
