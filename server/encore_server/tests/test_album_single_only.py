@@ -171,3 +171,22 @@ def test_the_report_counts_the_single_only_songs_apart_and_says_why() -> None:
 
 def test_the_revision_was_raised_for_the_single_rule() -> None:
     assert album_finder.IDENTITY_REVISION == 4
+
+
+def test_the_write_transaction_still_stamps_a_matched_ep(pdb: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The other side of the second layer (the independent review of PR 125): an EP is accepted, so a matched verdict whose release is an EP is written, and the write
+    transaction does not treat it like a single."""
+    ref = make_ref(pdb, "Creature", "LANDMVRKS", 225_000)
+    real = album_finder.decide
+
+    def a_matched_verdict_for_an_ep(song: Song, *args: Any, **kwargs: Any) -> Verdict:
+        good = real(song, *args, **kwargs)
+        assert good.match is not None
+        return Verdict("matched", "matched", match=dataclasses.replace(good.match, record_type="ep"))
+
+    monkeypatch.setattr(album_finder, "decide", a_matched_verdict_for_an_ep)
+    base = Catalogue({("LANDMVRKS", "Creature"): [creature_hit()]}, albums(ALBUM))
+    finder(pdb, base).run_once()
+    after = row_of(pdb, ref)
+    assert (after["identity_outcome"], after["identity_reason"]) == ("matched", "matched")
+    assert after["album"] is not None and after["deezer_id"] is not None
