@@ -1,0 +1,12 @@
+{
+ "id": "20261124T034914Z-agent-9173",
+ "item": "N-34",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-24T03:49:14Z",
+ "type": "note",
+ "body": "24 Nov 2026, THE LIVE DRY RUN OF N-34 SLICE 2 (the lead; the advisor's gate before #125 merges; owner AFK). WHAT RAN: VM 108's database copied read-only (sha fb9f20f7dbc7a9db, schema 18, migrated INSIDE the copy only), PR 125's code (head b8c2ad6) in a throwaway container from the image already on the VM, the kept files read from /srv/music read-only; 03:42-03:47 UTC; 985 requests to api.deezer.com from the home address, 4 a second, saved as answers (local/n34-dryrun-24nov/, not in the repository); nothing deployed, the server kept running. NUMBERS (672 songs): matched 150 (96 album, 40 single, 14 ep); none/no_same_recording 509; none/compilation_title 6; none/no_eligible_release 4; held/twin_held 2; none/single_before_album 1; non-Latin songs with only Latin hits 0; length from FILE 650, from the listing 22, none 0. TOLERANCE: of 404 songs with a same-artist/title/version hit, 161 are inside +-3 s (40 percent), 243 outside, a smooth tail, NO cliff (3-4 s: 14, 4-5 s: 10, 5-10 s: 29 songs): no better edge exists in the data, so 3 s is KEPT as the conservative edge; the price is 243 name-matched songs that stay a re-askable none (a wrong id is permanent, a miss is not). SINGLE-BEFORE-ALBUM WINDOW: 1 pair in 672 songs (301 days): NOT enough to freeze; the case stays re-askable (named stop-gap, trigger: a dry run over a library with enough pairs, say 30). FINDING: the 150 matched stamps were read; one class needs a rule: a studio song stamped with a release whose own TITLE says Live ('Ja Rule - Always On Time -> Ja Rule: 2005 (Live)'); the builder applies the version-marker rule to the release's title too and bumps IDENTITY_REVISION. ACCEPTED (17 Nov ruling): a sole same-artist compilation (Outkast - So Fresh, So Clean -> 'Big Boi & Dre Present...OutKast', 2001; the original album Stankonia was not among the hits): the discography lookup (option b) is the remedy if such stamps matter. THE KEEPER writes ref.album into the tags and folder of a LATER keep, so a stamp reaches the Host's disk through a later download: no image with slice 2 runs on a real server before this reading was done for THAT server's copy. NEXT: attacker, then reviewer (permanence focus), then merge; nothing deployed.",
+ "to": [
+  "agent"
+ ]
+}
