@@ -381,6 +381,15 @@ def installed() -> DeezerClient | None:
 _installed: DeezerClient | None = None
 
 
+def track_by_id(deezer_id: str, *, client: httpx.Client | None = None, wait_s: float | None = None) -> dict[str, Any]:
+    """The catalogue's row of one recording by its id (`/track/<id>`), a *background* turn at the installed gate like [search_tracks]. [NotInCatalogue] when the catalogue says there
+    is no such recording; [LookupUnavailable] when it could not be asked. The id is the caller's to check (digits only: it goes into a path)."""
+    asking = DeezerClient(Gate(background_gap_s=0.0), client) if client is not None else _installed
+    if asking is None:
+        raise CatalogueOff("no catalogue is set up in this process")
+    return asking.get(f"/track/{deezer_id}", None, priority="background", wait_s=wait_s)
+
+
 def search_tracks(
     artist: str, title: str, *, client: httpx.Client | None = None, limit: int = 8, wait_s: float | None = None
 ) -> list[dict[str, Any]]:

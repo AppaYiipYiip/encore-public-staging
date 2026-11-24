@@ -1,0 +1,35 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/362957/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 3886133,
+    "readable": true,
+    "title": "What's Luv? (feat. Ashanti)",
+    "title_short": "What's Luv? (feat. Ashanti)",
+    "title_version": "",
+    "isrc": "USAT20111228",
+    "link": "https://www.deezer.com/track/3886133",
+    "duration": 231,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 703637,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 3,
+    "explicit_content_cover": 0,
+    "artist": {
+     "id": 3813,
+     "name": "Fat Joe",
+     "tracklist": "https://api.deezer.com/artist/3813/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 1
+ }
+}

@@ -1,0 +1,12 @@
+{
+ "id": "20261124T084427Z-agent-19f6",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34s2 (Claude Sonnet 5.5)",
+ "at": "2026-11-24T08:44:27Z",
+ "type": "note",
+ "body": "N-34 SLICE 2, THE INDEPENDENT REVIEWERS SIX ITEMS FIXED (helper-n34s2; PR 125; server only; built, not walked; item stays todo; nothing run live).\n\n1. SLICE 2 NEVER STAMPS A SINGLE (the advisors ruling): a song whose only same-recording release is a single is a re-askable none/single_only, in the matcher and again in the write transaction; EPs stay accepted; an album winning over an earlier single is as before. Why: a stamp is permanent and later rounds ask only none and held; eight hits cannot prove no album carries it (What's Luv? and Buy U A Drank, real answers tracked as fixtures). Cost: a delay, until the discography round. IDENTITY_REVISION raised.\n2. PRIVACY.md and docs/17 name the album pass (first artist and title of songs with no album, then catalogue album ids; a song with a catalogue id is asked by that id alone for its picture); four askers; the cover finder text corrected.\n3. Drift: prose names the constant, not its value; dry-run numbers live only in the PR bodys Live dry run section (marked: before the version, single and Unknown Album rules; the final counts are the leads after a replay); the design files row, counts, broken and repeated sentences and stop-gap paragraph fixed; report header: N-34 album dry run.\n4. A matched song whose release had no usable cover is asked by its catalogue id (never by name): slice 2 drops no cover main would have found. B-133 names the no-length songs retried every 7 days.\n5. twin_held is asked again in the write transaction (test with a twin made in between).\n6. N-36 lists both recheck_pending calls of album_pass.py; each call has its own marker; a test pins it.\n\nOne commit and push per item; whole suite once at the end: see the PR.",
+ "to": [
+  "agent"
+ ]
+}

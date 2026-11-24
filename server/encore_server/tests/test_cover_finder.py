@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 from typing import Any
 
@@ -34,9 +35,11 @@ def liked(
     *,
     basis: str | None = None,
     uploader: str | None = None,
+    length_ms: int | None = None,
 ) -> str:
     with db.tx() as conn:
-        ref = refs.resolve(conn, {"title": title, "artists": [artist], "album": album}, artist_basis=basis, uploader=uploader)
+        item = {"title": title, "artists": [artist], "album": album, **({"durationMs": length_ms} if length_ms else {})}
+        ref = refs.resolve(conn, item, artist_basis=basis, uploader=uploader)
         library.set_item(conn, "pn_1", "like", ref["id"])
     return str(ref["id"])
 
@@ -51,7 +54,7 @@ class Catalogue:
         self.answers = answers
         self.asked: list[str] = []
 
-    def __call__(self, artist: str, title: str, album: str | None) -> str | None:
+    def __call__(self, artist: str, title: str, album: str | None, *, length_ms: int | None = None) -> str | None:
         self.asked.append(title)
         return self.answers.get(title)
 
@@ -126,8 +129,19 @@ def client_for(payload: Any, status: int = 200) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(status, json=payload)))
 
 
-def hit(title: str, artist: str, album: str, cover: str = PICTURE) -> dict[str, Any]:
-    return {"title": title, "artist": {"name": artist}, "album": {"title": album, "cover_xl": cover}}
+_HIT_IDS = itertools.count(1)
+
+
+def hit(title: str, artist: str, album: str, cover: str = PICTURE, duration: int = 215) -> dict[str, Any]:
+    """A search row as Deezer sends one: since N-34 slice 2 the lookup reads it through the matcher, which needs an id, a length in seconds and the album's id."""
+    ident = next(_HIT_IDS)
+    return {
+        "id": ident,
+        "title": title,
+        "duration": duration,
+        "artist": {"id": 1, "name": artist},
+        "album": {"id": 100 + ident, "title": album, "cover_xl": cover},
+    }
 
 
 def test_the_lookup_takes_the_album_of_the_same_song_and_prefers_the_album_asked_for() -> None:
@@ -139,16 +153,19 @@ def test_the_lookup_takes_the_album_of_the_same_song_and_prefers_the_album_asked
         ]
     }
 
-    assert deezer_lookup("Radiohead", "Nude", "In Rainbows", client=client_for(payload)) == PICTURE
-    assert deezer_lookup("Radiohead", "Nude", None, client=client_for(payload)) == "https://cdn.dzcdn.net/other.jpg"
+    assert deezer_lookup("Radiohead", "Nude", "In Rainbows", length_ms=215_000, client=client_for(payload)) == PICTURE
+    assert (
+        deezer_lookup("Radiohead", "Nude", None, length_ms=215_000, client=client_for(payload))
+        == "https://cdn.dzcdn.net/other.jpg"
+    )
 
 
 def test_the_lookup_is_not_fooled_by_another_artist_or_another_picture_host() -> None:
     wrong_artist = {"data": [hit("Nude", "Some Cover Band", "Tribute")]}
     wrong_host = {"data": [hit("Nude", "Radiohead", "In Rainbows", "https://evil.example/x.jpg")]}
 
-    assert deezer_lookup("Radiohead", "Nude", None, client=client_for(wrong_artist)) is None
-    assert deezer_lookup("Radiohead", "Nude", None, client=client_for(wrong_host)) is None
+    assert deezer_lookup("Radiohead", "Nude", None, length_ms=215_000, client=client_for(wrong_artist)) is None
+    assert deezer_lookup("Radiohead", "Nude", None, length_ms=215_000, client=client_for(wrong_host)) is None
 
 
 def test_the_lookup_says_it_could_not_ask_when_the_catalogue_is_down_throttled_or_answers_nonsense() -> None:
@@ -156,11 +173,11 @@ def test_the_lookup_says_it_could_not_ask_when_the_catalogue_is_down_throttled_o
     throttled = {"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}}
     for payload, status in (({}, 503), ({}, 429), (throttled, 200), ({"data": "nope"}, 200), ([], 200)):
         with pytest.raises(LookupUnavailable):
-            deezer_lookup("A", "B", None, client=client_for(payload, status))
+            deezer_lookup("A", "B", None, length_ms=200_000, client=client_for(payload, status))
 
 
 def test_the_lookup_gives_nothing_when_the_catalogue_knows_no_such_recording() -> None:
-    assert deezer_lookup("A", "B", None, client=client_for({"data": [], "total": 0})) is None
+    assert deezer_lookup("A", "B", None, length_ms=200_000, client=client_for({"data": [], "total": 0})) is None
 
 
 def test_a_catalogue_that_could_not_be_asked_leaves_the_song_to_be_asked_about_again_at_once(tmp_path: Path) -> None:
@@ -168,7 +185,7 @@ def test_a_catalogue_that_could_not_be_asked_leaves_the_song_to_be_asked_about_a
     first, second = liked(db, "Nude"), liked(db, "Reckoner", album="Other")
     asked: list[str] = []
 
-    def lookup(artist: str, title: str, album: str | None) -> str | None:
+    def lookup(artist: str, title: str, album: str | None, *, length_ms: int | None = None) -> str | None:
         asked.append(title)
         raise LookupUnavailable("HTTP 429")
 

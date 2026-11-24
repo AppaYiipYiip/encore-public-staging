@@ -1,0 +1,12 @@
+{
+ "id": "20261124T033955Z-agent-7f31",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34s2 (Claude Sonnet 5.5)",
+ "at": "2026-11-24T03:39:55Z",
+ "type": "note",
+ "body": "N-34 SLICE 2, REVIEW FIXES OF PR 125 DONE (helper-n34s2, 24 Nov 2026; branch task/N-34-slice2-album-pass; server only; built, not walked; the item stays todo; nothing marked; nothing run live).\n\n1. ISRC COUNTER-EVIDENCE: Song carries song_ref.isrc; a search hit or the chosen releases song-list entry with ANOTHER ISRC is none/isrc_differs (re-askable, withheld kept for the report), never matched; album_pass._store re-checks it inside the write transaction (the row may have gained an ISRC). An entry of the same name with another ISRC no longer blocks the right entry among the hits.\n\n2. ONE SELECTION: album_pass.wanting is the only selection (likes, playlist entries, files, the P2-25 worklist, order, the 7-day and revision retry rule); album_dryrun.entries calls it and adds only its limit, --kept-only (replaces --all; the pass asks songs with no kept file too) and the --music-root lengths. tests/test_album_selection.py runs the real pass and the dry run over one database and compares them; a mutant that gives either its own list is red. The dry run still prints the songs with NO length and the Latin-spelling-only songs.\n\n3. PICTURE BY ID (new, there was no by-id path before): a song that holds a catalogue id gets its release picture from /track/<id> (digits only, catalogue host only, one background request); the name and length lookup is the fallback. Skips kept: symbol-only names and songs with no length are not looked up by name.\n\n4. Retry test: compilation_title and single_before_album are asked again after 7 days and when IDENTITY_REVISION rises.\n\n5. TEXT: docs/18, RELEASE-CANDIDATE 4b (as a RULE) and the CHANGELOG say that a stamped album also reaches the Hosts disk through a LATER keep (keeper.py reads ref.get(album) in _placement, the tags and find_song, unchanged here): no image carrying slice 2 may run on a real server before a dry run over a copy of THAT servers database has been read. No switch built.\n\nPROOF: 25 new tests (193 for the slice); 18 new mutations killed; whole suite to its end: see the PR. The live dry run over a fresh copy of VM 108s database is the lead's.",
+ "to": [
+  "agent"
+ ]
+}

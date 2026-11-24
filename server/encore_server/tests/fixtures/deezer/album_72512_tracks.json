@@ -1,0 +1,58 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/72512/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 552315,
+    "readable": true,
+    "title": "Buy U a Drank (Shawty Snappin') (feat. Yung Joc)",
+    "title_short": "Buy U a Drank (Shawty Snappin') (feat. Yung Joc)",
+    "title_version": "",
+    "isrc": "USJI10700121",
+    "link": "https://www.deezer.com/track/552315",
+    "duration": 229,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 676094,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 0,
+    "artist": {
+     "id": 323,
+     "name": "T-Pain",
+     "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 552317,
+    "readable": true,
+    "title": "Calm The Fuck Doun",
+    "title_short": "Calm The Fuck Doun",
+    "title_version": "",
+    "isrc": "USJI10700372",
+    "link": "https://www.deezer.com/track/552317",
+    "duration": 243,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 162773,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 0,
+    "artist": {
+     "id": 323,
+     "name": "T-Pain",
+     "tracklist": "https://api.deezer.com/artist/323/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 2
+ }
+}

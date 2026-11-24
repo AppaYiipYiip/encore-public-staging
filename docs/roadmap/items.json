@@ -1092,7 +1092,7 @@
  "N-36": {
   "kind": "plumbing",
   "title": "Behind the scenes: the one-time repair of songs in other alphabets is deleted",
-  "note": "Removal trigger of P2-25's repair (design 15 Nov 2026): the worklist table ref_recheck, rehome.py, keyrepair's frozen test of what the old fold lost, the recheck_pending hold in refmerge and tests/legacy_fold.py exist only to repair databases the old text folding damaged. Delete them (and drop the table in a migration) when the table is EMPTY on every install the project knows (VM 108, the lead's server, the owner's: each read, not assumed) and one release has passed since slice 4. Every piece is marked STOP-GAP(P2-25 one-shot-repair) in the code; a guard test fails when a marked piece names a release that has passed. The permanent parts stay: the fold, the revision constant and the rekey at start-up.",
+  "note": "Removal trigger of P2-25's repair (design 15 Nov 2026): the worklist table ref_recheck, rehome.py, keyrepair's frozen test of what the old fold lost, the recheck_pending hold in refmerge, the TWO refs.recheck_pending calls of album_pass.py (in wanting and in _store: N-34 slice 2) and tests/legacy_fold.py exist only to repair databases the old text folding damaged. Delete them (and drop the table in a migration) when the table is EMPTY on every install the project knows (VM 108, the lead's server, the owner's: each read, not assumed) and one release has passed since slice 4. Every piece is marked STOP-GAP(P2-25 one-shot-repair) in the code; a guard test fails when a marked piece names a release that has passed. The permanent parts stay: the fold, the revision constant and the rekey at start-up.",
   "proposal": true,
   "size": "S",
   "needs": [

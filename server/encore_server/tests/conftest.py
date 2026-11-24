@@ -167,11 +167,25 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
     monkeypatch.setattr(httpx.HTTPTransport, "handle_request", guarded)
 
     # What the app asks the catalogue with by default is nobody: no picture is found. (The guard above is the net under this.)
-    def nobody(artist: str, title: str, album: str | None, *, client: object = None) -> None:
+    def nobody(artist: str, title: str, album: str | None, *, length_ms: int | None = None, client: object = None) -> None:
         return None
 
     monkeypatch.setattr("encore_server.cover_finder.deezer_lookup", nobody)
     monkeypatch.setattr("encore_server.api.deezer_lookup", nobody)
+
+    def nobody_by_id(deezer_id: str, *, client: object = None) -> None:
+        return None
+
+    monkeypatch.setattr("encore_server.cover_finder.deezer_picture_by_id", nobody_by_id)
+
+    # The album pass (N-34 slice 2) of an app made in a test asks nobody either: its catalogue "cannot be asked", so it stores nothing and stops. A test about the pass
+    # gives its own search and album functions.
+    def unreachable(artist: str, title: str) -> list[dict[str, object]]:
+        from encore_server.deezer import LookupUnavailable
+
+        raise LookupUnavailable("a test may not ask the real catalogue")
+
+    monkeypatch.setattr("encore_server.album_pass.search_the_catalogue", unreachable)
     monkeypatch.setattr("encore_server.artist_finder.deezer_artist_picture", nobody)
     yield
     assert not asked, f"this test asked the real catalogue {len(asked)} time(s): {asked[:2]}"

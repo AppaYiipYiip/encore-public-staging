@@ -1,0 +1,430 @@
+{
+ "recorded": "2026-11-24",
+ "path": "/album/11552538/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 111114680,
+    "readable": true,
+    "title": "Holla, Holla",
+    "title_short": "Holla, Holla",
+    "isrc": "GBAWA0920830",
+    "link": "https://www.deezer.com/track/111114680",
+    "duration": 110,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 123724,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114682,
+    "readable": true,
+    "title": "Livin' It Up",
+    "title_short": "Livin' It Up",
+    "isrc": "GBAWA0920831",
+    "link": "https://www.deezer.com/track/111114682",
+    "duration": 226,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 150101,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114684,
+    "readable": true,
+    "title": "Between Me And You",
+    "title_short": "Between Me And You",
+    "isrc": "GBAWA0920832",
+    "link": "https://www.deezer.com/track/111114684",
+    "duration": 139,
+    "track_position": 3,
+    "disk_number": 1,
+    "rank": 118127,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114686,
+    "readable": true,
+    "title": "Put It On Me",
+    "title_short": "Put It On Me",
+    "isrc": "GBAWA0920833",
+    "link": "https://www.deezer.com/track/111114686",
+    "duration": 280,
+    "track_position": 4,
+    "disk_number": 1,
+    "rank": 106543,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114688,
+    "readable": true,
+    "title": "Down Ass Chick (A.k.a. Down Ass Bitch)",
+    "title_short": "Down Ass Chick (A.k.a. Down Ass Bitch)",
+    "isrc": "GBAWA0920834",
+    "link": "https://www.deezer.com/track/111114688",
+    "duration": 126,
+    "track_position": 5,
+    "disk_number": 1,
+    "rank": 126133,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114690,
+    "readable": true,
+    "title": "Down 4 You",
+    "title_short": "Down 4 You",
+    "isrc": "GBAWA0920835",
+    "link": "https://www.deezer.com/track/111114690",
+    "duration": 122,
+    "track_position": 6,
+    "disk_number": 1,
+    "rank": 184724,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114692,
+    "readable": true,
+    "title": "Can I Get A",
+    "title_short": "Can I Get A",
+    "isrc": "GBAWA0920836",
+    "link": "https://www.deezer.com/track/111114692",
+    "duration": 54,
+    "track_position": 7,
+    "disk_number": 1,
+    "rank": 61874,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114694,
+    "readable": true,
+    "title": "Murder Reigns",
+    "title_short": "Murder Reigns",
+    "isrc": "GBAWA0920837",
+    "link": "https://www.deezer.com/track/111114694",
+    "duration": 148,
+    "track_position": 8,
+    "disk_number": 1,
+    "rank": 113215,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114696,
+    "readable": true,
+    "title": "Mesmerize",
+    "title_short": "Mesmerize",
+    "isrc": "GBAWA0920838",
+    "link": "https://www.deezer.com/track/111114696",
+    "duration": 141,
+    "track_position": 9,
+    "disk_number": 1,
+    "rank": 52965,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114698,
+    "readable": true,
+    "title": "I Cry",
+    "title_short": "I Cry",
+    "isrc": "GBAWA0920839",
+    "link": "https://www.deezer.com/track/111114698",
+    "duration": 137,
+    "track_position": 10,
+    "disk_number": 1,
+    "rank": 26044,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114700,
+    "readable": true,
+    "title": "So Much Pain",
+    "title_short": "So Much Pain",
+    "isrc": "GBAWA0920840",
+    "link": "https://www.deezer.com/track/111114700",
+    "duration": 279,
+    "track_position": 11,
+    "disk_number": 1,
+    "rank": 41094,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114702,
+    "readable": true,
+    "title": "The Crown",
+    "title_short": "The Crown",
+    "isrc": "GBAWA0920841",
+    "link": "https://www.deezer.com/track/111114702",
+    "duration": 45,
+    "track_position": 12,
+    "disk_number": 1,
+    "rank": 33430,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114704,
+    "readable": true,
+    "title": "Clap Back",
+    "title_short": "Clap Back",
+    "isrc": "GBAWA0920842",
+    "link": "https://www.deezer.com/track/111114704",
+    "duration": 150,
+    "track_position": 13,
+    "disk_number": 1,
+    "rank": 37169,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114706,
+    "readable": true,
+    "title": "Ain't It Funny",
+    "title_short": "Ain't It Funny",
+    "isrc": "GBAWA0920843",
+    "link": "https://www.deezer.com/track/111114706",
+    "duration": 51,
+    "track_position": 14,
+    "disk_number": 1,
+    "rank": 63835,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114708,
+    "readable": true,
+    "title": "I'm Real",
+    "title_short": "I'm Real",
+    "isrc": "GBAWA0920844",
+    "link": "https://www.deezer.com/track/111114708",
+    "duration": 145,
+    "track_position": 15,
+    "disk_number": 1,
+    "rank": 123085,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114710,
+    "readable": true,
+    "title": "Thug Lovin'",
+    "title_short": "Thug Lovin'",
+    "isrc": "GBAWA0920845",
+    "link": "https://www.deezer.com/track/111114710",
+    "duration": 245,
+    "track_position": 16,
+    "disk_number": 1,
+    "rank": 53827,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114712,
+    "readable": true,
+    "title": "Always On Time",
+    "title_short": "Always On Time",
+    "isrc": "GBAWA0920846",
+    "link": "https://www.deezer.com/track/111114712",
+    "duration": 245,
+    "track_position": 17,
+    "disk_number": 1,
+    "rank": 157493,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114714,
+    "readable": true,
+    "title": "Wonderful",
+    "title_short": "Wonderful",
+    "isrc": "GBAWA0920847",
+    "link": "https://www.deezer.com/track/111114714",
+    "duration": 214,
+    "track_position": 18,
+    "disk_number": 1,
+    "rank": 116192,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 111114716,
+    "readable": true,
+    "title": "New York",
+    "title_short": "New York",
+    "isrc": "GBAWA0920848",
+    "link": "https://www.deezer.com/track/111114716",
+    "duration": 120,
+    "track_position": 19,
+    "disk_number": 1,
+    "rank": 18592,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 6,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 19
+ }
+}

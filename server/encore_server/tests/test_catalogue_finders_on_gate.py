@@ -42,7 +42,7 @@ def test_the_cover_finder_finds_the_cover_through_the_gate_from_a_recorded_answe
     upstream = RecordedDeezer()
     install(upstream)
     db = database(tmp_path)
-    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours")
+    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", length_ms=200_000)
 
     report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
 
@@ -59,8 +59,8 @@ def test_b124_a_refusal_at_the_gate_is_not_no_picture_and_the_next_pass_asks_aga
     gate = install(upstream)
     db = database(tmp_path)
     ids = [
-        liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours"),
-        liked(db, "Other", artist="Somebody", album="Else"),
+        liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", length_ms=200_000),
+        liked(db, "Other", artist="Somebody", album="Else", length_ms=200_000),
     ]
     upstream.overrides["/search"] = refusal  # type: ignore[assignment]
 
@@ -87,7 +87,7 @@ def test_b124_a_resting_gate_asks_nothing_and_remembers_nothing(tmp_path: Path) 
     gate = install(upstream)
     gate.done(gate.acquire("interactive"), "refused")
     db = database(tmp_path)
-    liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours")
+    liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", length_ms=200_000)
 
     report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
 
@@ -100,7 +100,7 @@ def test_a_server_whose_catalogue_is_switched_off_opens_no_connection_and_rememb
     upstream = RecordedDeezer()
     install(upstream, enabled=False)
     db = database(tmp_path)
-    liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours")
+    liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", length_ms=200_000)
 
     report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
 
@@ -244,7 +244,9 @@ def test_n26_a_song_that_is_a_channel_or_nobody_gets_no_cover_look_up_and_does_n
     upstream = RecordedDeezer()
     install(upstream)
     db = database(tmp_path)
-    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis, uploader="The Weeknd")
+    ref = liked(
+        db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis, uploader="The Weeknd", length_ms=200_000
+    )
 
     report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
 
@@ -261,7 +263,7 @@ def test_n26_a_song_of_a_performer_or_one_with_no_facts_is_looked_up_as_before(t
     upstream = RecordedDeezer()
     install(upstream)
     db = database(tmp_path)
-    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis)
+    ref = liked(db, "Blinding Lights", artist="The Weeknd", album="After Hours", basis=basis, length_ms=200_000)
 
     report = CoverFinder(db, REAL_COVER_LOOKUP, sleep=lambda _: None).run_once()
 

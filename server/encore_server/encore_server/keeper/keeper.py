@@ -90,7 +90,7 @@ class Keeper:
         runner: Runner | None = None,
         write_tags_: Callable[..., bool] = write_tags,
         fetch_cover_: Callable[[str | None], bytes | None] | None = None,
-        find_cover_: Callable[[str, str, str | None], str | None] | None = None,
+        find_cover_: Callable[..., str | None] | None = None,
         on_changed: Callable[[dict[str, int]], None] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
@@ -205,7 +205,9 @@ class Keeper:
         if self._find_cover is None or not self._may_ask_the_catalogue(ref):
             return None
         try:
-            url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"))
+            # N-34 slice 2 (audit B-133): the look-up compares the version AND the length now, so it is given the length the ref has (the import's listing, which can be 1 to 12 s
+            # off a file's own: STOP-GAP until slice 3 reads the kept FILE's length here, `_identified`); a song with none is not looked up (the keep goes on without a picture).
+            url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"), length_ms=ref.get("durationMs"))
         except LookupUnavailable as error:
             # The catalogue is resting, switched off (`ENCORE_CATALOGUE=0`) or did not answer: not a failure, and nothing to dump into the log for every song kept.
             log.info("no picture was asked for %s: the catalogue could not be asked (%s)", ref["id"], error)

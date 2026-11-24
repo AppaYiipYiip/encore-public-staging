@@ -76,7 +76,7 @@ def message(late: list[Marker], current: str) -> str:
     where = "\n".join(f"  {m.file}:{m.line}  STOP-GAP(P2-25 {m.name}), remove after {m.release}" for m in late)
     return (
         f"The server is at version {current} and these stop-gaps of P2-25 were to be gone after the release that carries them:\n{where}\n"
-        "Delete them: board item N-36 lists every piece (the worklist table with a migration that drops it, rehome.py, keyrepair._lost_by_old_fold, the recheck_pending hold, "
+        "Delete them: board item N-36 lists every piece (the worklist table with a migration that drops it, rehome.py, keyrepair._lost_by_old_fold, the recheck_pending hold of refmerge and the two calls of album_pass.py, "
         "tests/legacy_fold.py) and their tests, and this inventory. Do it only when `python docs/evidence/scripts/audit_stack.py check rekey` "
         "says the worklist is empty on every install the project knows. If instead this is the FIRST release (the version was raised to the number it ships under), set "
         "`remove after` of every marker to that number. If the trigger has really not been met, move the release on AND write why in a board note on N-36. "
@@ -160,6 +160,7 @@ INVENTORY: dict[str, dict[str, str]] = {
         "encore_server/keyrepair.py": "def _lost_by_old_fold(",
         "encore_server/rehome.py": "class Rehome:",
         "encore_server/refs.py": "def recheck_pending(",
+        "encore_server/album_pass.py": "refs.recheck_pending(",
         "encore_server/refmerge.py": '"recheck_pending"',
         "encore_server/ref_janitor.py": "DELETE FROM ref_recheck",
         "tests/legacy_fold.py": "def norm_key(",
@@ -190,6 +191,25 @@ def test_the_piece_a_marker_stands_for_is_still_there_next_to_its_marker(name: s
     assert f"STOP-GAP(P2-25 {name};" in text, (
         f"{file} still holds {piece!r} but its STOP-GAP(P2-25 {name}) marker is gone: the reminder must stay while the piece does"
     )
+
+
+def test_each_recheck_pending_call_of_the_album_pass_carries_a_marker_of_its_own() -> None:
+    """N-36 removes `refs.recheck_pending` and BOTH calls of `album_pass.py` (in `wanting` and in `_store`): each call has its own marker, so deleting one and not the other is seen,
+    and the message above ("the two calls of album_pass.py") is true."""
+    text = (SERVER / "encore_server" / "album_pass.py").read_text(encoding="utf-8")
+    calls = [i for i in range(len(text)) if text.startswith("refs.recheck_pending(", i)]
+    markers = [m for m in found() if m.file == "encore_server/album_pass.py"]
+    assert len(calls) == 2 and len(markers) == 2, (len(calls), len(markers))
+    for call in calls:
+        assert "STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0)" in text[max(0, call - 400) : call], (
+            "the marker stands right above its call"
+        )
+
+
+def test_n36_names_both_calls_of_the_album_pass() -> None:
+    items = json.loads((REPO / "docs" / "roadmap" / "items.json").read_text(encoding="utf-8"))
+    note = items["N-36"]["note"]
+    assert "album_pass.py" in note and "wanting" in note and "_store" in note
 
 
 def test_the_task_stays_on_the_board() -> None:

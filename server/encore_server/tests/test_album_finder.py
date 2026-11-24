@@ -378,11 +378,11 @@ def test_a_hit_with_no_letter_or_digit_in_its_names_is_never_the_song_and_the_eq
 
 def test_the_matcher_carries_no_era_0_stop_gap_and_keeps_the_one_that_is_still_true() -> None:
     """The text of era 0 (the skip rule that refused every non-Latin name until P2-25 slice 2) was true once and is false now; a false sentence in a source file
-    tells the next reader a refusal exists that does not. The one stop-gap that IS still true is the tolerance's."""
+    tells the next reader a refusal exists that does not. The stop-gaps that ARE still true are the window's and the compilation markers'."""
     source = inspect.getsource(album_finder)
     for stale in ("STOP-GAP(P2-25", "era 0", "until P2-25", "skip_rule", "skip rule"):
         assert stale not in source, stale
-    assert "STOP-GAP(N-34 tolerance)" in source
+    assert "STOP-GAP(N-34 single window)" in source and "STOP-GAP(N-34 compilation markers)" in source
 
 
 # ------------------------------------------------------------------------------------------------------------------ steps 1 and 2: the same recording
@@ -524,16 +524,18 @@ def test_the_tolerance_is_three_thousand_milliseconds_inclusive(length_ms: int, 
     assert verdict.delta_ms == length_ms - 240_000
 
 
-def test_the_tolerance_can_be_given_and_starts_as_the_servers_own_unmeasured_figure() -> None:
+def test_the_tolerance_can_be_given_and_is_the_servers_own_figure_measured_and_kept() -> None:
     requiem = copy.deepcopy(recorded_search("LANDMVRKS Requiem")["data"])
     assert judge_hits(Song("LANDMVRKS", "Requiem", 244_000), requiem, tolerance_ms=4_000)[0].accepted
     assert not judge_hits(Song("LANDMVRKS", "Requiem", 244_001), requiem, tolerance_ms=4_000)[0].accepted
     assert album_finder.TOLERANCE_MS == refs.DURATION_TOLERANCE_MS == 3_000
     source = inspect.getsource(album_finder)
     assert "TOLERANCE_MS = refs.DURATION_TOLERANCE_MS" in source, "imported from the one place, never copied"
-    assert "UNMEASURED" in source and "STOP-GAP(N-34 tolerance)" in source, (
-        "the stop-gap keeps its price and its removal trigger in the code"
-    )
+    assert (
+        "MEASURED on 24 Nov 2026 and KEPT at 3 s" in source
+        and "UNMEASURED" not in source
+        and "STOP-GAP(N-34 tolerance)" not in source
+    ), "the measurement, its numbers and the price stay beside the constant; it is a decision now, not a stop-gap"
 
 
 def test_a_hit_with_no_length_or_no_artist_is_never_the_same_recording() -> None:
@@ -563,9 +565,11 @@ def test_an_album_two_hits_are_on_is_asked_once_and_the_lowest_track_id_is_the_h
     assert verdict.match is not None and verdict.match.deezer_id == "3116792061"
 
 
-def test_an_album_beats_an_earlier_single_whatever_the_dates() -> None:
-    """The recorded single is dated 2024-01-17, the recorded album 2025-04-18: a lead single is older than its album."""
-    verdict = choose_release(CREATURE, [single_hit(), creature_hit()], creature_albums())
+def test_an_album_beats_an_earlier_single_inside_the_window() -> None:
+    """The recorded single is dated 2024-01-17, the recorded album 2025-04-18 (457 days): a lead single is older than its album. Slice 1 let the album win
+    WHATEVER the dates; the advisor's ruling of 17 Nov 2026 lets it win only INSIDE a window, which is not frozen (`SINGLE_BEFORE_ALBUM_WINDOW_DAYS`, the rows
+    of `test_album_withheld.py`): the window is given here, so that the rest of the rule is still pinned."""
+    verdict = choose_release(CREATURE, [single_hit(), creature_hit()], creature_albums(), single_window_days=500)
     assert (verdict.outcome, verdict.reason) == ("matched", "matched")
     match = verdict.match
     assert match is not None
@@ -581,10 +585,12 @@ def test_an_album_beats_an_earlier_single_whatever_the_dates() -> None:
     assert {r.album_id: r.reason for r in verdict.releases} == {SINGLE: "outranked", ALBUM: "chosen"}
 
 
-def test_a_single_is_its_own_release_when_nothing_else_carries_the_recording() -> None:
+def test_a_single_is_what_the_matcher_chooses_when_nothing_else_carries_the_recording_and_the_rule_then_withholds_it() -> None:
+    """CHANGED by the advisor's ruling after the live dry run (`test_album_single_only.py`): the matcher still CHOOSES the single (its facts are `withheld`, for the report), and
+    slice 2 never stamps it: `none`/`single_only`."""
     verdict = choose_release(CREATURE, [single_hit()], albums(SINGLE))
-    match = verdict.match
-    assert verdict.outcome == "matched" and match is not None
+    match = verdict.withheld
+    assert (verdict.outcome, verdict.reason, verdict.match) == ("none", "single_only", None) and match is not None
     assert (match.album_id, match.album, match.record_type, match.track_no, match.deezer_id, match.isrc) == (
         SINGLE,
         "Creature",
@@ -597,12 +603,13 @@ def test_a_single_is_its_own_release_when_nothing_else_carries_the_recording() -
 
 
 def test_an_ep_beats_a_single_that_is_older_and_an_album_beats_an_earlier_single() -> None:
-    """DERIVED: the recorded album answer typed `single` (and dated 2024-06-01), the recorded single's answer typed `ep` and dated later."""
+    """DERIVED: the recorded album answer typed `single` (and dated 2024-06-01), the recorded single's answer typed `ep` and dated later (465 days: inside the
+    window given below; the window itself is `test_album_withheld.py`'s)."""
     both = {
         ALBUM: derive(albums(ALBUM)[ALBUM], recordType="single", releaseDate="2024-06-01"),
         SINGLE: derive(albums(SINGLE)[SINGLE], recordType="ep", releaseDate="2025-09-09"),
     }
-    verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both)
+    verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both, single_window_days=500)
     assert verdict.match is not None and verdict.match.album_id == SINGLE, "the ep wins although it is the later one"
     assert verdict.match.record_type == "ep"
 
@@ -612,7 +619,9 @@ def test_an_unknown_record_type_never_wins_even_when_it_is_the_earlier_release(u
     """DERIVED: the album's answer with a `recordType` nobody has seen and an EARLIER date than the single's."""
     both = {ALBUM: derive(albums(ALBUM)[ALBUM], recordType=unknown, releaseDate="2020-01-01"), SINGLE: albums(SINGLE)[SINGLE]}
     verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both)
-    assert verdict.match is not None and verdict.match.album_id == SINGLE
+    assert verdict.withheld is not None and verdict.withheld.album_id == SINGLE and verdict.reason == "single_only", (
+        "the single is all that is left, and it is not stamped"
+    )
     assert {r.album_id: r.reason for r in verdict.releases} == {ALBUM: "record_type", SINGLE: "chosen"}
     alone = choose_release(CREATURE, [creature_hit()], {ALBUM: both[ALBUM]})
     assert (alone.outcome, alone.reason, alone.match) == ("none", "no_eligible_release", None)
@@ -650,8 +659,10 @@ def test_the_record_types_of_every_recorded_release_are_the_ones_the_matcher_doc
     this fails and the comment is rewritten with the new counts."""
     seen, holders = _recorded_release_types()
     counts = {kind: sum(1 for value in seen.values() if value == kind) for kind in sorted(set(seen.values()))}
-    assert counts == {"album": 114, "ep": 10, "single": 104}, counts
-    assert len(seen) == 228 and holders == 9, "228 releases in 8 answers of the server's folder and the 20 recorded searches"
+    assert counts == {"album": 116, "ep": 10, "single": 106}, counts
+    assert len(seen) == 232 and holders == 14, (
+        "232 releases in 13 answers of the server's folder (8 of step 0 and 5 of the live dry run of 24 Nov 2026: Ja Rule live and studio, Opeth remixed, two singles) and the 20 recorded searches"
+    )
     assert set(counts) <= {"album", "ep", "single"}, (
         "no compile, no live, no remix value was ever recorded: the matcher's `never wins` rule is untested on a real one"
     )
@@ -665,13 +676,15 @@ def test_the_type_is_read_without_its_case() -> None:
 
 def test_the_earliest_release_date_beats_the_lowest_id() -> None:
     """DERIVED: the two recorded albums of Comfortably Numb with their dates SWAPPED, so the later date belongs to the lower id (The Wall, 12114248).
-    The best-of's song list was not recorded: it gets the one row the rule reads (The Wall's recorded row of the song with the best-of's own track id)."""
+    The best-of's song list was not recorded: it gets the one row the rule reads (The Wall's recorded row of the song with the best-of's own track id).
+    Its TITLE is shortened to "A Foot in the Door", because "The Best of Pink Floyd" is a compilation marker and would hold the match back
+    (`test_album_withheld.py`): this row is about the date and the id."""
     pair = albums(WALL, BEST_OF)
     row = next(t for t in pair[WALL]["tracks"] if t["title"] == "Comfortably Numb")
     pair[BEST_OF]["tracks"] = [{**row, "id": "116914348", "trackNo": 14, "discNo": 1}]
     swapped = {
         WALL: derive(pair[WALL], releaseDate="2011-11-08", year=2011),
-        BEST_OF: derive(pair[BEST_OF], releaseDate="1979-11-30", year=1979),
+        BEST_OF: derive(pair[BEST_OF], releaseDate="1979-11-30", year=1979, title="A Foot in the Door"),
     }
     verdict = choose_release(COMFORTABLY_NUMB, hits("pink floyd comfortably numb"), swapped)
     assert verdict.match is not None and (verdict.match.album_id, verdict.match.year, verdict.match.track_no) == (
@@ -757,7 +770,7 @@ def test_the_album_artist_must_be_the_songs_first_artist() -> None:
             SINGLE: albums(SINGLE)[SINGLE],
         }
         verdict = choose_release(CREATURE, [creature_hit(), single_hit()], both)
-        assert verdict.match is not None and verdict.match.album_id == SINGLE, other
+        assert verdict.withheld is not None and verdict.withheld.album_id == SINGLE and verdict.reason == "single_only", other
         assert {r.album_id: r.reason for r in verdict.releases} == {ALBUM: "album_artist", SINGLE: "chosen"}, other
     no_artist = derive(albums(ALBUM)[ALBUM], artists=[])
     assert choose_release(CREATURE, [creature_hit()], {ALBUM: no_artist}).reason == "no_eligible_release"
@@ -773,37 +786,10 @@ def best_of_answer() -> dict[str, Any]:
     return best_of
 
 
-def test_an_original_single_loses_to_a_same_artist_best_of_typed_album_whatever_the_dates() -> None:
-    """A LIMIT of the same kind (see the next test): `album` and `ep` rank before `single` whatever the dates, so a song whose ORIGINAL release is a single
-    gets the later best-of as its album when the catalogue types that `album`. DERIVED: The Wall's recorded answer typed `single` (its date 1979-11-30 is
-    EARLIER than the best-of's 2011-11-08), both recorded hits present."""
-    both = {WALL: derive(albums(WALL)[WALL], recordType="single"), BEST_OF: best_of_answer()}
-    verdict = choose_release(COMFORTABLY_NUMB, hits("pink floyd comfortably numb"), both)
-    assert verdict.match is not None and (verdict.match.album_id, verdict.match.record_type) == (BEST_OF, "album")
-    assert {r.album_id: r.reason for r in verdict.releases} == {WALL: "outranked", BEST_OF: "chosen"}
-
-
-def test_a_best_of_by_the_same_artist_typed_album_is_chosen_when_it_is_the_only_release_hit() -> None:
-    """A LIMIT, pinned on purpose and OPEN for the lead before slice 2 stores a stamp (the CHANGELOG line of N-34 slice 1 names it): the recorded best-of is
-    by the same artist and the catalogue types it `album` (2011-11-08), so nothing in the rule refuses it; it loses to an original only on the earliest
-    date, and only when that original is also an `album` or `ep` among the hits (an original single loses to it: the test above). DERIVED: the recorded
-    "Comfortably Numb" search WITHOUT The Wall's hit, and [best_of_answer]."""
-    found = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
-    best_of = best_of_answer()
-    assert wanted_albums(COMFORTABLY_NUMB, found) == [BEST_OF]
-    verdict = choose_release(COMFORTABLY_NUMB, found, {BEST_OF: best_of})
-    assert (verdict.outcome, verdict.reason) == ("matched", "matched")
-    match = verdict.match
-    assert match is not None
-    assert (match.album_id, match.album, match.record_type, match.release_date, match.deezer_id, match.track_no) == (
-        BEST_OF,
-        "A Foot in the Door: The Best of Pink Floyd",
-        "album",
-        "2011-11-08",
-        "116914348",
-        7,
-    )
-    assert [(r.album_id, r.reason) for r in verdict.releases] == [(BEST_OF, "chosen")]
+# Two limits of slice 1 were PINNED here: "an original single loses to a same-artist best-of typed album whatever the dates" and "a same-artist best-of is chosen when
+# it is the only release hit" (the lead's open question of 17 Nov 2026). The advisor's ruling of the same day closed both, so they flip: the first is
+# `single_before_album` (re-askable; the song keeps no stamp), the second is `compilation_title` when the title says best-of and `matched` when it does not (a
+# best-of called "Gold"). They are rewritten, with the rows the ruling adds, in `tests/test_album_withheld.py`.
 
 
 def test_a_track_list_without_the_hits_id_is_a_miss_never_a_guess_at_another_release() -> None:

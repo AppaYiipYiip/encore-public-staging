@@ -14,6 +14,14 @@ a song its place in the bucket and nothing else, and a better rule asks it again
   remembered; `unsupported`, `no_length` and `unavailable` ("could not ask") are not, and [Verdict.remember] says which (a test pins it, so a pass can
   never store the second kind: the day the fold is fixed those songs are simply asked).
 
+**Slice 2 (the advisor's ruling of 17 Nov 2026, binding) adds one principle: a stamped album is effectively permanent** (`refs.find` matches the ids first and the repair of slice 5 files
+the song by its album), so anything the matcher cannot justify on evidence is a RE-ASKABLE `none` with a reason, never `matched`, and [Verdict.withheld] keeps what the old rule would have
+written, for the report only: `single_before_album` (an album or EP carries the recording and an earlier single too: the album wins only inside `SINGLE_BEFORE_ALBUM_WINDOW_DAYS`, NOT
+FROZEN), `compilation_title` (the chosen release's title carries a marker of `COMPILATION_MARKERS`) and `latin_spelling_only` (a non-Latin song whose only hits are spelled in Latin letters).
+[decide] asks and decides in one function, which the album pass and the dry run both call (the two do not select the same songs: see `album_dryrun`). `IDENTITY_REVISION` is raised by hand with
+every change of the rule's code (a new step) and is pinned with the values that are plain data: the tolerance, the single window, the compilation markers, the types that win and
+`textnorm.TEXTNORM_REVISION` (a change of the fold changes which keys are equal, which decided most `none` answers).
+
 **The names go through the one fold, so its limits are the matcher's.** Since P2-25 slices 2 and 3 `textnorm` keeps the letters of every alphabet (audit
 B-37): two different Arabic songs are two different keys, and a hit is the song only when its artist AND its key (`refs.norm_key`: the artist, the title
 and the version) are equal. Nothing is transliterated, so an Arabic name and its Latin spelling are two names: a miss, never a wrong stamp. The one kind of
@@ -27,35 +35,85 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from collections.abc import Mapping, Sequence
+import unicodedata
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, Literal, Protocol
 
 from . import refs
 from .catalogue import map_track, release_key
-from .textnorm import is_unknown_artist, norm_artist, norm_title, survives_fold_whole
+from .deezer import LookupUnavailable, NotInCatalogue
+from .textnorm import fold, is_unknown_artist, mentions_version, norm_artist, norm_title, survives_fold_whole, words
 
 #: How far a song's length may be from the catalogue's for the two to be the same recording, in milliseconds. It starts as the one number the server
 #: already uses for "the same recording" (`refs.DURATION_TOLERANCE_MS`, imported, never copied).
 #:
-#: **STOP-GAP(N-34 tolerance): UNMEASURED for this use.** 3 s is the figure for two descriptions of one song, not for a YouTube upload against the
-#: catalogue's studio length (N-11 found an import's listing 1 to 12 s off the music server's own length of the same file). Price: a tolerance too
-#: tight only makes misses (`none`, asked again after a better rule or 7 days); one too loose would write a permanent wrong id. Removal trigger: the lead
-#: reads the dry run (`python -m encore_server.album_dryrun`) over the REAL files and the REAL catalogue, and this constant is frozen from its
-#: histogram (the task is the start of N-34 slice 2); until then the report prints this sentence on its first line.
+#: **MEASURED on 24 Nov 2026 and KEPT at 3 s.** The live dry run (672 songs of VM 108's library, the kept FILES read from disk, the real catalogue) found 404 songs with a
+#: hit of the same artist, title and version: 161 (40 percent) within 3 s of the catalogue's length, 243 outside, in a smooth tail with NO cliff (the bins 3 to 4 s, 4 to 5 s and
+#: 5 to 10 s hold 14, 10 and 29 songs). There is no better edge in the data, so 3 s stays as the conservative one. Price: a tolerance this tight only makes misses (243 songs
+#: with a hit of their name stay a re-askable `none`); one too loose would write a permanent wrong id. It is a decision, not a stop-gap: the report prints it on its first
+#: line, and a different library may be read the same way (`--tolerance-ms`).
 TOLERANCE_MS = refs.DURATION_TOLERANCE_MS
+
+#: The revision of the rule as a whole. Raised BY HAND when the rule's code changes (a new step, a new reason); the plain data that decides a verdict (`TOLERANCE_MS`, the single
+#: window, the compilation markers, the types that win, `textnorm.TEXTNORM_REVISION`) is pinned with it in `tests/test_album_withheld.py`, so a change to one of THOSE cannot land
+#: without this rising. A `none` or `held` song whose `identity_rev` is
+#: lower is asked again at once (`album_pass`); a `matched` song is never asked (it has its ids).
+#: 2: the release-title version rule (`release_markers`), `isrc_differs` and the marker `retrospective`, from the review of PR 125 and the live dry run. Nothing was stamped with 1.
+#: 3: the marks Unplugged, Re-recorded and the possessive Version, and a release called `Unknown Album` refused (the adversarial tester). Nothing was stamped with 2.
+#: 4: slice 2 never stamps a single (`single_only`, the advisor's ruling after the live dry run). Nothing was stamped with 3.
+IDENTITY_REVISION = 4
+
+#: How many days an ALBUM may come after the SINGLE that carries the same recording and still be the song's album (a lead single comes out before its album).
+#: Inside it the album wins; outside it, or when the two dates cannot be compared, the song is `none` with the reason `single_before_album`, which is asked again.
+#:
+#: **STOP-GAP(N-34 single window): NOT FROZEN (`None`): every earlier single is re-askable.** The advisor's ruling of 17 Nov 2026 asked for a window MEASURED from
+#: the tracked recordings (`tests/test_album_withheld.py::measured_pairs`, no network). They hold ONE proven pair (Creature: the same ISRC and length on the single
+#: and on the album, 457 days apart) and three more by title and date (127, 84 and 64 days), all of one band and one album: they show that a lead single can come
+#: out months before its album, not where a window ends (no counter-example, no second artist, no label that re-dates a catalogue), and a wrong stamp is permanent.
+#: Price: every song whose recording came out first as a single and later on an album stays in the bucket "Songs without an album" (named for what it is) and is
+#: asked again every 7 days (a search and the album answers, cached 7 days), until the window is frozen. Removal trigger: the live dry run over the owner's library
+#: (`python -m encore_server.album_dryrun --live`, after his test week, the lead's decision) measures the gaps of many artists; the lead reads them, this constant
+#: is set, `IDENTITY_REVISION` rises and the songs are asked again. Task: N-34 itself (it stays todo until then). Reminder: the dry-run report's first line.
+SINGLE_BEFORE_ALBUM_WINDOW_DAYS: int | None = None
+
+#: Words that say a release is a COMPILATION in its title (whole words, in the order they are tried; the catalogue's `record_type` never marks one: no recorded
+#: release is typed `compile`). A SECOND LAYER, never the rule: a match to a release whose title carries one is `none` with the reason `compilation_title` (asked
+#: again), not `matched`; a best-of called "Gold" or "Legend" passes, and nothing is refused for good.
+#:
+#: **STOP-GAP(N-34 compilation markers): English words, a guess on a title.** Price: a song whose real album is called "Collection" or "Hits" stays unfiled and is
+#: asked again every 7 days; a compilation with no such word is accepted (the ruling's case 1). Removal trigger: the artist's discography (the earliest release
+#: among ALL the albums of the artist that hold the recording), which the ruling defers to a later `identity_rev` round if the dry run shows a large unresolved
+#: remainder; then this list goes. Task: N-34 itself.
+COMPILATION_MARKERS: tuple[str, ...] = (
+    "greatest hits",
+    "best of",
+    "very best",
+    "essential",
+    "essentials",
+    "collection",
+    "collections",
+    "anthology",
+    "definitive",
+    "ultimate",
+    "retrospective",
+    "hits",
+)
 
 Outcome = Literal["matched", "none", "held", "unsupported", "no_length", "unavailable"]
 
 #: The outcomes that are FACTS about the song and the catalogue, and may be stored. The rest say "not asked": never stored (audit B-124).
 REMEMBERED: frozenset[Outcome] = frozenset({"matched", "none", "held"})
 
-HitReason = Literal["same_recording", "unreadable", "artist", "title_or_version", "no_length", "length", "no_album"]
-ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type"]
+HitReason = Literal[
+    "same_recording", "unreadable", "artist", "title_or_version", "isrc_differs", "no_length", "length", "no_album"
+]
+ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type", "release_version", "release_placeholder"]
 
 #: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
 #: 20 searches of `app/test/fixtures/deezer/search.json`; the server's own mapped copies in `app/test/fixtures/server/` are not counted, they are the same releases
-#: again): 228 distinct releases, `album` 114, `single` 104, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
+#: again; plus the 5 answers of the live dry run of 24 Nov 2026 that the tests need): 232 distinct releases, `album` 116, `single` 106, `ep` 10 (recounted by `tests/test_album_finder.py`, which fails when a recording changes them).
 #: **The recordings hold no `compile` and no live or remix value: no release of them is marked a compilation or a live record**, so the type cannot tell a
 #: best-of from an album (Legend Remixed and the Legacy sets are `album`). **Any other value never wins**: the spellings that mark a compilation or a live
 #: record are not known, and a guess would be a wrong album.
@@ -75,6 +133,15 @@ class Song:
     artist: str
     title: str
     length_ms: int | None
+    #: The song's own ISRC (`song_ref.isrc`), `None` when it holds none. COUNTER-EVIDENCE only: a recording has one ISRC, so a catalogue entry that carries ANOTHER one is not
+    #: this recording (`isrc_differs`); an equal one, or none on either side, changes nothing (nothing is matched BY it here: the pass fills the ids afterwards).
+    isrc: str | None = None
+
+
+def _isrc(value: object) -> str | None:
+    """An ISRC as the catalogue's mapping writes it (`catalogue.map_track`: upper case, no hyphens), or `None`."""
+    text = str(value).replace("-", "").replace(" ", "").upper() if value else ""
+    return text or None
 
 
 @dataclass(frozen=True)
@@ -91,6 +158,10 @@ class HitVerdict:
     #: The artist, the title and the version all agree (the length is the only thing left to say): `reason` is `length`, `no_length`, `no_album` or
     #: `same_recording`.
     name_fits: bool
+    #: The title and the picture of the album the hit is on, as the catalogue's search row carries them (`None` when it carries none): what the cover finder takes
+    #: from an ACCEPTED hit.
+    album_title: str | None = None
+    cover: str | None = None
 
     @property
     def accepted(self) -> bool:
@@ -143,6 +214,9 @@ class Verdict:
     #: For `matched`; for `held` too: what WOULD have been written.
     match: Match | None = None
     detail: str = ""
+    #: For a `none` the rule WITHHELD (`single_before_album`, `compilation_title`): what the old rule would have written, so that the dry run can show it and count
+    #: the songs that wait on a window or a better rule. **Never written by anybody**: only `match` of a `matched` verdict is stored.
+    withheld: Match | None = None
 
     @property
     def remember(self) -> bool:
@@ -240,7 +314,7 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
     A hit whose artist or title holds no letter and no digit has nothing to compare, and the equality refuses it at 1 or 2: the song has a letter or a digit in
     both, so it has neither that artist nor that key.
     """
-    want_artist, want_key = norm_artist(song.artist), refs.norm_key(song.artist, song.title)
+    want_artist, want_key, want_isrc = norm_artist(song.artist), refs.norm_key(song.artist, song.title), _isrc(song.isrc)
     verdicts: list[HitVerdict] = []
     for row in hits:
         track = map_track(row)
@@ -257,6 +331,11 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
             reason = "artist"
         elif refs.norm_key(name, title) != want_key:
             reason = "title_or_version"
+        elif want_isrc and track["isrc"] and track["isrc"] != want_isrc:
+            # The names agree and the ISRCs do not: another recording (a remaster, a re-recording) of the same name. The search row seldom carries an ISRC; the chosen release's
+            # song list does, and `choose_release` asks the same question there.
+            fits = True
+            reason = "isrc_differs"
         else:
             fits = True
             if delta is None:
@@ -267,7 +346,19 @@ def judge_hits(song: Song, hits: Sequence[object], *, tolerance_ms: int = TOLERA
                 reason = "no_album"
             else:
                 reason = "same_recording"
-        verdicts.append(HitVerdict(track["id"], name, title, album_id, reason, delta, fits))
+        verdicts.append(
+            HitVerdict(
+                track["id"],
+                name,
+                title,
+                album_id,
+                reason,
+                delta,
+                fits,
+                track["album"]["title"] if track["album"] else None,
+                track["cover"],
+            )
+        )
     return tuple(verdicts)
 
 
@@ -295,10 +386,15 @@ def release_date(value: object) -> str | None:
     return str(value)
 
 
+#: The most digits a catalogue id has (Deezer's are 8 to 10 today; a 64-bit number has 19 or 20).
+_MAX_ID_DIGITS = 20
+
+
 def _id_order(ident: str) -> tuple[int, int, str]:
-    """Catalogue ids are numbers sent as text: the LOWEST id is the numerically lowest ("9" is lower than "10"); anything else sorts after them."""
+    """Catalogue ids are numbers sent as text: the LOWEST id is the numerically lowest ("9" is lower than "10"); anything else sorts after them. A real id is 1 to 20 ASCII
+    digits: a longer one is not an id (`int()` of 4,301 digits raises, the tester's probe made the pass abort at that song every pass) and sorts after every real id."""
     # `isascii` first: a superscript two is `isdigit()` and `int()` raises on it, and `catalogue._id` passes any text through.
-    return (0, int(ident), ident) if ident.isascii() and ident.isdigit() else (1, 0, ident)
+    return (0, int(ident), ident) if ident.isascii() and ident.isdigit() and len(ident) <= _MAX_ID_DIGITS else (1, 0, ident)
 
 
 @dataclass(frozen=True)
@@ -335,7 +431,42 @@ def _facts(album_id: str, answer: object) -> _Facts | None:
     )
 
 
-def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
+#: The forms of a version word that a release title can carry and `textnorm.mentions_version` (whole words of `VERSION_WORDS`) does not see: "Remixed", "The Remixes".
+_VERSION_FORMS = {
+    "remixed": "remix",
+    "remixes": "remix",
+    "demos": "demo",
+    "covers": "cover",
+    "instrumentals": "instrumental",
+    "mashups": "mashup",
+    "medleys": "medley",
+}
+
+
+#: Marks a title can carry that `textnorm.VERSION_WORDS` does not list: another RECORDING of the song, which the library's file is not unless the song's own title says so.
+#: (`textnorm` is the pinned fold and its list feeds the YouTube matcher, so these are the album matcher's own.) **`Sessions` and `Tribute` are left out on purpose**: they are in too
+#: many real album names, the cost of a miss is a re-askable `none`, and the artist's discography (the remedy named on 17 Nov) tells such a release apart. A possessive "Version"
+#: (Taylor's Version, Mine's Version) is a re-recording by its own convention.
+_EXTRA_MARKS: tuple[tuple[str, str], ...] = (
+    ("unplugged", r"\bunplugged\b"),
+    ("re-recorded", r"\bre[ -]?record(?:ed|ing|ings|s)?\b"),
+    ("possessive version", r"\b\w+['\u2019]s version\b"),
+)
+_EXTRA_PATTERNS = tuple((name, re.compile(pattern)) for name, pattern in _EXTRA_MARKS)
+
+
+def release_markers(title: str) -> frozenset[str]:
+    """The version marks a RELEASE's title carries: the server's one list of "versions that are not what was asked for unless the request says so" (`textnorm.VERSION_WORDS`:
+    live, remix, acoustic, demo, instrumental, karaoke, cover ...), as whole words, and the plural and past forms a title uses ("Remixed", "The Remixes"). **The labels that say which
+    PRINTING it is, not which recording, are not marks** (Remastered, Deluxe, Bonus or Expanded Edition, Explicit, Clean, Radio Edit, a year): they are not in the list."""
+    found = set(mentions_version(title))
+    folded = fold(title or "")
+    found |= {_VERSION_FORMS[token] for token in words(folded) if token in _VERSION_FORMS}
+    found |= {name for name, pattern in _EXTRA_PATTERNS if pattern.search(folded)}
+    return frozenset(found)
+
+
+def _why_not(facts: _Facts, want_artist: str, song_marks: frozenset[str] = frozenset()) -> ReleaseReason | None:
     """Step 3 (a) and (b): why this release can never be chosen, or `None`."""
     # (a) The album artist is the song's first artist: a song on somebody else's album, a tribute, a compilation of many artists is a miss. An album that names
     # nobody, or whose artist has nothing to compare, is nobody's: the song's own artist has a letter or a digit (step 0), so the equality refuses it.
@@ -344,12 +475,70 @@ def _why_not(facts: _Facts, want_artist: str) -> ReleaseReason | None:
     # (b) The type: `album` and `ep` rank first, `single` after them, any other value (or none) never wins.
     if facts.record_type not in _FULL_RELEASE and facts.record_type != _SINGLE:
         return "record_type"
+    # (c) The version: a release whose own title says live, remix, acoustic ... when the song's title does not is the release of ANOTHER recording of that name. The hit's title is
+    # held to the same marks (`refs.norm_key`'s version signature); without this a studio song was stamped with a live album, the earliest of its two releases (the live dry run).
+    if release_markers(facts.title) - song_marks:
+        return "release_version"
+    # (d) A release called `Unknown Album` is the music server's word for NO album: matched, the id would be set and the album written would be the placeholder, a permanent
+    # match with no album that nothing asks again (the tester's probe).
+    if refs.is_placeholder_album(facts.title):
+        return "release_placeholder"
     return None
 
 
 def _order(facts: _Facts) -> tuple[int, str, tuple[int, int, str]]:
     """Step 3 (b) to (d): `album` and `ep` before `single` whatever the dates, then the EARLIEST date (none is last), then the lowest id."""
     return (0 if facts.record_type in _FULL_RELEASE else 1, facts.date or _NO_DATE, _id_order(facts.album_id))
+
+
+def _gap_days(earlier: str | None, later: str | None) -> int | None:
+    """The days from one release date to another, or `None` when either is not a real day (`release_date` checks the shape; a 31st of February passes it)."""
+    try:
+        return (date.fromisoformat(later) - date.fromisoformat(earlier)).days if earlier and later else None
+    except ValueError:
+        return None
+
+
+def _single_before(album: _Facts, singles: Sequence[_Facts], window_days: int | None) -> str | None:
+    """The reason the album cannot be taken over an EARLIER single, or `None` (the advisor's ruling, case 2). A single dated on the album's day or after it is
+    no earlier single. An earlier one is inside the window when [window_days] is set and the gap is within it (inclusive). Anything else, a gap that cannot be
+    measured included (a date that is missing or is not a day), is outside: the album has no proof."""
+    for single in singles:
+        if album.date and single.date and single.date >= album.date:
+            continue
+        gap = _gap_days(single.date, album.date)
+        if gap is not None and window_days is not None and gap <= window_days:
+            continue
+        shown = f"{gap} days" if gap is not None else "an unknown gap"
+        return f"single {single.album_id} ({single.date or 'no date'}) before album {album.album_id} ({album.date or 'no date'}): {shown}, window {window_days}"
+    return None
+
+
+def _compilation_title(title: str) -> bool:
+    """Whether the title carries one of [COMPILATION_MARKERS] as whole words (case, accents and punctuation do not matter: the shared fold)."""
+    tokens = words(fold(title))
+    for marker in COMPILATION_MARKERS:
+        part = marker.split()
+        if any(tokens[start : start + len(part)] == part for start in range(len(tokens) - len(part) + 1)):
+            return True
+    return False
+
+
+def _non_latin(text: str) -> bool:
+    """Whether the text holds a letter of another script than the Latin one (Arabic, Cyrillic, Hangul, kana, ideographs, Greek...)."""
+    return any(
+        unicodedata.category(ch) in ("Lu", "Ll", "Lt", "Lo") and not unicodedata.name(ch, "").startswith("LATIN") for ch in text
+    )
+
+
+def _latin_spelling_only(song: Song, verdicts: Sequence[HitVerdict]) -> bool:
+    """A song with a name in another script, and a catalogue that answered with hits spelled in Latin letters ONLY: era 1 compares names in the alphabet they
+    are written in and transliterates nothing, so the Latin spelling of an Arabic song can never be proved to be the song. Told apart so that the dry run and the
+    database count the songs the catalogue cannot place by that cause."""
+    readable = [hit for hit in verdicts if hit.reason != "unreadable"]
+    if not readable or not (_non_latin(song.artist) or _non_latin(song.title)):
+        return False
+    return not any(_non_latin(hit.artist) or _non_latin(hit.title) for hit in readable)
 
 
 def _held(match: Match, own_key: str, release: str, holdings: Holdings) -> str | None:
@@ -363,6 +552,33 @@ def _held(match: Match, own_key: str, release: str, holdings: Holdings) -> str |
     return None
 
 
+def decide(
+    song: Song,
+    search: Callable[[str, str], list[dict[str, Any]]],
+    album: Callable[[str], dict[str, Any]],
+    holdings: Holdings = NO_HOLDINGS,
+    *,
+    tolerance_ms: int = TOLERANCE_MS,
+    single_window_days: int | None = SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
+) -> Verdict:
+    """ASK and decide, the one function the album pass and its dry run both call (they do not select the same songs, see `album_dryrun`): the search, then each album the
+    same-recording hits are on (serially), then [choose_release]. [search] and [album] are the caller's (this module opens no connection: the pass gives the gate's, a test
+    gives a fake). A search or an album that could not be asked is `unavailable`, never `none`: a "no" is a fact about the catalogue."""
+    if refusal(song) is not None:
+        return choose_release(song, [], {})
+    try:
+        found = search(song.artist, song.title)
+    except LookupUnavailable as error:
+        return Verdict("unavailable", "search_not_asked", detail=str(error))
+    answers: dict[str, Mapping[str, Any] | None] = {}
+    for album_id in wanted_albums(song, found, tolerance_ms=tolerance_ms):
+        try:
+            answers[album_id] = album(album_id)
+        except (LookupUnavailable, NotInCatalogue):
+            continue  # `choose_release` reads an album that is not in the mapping as "could not ask"
+    return choose_release(song, found, answers, holdings, tolerance_ms=tolerance_ms, single_window_days=single_window_days)
+
+
 def choose_release(
     song: Song,
     hits: Sequence[object],
@@ -370,6 +586,7 @@ def choose_release(
     holdings: Holdings = NO_HOLDINGS,
     *,
     tolerance_ms: int = TOLERANCE_MS,
+    single_window_days: int | None = SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
 ) -> Verdict:
     """The six steps. [hits] are the rows of `deezer.search_tracks`; [albums] maps an album id to `Catalogue.album(id)` (`{album, tracks, unavailable?}`)
     for the ids [wanted_albums] named, `None` (or no entry) for one that could not be asked. [holdings] is what the other refs hold (step 5).
@@ -381,6 +598,11 @@ def choose_release(
       (the original is older than its best-ofs and reissues: "Comfortably Numb" is 382 s on The Wall and on a best-of, only the date tells them apart);
       then the lowest id. Editions are compared only where two releases must be told apart as one (step 5, and the report's count of releases): a
       deluxe reissue is later than its original, so the date already prefers the original. What is written is the catalogue's own title.
+    * **Withheld (the advisor's ruling of 17 Nov 2026): what cannot be justified on evidence is `none` with a reason, never `matched`**, because a stamped album
+      is effectively permanent. (a) The chosen release is an album or EP and an EARLIER single carries the recording: the album outranks it only inside
+      [single_window_days] (`single_before_album`; `None`, the default, is NOT FROZEN: see `SINGLE_BEFORE_ALBUM_WINDOW_DAYS`). (b) The chosen release's title carries
+      a compilation marker (`compilation_title`). Both keep `withheld`, the match the old rule would have written. A same-artist best-of that is the only candidate
+      and says nothing of it in its title is accepted.
     * Step 4: the chosen release's song list must hold the hit's id (a track has another id on every release): it gives the track number, the disc and
       the ISRC. A list that does not is `none`, never a guess at the next release.
     * Step 5: a taken `deezer_id` or `isrc`, or another ref that is this song on this release, is `held`: nothing is written and the pair is logged.
@@ -390,7 +612,12 @@ def choose_release(
     verdicts = judge_hits(song, hits, tolerance_ms=tolerance_ms)
     accepted = [hit for hit in verdicts if hit.accepted and hit.album_id]
     if not accepted:
-        reason = "no_album_on_hit" if any(hit.reason == "no_album" for hit in verdicts) else "no_same_recording"
+        if any(hit.reason == "no_album" for hit in verdicts):
+            reason = "no_album_on_hit"
+        elif any(hit.reason == "isrc_differs" for hit in verdicts):
+            reason = "isrc_differs"  # the names agree and the catalogue's own ISRC says it is another recording: counter-evidence, told apart from a plain miss
+        else:
+            reason = "latin_spelling_only" if _latin_spelling_only(song, verdicts) else "no_same_recording"
         return Verdict("none", reason, hits=verdicts)
 
     ids = list(dict.fromkeys(hit.album_id for hit in accepted if hit.album_id))
@@ -401,7 +628,8 @@ def choose_release(
     known = {ident: found for ident, found in facts.items() if found is not None}
 
     want_artist = norm_artist(song.artist)
-    refused_why = {ident: _why_not(found, want_artist) for ident, found in known.items()}
+    song_marks = release_markers(song.title)
+    refused_why = {ident: _why_not(found, want_artist, song_marks) for ident, found in known.items()}
     eligible = [ident for ident in ids if refused_why[ident] is None]
 
     def judged(chosen: str | None) -> tuple[ReleaseVerdict, ...]:
@@ -418,7 +646,16 @@ def choose_release(
         )
 
     if not eligible:
-        return Verdict("none", "no_eligible_release", hits=verdicts, releases=judged(None))
+        # Named when the version was what refused a release: the song is on a live or remix release of its name only, the one case a better rule or another recording of the
+        # catalogue may turn into a stamp.
+        why = (
+            "release_version_mismatch"
+            if any(refused_why[ident] == "release_version" for ident in ids)
+            else "release_placeholder"
+            if any(refused_why[ident] == "release_placeholder" for ident in ids)
+            else "no_eligible_release"
+        )
+        return Verdict("none", why, hits=verdicts, releases=judged(None))
     chosen = min(eligible, key=lambda ident: _order(known[ident]))
     releases = judged(chosen)
     release, answer = known[chosen], albums[chosen]
@@ -446,6 +683,42 @@ def choose_release(
         disc_no=track.get("discNo"),
         cover=release.cover,
     )
+    # COUNTER-EVIDENCE comes first (review of PR 125): the song holds an ISRC and the catalogue's entry on the chosen release carries another one, so it is not this
+    # recording and a permanent stamp would be a wrong one. Re-askable, with what would have been written, like every withheld answer.
+    if (own := _isrc(song.isrc)) and match.isrc and _isrc(match.isrc) != own:
+        return Verdict(
+            "none",
+            "isrc_differs",
+            hits=verdicts,
+            releases=releases,
+            detail=f"the song holds {own}, the catalogue's entry {match.isrc}",
+            withheld=match,
+        )
+    # SLICE 2 NEVER STAMPS A SINGLE (the advisor's ruling after the live dry run of 24 Nov 2026, where 40 of 150 stamps were singles and two of them album tracks: `What's Luv?`,
+    # `Buy U A Drank`). A stamp is PERMANENT and the later rounds (the artist's discography, a better rule) only ask `none` and `held` again, so a single stamped here can never be
+    # corrected; and the eight hits of a search cannot prove that no album carries the recording. The song is a re-askable `none`. EPs stay accepted; an album that wins over an
+    # earlier single is decided above (the window). **The cost is a delay**: the song stays in "Songs without an album" until the discography round, whose first measured target
+    # these songs are.
+    if release.record_type == _SINGLE:
+        return Verdict(
+            "none",
+            "single_only",
+            hits=verdicts,
+            releases=releases,
+            detail=f"the only release of the hits is the single {release.album_id}",
+            withheld=match,
+        )
+    withhold: tuple[str, str] | None = None
+    if release.record_type in _FULL_RELEASE:
+        earlier = _single_before(
+            release, [known[ident] for ident in eligible if known[ident].record_type == _SINGLE], single_window_days
+        )
+        if earlier is not None:
+            withhold = ("single_before_album", earlier)
+    if withhold is None and _compilation_title(release.title):
+        withhold = ("compilation_title", release.title)
+    if withhold is not None:
+        return Verdict("none", withhold[0], hits=verdicts, releases=releases, detail=withhold[1], withheld=match)
     held = _held(match, refs.norm_key(song.artist, song.title), release.key, holdings)
     if held is not None:
         return Verdict("held", held, hits=verdicts, releases=releases, match=match)

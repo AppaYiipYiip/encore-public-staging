@@ -41,6 +41,7 @@ from . import (
 )
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
+from .album_pass import AlbumFinder
 from .artist_finder import ArtistFinder, ArtistLookup
 from .auth import (
     COVER_PASS_SCOPE,
@@ -1718,6 +1719,8 @@ def create_app(
         server_name=settings.server_name,
         on_ended=ended,
     )
+    # N-34 slice 2: which album a song is on, asked of the catalogue BEFORE the cover finder, so the one search that finds the album also gives the picture.
+    album_pass = AlbumFinder.on(database, catalogue, music_dir=settings.music_dir)
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
     artist_finder = (
         ArtistFinder(database, client, artist_lookup, music_dir=settings.music_dir, after=client.start_scan)
@@ -1731,6 +1734,7 @@ def create_app(
     def errands() -> None:
         for errand in (
             accounts.heal_libraries,
+            album_pass.run_once,
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
             tombstone_purge.run_once,  # N-31: old tombstones and old import lists go, so that the janitor below finds their songs unpointed

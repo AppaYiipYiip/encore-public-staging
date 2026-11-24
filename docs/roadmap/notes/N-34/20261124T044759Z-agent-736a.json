@@ -1,0 +1,12 @@
+{
+ "id": "20261124T044759Z-agent-736a",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34s2 (Claude Sonnet 5.5)",
+ "at": "2026-11-24T04:47:59Z",
+ "type": "note",
+ "body": "N-34 SLICE 2, THE ADVERSARIAL TESTERS FIVE CONCERNS FIXED (helper-n34s2; PR 125; server only; built, not walked; item stays todo; nothing run live).\n\n1. A release the catalogue calls Unknown Album is never chosen (release_placeholder, re-askable none) at the matcher, in the fill rule and in the pass write transaction.\n2. Unplugged, Re-recorded and a possessive Version (Taylors Version) are version marks for a release title, refused unless the songs own title has them; Sessions and Tribute stay out on purpose (common in real album names; discography is the remedy). IDENTITY_REVISION 3, pinned with the extra marks.\n3. album_finder._id_order: an id is 1 to 20 ASCII digits or it sorts after every real id (int() of 4301 digits raised and starved the pass). run_once now skips one song whose matching raises (logged by ref id and exception class only, nothing remembered, report.failed) and goes on.\n4. deezer_picture_by_id takes [0-9] only.\n5. album_dryrun.entries reads a length through album_pass.length_and_source (fractional or negative duration = no length; a kept path outside the music folder is never read), like the pass; a test compares both.\n\nTests red first, 19 mutants killed. Whole suite: see the PR. The matcher over the lead copy is still not re-run (expected 149 matched, 7 compilation_title before these fixes).",
+ "to": [
+  "agent"
+ ]
+}
