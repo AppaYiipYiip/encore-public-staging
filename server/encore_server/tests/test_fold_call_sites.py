@@ -4,6 +4,7 @@ with its counterpart (a name in another alphabet is FOUND, and two different nam
 
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 from typing import Any
 
@@ -123,8 +124,20 @@ def client_for(hits: list[dict[str, Any]]) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(handler))
 
 
+_HIT_IDS = itertools.count(1)
+
+
 def hit(artist: str, title: str, cover: str, album: str = "Album") -> dict[str, Any]:
-    return {"artist": {"name": artist}, "title": title, "album": {"title": album, "cover_xl": cover}}
+    """A search row the picture lookup can read since N-34 slice 2 (audit B-133: it reads hits through the album matcher, which needs an id, a length in seconds and the
+    album's id, and gives no picture to a song with no length, so every call below passes one; without it the rows that expect no picture would pass for the wrong reason)."""
+    ident = next(_HIT_IDS)
+    return {
+        "id": ident,
+        "title": title,
+        "duration": 215,
+        "artist": {"id": 1, "name": artist},
+        "album": {"id": 100 + ident, "title": album, "cover_xl": cover},
+    }
 
 
 PICTURE = "https://cdn-images.dzcdn.net/images/cover/abc/1000x1000.jpg"
@@ -134,19 +147,31 @@ OTHER = "https://cdn-images.dzcdn.net/images/cover/other/1000x1000.jpg"
 def test_one_deezer_hit_for_an_arabic_song_does_not_match_another_arabic_song() -> None:
     """Before: every Arabic name folded to `''` and `'' == ''`, so one hit was the cover of every Arabic song."""
     only = client_for([hit("فيروز", "سألوني الناس", PICTURE)])
-    assert deezer_lookup("فيروز", "نسّم علينا الهوا", None, client=only) is None
-    assert deezer_lookup("ام كلثوم", "سألوني الناس", None, client=only) is None
-    assert deezer_lookup("Fairuz", "سألوني الناس", None, client=only) is None
+    assert deezer_lookup("فيروز", "نسّم علينا الهوا", None, length_ms=215_000, client=only) is None
+    assert deezer_lookup("ام كلثوم", "سألوني الناس", None, length_ms=215_000, client=only) is None
+    assert deezer_lookup("Fairuz", "سألوني الناس", None, length_ms=215_000, client=only) is None
 
 
 def test_an_exact_arabic_hit_is_the_picture_of_that_song() -> None:
     both = client_for([hit("فيروز", "نسم علينا الهوا", OTHER), hit("فيروز", "سألوني الناس", PICTURE)])
-    assert deezer_lookup("فيروز", "سألوني الناس", None, client=both) == PICTURE
+    assert deezer_lookup("فيروز", "سألوني الناس", None, length_ms=215_000, client=both) == PICTURE
 
 
-def test_a_symbol_only_name_matches_only_itself() -> None:
-    assert deezer_lookup("!!!", "Me and Giuliani", None, client=client_for([hit("???", "Me and Giuliani", PICTURE)])) is None
-    assert deezer_lookup("!!!", "Me and Giuliani", None, client=client_for([hit("!!!", "Me and Giuliani", PICTURE)])) == PICTURE
+def test_a_symbol_only_name_is_not_looked_up_by_the_picture_finder_and_costs_no_request() -> None:
+    """CHANGED by N-34 slice 2 (audit B-133). P2-25 pinned here "a symbol-only name matches only itself" (`!!!` found the band `!!!` and never `???`). The picture finder now has the
+    album matcher's skip rule, the design's one refusal: a name with no letter and no digit has nothing to compare (`survives_fold_whole`), so it is not looked up at all.
+    **COST, said plainly:** a band whose name is only symbols keeps its video's thumbnail (or none) where it used to find its own catalogue picture. `!!!` and `???` are still two
+    different songs for `refs.norm_key` (the rows above and `test_refs.py`), so nothing else changes."""
+    requests: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(str(request.url))
+        return httpx.Response(200, json={"data": [hit("!!!", "Me and Giuliani", PICTURE), hit("???", "Me and Giuliani", OTHER)]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    assert deezer_lookup("!!!", "Me and Giuliani", None, length_ms=215_000, client=client) is None
+    assert deezer_lookup("???", "Me and Giuliani", None, length_ms=215_000, client=client) is None
+    assert requests == []
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------

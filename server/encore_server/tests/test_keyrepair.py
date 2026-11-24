@@ -1080,7 +1080,9 @@ def test_the_migration_only_adds_the_worklist_and_the_two_tombstone_columns(tmp_
     with before.read() as conn:
         tables_before = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         columns_before = {t: [r["name"] for r in conn.execute(f"PRAGMA table_info({t})")] for t in tables_before}  # noqa: S608
-    applied = before.migrate()
+    applied = before.migrate(
+        migrations=[m for m in Database._migrations() if m[0] <= 18]
+    )  # up to this step: a later one must not change what this says
     assert applied == [18]
     with before.read() as conn:
         tables_after = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
