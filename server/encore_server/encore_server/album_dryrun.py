@@ -50,7 +50,6 @@ from .catalogue import Cache, Catalogue
 from .deezer import DeezerClient, Gate
 from .fixture_names import fixture_name
 from .ids import now_ms
-from .keeper.tagging import file_length_ms
 
 #: Fields the recorder (`tools/record_catalogue_fixtures.py`) takes out of an answer before it is saved: signed addresses and share links.
 _DROP = frozenset({"preview", "share", "md5_image"})
@@ -191,11 +190,8 @@ def entries(
     for row in rows:
         if kept_only and row["kept"] is None:
             continue
-        length, source = row["duration_ms"], "listing" if row["duration_ms"] else "none"
-        if music_root is not None and row["kept"]:
-            from_file = file_length_ms(music_root / row["kept"])
-            if from_file is not None:
-                length, source = from_file, "file"
+        # THE definition of a song's length, the pass's own (a fractional or negative duration is no length; a kept path that leaves the music folder is never read).
+        length, source = album_pass.length_and_source(music_root, row["kept"], row["duration_ms"])
         out.append(Entry(row["id"], Song(refs.lead_artist(row["artists"]), row["title"], length, row["isrc"]), source))
         if limit is not None and len(out) >= limit:
             break

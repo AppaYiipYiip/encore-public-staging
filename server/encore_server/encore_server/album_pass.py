@@ -60,16 +60,24 @@ AlbumAsk = Callable[[str], dict[str, Any]]
 _IDENTITY_COLUMNS = frozenset({"identity_tried_at", "identity_rev", "identity_outcome", "identity_reason"})
 
 
-def length_of(music_dir: Path | None, kept: str | None, listed_ms: object) -> int | None:
-    """A song's length for the comparison with the catalogue's: the kept FILE's own when the music folder is known and the file can be read (the import's listing is 1 to 12 s
-    off: N-11; a path that leaves the folder is never read), else the ref's own `duration_ms`, else `None`. ONE rule for the album pass and the cover finder."""
+def length_and_source(music_dir: Path | None, kept: str | None, listed_ms: object) -> tuple[int | None, str]:
+    """A song's length for the comparison with the catalogue's, and where it came from (`file`, `listing` or `none`): the kept FILE's own when the music folder is known and the
+    file can be read (the import's listing is 1 to 12 s off: N-11; a path that leaves the folder is never read), else the ref's own `duration_ms` when it is a whole number above
+    zero (a fractional or negative one is no length), else `None`. THE one definition: the album pass, the cover finder and the dry run all read a length through it."""
     if music_dir is not None and kept:
         path = music_dir / kept
         if inside(music_dir, path):
             from_file = file_length_ms(path)
             if from_file:
-                return from_file
-    return int(listed_ms) if isinstance(listed_ms, int) and listed_ms > 0 else None
+                return from_file, "file"
+    if isinstance(listed_ms, int) and listed_ms > 0:
+        return int(listed_ms), "listing"
+    return None, "none"
+
+
+def length_of(music_dir: Path | None, kept: str | None, listed_ms: object) -> int | None:
+    """[length_and_source] without the source."""
+    return length_and_source(music_dir, kept, listed_ms)[0]
 
 
 def search_the_catalogue(artist: str, title: str) -> list[dict[str, Any]]:
@@ -89,6 +97,8 @@ class AlbumReport:
     refused: int = 0
     #: Songs that were left alone: on the P2-25 worklist, or changed while the catalogue was being asked.
     skipped: int = 0
+    #: Songs whose matching RAISED something unexpected: logged by ref id, left for the next pass, nothing remembered, the pass went on.
+    failed: int = 0
     #: How many songs got each reason, the remembered answers only (`matched`, `no_same_recording`, `latin_spelling_only`, `single_before_album`, ...).
     reasons: dict[str, int] = field(default_factory=dict)
     #: `False` when the pass ended before the last song (the limit, the time, a catalogue that could not be asked).
@@ -200,31 +210,19 @@ class AlbumFinder:
             rows = wanting(conn, now=self._now(), report=report)
         started = self._clock()
         for row in rows:
-            song = Song(
-                refs.lead_artist(row["artists"]),
-                row["title"],
-                length_of(self._music, row["kept"], row["duration_ms"]),
-                row["isrc"],
-            )
-            if album_finder.refusal(song) is not None:
-                # No request, nothing remembered ("not asked"); the song was examined, so its placeholder literal is forgotten.
-                report.refused += 1
-                self._store(row["id"], None, report)
-                continue
-            if report.asked >= self._per_pass or self._clock() - started >= self._budget_s:
-                report.complete = False
-                break
-            if (why := self._resting()) is not None:
-                report.stopped, report.complete = why, False
-                break
-            verdict = album_finder.decide(song, self._search, self._album, _DbHoldings(self._db, row["id"]))
-            if verdict.outcome == "unavailable":
-                # Not "the catalogue knows none": nothing is stored for this song or the rest, and the next pass asks again (audit B-124).
-                report.stopped, report.complete = f"the catalogue could not be asked ({verdict.reason})", False
-                log.info("the catalogue could not be asked (%s); the pass stops", verdict.reason)
-                break
-            report.asked += 1
-            self._store(row["id"], verdict, report)
+            try:
+                if self._one(row, report, started):
+                    break
+            except Exception as error:  # noqa: BLE001 - one song must not stop the pass (an id nobody expected, a row nobody described): the songs after it are asked
+                # By ref id only (no title, no artist, and not the exception's own text, which may quote them); the traceback is for a person who asks for DEBUG. Nothing is
+                # remembered: the write transaction of that song rolled back, and the next pass asks again.
+                report.failed += 1
+                log.warning(
+                    "album pass: matching song %s failed unexpectedly (%s); left for the next pass",
+                    row["id"],
+                    type(error).__name__,
+                )
+                log.debug("album pass: the failure of song %s", row["id"], exc_info=True)
         if report.asked:
             log.info(
                 "album pass: %d songs asked, %d matched, %d none, %d held; %d not asked%s",
@@ -238,6 +236,35 @@ class AlbumFinder:
         return report
 
     # ------------------------------------------------------------------------------------------------------------ what is written
+
+    def _one(self, row: sqlite3.Row, report: AlbumReport, started: float) -> bool:
+        """One song through the pass. `True` when the pass must stop here (the limit, the time, a catalogue that rests or could not be asked)."""
+        song = Song(
+            refs.lead_artist(row["artists"]),
+            row["title"],
+            length_of(self._music, row["kept"], row["duration_ms"]),
+            row["isrc"],
+        )
+        if album_finder.refusal(song) is not None:
+            # No request, nothing remembered ("not asked"); the song was examined, so its placeholder literal is forgotten.
+            report.refused += 1
+            self._store(row["id"], None, report)
+            return False
+        if report.asked >= self._per_pass or self._clock() - started >= self._budget_s:
+            report.complete = False
+            return True
+        if (why := self._resting()) is not None:
+            report.stopped, report.complete = why, False
+            return True
+        verdict = album_finder.decide(song, self._search, self._album, _DbHoldings(self._db, row["id"]))
+        if verdict.outcome == "unavailable":
+            # Not "the catalogue knows none": nothing is stored for this song or the rest, and the next pass asks again (audit B-124).
+            report.stopped, report.complete = f"the catalogue could not be asked ({verdict.reason})", False
+            log.info("the catalogue could not be asked (%s); the pass stops", verdict.reason)
+            return True
+        report.asked += 1
+        self._store(row["id"], verdict, report)
+        return False
 
     def _store(self, ref_id: str, verdict: Verdict | None, report: AlbumReport) -> None:
         """One transaction per song: the facts (or only the placeholder forgotten), the remembered answer, and the phones told. [verdict] is `None` for a song that was only
@@ -258,7 +285,10 @@ class AlbumFinder:
             if outcome == "matched" and verdict is not None and verdict.match is not None:
                 updates = refs.release_facts_to_fill(conn, row, verdict.match)
                 # The second layer of step 5: an id that another song took since the matcher read the database is a pair, not a stamp.
-                if "album" not in updates:
+                if refs.is_placeholder_album(verdict.match.album):
+                    # The second layer of `release_placeholder`: no album and no id are written for a release called `Unknown Album`, whatever the verdict said.
+                    outcome, reason, updates = "none", "release_placeholder", refs.forget_placeholder_album(row)
+                elif "album" not in updates:
                     outcome, reason, updates = "none", "nothing_to_fill", refs.forget_placeholder_album(row)
                 elif (
                     row["isrc"]

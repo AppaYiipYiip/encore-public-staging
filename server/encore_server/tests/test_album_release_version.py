@@ -200,7 +200,7 @@ def test_the_report_names_the_new_cause_and_the_isrc_cause() -> None:
 
 def test_the_revision_was_raised_because_the_rule_changed() -> None:
     """Nothing was stamped anywhere with revision 1 (the live dry run writes nothing), so raising it costs nothing: the first pass on a real server asks every song under revision 2."""
-    assert album_finder.IDENTITY_REVISION == 2
+    assert album_finder.IDENTITY_REVISION == 3
 
 
 def test_every_answer_the_live_dry_run_ledger_names_is_here_and_is_the_answer_to_its_own_request() -> None:

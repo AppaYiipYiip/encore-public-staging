@@ -31,7 +31,6 @@ from encore_server.album_dryrun import (
     Report,
     Row,
     entries,
-    file_length_ms,
     main,
     opened,
     run,
@@ -39,6 +38,7 @@ from encore_server.album_dryrun import (
 from encore_server.album_finder import HitVerdict, Song, Verdict
 from encore_server.db import Database
 from encore_server.fixture_names import fixture_name, search_name
+from encore_server.keeper.tagging import file_length_ms
 from tests.catalogue_fakes import QUOTA, RECORDED, searches
 
 # ------------------------------------------------------------------------------------------------------------------ a database and a folder of answers

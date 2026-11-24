@@ -419,6 +419,8 @@ def release_facts_to_fill(conn: sqlite3.Connection, row: sqlite3.Row, found: Rel
     number, the year and the picture of the catalogue's release would describe another one, so when the two albums are not one release (`catalogue.release_key`:
     a deluxe edition is its original) NOTHING is written, ids included: the row never said it was this recording. The title, the artists, the key and the
     album artist are never written."""
+    if is_placeholder_album(found.album):
+        return {}  # a release called `Unknown Album` is the music server's word for no album: nothing of it is a fact to write
     have = row["album"]
     placeholder = is_placeholder_album(have)
     if not placeholder and release_key(str(have)) != release_key(found.album):

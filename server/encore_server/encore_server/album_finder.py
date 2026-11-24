@@ -61,7 +61,8 @@ TOLERANCE_MS = refs.DURATION_TOLERANCE_MS
 #: without this rising. A `none` or `held` song whose `identity_rev` is
 #: lower is asked again at once (`album_pass`); a `matched` song is never asked (it has its ids).
 #: 2: the release-title version rule (`release_markers`), `isrc_differs` and the marker `retrospective`, from the review of PR 125 and the live dry run. Nothing was stamped with 1.
-IDENTITY_REVISION = 2
+#: 3: the marks Unplugged, Re-recorded and the possessive Version, and a release called `Unknown Album` refused (the adversarial tester). Nothing was stamped with 2.
+IDENTITY_REVISION = 3
 
 #: How many days an ALBUM may come after the SINGLE that carries the same recording and still be the song's album (a lead single comes out before its album).
 #: Inside it the album wins; outside it, or when the two dates cannot be compared, the song is `none` with the reason `single_before_album`, which is asked again.
@@ -107,7 +108,7 @@ REMEMBERED: frozenset[Outcome] = frozenset({"matched", "none", "held"})
 HitReason = Literal[
     "same_recording", "unreadable", "artist", "title_or_version", "isrc_differs", "no_length", "length", "no_album"
 ]
-ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type", "release_version"]
+ReleaseReason = Literal["chosen", "outranked", "album_artist", "record_type", "release_version", "release_placeholder"]
 
 #: The `record_type`s of every release in the tracked recordings of Deezer's real answers (the 8 answers of `tests/fixtures/deezer/` that hold releases, and the
 #: 20 searches of `app/test/fixtures/deezer/search.json`; the server's own mapped copies in `app/test/fixtures/server/` are not counted, they are the same releases
@@ -384,10 +385,15 @@ def release_date(value: object) -> str | None:
     return str(value)
 
 
+#: The most digits a catalogue id has (Deezer's are 8 to 10 today; a 64-bit number has 19 or 20).
+_MAX_ID_DIGITS = 20
+
+
 def _id_order(ident: str) -> tuple[int, int, str]:
-    """Catalogue ids are numbers sent as text: the LOWEST id is the numerically lowest ("9" is lower than "10"); anything else sorts after them."""
+    """Catalogue ids are numbers sent as text: the LOWEST id is the numerically lowest ("9" is lower than "10"); anything else sorts after them. A real id is 1 to 20 ASCII
+    digits: a longer one is not an id (`int()` of 4,301 digits raises, the tester's probe made the pass abort at that song every pass) and sorts after every real id."""
     # `isascii` first: a superscript two is `isdigit()` and `int()` raises on it, and `catalogue._id` passes any text through.
-    return (0, int(ident), ident) if ident.isascii() and ident.isdigit() else (1, 0, ident)
+    return (0, int(ident), ident) if ident.isascii() and ident.isdigit() and len(ident) <= _MAX_ID_DIGITS else (1, 0, ident)
 
 
 @dataclass(frozen=True)
@@ -436,12 +442,26 @@ _VERSION_FORMS = {
 }
 
 
+#: Marks a title can carry that `textnorm.VERSION_WORDS` does not list: another RECORDING of the song, which the library's file is not unless the song's own title says so.
+#: (`textnorm` is the pinned fold and its list feeds the YouTube matcher, so these are the album matcher's own.) **`Sessions` and `Tribute` are left out on purpose**: they are in too
+#: many real album names, the cost of a miss is a re-askable `none`, and the artist's discography (the remedy named on 17 Nov) tells such a release apart. A possessive "Version"
+#: (Taylor's Version, Mine's Version) is a re-recording by its own convention.
+_EXTRA_MARKS: tuple[tuple[str, str], ...] = (
+    ("unplugged", r"\bunplugged\b"),
+    ("re-recorded", r"\bre[ -]?record(?:ed|ing|ings|s)?\b"),
+    ("possessive version", r"\b\w+['\u2019]s version\b"),
+)
+_EXTRA_PATTERNS = tuple((name, re.compile(pattern)) for name, pattern in _EXTRA_MARKS)
+
+
 def release_markers(title: str) -> frozenset[str]:
     """The version marks a RELEASE's title carries: the server's one list of "versions that are not what was asked for unless the request says so" (`textnorm.VERSION_WORDS`:
     live, remix, acoustic, demo, instrumental, karaoke, cover ...), as whole words, and the plural and past forms a title uses ("Remixed", "The Remixes"). **The labels that say which
     PRINTING it is, not which recording, are not marks** (Remastered, Deluxe, Bonus or Expanded Edition, Explicit, Clean, Radio Edit, a year): they are not in the list."""
     found = set(mentions_version(title))
-    found |= {_VERSION_FORMS[token] for token in words(fold(title or "")) if token in _VERSION_FORMS}
+    folded = fold(title or "")
+    found |= {_VERSION_FORMS[token] for token in words(folded) if token in _VERSION_FORMS}
+    found |= {name for name, pattern in _EXTRA_PATTERNS if pattern.search(folded)}
     return frozenset(found)
 
 
@@ -458,6 +478,10 @@ def _why_not(facts: _Facts, want_artist: str, song_marks: frozenset[str] = froze
     # held to the same marks (`refs.norm_key`'s version signature); without this a studio song was stamped with a live album, the earliest of its two releases (the live dry run).
     if release_markers(facts.title) - song_marks:
         return "release_version"
+    # (d) A release called `Unknown Album` is the music server's word for NO album: matched, the id would be set and the album written would be the placeholder, a permanent
+    # match with no album that nothing asks again (the tester's probe).
+    if refs.is_placeholder_album(facts.title):
+        return "release_placeholder"
     return None
 
 
@@ -624,7 +648,11 @@ def choose_release(
         # Named when the version was what refused a release: the song is on a live or remix release of its name only, the one case a better rule or another recording of the
         # catalogue may turn into a stamp.
         why = (
-            "release_version_mismatch" if any(refused_why[ident] == "release_version" for ident in ids) else "no_eligible_release"
+            "release_version_mismatch"
+            if any(refused_why[ident] == "release_version" for ident in ids)
+            else "release_placeholder"
+            if any(refused_why[ident] == "release_placeholder" for ident in ids)
+            else "no_eligible_release"
         )
         return Verdict("none", why, hits=verdicts, releases=judged(None))
     chosen = min(eligible, key=lambda ident: _order(known[ident]))

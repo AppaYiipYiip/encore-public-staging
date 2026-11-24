@@ -448,11 +448,16 @@ def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_th
             "textnorm_revision": TEXTNORM_REVISION,
             "version_words": list(VERSION_WORDS),
             "version_forms": album_finder._VERSION_FORMS,
+            "extra_marks": album_finder._EXTRA_MARKS,
         },
         sort_keys=True,
     )
     fingerprint = hashlib.sha256(state.encode()).hexdigest()[:16]
-    known = {1: "90e3395504ceed7b", 2: "fff965fa74e495fb"}  # 1 = the state of PR 125 as first pushed (never stamped anywhere)
+    known = {
+        1: "90e3395504ceed7b",
+        2: "fff965fa74e495fb",
+        3: "8d639d3ea5098204",
+    }  # 1 = the state of PR 125 as first pushed (never stamped anywhere)
     assert album_finder.IDENTITY_REVISION in known, "a new revision needs its line here"
     assert known[album_finder.IDENTITY_REVISION] == fingerprint, (
         f"the rule changed without a new IDENTITY_REVISION: raise it and add `{album_finder.IDENTITY_REVISION + 1}: {fingerprint!r}` (state: {state})"

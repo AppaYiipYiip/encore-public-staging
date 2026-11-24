@@ -77,7 +77,7 @@ def deezer_picture_by_id(deezer_id: str, *, client: httpx.Client | None = None) 
     """The picture of the album a catalogue id is on, by the id itself: a song that HOLDS an id is not a name to compare, the id names the very release it was described on
     (review of PR 125). `None` when the id is not digits (it goes into a path: nothing is asked), the catalogue knows no such recording or the picture is not on its host.
     Raises [LookupUnavailable] when the catalogue could not be asked."""
-    if not re.fullmatch(r"\d{1,20}", deezer_id or ""):
+    if not re.fullmatch(r"[0-9]{1,20}", deezer_id or ""):  # ASCII digits: `\d` takes Arabic-Indic and fullwidth ones too
         return None
     try:
         row = track_by_id(deezer_id, client=client)
