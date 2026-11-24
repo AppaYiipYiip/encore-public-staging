@@ -1,5 +1,7 @@
 """N-34 slice 1: the DRY RUN of the album matcher. It writes nothing, anywhere: it reads a COPY of the database, asks a catalogue source, runs
-`album_finder.choose_release` on every song and prints a report. The lead reads the report before slice 2 stores anything.
+`album_finder.decide` on every song and prints a report. The lead reads the report before an image that holds the album pass (slice 2) runs on a server.
+
+**What the report shares with the pass, and what it does not.** It DECIDES with the very function the pass asks with (`album_finder.decide`: one verdict per song, the same rule). It does not SELECT the same songs: [entries] (1) does not leave out a ref on the P2-25 worklist (`ref_recheck`), which the pass skips, (2) leaves out the songs with no kept file unless `--all` is given (the pass also asks the songs somebody liked or put in a playlist), and (3) ignores the stored identity (`identity_outcome`, `identity_rev`, `identity_tried_at`: a copy that the pass has already run over reports the songs it left asked-for again, and a matched song is out of it only because it has its `deezer_id`).
 
     # Replay recorded answers (no request is made; a song whose answers were not recorded is "not asked", never "the catalogue knows none"):
     python -m encore_server.album_dryrun --db copy.db --answers server/encore_server/tests/fixtures/deezer
@@ -238,7 +240,7 @@ def _decide(
     tolerance_ms: int,
     single_window_days: int | None,
 ) -> Verdict:
-    """The very function the album pass asks with (`album_finder.decide`): what this report counts is what the pass will write."""
+    """Decides with the very function the album pass asks with (`album_finder.decide`). The SELECTION of the songs differs, see the module docstring."""
     return album_finder.decide(
         item.song, search, album, RefHoldings(conn, item.ref_id), tolerance_ms=tolerance_ms, single_window_days=single_window_days
     )

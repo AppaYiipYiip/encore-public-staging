@@ -14,6 +14,14 @@ a song its place in the bucket and nothing else, and a better rule asks it again
   remembered; `unsupported`, `no_length` and `unavailable` ("could not ask") are not, and [Verdict.remember] says which (a test pins it, so a pass can
   never store the second kind: the day the fold is fixed those songs are simply asked).
 
+**Slice 2 (the advisor's ruling of 17 Nov 2026, binding) adds one principle: a stamped album is effectively permanent** (`refs.find` matches the ids first and the repair of slice 5 files
+the song by its album), so anything the matcher cannot justify on evidence is a RE-ASKABLE `none` with a reason, never `matched`, and [Verdict.withheld] keeps what the old rule would have
+written, for the report only: `single_before_album` (an album or EP carries the recording and an earlier single too: the album wins only inside `SINGLE_BEFORE_ALBUM_WINDOW_DAYS`, NOT
+FROZEN), `compilation_title` (the chosen release's title carries a marker of `COMPILATION_MARKERS`) and `latin_spelling_only` (a non-Latin song whose only hits are spelled in Latin letters).
+[decide] asks and decides in one function, which the album pass and the dry run both call (the two do not select the same songs: see `album_dryrun`). `IDENTITY_REVISION` is raised by hand with
+every change of the rule's code (a new step) and is pinned with the values that are plain data: the tolerance, the single window, the compilation markers, the types that win and
+`textnorm.TEXTNORM_REVISION` (a change of the fold changes which keys are equal, which decided most `none` answers).
+
 **The names go through the one fold, so its limits are the matcher's.** Since P2-25 slices 2 and 3 `textnorm` keeps the letters of every alphabet (audit
 B-37): two different Arabic songs are two different keys, and a hit is the song only when its artist AND its key (`refs.norm_key`: the artist, the title
 and the version) are equal. Nothing is transliterated, so an Arabic name and its Latin spelling are two names: a miss, never a wrong stamp. The one kind of
@@ -50,8 +58,9 @@ from .textnorm import fold, is_unknown_artist, norm_artist, norm_title, survives
 #: read by the lead after the owner's test week; the task is N-34 itself (it stays todo until then).
 TOLERANCE_MS = refs.DURATION_TOLERANCE_MS
 
-#: The revision of the rule as a whole: every value that decides a verdict (`TOLERANCE_MS`, the single window, the compilation markers, the types that win) is
-#: pinned with it in `tests/test_album_withheld.py`, so a change to one of them cannot land without this rising. A `none` or `held` song whose `identity_rev` is
+#: The revision of the rule as a whole. Raised BY HAND when the rule's code changes (a new step, a new reason); the plain data that decides a verdict (`TOLERANCE_MS`, the single
+#: window, the compilation markers, the types that win, `textnorm.TEXTNORM_REVISION`) is pinned with it in `tests/test_album_withheld.py`, so a change to one of THOSE cannot land
+#: without this rising. A `none` or `held` song whose `identity_rev` is
 #: lower is asked again at once (`album_pass`); a `matched` song is never asked (it has its ids).
 IDENTITY_REVISION = 1
 
@@ -486,7 +495,7 @@ def decide(
     tolerance_ms: int = TOLERANCE_MS,
     single_window_days: int | None = SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
 ) -> Verdict:
-    """ASK and decide, the one function the album pass and its dry run share, so that what the report counts is what the pass will write: the search, then each album the
+    """ASK and decide, the one function the album pass and its dry run both call (they do not select the same songs, see `album_dryrun`): the search, then each album the
     same-recording hits are on (serially), then [choose_release]. [search] and [album] are the caller's (this module opens no connection: the pass gives the gate's, a test
     gives a fake). A search or an album that could not be asked is `unavailable`, never `none`: a "no" is a fact about the catalogue."""
     if refusal(song) is not None:

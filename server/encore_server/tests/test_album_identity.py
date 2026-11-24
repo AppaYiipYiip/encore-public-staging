@@ -42,17 +42,21 @@ def test_the_migration_only_adds_four_nullable_columns_and_no_value() -> None:
     ]
 
 
-def test_the_migration_number_is_the_next_free_one_and_is_not_taken_twice() -> None:
+def test_the_migration_number_is_not_taken_twice_and_comes_after_the_rehome_s() -> None:
+    """Main's schema was 18 (`0018_ref_recheck`) when this step was cut, so it is 0019; a later branch takes the next number after whatever main has (`Database.migrate` refuses two
+    steps with one number, and this checks it for this one)."""
     numbers = [number for number, _, _ in Database._migrations()]
     number, _, _ = _the_identity_migration()
     assert numbers.count(number) == 1, "`Database.migrate` refuses two steps with one number"
-    assert number == max(numbers), "this is the newest step of this branch (a later branch takes the next number after it)"
+    assert number == 19
 
 
 def test_the_migration_leaves_every_old_row_as_it_was_and_takes_a_backup_first(tmp_path: Path) -> None:
     number, _, _ = _the_identity_migration()
     db = Database(tmp_path / "encore.db")
+    # Exactly the steps up to the one under test (`test_db.py`'s convention): a step added LATER must not change what this test says.
     before_this_one = [m for m in Database._migrations() if m[0] < number]
+    up_to_this_one = [m for m in Database._migrations() if m[0] <= number]
     db.migrate(version="before", migrations=before_this_one)
     with db.tx() as conn:
         for index, (title, album) in enumerate([("Requiem", None), ("Creature", "[Unknown Album]"), ("Hollow", "Hollow")]):
@@ -64,7 +68,7 @@ def test_the_migration_leaves_every_old_row_as_it_was_and_takes_a_backup_first(t
         old = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]
         width = len(old[0])
 
-    assert db.migrate(version="n34-slice2") == [number]
+    assert db.migrate(version="n34-slice2", migrations=up_to_this_one) == [number]
 
     with db.read() as conn:
         new = [tuple(row) for row in conn.execute("SELECT * FROM song_ref ORDER BY id")]

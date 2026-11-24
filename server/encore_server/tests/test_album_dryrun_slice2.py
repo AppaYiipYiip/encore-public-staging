@@ -1,5 +1,6 @@
 """N-34 slice 2, the dry run's half: the report counts what slice 2 adds APART so that the lead can read it before anything is stored, and the dry run asks with the very
-function the album pass asks with (`album_finder.decide`), so what the report counts is what the pass will write.
+function the album pass asks with (`album_finder.decide`). The two do NOT select the same songs (the worklist, the songs with no kept file, the stored identity: see the docstring of
+`album_dryrun`).
 
 Added to `album_dryrun`: the songs whose only catalogue hits are spelled in Latin letters (a non-Latin song: counted apart, 17 Nov 2026), the songs the rule WITHHELD
 (`single_before_album`, `compilation_title`) with what the old rule would have written, the gaps between an earlier single and the album that carries the same recording
