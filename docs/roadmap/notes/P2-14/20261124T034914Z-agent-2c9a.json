@@ -1,0 +1,12 @@
+{
+ "id": "20261124T034914Z-agent-2c9a",
+ "item": "P2-14",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-24T03:49:14Z",
+ "type": "note",
+ "body": "24 Nov 2026, a heads-up for whoever rebases the DRAFT PR #1 (P2-14, lyrics on the server): it still carries a migration numbered 0009, but main now has migrations up to 0018 (P2-25 slice 4) and N-34 slice 2 (PR 125) takes 0019. On the rebase take the NEXT FREE number after whatever main holds then: look at server/encore_server/encore_server/migrations yourself, never at this note (migrate refuses duplicate numbers and the numbers are decided by merge order). The PR stays on hold until b11.",
+ "to": [
+  "agent"
+ ]
+}
