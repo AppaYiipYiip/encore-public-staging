@@ -1,0 +1,12 @@
+{
+ "id": "20261124T085313Z-agent-62e7",
+ "item": "N-48",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-24T08:53:13Z",
+ "type": "note",
+ "body": "24 Nov 2026, item N-48 (the artist's discography round) filed so that the stop-gaps of N-34 slice 2 have their task. WHY: after the live dry run of 672 songs on VM 108's library, the advisor ruled that slice 2 NEVER STAMPS A SINGLE (40 of the first 150 stamps were singles; What's Luv? and Buy U A Drank are album tracks). A stamp is permanent and a later round re-asks only none and held, so the search's eight hits cannot prove that no album carries the recording; those songs wait as a re-askable none/single_only, and a sole same-artist compilation waits as none/compilation_title when its title says so. THE REMEDY, this item: the artist's DISCOGRAPHY (a request per album, for every artist) as a new identity_rev round, MEASURED FIRST by a dry run over the same library (how many of the 40 single_only and the 7 compilation_title songs find an album, how many requests it costs); server only; fakes and recorded answers for tests; a live run only by the lead. It is the removal trigger and the task of the single and compilation-marker stop-gaps in the design (docs/tasks/P2-songs-as-references.md) and of the 'Songs without an album' bucket that stays for these songs until it is built. Depends on N-34 slice 2 being merged (PR 125).",
+ "to": [
+  "agent"
+ ]
+}
