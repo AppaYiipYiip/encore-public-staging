@@ -276,7 +276,8 @@ class AlbumFinder:
                 row is None
                 or row["deezer_id"] is not None
                 or not refs.is_placeholder_album(row["album"])
-                or refs.recheck_pending(conn, ref_id)  # the second of the two calls N-36 removes (see `_wanting`)
+                # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the second of the two `refs.recheck_pending` calls N-36 removes (the first is in `wanting`).
+                or refs.recheck_pending(conn, ref_id)
             ):
                 report.skipped += 1
                 return

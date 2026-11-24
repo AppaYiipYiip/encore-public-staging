@@ -193,6 +193,25 @@ def test_the_piece_a_marker_stands_for_is_still_there_next_to_its_marker(name: s
     )
 
 
+def test_each_recheck_pending_call_of_the_album_pass_carries_a_marker_of_its_own() -> None:
+    """N-36 removes `refs.recheck_pending` and BOTH calls of `album_pass.py` (in `wanting` and in `_store`): each call has its own marker, so deleting one and not the other is seen,
+    and the message above ("the two calls of album_pass.py") is true."""
+    text = (SERVER / "encore_server" / "album_pass.py").read_text(encoding="utf-8")
+    calls = [i for i in range(len(text)) if text.startswith("refs.recheck_pending(", i)]
+    markers = [m for m in found() if m.file == "encore_server/album_pass.py"]
+    assert len(calls) == 2 and len(markers) == 2, (len(calls), len(markers))
+    for call in calls:
+        assert "STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0)" in text[max(0, call - 400) : call], (
+            "the marker stands right above its call"
+        )
+
+
+def test_n36_names_both_calls_of_the_album_pass() -> None:
+    items = json.loads((REPO / "docs" / "roadmap" / "items.json").read_text(encoding="utf-8"))
+    note = items["N-36"]["note"]
+    assert "album_pass.py" in note and "wanting" in note and "_store" in note
+
+
 def test_the_task_stays_on_the_board() -> None:
     """The removal trigger has a task, N-36 (its scope is in its board notes, which may be reworded freely), so `roadmap.py brief` and the board show it."""
     items = json.loads((REPO / "docs" / "roadmap" / "items.json").read_text(encoding="utf-8"))

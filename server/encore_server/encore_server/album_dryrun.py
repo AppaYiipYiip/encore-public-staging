@@ -325,7 +325,7 @@ class Report:
             f"of 17 Nov 2026). Removal trigger: a dry run over a library that holds enough single/album pairs to show a window (about 30; the lead decides): the live run of 24 Nov 2026 "
             f"over 672 songs found 1 (301 days). The section 'single-before-album gaps' below is what it is frozen from."
         )
-        say(f"N-34 slice 1 dry run: {total} songs through the matcher, nothing written. {datetime.now(UTC):%Y-%m-%d %H:%M} UTC")
+        say(f"N-34 album dry run: {total} songs through the matcher, nothing written. {datetime.now(UTC):%Y-%m-%d %H:%M} UTC")
         if self.stopped:
             say(f"STOPPED EARLY: {self.stopped}; the songs after this point were not asked.")
         say(f"requests: {', '.join(f'{k} {v}' for k, v in sorted(self.requests.items())) or 'none'}")
