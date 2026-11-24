@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .. import library, refs
+from ..album_pass import KeepAnswer, file_or_listing_length
 from ..artist_basis import is_performer
 from ..db import Database
 from ..deezer import LookupUnavailable
@@ -23,10 +24,10 @@ from ..scheduler import GiveUp, Retry, WorkItem
 from ..sources.youtube.errors import DownloadError
 from ..sources.youtube.source import Wanted, wanted_from_ref
 from ..textnorm import is_unknown_artist
-from .covers import fetch_cover
-from .placement import AUDIO_SUFFIXES, find_existing, free_gb, inside, place_file, plan_placement
+from .covers import fetch_cover, write_folder_picture
+from .placement import AUDIO_SUFFIXES, Placement, find_existing, free_gb, inside, place_file, plan_for_ref
 from .process import Runner, run_command
-from .tagging import Tags, write_tags
+from .tagging import tags_of, write_tags
 
 log = logging.getLogger("encore_server.keeper")
 
@@ -94,6 +95,8 @@ class Keeper:
         on_changed: Callable[[dict[str, int]], None] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        identify_: Callable[[str, int | None], KeepAnswer] | None = None,
+        length_of_: Callable[[Path | None, object], tuple[int | None, str]] = file_or_listing_length,
     ) -> None:
         self._db = db
         self._source = source
@@ -106,6 +109,10 @@ class Keeper:
         # address otherwise fetched it from the real picture host (found by the network guard of P2-12).
         self._cover = fetch_cover_ if fetch_cover_ is not None else fetch_cover
         self._find_cover = find_cover_
+        #: N-34 slice 3: which album is the song being kept on (`album_pass.KeepAsker`); `None` = not asked, the keep is filed as it always was.
+        self._identify = identify_
+        #: How a length is read: the downloaded FILE's own, else the listing's (`album_pass.file_or_listing_length`, the one definition the pass and the dry run read with).
+        self._length_of = length_of_
         self._on_changed = on_changed
         self._sleep = sleep
         self._clock = clock
@@ -128,21 +135,53 @@ class Keeper:
 
     # ------------------------------------------------------------------ the file
 
-    def _placement(self, ref: dict[str, Any], suffix: str = ".opus") -> Any:
-        artist = ref.get("albumArtist") or ref["artists"][0]
-        return plan_placement(
-            self._settings.root,
-            artist=artist,
-            album=ref.get("album"),
-            title=ref["title"],
-            track=ref.get("trackNo"),
-            disc=ref.get("discNo"),
-            suffix=suffix,
-        )
+    def _placement(self, ref: dict[str, Any], suffix: str = ".opus") -> Placement:
+        return plan_for_ref(self._settings.root, ref, suffix)
+
+    def _relative(self, path: Path) -> str:
+        """The path as `song_file.path` holds it: relative to the music folder, with forward slashes."""
+        return path.resolve().relative_to(self._settings.music_dir.resolve()).as_posix()
 
     def _existing(self, ref: dict[str, Any]) -> Path | None:
-        """A file for this song already in its folder (a run that died after placing it, or the same song put there by hand)."""
-        return find_existing(self._placement(ref), ref["title"])
+        """A file for this song already on the disk, so that it is linked and not fetched again: **first the song's OWN file, wherever it lies** (audit B-110: the keeper used to
+        look only where it would put the song NOW, so a song whose album became known between two keeps was saved a second time, in the album's folder), then a file at the place
+        it would choose now (a run that died after placing it, or the same song put there by hand)."""
+        return self._own_file(ref) or find_existing(self._placement(ref), ref["title"], skip=self._held_by_another(ref["id"]))
+
+    def _own_file(self, ref: dict[str, Any]) -> Path | None:
+        """A file THIS song's rows hold that the keeper wrote: `source = 'youtube'`, under `Encore/`, still on the disk, preferred one first. **Never a file of the Host's own
+        library** (`_link` would attach it again as a kept file and a later repair would move it) and never a path that leaves the server's folder."""
+        with self._db.read() as conn:
+            rows = conn.execute(
+                "SELECT path FROM song_file WHERE ref = ? AND source = 'youtube' AND path IS NOT NULL ORDER BY preferred DESC, added_at",
+                (ref["id"],),
+            ).fetchall()
+        for row in rows:
+            if not str(row["path"]).startswith(KEPT_FOLDER + "/"):
+                continue
+            path = self._settings.music_dir / str(row["path"])
+            if path.suffix.lower() in AUDIO_SUFFIXES and inside(self._settings.root, path) and path.is_file():
+                return path
+        return None
+
+    def _held_by_another(self, ref_id: str) -> Callable[[Path], bool]:
+        """Whether a file in the song's folder is the file of ANOTHER song (a row of another ref holds its path): two refs of one song, the owner's Creature, must not be handed one
+        file (the shared file N-11's notes name). The music server compares paths without regard to case, and so does this."""
+
+        def held(path: Path) -> bool:
+            try:
+                relative = self._relative(path)
+            except (ValueError, OSError):
+                return True  # not inside the music folder: never taken
+            with self._db.read() as conn:
+                return (
+                    conn.execute(
+                        "SELECT 1 FROM song_file WHERE ref != ? AND LOWER(path) = LOWER(?)", (ref_id, relative)
+                    ).fetchone()
+                    is not None
+                )
+
+        return held
 
     def _fetch(self, ref: dict[str, Any], item: WorkItem) -> Path:
         s = self._settings
@@ -178,36 +217,58 @@ class Keeper:
 
     def _finish(self, ref: dict[str, Any], downloaded: Path) -> Path:
         audio = self._as_opus(downloaded)
-        cover_url = ref.get("coverUrl") or self._look_for_cover(ref)
+        # The length of the file that was just downloaded, not the import's listing (1 to 12 s off, N-11): the album question and the picture look-up are both asked with it.
+        length_ms, _ = self._length_of(audio, ref.get("durationMs"))
+        ref, answer = self._identified(ref, length_ms)
+        picture = (
+            answer.cover if answer is not None else None
+        )  # a picture that came from the catalogue in this keep (never a video's thumbnail)
+        cover_url = ref.get("coverUrl")
+        if not cover_url and not (answer is not None and answer.outcome == "matched"):
+            # A song the catalogue just placed is not looked up BY NAME for a picture: its release had none usable, and a search by name could only pick another release's.
+            cover_url = picture = self._look_for_cover(ref, length_ms)
         cover = self._cover(cover_url)
-        tags = Tags(
-            title=ref["title"],
-            artist=", ".join(ref["artists"]),
-            artists=tuple(ref["artists"]),
-            album=ref.get("album"),
-            album_artist=ref.get("albumArtist") or ref["artists"][0],
-            track=ref.get("trackNo"),
-            disc=ref.get("discNo"),
-            year=ref.get("year"),
-            isrc=ref.get("isrc"),
-            mbid=ref.get("mbid"),
-        )
-        if not self._write_tags(audio, tags, cover):
+        if not self._write_tags(audio, tags_of(ref), cover):
             log.info("could not write tags into %s; the file is kept with the names it has", audio.name)
         placement = self._placement(ref, audio.suffix.lower() or ".opus")
-        already = find_existing(placement, ref["title"])
+        already = find_existing(placement, ref["title"], skip=self._held_by_another(ref["id"]))
         if already is not None:
             return already  # the same song was put there while this ran: that one stays
-        return place_file(audio, placement, self._settings.music_dir)
+        placed = place_file(audio, placement, self._settings.music_dir)
+        if cover and picture and cover_url == picture and not refs.is_placeholder_album(ref.get("album")):
+            # The album's picture is the folder's too, so the music server shows the album with it from its first scan: only a picture of the catalogue, only in an album's folder
+            # (never in Singles, which holds songs of no album), never over a picture the folder has (`write_folder_picture`).
+            write_folder_picture(self._settings.root, placed, cover)
+        return placed
 
-    def _look_for_cover(self, ref: dict[str, Any]) -> str | None:
-        """A song that came without a picture gets the catalogue's, in its file and on its ref (every phone then shows it)."""
+    def _identified(self, ref: dict[str, Any], length_ms: int | None) -> tuple[dict[str, Any], KeepAnswer | None]:
+        """N-34 slice 3: which album is this song on, asked BEFORE the tags and the folder are made, so that the file lands in `Encore/<artist>/<album>/NN - Title` tagged with the
+        album, the track and the year, and is never filed under "Singles" to be moved later. The ref is read again when the answer wrote something.
+
+        **The permanence rules.** The question is `album_pass.KeepAsker`'s: the very selection, matcher and write rule of the album pass, so a keep files a song under an album
+        ONLY on a `matched` outcome the pass would have written too, and never rewrites an album the ref has. **A catalogue that cannot be asked, or any failure, never delays or
+        stops the keep**: it goes on exactly as it did before, without an album and with nothing remembered, and the pass of slice 2 (and the repair of slice 5) place the song later."""
+        if self._identify is None:
+            return ref, None
+        try:
+            answer = self._identify(ref["id"], length_ms)
+        except Exception:  # noqa: BLE001 - an album is a nicety of the keep, never a reason to fail it
+            log.info("asking which album %s is on failed; it is kept without one", ref["id"], exc_info=True)
+            return ref, None
+        if answer.outcome == "unavailable":
+            log.info("no album was asked for %s: the catalogue could not be asked (%s)", ref["id"], answer.reason)
+        if not answer.wrote:
+            return ref, answer
+        with self._db.read() as conn:
+            return refs.get_ref(conn, ref["id"]), answer
+
+    def _look_for_cover(self, ref: dict[str, Any], length_ms: int | None) -> str | None:
+        """A song that came without a picture gets the catalogue's, in its file and on its ref (every phone then shows it). [length_ms] is the downloaded FILE's own (N-34 slice 3: it
+        was the listing's, which can be 1 to 12 s off, until the keeper read the file); a song with none is not looked up (the keep goes on without a picture)."""
         if self._find_cover is None or not self._may_ask_the_catalogue(ref):
             return None
         try:
-            # N-34 slice 2 (audit B-133): the look-up compares the version AND the length now, so it is given the length the ref has (the import's listing, which can be 1 to 12 s
-            # off a file's own: STOP-GAP until slice 3 reads the kept FILE's length here, `_identified`); a song with none is not looked up (the keep goes on without a picture).
-            url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"), length_ms=ref.get("durationMs"))
+            url = self._find_cover(ref["artists"][0], ref["title"], ref.get("album"), length_ms=length_ms)
         except LookupUnavailable as error:
             # The catalogue is resting, switched off (`ENCORE_CATALOGUE=0`) or did not answer: not a failure, and nothing to dump into the log for every song kept.
             log.info("no picture was asked for %s: the catalogue could not be asked (%s)", ref["id"], error)

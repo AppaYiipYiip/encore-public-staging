@@ -31,9 +31,8 @@ from .catalogue import release_key
 from .db import Database
 from .deezer import LookupUnavailable, NotInCatalogue, search_tracks, track_by_id
 from .ids import now_ms
-from .keeper.covers import cover_url_ok, fetch_cover
+from .keeper.covers import cover_url_ok, fetch_cover, folder_wants_a_picture, write_folder_picture
 from .keeper.keeper import KEPT_FOLDER
-from .keeper.placement import inside
 from .textnorm import artist_key, is_unknown_artist
 
 log = logging.getLogger("encore_server.cover_finder")
@@ -242,16 +241,13 @@ class CoverFinder:
             self._folder_picture(relative, url)
 
     def _folder_picture(self, relative: str, url: str | None) -> None:
-        """A `cover.jpg` in the album folder of a file this server keeps, so the music server (and every other player of it) shows the album
-        with its picture; a folder that already has one is left as it is."""
+        """A `cover.jpg` in the album folder of a file this server keeps ([write_folder_picture]: never outside `Encore/`, a folder that already has a picture is left as it is)."""
         if self._music is None or not url or not relative.startswith(KEPT_FOLDER + "/"):
             return
-        folder = (self._music / relative).parent
-        if not inside(self._music, folder) or not folder.is_dir() or any(folder.glob("cover.*")) or any(folder.glob("folder.*")):
-            return
-        data = self._fetch(url)
-        if data:
-            (folder / "cover.jpg").write_bytes(data)
+        file, root = self._music / relative, self._music / KEPT_FOLDER
+        if not folder_wants_a_picture(root, file):
+            return  # asked before the picture is fetched: nothing is downloaded for a folder that would refuse it
+        if write_folder_picture(root, file, self._fetch(url)):
             self._wrote_art = True
 
 

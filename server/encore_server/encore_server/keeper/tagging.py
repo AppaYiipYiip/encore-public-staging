@@ -18,6 +18,7 @@ import os
 import struct
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .process import Runner, run_command
 
@@ -39,6 +40,23 @@ class Tags:
     #: What lets a later scan (or another program) tell this is the same recording: written when known.
     isrc: str | None = None
     mbid: str | None = None
+
+
+def tags_of(ref: dict[str, Any]) -> Tags:
+    """The tags of a song's file, from the song's ref (the API's shape). THE one builder: the keeper tags a new file with it (N-34 slice 3) and the repair of the files already
+    kept (slice 5, N-26's artist rewrite) retags with it, so a file agrees with its ref by one definition."""
+    return Tags(
+        title=ref["title"],
+        artist=", ".join(ref["artists"]),
+        artists=tuple(ref["artists"]),
+        album=ref.get("album"),
+        album_artist=ref.get("albumArtist") or ref["artists"][0],
+        track=ref.get("trackNo"),
+        disc=ref.get("discNo"),
+        year=ref.get("year"),
+        isrc=ref.get("isrc"),
+        mbid=ref.get("mbid"),
+    )
 
 
 def _flac_picture(data: bytes, mime: str = "image/jpeg") -> bytes:

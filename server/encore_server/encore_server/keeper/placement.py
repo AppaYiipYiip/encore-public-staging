@@ -10,8 +10,10 @@ import contextlib
 import os
 import re
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ..textnorm import UNKNOWN_ARTIST, fold, norm_title, safe_path_part, title_key, version_signature, words
 
@@ -93,8 +95,23 @@ def plan_placement(
     )
 
 
-def find_existing(placement: Placement, title: str) -> Path | None:
-    """A file for the same song already in the target folder (any format)."""
+def plan_for_ref(root: Path, ref: dict[str, Any], suffix: str = ".opus") -> Placement:
+    """Where the file of a song goes, planned from the song's ref (the API's shape: `artists`, `albumArtist`, `album`, `title`, `trackNo`, `discNo`). THE one function the keeper,
+    the dry run of the new keeps (N-34 slice 3: what a keep would be filed under) and the repair of the files already kept (slice 5) plan with. Nothing is created here."""
+    return plan_placement(
+        root,
+        artist=ref.get("albumArtist") or ref["artists"][0],
+        album=ref.get("album"),
+        title=ref["title"],
+        track=ref.get("trackNo"),
+        disc=ref.get("discNo"),
+        suffix=suffix,
+    )
+
+
+def find_existing(placement: Placement, title: str, *, skip: Callable[[Path], bool] | None = None) -> Path | None:
+    """A file for the same song already in the target folder (any format). A file for which [skip] says yes is not the song's to take: the keeper skips the files another
+    song holds (N-34 slice 3, audit B-110: two refs of one song were handed one file)."""
     folder = placement.folder
     if not folder.is_dir():
         return None
@@ -114,7 +131,7 @@ def find_existing(placement: Placement, title: str) -> Path | None:
         if f.suffix.lower() not in AUDIO_SUFFIXES or not f.is_file():
             continue
         stem = re.sub(r"^\d{1,2}(-\d{1,2})?\s*-\s*", "", f.stem)
-        if title_key(stem) == want and version_signature(stem) == version_signature(name):
+        if title_key(stem) == want and version_signature(stem) == version_signature(name) and not (skip is not None and skip(f)):
             return f
     return None
 

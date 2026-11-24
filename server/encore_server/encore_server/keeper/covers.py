@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import logging
+import os
 import urllib.parse
+from pathlib import Path
 
 import httpx
+
+from .placement import inside
 
 log = logging.getLogger("encore_server.keeper.covers")
 
@@ -55,3 +59,24 @@ def fetch_cover(url: str | None, *, max_bytes: int = 6 * 1024 * 1024, timeout: f
         log.info("no cover from %s: %s", urllib.parse.urlparse(url).hostname, type(error).__name__)
         return None
     return data or None
+
+
+def folder_wants_a_picture(kept_root: Path, file: Path) -> bool:
+    """Whether the album folder of [file] is one a picture may be written into: inside [kept_root], the server's own `Encore/` folder (`placement.inside`, after links and dots are
+    resolved: a folder of the Host's own music library never is), a folder that exists, and one that holds no `cover.*` and no `folder.*` of any kind (the Host's own picture, or an
+    earlier one, is left as it is)."""
+    folder = file.parent
+    return inside(kept_root, folder) and folder.is_dir() and not any(folder.glob("cover.*")) and not any(folder.glob("folder.*"))
+
+
+def write_folder_picture(kept_root: Path, file: Path, data: bytes | None) -> bool:
+    """A `cover.jpg` in the album folder of [file], so the music server (and every other player of it) shows the album with its picture. Returns whether one was written.
+
+    THE one function the keeper (a new keep filed under its album: N-34 slice 3), the cover finder (a picture found later) and the repair (slice 5) write a folder picture with,
+    under the rule of [folder_wants_a_picture]. The picture is written under a hidden name and renamed, so a scan never reads half a picture."""
+    if not data or not folder_wants_a_picture(kept_root, file):
+        return False
+    target, partial = file.parent / "cover.jpg", file.parent / ".cover.jpg.part"
+    partial.write_bytes(data)
+    os.replace(partial, target)
+    return True

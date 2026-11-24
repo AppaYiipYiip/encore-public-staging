@@ -50,6 +50,7 @@ from .catalogue import Cache, Catalogue
 from .deezer import DeezerClient, Gate
 from .fixture_names import fixture_name
 from .ids import now_ms
+from .keeper.placement import plan_for_ref
 
 #: Fields the recorder (`tools/record_catalogue_fixtures.py`) takes out of an answer before it is saved: signed addresses and share links.
 _DROP = frozenset({"preview", "share", "md5_image"})
@@ -172,27 +173,40 @@ class Entry:
     song: Song
     #: Where `song.length_ms` came from: `file` (read from the kept file), `listing` (`song_ref.duration_ms`, the import's), or `none`.
     length_from: str
+    #: The music server has no file of this song, so a keep of it would be a NEW keep (the keeper fetches it, asks its album and files it): N-34 slice 3.
+    new_keep: bool = False
 
 
 def entries(
     conn: sqlite3.Connection,
     *,
     kept_only: bool = False,
+    new_keeps_only: bool = False,
     limit: int | None = None,
     music_root: Path | None = None,
     now: int | None = None,
 ) -> list[Entry]:
     """The songs the pass will ask about: **`album_pass.wanting`, the ONE selection** (review of PR 125: reading this report must predict what the pass stamps). On top of it the
     dry run has only its own: [kept_only] leaves out those nobody kept a file of (the pass asks them too), [limit], and the kept file's own length when [music_root] is given.
-    [now] is the clock of the retry rule (a `none` of the last 7 days is not asked again)."""
+    [now] is the clock of the retry rule (a `none` of the last 7 days is not asked again). [new_keeps_only] keeps the songs the music server has no file of: the songs a NEW
+    keep would be about (the keeper asks the same question of one of them with `album_pass.wanting(ref_id=...)`: this is that selection, filtered)."""
     rows = album_pass.wanting(conn, now=now_ms() if now is None else now)
     out: list[Entry] = []
     for row in rows:
         if kept_only and row["kept"] is None:
             continue
+        if new_keeps_only and row["linked"]:
+            continue
         # THE definition of a song's length, the pass's own (a fractional or negative duration is no length; a kept path that leaves the music folder is never read).
         length, source = album_pass.length_and_source(music_root, row["kept"], row["duration_ms"])
-        out.append(Entry(row["id"], Song(refs.lead_artist(row["artists"]), row["title"], length, row["isrc"]), source))
+        out.append(
+            Entry(
+                row["id"],
+                Song(refs.lead_artist(row["artists"]), row["title"], length, row["isrc"]),
+                source,
+                new_keep=not row["linked"],
+            )
+        )
         if limit is not None and len(out) >= limit:
             break
     return out
@@ -205,6 +219,9 @@ def entries(
 class Row:
     entry: Entry
     verdict: Verdict
+    #: For a NEW keep: where the keeper would file the song's file, relative to the music folder (`keeper.placement.plan_for_ref`, the keeper's own planner, from the ref the keep
+    #: would have after the verdict is written). `None` for a song that is not a new keep.
+    keep_path: str | None = None
 
 
 def run(
@@ -216,16 +233,45 @@ def run(
     tolerance_ms: int = album_finder.TOLERANCE_MS,
     single_window_days: int | None = album_finder.SINGLE_BEFORE_ALBUM_WINDOW_DAYS,
     stop: Callable[[], bool] = lambda: False,
+    music_root: Path | None = None,
 ) -> list[Row]:
     """Every song through the matcher, exactly as slice 2's pass will ask: the search, then each album the same-recording hits are on (serially), then
     `choose_release` with the other refs' holdings read from [conn]. A search or an album that could not be asked is `unavailable`, never `none`.
-    [stop] is asked after each song (the request cap of a live run)."""
+    [stop] is asked after each song (the request cap of a live run). [music_root] is the music folder the keeper files under (its `Encore/` folder): a NEW keep gets the path it
+    would be filed at."""
     rows: list[Row] = []
     for item in items:
-        rows.append(Row(item, _decide(conn, item, search, album, tolerance_ms, single_window_days)))
+        verdict = _decide(conn, item, search, album, tolerance_ms, single_window_days)
+        rows.append(Row(item, verdict, new_keep_path(conn, item, verdict, music_root) if item.new_keep else None))
         if stop():
             break
     return rows
+
+
+def new_keep_path(conn: sqlite3.Connection, item: Entry, verdict: Verdict, music_root: Path | None) -> str:
+    """Where a keep of this song would file its file: the keeper's own planner (`plan_for_ref`) over the ref the keep would have. A `matched` verdict fills the album, the track and
+    the disc exactly as the write rule does (`refs.release_facts_to_fill`, read only here); every other answer that is a fact, and a song that was only examined, forgets the
+    placeholder literal, so the song goes to Singles; a catalogue that could not be asked writes nothing, so the song is filed under what it has today."""
+    row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (item.ref_id,)).fetchone()
+    ref: dict[str, Any] = {
+        "title": row["title"],
+        "artists": json.loads(row["artists"]),
+        "albumArtist": row["album_artist"],
+        "album": row["album"],
+        "trackNo": row["track_no"],
+        "discNo": row["disc_no"],
+    }
+    if verdict.outcome == "matched" and verdict.match is not None:
+        facts = refs.release_facts_to_fill(conn, row, verdict.match)
+        ref |= {
+            "album": facts.get("album"),
+            "trackNo": facts.get("track_no", ref["trackNo"]),
+            "discNo": facts.get("disc_no", ref["discNo"]),
+        }
+    elif verdict.outcome != "unavailable":
+        ref["album"] = None if refs.is_placeholder_album(ref["album"]) else ref["album"]
+    base = music_root if music_root is not None else Path("music")
+    return plan_for_ref(base / "Encore", ref).path.relative_to(base).as_posix()
 
 
 def _decide(
@@ -453,6 +499,37 @@ class Report:
             for row in some[: min(self.examples, 5)]:
                 say(f"           {_name(row.entry)}  ({row.verdict.reason})")
         say("")
+        say(
+            "== NEW KEEPS: where a song kept from now on would be filed (N-34 slice 3; the keeper asks the very question above, with the downloaded file's length)"
+        )
+        fresh = [row for row in self.rows if row.keep_path is not None]
+        if not fresh:
+            say("  (no song would be a new keep)")
+        else:
+            under = [row for row in fresh if row.verdict.outcome == "matched"]
+            singles = Counter(row.verdict.reason for row in fresh if row.verdict.outcome in ("none", "held"))
+            unasked = [row for row in fresh if row.verdict.outcome not in ("matched", "none", "held")]
+            say(f"  {len(fresh)} songs have no file the music server knows; a keep of each would file it:")
+            say(f"  {len(under):5d}  under an album (a `matched` answer, the only way a keep files a song under an album)")
+            for reason, count in sorted(singles.items(), key=lambda item: (-item[1], item[0])):
+                say(
+                    f"  {count:5d}  where it is filed today, in Singles with no album: {reason} (asked again by the pass after 7 days or a better rule)"
+                )
+            say(
+                f"  {len(unasked):5d}  as it is today, nothing remembered: the catalogue could not be asked, or the song has no name or length to ask with"
+            )
+            listed = sum(1 for row in fresh if row.entry.length_from != "file")
+            say(
+                f"  {listed} of these songs were measured by the import's listing: the file a keep downloads has its own length, which is 1 to 12 s off the listing's, so a `none` "
+                f"here can be a `matched` at the real keep and the other way round. The counts above are a forecast; the folders below are what the keeper's own planner says."
+            )
+            for row in (under + [r for r in fresh if r not in under])[: self.examples]:
+                say(
+                    f"  {_name(row.entry)}  [{row.entry.length_from}]  ->  {row.keep_path}  ({row.verdict.outcome}/{row.verdict.reason})"
+                )
+            if len(fresh) > self.examples:
+                say(f"  ... {len(fresh) - self.examples} more (--examples)")
+        say("")
         say("== matched (read these for a wrong album)")
         matched = [row for row in self.rows if row.verdict.outcome == "matched" and row.verdict.match is not None]
         for row in matched[: self.examples]:
@@ -495,6 +572,11 @@ def main(
     parser.add_argument(
         "--kept-only", action="store_true", help="leave out the songs nobody kept a file of (the pass asks them too)"
     )
+    parser.add_argument(
+        "--new-keeps",
+        action="store_true",
+        help="only the songs the music server has no file of (a keep of them would fetch, ask and file them): what NEW KEEPS would be filed under",
+    )
     parser.add_argument("--tolerance-ms", type=int, default=album_finder.TOLERANCE_MS)
     parser.add_argument(
         "--single-window-days",
@@ -514,7 +596,9 @@ def main(
     conn = sqlite3.connect(f"{args.db.resolve().as_uri()}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     try:
-        items = entries(conn, kept_only=args.kept_only, limit=args.limit, music_root=args.music_root)
+        items = entries(
+            conn, kept_only=args.kept_only, new_keeps_only=args.new_keeps, limit=args.limit, music_root=args.music_root
+        )
         with opened(args.answers, live=args.live, max_requests=args.max_requests, network=network) as source:
             why: list[str] = []
 
@@ -531,6 +615,7 @@ def main(
                 tolerance_ms=args.tolerance_ms,
                 single_window_days=args.single_window_days,
                 stop=stop,
+                music_root=args.music_root,
             )
             requests = {
                 "asked": source.transport.asked,

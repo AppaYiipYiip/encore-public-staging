@@ -15,7 +15,10 @@ import pytest
 from encore_server import album_finder, album_pass
 from encore_server.album_pass import commit_verdict, file_or_listing_length, length_and_source, wanting
 from encore_server.db import Database
-from tests.test_album_pass import DAY_MS, NOW, Catalogue, landmvrks, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
+from tests import test_album_pass
+from tests.test_album_pass import DAY_MS, NOW, Catalogue, landmvrks, make_ref, row_of
+
+pdb = test_album_pass.pdb  # the fixture of the pass's tests, under its own name
 
 
 def asked_for(db: Database, ref: str, *, now: int = NOW) -> bool:
@@ -95,10 +98,14 @@ def test_the_retry_rule_is_the_passes_a_week_and_a_better_rule(pdb: Database) ->
 # ------------------------------------------------------------------------------------------------------------------ one way to read a length
 
 
-def test_a_length_is_the_files_own_and_else_the_listings_whole_number_and_else_none(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_a_length_is_the_files_own_and_else_the_listings_whole_number_and_else_none(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(album_pass, "file_length_ms", lambda path: 231_456 if path.name == "a.opus" else None)
     assert file_or_listing_length(tmp_path / "a.opus", 230_000) == (231_456, "file")
-    assert file_or_listing_length(tmp_path / "b.opus", 230_000) == (230_000, "listing"), "a file that cannot be read falls back to the listing"
+    assert file_or_listing_length(tmp_path / "b.opus", 230_000) == (230_000, "listing"), (
+        "a file that cannot be read falls back to the listing"
+    )
     assert file_or_listing_length(None, 230_000) == (230_000, "listing")
     assert file_or_listing_length(None, 230_000.5) == (None, "none"), "a fractional listing is no length"
     assert file_or_listing_length(None, -1) == (None, "none")
@@ -148,7 +155,9 @@ def test_the_write_rule_is_one_function_the_pass_and_a_keep_both_call(pdb: Datab
 
 def test_a_verdict_of_none_remembers_the_answer_and_forgets_the_placeholder(pdb: Database) -> None:
     ref = make_ref(pdb, "A Song Nobody Recorded", "Nobody At All", 200_000, kept=None)
-    verdict = album_finder.decide(album_finder.Song("Nobody At All", "A Song Nobody Recorded", 200_000), Catalogue().search, Catalogue().album)
+    verdict = album_finder.decide(
+        album_finder.Song("Nobody At All", "A Song Nobody Recorded", 200_000), Catalogue().search, Catalogue().album
+    )
     with pdb.tx() as conn:
         done = commit_verdict(conn, ref, verdict, now=NOW)
     assert (done.outcome, done.reason, done.wrote) == ("none", "no_same_recording", True)
