@@ -194,18 +194,64 @@ def deezer_lookup_without_network(artist: str, title: str, album: str | None, *,
     return deezer_lookup(artist, title, album, length_ms=length_ms, client=httpx.Client(transport=httpx.MockTransport(refuse)))
 
 
-def test_a_song_the_album_pass_matched_gets_its_picture_from_the_identity_and_is_not_asked_here(tmp_path: Path) -> None:
-    db = database(tmp_path)
-    matched = liked(db, "Nude")
-    other = liked(db, "Reckoner")
+def make_matched(db: Database, ref: str, deezer_id: str = "3116792061") -> None:
+    """What the album pass leaves on a song it matched: the outcome and the catalogue id (the picture is the pass's, written only when the release had a usable one)."""
     with db.tx() as conn:
         conn.execute(
-            "UPDATE song_ref SET identity_outcome = 'matched', identity_rev = 1, identity_tried_at = 1 WHERE id = ?", (matched,)
+            "UPDATE song_ref SET identity_outcome = 'matched', identity_rev = 1, identity_tried_at = 1, deezer_id = ? WHERE id = ?",
+            (deezer_id, ref),
         )
-    spy = Spy()
-    CoverFinder(db, spy, sleep=lambda _: None).run_once()
-    assert [call[0] for call in spy.calls] == ["Reckoner"]
-    assert cover_of(db, other) == PICTURE and cover_of(db, matched) is None
+
+
+def test_a_song_the_album_pass_matched_with_no_usable_picture_gets_it_by_its_id_and_is_never_searched_by_name(
+    tmp_path: Path,
+) -> None:
+    """Review of PR 125: the pass writes the release's picture when it has a usable one; when it had none the song used to be left out of the finder for good, and main would have
+    found one. It has a catalogue id, so the finder asks by that id: the same release, never another release's picture by name."""
+    db = database(tmp_path)
+    matched = liked(db, "Nude")
+    other = liked(db, "Reckoner", album="Other")
+    make_matched(db, matched)
+    by_id, by_name = ById(), Spy()
+    CoverFinder(db, by_name, by_id=by_id, sleep=lambda _: None).run_once()
+    assert by_id.asked == ["3116792061"]
+    assert [call[0] for call in by_name.calls] == ["Reckoner"], "the matched song is not searched by name"
+    assert cover_of(db, matched) == STUDIO and cover_of(db, other) == PICTURE
+
+
+def test_a_matched_song_the_catalogue_has_no_picture_for_is_settled_and_still_not_searched_by_name(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    matched = liked(db, "Nude")
+    make_matched(db, matched)
+    by_name = Spy()
+    CoverFinder(db, by_name, by_id=ById(None), sleep=lambda _: None).run_once()
+    assert by_name.calls == [] and cover_of(db, matched) is None
+    with db.read() as conn:
+        assert conn.execute("SELECT cover_tried_at IS NOT NULL FROM song_ref WHERE id = ?", (matched,)).fetchone()[0] == 1, (
+            "settled for a week, like any miss"
+        )
+
+
+def test_a_matched_song_never_takes_the_picture_another_song_of_the_same_album_name_was_found_by_name(tmp_path: Path) -> None:
+    """The one-question-per-release shortcut is for name lookups; a matched song's release is the identity's, so a sibling's by-name picture (which may be another release's) is not its."""
+    db = database(tmp_path)
+    one, two = sorted(
+        [liked(db, "Nude", length_ms=215_000), liked(db, "Reckoner", length_ms=215_000)]
+    )  # the finder goes through them in id order
+    make_matched(db, two)
+    CoverFinder(db, Spy(PICTURE), by_id=ById(None), sleep=lambda _: None).run_once()
+    assert cover_of(db, one) == PICTURE and cover_of(db, two) is None
+
+
+def test_a_matched_song_that_has_its_picture_is_not_asked_at_all(tmp_path: Path) -> None:
+    db = database(tmp_path)
+    matched = liked(db, "Nude")
+    make_matched(db, matched)
+    with db.tx() as conn:
+        conn.execute("UPDATE song_ref SET cover_url = ? WHERE id = ?", (STUDIO, matched))
+    by_id, by_name = ById(), Spy()
+    CoverFinder(db, by_name, by_id=by_id, sleep=lambda _: None).run_once()
+    assert by_id.asked == [] and by_name.calls == []
 
 
 def test_a_live_album_does_not_inherit_the_studio_albums_picture(tmp_path: Path) -> None:

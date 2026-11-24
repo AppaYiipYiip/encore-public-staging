@@ -7,7 +7,7 @@ stops and nothing is remembered (audit B-124).
 
 **It asks through the matcher of the album pass** (N-34 slice 2, audit B-133): a hit is the song only when the artist, the title AND the version agree and the length is
 within the tolerance (`album_finder.judge_hits`), so a live upload is not given a studio album's picture and the other way round; a name with nothing to compare or a song
-with no length is not looked up at all. A song the album pass matched has its picture from that identity (the release's cover, written by the pass) and is not asked here.
+with no length is not looked up at all. A song the album pass matched has its picture from that identity (the release's cover, written by the pass); when the release had none usable it is asked by its catalogue id, never by name.
 """
 
 from __future__ import annotations
@@ -125,15 +125,15 @@ class CoverFinder:
         """Songs somebody has (a like, a playlist entry) or the server keeps, without a picture, kept ones and liked ones first. **Never a song whose artist
         is a channel's name or nobody's** (N-26: `channel`, `unknown`): the name of an uploader is not asked about at the catalogue from the Host's address.
         The cost, written down: an upload on a band's own channel loses a catalogue cover until N-28 names its artist, and keeps its video's thumbnail.
-        **Never a song the album pass matched** (`identity_outcome = 'matched'`): its picture is the identity's, written by the pass from the chosen release; a by-name search
-        here could only pick another release's picture. The kept file's path and the ref's length come with the row: the comparison is by length (`album_finder.judge_hits`)."""
+        **A song the album pass matched** (`identity_outcome = 'matched'`) has the identity's picture, written by the pass from the chosen release when that release had a usable
+        one; when it had none the song is still wanted here and is asked BY ITS CATALOGUE ID only (the same release), never by name: a by-name search could only pick another
+        release's picture, and slice 2 must never drop a cover that main would have found. The kept file's path and the ref's length come with the row: the comparison is by length (`album_finder.judge_hits`)."""
         return conn.execute(
-            "SELECT r.id, r.title, r.artists, r.album, r.album_artist, r.duration_ms, r.deezer_id,"
+            "SELECT r.id, r.title, r.artists, r.album, r.album_artist, r.duration_ms, r.deezer_id, r.identity_outcome,"
             " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
             "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
             " FROM song_ref r"
             " WHERE r.cover_url IS NULL AND (r.cover_tried_at IS NULL OR r.cover_tried_at < ?)"
-            " AND (r.identity_outcome IS NULL OR r.identity_outcome != 'matched')"
             f" AND {performer_clause('r.artist_basis')}"
             " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
             "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
@@ -195,9 +195,10 @@ class CoverFinder:
                 self._sleep(self._pause)
                 if url and key is not None:
                     by_album[key] = url
-            if url is None and key is not None:
+            matched = row["identity_outcome"] == "matched"
+            if url is None and key is not None and not matched:
                 url = by_album.get(key)
-            if url is None:
+            if url is None and not matched:
                 report.looked += 1
                 try:
                     url = self._lookup(
