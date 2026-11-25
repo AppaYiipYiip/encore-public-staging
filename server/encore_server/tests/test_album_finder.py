@@ -435,7 +435,7 @@ def test_comfortably_numb_the_wall_wins_over_the_two_best_ofs_and_every_live_ver
     assert (match.deezer_id, match.album_id, match.album, match.record_type) == ("116914122", WALL, "The Wall", "album")
     assert (match.release_date, match.year, match.track_no, match.disc_no, match.isrc) == (
         "1979-11-30",
-        1979,
+        None,  # the year is not part of a stamp (N-34, PR 130): a reissue date cannot be told from the real one
         6,
         2,
         "GBN9Y1100113",
@@ -605,7 +605,7 @@ def test_an_album_beats_an_earlier_single_inside_the_window() -> None:
         "album",
         "3116792061",
         2,
-        2025,
+        None,  # no year in a stamp (N-34, PR 130)
     )
     assert not match.single
     assert {r.album_id: r.reason for r in verdict.releases} == {SINGLE: "outranked", ALBUM: "chosen"}
@@ -720,7 +720,7 @@ def test_the_earliest_release_date_beats_the_lowest_id() -> None:
         chosen_match(verdict).track_no,
     ) == (
         BEST_OF,
-        1979,
+        None,  # no year in a stamp (N-34, PR 130)
         14,
     )
 

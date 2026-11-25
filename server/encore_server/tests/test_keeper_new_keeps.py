@@ -125,7 +125,7 @@ def test_a_matched_new_keep_is_filed_and_tagged_under_its_album_from_the_start(k
         ALBUM_TITLE,
         2,
         1,
-        2025,
+        None,  # no year in a stamp (N-34, PR 130): a reissue date cannot be told from the real one
         "DEYO62300153",
         "LANDMVRKS",
     )

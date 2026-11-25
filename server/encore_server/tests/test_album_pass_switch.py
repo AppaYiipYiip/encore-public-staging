@@ -248,3 +248,48 @@ def test_a_matched_song_of_an_older_revision_is_never_asked_again(pdb: Database)
 def test_the_album_pass_module_still_exists_for_the_dry_run_whatever_the_switch_says() -> None:
     """The switch turns off the ERRAND and the keeper's question, not the code: `python -m encore_server.album_dryrun` reads a copy of a server's database whatever its settings say."""
     assert hasattr(album_pass, "AlbumFinder") and hasattr(album_pass, "KeepAsker")
+
+
+@pytest.mark.parametrize("switch", [True, False])
+def test_the_switch_alone_decides_whether_the_keeper_and_the_hourly_pass_are_built_with_the_album_question(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, switch: bool
+) -> None:
+    """The review of PR 130 (mutant 5): dropping the keeper's half of the switch left every test green, because the test above has no album to find. This asserts the WIRING itself: the keeper is given its
+    album question and the hourly errand is built only when the switch is on, and with it on both ARE built (the control: this app does build a keeper)."""
+    from encore_server import api
+
+    class Configured(FakeNavidrome):
+        configured = True
+
+    built: list[str] = []
+
+    def watch(owner: Any) -> None:
+        original = owner.on
+
+        def on(*args: Any, **kwargs: Any) -> Any:
+            built.append(owner.__name__)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(owner, "on", on)
+
+    watch(api.KeepAsker)
+    watch(api.AlbumFinder)
+    music = tmp_path / "music"
+    music.mkdir()
+    settings = Settings(
+        data_dir=tmp_path / "data",
+        music_dir=music,
+        navidrome_url="http://navidrome.invalid",
+        youtube=False,
+        workers=False,
+        min_free_gb=0.0,
+        album_pass=switch,
+    )
+    catalogue = RealCatalogue(
+        DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=RecordedDeezer().transport())),
+        Cache(None),
+    )
+    create_app(settings, verifier=FakeVerifier(), youtube=FakeSource(), navidrome=Configured(music), catalogue=catalogue)  # type: ignore[arg-type]
+
+    assert ("KeepAsker" in built) is switch, built
+    assert ("AlbumFinder" in built) is switch, built

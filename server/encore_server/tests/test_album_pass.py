@@ -172,7 +172,7 @@ def test_a_song_the_catalogue_knows_gets_its_album_and_everything_the_release_sa
         "The Darkest Place I've Ever Been",
         2,
         1,
-        2025,
+        None,  # no year in a stamp (N-34, PR 130): a reissue date cannot be told from the real one
         "3116792061",
         "DEYO62300153",
     )
@@ -730,7 +730,7 @@ def test_the_wall_wins_for_comfortably_numb_through_the_pass(pdb: Database) -> N
     answers = {WALL: albums(WALL)[WALL], BEST_OF: best_of_answer()}
     finder(pdb, Catalogue({("Pink Floyd", "Comfortably Numb"): hits("pink floyd comfortably numb")}, answers)).run_once()
     after = row_of(pdb, ref)
-    assert after["album"] == "The Wall" and after["year"] == 1979 and after["identity_outcome"] == "matched"
+    assert after["album"] == "The Wall" and after["year"] is None and after["identity_outcome"] == "matched"
 
 
 # ------------------------------------------------------------------------------------------------------------------ the pass writes nothing outside the row

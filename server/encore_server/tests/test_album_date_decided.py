@@ -54,8 +54,6 @@ def test_the_five_songs_a_real_pass_stamped_wrongly_are_re_askable_nones_with_th
         ),  # its lead singles are other releases of the song: the album is no sole release
         ("System Of A Down", "Chop Suey!", "Toxicity", "album"),
         ("Pause", "Lyam", "Metamorphose", "ep"),  # a sole EP stays accepted (the artist's own EPs; a compilation EP is rare)
-        # two compilations by their titles (`Greatest Hits`, `The Studio Album Collection`) are no rival originals; `By the Way (Deluxe Edition)` and the plain title are one release
-        ("Red Hot Chili Peppers", "By the Way", "By the Way (Deluxe Edition)", "album"),
     ],
 )
 def test_the_songs_the_rules_must_not_delay_stay_matched_on_the_real_answers(
@@ -268,7 +266,9 @@ def test_a_year_only_date_is_still_earlier_than_any_date_of_a_later_year_and_a_p
     two = verdict_of(
         Rel("5", "Harbour", "album", "2002-01-01"), Rel("4", "Harbour (Deluxe Edition)", "album", "2002-01-01"), LATER_SINGLE
     )
-    assert two.match is not None and two.match.album_id == "4", "two placeholders of one year: the lowest id, as before"
+    assert two.match is not None and two.match.album_id == "5", (
+        "two placeholders of one year: the plain title, then the lowest id"
+    )
 
 
 def test_a_release_with_no_date_is_still_last() -> None:
@@ -282,3 +282,13 @@ def test_the_year_only_rule_does_not_loosen_the_single_before_album_rule() -> No
     """`_single_before` is a WITHHOLD: a loosened one would make permanent stamps. A single dated 2000-01-01 before an album of the same year stays `single_before_album`."""
     verdict = verdict_of(Rel("1", "Harbour", "album", "2000-05-05"), Rel("9", "Harbour Lights", "single", "2000-01-01"))
     assert outcome(verdict) == ("none", "single_before_album")
+
+
+def test_by_the_way_is_never_stamped_under_the_name_of_its_edition() -> None:
+    """The two releases are one family and dated the same day: the stamp, when there is one, is the PLAIN title (the album's name is permanent); on the recorded answers the plain release's track list was not
+    recorded, so the pass would ask again (`unavailable`), which is the safe side."""
+    verdict = recorded_song("Red Hot Chili Peppers", "By the Way")
+    if verdict.outcome == "matched":
+        assert verdict.match is not None and verdict.match.album == "By the Way"
+    else:
+        assert verdict.outcome == "unavailable", verdict

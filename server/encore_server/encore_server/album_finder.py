@@ -508,22 +508,72 @@ _LABEL_TRAILING = re.compile(
 )
 
 
-def release_family(title: str) -> str:
-    """What two titles must share to be ONE RELEASE for the rules of `date_decided` and `sole_album`: `catalogue.release_key` (no case, the shared fold, the edition suffixes it knows, no
-    leading "the") with the edition labels of the live data folded too: "Hybrid Theory (Bonus Edition)", "(20th Anniversary Edition)", "Meteora 20th Anniversary Edition", "(20th Anniversary / Deluxe)",
-    "[Edited Version]", "(International Version)", "(Clean)", "(2001)" are the plain title's release. **The one place the labels live** (`catalogue.release_key` also feeds the twin rule, the
-    fill rule and the cover finder, which are not changed by this slice); a group that holds any other word is part of the title, so "Relapse: Refill" and "Waking The Fallen: Resurrected" are other
-    releases and "(Live)", "(Acoustic)" and "(Taylor's Version)" never fold. A title that is only labels keeps its own key (never the empty family). **The direction of an error**: a label
-    this misses makes two editions two families (a song is delayed, never wrongly stamped); a label it should not fold would hide a rival and let a stamp through, so the words are few and listed."""
+def _plain_text(text: str) -> str:
+    """The fallback of a family key: the title's own text, Unicode-normalised, case-folded and with its whitespace collapsed (NOT `release_key`, which drops symbols and edition words)."""
+    return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
+
+
+def _key(text: str) -> str:
+    """`catalogue.release_key` of the text, or, where that is empty (a title of symbols such as "÷", "+", "!!!", or of labels only such as "Deluxe", "Remastered"), the text's own plain form: a family key is
+    never empty for a title that has any character, so two different such titles are never one release (the review of PR 130: they were, and a rival disappeared)."""
+    return release_key(text) or _plain_text(text)
+
+
+def _strip_labels(title: str) -> str:
+    """The folded title with the NARROW list of edition labels taken off its end, never down to nothing: a shorter text is taken only when it has a key of its own."""
     text = fold(title.strip())
     while True:
         shorter = _LABEL_BRACKETED.sub("", text, count=1)
         if shorter == text:
             shorter = _LABEL_TRAILING.sub("", text, count=1)
-        if shorter == text or not release_key(shorter):
-            break
+        if shorter == text or not _key(shorter):
+            return text
         text = shorter
-    return release_key(text)
+
+
+def release_family(title: str) -> str:
+    """The NARROW family: what two titles must share to be ONE RELEASE for the rival test of `date_decided`: `catalogue.release_key` (no case, the shared fold, the edition suffixes it knows, no
+    leading "the") with the edition labels of the live data folded too: "Hybrid Theory (Bonus Edition)", "(20th Anniversary Edition)", "Meteora 20th Anniversary Edition", "(20th Anniversary / Deluxe)"
+    "[Edited Version]", "(International Version)", "(Clean)", "(2001)" are the plain title's release. **The one place the labels live** (`catalogue.release_key` also feeds the twin rule, the
+    fill rule and the cover finder, which are not changed by this slice); a group that holds any other word is part of the title, so "Relapse: Refill" and "Waking The Fallen: Resurrected" are other
+    releases and "(Live)", "(Acoustic)" and "(Taylor's Version)" never fold. A title that is only labels or only symbols keeps a key of its own (`_key`: never the empty family).
+    **The direction of an error, for THIS comparison**: a label it misses makes a RIVAL (two families), so the song is held (`date_decided`, a delay); a label it folds that it should not would hide a rival
+    and let a stamp through, so the words are few and listed. The other rule, `sole_album`, fails the other way and uses [broad_release_family]."""
+    return _key(_strip_labels(title))
+
+
+#: The BROAD family's extra tails: any trailing bracketed group, a dashed or colon group ("Harbour - Tour Edition", "Relapse: Refill"), or up to three words that end in an edition word
+#: ("Harbour Tour Edition", "Harbour Japanese Version", "Harbour Reissue 2009").
+_BROAD_TAIL = re.compile(
+    r"\s*[(\[][^()\[\]]*[)\]]\s*$"
+    r"|\s*:\s+\S.*$"
+    r"|\s+[-–—]\s+\S.*$"
+    r"|\s+(?:\S+\s+){0,3}(?:edition|version|reissue|reissued|remaster|remastered|remasters)(?:\s+(?:19|20)\d\d)?\s*$"
+)
+
+
+def broad_release_family(title: str) -> str:
+    """The BROAD family, for the sole-album test of `sole_album`: the narrow family with every trailing bracketed, dashed or "edition" group taken off as well, so that an edition label this code has never
+    seen ("(Tour Edition)", "(Collector's Edition)", "- Japan") is still the same release. **Its error direction is the other one**: it may call two different releases one, and then a song is held
+    as a sole album (a delay); it never makes a second release out of one, which would let a sole album through. Never empty for a title that has any character (`_key`)."""
+    text = fold(title.strip())
+    while True:
+        shorter = _strip_labels(text)
+        if shorter == text:
+            shorter = _BROAD_TAIL.sub("", text, count=1)
+        if shorter == text or not _key(shorter):
+            return _key(text)
+        text = shorter
+
+
+def _family_of(facts: _Facts, *, broad: bool = False) -> str:
+    """A release's family key; a release with no title at all is a family of its own (its id), never one with every other untitled release."""
+    return (broad_release_family if broad else release_family)(facts.title) or f"#{facts.album_id}"
+
+
+def _labelled(title: str) -> bool:
+    """Whether the title carries one of the narrow edition labels: on a tie, the PLAIN title is the release's name (the album's name is permanent)."""
+    return _strip_labels(title) != fold(title.strip())
 
 
 def _title_says(title: str, phrases: Sequence[str]) -> bool:
@@ -570,10 +620,15 @@ def _date_order(date_: str | None) -> tuple[int, int, str]:
     return (int(date_[:4]), 1 if date_.endswith("-01-01") else 0, date_)
 
 
-def _order(facts: _Facts) -> tuple[int, tuple[int, int, str], tuple[int, int, str]]:
-    """Step 3 (b) to (d): `album` and `ep` before `single` whatever the dates (the TIER), then the EARLIEST date ([_date_order]), then the lowest id. **Nothing sits between the tier and the
+def _order(facts: _Facts) -> tuple[int, tuple[int, int, str], int, tuple[int, int, str]]:
+    """Step 3 (b) to (d): `album` and `ep` before `single` whatever the dates (the TIER), then the EARLIEST date ([_date_order]), then, on a tie, the title with no edition label ("By the Way", not "By the Way (Deluxe Edition)": the name is permanent), then the lowest id. **Nothing sits between the tier and the
     date**: a release that beat another of its tier ONLY by what follows the tier (a date, a tie, a missing date, an id) is what `date_decided` is about."""
-    return (0 if facts.record_type in _FULL_RELEASE else 1, _date_order(facts.date), _id_order(facts.album_id))
+    return (
+        0 if facts.record_type in _FULL_RELEASE else 1,
+        _date_order(facts.date),
+        1 if _labelled(facts.title) else 0,
+        _id_order(facts.album_id),
+    )
 
 
 def _gap_days(earlier: str | None, later: str | None) -> int | None:
@@ -609,17 +664,18 @@ def _doubted_by_the_dates(chosen: _Facts, others: Sequence[_Facts]) -> tuple[str
     A rival is a release of the same TIER (album or EP: `_order`'s tier), of another family, whose title does not say compilation; it counts whatever its date (earlier, later, the same day,
     none: only the id and the date put the chosen release first, and neither is evidence). The sole rule asks for ONE family among all the eligible releases, a single included: a single of
     the song is the song's own release, a second family that corroborates the album."""
-    family = release_family(chosen.title)
+    family = _family_of(chosen)
     if chosen.record_type in _FULL_RELEASE:
         rivals = [
             other
             for other in others
-            if other.record_type in _FULL_RELEASE and release_family(other.title) != family and not _compilation_like(other.title)
+            if other.record_type in _FULL_RELEASE and _family_of(other) != family and not _compilation_like(other.title)
         ]
         if rivals:
             shown = "; ".join(f"{rival.title} ({rival.record_type}, {rival.date or 'no date'})" for rival in rivals[:3])
             return "date_decided", f"{chosen.title} ({chosen.date or 'no date'}) was ahead of {shown} on the date order alone"
-    if chosen.record_type == "album" and all(release_family(other.title) == family for other in others):
+    broad = _family_of(chosen, broad=True)
+    if chosen.record_type == "album" and all(_family_of(other, broad=True) == broad for other in others):
         return "sole_album", f"{chosen.title} is the only release of the hits"
     return None
 
@@ -701,8 +757,8 @@ def choose_release(
     * **Withheld (the advisor's ruling of 17 Nov 2026): what cannot be justified on evidence is `none` with a reason, never `matched`**, because a stamped album
       is effectively permanent. (a) The chosen release is an album or EP and an EARLIER single carries the recording: the album outranks it only inside
       [single_window_days] (`single_before_album`; `None`, the default, is NOT FROZEN: see `SINGLE_BEFORE_ALBUM_WINDOW_DAYS`). (b) The chosen release's title carries
-      a compilation marker (`compilation_title`). Both keep `withheld`, the match the old rule would have written. A same-artist best-of that is the only candidate
-      and says nothing of it in its title is accepted.
+      a compilation marker (`compilation_title`). Both keep `withheld`, the match the old rule would have written. A SOLE album (one release family among the eligible
+      releases of the hits) is `sole_album` and a choice only the dates decided is `date_decided`: see `_doubted_by_the_dates`.
     * Step 4: the chosen release's song list must hold the hit's id (a track has another id on every release): it gives the track number, the disc and
       the ISRC. A list that does not is `none`, never a guess at the next release.
     * Step 5: a taken `deezer_id` or `isrc`, or another ref that is this song on this release, is `held`: nothing is written and the pair is logged.
@@ -778,7 +834,11 @@ def choose_release(
         album=release.title,
         record_type=release.record_type or "",
         release_date=release.date,
-        year=int(release.date[:4]) if release.date else None,
+        # STOP-GAP(N-34 year): the year is NOT written by a stamp. The catalogue's dates of old releases are reissue dates and year-only placeholders (Weathered 2009, The Invisible Band 2009,
+        # Contraband 1990-01-01) and no rule inside the hits can tell them from the real one; a wrong year is as permanent as a wrong album and reaches the Host's disk through the keeper's tags.
+        # PRICE: a song stamped here has no year until another source fills it. Removal trigger and task: the artist's discography (item N-48), whose album list can say the first year.
+        # The date stays in `release_date` for the report.
+        year=None,
         track_no=track.get("trackNo"),
         disc_no=track.get("discNo"),
         cover=release.cover,

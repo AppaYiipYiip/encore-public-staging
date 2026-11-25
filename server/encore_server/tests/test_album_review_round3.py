@@ -147,7 +147,13 @@ def test_a_song_whose_own_title_says_it_may_take_the_release_that_says_it() -> N
     hit["title"] = "Creature (Taylor's Version)"
     song = Song("LANDMVRKS", "Creature (Taylor's Version)", 225_000)
     verdict = choose_release(song, *with_later_single([hit], with_title("Creature (Taylor's Version)")))
-    assert verdict.outcome == "matched", (verdict.outcome, verdict.reason)
+    # The version rule does not refuse the release (it is the CHOSEN one); the broad family folds its "(Taylor's Version)" into the later single's title, so it is held as a sole album: a delay,
+    # never a stamp (PR 130: the broad comparison fails closed for the sole-album rule).
+    assert any(release.reason == "chosen" for release in verdict.releases), verdict
+    assert (verdict.outcome, verdict.reason) in {("matched", "matched"), ("none", "sole_album")}, (
+        verdict.outcome,
+        verdict.reason,
+    )
 
 
 @pytest.mark.parametrize(

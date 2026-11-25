@@ -271,7 +271,7 @@ def test_the_run_decides_every_song_on_the_recorded_answers_and_says_what_it_cou
     assert matched["Requiem"] is not None and matched["Requiem"].album == "The Darkest Place I've Ever Been"
     assert matched["Comfortably Numb"] is not None and (matched["Comfortably Numb"].album, matched["Comfortably Numb"].year) == (
         "The Wall",
-        1979,
+        None,  # no year in a stamp (N-34, PR 130): a reissue date cannot be told from the real one
     )
     # the best-of's song list was never recorded and is not needed (The Wall is chosen), so it is "could not ask" for a song that did not need it
     assert (

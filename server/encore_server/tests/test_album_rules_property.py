@@ -20,7 +20,34 @@ from hypothesis import strategies as st
 from encore_server.album_finder import choose_release
 from tests.album_world import Rel, world
 
-BASES = ["Harbour", "Moorings", "Tidewater", "Lanterns", "Foghorn", "Saltmarsh", "Driftwood", "Kelpwood"]
+# The bases include what the review of PR 130 found (symbol-only titles, label-only titles, a year as the whole title): the generator knows each is its own release.
+BASES = [
+    "Harbour",
+    "Moorings",
+    "Tidewater",
+    "Lanterns",
+    "Foghorn",
+    "Saltmarsh",
+    "Driftwood",
+    "Kelpwood",
+    "\u00f7",
+    "+",
+    "=",
+    "!!!",
+    "Deluxe",
+    "Remastered",
+    "2001",
+    "1989",
+]
+# Labels the NARROW list knows (the rule is exact about them) and labels it has never seen (the rule must fail CLOSED about them: a hold, never a stamp).
+UNLISTED_LABELS = [
+    " (Tour Edition)",
+    " (Reissue)",
+    " (Collector's Edition)",
+    " - Japan Edition",
+    " (Platinum Edition)",
+    " Japanese Version",
+]
 LABELS = [
     "",
     "",
@@ -59,6 +86,7 @@ class Made:
     family: int  # the generator's own label of "which release this is"
     eligible: bool
     compilation: bool
+    listed: bool = True  # every label of this release is one the narrow list knows
 
 
 @st.composite
@@ -75,14 +103,17 @@ def catalogues(draw: st.DrawFn) -> list[Made]:
         for _ in range(draw(st.integers(1, 3))):
             number += 1
             record = draw(st.sampled_from(["album", "album", "ep", "single"]))
+            label = draw(st.sampled_from(LABELS + UNLISTED_LABELS if draw(st.integers(0, 3)) == 0 else LABELS))
             rel = Rel(
                 str(100 + number),
-                title + draw(st.sampled_from(LABELS)),
+                title + label,
                 record,
                 draw(st.sampled_from(DATES)),
                 artist="Somebody Else" if foreign else None,
             )
-            made.append(Made(rel, family, eligible=not foreign and not live, compilation=compilation))
+            made.append(
+                Made(rel, family, eligible=not foreign and not live, compilation=compilation, listed=label not in UNLISTED_LABELS)
+            )
     return made
 
 
@@ -118,7 +149,8 @@ def test_a_matched_verdict_has_no_date_competitor_and_is_not_a_sole_album_and_ea
             f"{chosen.rel.title!r} was chosen though {[c.rel.title for c in competitors]} compete with it on the date alone"
         )
         assert not (chosen.rel.type == "album" and families == 1), "a sole album is never stamped"
-    elif (verdict.outcome, verdict.reason) == ("none", "date_decided"):
+    elif (verdict.outcome, verdict.reason) == ("none", "date_decided") and all(m.listed for m in made):
+        # (a label the narrow list has never seen may hold a song the ground truth would stamp: that is the safe direction, so only checked when every label is known)
         assert verdict.withheld is not None
         _, competitors, _ = _facts(made, verdict.withheld.album_id)
         assert competitors, "date_decided said no competitor exists"

@@ -1,0 +1,9 @@
+{
+ "id": "20261125T234521Z-agent-74b9",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34fix (Claude Sonnet 5.5)",
+ "at": "2026-11-25T23:45:21Z",
+ "type": "note",
+ "body": "N-34 status for whoever reads the board (26 Nov 2026, lead): the first live album pass on VM 108 stamped 5 wrong permanent albums; all 35 stamps were undone from the pre-update copy and the server was stopped on purpose. The fix is PR #130: two new holds (none/date_decided, none/sole_album), ENCORE_ALBUM_PASS switch (stops the hourly pass AND the keeper's question), and, after the independent review, a family key that is never empty, a narrow and a broad family comparison that each fail closed, the plain title winning a date tie, and NO YEAR written by a stamp (stop-gap: the price is a missing year; the task that ends it is N-48, the artist's discography round). Held controls (accepted price, delay only): Stankonia, Hybrid Theory, Numb, Breaking the Habit. The first public image stays blocked until #130 is merged AND a fresh live dry run's matched list is read the same day. Server work next after the merge: restart VM 108 with ENCORE_ALBUM_PASS=0, fresh live dry run, read the list, switch on, check on the A35; then N-48 (measure first)."
+}
