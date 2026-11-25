@@ -8,8 +8,10 @@ likes, playlists and history point at the *ref*; this only adds a row to `song_f
 from __future__ import annotations
 
 import logging
+import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -33,6 +35,53 @@ log = logging.getLogger("encore_server.keeper")
 
 #: The folder, inside the music folder, that holds everything the server keeps.
 KEPT_FOLDER = "Encore"
+
+
+class Reservations:
+    """The files a keep has placed or taken and not yet linked, process-wide (audit B-110's window, found by the review of PR 129).
+
+    A file is the song's own from the moment a keep places it, but the row that says so (`song_file`) is written only after the music server has found the file (up to
+    `scan_wait_s`, 45 s). In between, a second keep of another ref of the same song (the owner's Creature pair, two workers) looked in the same folder, found no row, and took
+    the file: two refs held one path. So a keep RESERVES the file in the same step that places or takes it, and releases it when its link is done (or failed): `claim` is
+    the only way a keep takes a file at the place it would choose, and a file reserved by another ref is not taken. Keyed by the resolved path without regard to case, like the
+    music server compares them."""
+
+    def __init__(self) -> None:
+        self._lock = threading.RLock()
+        self._owner: dict[str, str] = {}
+
+    @staticmethod
+    def _key(path: Path) -> str:
+        return str(path.resolve()).lower()
+
+    @contextmanager
+    def exclusive(self) -> Iterator[None]:
+        """The lock a keep holds while it places a file and reserves it, so that nobody can look between the two."""
+        with self._lock:
+            yield
+
+    def claim(self, path: Path, ref_id: str) -> bool:
+        """Reserves [path] for [ref_id]. `False` (nothing changed) when ANOTHER ref has it reserved."""
+        with self._lock:
+            key = self._key(path)
+            if self._owner.get(key, ref_id) != ref_id:
+                return False
+            self._owner[key] = ref_id
+            return True
+
+    def release(self, ref_id: str) -> None:
+        """Everything [ref_id] reserved: its link is done, or it failed (the file has a row now, or the next try finds it)."""
+        with self._lock:
+            for key in [key for key, owner in self._owner.items() if owner == ref_id]:
+                del self._owner[key]
+
+    def reserved(self) -> dict[str, str]:
+        with self._lock:
+            return dict(self._owner)
+
+
+#: The one record of the process: two keepers (a test makes many apps) never share a path, and two workers of one keeper must.
+RESERVATIONS = Reservations()
 
 #: Why a song was not kept, as `work_item.error` says it. `failures.py` turns these into the sentences a person reads (a test keeps the two in step).
 GIVE_UP = {
@@ -125,8 +174,11 @@ class Keeper:
             ref = refs.get_ref(conn, item.ref)
         if self._linked(ref):
             return
-        path = self._existing(ref) or self._fetch(ref, item)
-        self._link(ref, path)
+        try:
+            path = self._existing(ref) or self._fetch(ref, item)
+            self._link(ref, path)
+        finally:
+            RESERVATIONS.release(ref["id"])
 
     @staticmethod
     def _linked(ref: dict[str, Any]) -> bool:
@@ -146,7 +198,7 @@ class Keeper:
         """A file for this song already on the disk, so that it is linked and not fetched again: **first the song's OWN file, wherever it lies** (audit B-110: the keeper used to
         look only where it would put the song NOW, so a song whose album became known between two keeps was saved a second time, in the album's folder), then a file at the place
         it would choose now (a run that died after placing it, or the same song put there by hand)."""
-        return self._own_file(ref) or find_existing(self._placement(ref), ref["title"], skip=self._held_by_another(ref["id"]))
+        return self._own_file(ref) or find_existing(self._placement(ref), ref["title"], skip=self._taken(ref["id"]))
 
     def _own_file(self, ref: dict[str, Any]) -> Path | None:
         """A file THIS song's rows hold that the keeper wrote: `source = 'youtube'`, under `Encore/`, still on the disk, preferred one first. **Never a file of the Host's own
@@ -163,6 +215,17 @@ class Keeper:
             if path.suffix.lower() in AUDIO_SUFFIXES and inside(self._settings.root, path) and path.is_file():
                 return path
         return None
+
+    def _taken(self, ref_id: str) -> Callable[[Path], bool]:
+        """What `find_existing` asks of a file it would take (only of a file that matches the song): `True` when it is not [ref_id]'s to take (another ref's row holds it, or
+        another ref has it reserved); otherwise the file is RESERVED for [ref_id] in the same step (under the lock), so two keeps can never both take one file."""
+        held = self._held_by_another(ref_id)
+
+        def taken(path: Path) -> bool:
+            with RESERVATIONS.exclusive():
+                return held(path) or not RESERVATIONS.claim(path, ref_id)
+
+        return taken
 
     def _held_by_another(self, ref_id: str) -> Callable[[Path], bool]:
         """Whether a file in the song's folder is the file of ANOTHER song (a row of another ref holds its path): two refs of one song, the owner's Creature, must not be handed one
@@ -231,10 +294,12 @@ class Keeper:
         if not self._write_tags(audio, tags_of(ref), cover):
             log.info("could not write tags into %s; the file is kept with the names it has", audio.name)
         placement = self._placement(ref, audio.suffix.lower() or ".opus")
-        already = find_existing(placement, ref["title"], skip=self._held_by_another(ref["id"]))
+        already = find_existing(placement, ref["title"], skip=self._taken(ref["id"]))
         if already is not None:
             return already  # the same song was put there while this ran: that one stays
-        placed = place_file(audio, placement, self._settings.music_dir)
+        with RESERVATIONS.exclusive():  # placed and reserved in one step: no other keep can look in between
+            placed = place_file(audio, placement, self._settings.music_dir)
+            RESERVATIONS.claim(placed, ref["id"])
         if cover and picture and cover_url == picture and not refs.is_placeholder_album(ref.get("album")):
             # The album's picture is the folder's too, so the music server shows the album with it from its first scan: only a picture of the catalogue, only in an album's folder
             # (never in Singles, which holds songs of no album), never over a picture the folder has (`write_folder_picture`).

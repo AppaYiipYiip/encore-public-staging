@@ -34,8 +34,10 @@ from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
 from encore_server.keeper.covers import write_folder_picture
+from encore_server.keeper.keeper import RESERVATIONS, Reservations
 from encore_server.keeper.placement import plan_for_ref
 from encore_server.keeper.tagging import Tags, tags_of
+from encore_server.scheduler import Retry
 from tests.catalogue_fakes import RecordedDeezer
 from tests.conftest import FakeVerifier, creds, resolve
 from tests.test_album_finder import ALBUM, SINGLE, albums, derive, single_hit
@@ -646,6 +648,73 @@ def test_a_holder_is_found_whatever_the_case_of_the_path(krig: KeepRig) -> None:
         conn.execute("UPDATE song_file SET path = 'ENCORE/landmvrks/SINGLES/creature.OPUS' WHERE ref = ?", (first,))
     krig.keep(second)
     assert len(krig.source.asked) == 1
+
+
+def test_two_refs_of_one_song_cannot_take_one_file_while_the_first_waits_for_the_music_server(krig: KeepRig) -> None:
+    """The attacker's probe of PR 129 (audit B-110's window): ref A has PLACED its file and waits in `_link` for the music server, so no row holds the file yet; ref B (the
+    second worker) used to find it in the folder and take it, and the two refs held one path. A keep now reserves its file from the moment it places or takes it."""
+    krig.keeper._identify = None
+    first = krig.creature()
+    second = krig.creature(duration=OTHER_LISTED_MS)
+    started: list[int] = []
+    real_scan = krig.navidrome.start_scan
+
+    def scan(*, full: bool = False) -> bool:
+        if not started:
+            started.append(1)
+            krig.keep(second)  # the second keep runs now: the first one's file is placed and no row holds it
+        return real_scan(full=full)
+
+    krig.navidrome.start_scan = scan  # type: ignore[method-assign]
+
+    krig.keep(first)
+
+    assert files_of(krig, first) == ["Encore/LANDMVRKS/Singles/Creature.opus"]
+    assert files_of(krig, second) == ["Encore/LANDMVRKS/Singles/Creature (2).opus"]
+    assert len(krig.source.asked) == 2 and RESERVATIONS.reserved() == {}, "and every reservation is released"
+
+
+def test_a_file_a_keep_takes_at_the_planned_place_is_reserved_for_it_too(krig: KeepRig) -> None:
+    """The other way to a file: a keep that TAKES a file already in the folder (a run that died after placing it) reserves it the same way."""
+    krig.keeper._identify = None
+    first = krig.creature()
+    second = krig.creature(duration=OTHER_LISTED_MS)
+    path = krig.music / "Encore/LANDMVRKS/Singles/Creature.opus"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(AUDIO)
+    started: list[int] = []
+    real_scan = krig.navidrome.start_scan
+
+    def scan(*, full: bool = False) -> bool:
+        if not started:
+            started.append(1)
+            krig.keep(second)
+        return real_scan(full=full)
+
+    krig.navidrome.start_scan = scan  # type: ignore[method-assign]
+    krig.keep(first)
+    assert files_of(krig, first) == ["Encore/LANDMVRKS/Singles/Creature.opus"]
+    assert files_of(krig, second) == ["Encore/LANDMVRKS/Singles/Creature (2).opus"]
+
+
+def test_a_reservation_is_released_when_the_link_fails(krig: KeepRig) -> None:
+    krig.keeper._identify = None
+    krig.navidrome.finds_after_scan = False
+    ref = krig.creature()
+    with pytest.raises(Retry):
+        krig.keep(ref)
+    assert RESERVATIONS.reserved() == {}, "a keep that ended in a retry holds nothing"
+
+
+def test_a_reservation_is_one_refs_and_never_another(tmp_path: Path) -> None:
+    book = Reservations()
+    path = tmp_path / "A" / "Creature.opus"
+    assert book.claim(path, "sr_a") and book.claim(path, "sr_a"), "the same ref may claim it again"
+    assert not book.claim(path, "sr_b"), "another ref may not"
+    book.release("sr_b")
+    assert not book.claim(path, "sr_b"), "releasing what you do not hold changes nothing"
+    book.release("sr_a")
+    assert book.reserved() == {} and book.claim(path, "sr_b")
 
 
 def test_a_file_at_the_planned_place_that_nobody_holds_is_still_reused(krig: KeepRig) -> None:
