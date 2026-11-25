@@ -33,9 +33,9 @@ from encore_server.catalogue import Catalogue as RealCatalogue
 from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
-from encore_server.keeper.covers import write_folder_picture
+from encore_server.keeper.covers import folder_has_a_picture, write_folder_picture
 from encore_server.keeper.keeper import RESERVATIONS, Reservations
-from encore_server.keeper.placement import plan_for_ref
+from encore_server.keeper.placement import is_shared_folder, plan_for_ref
 from encore_server.keeper.tagging import Tags, tags_of
 from encore_server.scheduler import Retry
 from tests.catalogue_fakes import RecordedDeezer
@@ -416,9 +416,9 @@ def test_a_song_on_the_p2_25_worklist_is_not_asked_by_a_keep(krig: KeepRig) -> N
 def test_a_folder_that_has_a_picture_is_left_alone(krig: KeepRig) -> None:
     folder = krig.music / ALBUM_DIR
     folder.mkdir(parents=True)
-    (folder / "folder.png").write_bytes(b"the Host's own picture")
+    (folder / "Folder.PNG").write_bytes(b"the Host's own picture")  # mixed case on purpose: Linux does not fold it
     krig.keep(krig.creature())
-    assert sorted(p.name for p in folder.iterdir()) == ["02 - Creature.opus", "folder.png"]
+    assert sorted(p.name for p in folder.iterdir()) == ["02 - Creature.opus", "Folder.PNG"]
 
 
 def test_no_folder_picture_is_written_into_singles(krig: KeepRig) -> None:
@@ -445,9 +445,7 @@ def test_a_picture_that_is_a_videos_thumbnail_is_embedded_but_never_becomes_the_
     assert not any(p.endswith("cover.jpg") for p in krig.kept_paths())
 
 
-def test_write_folder_picture_never_writes_outside_the_servers_folder_or_over_a_picture(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_folder_picture_never_writes_outside_the_servers_folder_or_over_a_picture(tmp_path: Path) -> None:
     root = tmp_path / "music" / "Encore"
     mine = root / "A" / "B"
     mine.mkdir(parents=True)
@@ -456,27 +454,267 @@ def test_write_folder_picture_never_writes_outside_the_servers_folder_or_over_a_
     assert write_folder_picture(root, mine / "x.opus", None) is False and list(mine.iterdir()) == [], (
         "no picture, nothing written"
     )
-    renamed: list[tuple[str, str]] = []
-    real_replace = os.replace
-
-    def recording_replace(src: Any, dst: Any) -> None:
-        renamed.append((Path(src).name, Path(dst).name))
-        real_replace(src, dst)
-
-    monkeypatch.setattr(os, "replace", recording_replace)  # `covers` renames with `os.replace`: the same module object
     assert write_folder_picture(root, mine / "x.opus", b"jpg") is True
-    assert renamed == [(".cover.jpg.part", "cover.jpg")], (
-        "written under a hidden name and renamed: a scan never reads half a picture"
-    )
-    assert [p.name for p in mine.iterdir()] == ["cover.jpg"], "no half-written file is left"
+    assert [p.name for p in mine.iterdir()] == ["cover.jpg"], "no temp file is left"
     assert write_folder_picture(root, mine / "x.opus", b"other") is False and (mine / "cover.jpg").read_bytes() == b"jpg"
     assert write_folder_picture(root, hosts / "x.opus", b"jpg") is False and list(hosts.iterdir()) == [], (
         "the Host's folder is never written into"
     )
     assert write_folder_picture(root, root / ".." / "Albums" / "B" / "x.opus", b"jpg") is False
-    (mine / "cover.jpg").unlink()
-    (mine / "Folder.PNG").write_bytes(b"png")
-    assert write_folder_picture(root, mine / "x.opus", b"jpg") is False, "a folder.* of any kind counts"
+
+
+# The names are written in MIXED case on purpose: a glob folds case on Windows and not on Linux, and this must be the same on every file system (CI found it).
+@pytest.mark.parametrize("name", ["Cover.JPG", "cOVER.png", "FOLDER.jpg", "Folder.PNG", "Front.Jpeg", "front.webp", "cover.JPG"])
+def test_a_picture_of_any_case_in_the_folder_is_left_alone(tmp_path: Path, name: str) -> None:
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+    (folder / name).write_bytes(b"the Host's own picture")
+    assert folder_has_a_picture(folder)
+    assert write_folder_picture(root, folder / "x.opus", b"jpg") is False
+    assert sorted(p.name for p in folder.iterdir()) == [name]
+
+
+@pytest.mark.parametrize(
+    "name", ["covers.txt", "discover.jpg", "cover", "folders.jpg", "01 - Cover.opus", ".cover.jpg.part", "Frontier.jpg"]
+)
+def test_a_file_that_is_not_a_folder_picture_is_not_taken_for_one(tmp_path: Path, name: str) -> None:
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+    (folder / name).write_bytes(b"x")
+    assert not folder_has_a_picture(folder)
+    assert write_folder_picture(root, folder / "x.opus", b"jpg") is True
+
+
+def litter(folder: Path) -> list[str]:
+    return sorted(p.name for p in folder.iterdir() if p.name.startswith("."))
+
+
+class HalfWrittenFile:
+    """A file object that writes three bytes and then fails the way a full disk does."""
+
+    def __init__(self, real: Any) -> None:
+        self._real = real
+
+    def __enter__(self) -> HalfWrittenFile:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self._real.close()
+
+    def write(self, data: bytes) -> int:
+        self._real.write(data[:3])
+        self._real.flush()
+        raise OSError(28, "No space left on device")
+
+
+def test_a_picture_that_fails_half_way_leaves_no_litter_and_raises_for_the_keeper_to_catch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+    real_fdopen = os.fdopen
+    monkeypatch.setattr(
+        os, "fdopen", lambda fd, mode="r", *args, **kwargs: HalfWrittenFile(real_fdopen(fd, mode, *args, **kwargs))
+    )
+
+    with pytest.raises(OSError, match="No space"):
+        write_folder_picture(root, folder / "x.opus", b"a whole picture")
+
+    assert list(folder.iterdir()) == [], "neither a temp file nor a cover.jpg of three bytes"
+
+
+def test_two_writers_of_one_folder_do_not_share_a_temp_file_and_the_first_picture_stays(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reviewer's probe: both used the temp name `.cover.jpg.part`, so the first writer's rename raised FileNotFoundError out of its keep; and `never over a picture` was
+    check-then-replace. Writer two now runs COMPLETELY between writer one's write and its publish."""
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+    real_link = os.link
+    seen: list[str] = []
+
+    def link(src: Any, dst: Any) -> None:
+        if not seen:
+            seen.append(Path(src).name)
+            assert write_folder_picture(root, folder / "y.opus", b"second") is True  # a whole second writer, in the same folder
+        real_link(src, dst)
+
+    monkeypatch.setattr(os, "link", link)
+
+    assert write_folder_picture(root, folder / "x.opus", b"first") is False, (
+        "the first writer finds the picture there and writes nothing"
+    )
+
+    assert (folder / "cover.jpg").read_bytes() == b"second", "never over a picture another writer made first"
+    assert litter(folder) == [] and seen[0].startswith(".cover.") and seen[0].endswith(".part")
+
+
+def test_a_file_system_without_hard_links_takes_an_exclusive_create_and_still_never_overwrites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+
+    def no_links(src: Any, dst: Any) -> None:
+        raise OSError(1, "Operation not permitted")
+
+    monkeypatch.setattr(os, "link", no_links)
+    assert write_folder_picture(root, folder / "x.opus", b"jpg") is True
+    assert (folder / "cover.jpg").read_bytes() == b"jpg" and litter(folder) == []
+    (folder / "cover.jpg").unlink()
+    (folder / "cover.jpg").write_bytes(b"made first")
+    # the check passed, then another writer won: the exclusive create refuses and nothing is replaced
+    monkeypatch.setattr("encore_server.keeper.covers.folder_wants_a_picture", lambda root, file: True)
+    assert write_folder_picture(root, folder / "x.opus", b"jpg") is False
+    assert (folder / "cover.jpg").read_bytes() == b"made first" and litter(folder) == []
+
+
+def test_a_failed_exclusive_create_removes_what_it_made(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "Encore"
+    folder = root / "A" / "B"
+    folder.mkdir(parents=True)
+
+    def no_links(src: Any, dst: Any) -> None:
+        raise OSError(1, "Operation not permitted")
+
+    real_fdopen = os.fdopen
+    calls: list[int] = []
+
+    def fdopen(fd: int, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        calls.append(fd)
+        real = real_fdopen(fd, mode, *args, **kwargs)
+        return (
+            real if len(calls) == 1 else HalfWrittenFile(real)
+        )  # the temp is written, the target of the fallback fails half-way
+
+    monkeypatch.setattr(os, "link", no_links)
+    monkeypatch.setattr(os, "fdopen", fdopen)
+    with pytest.raises(OSError, match="No space"):
+        write_folder_picture(root, folder / "x.opus", b"a whole picture")
+    assert list(folder.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    "failure", [OSError(28, "No space left on device"), PermissionError(13, "denied"), RuntimeError("anything at all")]
+)
+def test_a_folder_picture_that_fails_never_fails_the_keep(
+    krig: KeepRig, monkeypatch: pytest.MonkeyPatch, failure: Exception
+) -> None:
+    """The reviewer's probe: the picture failed after `place_file`, the keep raised, the file was left placed with no row. A picture is a nicety."""
+
+    def fails(kept_root: Path, file: Path, data: bytes | None) -> bool:
+        raise failure
+
+    monkeypatch.setattr("encore_server.keeper.keeper.write_folder_picture", fails)
+    ref = krig.creature()
+
+    krig.keep(ref)
+
+    assert krig.audio_paths() == [f"{ALBUM_DIR}/02 - Creature.opus"] and krig.ref(ref)["file"]["navidromeSongId"] == "nd-1"
+    assert not any(p.endswith("cover.jpg") for p in krig.kept_paths()) and litter(krig.music / ALBUM_DIR) == []
+
+
+def test_a_picture_that_dies_half_way_through_a_keep_leaves_the_keep_done_and_the_folder_clean(
+    krig: KeepRig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_fdopen = os.fdopen
+    monkeypatch.setattr(
+        os, "fdopen", lambda fd, mode="r", *args, **kwargs: HalfWrittenFile(real_fdopen(fd, mode, *args, **kwargs))
+    )
+    ref = krig.creature()
+    krig.keep(ref)
+    assert krig.ref(ref)["file"]["navidromeSongId"] == "nd-1"
+    assert krig.kept_paths() == [f"{ALBUM_DIR}/02 - Creature.opus"], "no cover.jpg of three bytes and no hidden temp file"
+
+
+# A matched album whose FOLDER is the shared Singles folder: an album titled Singles, or a title that cleans to nothing (the planner falls back to Singles for those).
+@pytest.mark.parametrize("title", ["Singles", "singles", "SINGLES", "Singles.", ".", "..", "..."])
+def test_no_folder_picture_is_written_into_the_shared_singles_folder_whatever_the_albums_title(krig: KeepRig, title: str) -> None:
+    """The reviewer's probe: the guard tested the album TEXT, so a matched album called Singles filed the song in the shared folder and wrote the catalogue's cover there,
+    for ever, next to the songs of no album. The folder PLACED decides."""
+    krig.catalogue = Catalogue(landmvrks().searches, {ALBUM: derive(albums(ALBUM)[ALBUM], title=title)})
+    ref = krig.creature()
+
+    krig.keep(ref)
+
+    assert krig.row(ref)["identity_outcome"] == "matched", "the premise: the catalogue placed it"
+    audio = krig.audio_paths()
+    assert len(audio) == 1 and is_shared_folder((krig.music / audio[0]).parent), audio
+    assert not any(p.lower().endswith("cover.jpg") for p in krig.kept_paths())
+
+
+def test_the_shared_folder_is_the_same_folder_whatever_it_is_called_on_the_disk(tmp_path: Path) -> None:
+    for name in ("Singles", "singles", "SINGLES", "Singles.", " Singles "):
+        assert is_shared_folder(tmp_path / name), name
+    for name in ("Singles and Rarities", "Single", "The Singles", "Hollow"):
+        assert not is_shared_folder(tmp_path / name), name
+
+
+def test_the_one_function_never_writes_a_folder_picture_into_a_singles_folder(tmp_path: Path) -> None:
+    """One function writes folder pictures for everybody (`write_folder_picture`), so the rule holds for the finder too."""
+    root = tmp_path / "Encore"
+    folder = root / "A" / "Singles"
+    folder.mkdir(parents=True)
+    assert write_folder_picture(root, folder / "x.opus", b"jpg") is False and list(folder.iterdir()) == []
+
+
+# ------------------------------------------------------------------------------------------------------------------ the song as it is NOW (audit: the stale ref)
+
+
+def stamp_by_the_pass(krig: KeepRig, ref: str) -> None:
+    """What the hourly pass does while a keep is busy: the song gets a real album."""
+    with krig.db.tx() as conn:
+        conn.execute("UPDATE song_ref SET album = 'Pass Album', track_no = 3, year = 2020 WHERE id = ?", (ref,))
+
+
+def test_a_song_the_pass_stamped_while_it_downloaded_is_filed_by_its_album_now(krig: KeepRig) -> None:
+    """The reviewer's probe: the ref was read when the keep began, so a file was filed in Singles with no album tag while the ref said Pass Album."""
+    krig.keeper._identify = None  # the keep asks nothing: this is the ref read at the start
+    ref = krig.creature()
+    real_download = krig.source.download
+
+    def download_while_the_pass_stamps(wanted: Any, stem: Path, *, max_bytes: int) -> Path:
+        stamp_by_the_pass(krig, ref)
+        return real_download(wanted, stem, max_bytes=max_bytes)
+
+    krig.source.download = download_while_the_pass_stamps  # type: ignore[method-assign]
+    krig.keep(ref)
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Pass Album/03 - Creature.opus"]
+    assert (krig.tagged[0][1].album, krig.tagged[0][1].track, krig.tagged[0][1].year) == ("Pass Album", 3, 2020)
+
+
+def test_a_song_the_pass_stamped_while_the_catalogue_was_asked_is_filed_by_its_album_now(krig: KeepRig) -> None:
+    """The same, during the question: the answer is `skipped` (the row has an album now) and the keeper must read the ref again anyway."""
+    ref = krig.creature()
+    real_search = krig.catalogue.search
+
+    def search_while_the_pass_stamps(artist: str, title: str) -> list[dict[str, Any]]:
+        stamp_by_the_pass(krig, ref)
+        return real_search(artist, title)
+
+    krig.catalogue.search = search_while_the_pass_stamps  # type: ignore[method-assign]
+    krig.keep(ref)
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Pass Album/03 - Creature.opus"]
+    assert krig.tagged[0][1].album == "Pass Album" and krig.row(ref)["identity_outcome"] is None, (
+        "skipped: nothing of the catalogue's was written"
+    )
+
+
+def test_a_question_that_fails_still_files_the_song_by_its_album_now(krig: KeepRig) -> None:
+    ref = krig.creature()
+
+    def broken(ref_id: str, length_ms: int | None) -> KeepAnswer:
+        stamp_by_the_pass(krig, ref)
+        raise RuntimeError("something nobody expected")
+
+    krig.keeper._identify = broken
+    krig.keep(ref)
+    assert krig.audio_paths() == ["Encore/LANDMVRKS/Pass Album/03 - Creature.opus"]
 
 
 # ------------------------------------------------------------------------------------------------------------------ one builder of the tags, one planner of the place

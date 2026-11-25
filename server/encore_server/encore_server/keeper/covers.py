@@ -5,11 +5,12 @@ from __future__ import annotations
 import logging
 import os
 import urllib.parse
+import uuid
 from pathlib import Path
 
 import httpx
 
-from .placement import inside
+from .placement import inside, is_shared_folder
 
 log = logging.getLogger("encore_server.keeper.covers")
 
@@ -61,22 +62,61 @@ def fetch_cover(url: str | None, *, max_bytes: int = 6 * 1024 * 1024, timeout: f
     return data or None
 
 
+#: The names the music server takes as a folder's picture, in its own order (`cover.*`, `folder.*`, `front.*`), compared in lower case: the answer must not depend on whether the
+#: file system folds case (a glob does on Windows and does not on Linux).
+PICTURE_PREFIXES = ("cover.", "folder.", "front.")
+
+
+def folder_has_a_picture(folder: Path) -> bool:
+    """Whether [folder] already holds a picture under one of the names of [PICTURE_PREFIXES], in any case. A folder that cannot be listed is answered yes: nothing is written."""
+    try:
+        return any(entry.name.lower().startswith(PICTURE_PREFIXES) for entry in folder.iterdir())
+    except OSError:
+        return True
+
+
 def folder_wants_a_picture(kept_root: Path, file: Path) -> bool:
     """Whether the album folder of [file] is one a picture may be written into: inside [kept_root], the server's own `Encore/` folder (`placement.inside`, after links and dots are
-    resolved: a folder of the Host's own music library never is), a folder that exists, and one that holds no `cover.*` and no `folder.*` of any kind (the Host's own picture, or an
-    earlier one, is left as it is)."""
+    resolved: a folder of the Host's own music library never is), a folder that exists, **not the shared `Singles` folder** (it holds songs of no album: one picture there would be
+    the picture of nothing; decided on the folder, `placement.is_shared_folder`), and one that holds no picture of any case (`folder_has_a_picture`: the Host's own, or an earlier
+    one, is left as it is)."""
     folder = file.parent
-    return inside(kept_root, folder) and folder.is_dir() and not any(folder.glob("cover.*")) and not any(folder.glob("folder.*"))
+    return inside(kept_root, folder) and folder.is_dir() and not is_shared_folder(folder) and not folder_has_a_picture(folder)
+
+
+def _write(path: Path, data: bytes, *, exclusive: bool) -> None:
+    """Creates [path] with [data] (the default permissions: the music server reads it as another user). [exclusive]: it must not exist yet."""
+    flags = os.O_CREAT | os.O_WRONLY | getattr(os, "O_BINARY", 0) | (os.O_EXCL if exclusive else 0)
+    with os.fdopen(os.open(path, flags, 0o666), "wb") as handle:
+        handle.write(data)
 
 
 def write_folder_picture(kept_root: Path, file: Path, data: bytes | None) -> bool:
     """A `cover.jpg` in the album folder of [file], so the music server (and every other player of it) shows the album with its picture. Returns whether one was written.
 
     THE one function the keeper (a new keep filed under its album: N-34 slice 3), the cover finder (a picture found later) and the repair (slice 5) write a folder picture with,
-    under the rule of [folder_wants_a_picture]. The picture is written under a hidden name and renamed, so a scan never reads half a picture."""
+    under the rule of [folder_wants_a_picture]. **Written under a unique hidden name of this writer's own** (two writers of one folder never share a temp file), **published with
+    a hard link, which fails when the target exists** (so a picture another writer made first is never replaced: the no-overwrite is atomic, not check-then-replace), and **the
+    temp is removed whatever happens**, so a full disk or a failure half-way leaves no litter. A file system without hard links (some network shares) takes an exclusive create of
+    the target instead, removed again if its write fails. Raises `OSError` on a real failure: the keeper catches it, a picture is never a reason to fail a keep."""
     if not data or not folder_wants_a_picture(kept_root, file):
         return False
-    target, partial = file.parent / "cover.jpg", file.parent / ".cover.jpg.part"
-    partial.write_bytes(data)
-    os.replace(partial, target)
-    return True
+    target = file.parent / "cover.jpg"
+    temp = file.parent / f".cover.{os.getpid()}.{uuid.uuid4().hex}.part"
+    try:
+        _write(temp, data, exclusive=True)
+        try:
+            os.link(temp, target)
+        except FileExistsError:
+            return False
+        except OSError:
+            try:
+                _write(target, data, exclusive=True)
+            except FileExistsError:
+                return False
+            except BaseException:
+                target.unlink(missing_ok=True)
+                raise
+        return True
+    finally:
+        temp.unlink(missing_ok=True)

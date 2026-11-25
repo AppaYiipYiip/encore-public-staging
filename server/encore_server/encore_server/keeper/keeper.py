@@ -21,6 +21,7 @@ from ..album_pass import KeepAnswer, file_or_listing_length
 from ..artist_basis import is_performer
 from ..db import Database
 from ..deezer import LookupUnavailable
+from ..errors import ApiError
 from ..navidrome import NavidromeClient, file_meta
 from ..scheduler import GiveUp, Retry, WorkItem
 from ..sources.youtube.errors import DownloadError
@@ -280,6 +281,8 @@ class Keeper:
 
     def _finish(self, ref: dict[str, Any], downloaded: Path) -> Path:
         audio = self._as_opus(downloaded)
+        # The song may have changed while it downloaded (the album pass stamped its album): it is filed by what it is NOW, not by what it was when the keep began.
+        ref = self._current(ref)
         # The length of the file that was just downloaded, not the import's listing (1 to 12 s off, N-11): the album question and the picture look-up are both asked with it.
         length_ms, _ = self._length_of(audio, ref.get("durationMs"))
         ref, answer = self._identified(ref, length_ms)
@@ -300,15 +303,30 @@ class Keeper:
         with RESERVATIONS.exclusive():  # placed and reserved in one step: no other keep can look in between
             placed = place_file(audio, placement, self._settings.music_dir)
             RESERVATIONS.claim(placed, ref["id"])
-        if cover and picture and cover_url == picture and not refs.is_placeholder_album(ref.get("album")):
-            # The album's picture is the folder's too, so the music server shows the album with it from its first scan: only a picture of the catalogue, only in an album's folder
-            # (never in Singles, which holds songs of no album), never over a picture the folder has (`write_folder_picture`).
-            write_folder_picture(self._settings.root, placed, cover)
+        if cover and picture and cover_url == picture:
+            # The album's picture is the folder's too, so the music server shows the album with it from its first scan: only a picture of the catalogue (never a video's
+            # thumbnail), and only where the PLACED folder allows (`write_folder_picture`: never the shared Singles folder, never over a picture the folder has).
+            self._folder_picture(ref["id"], placed, cover)
         return placed
+
+    def _folder_picture(self, ref_id: str, placed: Path, cover: bytes) -> None:
+        """The folder's picture is a nicety: whatever goes wrong with it (a full disk, a folder that cannot be written), the keep has placed its file and goes on to link it."""
+        try:
+            write_folder_picture(self._settings.root, placed, cover)
+        except Exception:  # noqa: BLE001 - never a reason to fail a keep
+            log.info("could not write the folder picture for %s; the keep goes on", ref_id, exc_info=True)
+
+    def _current(self, ref: dict[str, Any]) -> dict[str, Any]:
+        """The song as the database has it now (cheap): a keep takes minutes, and the album pass may have stamped the song meanwhile."""
+        try:
+            with self._db.read() as conn:
+                return refs.get_ref(conn, ref["id"])
+        except ApiError:
+            return ref
 
     def _identified(self, ref: dict[str, Any], length_ms: int | None) -> tuple[dict[str, Any], KeepAnswer | None]:
         """N-34 slice 3: which album is this song on, asked BEFORE the tags and the folder are made, so that the file lands in `Encore/<artist>/<album>/NN - Title` tagged with the
-        album, the track and the year, and is never filed under "Singles" to be moved later. The ref is read again when the answer wrote something.
+        album, the track and the year, and is never filed under "Singles" to be moved later. The ref is ALWAYS read again after the question, whatever it came to: the pass may have stamped the song while it was asked (a `not_wanted` or `skipped` answer).
 
         **The permanence rules.** The question is `album_pass.KeepAsker`'s: the very selection, matcher and write rule of the album pass, so a keep files a song under an album
         ONLY on a `matched` outcome the pass would have written too, and never rewrites an album the ref has. **A catalogue that cannot be asked, or any failure, never delays or
@@ -319,13 +337,10 @@ class Keeper:
             answer = self._identify(ref["id"], length_ms)
         except Exception:  # noqa: BLE001 - an album is a nicety of the keep, never a reason to fail it
             log.info("asking which album %s is on failed; it is kept without one", ref["id"], exc_info=True)
-            return ref, None
+            return self._current(ref), None
         if answer.outcome == "unavailable":
             log.info("no album was asked for %s: the catalogue could not be asked (%s)", ref["id"], answer.reason)
-        if not answer.wrote:
-            return ref, answer
-        with self._db.read() as conn:
-            return refs.get_ref(conn, ref["id"]), answer
+        return self._current(ref), answer
 
     def _look_for_cover(self, ref: dict[str, Any], length_ms: int | None) -> str | None:
         """A song that came without a picture gets the catalogue's, in its file and on its ref (every phone then shows it). [length_ms] is the downloaded FILE's own (N-34 slice 3: it
