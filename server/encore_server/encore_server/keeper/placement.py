@@ -10,10 +10,25 @@ import contextlib
 import os
 import re
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-from ..textnorm import UNKNOWN_ARTIST, fold, norm_title, safe_path_part, title_key, version_signature, words
+from ..textnorm import (
+    UNKNOWN_ARTIST,
+    fold,
+    is_placeholder_album,
+    norm_title,
+    safe_path_part,
+    title_key,
+    version_signature,
+    words,
+)
+
+#: The folder of the songs that have no album. It is also what the planner falls back to for an album whose name cleans to nothing (`.`, `..`, `...`), so a folder with this
+#: name is SHARED by unrelated songs, whatever the album text said.
+SINGLES = "Singles"
 
 AUDIO_SUFFIXES = {".opus", ".ogg", ".m4a", ".mp3", ".flac", ".aac", ".wav"}
 
@@ -32,6 +47,12 @@ def _folder_key(name: str) -> str:
     """A folder name as its letters and digits in any alphabet, joined (P2-25: it was `a-z0-9`, so every Arabic or Russian artist folder was `''`, and a folder
     that was there was never joined). The same fold as the keys, so a folder written with other marks or another case is the same folder."""
     return "".join(words(norm_title(name) or fold(name)))
+
+
+def is_shared_folder(folder: Path) -> bool:
+    """Whether [folder] is the shared `Singles` folder (the fold of its NAME, so `singles` and `Singles.` are it too: the planner joins them). Decided on the folder a file was
+    PLACED in, never on the album text: an album titled Singles, or one that cleans to nothing, is filed there as well."""
+    return _folder_key(folder.name) == _folder_key(SINGLES)
 
 
 def _existing_child(parent: Path, wanted: str) -> Path | None:
@@ -85,7 +106,7 @@ def plan_placement(
     """Where the file goes. Nothing is created here."""
     artist_name = safe_path_part(artist, UNKNOWN_ARTIST)
     artist_dir = _existing_child(music_dir, artist_name) or (music_dir / artist_name)
-    album_name = safe_path_part(album or "Singles", "Singles")
+    album_name = safe_path_part(album or SINGLES, SINGLES)
     album_dir = _existing_child(artist_dir, album_name) or (artist_dir / album_name)
     return Placement(
         album_dir,
@@ -93,8 +114,26 @@ def plan_placement(
     )
 
 
-def find_existing(placement: Placement, title: str) -> Path | None:
-    """A file for the same song already in the target folder (any format)."""
+def plan_for_ref(root: Path, ref: dict[str, Any], suffix: str = ".opus") -> Placement:
+    """Where the file of a song goes, planned from the song's ref (the API's shape: `artists`, `albumArtist`, `album`, `title`, `trackNo`, `discNo`). THE one function the keeper,
+    the dry run of the new keeps (N-34 slice 3: what a keep would be filed under) and the repair of the files already kept (slice 5) plan with. Nothing is created here.
+    **The music server's placeholder (`[Unknown Album]`) is no album**: it is never made a folder (`textnorm.is_placeholder_album`, the same definition the tags use): that folder IS the
+    bucket N-34 empties, and a song put in it once and in `Singles` the next time was saved twice (audit B-110's own example)."""
+    album = ref.get("album")
+    return plan_placement(
+        root,
+        artist=ref.get("albumArtist") or ref["artists"][0],
+        album=None if is_placeholder_album(album) else album,
+        title=ref["title"],
+        track=ref.get("trackNo"),
+        disc=ref.get("discNo"),
+        suffix=suffix,
+    )
+
+
+def find_existing(placement: Placement, title: str, *, skip: Callable[[Path], bool] | None = None) -> Path | None:
+    """A file for the same song already in the target folder (any format). A file for which [skip] says yes is not the song's to take: the keeper skips the files another
+    song holds (N-34 slice 3, audit B-110: two refs of one song were handed one file)."""
     folder = placement.folder
     if not folder.is_dir():
         return None
@@ -114,7 +153,7 @@ def find_existing(placement: Placement, title: str) -> Path | None:
         if f.suffix.lower() not in AUDIO_SUFFIXES or not f.is_file():
             continue
         stem = re.sub(r"^\d{1,2}(-\d{1,2})?\s*-\s*", "", f.stem)
-        if title_key(stem) == want and version_signature(stem) == version_signature(name):
+        if title_key(stem) == want and version_signature(stem) == version_signature(name) and not (skip is not None and skip(f)):
             return f
     return None
 

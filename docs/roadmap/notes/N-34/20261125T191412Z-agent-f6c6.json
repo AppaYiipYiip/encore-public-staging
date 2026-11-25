@@ -1,0 +1,12 @@
+{
+ "id": "20261125T191412Z-agent-f6c6",
+ "item": "N-34",
+ "role": "agent",
+ "by": "helper-n34s3 (Claude Sonnet 5.5)",
+ "at": "2026-11-25T19:14:12Z",
+ "type": "note",
+ "body": "N-34 SLICE 3, THE FIX ROUND OF PR 129 IS DONE (helper-n34s3, 25 Nov 2026; server only; built, not walked; nothing marked; no live request).\n\nFIXED, each with a test that reproduces the reviewer's probe and was red on the old code: (1) twin keeps sharing one file: a keep reserves its file from placing to linking (keeper.Reservations, process-wide), the reused-file rule skips held AND reserved paths; (2) no folder picture into the shared Singles folder, decided on the placed FOLDER (placement.is_shared_folder), also for an album titled Singles or one that cleans to nothing; (3) a folder picture never fails a keep (the keeper catches it), unique hidden temp per writer, published with a hard link that fails when the target exists (exclusive create where there are no hard links), temp removed in a finally; (4) the song is read again after the download and after the question whatever the answer; (5) the public texts no longer say a keep is never delayed: an unreachable catalogue fails at once, a slow one can hold a keep for the budget (10 s) plus one request's own timeout (8 s); (6) the restated live-run counts are out of docs/18, the CHANGELOG and RC 4b; (7) CI on Linux: a folder already has a picture when any name starting cover., folder. or front. is there, compared in lower case (the glob is case-sensitive on Linux); tests use mixed case.\n\nKnown, accepted: a keep cut after the question leaves the folder picture missing until slice 5 repairs it; Windows reserved names and the case of the glob on a real Linux host were not run on a real machine; a song whose catalogue cannot be asked is asked again on every retry (nothing is remembered, as intended).",
+ "to": [
+  "agent"
+ ]
+}

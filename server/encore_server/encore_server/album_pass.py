@@ -16,7 +16,7 @@ the search, the albums the same-recording hits are on, then the six steps) and w
   owner's server were written by the library scan before the N-11 guard. (A song the pass does not examine keeps what it has: a channel's or nobody's name, a song that has a
   catalogue id already, a song nobody has. Not done, and said.)
 
-**The pass writes no file** and moves none: the album folder, the tags and the folder picture are slices 3 and 5. A song's line on the phone names the album at once; its artist
+**The pass writes no file** and moves none: the album folder, the tags and the folder picture of a file are made by the keeper for a song being kept now (slice 3, `Keeper._identified`, which asks the pass's own question below: [KeepAsker]) and by the repair of the files already kept (slice 5). A song's line on the phone names the album at once; its artist
 page keeps showing the music server's own albums until the files are filed under them.
 
 The songs are asked ONE AT A TIME (the album answers serially: a long deadline parks one of the pool's workers the routes share), at the gate's own pace (background turns). A
@@ -60,24 +60,41 @@ AlbumAsk = Callable[[str], dict[str, Any]]
 _IDENTITY_COLUMNS = frozenset({"identity_tried_at", "identity_rev", "identity_outcome", "identity_reason"})
 
 
-def length_and_source(music_dir: Path | None, kept: str | None, listed_ms: object) -> tuple[int | None, str]:
-    """A song's length for the comparison with the catalogue's, and where it came from (`file`, `listing` or `none`): the kept FILE's own when the music folder is known and the
-    file can be read (the import's listing is 1 to 12 s off: N-11; a path that leaves the folder is never read), else the ref's own `duration_ms` when it is a whole number above
-    zero (a fractional or negative one is no length), else `None`. THE one definition: the album pass, the cover finder and the dry run all read a length through it."""
-    if music_dir is not None and kept:
-        path = music_dir / kept
-        if inside(music_dir, path):
-            from_file = file_length_ms(path)
-            if from_file:
-                return from_file, "file"
+def file_or_listing_length(path: Path | None, listed_ms: object) -> tuple[int | None, str]:
+    """A song's length for the comparison with the catalogue's, and where it came from (`file`, `listing` or `none`): the FILE's own when [path] is given and can be read (the
+    import's listing is 1 to 12 s off a file's own: N-11), else the ref's own `duration_ms` when it is a whole number above zero (a fractional or negative one is no length), else
+    `None`. THE one definition of how a length is read, for a file that is kept (`length_and_source`) and for the file a keep has just downloaded (N-34 slice 3: the keeper)."""
+    if path is not None:
+        from_file = file_length_ms(path)
+        if from_file:
+            return from_file, "file"
     if isinstance(listed_ms, int) and listed_ms > 0:
         return int(listed_ms), "listing"
     return None, "none"
 
 
+def length_and_source(music_dir: Path | None, kept: str | None, listed_ms: object) -> tuple[int | None, str]:
+    """[file_or_listing_length] for a KEPT file, given by its path relative to the music folder: a path that leaves the folder is never read. THE one definition: the album pass,
+    the cover finder and the dry run all read a length through it."""
+    path: Path | None = None
+    if music_dir is not None and kept:
+        candidate = music_dir / kept
+        if inside(music_dir, candidate):
+            path = candidate
+    return file_or_listing_length(path, listed_ms)
+
+
 def length_of(music_dir: Path | None, kept: str | None, listed_ms: object) -> int | None:
     """[length_and_source] without the source."""
     return length_and_source(music_dir, kept, listed_ms)[0]
+
+
+def resting_reason(catalogue: Catalogue) -> str | None:
+    """Why the catalogue must not be asked now (it asked this server to rest), or `None`: the pass and a new keep both stop at it, as the cover finder does."""
+    state = catalogue.state()
+    if state.get("state") == "resting":
+        return f"the catalogue asked this server to rest ({state.get('resumesInSec')} s)"
+    return None
 
 
 def search_the_catalogue(artist: str, title: str) -> list[dict[str, Any]]:
@@ -106,27 +123,47 @@ class AlbumReport:
     stopped: str | None = None
 
 
-def wanting(conn: sqlite3.Connection, *, now: int, report: AlbumReport | None = None) -> list[sqlite3.Row]:
-    """THE selection of the songs the catalogue is asked about, the ONE function the album pass and its dry run (`album_dryrun.entries`) both call, so that reading the dry run
-    predicts what the pass will ask and stamp (review of PR 125; a test runs both over one database and compares them). The songs whose album is NULL or the placeholder, with no
-    catalogue id, whose artist is a performer or unknown (`artist_basis.performer_clause`: never a channel's name or nobody's, N-26), that somebody has (a like, a playlist entry)
-    or the server keeps, and that were never asked, or were answered `none` or `held` by an older rule or more than 7 days before [now]. Songs with a kept file first, then the
-    order they were made in. A song that is on the P2-25 worklist is left out and counted in [report]: its file, and so its length and its name, may belong to another song until
-    the rehome has judged it, and a stamp is permanent. Reads only."""
+def wanting(
+    conn: sqlite3.Connection, *, now: int, report: AlbumReport | None = None, ref_id: str | None = None, being_kept: bool = False
+) -> list[sqlite3.Row]:
+    """THE selection of the songs the catalogue is asked about, the ONE function the album pass, its dry run (`album_dryrun.entries`) and the keeper's new keeps (N-34 slice 3,
+    [ref_id]) all call, so that reading the dry run predicts what the pass will ask and stamp (review of PR 125; a test runs both over one database and compares them). The songs
+    whose album is NULL or the placeholder, with no catalogue id, whose artist is a performer or unknown (`artist_basis.performer_clause`: never a channel's name or nobody's, N-26),
+    that somebody has (a like, a playlist entry) or the server keeps, and that were never asked, or were answered `none` or `held` by an older rule or more than 7 days before [now].
+    Songs with a kept file first, then the order they were made in. A song that is on the P2-25 worklist is left out and counted in [report]: its file, and so its length and its
+    name, may belong to another song until the rehome has judged it, and a stamp is permanent. Reads only.
+
+    **[ref_id]** asks the same question of ONE song (a song being kept now): every rule above holds, and only the "somebody has it or the server keeps it" clause is dropped, because
+    the keep itself is the server keeping it. A song a keep must not file under an album is therefore exactly a song the pass would not stamp (a real album, an id, a channel's
+    name, an answer of this rule from the last week). **[being_kept]** (the dry run's new-keeps mode) also takes the songs the server has a `keep` waiting or running for (a song
+    played on two days is kept without a like or a playlist entry): the keeper asks those too. Each row also says whether the music server already has a file of the song (`linked`): a song it has none of is the
+    one a keep would fetch (the dry run's section on new keeps)."""
+    holder = (
+        " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
+        "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
+        "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL)"
+        + (
+            "  OR EXISTS (SELECT 1 FROM work_item w WHERE w.ref = r.id AND w.kind = 'keep' AND w.state IN ('queued', 'running'))"
+            if being_kept
+            else ""
+        )
+        + ")"
+        if ref_id is None
+        else " AND r.id = ?"
+    )
     rows = conn.execute(
         "SELECT r.id, r.title, r.artists, r.album, r.duration_ms, r.isrc,"
         " (SELECT f.path FROM song_file f WHERE f.ref = r.id AND f.source = 'youtube' AND f.path IS NOT NULL"
-        "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept"
+        "  ORDER BY f.preferred DESC, f.added_at LIMIT 1) AS kept,"
+        " EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id AND f.navidrome_song_id IS NOT NULL) AS linked"
         " FROM song_ref r WHERE r.deezer_id IS NULL"
         " AND (r.album IS NULL OR TRIM(r.album) = '' OR LOWER(r.album) LIKE '%unknown album%')"
         f" AND {performer_clause('r.artist_basis')}"
         " AND (r.identity_outcome IS NULL OR (r.identity_outcome IN ('none', 'held')"
         "  AND (r.identity_rev IS NULL OR r.identity_rev < ? OR r.identity_tried_at IS NULL OR r.identity_tried_at <= ?)))"
-        " AND (EXISTS (SELECT 1 FROM song_file f WHERE f.ref = r.id)"
-        "  OR EXISTS (SELECT 1 FROM library_item i WHERE i.kind = 'like' AND i.target = r.id)"
-        "  OR EXISTS (SELECT 1 FROM playlist_entry e WHERE e.ref = r.id AND e.deleted_at IS NULL))"
+        f"{holder}"
         " ORDER BY (kept IS NULL), r.created_at, r.id",
-        (album_finder.IDENTITY_REVISION, now - RETRY_AFTER_MS),
+        (album_finder.IDENTITY_REVISION, now - RETRY_AFTER_MS, *(() if ref_id is None else (ref_id,))),
     ).fetchall()
     wanted: list[sqlite3.Row] = []
     for row in rows:
@@ -187,17 +224,11 @@ class AlbumFinder:
         def album(ident: str) -> dict[str, Any]:
             return catalogue.album(ident, priority="background", deadline_s=ALBUM_DEADLINE_S)
 
-        def resting() -> str | None:
-            state = catalogue.state()
-            if state.get("state") == "resting":
-                return f"the catalogue asked this server to rest ({state.get('resumesInSec')} s)"
-            return None
-
         return cls(
             db,
             search=lambda artist, title: search_the_catalogue(artist, title),
             album=album,
-            resting=resting,
+            resting=lambda: resting_reason(catalogue),
             music_dir=music_dir,
             **options,
         )
@@ -267,99 +298,231 @@ class AlbumFinder:
         return False
 
     def _store(self, ref_id: str, verdict: Verdict | None, report: AlbumReport) -> None:
-        """One transaction per song: the facts (or only the placeholder forgotten), the remembered answer, and the phones told. [verdict] is `None` for a song that was only
-        examined (no request, nothing remembered)."""
+        """One transaction per song: the facts (or only the placeholder forgotten), the remembered answer, and the phones told ([commit_verdict], which a new keep calls too).
+        [verdict] is `None` for a song that was only examined (no request, nothing remembered)."""
         with self._db.tx() as conn:
-            row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
-            # Re-read, inside the write: only a ref that is STILL without an album (or with the placeholder) and without a catalogue id, and not on the worklist, is written.
-            if (
-                row is None
-                or row["deezer_id"] is not None
-                or not refs.is_placeholder_album(row["album"])
-                # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the second of the two `refs.recheck_pending` calls N-36 removes (the first is in `wanting`).
-                or refs.recheck_pending(conn, ref_id)
-            ):
-                report.skipped += 1
-                return
-            outcome, reason = (verdict.outcome, verdict.reason) if verdict is not None and verdict.remember else (None, None)
-            updates: dict[str, Any] = {}
-            if outcome == "matched" and verdict is not None and verdict.match is not None:
-                updates = refs.release_facts_to_fill(conn, row, verdict.match)
-                # The second layer of step 5: an id that another song took since the matcher read the database is a pair, not a stamp.
-                if refs.is_placeholder_album(verdict.match.album):
-                    # The second layer of `release_placeholder`: no album and no id are written for a release called `Unknown Album`, whatever the verdict said.
-                    outcome, reason, updates = "none", "release_placeholder", refs.forget_placeholder_album(row)
-                elif verdict.match.single:
-                    # The second layer of `single_only`: slice 2 never stamps a single, whatever the verdict said (a stamp is permanent and a later round asks only none and held).
-                    outcome, reason, updates = "none", "single_only", refs.forget_placeholder_album(row)
-                elif "album" not in updates:
-                    outcome, reason, updates = "none", "nothing_to_fill", refs.forget_placeholder_album(row)
-                elif (
-                    row["isrc"]
-                    and verdict.match.isrc
-                    and album_finder._isrc(row["isrc"]) != album_finder._isrc(verdict.match.isrc)
-                ):
-                    # The row may have gained an ISRC since it was read (a phone described the song, a scan read its tags): another recording's ISRC is counter-evidence.
-                    outcome, reason, updates = "none", "isrc_differs", refs.forget_placeholder_album(row)
-                elif verdict.match.deezer_id and "deezer_id" not in updates:
-                    outcome, reason, updates = "held", "deezer_id_held", refs.forget_placeholder_album(row)
-                elif verdict.match.isrc and row["isrc"] is None and "isrc" not in updates:
-                    outcome, reason, updates = "held", "isrc_held", refs.forget_placeholder_album(row)
-                elif album_finder.RefHoldings(conn, ref_id).twin_held(
-                    refs.norm_key(refs.lead_artist(row["artists"]), row["title"]), release_key(verdict.match.album)
-                ):
-                    # The third kind of pair (step 5), asked again as the matcher asked it: another ref of this song that already has this album was made after the matcher looked.
-                    outcome, reason, updates = "held", "twin_held", refs.forget_placeholder_album(row)
-            else:
-                updates = refs.forget_placeholder_album(row)
-            if outcome == "held":
-                self._log_pair(conn, ref_id, row, verdict, reason or "")
-            if outcome is not None:
-                updates |= {
-                    "identity_tried_at": self._now(),
-                    "identity_rev": album_finder.IDENTITY_REVISION,
-                    "identity_outcome": outcome,
-                    "identity_reason": reason,
-                }
-            if updates:
-                assignments = ", ".join(f"{column} = ?" for column in updates)
-                conn.execute(f"UPDATE song_ref SET {assignments} WHERE id = ?", (*updates.values(), ref_id))  # noqa: S608 - fixed column names
-                if any(column not in _IDENTITY_COLUMNS for column in updates):
-                    library.touch_ref_holders(conn, ref_id)
-                    if conn.execute("SELECT 1 FROM song_file WHERE ref = ?", (ref_id,)).fetchone() is not None:
-                        refs.touch_file(conn, ref_id)
-        if outcome == "matched":
+            done = commit_verdict(conn, ref_id, verdict, now=self._now())
+        if done.skipped:
+            report.skipped += 1
+            return
+        if done.outcome == "matched":
             report.matched += 1
-        elif outcome == "held":
+        elif done.outcome == "held":
             report.held += 1
-        elif outcome == "none":
+        elif done.outcome == "none":
             report.none += 1
-        if outcome is not None and reason:
+        if done.outcome is not None and done.reason:
             counted = Counter(report.reasons)
-            counted[reason] += 1
+            counted[done.reason] += 1
             report.reasons = dict(counted)
 
-    def _log_pair(self, conn: sqlite3.Connection, ref_id: str, row: sqlite3.Row, verdict: Verdict | None, reason: str) -> None:
-        """One INFO line for a held pair, like `refmerge`'s: the two refs and the catalogue's id, never a title or an artist."""
-        match = verdict.match if verdict is not None else None
-        other: sqlite3.Row | None = None
-        if match is not None and reason == "deezer_id_held":
-            other = conn.execute("SELECT id FROM song_ref WHERE deezer_id = ? AND id != ?", (match.deezer_id, ref_id)).fetchone()
-        elif match is not None and reason == "isrc_held" and match.isrc:
-            other = conn.execute("SELECT id FROM song_ref WHERE isrc = ? AND id != ?", (match.isrc, ref_id)).fetchone()
-        elif match is not None and reason == "twin_held":
-            wanted = release_key(match.album)
-            for twin in conn.execute(
-                "SELECT id, album FROM song_ref WHERE norm_key = ? AND id != ? AND album IS NOT NULL", (row["norm_key"], ref_id)
-            ):
-                if not refs.is_placeholder_album(twin["album"]) and release_key(twin["album"]) == wanted:
-                    other = twin
-                    break
-        log.info(
-            "held pair: song %s and song %s are one recording of the catalogue (id %s, album %s): %s; nothing was written",
-            ref_id,
-            other["id"] if other is not None else "?",
-            match.deezer_id if match is not None else "?",
-            match.album_id if match is not None else "?",
-            reason,
+
+@dataclass(frozen=True)
+class Committed:
+    """What [commit_verdict] did for one song."""
+
+    #: The answer that was remembered (`matched`, `none` or `held`), or `None` when nothing was (a song that was only examined).
+    outcome: str | None
+    reason: str | None
+    #: The row no longer qualified when it was read again inside the write (an album, an id, the worklist): nothing was written.
+    skipped: bool = False
+    #: Whether any column of the song changed, the identity columns included: the caller reads the ref again.
+    wrote: bool = False
+    #: The picture address this write put on the song (the release's cover), when it did: the one picture a new keep may also use for the folder.
+    cover: str | None = None
+
+
+def commit_verdict(conn: sqlite3.Connection, ref_id: str, verdict: Verdict | None, *, now: int) -> Committed:
+    """THE write rule of the matcher, inside the caller's transaction: the album pass calls it for every song it asks about and a NEW KEEP (N-34 slice 3) calls it for the song it
+    is keeping, so a keep can never stamp what the pass would refuse. The facts (or only the placeholder forgotten), the remembered answer and the phones told, in the order
+    of the second layers below. [verdict] is `None` for a song that was only examined (no request, nothing remembered).
+
+    The row is read again here and only a ref that is STILL without an album (or with the placeholder) and without a catalogue id, and not on the worklist, is written; every
+    other song is `skipped`. Every verdict of the matcher is checked once more against what the row and the database hold NOW (a placeholder release, a single, nothing to fill, a
+    new ISRC, an id another song took, a twin made meanwhile): the result is `none` or `held`, never a stamp."""
+    row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (ref_id,)).fetchone()
+    if (
+        row is None
+        or row["deezer_id"] is not None
+        or not refs.is_placeholder_album(row["album"])
+        # STOP-GAP(P2-25 one-shot-repair; remove after 0.1.0): the second of the two `refs.recheck_pending` calls N-36 removes (the first is in `wanting`).
+        or refs.recheck_pending(conn, ref_id)
+    ):
+        return Committed(None, None, skipped=True)
+    outcome, reason = (verdict.outcome, verdict.reason) if verdict is not None and verdict.remember else (None, None)
+    updates: dict[str, Any] = {}
+    if outcome == "matched" and verdict is not None and verdict.match is not None:
+        updates = refs.release_facts_to_fill(conn, row, verdict.match)
+        # The second layer of step 5: an id that another song took since the matcher read the database is a pair, not a stamp.
+        if refs.is_placeholder_album(verdict.match.album):
+            # The second layer of `release_placeholder`: no album and no id are written for a release called `Unknown Album`, whatever the verdict said.
+            outcome, reason, updates = "none", "release_placeholder", refs.forget_placeholder_album(row)
+        elif verdict.match.single:
+            # The second layer of `single_only`: slice 2 never stamps a single, whatever the verdict said (a stamp is permanent and a later round asks only none and held).
+            outcome, reason, updates = "none", "single_only", refs.forget_placeholder_album(row)
+        elif "album" not in updates:
+            outcome, reason, updates = "none", "nothing_to_fill", refs.forget_placeholder_album(row)
+        elif row["isrc"] and verdict.match.isrc and album_finder._isrc(row["isrc"]) != album_finder._isrc(verdict.match.isrc):
+            # The row may have gained an ISRC since it was read (a phone described the song, a scan read its tags): another recording's ISRC is counter-evidence.
+            outcome, reason, updates = "none", "isrc_differs", refs.forget_placeholder_album(row)
+        elif verdict.match.deezer_id and "deezer_id" not in updates:
+            outcome, reason, updates = "held", "deezer_id_held", refs.forget_placeholder_album(row)
+        elif verdict.match.isrc and row["isrc"] is None and "isrc" not in updates:
+            outcome, reason, updates = "held", "isrc_held", refs.forget_placeholder_album(row)
+        elif album_finder.RefHoldings(conn, ref_id).twin_held(
+            refs.norm_key(refs.lead_artist(row["artists"]), row["title"]), release_key(verdict.match.album)
+        ):
+            # The third kind of pair (step 5), asked again as the matcher asked it: another ref of this song that already has this album was made after the matcher looked.
+            outcome, reason, updates = "held", "twin_held", refs.forget_placeholder_album(row)
+    else:
+        updates = refs.forget_placeholder_album(row)
+    if outcome == "held":
+        log_pair(conn, ref_id, row, verdict, reason or "")
+    if outcome is not None:
+        updates |= {
+            "identity_tried_at": now,
+            "identity_rev": album_finder.IDENTITY_REVISION,
+            "identity_outcome": outcome,
+            "identity_reason": reason,
+        }
+    if updates:
+        assignments = ", ".join(f"{column} = ?" for column in updates)
+        conn.execute(f"UPDATE song_ref SET {assignments} WHERE id = ?", (*updates.values(), ref_id))  # noqa: S608 - fixed column names
+        if any(column not in _IDENTITY_COLUMNS for column in updates):
+            library.touch_ref_holders(conn, ref_id)
+            if conn.execute("SELECT 1 FROM song_file WHERE ref = ?", (ref_id,)).fetchone() is not None:
+                refs.touch_file(conn, ref_id)
+    return Committed(outcome, reason, wrote=bool(updates), cover=updates.get("cover_url"))
+
+
+def log_pair(conn: sqlite3.Connection, ref_id: str, row: sqlite3.Row, verdict: Verdict | None, reason: str) -> None:
+    """One INFO line for a held pair, like `refmerge`'s: the two refs and the catalogue's id, never a title or an artist."""
+    match = verdict.match if verdict is not None else None
+    other: sqlite3.Row | None = None
+    if match is not None and reason == "deezer_id_held":
+        other = conn.execute("SELECT id FROM song_ref WHERE deezer_id = ? AND id != ?", (match.deezer_id, ref_id)).fetchone()
+    elif match is not None and reason == "isrc_held" and match.isrc:
+        other = conn.execute("SELECT id FROM song_ref WHERE isrc = ? AND id != ?", (match.isrc, ref_id)).fetchone()
+    elif match is not None and reason == "twin_held":
+        wanted = release_key(match.album)
+        for twin in conn.execute(
+            "SELECT id, album FROM song_ref WHERE norm_key = ? AND id != ? AND album IS NOT NULL", (row["norm_key"], ref_id)
+        ):
+            if not refs.is_placeholder_album(twin["album"]) and release_key(twin["album"]) == wanted:
+                other = twin
+                break
+    log.info(
+        "held pair: song %s and song %s are one recording of the catalogue (id %s, album %s): %s; nothing was written",
+        ref_id,
+        other["id"] if other is not None else "?",
+        match.deezer_id if match is not None else "?",
+        match.album_id if match is not None else "?",
+        reason,
+    )
+
+
+# ------------------------------------------------------------------------------------------------------------------ a new keep (N-34 slice 3)
+
+#: How long a keep waits for the catalogue: the design's short wait ("one `background` turn with a short wait (10 s; `search_tracks` takes a `wait_s`, the 120 s default would
+#: stall a keep behind the repair's pass)"), for ONE call and in all for the whole question (the search and each album's answer share it). A keep that runs out of time is a
+#: keep without an album, exactly as before slice 3, and remembers nothing; the pass of slice 2 and the repair of slice 5 place the song later. PRICE, named: while the gate is busy
+#: (the hourly pass asks at the same pace) a keep may stay in `Singles` that a quieter moment would have filed under its album; a miss is re-askable, a wrong album is not.
+#: HONEST BOUND: the wait limits the turn at the gate and each album answer, NOT a request that has been sent (a background request has its own 8 s timeout), so a SLOW catalogue can
+#: hold a keep for the budget plus one request's timeout; an UNREACHABLE one (down, resting, switched off, refused) fails at once. Building a hard deadline was not done: it costs a
+#: thread that outlives the keep, and the bound is short.
+KEEP_CALL_WAIT_S = 10.0
+KEEP_BUDGET_S = 10.0
+
+
+def search_the_catalogue_for_keep(artist: str, title: str, wait_s: float) -> list[dict[str, Any]]:
+    """The one search of a new keep: the installed catalogue, as a background turn with a short wait. (A module function, so the tests of the app put their own in.)"""
+    return deezer.search_tracks(artist, title, wait_s=wait_s)
+
+
+@dataclass(frozen=True)
+class KeepAnswer:
+    """What the album question of a new keep came to. `outcome`: `matched`, `none` or `held` (remembered answers, written by [commit_verdict]); `not_asked` (a name with nothing
+    to compare or no length: nothing asked, nothing remembered); `not_wanted` (the song is not one the pass would ask about: it has an album, an id, a channel's name, a recent
+    answer ...); `unavailable` (the catalogue could not be asked: nothing remembered); `skipped` (the row changed while the catalogue was asked: nothing written)."""
+
+    outcome: str
+    reason: str = ""
+    #: Whether any column of the song changed, so the keeper must read the ref again.
+    wrote: bool = False
+    #: The picture the catalogue's release gave the song in this write.
+    cover: str | None = None
+
+
+class KeepAsker:
+    """Which album is the song being kept on? ONE question per new keep, asked through the very selection (`wanting`, for one ref), the very matcher (`album_finder.decide`) and the
+    very write rule ([commit_verdict]) of the album pass, with the length of the FILE the keeper has just downloaded. **It never remembers anything for a catalogue that cannot be
+    asked**: the keep goes on without an album, exactly as before slice 3, and the pass of slice 2 asks the song later. (The keeper also catches any other exception.)
+
+    The calls are the caller's (`search(artist, title, wait_s)`, `album(id, wait_s)`: a test gives recorded ones; [on] gives the installed catalogue's, as background turns). Each call
+    waits at most [call_wait_s], and the whole question [budget_s]: the time left is what a call is given, and a call after the time is spent is "could not ask". A keep is a
+    background job, but a person may be waiting for the file: the question costs a keep its budget at most PLUS one request's own timeout (the wait bounds the turn at the gate and each album answer, not a request already sent)."""
+
+    def __init__(
+        self,
+        db: Database,
+        *,
+        search: Callable[[str, str, float], list[dict[str, Any]]],
+        album: Callable[[str, float], dict[str, Any]],
+        resting: Callable[[], str | None] = lambda: None,
+        call_wait_s: float = KEEP_CALL_WAIT_S,
+        budget_s: float = KEEP_BUDGET_S,
+        clock: Callable[[], float] = time.monotonic,
+        now: Callable[[], int] = now_ms,
+    ) -> None:
+        self._db = db
+        self._search, self._album, self._resting = search, album, resting
+        self._call_wait, self._budget = call_wait_s, budget_s
+        self._clock, self._now = clock, now
+
+    @classmethod
+    def on(cls, db: Database, catalogue: Catalogue, **options: Any) -> KeepAsker:
+        """The question as the server asks it: the installed gate's one search and the catalogue's album answers, both background turns."""
+
+        def search(artist: str, title: str, wait_s: float) -> list[dict[str, Any]]:
+            return search_the_catalogue_for_keep(artist, title, wait_s)
+
+        def album(ident: str, wait_s: float) -> dict[str, Any]:
+            return catalogue.album(ident, priority="background", deadline_s=wait_s)
+
+        return cls(db, search=search, album=album, resting=lambda: resting_reason(catalogue), **options)
+
+    def __call__(self, ref_id: str, length_ms: int | None) -> KeepAnswer:
+        with self._db.read() as conn:
+            rows = wanting(conn, now=self._now(), ref_id=ref_id)
+        if not rows:
+            return KeepAnswer("not_wanted")
+        row = rows[0]
+        song = Song(refs.lead_artist(row["artists"]), row["title"], length_ms, row["isrc"])
+        if album_finder.refusal(song) is not None:
+            # No request and nothing remembered; the song was examined, so the placeholder literal is forgotten (the pass does the same) and never reaches the tags.
+            with self._db.tx() as conn:
+                done = commit_verdict(conn, ref_id, None, now=self._now())
+            return KeepAnswer("not_asked", wrote=done.wrote)
+        if (why := self._resting()) is not None:
+            return KeepAnswer("unavailable", why)
+        deadline = self._clock() + self._budget
+
+        def wait() -> float:
+            left = deadline - self._clock()
+            if left <= 0:
+                raise deezer.LookupUnavailable("the time a keep has for the catalogue is spent")
+            return min(self._call_wait, left)
+
+        verdict = album_finder.decide(
+            song,
+            lambda artist, title: self._search(artist, title, wait()),
+            lambda ident: self._album(ident, wait()),
+            _DbHoldings(self._db, ref_id),
         )
+        if verdict.outcome == "unavailable":
+            return KeepAnswer("unavailable", verdict.reason)
+        with self._db.tx() as conn:
+            done = commit_verdict(conn, ref_id, verdict, now=self._now())
+        if done.skipped:
+            return KeepAnswer("skipped")
+        return KeepAnswer(done.outcome or "not_asked", done.reason or "", wrote=done.wrote, cover=done.cover)

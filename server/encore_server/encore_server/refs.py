@@ -8,7 +8,6 @@ catalogue and video ids, then the normalised artist + title (and which version i
 from __future__ import annotations
 
 import json
-import re
 import sqlite3
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Any, Protocol
@@ -20,21 +19,15 @@ from .errors import ApiError
 from .ids import new_id, now_ms
 from .keeper.covers import cover_url_ok
 from .textnorm import artist_key, is_unknown_artist, title_key, version_signature
+from .textnorm import (
+    is_placeholder_album as is_placeholder_album,
+)  # the one definition lives with `is_unknown_artist`; `refs.is_placeholder_album` stays the name callers use
 
 #: Two recordings with the same normalised name are the same song when their lengths differ by no more than this.
 DURATION_TOLERANCE_MS = 3000
 
 _TEXT_LIMIT = 300
 _MAX_ARTISTS = 20
-
-#: The album the music server lists a file under when its tags name none. It says "no album", so it is never copied onto a ref that has a real one
-#: or none (N-11: the doubled songs showed under "[unknown album]").
-_PLACEHOLDER_ALBUM = re.compile(r"^\[?\s*unknown album\s*\]?$", re.IGNORECASE)
-
-
-def is_placeholder_album(value: object) -> bool:
-    """Whether an album is no album: nothing, blank, or the music server's `[Unknown Album]`."""
-    return not isinstance(value, str) or not value.strip() or _PLACEHOLDER_ALBUM.match(value.strip()) is not None
 
 
 def norm_key(artist: str, title: str) -> str:

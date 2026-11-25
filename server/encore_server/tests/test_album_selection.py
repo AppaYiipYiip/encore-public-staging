@@ -147,8 +147,8 @@ def test_one_function_is_the_selection_of_both(pdb: Database, monkeypatch: Any) 
     ids = a_library(pdb)
     only = [ids["kept"]]
 
-    def narrowed(conn: sqlite3.Connection, *, now: int, report: Any = None) -> list[sqlite3.Row]:
-        return [row for row in real(conn, now=now, report=report) if row["id"] in only]
+    def narrowed(conn: sqlite3.Connection, **options: Any) -> list[sqlite3.Row]:
+        return [row for row in real(conn, **options) if row["id"] in only]
 
     real = album_pass.wanting
     monkeypatch.setattr(album_pass, "wanting", narrowed)

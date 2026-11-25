@@ -186,6 +186,14 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
         raise LookupUnavailable("a test may not ask the real catalogue")
 
     monkeypatch.setattr("encore_server.album_pass.search_the_catalogue", unreachable)
+
+    # ... and neither does the question of a new keep (N-34 slice 3: the album a song being kept is on): it "cannot be asked", the keep goes on without an album.
+    def unreachable_for_a_keep(artist: str, title: str, wait_s: float) -> list[dict[str, object]]:
+        from encore_server.deezer import LookupUnavailable
+
+        raise LookupUnavailable("a test may not ask the real catalogue")
+
+    monkeypatch.setattr("encore_server.album_pass.search_the_catalogue_for_keep", unreachable_for_a_keep)
     monkeypatch.setattr("encore_server.artist_finder.deezer_artist_picture", nobody)
     yield
     assert not asked, f"this test asked the real catalogue {len(asked)} time(s): {asked[:2]}"

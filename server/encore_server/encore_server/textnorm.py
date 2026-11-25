@@ -408,6 +408,17 @@ def is_unknown_artist(name: str) -> bool:
     return norm_artist(name) == norm_artist(UNKNOWN_ARTIST)
 
 
+#: The album the music server lists a file under when its tags name none. It says "no album", so it is never copied onto a ref that has a real one
+#: or none (N-11: the doubled songs showed under "[unknown album]").
+_PLACEHOLDER_ALBUM = re.compile(r"^\[?\s*unknown album\s*\]?$", re.IGNORECASE)
+
+
+def is_placeholder_album(value: object) -> bool:
+    """Whether an album is no album: nothing, blank, or the music server's `[Unknown Album]`. THE one definition, next to `is_unknown_artist` (its twin for the artist): `refs`
+    re-exports it, and a file's tags and folder are built with it (N-34 slice 3: the placeholder is never written to the Host's disk)."""
+    return not isinstance(value, str) or not value.strip() or _PLACEHOLDER_ALBUM.match(value.strip()) is not None
+
+
 #: Where a combined artist string ("Daft Punk feat. Pharrell Williams", "Fat Joe, Lil Wayne") is cut into names. The YouTube matcher and the music server's
 #: matcher use this one definition. The comma and the semicolon of other scripts cut like the ASCII ones: the Arabic `،` `؛`, the ideographic `、` and the
 #: fullwidth `，` `；`. The words for "and" in other scripts (`و`, `и`, `と`) are NOT separators here: a word inside a name is not a cut (P2-12b's credits).

@@ -41,7 +41,7 @@ from . import (
 )
 from . import join_page as join_pages
 from .accounts import Accounts, Limiter, LoginGuard
-from .album_pass import AlbumFinder
+from .album_pass import AlbumFinder, KeepAsker
 from .artist_finder import ArtistFinder, ArtistLookup
 from .auth import (
     COVER_PASS_SCOPE,
@@ -1616,6 +1616,7 @@ def _background(
     youtube: YoutubeSource | None,
     client: NavidromeClient,
     notifications: Notifications,
+    catalogue: Catalogue,
 ) -> tuple[Scheduler | None, Keeper | None, ImportService]:
     """The background work: matching the songs of imports to uploads, and the keeper. Without a way to fetch songs nothing is queued,
     and without a music-server account that can find what was kept the keeper is off: every song still plays by streaming, and the
@@ -1645,6 +1646,9 @@ def _background(
             settings.data_dir / "work",
             on_changed=tell,
             find_cover_=deezer_lookup,
+            # N-34 slice 3: which album the song being kept is on, asked of the catalogue (the very selection, matcher and write rule of the album pass) before its tags and
+            # its folder are made. A catalogue that cannot be asked never delays or stops a keep.
+            identify_=KeepAsker.on(database, catalogue),
         )
         handlers["keep"] = keeper.handle
     imports = ImportService(database, hub, youtube, notifications=notifications)
@@ -1694,17 +1698,17 @@ def create_app(
         identity = load_or_create(conn)
         stream_key = stream_secret(conn)
     notifications = Notifications(database, hub)
-    scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications)
+    catalogue = catalogue or _default_catalogue(settings)
+    # The ONE gate to the catalogue: every look-up of this server that has no client of its own (the cover finder, the artist finder, the keeper's cover and its album question)
+    # goes through it, and so do the routes. Taken away again when the server stops (a test makes many apps in one process). Made BEFORE the keeper, which asks through it.
+    deezer.install(catalogue.client)
+    scheduler, keeper, imports = _background(settings, database, hub, youtube, client, notifications, catalogue)
     keep_watch = (
         KeepWatch(database, scheduler, hub, lambda: _youtube_status(youtube))
         if scheduler is not None and scheduler.handles("keep")
         else None
     )
     the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
-    catalogue = catalogue or _default_catalogue(settings)
-    # The ONE gate to the catalogue: every look-up of this server that has no client of its own (the cover finder, the artist finder, the keeper's
-    # cover) goes through it, and so do the routes. Taken away again when the server stops (a test makes many apps in one process).
-    deezer.install(catalogue.client)
 
     def ended(person_id: str, user: str | None) -> None:
         # Locked, removed or given a new password: the live connections of the person close and the music server's remembered yes is forgotten.
