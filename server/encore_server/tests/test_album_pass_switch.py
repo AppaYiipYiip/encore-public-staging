@@ -29,9 +29,9 @@ from encore_server.navidrome import NavidromeClient
 from encore_server.navidrome_admin import NavidromeAdmin
 from tests.catalogue_fakes import RecordedDeezer
 from tests.conftest import FakeVerifier, creds, resolve
+from tests.test_album_pass import DAY_MS, NOW, Catalogue, finder, landmvrks, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 from tests.test_keeper import FakeNavidrome, FakeSource, fake_ffmpeg
 from tests.test_keeper_new_keeps import FILE_LENGTH_MS
-from tests.test_album_pass import DAY_MS, NOW, Catalogue, finder, landmvrks, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 
 COMPOSE = Path(__file__).resolve().parents[1] / "deploy" / "compose.yaml"
 
@@ -121,7 +121,22 @@ def test_with_the_switch_off_the_library_link_asks_no_album_and_stamps_nothing_a
     assert not any(call.startswith("album pass") for call in calls), calls
     assert "cover finder: Comfortably Numb" in calls, "the pictures are the catalogue's, not this switch's"
     assert not any(path.startswith("/album/") for path in upstream.paths()), "no album question reached the catalogue"
-    assert row_of(services.db, placed) == before, "nothing is stamped and no identity column is written"
+    after = row_of(services.db, placed)
+    stamped = (
+        "album",
+        "track_no",
+        "disc_no",
+        "year",
+        "deezer_id",
+        "isrc",
+        "identity_tried_at",
+        "identity_rev",
+        "identity_outcome",
+        "identity_reason",
+    )
+    assert {k: after[k] for k in stamped} == {k: before[k] for k in stamped}, (
+        "nothing is stamped and no identity column is written (the cover finder's own note, cover_tried_at, is its own)"
+    )
 
 
 def test_with_the_switch_on_the_same_app_asks_and_stamps_the_control(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

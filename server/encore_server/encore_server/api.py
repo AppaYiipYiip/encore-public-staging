@@ -1648,7 +1648,7 @@ def _background(
             find_cover_=deezer_lookup,
             # N-34 slice 3: which album the song being kept is on, asked of the catalogue (the very selection, matcher and write rule of the album pass) before its tags and
             # its folder are made. A catalogue that cannot be asked never delays or stops a keep.
-            identify_=KeepAsker.on(database, catalogue),
+            identify_=KeepAsker.on(database, catalogue) if settings.album_pass else None,
         )
         handlers["keep"] = keeper.handle
     imports = ImportService(database, hub, youtube, notifications=notifications)
@@ -1724,7 +1724,11 @@ def create_app(
         on_ended=ended,
     )
     # N-34 slice 2: which album a song is on, asked of the catalogue BEFORE the cover finder, so the one search that finds the album also gives the picture.
-    album_pass = AlbumFinder.on(database, catalogue, music_dir=settings.music_dir)
+    album_pass = AlbumFinder.on(database, catalogue, music_dir=settings.music_dir) if settings.album_pass else None
+    if not settings.album_pass:
+        log.info(
+            "the album pass is switched off (ENCORE_ALBUM_PASS=0): no album is asked of the catalogue and none is stamped, by the hourly pass or by a new keep"
+        )
     finder = CoverFinder(database, music_dir=settings.music_dir, after=client.start_scan if client.configured else None)
     artist_finder = (
         ArtistFinder(database, client, artist_lookup, music_dir=settings.music_dir, after=client.start_scan)
@@ -1738,7 +1742,7 @@ def create_app(
     def errands() -> None:
         for errand in (
             accounts.heal_libraries,
-            album_pass.run_once,
+            *((album_pass.run_once,) if album_pass is not None else ()),
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
             tombstone_purge.run_once,  # N-31: old tombstones and old import lists go, so that the janitor below finds their songs unpointed
