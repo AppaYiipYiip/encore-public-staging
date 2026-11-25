@@ -1,0 +1,547 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/1434890",
+ "params": {},
+ "answer": {
+  "id": 1434890,
+  "title": "Toxicity",
+  "upc": "888880467751",
+  "link": "https://www.deezer.com/album/1434890",
+  "cover": "https://api.deezer.com/album/1434890/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    },
+    {
+     "id": 155,
+     "name": "Hard Rock",
+     "picture": "https://api.deezer.com/genre/155/image",
+     "type": "genre"
+    },
+    {
+     "id": 464,
+     "name": "Metal",
+     "picture": "https://api.deezer.com/genre/464/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "American/Columbia",
+  "nb_tracks": 15,
+  "duration": 2637,
+  "fans": 194175,
+  "release_date": "2001-01-01",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/1434890/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 458,
+    "name": "System of a Down",
+    "link": "https://www.deezer.com/artist/458",
+    "picture": "https://api.deezer.com/artist/458/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 458,
+   "name": "System of a Down",
+   "picture": "https://api.deezer.com/artist/458/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/67460cdb0b52bfde1b807650958058d6/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 15523769,
+     "readable": true,
+     "title": "Prison Song",
+     "title_short": "Prison Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523769",
+     "duration": 201,
+     "rank": 715714,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523770,
+     "readable": true,
+     "title": "Needles",
+     "title_short": "Needles",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523770",
+     "duration": 193,
+     "rank": 613099,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523772,
+     "readable": true,
+     "title": "Deer Dance",
+     "title_short": "Deer Dance",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523772",
+     "duration": 174,
+     "rank": 663445,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523775,
+     "readable": true,
+     "title": "Jet Pilot",
+     "title_short": "Jet Pilot",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523775",
+     "duration": 126,
+     "rank": 565147,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523778,
+     "readable": true,
+     "title": "X",
+     "title_short": "X",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523778",
+     "duration": 118,
+     "rank": 567506,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523781,
+     "readable": true,
+     "title": "Chop Suey!",
+     "title_short": "Chop Suey!",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523781",
+     "duration": 210,
+     "rank": 738481,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523784,
+     "readable": true,
+     "title": "Bounce",
+     "title_short": "Bounce",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523784",
+     "duration": 114,
+     "rank": 623536,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523788,
+     "readable": true,
+     "title": "Forest",
+     "title_short": "Forest",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523788",
+     "duration": 240,
+     "rank": 684067,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523790,
+     "readable": true,
+     "title": "ATWA",
+     "title_short": "ATWA",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523790",
+     "duration": 176,
+     "rank": 789911,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523791,
+     "readable": true,
+     "title": "Science",
+     "title_short": "Science",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523791",
+     "duration": 162,
+     "rank": 584252,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523792,
+     "readable": true,
+     "title": "Shimmy",
+     "title_short": "Shimmy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523792",
+     "duration": 110,
+     "rank": 563574,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523793,
+     "readable": true,
+     "title": "Toxicity",
+     "title_short": "Toxicity",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523793",
+     "duration": 218,
+     "rank": 945849,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523796,
+     "readable": true,
+     "title": "Psycho",
+     "title_short": "Psycho",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523796",
+     "duration": 225,
+     "rank": 670203,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523799,
+     "readable": true,
+     "title": "Aerials",
+     "title_short": "Aerials",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523799",
+     "duration": 237,
+     "rank": 875033,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 15523803,
+     "readable": true,
+     "title": "Der Voghormia",
+     "title_short": "Der Voghormia",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/15523803",
+     "duration": 133,
+     "rank": 526993,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 458,
+      "name": "System of a Down",
+      "tracklist": "https://api.deezer.com/artist/458/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1434890,
+      "title": "Toxicity",
+      "cover": "https://api.deezer.com/album/1434890/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6baa3ad626e859f67bbddae6528fd949/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1434890/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

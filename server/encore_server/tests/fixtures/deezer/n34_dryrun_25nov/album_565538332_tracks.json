@@ -1,0 +1,150 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/565538332/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 2724491742,
+    "readable": true,
+    "title": "Red Pill",
+    "title_short": "Red Pill",
+    "title_version": "",
+    "isrc": "SE5XG2313502",
+    "link": "https://www.deezer.com/track/2724491742",
+    "duration": 166,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 99977,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2724491752,
+    "readable": true,
+    "title": "Drop",
+    "title_short": "Drop",
+    "title_version": "",
+    "isrc": "SE5XG2313503",
+    "link": "https://www.deezer.com/track/2724491752",
+    "duration": 188,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 112256,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2724491762,
+    "readable": true,
+    "title": "Cage",
+    "title_short": "Cage",
+    "title_version": "",
+    "isrc": "SE5XG2313504",
+    "link": "https://www.deezer.com/track/2724491762",
+    "duration": 218,
+    "track_position": 3,
+    "disk_number": 1,
+    "rank": 266217,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2724491772,
+    "readable": true,
+    "title": "Nostalgia III",
+    "title_short": "Nostalgia III",
+    "title_version": "",
+    "isrc": "QZNW72345503",
+    "link": "https://www.deezer.com/track/2724491772",
+    "duration": 152,
+    "track_position": 4,
+    "disk_number": 1,
+    "rank": 120282,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2724491782,
+    "readable": true,
+    "title": "Tiki-Taka",
+    "title_short": "Tiki-Taka",
+    "title_version": "",
+    "isrc": "SE5XG2313506",
+    "link": "https://www.deezer.com/track/2724491782",
+    "duration": 140,
+    "track_position": 5,
+    "disk_number": 1,
+    "rank": 132037,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 2724491792,
+    "readable": true,
+    "title": "Lyam",
+    "title_short": "Lyam",
+    "title_version": "",
+    "isrc": "SE5XG2313507",
+    "link": "https://www.deezer.com/track/2724491792",
+    "duration": 216,
+    "track_position": 6,
+    "disk_number": 1,
+    "rank": 330479,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 1,
+    "artist": {
+     "id": 83321,
+     "name": "Pause",
+     "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 6
+ }
+}

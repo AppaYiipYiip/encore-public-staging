@@ -1,0 +1,659 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/7557634",
+ "params": {},
+ "answer": {
+  "id": 7557634,
+  "title": "May Death Never Stop You",
+  "upc": "093624938354",
+  "link": "https://www.deezer.com/album/7557634",
+  "cover": "https://api.deezer.com/album/7557634/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 85,
+  "genres": {
+   "data": [
+    {
+     "id": 85,
+     "name": "Alternative",
+     "picture": "https://api.deezer.com/genre/85/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Reprise",
+  "nb_tracks": 19,
+  "duration": 4396,
+  "fans": 42150,
+  "release_date": "2014-03-21",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/7557634/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 599,
+    "name": "My Chemical Romance",
+    "link": "https://www.deezer.com/artist/599",
+    "picture": "https://api.deezer.com/artist/599/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 599,
+   "name": "My Chemical Romance",
+   "picture": "https://api.deezer.com/artist/599/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/8c78e78c01bbdc0c80fb4556c762d3bb/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 76228424,
+     "readable": true,
+     "title": "Fake Your Death",
+     "title_short": "Fake Your Death",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228424",
+     "duration": 200,
+     "rank": 356371,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228425,
+     "readable": true,
+     "title": "Honey, This Mirror Isn't Big Enough for the Two of Us",
+     "title_short": "Honey, This Mirror Isn't Big Enough for the Two of Us",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228425",
+     "duration": 233,
+     "rank": 185029,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228426,
+     "readable": true,
+     "title": "Vampires Will Never Hurt You",
+     "title_short": "Vampires Will Never Hurt You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228426",
+     "duration": 326,
+     "rank": 233408,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228427,
+     "readable": true,
+     "title": "Helena",
+     "title_short": "Helena",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228427",
+     "duration": 205,
+     "rank": 309589,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228428,
+     "readable": true,
+     "title": "You Know What They Do to Guys Like Us in Prison",
+     "title_short": "You Know What They Do to Guys Like Us in Prison",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228428",
+     "duration": 175,
+     "rank": 158594,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228429,
+     "readable": true,
+     "title": "I'm Not Okay (I Promise)",
+     "title_short": "I'm Not Okay (I Promise)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228429",
+     "duration": 188,
+     "rank": 236656,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228430,
+     "readable": true,
+     "title": "The Ghost of You",
+     "title_short": "The Ghost of You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228430",
+     "duration": 237,
+     "rank": 303155,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228431,
+     "readable": true,
+     "title": "Welcome to the Black Parade",
+     "title_short": "Welcome to the Black Parade",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228431",
+     "duration": 314,
+     "rank": 250474,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228432,
+     "readable": true,
+     "title": "Cancer",
+     "title_short": "Cancer",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228432",
+     "duration": 144,
+     "rank": 143221,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228433,
+     "readable": true,
+     "title": "Mama",
+     "title_short": "Mama",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228433",
+     "duration": 279,
+     "rank": 201420,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228434,
+     "readable": true,
+     "title": "Teenagers",
+     "title_short": "Teenagers",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228434",
+     "duration": 162,
+     "rank": 276129,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228435,
+     "readable": true,
+     "title": "Famous Last Words",
+     "title_short": "Famous Last Words",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228435",
+     "duration": 300,
+     "rank": 188210,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228437,
+     "readable": true,
+     "title": "Na Na Na (Na Na Na Na Na Na Na Na Na)",
+     "title_short": "Na Na Na (Na Na Na Na Na Na Na Na Na)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228437",
+     "duration": 206,
+     "rank": 251908,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228438,
+     "readable": true,
+     "title": "SING",
+     "title_short": "SING",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228438",
+     "duration": 271,
+     "rank": 178169,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228439,
+     "readable": true,
+     "title": "Planetary (GO!)",
+     "title_short": "Planetary (GO!)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228439",
+     "duration": 247,
+     "rank": 143450,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228440,
+     "readable": true,
+     "title": "The Kids from Yesterday",
+     "title_short": "The Kids from Yesterday",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76228440",
+     "duration": 326,
+     "rank": 198143,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228441,
+     "readable": true,
+     "title": "Skylines and Turnstiles (Demo)",
+     "title_short": "Skylines and Turnstiles",
+     "title_version": "(Demo)",
+     "link": "https://www.deezer.com/track/76228441",
+     "duration": 210,
+     "rank": 107260,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228442,
+     "readable": true,
+     "title": "Knives / Sorrow (Demo)",
+     "title_short": "Knives / Sorrow",
+     "title_version": "(Demo)",
+     "link": "https://www.deezer.com/track/76228442",
+     "duration": 134,
+     "rank": 107252,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76228443,
+     "readable": true,
+     "title": "Cubicles (Demo)",
+     "title_short": "Cubicles",
+     "title_version": "(Demo)",
+     "link": "https://www.deezer.com/track/76228443",
+     "duration": 239,
+     "rank": 160098,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 599,
+      "name": "My Chemical Romance",
+      "tracklist": "https://api.deezer.com/artist/599/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7557634,
+      "title": "May Death Never Stop You",
+      "cover": "https://api.deezer.com/album/7557634/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/500d84dd59475c2428f149e85afaf292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7557634/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

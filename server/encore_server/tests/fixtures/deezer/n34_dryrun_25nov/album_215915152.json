@@ -1,0 +1,845 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/215915152",
+ "params": {},
+ "answer": {
+  "id": 215915152,
+  "title": "The Better Life (20th Anniversary / Deluxe)",
+  "upc": "602435808031",
+  "link": "https://www.deezer.com/album/215915152",
+  "cover": "https://api.deezer.com/album/215915152/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Records",
+  "nb_tracks": 25,
+  "duration": 5512,
+  "fans": 633,
+  "release_date": "2021-03-26",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/215915152/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 340,
+    "name": "3 Doors Down",
+    "link": "https://www.deezer.com/artist/340",
+    "picture": "https://api.deezer.com/artist/340/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 340,
+   "name": "3 Doors Down",
+   "picture": "https://api.deezer.com/artist/340/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 1280029762,
+     "readable": true,
+     "title": "Kryptonite",
+     "title_short": "Kryptonite",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029762",
+     "duration": 236,
+     "rank": 109616,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029782,
+     "readable": true,
+     "title": "Loser",
+     "title_short": "Loser",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029782",
+     "duration": 261,
+     "rank": 133556,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029802,
+     "readable": true,
+     "title": "Duck And Run",
+     "title_short": "Duck And Run",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029802",
+     "duration": 232,
+     "rank": 152059,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029812,
+     "readable": true,
+     "title": "Not Enough",
+     "title_short": "Not Enough",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029812",
+     "duration": 196,
+     "rank": 112221,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029822,
+     "readable": true,
+     "title": "Be Like That",
+     "title_short": "Be Like That",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029822",
+     "duration": 267,
+     "rank": 200393,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029842,
+     "readable": true,
+     "title": "Life Of My Own",
+     "title_short": "Life Of My Own",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029842",
+     "duration": 239,
+     "rank": 102612,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029852,
+     "readable": true,
+     "title": "The Better Life",
+     "title_short": "The Better Life",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029852",
+     "duration": 185,
+     "rank": 89301,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029862,
+     "readable": true,
+     "title": "Down Poison",
+     "title_short": "Down Poison",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029862",
+     "duration": 265,
+     "rank": 77900,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029872,
+     "readable": true,
+     "title": "By My Side",
+     "title_short": "By My Side",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029872",
+     "duration": 200,
+     "rank": 40886,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029892,
+     "readable": true,
+     "title": "Smack",
+     "title_short": "Smack",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029892",
+     "duration": 151,
+     "rank": 42359,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029902,
+     "readable": true,
+     "title": "So I Need You",
+     "title_short": "So I Need You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029902",
+     "duration": 231,
+     "rank": 65301,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029922,
+     "readable": true,
+     "title": "Kryptonite (Acoustic)",
+     "title_short": "Kryptonite",
+     "title_version": "(Acoustic)",
+     "link": "https://www.deezer.com/track/1280029922",
+     "duration": 229,
+     "rank": 618318,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029932,
+     "readable": true,
+     "title": "Be Like That (Acoustic)",
+     "title_short": "Be Like That",
+     "title_version": "(Acoustic)",
+     "link": "https://www.deezer.com/track/1280029932",
+     "duration": 262,
+     "rank": 146601,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029942,
+     "readable": true,
+     "title": "The Better Life (XX Mix)",
+     "title_short": "The Better Life",
+     "title_version": "(XX Mix)",
+     "link": "https://www.deezer.com/track/1280029942",
+     "duration": 184,
+     "rank": 38517,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029952,
+     "readable": true,
+     "title": "Wasted Me",
+     "title_short": "Wasted Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1280029952",
+     "duration": 191,
+     "rank": 38342,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029962,
+     "readable": true,
+     "title": "Kryptonite (Escatawpa Sessions)",
+     "title_short": "Kryptonite",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280029962",
+     "duration": 232,
+     "rank": 43818,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029972,
+     "readable": true,
+     "title": "Loser (Escatawpa Sessions)",
+     "title_short": "Loser",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280029972",
+     "duration": 213,
+     "rank": 39398,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029982,
+     "readable": true,
+     "title": "Life Of My Own (Escatawpa Sessions)",
+     "title_short": "Life Of My Own",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280029982",
+     "duration": 281,
+     "rank": 17050,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280029992,
+     "readable": true,
+     "title": "Smack (Escatawpa Sessions)",
+     "title_short": "Smack",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280029992",
+     "duration": 148,
+     "rank": 26096,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030012,
+     "readable": true,
+     "title": "Down Poison (Escatawpa Sessions)",
+     "title_short": "Down Poison",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030012",
+     "duration": 381,
+     "rank": 31509,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030022,
+     "readable": true,
+     "title": "Dead Love (Escatawpa Sessions)",
+     "title_short": "Dead Love",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030022",
+     "duration": 162,
+     "rank": 22231,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030032,
+     "readable": true,
+     "title": "Wasted Me (Escatawpa Sessions)",
+     "title_short": "Wasted Me",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030032",
+     "duration": 175,
+     "rank": 21307,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030042,
+     "readable": true,
+     "title": "Man In My Mind (Escatawpa Sessions)",
+     "title_short": "Man In My Mind",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030042",
+     "duration": 185,
+     "rank": 15971,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030052,
+     "readable": true,
+     "title": "By My Side (Escatawpa Sessions)",
+     "title_short": "By My Side",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030052",
+     "duration": 196,
+     "rank": 15525,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1280030062,
+     "readable": true,
+     "title": "Sarah Yellin' 86 (Escatawpa Sessions)",
+     "title_short": "Sarah Yellin' 86",
+     "title_version": "(Escatawpa Sessions)",
+     "link": "https://www.deezer.com/track/1280030062",
+     "duration": 210,
+     "rank": 127887,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 215915152,
+      "title": "The Better Life (20th Anniversary / Deluxe)",
+      "cover": "https://api.deezer.com/album/215915152/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/2e8ef1b4568a23b099b0a2d67a131cc4/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/215915152/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

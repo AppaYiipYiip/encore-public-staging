@@ -1,0 +1,845 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/9276214",
+ "params": {},
+ "answer": {
+  "id": 9276214,
+  "title": "The Studio Album Collection 1991 - 2011",
+  "upc": "093624931935",
+  "link": "https://www.deezer.com/album/9276214",
+  "cover": "https://api.deezer.com/album/9276214/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 85,
+  "genres": {
+   "data": [
+    {
+     "id": 85,
+     "name": "Alternative",
+     "picture": "https://api.deezer.com/genre/85/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Warner Records",
+  "nb_tracks": 103,
+  "duration": 6622,
+  "fans": 66152,
+  "release_date": "2014-12-12",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/9276214/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 182,
+    "name": "Red Hot Chili Peppers",
+    "link": "https://www.deezer.com/artist/182",
+    "picture": "https://api.deezer.com/artist/182/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 182,
+   "name": "Red Hot Chili Peppers",
+   "picture": "https://api.deezer.com/artist/182/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 91442598,
+     "readable": true,
+     "title": "The Power of Equality",
+     "title_short": "The Power of Equality",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442598",
+     "duration": 243,
+     "rank": 174511,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442600,
+     "readable": true,
+     "title": "If You Have to Ask",
+     "title_short": "If You Have to Ask",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442600",
+     "duration": 216,
+     "rank": 193890,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442602,
+     "readable": true,
+     "title": "Breaking the Girl",
+     "title_short": "Breaking the Girl",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442602",
+     "duration": 295,
+     "rank": 189922,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442604,
+     "readable": true,
+     "title": "Funky Monks",
+     "title_short": "Funky Monks",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442604",
+     "duration": 323,
+     "rank": 157931,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442606,
+     "readable": true,
+     "title": "Suck My Kiss",
+     "title_short": "Suck My Kiss",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442606",
+     "duration": 217,
+     "rank": 169363,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442608,
+     "readable": true,
+     "title": "I Could Have Lied",
+     "title_short": "I Could Have Lied",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442608",
+     "duration": 244,
+     "rank": 145843,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442610,
+     "readable": true,
+     "title": "Mellowship Slinky in B Major",
+     "title_short": "Mellowship Slinky in B Major",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442610",
+     "duration": 239,
+     "rank": 107096,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442612,
+     "readable": true,
+     "title": "The Righteous & the Wicked",
+     "title_short": "The Righteous & the Wicked",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442612",
+     "duration": 248,
+     "rank": 90173,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442614,
+     "readable": true,
+     "title": "Give It Away",
+     "title_short": "Give It Away",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442614",
+     "duration": 282,
+     "rank": 222806,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442616,
+     "readable": true,
+     "title": "Blood Sugar Sex Magik",
+     "title_short": "Blood Sugar Sex Magik",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442616",
+     "duration": 271,
+     "rank": 162257,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442618,
+     "readable": true,
+     "title": "Under the Bridge",
+     "title_short": "Under the Bridge",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442618",
+     "duration": 264,
+     "rank": 294629,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442620,
+     "readable": true,
+     "title": "Naked in the Rain",
+     "title_short": "Naked in the Rain",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442620",
+     "duration": 265,
+     "rank": 146488,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442622,
+     "readable": true,
+     "title": "Apache Rose Peacock",
+     "title_short": "Apache Rose Peacock",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442622",
+     "duration": 282,
+     "rank": 151107,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442624,
+     "readable": true,
+     "title": "The Greeting Song",
+     "title_short": "The Greeting Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442624",
+     "duration": 193,
+     "rank": 110054,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442626,
+     "readable": true,
+     "title": "My Lovely Man",
+     "title_short": "My Lovely Man",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442626",
+     "duration": 279,
+     "rank": 74518,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442628,
+     "readable": true,
+     "title": "Sir Psycho Sexy",
+     "title_short": "Sir Psycho Sexy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442628",
+     "duration": 496,
+     "rank": 108650,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442630,
+     "readable": true,
+     "title": "They're Red Hot",
+     "title_short": "They're Red Hot",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442630",
+     "duration": 71,
+     "rank": 50013,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442632,
+     "readable": true,
+     "title": "Warped",
+     "title_short": "Warped",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442632",
+     "duration": 304,
+     "rank": 102308,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442634,
+     "readable": true,
+     "title": "Aeroplane",
+     "title_short": "Aeroplane",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442634",
+     "duration": 285,
+     "rank": 206050,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442636,
+     "readable": true,
+     "title": "Deep Kick",
+     "title_short": "Deep Kick",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442636",
+     "duration": 393,
+     "rank": 88990,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442638,
+     "readable": true,
+     "title": "My Friends",
+     "title_short": "My Friends",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442638",
+     "duration": 248,
+     "rank": 211680,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442640,
+     "readable": true,
+     "title": "Coffee Shop",
+     "title_short": "Coffee Shop",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442640",
+     "duration": 188,
+     "rank": 115814,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442642,
+     "readable": true,
+     "title": "Pea",
+     "title_short": "Pea",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442642",
+     "duration": 107,
+     "rank": 72078,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442644,
+     "readable": true,
+     "title": "One Big Mob",
+     "title_short": "One Big Mob",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442644",
+     "duration": 362,
+     "rank": 62945,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 91442646,
+     "readable": true,
+     "title": "Walkabout",
+     "title_short": "Walkabout",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/91442646",
+     "duration": 307,
+     "rank": 66680,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 9276214,
+      "title": "The Studio Album Collection 1991 - 2011",
+      "cover": "https://api.deezer.com/album/9276214/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/ca9441e904f0f09044fb514bbfc49089/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/9276214/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

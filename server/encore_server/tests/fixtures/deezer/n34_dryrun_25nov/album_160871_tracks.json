@@ -1,0 +1,104 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/160871/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 1568093,
+    "readable": true,
+    "title": "Wonderful (12\" Version)",
+    "title_short": "Wonderful",
+    "title_version": "(12\" Version)",
+    "isrc": "USDJ20400818",
+    "link": "https://www.deezer.com/track/1568093",
+    "duration": 272,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 251171,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1568096,
+    "readable": true,
+    "title": "Caught Up (12\" Version)",
+    "title_short": "Caught Up",
+    "title_version": "(12\" Version)",
+    "isrc": "USDJ20400519",
+    "link": "https://www.deezer.com/track/1568096",
+    "duration": 269,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 75002,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1568100,
+    "readable": true,
+    "title": "Wonderful (Instrumental)",
+    "title_short": "Wonderful",
+    "title_version": "(Instrumental)",
+    "isrc": "USDJ20400754",
+    "link": "https://www.deezer.com/track/1568100",
+    "duration": 272,
+    "track_position": 3,
+    "disk_number": 1,
+    "rank": 128449,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1568102,
+    "readable": true,
+    "title": "Always On Time",
+    "title_short": "Always On Time",
+    "title_version": "",
+    "isrc": "USDJ20110760",
+    "link": "https://www.deezer.com/track/1568102",
+    "duration": 243,
+    "track_position": 4,
+    "disk_number": 1,
+    "rank": 157064,
+    "explicit_lyrics": true,
+    "explicit_content_lyrics": 1,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 138,
+     "name": "Ja Rule",
+     "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 4
+ }
+}

@@ -40,6 +40,7 @@ from tests.test_album_finder import (
     creature_hit,
     hits,
     single_hit,
+    with_later_single,
 )
 from tests.test_album_withheld import albums_for_arabic_hit, latin_hits
 
@@ -85,13 +86,14 @@ class Catalogue:
 
 
 def landmvrks() -> Catalogue:
-    """Requiem and Creature as the two recorded searches of step 0 answered them: the album's row alone (the single's row was not among the eight)."""
+    """Requiem and Creature as the two recorded searches of step 0 answered them (the album's row alone; the single's row was not among the eight), each with ONE derived single that
+    came out after the album (`with_later_single`): since 25 Nov 2026 an album that is the only release among the hits is a re-askable `sole_album` (`test_album_sole_album.py`), so
+    the songs these tests are about need a second release family. The single is another tier and never a competitor, and it is never earlier than the album."""
+    creature_hits, creature_albums = with_later_single(recorded_search("LANDMVRKS Creature")["data"], albums(ALBUM), "9000001")
+    requiem_hits, requiem_albums = with_later_single(recorded_search("LANDMVRKS Requiem")["data"], albums(ALBUM), "9000002")
     return Catalogue(
-        {
-            ("LANDMVRKS", "Requiem"): recorded_search("LANDMVRKS Requiem")["data"],
-            ("LANDMVRKS", "Creature"): recorded_search("LANDMVRKS Creature")["data"],
-        },
-        albums(ALBUM, SINGLE),
+        {("LANDMVRKS", "Requiem"): requiem_hits, ("LANDMVRKS", "Creature"): creature_hits},
+        {**albums(SINGLE), **creature_albums, **requiem_albums},
     )
 
 
@@ -508,7 +510,10 @@ def test_two_different_arabic_songs_and_one_catalogue_hit_only_the_song_it_is_na
     hit = arabic_hit("كيفك إنت")
     one = make_ref(pdb, "كيفك إنت", "فيروز", 209_000)
     other = make_ref(pdb, "حبيبي", "فيروز", 209_000)
-    catalogue = Catalogue({("فيروز", "كيفك إنت"): [hit], ("فيروز", "حبيبي"): [hit]}, albums_for_arabic_hit(hit))
+    found, known = with_later_single(
+        [hit], albums_for_arabic_hit(hit)
+    )  # a single beside the album: no sole release (25 Nov 2026)
+    catalogue = Catalogue({("فيروز", "كيفك إنت"): found, ("فيروز", "حبيبي"): found}, known)
     finder(pdb, catalogue).run_once()
     assert row_of(pdb, one)["album"] == hit["album"]["title"] and row_of(pdb, one)["identity_outcome"] == "matched"
     assert row_of(pdb, other)["album"] is None and (
@@ -685,14 +690,26 @@ def test_a_best_of_whose_title_says_so_is_re_askable_and_no_stamp_is_written(pdb
     )
 
 
-def test_a_best_of_that_says_nothing_of_it_in_its_title_is_stamped_when_it_is_the_only_candidate(pdb: Database) -> None:
-    """The ruling's case 1: it is a real release of the recording. A best-of called "Gold" passes."""
+def test_a_best_of_that_says_nothing_of_it_in_its_title_is_a_sole_album_when_alone_and_stamped_beside_a_single(
+    pdb: Database,
+) -> None:
+    """The ruling's case 1 of 17 Nov 2026 (a best-of called "Gold" passes the title check) as the rules of 25 Nov 2026 leave it: ALONE among the hits it is a remembered, re-askable
+    `sole_album`; with a single of the song beside it (the limit of what the rules can see) it is stamped."""
     only = [row for row in hits("pink floyd comfortably numb") if row["id"] != 116914122]
     gold = best_of_answer()
     gold["album"]["title"] = "Gold"
-    ref = make_ref(pdb, "Comfortably Numb", "Pink Floyd", 382_000)
+    alone = make_ref(pdb, "Comfortably Numb", "Pink Floyd", 382_000)
     finder(pdb, Catalogue({("Pink Floyd", "Comfortably Numb"): only}, {BEST_OF: gold})).run_once()
-    after = row_of(pdb, ref)
+    after = row_of(pdb, alone)
+    assert (after["album"], after["identity_outcome"], after["identity_reason"], after["deezer_id"]) == (
+        None,
+        "none",
+        "sole_album",
+        None,
+    )
+    found, known = with_later_single(only, {BEST_OF: gold})
+    finder(pdb, Catalogue({("Pink Floyd", "Comfortably Numb"): found}, known), now=NOW + 30 * DAY_MS).run_once()
+    after = row_of(pdb, alone)
     assert (after["album"], after["identity_outcome"], after["deezer_id"]) == ("Gold", "matched", "116914348")
 
 
@@ -777,22 +794,21 @@ def test_the_app_runs_the_album_pass_as_an_errand_before_the_cover_finder_and_th
         settings, navidrome=client, navidrome_admin=NavidromeAdmin("http://music.invalid", "", ""), catalogue=recorded_catalogue
     )
     services = app.state.services
-    placed = make_ref(services.db, "Creature", "LANDMVRKS", 225_000)
+    placed = make_ref(services.db, "Comfortably Numb", "Pink Floyd", 382_000)
     pictureless = make_ref(services.db, "Hollow Song", "Some Band", 200_000, album="Hollow", kept="Encore/b/Hollow/h.opus")
 
     assert services.linker is not None
     services.linker.run_once()
 
-    assert calls.index("album pass: Creature") < min(i for i, c in enumerate(calls) if c.startswith("cover finder")), calls
-    assert "cover finder: Hollow Song" in calls and "cover finder: Creature" not in calls, (
-        "the pass gave Creature its picture: the cover finder is not asked"
+    assert calls.index("album pass: Comfortably Numb") < min(i for i, c in enumerate(calls) if c.startswith("cover finder")), (
+        calls
+    )
+    assert "cover finder: Hollow Song" in calls and "cover finder: Comfortably Numb" not in calls, (
+        "the pass gave the song its picture: the cover finder is not asked"
     )
     after = row_of(services.db, placed)
-    assert (after["album"], after["identity_outcome"], after["deezer_id"]) == (
-        "The Darkest Place I've Ever Been",
-        "matched",
-        "3116792061",
-    )
+    # The Wall (1979) and a best-of by its title (exempt as a rival original, but a second release family): not a sole album, no competitor.
+    assert (after["album"], after["identity_outcome"], after["deezer_id"]) == ("The Wall", "matched", "116914122")
     assert after["cover_url"], "the one search that found the album also gave the picture"
     assert row_of(services.db, pictureless)["identity_outcome"] is None, "a song with an album of its own is not asked"
 

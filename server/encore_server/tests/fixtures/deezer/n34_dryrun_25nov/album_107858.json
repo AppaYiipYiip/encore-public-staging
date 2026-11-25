@@ -1,0 +1,814 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/107858",
+ "params": {},
+ "answer": {
+  "id": 107858,
+  "title": "Stankonia",
+  "upc": "730082607223",
+  "link": "https://www.deezer.com/album/107858",
+  "cover": "https://api.deezer.com/album/107858/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Arista/LaFace Records",
+  "nb_tracks": 24,
+  "duration": 4401,
+  "fans": 37564,
+  "release_date": "2000-10-31",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/107858/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 9,
+    "name": "Outkast",
+    "link": "https://www.deezer.com/artist/9",
+    "picture": "https://api.deezer.com/artist/9/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 9,
+   "name": "Outkast",
+   "picture": "https://api.deezer.com/artist/9/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 963035,
+     "readable": true,
+     "title": "Intro",
+     "title_short": "Intro",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963035",
+     "duration": 70,
+     "rank": 221073,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963038,
+     "readable": true,
+     "title": "Gasoline Dreams (with Khujo Goodie)",
+     "title_short": "Gasoline Dreams (with Khujo Goodie)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963038",
+     "duration": 215,
+     "rank": 360240,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963039,
+     "readable": true,
+     "title": "I'm Cool (Interlude)",
+     "title_short": "I'm Cool (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963039",
+     "duration": 42,
+     "rank": 220336,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967465,
+     "readable": true,
+     "title": "So Fresh, So Clean",
+     "title_short": "So Fresh, So Clean",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967465",
+     "duration": 240,
+     "rank": 498916,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963042,
+     "readable": true,
+     "title": "Ms. Jackson",
+     "title_short": "Ms. Jackson",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963042",
+     "duration": 272,
+     "rank": 899315,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 962164,
+     "readable": true,
+     "title": "Snappin' & Trappin' (feat. Killer Mike & J-Sweet)",
+     "title_short": "Snappin' & Trappin' (feat. Killer Mike & J-Sweet)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/962164",
+     "duration": 260,
+     "rank": 247685,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963044,
+     "readable": true,
+     "title": "D.F. (Interlude)",
+     "title_short": "D.F. (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963044",
+     "duration": 27,
+     "rank": 22337,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963045,
+     "readable": true,
+     "title": "Spaghetti Junction",
+     "title_short": "Spaghetti Junction",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963045",
+     "duration": 237,
+     "rank": 322732,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963047,
+     "readable": true,
+     "title": "Kim & Cookie (Interlude)",
+     "title_short": "Kim & Cookie (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963047",
+     "duration": 73,
+     "rank": 223033,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963049,
+     "readable": true,
+     "title": "I'll Call B4 I Cum (feat. Gangsta Boo & Eco)",
+     "title_short": "I'll Call B4 I Cum (feat. Gangsta Boo & Eco)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963049",
+     "duration": 258,
+     "rank": 233766,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963052,
+     "readable": true,
+     "title": "B.O.B. (Bombs Over Baghdad)",
+     "title_short": "B.O.B.",
+     "title_version": "(Bombs Over Baghdad)",
+     "link": "https://www.deezer.com/track/963052",
+     "duration": 304,
+     "rank": 499758,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 962157,
+     "readable": true,
+     "title": "Xplosion (feat. B-Real)",
+     "title_short": "Xplosion (feat. B-Real)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/962157",
+     "duration": 249,
+     "rank": 249009,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967466,
+     "readable": true,
+     "title": "Good Hair (Interlude)",
+     "title_short": "Good Hair (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967466",
+     "duration": 15,
+     "rank": 54565,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963054,
+     "readable": true,
+     "title": "We Luv Deez Hoez (feat. Backbone & Big Gipp)",
+     "title_short": "We Luv Deez Hoez (feat. Backbone & Big Gipp)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963054",
+     "duration": 250,
+     "rank": 258788,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 962160,
+     "readable": true,
+     "title": "Humble Mumble (feat. Erykah Badu)",
+     "title_short": "Humble Mumble (feat. Erykah Badu)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/962160",
+     "duration": 291,
+     "rank": 249201,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963055,
+     "readable": true,
+     "title": "Drinkin' Again (Interlude)",
+     "title_short": "Drinkin' Again (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963055",
+     "duration": 24,
+     "rank": 30616,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963057,
+     "readable": true,
+     "title": "?",
+     "title_short": "?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963057",
+     "duration": 89,
+     "rank": 197974,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 962162,
+     "readable": true,
+     "title": "Red Velvet",
+     "title_short": "Red Velvet",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/962162",
+     "duration": 234,
+     "rank": 223958,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963058,
+     "readable": true,
+     "title": "Cruisin' In The ATL (Interlude)",
+     "title_short": "Cruisin' In The ATL (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963058",
+     "duration": 19,
+     "rank": 31043,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1088140,
+      "name": "Southside",
+      "tracklist": "https://api.deezer.com/artist/1088140/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967468,
+     "readable": true,
+     "title": "Gangsta Shit (feat. Slimm Calhoun, C-Bone & T-Mo)",
+     "title_short": "Gangsta Shit (feat. Slimm Calhoun, C-Bone & T-Mo)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967468",
+     "duration": 281,
+     "rank": 212298,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963060,
+     "readable": true,
+     "title": "Toilet Tisha",
+     "title_short": "Toilet Tisha",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963060",
+     "duration": 265,
+     "rank": 219960,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967470,
+     "readable": true,
+     "title": "Slum Beautiful (feat. Cee-Lo)",
+     "title_short": "Slum Beautiful (feat. Cee-Lo)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967470",
+     "duration": 248,
+     "rank": 181416,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963062,
+     "readable": true,
+     "title": "Pre-Nump (Interlude)",
+     "title_short": "Pre-Nump (Interlude)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963062",
+     "duration": 27,
+     "rank": 7806,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963064,
+     "readable": true,
+     "title": "Stankonia (Stanklove) (feat. Big Rube & Sleepy Brown)",
+     "title_short": "Stankonia (Stanklove) (feat. Big Rube & Sleepy Brown)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963064",
+     "duration": 411,
+     "rank": 174608,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107858,
+      "title": "Stankonia",
+      "cover": "https://api.deezer.com/album/107858/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/646d6414a24faaccf67c1d7e01f7d095/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107858/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

@@ -28,7 +28,7 @@ from encore_server.catalogue import Catalogue as RealCatalogue
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
 from tests.catalogue_fakes import RecordedDeezer, recorded_search
-from tests.test_album_finder import ALBUM, SINGLE, albums, creature_hit, derive, single_hit
+from tests.test_album_finder import ALBUM, SINGLE, albums, creature_hit, derive, single_hit, with_later_single
 from tests.test_album_pass import DAY_MS, NOW, Catalogue, finder, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 
 WHATS_LUV = "362957"  # `What's Luv? (feat. Ashanti)`, a single of 2002-02-05
@@ -141,8 +141,8 @@ def test_the_write_transaction_refuses_a_single_even_when_the_verdict_says_match
         return Verdict("matched", "matched", match=dataclasses.replace(good.match, record_type="single"))
 
     monkeypatch.setattr(album_finder, "decide", a_matched_verdict_for_a_single)
-    base = Catalogue({("LANDMVRKS", "Creature"): [creature_hit()]}, albums(ALBUM))
-    finder(pdb, base).run_once()
+    found, both = with_later_single([creature_hit()], albums(ALBUM))  # a single beside the album: no sole release (25 Nov 2026)
+    finder(pdb, Catalogue({("LANDMVRKS", "Creature"): found}, both)).run_once()
     after = row_of(pdb, ref)
     assert (after["identity_outcome"], after["identity_reason"], after["deezer_id"]) == ("none", "single_only", None)
 
@@ -170,7 +170,9 @@ def test_the_report_counts_the_single_only_songs_apart_and_says_why() -> None:
 
 
 def test_the_revision_was_raised_for_the_single_rule() -> None:
-    assert album_finder.IDENTITY_REVISION == 4
+    assert album_finder.IDENTITY_REVISION == 5, (
+        "the latest revision: 5 is the first with `date_decided` and `sole_album` (25 Nov 2026); the data it pins is in test_album_withheld.py"
+    )
 
 
 def test_the_write_transaction_still_stamps_a_matched_ep(pdb: Database, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -185,8 +187,8 @@ def test_the_write_transaction_still_stamps_a_matched_ep(pdb: Database, monkeypa
         return Verdict("matched", "matched", match=dataclasses.replace(good.match, record_type="ep"))
 
     monkeypatch.setattr(album_finder, "decide", a_matched_verdict_for_an_ep)
-    base = Catalogue({("LANDMVRKS", "Creature"): [creature_hit()]}, albums(ALBUM))
-    finder(pdb, base).run_once()
+    found, both = with_later_single([creature_hit()], albums(ALBUM))
+    finder(pdb, Catalogue({("LANDMVRKS", "Creature"): found}, both)).run_once()
     after = row_of(pdb, ref)
     assert (after["identity_outcome"], after["identity_reason"]) == ("matched", "matched")
     assert after["album"] is not None and after["deezer_id"] is not None

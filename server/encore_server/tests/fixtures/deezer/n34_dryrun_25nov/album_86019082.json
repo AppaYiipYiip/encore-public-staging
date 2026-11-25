@@ -1,0 +1,256 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/86019082",
+ "params": {},
+ "answer": {
+  "id": 86019082,
+  "title": "Acoustic Back Porch Jam",
+  "upc": "859730727646",
+  "link": "https://www.deezer.com/album/86019082",
+  "cover": "https://api.deezer.com/album/86019082/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "3 Doors Down 2019",
+  "nb_tracks": 6,
+  "duration": 1420,
+  "fans": 3970,
+  "release_date": "2019-02-06",
+  "record_type": "ep",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/86019082/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 340,
+    "name": "3 Doors Down",
+    "link": "https://www.deezer.com/artist/340",
+    "picture": "https://api.deezer.com/artist/340/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 340,
+   "name": "3 Doors Down",
+   "picture": "https://api.deezer.com/artist/340/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 625980232,
+     "readable": true,
+     "title": "When I'm Gone",
+     "title_short": "When I'm Gone",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980232",
+     "duration": 248,
+     "rank": 326641,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 625980242,
+     "readable": true,
+     "title": "Let Me Go",
+     "title_short": "Let Me Go",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980242",
+     "duration": 225,
+     "rank": 198960,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 625980252,
+     "readable": true,
+     "title": "It's Not My Time",
+     "title_short": "It's Not My Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980252",
+     "duration": 241,
+     "rank": 168448,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 625980262,
+     "readable": true,
+     "title": "The Real Life",
+     "title_short": "The Real Life",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980262",
+     "duration": 235,
+     "rank": 205977,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 625980272,
+     "readable": true,
+     "title": "Kryptonite",
+     "title_short": "Kryptonite",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980272",
+     "duration": 235,
+     "rank": 303748,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 625980282,
+     "readable": true,
+     "title": "Here Without You",
+     "title_short": "Here Without You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/625980282",
+     "duration": 236,
+     "rank": 295947,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 86019082,
+      "title": "Acoustic Back Porch Jam",
+      "cover": "https://api.deezer.com/album/86019082/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/8d9b034913007027259485df25ec228a/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/86019082/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

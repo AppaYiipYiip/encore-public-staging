@@ -1,0 +1,845 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/208221742",
+ "params": {},
+ "answer": {
+  "id": 208221742,
+  "title": "2000's Rock Hits",
+  "upc": "602435875316",
+  "link": "https://www.deezer.com/album/208221742",
+  "cover": "https://api.deezer.com/album/208221742/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "UME - Global Clearing House",
+  "nb_tracks": 38,
+  "duration": 5280,
+  "fans": 1453,
+  "release_date": "2021-02-19",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/208221742/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 108420982,
+    "name": "Various Artists",
+    "link": "https://www.deezer.com/artist/108420982",
+    "picture": "https://api.deezer.com/artist/108420982/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 108420982,
+   "name": "Various Artists",
+   "picture": "https://api.deezer.com/artist/108420982/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 1246696292,
+     "readable": true,
+     "title": "Kryptonite",
+     "title_short": "Kryptonite",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696292",
+     "duration": 234,
+     "rank": 238573,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696302,
+     "readable": true,
+     "title": "Last Resort",
+     "title_short": "Last Resort",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696302",
+     "duration": 200,
+     "rank": 88154,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 89,
+      "name": "Papa Roach",
+      "tracklist": "https://api.deezer.com/artist/89/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696312,
+     "readable": true,
+     "title": "What's My Age Again?",
+     "title_short": "What's My Age Again?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696312",
+     "duration": 150,
+     "rank": 114494,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696322,
+     "readable": true,
+     "title": "Fat Lip",
+     "title_short": "Fat Lip",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696322",
+     "duration": 182,
+     "rank": 77406,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 459,
+      "name": "Sum 41",
+      "tracklist": "https://api.deezer.com/artist/459/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696332,
+     "readable": true,
+     "title": "Rollin' (Air Raid Vehicle)",
+     "title_short": "Rollin' (Air Raid Vehicle)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696332",
+     "duration": 214,
+     "rank": 118321,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696342,
+     "readable": true,
+     "title": "She Hates Me",
+     "title_short": "She Hates Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696342",
+     "duration": 216,
+     "rank": 123041,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1070,
+      "name": "Puddle of Mudd",
+      "tracklist": "https://api.deezer.com/artist/1070/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696352,
+     "readable": true,
+     "title": "Smooth Criminal",
+     "title_short": "Smooth Criminal",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696352",
+     "duration": 209,
+     "rank": 122188,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 420,
+      "name": "Alien Ant Farm",
+      "tracklist": "https://api.deezer.com/artist/420/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696362,
+     "readable": true,
+     "title": "You're Gonna Go Far, Kid",
+     "title_short": "You're Gonna Go Far, Kid",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696362",
+     "duration": 178,
+     "rank": 181545,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 882,
+      "name": "The Offspring",
+      "tracklist": "https://api.deezer.com/artist/882/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696372,
+     "readable": true,
+     "title": "No One Knows",
+     "title_short": "No One Knows",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696372",
+     "duration": 278,
+     "rank": 90916,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1177,
+      "name": "Queens of the Stone Age",
+      "tracklist": "https://api.deezer.com/artist/1177/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696382,
+     "readable": true,
+     "title": "Woman",
+     "title_short": "Woman",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696382",
+     "duration": 175,
+     "rank": 91406,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 5359,
+      "name": "Wolfmother",
+      "tracklist": "https://api.deezer.com/artist/5359/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696392,
+     "readable": true,
+     "title": "Bring Me To Life",
+     "title_short": "Bring Me To Life",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696392",
+     "duration": 235,
+     "rank": 101543,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 98,
+      "name": "Evanescence",
+      "tracklist": "https://api.deezer.com/artist/98/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696402,
+     "readable": true,
+     "title": "Gives You Hell",
+     "title_short": "Gives You Hell",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696402",
+     "duration": 214,
+     "rank": 85717,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1278,
+      "name": "The All-American Rejects",
+      "tracklist": "https://api.deezer.com/artist/1278/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696412,
+     "readable": true,
+     "title": "The Middle",
+     "title_short": "The Middle",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696412",
+     "duration": 166,
+     "rank": 62407,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 346,
+      "name": "Jimmy Eat World",
+      "tracklist": "https://api.deezer.com/artist/346/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696422,
+     "readable": true,
+     "title": "Here It Goes Again",
+     "title_short": "Here It Goes Again",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696422",
+     "duration": 180,
+     "rank": 63115,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1279,
+      "name": "OK Go",
+      "tracklist": "https://api.deezer.com/artist/1279/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696432,
+     "readable": true,
+     "title": "Thnks fr th Mmrs",
+     "title_short": "Thnks fr th Mmrs",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696432",
+     "duration": 204,
+     "rank": 100380,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 404,
+      "name": "Fall Out Boy",
+      "tracklist": "https://api.deezer.com/artist/404/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696442,
+     "readable": true,
+     "title": "Savior",
+     "title_short": "Savior",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696442",
+     "duration": 242,
+     "rank": 93767,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3566,
+      "name": "Rise Against",
+      "tracklist": "https://api.deezer.com/artist/3566/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696452,
+     "readable": true,
+     "title": "All Star",
+     "title_short": "All Star",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696452",
+     "duration": 201,
+     "rank": 61091,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1179,
+      "name": "Smash Mouth",
+      "tracklist": "https://api.deezer.com/artist/1179/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696462,
+     "readable": true,
+     "title": "Miss Murder",
+     "title_short": "Miss Murder",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696462",
+     "duration": 206,
+     "rank": 65706,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2130,
+      "name": "AFI",
+      "tracklist": "https://api.deezer.com/artist/2130/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696472,
+     "readable": true,
+     "title": "The Diary of Jane (Single Version)",
+     "title_short": "The Diary of Jane",
+     "title_version": "(Single Version)",
+     "link": "https://www.deezer.com/track/1246696472",
+     "duration": 202,
+     "rank": 94573,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 5286,
+      "name": "Breaking Benjamin",
+      "tracklist": "https://api.deezer.com/artist/5286/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696482,
+     "readable": true,
+     "title": "The Kill (Bury Me)",
+     "title_short": "The Kill (Bury Me)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696482",
+     "duration": 231,
+     "rank": 69048,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 390183,
+      "name": "Thirty Seconds to Mars",
+      "tracklist": "https://api.deezer.com/artist/390183/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696492,
+     "readable": true,
+     "title": "Higher",
+     "title_short": "Higher",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696492",
+     "duration": 325,
+     "rank": 69217,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1783,
+      "name": "Creed",
+      "tracklist": "https://api.deezer.com/artist/1783/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696502,
+     "readable": true,
+     "title": "Here Without You",
+     "title_short": "Here Without You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696502",
+     "duration": 238,
+     "rank": 107199,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696512,
+     "readable": true,
+     "title": "My Way",
+     "title_short": "My Way",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696512",
+     "duration": 273,
+     "rank": 78997,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696522,
+     "readable": true,
+     "title": "The Ballad Of Chasey Lain",
+     "title_short": "The Ballad Of Chasey Lain",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696522",
+     "duration": 141,
+     "rank": 84870,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 421,
+      "name": "Bloodhound Gang",
+      "tracklist": "https://api.deezer.com/artist/421/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1246696532,
+     "readable": true,
+     "title": "Party Hard",
+     "title_short": "Party Hard",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1246696532",
+     "duration": 186,
+     "rank": 53514,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3688,
+      "name": "Andrew W.K.",
+      "tracklist": "https://api.deezer.com/artist/3688/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 208221742,
+      "title": "2000's Rock Hits",
+      "cover": "https://api.deezer.com/album/208221742/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/901cb9d4a5840ea27502bc14139332f2/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/208221742/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

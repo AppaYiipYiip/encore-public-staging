@@ -1,0 +1,442 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/102409042",
+ "params": {},
+ "answer": {
+  "id": 102409042,
+  "title": "Enema Of The State",
+  "upc": "602577982668",
+  "link": "https://www.deezer.com/album/102409042",
+  "cover": "https://api.deezer.com/album/102409042/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Geffen",
+  "nb_tracks": 12,
+  "duration": 2120,
+  "fans": 456,
+  "release_date": "2019-07-08",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/102409042/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 3,
+  "explicit_content_cover": 3,
+  "contributors": [
+   {
+    "id": 409,
+    "name": "blink-182",
+    "link": "https://www.deezer.com/artist/409",
+    "picture": "https://api.deezer.com/artist/409/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 409,
+   "name": "blink-182",
+   "picture": "https://api.deezer.com/artist/409/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 706842692,
+     "readable": true,
+     "title": "Dumpweed",
+     "title_short": "Dumpweed",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842692",
+     "duration": 143,
+     "rank": 114122,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842702,
+     "readable": true,
+     "title": "Don't Leave Me",
+     "title_short": "Don't Leave Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842702",
+     "duration": 143,
+     "rank": 54443,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842712,
+     "readable": true,
+     "title": "Aliens Exist",
+     "title_short": "Aliens Exist",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842712",
+     "duration": 192,
+     "rank": 36806,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842722,
+     "readable": true,
+     "title": "Going Away To College",
+     "title_short": "Going Away To College",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842722",
+     "duration": 179,
+     "rank": 72481,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842732,
+     "readable": true,
+     "title": "What's My Age Again?",
+     "title_short": "What's My Age Again?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842732",
+     "duration": 148,
+     "rank": 171138,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842742,
+     "readable": true,
+     "title": "Dysentery Gary",
+     "title_short": "Dysentery Gary",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842742",
+     "duration": 165,
+     "rank": 95321,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842752,
+     "readable": true,
+     "title": "Adam's Song",
+     "title_short": "Adam's Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842752",
+     "duration": 249,
+     "rank": 91152,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842762,
+     "readable": true,
+     "title": "All The Small Things",
+     "title_short": "All The Small Things",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842762",
+     "duration": 172,
+     "rank": 90690,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842772,
+     "readable": true,
+     "title": "The Party Song",
+     "title_short": "The Party Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842772",
+     "duration": 137,
+     "rank": 41579,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842782,
+     "readable": true,
+     "title": "Mutt",
+     "title_short": "Mutt",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842782",
+     "duration": 203,
+     "rank": 30445,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842792,
+     "readable": true,
+     "title": "Wendy Clear",
+     "title_short": "Wendy Clear",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842792",
+     "duration": 170,
+     "rank": 55068,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 706842802,
+     "readable": true,
+     "title": "Anthem",
+     "title_short": "Anthem",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/706842802",
+     "duration": 219,
+     "rank": 53001,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 3,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 102409042,
+      "title": "Enema Of The State",
+      "cover": "https://api.deezer.com/album/102409042/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/7bc24b8e4230e7e9f81329c692cbf94e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/102409042/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

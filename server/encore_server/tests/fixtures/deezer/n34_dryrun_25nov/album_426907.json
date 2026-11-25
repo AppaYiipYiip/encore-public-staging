@@ -1,0 +1,845 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/426907",
+ "params": {},
+ "answer": {
+  "id": 426907,
+  "title": "Cool - Rock",
+  "upc": "600753218181",
+  "link": "https://www.deezer.com/album/426907",
+  "cover": "https://api.deezer.com/album/426907/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Music Group International",
+  "nb_tracks": 30,
+  "duration": 5612,
+  "fans": 1048,
+  "release_date": "2009-10-19",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/426907/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 108420982,
+    "name": "Various Artists",
+    "link": "https://www.deezer.com/artist/108420982",
+    "picture": "https://api.deezer.com/artist/108420982/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 108420982,
+   "name": "Various Artists",
+   "picture": "https://api.deezer.com/artist/108420982/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 4639631,
+     "readable": true,
+     "title": "Crazy Crazy Nights",
+     "title_short": "Crazy Crazy Nights",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639631",
+     "duration": 225,
+     "rank": 40432,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 67,
+      "name": "KISS",
+      "tracklist": "https://api.deezer.com/artist/67/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639632,
+     "readable": true,
+     "title": "Sweet Home Alabama",
+     "title_short": "Sweet Home Alabama",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639632",
+     "duration": 284,
+     "rank": 444727,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 816,
+      "name": "Lynyrd Skynyrd",
+      "tracklist": "https://api.deezer.com/artist/816/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639633,
+     "readable": true,
+     "title": "The Bad Touch",
+     "title_short": "The Bad Touch",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639633",
+     "duration": 260,
+     "rank": 47490,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 421,
+      "name": "Bloodhound Gang",
+      "tracklist": "https://api.deezer.com/artist/421/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639634,
+     "readable": true,
+     "title": "Stuck In The Middle With You",
+     "title_short": "Stuck In The Middle With You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639634",
+     "duration": 204,
+     "rank": 62415,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 4900,
+      "name": "Stealers Wheel",
+      "tracklist": "https://api.deezer.com/artist/4900/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639635,
+     "readable": true,
+     "title": "Buddy Holly",
+     "title_short": "Buddy Holly",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639635",
+     "duration": 159,
+     "rank": 17840,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 418,
+      "name": "Weezer",
+      "tracklist": "https://api.deezer.com/artist/418/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639636,
+     "readable": true,
+     "title": "Cocaine",
+     "title_short": "Cocaine",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639636",
+     "duration": 168,
+     "rank": 67579,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1436,
+      "name": "J.J. Cale",
+      "tracklist": "https://api.deezer.com/artist/1436/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639637,
+     "readable": true,
+     "title": "Town Called Malice",
+     "title_short": "Town Called Malice",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639637",
+     "duration": 175,
+     "rank": 30892,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3944,
+      "name": "The Jam",
+      "tracklist": "https://api.deezer.com/artist/3944/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639638,
+     "readable": true,
+     "title": "Disposable Teens",
+     "title_short": "Disposable Teens",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639638",
+     "duration": 181,
+     "rank": 68745,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 482,
+      "name": "Marilyn Manson",
+      "tracklist": "https://api.deezer.com/artist/482/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639639,
+     "readable": true,
+     "title": "Since You Been Gone",
+     "title_short": "Since You Been Gone",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639639",
+     "duration": 196,
+     "rank": 47047,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1324,
+      "name": "Rainbow",
+      "tracklist": "https://api.deezer.com/artist/1324/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639640,
+     "readable": true,
+     "title": "Stand Up And Shout",
+     "title_short": "Stand Up And Shout",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639640",
+     "duration": 197,
+     "rank": 69230,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3038,
+      "name": "Dio",
+      "tracklist": "https://api.deezer.com/artist/3038/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639641,
+     "readable": true,
+     "title": "Wind Of Change",
+     "title_short": "Wind Of Change",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639641",
+     "duration": 312,
+     "rank": 224248,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 863,
+      "name": "Scorpions",
+      "tracklist": "https://api.deezer.com/artist/863/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639642,
+     "readable": true,
+     "title": "I Want Your Love",
+     "title_short": "I Want Your Love",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639642",
+     "duration": 209,
+     "rank": 24547,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 134102,
+      "name": "Transvision Vamp",
+      "tracklist": "https://api.deezer.com/artist/134102/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639643,
+     "readable": true,
+     "title": "Smooth Criminal",
+     "title_short": "Smooth Criminal",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639643",
+     "duration": 209,
+     "rank": 51441,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 420,
+      "name": "Alien Ant Farm",
+      "tracklist": "https://api.deezer.com/artist/420/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639644,
+     "readable": true,
+     "title": "Waiting For An Alibi",
+     "title_short": "Waiting For An Alibi",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639644",
+     "duration": 209,
+     "rank": 43712,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2139,
+      "name": "Thin Lizzy",
+      "tracklist": "https://api.deezer.com/artist/2139/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639645,
+     "readable": true,
+     "title": "Eloise (Single Version)",
+     "title_short": "Eloise",
+     "title_version": "(Single Version)",
+     "link": "https://www.deezer.com/track/4639645",
+     "duration": 311,
+     "rank": 64602,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 6415,
+      "name": "The Damned",
+      "tracklist": "https://api.deezer.com/artist/6415/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639646,
+     "readable": true,
+     "title": "Rollin' (Air Raid Vehicle)",
+     "title_short": "Rollin' (Air Raid Vehicle)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639646",
+     "duration": 214,
+     "rank": 148555,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639647,
+     "readable": true,
+     "title": "Maggie May (Single Version)",
+     "title_short": "Maggie May",
+     "title_version": "(Single Version)",
+     "link": "https://www.deezer.com/track/4639647",
+     "duration": 223,
+     "rank": 180299,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1440,
+      "name": "Rod Stewart",
+      "tracklist": "https://api.deezer.com/artist/1440/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639648,
+     "readable": true,
+     "title": "I Miss You",
+     "title_short": "I Miss You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639648",
+     "duration": 227,
+     "rank": 22294,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639649,
+     "readable": true,
+     "title": "More Than Words",
+     "title_short": "More Than Words",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639649",
+     "duration": 238,
+     "rank": 70165,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 527,
+      "name": "Extreme",
+      "tracklist": "https://api.deezer.com/artist/527/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639650,
+     "readable": true,
+     "title": "Do You Like It",
+     "title_short": "Do You Like It",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639650",
+     "duration": 216,
+     "rank": 25851,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 65473,
+      "name": "Kingdom Come",
+      "tracklist": "https://api.deezer.com/artist/65473/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639651,
+     "readable": true,
+     "title": "Sex Action",
+     "title_short": "Sex Action",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639651",
+     "duration": 218,
+     "rank": 51100,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 94963,
+      "name": "L.A. Guns",
+      "tracklist": "https://api.deezer.com/artist/94963/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639652,
+     "readable": true,
+     "title": "Kryptonite",
+     "title_short": "Kryptonite",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639652",
+     "duration": 234,
+     "rank": 189160,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639653,
+     "readable": true,
+     "title": "Gypsy Road",
+     "title_short": "Gypsy Road",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639653",
+     "duration": 234,
+     "rank": 122165,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 8397,
+      "name": "Cinderella",
+      "tracklist": "https://api.deezer.com/artist/8397/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639654,
+     "readable": true,
+     "title": "Everything About You",
+     "title_short": "Everything About You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639654",
+     "duration": 254,
+     "rank": 37379,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 5765,
+      "name": "Ugly Kid Joe",
+      "tracklist": "https://api.deezer.com/artist/5765/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4639655,
+     "readable": true,
+     "title": "Can't Give You More",
+     "title_short": "Can't Give You More",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4639655",
+     "duration": 255,
+     "rank": 24911,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 694,
+      "name": "Status Quo",
+      "tracklist": "https://api.deezer.com/artist/694/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 426907,
+      "title": "Cool - Rock",
+      "cover": "https://api.deezer.com/album/426907/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/236d4bdfdc6087d9e7575e5017638444/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/426907/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

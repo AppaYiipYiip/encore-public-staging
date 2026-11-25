@@ -9,6 +9,7 @@ live run is opt-in and capped and saves what it was told, and that the names of 
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import io
 import json
@@ -58,6 +59,30 @@ def make_ref(
     return ref
 
 
+def add_later_single(folder: Path, search_stem: str, ident: str) -> None:
+    """DERIVED, in the shape of the recordings: the recorded search of a song gets one more hit (the first hit's row with a new id, on a new release "<song> (Promo)"), and the folder gets that
+    release as a SINGLE of 2030-01-01 with its one song (`album_<id>` and `album_<id>_tracks`), made from the recorded answer of the first hit's album."""
+    search = json.loads((folder / f"{search_stem}.json").read_text(encoding="utf-8"))
+    hit = copy.deepcopy(search["answer"]["data"][0])
+    first_album = str(hit["album"]["id"])
+    title = f"{hit['title']} (Promo)"
+    hit.update(id=int(ident), album={**hit["album"], "id": int(ident), "title": title})
+    search["answer"]["data"].append(hit)
+    search["answer"]["total"] = len(search["answer"]["data"])
+    (folder / f"{search_stem}.json").write_text(json.dumps(search), encoding="utf-8")
+    album = json.loads((folder / f"album_{first_album}.json").read_text(encoding="utf-8"))
+    album["path"] = f"/album/{ident}"
+    album["answer"].update(id=int(ident), title=title, record_type="single", release_date="2030-01-01", nb_tracks=1)
+    album["answer"].pop("tracks", None)
+    (folder / f"album_{ident}.json").write_text(json.dumps(album), encoding="utf-8")
+    tracks = json.loads((folder / f"album_{first_album}_tracks.json").read_text(encoding="utf-8"))
+    row = copy.deepcopy(next(t for t in tracks["answer"]["data"] if t["id"] == search["answer"]["data"][0]["id"]))
+    row.update(id=int(ident), track_position=1, disk_number=1)
+    tracks["path"] = f"/album/{ident}/tracks"
+    tracks["answer"] = {"data": [row], "total": 1}
+    (folder / f"album_{ident}_tracks.json").write_text(json.dumps(tracks), encoding="utf-8")
+
+
 def answers_folder(tmp_path: Path) -> Path:
     """The recorded answers the replay serves: the committed step-0 recordings, plus the Pink Floyd search written in the recorder's file shape."""
     folder = tmp_path / "answers"
@@ -65,6 +90,10 @@ def answers_folder(tmp_path: Path) -> Path:
     for source in RECORDED.glob("*.json"):
         if re.fullmatch(r"search_track_.*|album_\d+(_tracks)?|artist_albums_\d+", source.stem):
             shutil.copy(source, folder / source.name)
+    # A single of each LANDMVRKS song that came out after the album (derived from the recorded answers, the file shapes unchanged): since 25 Nov 2026 an album that is the only
+    # release of the hits is a re-askable `sole_album`, and these songs are here for the run, the twin and the report, not for that rule (`test_album_sole_album.py`).
+    for query, ident in (("LANDMVRKS Requiem", "9000002"), ("LANDMVRKS Creature", "9000001")):
+        add_later_single(folder, fixture_name("/search", {"q": query}) or "", ident)
     for asked, recorded_as in (
         ("Pink Floyd Comfortably Numb", "pink floyd comfortably numb"),
         ("Mazzy Star Fade Into You", "mazzy star fade into you"),

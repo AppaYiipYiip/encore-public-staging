@@ -1,0 +1,628 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/13433823",
+ "params": {},
+ "answer": {
+  "id": 13433823,
+  "title": "Greatest Hits",
+  "upc": "602557016642",
+  "link": "https://www.deezer.com/album/13433823",
+  "cover": "https://api.deezer.com/album/13433823/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Geffen",
+  "nb_tracks": 18,
+  "duration": 3483,
+  "fans": 51859,
+  "release_date": "2016-06-24",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/13433823/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 1,
+  "contributors": [
+   {
+    "id": 409,
+    "name": "blink-182",
+    "link": "https://www.deezer.com/artist/409",
+    "picture": "https://api.deezer.com/artist/409/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 409,
+   "name": "blink-182",
+   "picture": "https://api.deezer.com/artist/409/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 127354197,
+     "readable": true,
+     "title": "Carousel",
+     "title_short": "Carousel",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354197",
+     "duration": 193,
+     "rank": 442826,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354199,
+     "readable": true,
+     "title": "M+M's",
+     "title_short": "M+M's",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354199",
+     "duration": 156,
+     "rank": 349870,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354201,
+     "readable": true,
+     "title": "Dammit",
+     "title_short": "Dammit",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354201",
+     "duration": 166,
+     "rank": 581887,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354203,
+     "readable": true,
+     "title": "Josie",
+     "title_short": "Josie",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354203",
+     "duration": 185,
+     "rank": 404883,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354205,
+     "readable": true,
+     "title": "What's My Age Again?",
+     "title_short": "What's My Age Again?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354205",
+     "duration": 150,
+     "rank": 529635,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354207,
+     "readable": true,
+     "title": "All The Small Things",
+     "title_short": "All The Small Things",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354207",
+     "duration": 172,
+     "rank": 845983,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354209,
+     "readable": true,
+     "title": "Adam's Song",
+     "title_short": "Adam's Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354209",
+     "duration": 249,
+     "rank": 703155,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354211,
+     "readable": true,
+     "title": "Man Overboard",
+     "title_short": "Man Overboard",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354211",
+     "duration": 167,
+     "rank": 456015,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354213,
+     "readable": true,
+     "title": "The Rock Show",
+     "title_short": "The Rock Show",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354213",
+     "duration": 169,
+     "rank": 310337,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354215,
+     "readable": true,
+     "title": "First Date",
+     "title_short": "First Date",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354215",
+     "duration": 169,
+     "rank": 332132,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354217,
+     "readable": true,
+     "title": "Stay Together For The Kids",
+     "title_short": "Stay Together For The Kids",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354217",
+     "duration": 239,
+     "rank": 309543,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354219,
+     "readable": true,
+     "title": "Feeling This",
+     "title_short": "Feeling This",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354219",
+     "duration": 173,
+     "rank": 356182,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354221,
+     "readable": true,
+     "title": "I Miss You",
+     "title_short": "I Miss You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354221",
+     "duration": 227,
+     "rank": 368415,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354223,
+     "readable": true,
+     "title": "Down",
+     "title_short": "Down",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354223",
+     "duration": 194,
+     "rank": 267394,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354225,
+     "readable": true,
+     "title": "Always",
+     "title_short": "Always",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354225",
+     "duration": 252,
+     "rank": 426938,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354227,
+     "readable": true,
+     "title": "Not Now",
+     "title_short": "Not Now",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354227",
+     "duration": 265,
+     "rank": 447680,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354229,
+     "readable": true,
+     "title": "Another Girl Another Planet",
+     "title_short": "Another Girl Another Planet",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/127354229",
+     "duration": 161,
+     "rank": 413587,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 127354231,
+     "readable": true,
+     "title": "Aliens Exist (Live In L.A.)",
+     "title_short": "Aliens Exist",
+     "title_version": "(Live In L.A.)",
+     "link": "https://www.deezer.com/track/127354231",
+     "duration": 196,
+     "rank": 224114,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 13433823,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/13433823/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/50627ad1a5ce0215359f0e8b2e37a01f/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/13433823/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

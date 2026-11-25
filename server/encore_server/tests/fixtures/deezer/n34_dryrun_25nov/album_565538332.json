@@ -1,0 +1,256 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/565538332",
+ "params": {},
+ "answer": {
+  "id": 565538332,
+  "title": "Metamorphose",
+  "upc": "5283023986604",
+  "link": "https://www.deezer.com/album/565538332",
+  "cover": "https://api.deezer.com/album/565538332/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Pause",
+  "nb_tracks": 6,
+  "duration": 1080,
+  "fans": 842,
+  "release_date": "2023-02-19",
+  "record_type": "ep",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/565538332/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 1,
+  "explicit_content_cover": 1,
+  "contributors": [
+   {
+    "id": 83321,
+    "name": "Pause",
+    "link": "https://www.deezer.com/artist/83321",
+    "picture": "https://api.deezer.com/artist/83321/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 83321,
+   "name": "Pause",
+   "picture": "https://api.deezer.com/artist/83321/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/bf571b9d57bbf05d727bd29a234104df/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 2724491742,
+     "readable": true,
+     "title": "Red Pill",
+     "title_short": "Red Pill",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491742",
+     "duration": 166,
+     "rank": 99977,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2724491752,
+     "readable": true,
+     "title": "Drop",
+     "title_short": "Drop",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491752",
+     "duration": 188,
+     "rank": 112256,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2724491762,
+     "readable": true,
+     "title": "Cage",
+     "title_short": "Cage",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491762",
+     "duration": 218,
+     "rank": 266217,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2724491772,
+     "readable": true,
+     "title": "Nostalgia III",
+     "title_short": "Nostalgia III",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491772",
+     "duration": 152,
+     "rank": 120282,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2724491782,
+     "readable": true,
+     "title": "Tiki-Taka",
+     "title_short": "Tiki-Taka",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491782",
+     "duration": 140,
+     "rank": 132037,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2724491792,
+     "readable": true,
+     "title": "Lyam",
+     "title_short": "Lyam",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2724491792",
+     "duration": 216,
+     "rank": 330479,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 83321,
+      "name": "Pause",
+      "tracklist": "https://api.deezer.com/artist/83321/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 565538332,
+      "title": "Metamorphose",
+      "cover": "https://api.deezer.com/album/565538332/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/caec40aea47d6879a0401eeb42d1b253/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/565538332/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

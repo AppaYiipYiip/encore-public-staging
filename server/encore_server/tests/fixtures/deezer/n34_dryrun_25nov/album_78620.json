@@ -1,0 +1,572 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/78620",
+ "params": {},
+ "answer": {
+  "id": 78620,
+  "title": "Split Personality",
+  "upc": "828765701822",
+  "link": "https://www.deezer.com/album/78620",
+  "cover": "https://api.deezer.com/album/78620/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    },
+    {
+     "id": 132,
+     "name": "Pop",
+     "picture": "https://api.deezer.com/genre/132/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "J Records",
+  "nb_tracks": 16,
+  "duration": 3547,
+  "fans": 1083,
+  "release_date": "2004-03-15",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/78620/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 2622,
+    "name": "Cassidy",
+    "link": "https://www.deezer.com/artist/2622",
+    "picture": "https://api.deezer.com/artist/2622/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 2622,
+   "name": "Cassidy",
+   "picture": "https://api.deezer.com/artist/2622/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 628290,
+     "readable": true,
+     "title": "My Interpretation",
+     "title_short": "My Interpretation",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628290",
+     "duration": 188,
+     "rank": 30802,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628337,
+     "readable": true,
+     "title": "Hotel (feat. R.Kelly)",
+     "title_short": "Hotel (feat. R.Kelly)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628337",
+     "duration": 247,
+     "rank": 576808,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628291,
+     "readable": true,
+     "title": "Lipstick (feat. Jazze Pha)",
+     "title_short": "Lipstick (feat. Jazze Pha)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628291",
+     "duration": 226,
+     "rank": 71052,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628316,
+     "readable": true,
+     "title": "Get No Better (feat. Mashonda)",
+     "title_short": "Get No Better (feat. Mashonda)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628316",
+     "duration": 235,
+     "rank": 138699,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 13162849,
+     "readable": true,
+     "title": "Make U Scream (feat. Snoop Dogg)",
+     "title_short": "Make U Scream (feat. Snoop Dogg)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/13162849",
+     "duration": 243,
+     "rank": 18573,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628292,
+     "readable": true,
+     "title": "SKIT: Tha Problem",
+     "title_short": "SKIT: Tha Problem",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628292",
+     "duration": 79,
+     "rank": 32116,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628317,
+     "readable": true,
+     "title": "Tha Problem (Dirty)",
+     "title_short": "Tha Problem",
+     "title_version": "(Dirty)",
+     "link": "https://www.deezer.com/track/628317",
+     "duration": 230,
+     "rank": 39750,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628293,
+     "readable": true,
+     "title": "Pop That Cannon (feat. Styles P.)",
+     "title_short": "Pop That Cannon (feat. Styles P.)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628293",
+     "duration": 250,
+     "rank": 8848,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628294,
+     "readable": true,
+     "title": "Blood Pressure (Dirty)",
+     "title_short": "Blood Pressure",
+     "title_version": "(Dirty)",
+     "link": "https://www.deezer.com/track/628294",
+     "duration": 213,
+     "rank": 32847,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628295,
+     "readable": true,
+     "title": "Can I Talk To You (feat. Jadakiss) (Street Mix)",
+     "title_short": "Can I Talk To You (feat. Jadakiss)",
+     "title_version": "(Street Mix)",
+     "link": "https://www.deezer.com/track/628295",
+     "duration": 267,
+     "rank": 80174,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628296,
+     "readable": true,
+     "title": "SKIT: Real Talk",
+     "title_short": "SKIT: Real Talk",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628296",
+     "duration": 65,
+     "rank": 38030,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628297,
+     "readable": true,
+     "title": "Real Talk",
+     "title_short": "Real Talk",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628297",
+     "duration": 277,
+     "rank": 17852,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628318,
+     "readable": true,
+     "title": "Husslin'",
+     "title_short": "Husslin'",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628318",
+     "duration": 193,
+     "rank": 27104,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628338,
+     "readable": true,
+     "title": "I'm Hungry",
+     "title_short": "I'm Hungry",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628338",
+     "duration": 234,
+     "rank": 48152,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628319,
+     "readable": true,
+     "title": "Around Tha World",
+     "title_short": "Around Tha World",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628319",
+     "duration": 254,
+     "rank": 16726,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 628339,
+     "readable": true,
+     "title": "Hotel (Vacation) Remix (feat. R.Kelly & Trina)",
+     "title_short": "Hotel (Vacation) Remix (feat. R.Kelly & Trina)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/628339",
+     "duration": 346,
+     "rank": 52967,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 78620,
+      "title": "Split Personality",
+      "cover": "https://api.deezer.com/album/78620/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/c65604a80c815d8ba6119a73adb1f0f1/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/78620/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,566 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/91616",
+ "params": {},
+ "answer": {
+  "id": 91616,
+  "title": "By the Way",
+  "upc": "093624814061",
+  "link": "https://www.deezer.com/album/91616",
+  "cover": "https://api.deezer.com/album/91616/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 85,
+  "genres": {
+   "data": [
+    {
+     "id": 85,
+     "name": "Alternative",
+     "picture": "https://api.deezer.com/genre/85/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Warner Records",
+  "nb_tracks": 16,
+  "duration": 4109,
+  "fans": 33009,
+  "release_date": "2002-06-25",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/91616/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 182,
+    "name": "Red Hot Chili Peppers",
+    "link": "https://www.deezer.com/artist/182",
+    "picture": "https://api.deezer.com/artist/182/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 182,
+   "name": "Red Hot Chili Peppers",
+   "picture": "https://api.deezer.com/artist/182/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 782016,
+     "readable": true,
+     "title": "By the Way",
+     "title_short": "By the Way",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782016",
+     "duration": 216,
+     "rank": 588268,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782023,
+     "readable": true,
+     "title": "Universally Speaking",
+     "title_short": "Universally Speaking",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782023",
+     "duration": 256,
+     "rank": 313434,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782030,
+     "readable": true,
+     "title": "This Is the Place",
+     "title_short": "This Is the Place",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782030",
+     "duration": 257,
+     "rank": 312596,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782036,
+     "readable": true,
+     "title": "Dosed",
+     "title_short": "Dosed",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782036",
+     "duration": 311,
+     "rank": 350861,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782044,
+     "readable": true,
+     "title": "Don't Forget Me",
+     "title_short": "Don't Forget Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782044",
+     "duration": 277,
+     "rank": 338784,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782053,
+     "readable": true,
+     "title": "The Zephyr Song",
+     "title_short": "The Zephyr Song",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782053",
+     "duration": 231,
+     "rank": 403550,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782060,
+     "readable": true,
+     "title": "Can't Stop",
+     "title_short": "Can't Stop",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782060",
+     "duration": 269,
+     "rank": 510977,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782065,
+     "readable": true,
+     "title": "I Could Die for You",
+     "title_short": "I Could Die for You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782065",
+     "duration": 192,
+     "rank": 319636,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782071,
+     "readable": true,
+     "title": "Midnight",
+     "title_short": "Midnight",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782071",
+     "duration": 295,
+     "rank": 264167,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782076,
+     "readable": true,
+     "title": "Throw Away Your Television",
+     "title_short": "Throw Away Your Television",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782076",
+     "duration": 224,
+     "rank": 466027,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782084,
+     "readable": true,
+     "title": "Cabron",
+     "title_short": "Cabron",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782084",
+     "duration": 218,
+     "rank": 291417,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782092,
+     "readable": true,
+     "title": "Tear",
+     "title_short": "Tear",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782092",
+     "duration": 317,
+     "rank": 287606,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782099,
+     "readable": true,
+     "title": "On Mercury",
+     "title_short": "On Mercury",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782099",
+     "duration": 207,
+     "rank": 286050,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782102,
+     "readable": true,
+     "title": "Minor Thing",
+     "title_short": "Minor Thing",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782102",
+     "duration": 217,
+     "rank": 461061,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782106,
+     "readable": true,
+     "title": "Warm Tape",
+     "title_short": "Warm Tape",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782106",
+     "duration": 255,
+     "rank": 219715,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 782117,
+     "readable": true,
+     "title": "Venice Queen",
+     "title_short": "Venice Queen",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/782117",
+     "duration": 367,
+     "rank": 291259,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 91616,
+      "title": "By the Way",
+      "cover": "https://api.deezer.com/album/91616/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/49b073f55550d41055e02c493f9a7d39/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/91616/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

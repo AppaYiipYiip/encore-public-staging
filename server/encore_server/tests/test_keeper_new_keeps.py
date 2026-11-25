@@ -347,7 +347,9 @@ def test_the_waits_shrink_with_the_budget(krig: KeepRig) -> None:
 
     krig.catalogue.search = search  # type: ignore[method-assign]
     krig.keep(krig.creature())
-    assert krig.waits == [10.0, 4.0], "after 6 s only 4 of the 10 s are left for the album answer"
+    assert krig.waits == [10.0, 4.0, 4.0], (
+        "after 6 s only 4 of the 10 s are left for each of the two album answers (the album and its single)"
+    )
 
 
 def test_an_exception_nobody_foresaw_in_the_album_question_never_stops_the_keep(
@@ -637,7 +639,9 @@ def test_a_picture_that_dies_half_way_through_a_keep_leaves_the_keep_done_and_th
 def test_no_folder_picture_is_written_into_the_shared_singles_folder_whatever_the_albums_title(krig: KeepRig, title: str) -> None:
     """The reviewer's probe: the guard tested the album TEXT, so a matched album called Singles filed the song in the shared folder and wrote the catalogue's cover there,
     for ever, next to the songs of no album. The folder PLACED decides."""
-    krig.catalogue = Catalogue(landmvrks().searches, {ALBUM: derive(albums(ALBUM)[ALBUM], title=title)})
+    krig.catalogue = Catalogue(
+        landmvrks().searches, {**landmvrks().known_albums, ALBUM: derive(albums(ALBUM)[ALBUM], title=title)}
+    )
     ref = krig.creature()
 
     krig.keep(ref)
@@ -1004,7 +1008,9 @@ def test_a_keep_never_writes_or_deletes_anything_outside_the_servers_own_folder(
 def test_a_song_the_catalogue_just_placed_whose_release_has_no_picture_is_not_looked_up_by_name_for_one(krig: KeepRig) -> None:
     """A search by name could only pick ANOTHER release's picture for it: the cover finder asks the very release by its id later (slice 2), never by name."""
     krig.cover_found = "https://cdn.dzcdn.net/another-release.jpg"
-    krig.catalogue = Catalogue(landmvrks().searches, {ALBUM: derive(albums(ALBUM)[ALBUM], cover=None)})
+    krig.catalogue = Catalogue(
+        landmvrks().searches, {**landmvrks().known_albums, ALBUM: derive(albums(ALBUM)[ALBUM], cover=None)}
+    )
     ref = krig.creature()
 
     krig.keep(ref)
@@ -1023,6 +1029,7 @@ def test_a_keep_through_the_real_gate_files_the_song_under_its_album(
     """`KeepAsker.on` over the real catalogue code and the RECORDED answers of the catalogue: the search is `deezer.search_tracks` as a background turn with the keep's short wait,
     the album is `Catalogue.album` as a background turn. (The conftest guard replaces the pass's search by one that cannot be asked; this test puts the real one back.)"""
     upstream = RecordedDeezer()
+    upstream.add_later_single("LANDMVRKS Creature")  # a single beside the album: no sole release (25 Nov 2026)
     client = DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport()))
     deezer.install(client)
     monkeypatch.setattr(album_pass, "search_the_catalogue_for_keep", the_real_search)
@@ -1082,6 +1089,7 @@ def test_the_app_asks_the_album_of_a_song_it_keeps(
     )  # the picture host is not reached from a test
     monkeypatch.setattr(album_pass, "search_the_catalogue_for_keep", the_real_search)
     upstream = RecordedDeezer()
+    upstream.add_later_single("LANDMVRKS Creature")  # a single beside the album: no sole release (25 Nov 2026)
     catalogue = RealCatalogue(
         DeezerClient(Gate(rate=1000, burst=1000, background_gap_s=0.0), httpx.Client(transport=upstream.transport())), Cache(None)
     )

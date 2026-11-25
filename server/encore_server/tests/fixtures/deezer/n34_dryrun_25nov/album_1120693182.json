@@ -1,0 +1,380 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/1120693182",
+ "params": {},
+ "answer": {
+  "id": 1120693182,
+  "title": "The Rules of Love: Pain is Love",
+  "upc": "881061770329",
+  "link": "https://www.deezer.com/album/1120693182",
+  "cover": "https://api.deezer.com/album/1120693182/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "UME - Global Clearing House",
+  "nb_tracks": 10,
+  "duration": 2842,
+  "fans": 174,
+  "release_date": "2026-10-16",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 138,
+    "name": "Ja Rule",
+    "link": "https://www.deezer.com/artist/138",
+    "picture": "https://api.deezer.com/artist/138/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 138,
+   "name": "Ja Rule",
+   "picture": "https://api.deezer.com/artist/138/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 4346024702,
+     "readable": true,
+     "title": "Always On Time",
+     "title_short": "Always On Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024702",
+     "duration": 245,
+     "rank": 258919,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024712,
+     "readable": true,
+     "title": "Between Me & You",
+     "title_short": "Between Me & You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024712",
+     "duration": 250,
+     "rank": 144010,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024722,
+     "readable": true,
+     "title": "Mesmerize",
+     "title_short": "Mesmerize",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024722",
+     "duration": 283,
+     "rank": 194853,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024732,
+     "readable": true,
+     "title": "Put It On Me",
+     "title_short": "Put It On Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024732",
+     "duration": 263,
+     "rank": 132830,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024742,
+     "readable": true,
+     "title": "Down Ass Bitch",
+     "title_short": "Down Ass Bitch",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024742",
+     "duration": 331,
+     "rank": 124362,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024752,
+     "readable": true,
+     "title": "I Cry",
+     "title_short": "I Cry",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024752",
+     "duration": 317,
+     "rank": 129213,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024762,
+     "readable": true,
+     "title": "Thug Lovin'",
+     "title_short": "Thug Lovin'",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024762",
+     "duration": 290,
+     "rank": 107973,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024772,
+     "readable": true,
+     "title": "Never Again",
+     "title_short": "Never Again",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024772",
+     "duration": 259,
+     "rank": 121597,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024782,
+     "readable": true,
+     "title": "Lost Little Girl",
+     "title_short": "Lost Little Girl",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024782",
+     "duration": 300,
+     "rank": 88502,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 4346024792,
+     "readable": true,
+     "title": "Pain Is Love",
+     "title_short": "Pain Is Love",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/4346024792",
+     "duration": 304,
+     "rank": 98126,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 1120693182,
+      "title": "The Rules of Love: Pain is Love",
+      "cover": "https://api.deezer.com/album/1120693182/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/413163a0268fd0093c177fb528091153/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/1120693182/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}
