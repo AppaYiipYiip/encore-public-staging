@@ -59,6 +59,10 @@ class Settings:
     #: The catalogue (Deezer's public search, docs/11 ADR-R47): this server asks it for pictures and answers its phones' search, artist and album pages from
     #: it. Off (`ENCORE_CATALOGUE=0`), no request is ever opened to it, the feature is not listed, and the pictures finders skip without remembering a miss.
     catalogue: bool = True
+    #: N-34, the album pass and the keeper's question about a NEW keep (which album is this song on): `ENCORE_ALBUM_PASS=0` stops BOTH (nothing is asked of the catalogue for an album and
+    #: nothing is stamped); it is NOT `ENCORE_CATALOGUE=0`, which also stops the pictures and the catalogue's pages. A stamp is permanent and reaches the Host's disk through a later keep, so a
+    #: Host who does not want it can say so.
+    album_pass: bool = True
     #: Keeping (docs/04 D-3): saved songs are copied into the music folder. Off, everything still plays by streaming.
     keep: bool = True
     #: The worker threads that do background work; off in tests, which run the scheduler by hand.
@@ -97,6 +101,7 @@ class Settings:
             youtube_pace_s=pace_from(e.get("ENCORE_YOUTUBE_PACE_S", "")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             catalogue=e.get("ENCORE_CATALOGUE", "1").strip().lower() not in ("0", "false", "no"),
+            album_pass=e.get("ENCORE_ALBUM_PASS", "1").strip().lower() not in ("0", "false", "no"),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),
             navidrome_admin_user=e.get("ENCORE_NAVIDROME_ADMIN_USER", "").strip(),

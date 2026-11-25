@@ -1,0 +1,132 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/229887",
+ "params": {},
+ "answer": {
+  "id": 229887,
+  "title": "Hate It Or Love It",
+  "upc": "602498821541",
+  "link": "https://www.deezer.com/album/229887",
+  "cover": "https://api.deezer.com/album/229887/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Geffen",
+  "nb_tracks": 2,
+  "duration": 443,
+  "fans": 709,
+  "release_date": "2005-05-09",
+  "record_type": "single",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/229887/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 1,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 393,
+    "name": "The Game",
+    "link": "https://www.deezer.com/artist/393",
+    "picture": "https://api.deezer.com/artist/393/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 393,
+   "name": "The Game",
+   "picture": "https://api.deezer.com/artist/393/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 2307185,
+     "readable": true,
+     "title": "Hate It Or Love It",
+     "title_short": "Hate It Or Love It",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2307185",
+     "duration": 207,
+     "rank": 407206,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 229887,
+      "title": "Hate It Or Love It",
+      "cover": "https://api.deezer.com/album/229887/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/229887/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2307186,
+     "readable": true,
+     "title": "Higher (AOL session)",
+     "title_short": "Higher",
+     "title_version": "(AOL session)",
+     "link": "https://www.deezer.com/track/2307186",
+     "duration": 236,
+     "rank": 75101,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 229887,
+      "title": "Hate It Or Love It",
+      "cover": "https://api.deezer.com/album/229887/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/aaa4ad49d1b2b2bc74bc6b53ba2d5aa9/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/229887/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

@@ -41,6 +41,7 @@ from tests.test_album_finder import (
     derive,
     hits,
     single_hit,
+    with_later_single,
 )
 
 # ------------------------------------------------------------------------------------------------------------------ step 0: the measurement, from the recordings
@@ -192,15 +193,21 @@ def test_a_song_with_only_a_single_among_the_hits_is_not_stamped_whatever_the_wi
         assert (verdict.outcome, verdict.reason, verdict.match) == ("none", "single_only", None)
 
 
-def test_the_recorded_searches_of_requiem_and_creature_list_only_the_album_so_both_match_whatever_the_window() -> None:
+def test_the_recorded_searches_of_requiem_and_creature_list_only_the_album_so_the_window_never_fires_and_the_album_is_sole() -> (
+    None
+):
     """The window fires only when an earlier single AND an album are both among the same-recording hits. The two searches recorded in step 0 returned the album's
-    row alone (the single's row is not among the eight), so the recorded songs match with the window unset."""
+    row alone (the single's row is not among the eight), so the window never fires: and since 25 Nov 2026 an album that is the only release of the hits is `sole_album`
+    (`test_album_sole_album.py`), re-askable. With a later single of the song beside it the album matches whatever the window (the window is about EARLIER singles)."""
     for title, length in (("Creature", 225_000), ("Requiem", 240_000)):
         found = recorded_search(f"LANDMVRKS {title}")["data"]
         assert {row["album"]["id"] for row in found} == {int(ALBUM)}
         verdict = choose_release(Song("LANDMVRKS", title, length), found, albums(ALBUM))
-        assert (verdict.outcome, verdict.reason) == ("matched", "matched"), title
-        assert verdict.match is not None and verdict.match.album_id == ALBUM
+        assert (verdict.outcome, verdict.reason) == ("none", "sole_album"), title
+        assert verdict.withheld is not None and verdict.withheld.album_id == ALBUM
+        corroborated = choose_release(Song("LANDMVRKS", title, length), *with_later_single(found, albums(ALBUM)))
+        assert (corroborated.outcome, corroborated.reason) == ("matched", "matched"), title
+        assert corroborated.match is not None and corroborated.match.album_id == ALBUM
 
 
 def test_the_window_looks_at_every_earlier_single_not_only_the_nearest() -> None:
@@ -257,13 +264,20 @@ def test_the_recorded_best_of_is_the_only_candidate_and_its_title_says_best_of_s
 
 
 @pytest.mark.parametrize("title", ["Gold", "Legend", "Legend - Remastered", "Exodus"])
-def test_a_same_artist_best_of_that_says_nothing_of_it_in_its_title_is_accepted_when_it_is_the_only_candidate(title: str) -> None:
-    """The title is never the rule: a best-of called "Gold" passes, because only the album's real title can be read and a guess would be worse than the
-    catalogue's own word (the ruling, case 1)."""
+def test_a_same_artist_best_of_that_says_nothing_of_it_in_its_title_passes_the_title_check_and_is_a_sole_album_when_alone(
+    title: str,
+) -> None:
+    """The title is never the rule: a best-of called "Gold" is not downgraded BY ITS TITLE, because only the album's real title can be read and a guess would be worse than the
+    catalogue's own word (the ruling of 17 Nov 2026, case 1). **That ruling's "accept it when it is the only candidate" is superseded by the sole-album rule of 25 Nov 2026**
+    (`test_album_sole_album.py`): the only release among the hits is an album the hits cannot prove is the song's original, so it is a re-askable `sole_album`, and the title check is
+    not what holds it. With a single of the song beside it the best-of IS stamped: the limit of what the rules can see, and the artist's discography (N-48) is the remedy."""
     found, answers = only_best_of(title)
     verdict = choose_release(COMFORTABLY_NUMB, found, answers)
-    assert (verdict.outcome, verdict.reason) == ("matched", "matched"), title
-    assert verdict.match is not None and verdict.match.album == title and verdict.withheld is None
+    assert (verdict.outcome, verdict.reason) == ("none", "sole_album"), title
+    assert verdict.withheld is not None and verdict.withheld.album == title
+    corroborated = choose_release(COMFORTABLY_NUMB, *with_later_single(found, answers))
+    assert (corroborated.outcome, corroborated.reason) == ("matched", "matched"), title
+    assert corroborated.match is not None and corroborated.match.album == title and corroborated.withheld is None
 
 
 @pytest.mark.parametrize(
@@ -324,7 +338,7 @@ def test_a_title_that_says_it_is_a_compilation_downgrades_a_match_to_re_askable(
 )
 def test_a_real_album_whose_title_merely_contains_a_marker_in_a_longer_word_is_not_downgraded(title: str) -> None:
     """A word counts only as a whole word: the marker list is a second layer and must cost songs as little as it can."""
-    found, answers = only_best_of(title)
+    found, answers = with_later_single(*only_best_of(title))  # a single beside the album: the album is no sole release
     verdict = choose_release(COMFORTABLY_NUMB, found, answers)
     assert (verdict.outcome, verdict.reason) == ("matched", "matched"), title
 
@@ -415,8 +429,11 @@ def test_an_arabic_song_whose_hit_is_spelled_in_arabic_still_matches_by_the_equa
     from tests.test_album_finder import arabic_hit
 
     hit = arabic_hit("كيفك إنت")
-    verdict = choose_release(ARABIC_FAIRUZ, [hit], albums_for_arabic_hit(hit))
+    verdict = choose_release(
+        ARABIC_FAIRUZ, *with_later_single([hit], albums_for_arabic_hit(hit))
+    )  # a single beside the album: no sole release
     assert verdict.outcome == "matched", (verdict.outcome, verdict.reason)
+    assert choose_release(ARABIC_FAIRUZ, [hit], albums_for_arabic_hit(hit)).reason == "sole_album"
 
 
 def albums_for_arabic_hit(hit: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -450,6 +467,10 @@ def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_th
             "version_words": list(VERSION_WORDS),
             "version_forms": album_finder._VERSION_FORMS,
             "extra_marks": album_finder._EXTRA_MARKS,
+            # revision 5 (25 Nov 2026): what decides whether a competitor exists and whether two titles are one release
+            "plain_words": list(album_finder.PLAIN_COMPILATION_WORDS),
+            "label_words": sorted(album_finder._LABEL_WORDS),
+            "label_ends": list(album_finder._LABEL_ENDS),
         },
         sort_keys=True,
     )
@@ -458,8 +479,9 @@ def test_the_data_a_better_rule_changes_is_pinned_with_the_revision_that_asks_th
         1: "90e3395504ceed7b",
         2: "fff965fa74e495fb",
         3: "8d639d3ea5098204",
-        4: "8d639d3ea5098204",  # the single rule is code, not data: the pinned data is the same as for 3
-    }  # 1 = the state of PR 125 as first pushed (never stamped anywhere)
+        4: "8d639d3ea5098204",  # the single rule is code, not data: the pinned data is the same as for 3 (a state WITHOUT the three fields of revision 5, so 1 to 4 no longer reproduce)
+        5: "e84d9d5c77f10d98",
+    }  # 1 = the state of PR 125 as first pushed (never stamped anywhere); 4 is the one a real server stamped 35 songs with
     assert album_finder.IDENTITY_REVISION in known, "a new revision needs its line here"
     assert known[album_finder.IDENTITY_REVISION] == fingerprint, (
         f"the rule changed without a new IDENTITY_REVISION: raise it and add `{album_finder.IDENTITY_REVISION + 1}: {fingerprint!r}` (state: {state})"

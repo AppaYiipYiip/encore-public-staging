@@ -1,0 +1,566 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/107867",
+ "params": {},
+ "answer": {
+  "id": 107867,
+  "title": "Big Boi & Dre Present...OutKast",
+  "upc": "730082609326",
+  "link": "https://www.deezer.com/album/107867",
+  "cover": "https://api.deezer.com/album/107867/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Arista/LaFace Records",
+  "nb_tracks": 16,
+  "duration": 4386,
+  "fans": 11998,
+  "release_date": "2001-11-30",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/107867/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 9,
+    "name": "Outkast",
+    "link": "https://www.deezer.com/artist/9",
+    "picture": "https://api.deezer.com/artist/9/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 9,
+   "name": "Outkast",
+   "picture": "https://api.deezer.com/artist/9/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/32b909447841adfe4fd4770b1c1530ed/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 963068,
+     "readable": true,
+     "title": "Camp Fire Intro",
+     "title_short": "Camp Fire Intro",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963068",
+     "duration": 67,
+     "rank": 73930,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967472,
+     "readable": true,
+     "title": "Funkin' Around",
+     "title_short": "Funkin' Around",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967472",
+     "duration": 274,
+     "rank": 130619,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963072,
+     "readable": true,
+     "title": "Ain't No Thang",
+     "title_short": "Ain't No Thang",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963072",
+     "duration": 339,
+     "rank": 165746,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963074,
+     "readable": true,
+     "title": "So Fresh, So Clean",
+     "title_short": "So Fresh, So Clean",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963074",
+     "duration": 240,
+     "rank": 683270,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963076,
+     "readable": true,
+     "title": "Rosa Parks",
+     "title_short": "Rosa Parks",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963076",
+     "duration": 237,
+     "rank": 191664,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 14882213,
+     "readable": true,
+     "title": "The Whole World (feat. Killer Mike)",
+     "title_short": "The Whole World (feat. Killer Mike)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/14882213",
+     "duration": 297,
+     "rank": 333973,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963078,
+     "readable": true,
+     "title": "Aquemini",
+     "title_short": "Aquemini",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963078",
+     "duration": 282,
+     "rank": 163802,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963081,
+     "readable": true,
+     "title": "B.O.B. (Bombs Over Baghdad)",
+     "title_short": "B.O.B.",
+     "title_version": "(Bombs Over Baghdad)",
+     "link": "https://www.deezer.com/track/963081",
+     "duration": 278,
+     "rank": 294508,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963083,
+     "readable": true,
+     "title": "Southernplayalisticadillacmuzik",
+     "title_short": "Southernplayalisticadillacmuzik",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963083",
+     "duration": 251,
+     "rank": 111059,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 962209,
+     "readable": true,
+     "title": "Crumblin' Erb",
+     "title_short": "Crumblin' Erb",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/962209",
+     "duration": 317,
+     "rank": 92875,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963085,
+     "readable": true,
+     "title": "Ms. Jackson",
+     "title_short": "Ms. Jackson",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963085",
+     "duration": 239,
+     "rank": 766599,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963088,
+     "readable": true,
+     "title": "Player's Ball",
+     "title_short": "Player's Ball",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963088",
+     "duration": 261,
+     "rank": 92395,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967474,
+     "readable": true,
+     "title": "Elevators (Me & You)",
+     "title_short": "Elevators (Me & You)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967474",
+     "duration": 262,
+     "rank": 200740,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 963090,
+     "readable": true,
+     "title": "SpottieOttieDopaliscious",
+     "title_short": "SpottieOttieDopaliscious",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/963090",
+     "duration": 358,
+     "rank": 180325,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 967271,
+     "readable": true,
+     "title": "Git Up, Git Out (feat. Goodie Mob)",
+     "title_short": "Git Up, Git Out (feat. Goodie Mob)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/967271",
+     "duration": 445,
+     "rank": 79915,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 13157884,
+     "readable": true,
+     "title": "Movin' Cool (The After Party)",
+     "title_short": "Movin' Cool (The After Party)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/13157884",
+     "duration": 239,
+     "rank": 97102,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9,
+      "name": "Outkast",
+      "tracklist": "https://api.deezer.com/artist/9/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 107867,
+      "title": "Big Boi & Dre Present...OutKast",
+      "cover": "https://api.deezer.com/album/107867/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/be4f08ec67000dcf53749f87eafcb292/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/107867/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

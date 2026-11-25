@@ -1,0 +1,690 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/72174172",
+ "params": {},
+ "answer": {
+  "id": 72174172,
+  "title": "20 #1’s: Alternative Rock",
+  "upc": "602567833925",
+  "link": "https://www.deezer.com/album/72174172",
+  "cover": "https://api.deezer.com/album/72174172/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Music Enterprises",
+  "nb_tracks": 20,
+  "duration": 4493,
+  "fans": 4870,
+  "release_date": "2018-09-07",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/72174172/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 1,
+  "contributors": [
+   {
+    "id": 108420982,
+    "name": "Various Artists",
+    "link": "https://www.deezer.com/artist/108420982",
+    "picture": "https://api.deezer.com/artist/108420982/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 108420982,
+   "name": "Various Artists",
+   "picture": "https://api.deezer.com/artist/108420982/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 549313882,
+     "readable": true,
+     "title": "All The Small Things",
+     "title_short": "All The Small Things",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313882",
+     "duration": 172,
+     "rank": 266841,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313892,
+     "readable": true,
+     "title": "Found Out About You",
+     "title_short": "Found Out About You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313892",
+     "duration": 232,
+     "rank": 250630,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 7865,
+      "name": "Gin Blossoms",
+      "tracklist": "https://api.deezer.com/artist/7865/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313902,
+     "readable": true,
+     "title": "Zombie",
+     "title_short": "Zombie",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313902",
+     "duration": 307,
+     "rank": 114317,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 196,
+      "name": "The Cranberries",
+      "tracklist": "https://api.deezer.com/artist/196/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313912,
+     "readable": true,
+     "title": "What I Got",
+     "title_short": "What I Got",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313912",
+     "duration": 171,
+     "rank": 72945,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 410,
+      "name": "Sublime",
+      "tracklist": "https://api.deezer.com/artist/410/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313922,
+     "readable": true,
+     "title": "No Rain",
+     "title_short": "No Rain",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313922",
+     "duration": 215,
+     "rank": 98176,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 3438,
+      "name": "Blind Melon",
+      "tracklist": "https://api.deezer.com/artist/3438/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313932,
+     "readable": true,
+     "title": "Sex & Candy",
+     "title_short": "Sex & Candy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313932",
+     "duration": 172,
+     "rank": 160893,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 788,
+      "name": "Marcy Playground",
+      "tracklist": "https://api.deezer.com/artist/788/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313942,
+     "readable": true,
+     "title": "Closing Time",
+     "title_short": "Closing Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313942",
+     "duration": 278,
+     "rank": 144076,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 2075,
+      "name": "Semisonic",
+      "tracklist": "https://api.deezer.com/artist/2075/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313952,
+     "readable": true,
+     "title": "Lightning Crashes",
+     "title_short": "Lightning Crashes",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313952",
+     "duration": 325,
+     "rank": 72128,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 168,
+      "name": "Live",
+      "tracklist": "https://api.deezer.com/artist/168/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313962,
+     "readable": true,
+     "title": "Fat Lip",
+     "title_short": "Fat Lip",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313962",
+     "duration": 182,
+     "rank": 110933,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 459,
+      "name": "Sum 41",
+      "tracklist": "https://api.deezer.com/artist/459/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313972,
+     "readable": true,
+     "title": "Hanging By A Moment",
+     "title_short": "Hanging By A Moment",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313972",
+     "duration": 215,
+     "rank": 87639,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 726,
+      "name": "Lifehouse",
+      "tracklist": "https://api.deezer.com/artist/726/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313982,
+     "readable": true,
+     "title": "Walkin' On The Sun",
+     "title_short": "Walkin' On The Sun",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313982",
+     "duration": 207,
+     "rank": 220104,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 1179,
+      "name": "Smash Mouth",
+      "tracklist": "https://api.deezer.com/artist/1179/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549313992,
+     "readable": true,
+     "title": "Last Resort",
+     "title_short": "Last Resort",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549313992",
+     "duration": 199,
+     "rank": 544964,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 89,
+      "name": "Papa Roach",
+      "tracklist": "https://api.deezer.com/artist/89/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314002,
+     "readable": true,
+     "title": "Counting Blue Cars (Tell Me Your Thoughts On God)",
+     "title_short": "Counting Blue Cars (Tell Me Your Thoughts On God)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314002",
+     "duration": 291,
+     "rank": 121343,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 2182,
+      "name": "Dishwalla",
+      "tracklist": "https://api.deezer.com/artist/2182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314012,
+     "readable": true,
+     "title": "Always",
+     "title_short": "Always",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314012",
+     "duration": 231,
+     "rank": 143965,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 3117,
+      "name": "Saliva",
+      "tracklist": "https://api.deezer.com/artist/3117/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314022,
+     "readable": true,
+     "title": "The Impression That I Get",
+     "title_short": "The Impression That I Get",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314022",
+     "duration": 194,
+     "rank": 102451,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 2577,
+      "name": "The Mighty Mighty Bosstones",
+      "tracklist": "https://api.deezer.com/artist/2577/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314032,
+     "readable": true,
+     "title": "Smooth Criminal",
+     "title_short": "Smooth Criminal",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314032",
+     "duration": 209,
+     "rank": 246854,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 420,
+      "name": "Alien Ant Farm",
+      "tracklist": "https://api.deezer.com/artist/420/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314042,
+     "readable": true,
+     "title": "Mother Mother",
+     "title_short": "Mother Mother",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314042",
+     "duration": 180,
+     "rank": 108522,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 3859,
+      "name": "Tracy Bonham",
+      "tracklist": "https://api.deezer.com/artist/3859/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314052,
+     "readable": true,
+     "title": "The Reason",
+     "title_short": "The Reason",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314052",
+     "duration": 232,
+     "rank": 107666,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 490,
+      "name": "Hoobastank",
+      "tracklist": "https://api.deezer.com/artist/490/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314062,
+     "readable": true,
+     "title": "Feel Good Drag",
+     "title_short": "Feel Good Drag",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314062",
+     "duration": 187,
+     "rank": 105164,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 8633,
+      "name": "Anberlin",
+      "tracklist": "https://api.deezer.com/artist/8633/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 549314072,
+     "readable": true,
+     "title": "Pepper",
+     "title_short": "Pepper",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/549314072",
+     "duration": 294,
+     "rank": 44080,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 1,
+     "artist": {
+      "id": 858,
+      "name": "Butthole Surfers",
+      "tracklist": "https://api.deezer.com/artist/858/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 72174172,
+      "title": "20 #1’s: Alternative Rock",
+      "cover": "https://api.deezer.com/album/72174172/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/0048e9f3296c9249bd6247e9fd92e107/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/72174172/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

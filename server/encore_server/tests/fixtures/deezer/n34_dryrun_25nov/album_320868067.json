@@ -1,0 +1,187 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/320868067",
+ "params": {},
+ "answer": {
+  "id": 320868067,
+  "title": "I Won't Be Home For Christmas",
+  "upc": "008815588621",
+  "link": "https://www.deezer.com/album/320868067",
+  "cover": "https://api.deezer.com/album/320868067/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/1000x1000-000000-80-0-0.jpg",
+  "genre_id": -1,
+  "genres": {
+   "data": []
+  },
+  "label": "Geffen*",
+  "nb_tracks": 4,
+  "duration": 752,
+  "fans": 229,
+  "release_date": "2001-10-16",
+  "record_type": "ep",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/320868067/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 409,
+    "name": "blink-182",
+    "link": "https://www.deezer.com/artist/409",
+    "picture": "https://api.deezer.com/artist/409/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 409,
+   "name": "blink-182",
+   "picture": "https://api.deezer.com/artist/409/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/3c60337b3a7cf8d3740bcea4c277f4e1/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 1760963077,
+     "readable": true,
+     "title": "I Won't Be Home For Christmas",
+     "title_short": "I Won't Be Home For Christmas",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1760963077",
+     "duration": 196,
+     "rank": 448889,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 320868067,
+      "title": "I Won't Be Home For Christmas",
+      "cover": "https://api.deezer.com/album/320868067/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/320868067/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1760963087,
+     "readable": true,
+     "title": "All The Small Things",
+     "title_short": "All The Small Things",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1760963087",
+     "duration": 172,
+     "rank": 172656,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 320868067,
+      "title": "I Won't Be Home For Christmas",
+      "cover": "https://api.deezer.com/album/320868067/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/320868067/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1760963097,
+     "readable": true,
+     "title": "Josie",
+     "title_short": "Josie",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1760963097",
+     "duration": 199,
+     "rank": 89072,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 320868067,
+      "title": "I Won't Be Home For Christmas",
+      "cover": "https://api.deezer.com/album/320868067/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/320868067/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1760963107,
+     "readable": true,
+     "title": "Please Take Me Home",
+     "title_short": "Please Take Me Home",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1760963107",
+     "duration": 185,
+     "rank": 72501,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 409,
+      "name": "blink-182",
+      "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 320868067,
+      "title": "I Won't Be Home For Christmas",
+      "cover": "https://api.deezer.com/album/320868067/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/df1ebbab45ccfb116952b3716174cc74/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/320868067/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

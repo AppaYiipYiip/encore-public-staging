@@ -1,0 +1,411 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/246646",
+ "params": {},
+ "answer": {
+  "id": 246646,
+  "title": "The Better Life",
+  "upc": "601215392029",
+  "link": "https://www.deezer.com/album/246646",
+  "cover": "https://api.deezer.com/album/246646/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 132,
+  "genres": {
+   "data": [
+    {
+     "id": 132,
+     "name": "Pop",
+     "picture": "https://api.deezer.com/genre/132/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Records",
+  "nb_tracks": 11,
+  "duration": 2459,
+  "fans": 14816,
+  "release_date": "2000-05-26",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/246646/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 340,
+    "name": "3 Doors Down",
+    "link": "https://www.deezer.com/artist/340",
+    "picture": "https://api.deezer.com/artist/340/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 340,
+   "name": "3 Doors Down",
+   "picture": "https://api.deezer.com/artist/340/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/674026fa8830498a358e820c14102d0a/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 2511224,
+     "readable": true,
+     "title": "Kryptonite",
+     "title_short": "Kryptonite",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511224",
+     "duration": 234,
+     "rank": 781080,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511225,
+     "readable": true,
+     "title": "Loser",
+     "title_short": "Loser",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511225",
+     "duration": 265,
+     "rank": 451282,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511226,
+     "readable": true,
+     "title": "Duck And Run",
+     "title_short": "Duck And Run",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511226",
+     "duration": 232,
+     "rank": 329152,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511227,
+     "readable": true,
+     "title": "Not Enough",
+     "title_short": "Not Enough",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511227",
+     "duration": 196,
+     "rank": 285562,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511228,
+     "readable": true,
+     "title": "Be Like That",
+     "title_short": "Be Like That",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511228",
+     "duration": 265,
+     "rank": 421254,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511229,
+     "readable": true,
+     "title": "Life Of My Own",
+     "title_short": "Life Of My Own",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511229",
+     "duration": 239,
+     "rank": 334597,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511230,
+     "readable": true,
+     "title": "Better Life",
+     "title_short": "Better Life",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511230",
+     "duration": 185,
+     "rank": 219772,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511231,
+     "readable": true,
+     "title": "Down Poison",
+     "title_short": "Down Poison",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511231",
+     "duration": 265,
+     "rank": 253525,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511232,
+     "readable": true,
+     "title": "By My Side",
+     "title_short": "By My Side",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511232",
+     "duration": 196,
+     "rank": 248319,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511233,
+     "readable": true,
+     "title": "Smack",
+     "title_short": "Smack",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/2511233",
+     "duration": 151,
+     "rank": 241188,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 2511234,
+     "readable": true,
+     "title": "So I Need You (Album Version)",
+     "title_short": "So I Need You",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/2511234",
+     "duration": 231,
+     "rank": 246547,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 340,
+      "name": "3 Doors Down",
+      "tracklist": "https://api.deezer.com/artist/340/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 246646,
+      "title": "The Better Life",
+      "cover": "https://api.deezer.com/album/246646/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/e075197e5985cd4269f829f1ea217cad/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/246646/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

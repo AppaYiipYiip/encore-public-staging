@@ -1,0 +1,566 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/7586043",
+ "params": {},
+ "answer": {
+  "id": 7586043,
+  "title": "Significant Other",
+  "upc": "602517735651",
+  "link": "https://www.deezer.com/album/7586043",
+  "cover": "https://api.deezer.com/album/7586043/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 152,
+  "genres": {
+   "data": [
+    {
+     "id": 152,
+     "name": "Rock",
+     "picture": "https://api.deezer.com/genre/152/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Interscope",
+  "nb_tracks": 16,
+  "duration": 3372,
+  "fans": 10048,
+  "release_date": "2008-06-03",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/7586043/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 93,
+    "name": "Limp Bizkit",
+    "link": "https://www.deezer.com/artist/93",
+    "picture": "https://api.deezer.com/artist/93/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 93,
+   "name": "Limp Bizkit",
+   "picture": "https://api.deezer.com/artist/93/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/63fd0602291ed4f3b564558525baa795/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 76495455,
+     "readable": true,
+     "title": "Intro",
+     "title_short": "Intro",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495455",
+     "duration": 37,
+     "rank": 272270,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495456,
+     "readable": true,
+     "title": "Just Like This",
+     "title_short": "Just Like This",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495456",
+     "duration": 215,
+     "rank": 362018,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495457,
+     "readable": true,
+     "title": "Nookie",
+     "title_short": "Nookie",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495457",
+     "duration": 266,
+     "rank": 363928,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495458,
+     "readable": true,
+     "title": "Break Stuff",
+     "title_short": "Break Stuff",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495458",
+     "duration": 167,
+     "rank": 359531,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495459,
+     "readable": true,
+     "title": "Re-Arranged",
+     "title_short": "Re-Arranged",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495459",
+     "duration": 354,
+     "rank": 354291,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495460,
+     "readable": true,
+     "title": "I'm Broke",
+     "title_short": "I'm Broke",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495460",
+     "duration": 239,
+     "rank": 374032,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495461,
+     "readable": true,
+     "title": "Nobody Like You",
+     "title_short": "Nobody Like You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495461",
+     "duration": 260,
+     "rank": 319623,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495462,
+     "readable": true,
+     "title": "Don't Go Off Wandering",
+     "title_short": "Don't Go Off Wandering",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495462",
+     "duration": 240,
+     "rank": 290783,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495463,
+     "readable": true,
+     "title": "9 Teen 90 Nine",
+     "title_short": "9 Teen 90 Nine",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495463",
+     "duration": 276,
+     "rank": 327736,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495464,
+     "readable": true,
+     "title": "N 2 Gether Now",
+     "title_short": "N 2 Gether Now",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495464",
+     "duration": 236,
+     "rank": 343323,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495465,
+     "readable": true,
+     "title": "Trust?",
+     "title_short": "Trust?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495465",
+     "duration": 218,
+     "rank": 339599,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495466,
+     "readable": true,
+     "title": "No Sex",
+     "title_short": "No Sex",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495466",
+     "duration": 235,
+     "rank": 349912,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495467,
+     "readable": true,
+     "title": "Show Me What You Got",
+     "title_short": "Show Me What You Got",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495467",
+     "duration": 266,
+     "rank": 386789,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495468,
+     "readable": true,
+     "title": "A Lesson Learned",
+     "title_short": "A Lesson Learned",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495468",
+     "duration": 160,
+     "rank": 236871,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495469,
+     "readable": true,
+     "title": "Outro",
+     "title_short": "Outro",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495469",
+     "duration": 103,
+     "rank": 185004,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 76495470,
+     "readable": true,
+     "title": "Mind Of Les",
+     "title_short": "Mind Of Les",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/76495470",
+     "duration": 100,
+     "rank": 162904,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 93,
+      "name": "Limp Bizkit",
+      "tracklist": "https://api.deezer.com/artist/93/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 7586043,
+      "title": "Significant Other",
+      "cover": "https://api.deezer.com/album/7586043/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/817e8cffd7c7c8daa258b2bd34e34ec6/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/7586043/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

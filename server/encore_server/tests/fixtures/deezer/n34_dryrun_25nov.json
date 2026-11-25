@@ -1,0 +1,124 @@
+{
+ "origin": "The SECOND live dry run of N-34 slice 2 (25 Nov 2026): the lead's answers over VM 108's library, one request per name and album, saved as answers2 (the first run's are the ones named in n34_dryrun_24nov.json). It is the run that found the five albums a real pass stamped wrongly. The files are copied byte for byte into the folder n34_dryrun_25nov/ (a SEPARATE folder: a file name is a hash of its request, so an answer of the second run has the same name as the first run's and DIFFERENT content, the catalogue having moved between the two). Only what the tests need: the search of each song below and every album answer its accepted hits name, and the song list of the CHOSEN release only (the matcher reads no other). The lengths are the CATALOGUE's own, within the 3 s tolerance of the file's length that the run read: the files themselves were not saved.",
+ "songs": [
+  {
+   "artist": "blink-182",
+   "title": "All The Small Things",
+   "length_ms": 171000
+  },
+  {
+   "artist": "Limp Bizkit",
+   "title": "Break Stuff",
+   "length_ms": 168000
+  },
+  {
+   "artist": "My Chemical Romance",
+   "title": "Welcome to the Black Parade",
+   "length_ms": 315000
+  },
+  {
+   "artist": "Cassidy",
+   "title": "Hotel",
+   "length_ms": 249000
+  },
+  {
+   "artist": "Ja Rule",
+   "title": "Always On Time",
+   "length_ms": 243000
+  },
+  {
+   "artist": "The Game",
+   "title": "Hate It Or Love It",
+   "length_ms": 206000
+  },
+  {
+   "artist": "System Of A Down",
+   "title": "Chop Suey!",
+   "length_ms": 209000
+  },
+  {
+   "artist": "Pause",
+   "title": "Lyam",
+   "length_ms": 217000
+  },
+  {
+   "artist": "Outkast",
+   "title": "So Fresh, So Clean",
+   "length_ms": 241000
+  },
+  {
+   "artist": "3 Doors Down",
+   "title": "Kryptonite",
+   "length_ms": 235000
+  },
+  {
+   "artist": "Red Hot Chili Peppers",
+   "title": "By the Way",
+   "length_ms": 218000
+  }
+ ],
+ "files": [
+  "search_track_blink_182_all_the_small_things_be1848f5d907c307",
+  "album_72704062",
+  "album_13433823",
+  "album_320868067",
+  "album_320868067_tracks",
+  "album_72174172",
+  "album_102409042",
+  "search_track_limp_bizkit_break_stuff_897bf650c648f3af",
+  "album_9623860",
+  "album_7586043",
+  "album_122540",
+  "album_122540_tracks",
+  "search_track_my_chemical_romance_welcome_to_the_black_abffe14872117342",
+  "album_7557634",
+  "album_7557634_tracks",
+  "search_track_cassidy_hotel_efe862fabf37fc65",
+  "album_78620",
+  "album_76165",
+  "album_76489",
+  "album_76489_tracks",
+  "album_77627",
+  "search_track_ja_rule_always_on_time_7801b175051e4590",
+  "album_85606442",
+  "album_51694882",
+  "album_61417662",
+  "album_1120693182",
+  "album_160871",
+  "album_160871_tracks",
+  "album_11552538",
+  "search_track_the_game_hate_it_or_love_it_b8b87b57a0975e0e",
+  "album_293752",
+  "album_293752_tracks",
+  "album_229887",
+  "album_10630912",
+  "album_2381291",
+  "search_track_system_of_a_down_chop_suey_57a5aab9a15dadb7",
+  "album_1434890",
+  "album_1434890_tracks",
+  "album_98304",
+  "album_1442520",
+  "search_track_pause_lyam_8280b497d5852faa",
+  "album_565538332",
+  "album_565538332_tracks",
+  "search_track_outkast_so_fresh_so_clean_474d881937ab8830",
+  "album_107867",
+  "album_107858",
+  "album_107858_tracks",
+  "album_180819332",
+  "album_843502202",
+  "search_track_3_doors_down_kryptonite_71e3a55abd93832f",
+  "album_246646",
+  "album_246646_tracks",
+  "album_215915152",
+  "album_208221742",
+  "album_426907",
+  "album_86019082",
+  "search_track_red_hot_chili_peppers_by_the_way_016f9b21e4006f34",
+  "album_86560",
+  "album_86560_tracks",
+  "album_91616",
+  "album_339680",
+  "album_9276214"
+ ]
+}

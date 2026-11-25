@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 from collections.abc import Callable
@@ -55,6 +56,28 @@ class RecordedDeezer:
         self.requests: list[httpx.Request] = []
         #: path -> what to answer instead of the recording (a status and a body, an exception to raise, or a function)
         self.overrides: dict[str, Reply] = {}
+        #: path -> a derived body served instead of a recording (`add_later_single`); and a query -> the hits a derived single adds to the recorded search
+        self.derived: dict[str, Any] = {}
+        self.derived_hits: dict[str, list[dict[str, Any]]] = {}
+
+    def add_later_single(self, query: str, ident: str = "9000001") -> None:
+        """DERIVED, in the shape of the recordings: the recorded search of [query] gets one more hit (the first hit's row on a new release "<song> (Promo)", a SINGLE of 2030-01-01
+        with its one song), served as `/album/<ident>` and `/album/<ident>/tracks` made from the recorded answers of the first hit's album. Since 25 Nov 2026 an album that is the only
+        release among the hits is a re-askable `sole_album`: the tests that are not about that rule give their song a second release family this way."""
+        name = fixture_name("/search", {"q": query})
+        assert name is not None
+        first = recorded(name)["data"][0]
+        title = f"{first['title']} (Promo)"
+        hit = copy.deepcopy(first)
+        hit.update(id=int(ident), album={**hit["album"], "id": int(ident), "title": title})
+        self.derived_hits.setdefault(query, []).append(hit)
+        album = copy.deepcopy(recorded(f"album_{first['album']['id']}"))
+        album.update(id=int(ident), title=title, record_type="single", release_date="2030-01-01", nb_tracks=1)
+        album.pop("tracks", None)
+        self.derived[f"/album/{ident}"] = album
+        row = copy.deepcopy(next(t for t in recorded(f"album_{first['album']['id']}_tracks")["data"] if t["id"] == first["id"]))
+        row.update(id=int(ident), track_position=1, disk_number=1)
+        self.derived[f"/album/{ident}/tracks"] = {"data": [row], "total": 1}
 
     def transport(self) -> httpx.MockTransport:
         return httpx.MockTransport(self)
@@ -77,6 +100,15 @@ class RecordedDeezer:
         return httpx.Response(200, json=self.answer(request.url.path, dict(request.url.params)))
 
     def answer(self, path: str, params: dict[str, str]) -> Any:
+        if path in self.derived:
+            return copy.deepcopy(self.derived[path])
+        body = self._answer(path, params)
+        extra = self.derived_hits.get(params.get("q", "")) if path == "/search" else None
+        if extra and isinstance(body, dict) and isinstance(body.get("data"), list):
+            body = {**body, "data": [*body["data"], *copy.deepcopy(extra)], "total": len(body["data"]) + len(extra)}
+        return body
+
+    def _answer(self, path: str, params: dict[str, str]) -> Any:
         if path == "/search":
             # The plain search the finders use. First the N-34 recordings (the whole raw answer of `search_tracks`, asked with that very query), then
             # the songs of the 20 recorded searches (matched without the query's case).

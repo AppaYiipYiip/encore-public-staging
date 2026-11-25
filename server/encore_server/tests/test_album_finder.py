@@ -89,6 +89,32 @@ def single_hit() -> dict[str, Any]:
     return row
 
 
+def with_later_single(
+    found: list[dict[str, Any]], answers: dict[str, dict[str, Any]], ident: str = "9000001"
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    """DERIVED, for the tests whose subject is NOT the rules of 25 Nov 2026: the same hits and album answers plus ONE SINGLE of the song that came out after every album (no "earlier single"),
+    so that the song has a second release family and the album is no sole release (`sole_album`); it has no competitor (a single is another tier). The single's own row and answer are
+    the first hit's, with a new id ([ident]), the title "<song> (Promo)", the type `single`, one song and the date 2030-01-01; nothing else is changed."""
+    found, answers = copy.deepcopy(found), copy.deepcopy(answers)
+    hit = found[0]
+    row = copy.deepcopy(hit)
+    row.update(id=int(ident), album={"id": int(ident), "title": f"{hit['title']} (Promo)"})
+    template = copy.deepcopy(next(iter(answers.values())))
+    own = next((t for t in template["tracks"] if str(t["id"]) == str(hit["id"])), template["tracks"][0])
+    template["album"].update(
+        id=ident, title=row["album"]["title"], recordType="single", releaseDate="2030-01-01", year=2030, trackCount=1
+    )
+    template["tracks"] = [{**own, "id": ident, "trackNo": 1, "discNo": 1}]
+    template.pop("unavailable", None)
+    return [*found, row], {**answers, ident: template}
+
+
+def chosen_match(verdict: Verdict) -> Any:
+    """What the matcher CHOSE (steps 3 and 4), whether the rules after it let the stamp through (`match`) or held it back as a re-askable `none` (`withheld`): the tests of the order
+    of the choice look at this, not at the outcome."""
+    return verdict.match or verdict.withheld
+
+
 CREATURE = Song("LANDMVRKS", "Creature", 225_000)
 COMFORTABLY_NUMB = Song("Pink Floyd", "Comfortably Numb", 382_000)
 
@@ -409,7 +435,7 @@ def test_comfortably_numb_the_wall_wins_over_the_two_best_ofs_and_every_live_ver
     assert (match.deezer_id, match.album_id, match.album, match.record_type) == ("116914122", WALL, "The Wall", "album")
     assert (match.release_date, match.year, match.track_no, match.disc_no, match.isrc) == (
         "1979-11-30",
-        1979,
+        None,  # the year is not part of a stamp (N-34, PR 130): a reissue date cannot be told from the real one
         6,
         2,
         "GBN9Y1100113",
@@ -562,7 +588,7 @@ def test_an_album_two_hits_are_on_is_asked_once_and_the_lowest_track_id_is_the_h
     twin["id"] = 3116792062
     assert wanted_albums(CREATURE, [twin, creature_hit()]) == [ALBUM]
     verdict = choose_release(CREATURE, [twin, creature_hit()], albums(ALBUM))
-    assert verdict.match is not None and verdict.match.deezer_id == "3116792061"
+    assert chosen_match(verdict) is not None and chosen_match(verdict).deezer_id == "3116792061"
 
 
 def test_an_album_beats_an_earlier_single_inside_the_window() -> None:
@@ -579,7 +605,7 @@ def test_an_album_beats_an_earlier_single_inside_the_window() -> None:
         "album",
         "3116792061",
         2,
-        2025,
+        None,  # no year in a stamp (N-34, PR 130)
     )
     assert not match.single
     assert {r.album_id: r.reason for r in verdict.releases} == {SINGLE: "outranked", ALBUM: "chosen"}
@@ -671,7 +697,8 @@ def test_the_record_types_of_every_recorded_release_are_the_ones_the_matcher_doc
 
 def test_the_type_is_read_without_its_case() -> None:
     answer = derive(albums(ALBUM)[ALBUM], recordType="Album")
-    assert choose_release(CREATURE, [creature_hit()], {ALBUM: answer}).outcome == "matched"
+    found, both = with_later_single([creature_hit()], {ALBUM: answer})
+    assert choose_release(CREATURE, found, both).outcome == "matched"
 
 
 def test_the_earliest_release_date_beats_the_lowest_id() -> None:
@@ -687,9 +714,13 @@ def test_the_earliest_release_date_beats_the_lowest_id() -> None:
         BEST_OF: derive(pair[BEST_OF], releaseDate="1979-11-30", year=1979, title="A Foot in the Door"),
     }
     verdict = choose_release(COMFORTABLY_NUMB, hits("pink floyd comfortably numb"), swapped)
-    assert verdict.match is not None and (verdict.match.album_id, verdict.match.year, verdict.match.track_no) == (
+    assert chosen_match(verdict) is not None and (
+        chosen_match(verdict).album_id,
+        chosen_match(verdict).year,
+        chosen_match(verdict).track_no,
+    ) == (
         BEST_OF,
-        1979,
+        None,  # no year in a stamp (N-34, PR 130)
         14,
     )
 
@@ -710,7 +741,7 @@ def test_with_the_same_type_and_date_the_lowest_id_wins_and_ids_are_compared_as_
     hit_ten.update(id=1, album={"id": 10, "title": "x"})
     hit_nine.update(id=2, album={"id": 9, "title": "x"})
     verdict = choose_release(CREATURE, [hit_ten, hit_nine], {"10": copy_as("10", "1"), "9": copy_as("9", "2")})
-    assert verdict.match is not None and verdict.match.album_id == "9" and verdict.match.deezer_id == "2"
+    assert chosen_match(verdict) is not None and chosen_match(verdict).album_id == "9" and chosen_match(verdict).deezer_id == "2"
 
 
 @pytest.mark.parametrize("odd", ["²", "①", "⁹"])
@@ -729,12 +760,12 @@ def test_an_id_with_a_digit_that_is_not_an_ascii_digit_sorts_after_the_numbers_a
     on_ten.update(id=2, album={"id": 10, "title": "x"})
     both = {odd: copy_as(odd, "1"), "10": copy_as("10", "2")}
     verdict = choose_release(CREATURE, [on_odd, on_ten], both)
-    assert verdict.match is not None and (verdict.match.album_id, verdict.match.deezer_id) == ("10", "2")
+    assert chosen_match(verdict) is not None and (chosen_match(verdict).album_id, chosen_match(verdict).deezer_id) == ("10", "2")
     # two hits on the SAME chosen album, the second with an odd track id: the numeric id is the hit
     twin = creature_hit()
     twin["id"] = odd
     verdict = choose_release(CREATURE, [twin, creature_hit()], albums(ALBUM))
-    assert verdict.match is not None and verdict.match.deezer_id == "3116792061"
+    assert chosen_match(verdict) is not None and chosen_match(verdict).deezer_id == "3116792061"
 
 
 def test_a_release_with_no_date_never_wins_earliest() -> None:
@@ -755,11 +786,11 @@ def test_a_release_with_no_date_never_wins_earliest() -> None:
     hit_undated = creature_hit()
     hit_undated.update(album={"id": 5, "title": "x"})
     verdict = choose_release(CREATURE, [hit_undated, creature_hit()], {"5": undated, ALBUM: one})
-    assert verdict.match is not None and verdict.match.album_id == ALBUM, (
+    assert chosen_match(verdict) is not None and chosen_match(verdict).album_id == ALBUM, (
         "an album with no date loses to one with a date, whatever its id"
     )
     only = choose_release(CREATURE, [hit_undated], {"5": undated})
-    assert only.match is not None and (only.match.release_date, only.match.year) == (None, None)
+    assert chosen_match(only) is not None and (chosen_match(only).release_date, chosen_match(only).year) == (None, None)
 
 
 def test_the_album_artist_must_be_the_songs_first_artist() -> None:
@@ -858,7 +889,7 @@ class Held:
 
 
 def test_a_taken_id_or_isrc_or_a_twin_on_the_same_release_is_held_and_names_what_would_have_been_written() -> None:
-    found, both = [creature_hit()], albums(ALBUM)
+    found, both = with_later_single([creature_hit()], albums(ALBUM))
     cases = [
         (Held(ids={"3116792061"}), "deezer_id_held"),
         (Held(isrcs={"DEYO62300153"}), "isrc_held"),
@@ -881,11 +912,13 @@ def test_a_twin_on_another_release_is_not_a_pair() -> None:
     other = Held(
         twins={(refs.norm_key("LANDMVRKS", "Creature"), release_key("Creature"))}
     )  # the single's release, not the album's
-    assert choose_release(CREATURE, [creature_hit()], albums(ALBUM), other).outcome == "matched"
+    found, both = with_later_single([creature_hit()], albums(ALBUM))
+    assert choose_release(CREATURE, found, both, other).outcome == "matched"
 
 
 def test_no_holdings_is_the_default_and_holds_nothing() -> None:
-    assert choose_release(CREATURE, [creature_hit()], albums(ALBUM)).outcome == "matched"
+    found, both = with_later_single([creature_hit()], albums(ALBUM))
+    assert choose_release(CREATURE, found, both).outcome == "matched"
     assert not NO_HOLDINGS.deezer_id_held("1") and not NO_HOLDINGS.isrc_held("x") and not NO_HOLDINGS.twin_held("a|b|", "c")
 
 

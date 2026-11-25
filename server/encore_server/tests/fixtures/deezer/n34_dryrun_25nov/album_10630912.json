@@ -1,0 +1,690 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/10630912",
+ "params": {},
+ "answer": {
+  "id": 10630912,
+  "title": "20 #1's: Modern Hip-Hop",
+  "upc": "602547300195",
+  "link": "https://www.deezer.com/album/10630912",
+  "cover": "https://api.deezer.com/album/10630912/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Music Enterprises",
+  "nb_tracks": 20,
+  "duration": 4767,
+  "fans": 1060,
+  "release_date": "2015-06-16",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/10630912/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 5080,
+    "name": "Various Artists",
+    "link": "https://www.deezer.com/artist/5080",
+    "picture": "https://api.deezer.com/artist/5080/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/5080/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 5080,
+   "name": "Various Artists",
+   "picture": "https://api.deezer.com/artist/5080/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/6d6503360e6cc202c9a1ed8617f3296b/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/5080/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 102354104,
+     "readable": true,
+     "title": "Best I Ever Had",
+     "title_short": "Best I Ever Had",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354104",
+     "duration": 259,
+     "rank": 81926,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 246791,
+      "name": "Drake",
+      "tracklist": "https://api.deezer.com/artist/246791/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354106,
+     "readable": true,
+     "title": "In Da Club",
+     "title_short": "In Da Club",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354106",
+     "duration": 193,
+     "rank": 169167,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 66,
+      "name": "50 Cent",
+      "tracklist": "https://api.deezer.com/artist/66/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354108,
+     "readable": true,
+     "title": "Slow Motion",
+     "title_short": "Slow Motion",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354108",
+     "duration": 248,
+     "rank": 55711,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3504,
+      "name": "Juvenile",
+      "tracklist": "https://api.deezer.com/artist/3504/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354110,
+     "readable": true,
+     "title": "Kiss Me Thru The Phone",
+     "title_short": "Kiss Me Thru The Phone",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354110",
+     "duration": 193,
+     "rank": 95029,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 352219,
+      "name": "Soulja Boy",
+      "tracklist": "https://api.deezer.com/artist/352219/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354112,
+     "readable": true,
+     "title": "Make Me Better",
+     "title_short": "Make Me Better",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354112",
+     "duration": 255,
+     "rank": 53671,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 74,
+      "name": "Fabolous",
+      "tracklist": "https://api.deezer.com/artist/74/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354114,
+     "readable": true,
+     "title": "Hate It Or Love It",
+     "title_short": "Hate It Or Love It",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354114",
+     "duration": 207,
+     "rank": 364428,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354116,
+     "readable": true,
+     "title": "My Last (Single Version)",
+     "title_short": "My Last",
+     "title_version": "(Single Version)",
+     "link": "https://www.deezer.com/track/102354116",
+     "duration": 254,
+     "rank": 10294,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 15427,
+      "name": "Big Sean",
+      "tracklist": "https://api.deezer.com/artist/15427/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354118,
+     "readable": true,
+     "title": "Put On",
+     "title_short": "Put On",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354118",
+     "duration": 326,
+     "rank": 90323,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 1338623,
+      "name": "Jeezy",
+      "tracklist": "https://api.deezer.com/artist/1338623/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354120,
+     "readable": true,
+     "title": "Wet",
+     "title_short": "Wet",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354120",
+     "duration": 225,
+     "rank": 64147,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3,
+      "name": "Snoop Dogg",
+      "tracklist": "https://api.deezer.com/artist/3/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354122,
+     "readable": true,
+     "title": "Oh Boy",
+     "title_short": "Oh Boy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354122",
+     "duration": 204,
+     "rank": 139670,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 51,
+      "name": "Cam'ron",
+      "tracklist": "https://api.deezer.com/artist/51/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354124,
+     "readable": true,
+     "title": "BedRock",
+     "title_short": "BedRock",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354124",
+     "duration": 289,
+     "rank": 106544,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 292217,
+      "name": "Young Money",
+      "tracklist": "https://api.deezer.com/artist/292217/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354126,
+     "readable": true,
+     "title": "Lights, Camera, Action!",
+     "title_short": "Lights, Camera, Action!",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354126",
+     "duration": 261,
+     "rank": 148573,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 134035,
+      "name": "Mr.Cheeks",
+      "tracklist": "https://api.deezer.com/artist/134035/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354128,
+     "readable": true,
+     "title": "Right Thurr",
+     "title_short": "Right Thurr",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354128",
+     "duration": 250,
+     "rank": 54437,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 735,
+      "name": "Chingy",
+      "tracklist": "https://api.deezer.com/artist/735/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354130,
+     "readable": true,
+     "title": "Lean Wit It, Rock Wit It",
+     "title_short": "Lean Wit It, Rock Wit It",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354130",
+     "duration": 228,
+     "rank": 52329,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2624,
+      "name": "Dem Franchize Boyz",
+      "tracklist": "https://api.deezer.com/artist/2624/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354132,
+     "readable": true,
+     "title": "Country Grammar (Hot Shit)",
+     "title_short": "Country Grammar (Hot Shit)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354132",
+     "duration": 289,
+     "rank": 142879,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 105,
+      "name": "Nelly",
+      "tracklist": "https://api.deezer.com/artist/105/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354134,
+     "readable": true,
+     "title": "Wobble Wobble",
+     "title_short": "Wobble Wobble",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354134",
+     "duration": 214,
+     "rank": 11494,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 8627,
+      "name": "504 Boyz",
+      "tracklist": "https://api.deezer.com/artist/8627/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354136,
+     "readable": true,
+     "title": "Callin' Me",
+     "title_short": "Callin' Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354136",
+     "duration": 257,
+     "rank": 47781,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 864471,
+      "name": "Lil Zane",
+      "tracklist": "https://api.deezer.com/artist/864471/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354138,
+     "readable": true,
+     "title": "Souljas",
+     "title_short": "Souljas",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354138",
+     "duration": 212,
+     "rank": 18624,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 9250,
+      "name": "Master P",
+      "tracklist": "https://api.deezer.com/artist/9250/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354140,
+     "readable": true,
+     "title": "It Wasn't Me",
+     "title_short": "It Wasn't Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354140",
+     "duration": 227,
+     "rank": 462132,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 461,
+      "name": "Shaggy",
+      "tracklist": "https://api.deezer.com/artist/461/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 102354142,
+     "readable": true,
+     "title": "What Would You Do?",
+     "title_short": "What Would You Do?",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/102354142",
+     "duration": 176,
+     "rank": 40681,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 7566,
+      "name": "City High",
+      "tracklist": "https://api.deezer.com/artist/7566/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 10630912,
+      "title": "20 #1's: Modern Hip-Hop",
+      "cover": "https://api.deezer.com/album/10630912/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/74d0e87587278690b888849d3d275f57/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/10630912/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

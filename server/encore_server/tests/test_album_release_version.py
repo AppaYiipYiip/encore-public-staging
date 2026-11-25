@@ -26,6 +26,7 @@ from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate
 from encore_server.fixture_names import fixture_name
 from tests.catalogue_fakes import RECORDED, RecordedDeezer, recorded_search
+from tests.test_album_finder import with_later_single
 from tests.test_album_pass import Catalogue as FakeCatalogue
 from tests.test_album_pass import finder, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 
@@ -103,10 +104,16 @@ def test_the_studio_song_is_on_the_studio_album_and_not_on_the_live_one_the_earl
     assert sorted(wanted_albums(ALWAYS_ON_TIME, found)) == sorted([PAIN_IS_LOVE, JA_RULE_LIVE]), (
         "the premise: both releases are asked"
     )
-    verdict = choose_release(ALWAYS_ON_TIME, found, albums(PAIN_IS_LOVE, JA_RULE_LIVE))
+    # (a single of the song beside the studio album since 25 Nov 2026: the live record is no second release family, so without one the album is a sole album)
+    verdict = choose_release(ALWAYS_ON_TIME, *with_later_single(found, albums(PAIN_IS_LOVE, JA_RULE_LIVE)))
     assert (verdict.outcome, verdict.reason) == ("matched", "matched")
     assert verdict.match is not None and (verdict.match.album, verdict.match.deezer_id) == ("Pain Is Love", "623714342")
-    assert {r.album_id: r.reason for r in verdict.releases} == {PAIN_IS_LOVE: "chosen", JA_RULE_LIVE: "release_version"}
+    assert {r.album_id: r.reason for r in verdict.releases} == {
+        PAIN_IS_LOVE: "chosen",
+        JA_RULE_LIVE: "release_version",
+        "9000001": "outranked",
+    }
+    assert choose_release(ALWAYS_ON_TIME, found, albums(PAIN_IS_LOVE, JA_RULE_LIVE)).reason == "sole_album"
 
 
 def test_a_studio_song_whose_only_release_is_a_live_album_is_a_re_askable_none_and_never_matched() -> None:
@@ -118,7 +125,8 @@ def test_a_studio_song_whose_only_release_is_a_live_album_is_a_re_askable_none_a
 
 def test_the_pass_stamps_the_studio_album_and_not_the_live_one(pdb: Database) -> None:  # noqa: F811
     ref = make_ref(pdb, "Always On Time", "Ja Rule", 244_000)
-    catalogue = FakeCatalogue({("Ja Rule", "Always On Time"): ja_rule_hits()}, albums(PAIN_IS_LOVE, JA_RULE_LIVE))
+    found, known = with_later_single(ja_rule_hits(), albums(PAIN_IS_LOVE, JA_RULE_LIVE))
+    catalogue = FakeCatalogue({("Ja Rule", "Always On Time"): found}, known)
     finder(pdb, catalogue).run_once()
     after = row_of(pdb, ref)
     assert (after["album"], after["identity_outcome"], after["deezer_id"]) == ("Pain Is Love", "matched", "623714342")
@@ -128,7 +136,9 @@ def test_a_song_that_is_itself_a_remix_may_take_the_remix_release_the_control() 
     """Opeth, `To Rid the Disease (Remixed)`, 381 s, on `Deliverance & Damnation Remixed`: the song's own title says remix, so a release that says it is no mismatch."""
     song = Song("Opeth", "To Rid the Disease (Remixed)", 381_000)
     found = copy.deepcopy(recorded_search("Opeth To Rid the Disease (Remixed)")["data"])
-    verdict = choose_release(song, found, albums(OPETH_REMIXED))
+    verdict = choose_release(
+        song, *with_later_single(found, albums(OPETH_REMIXED))
+    )  # a single beside it: no sole release (25 Nov 2026)
     assert (verdict.outcome, verdict.reason) == ("matched", "matched")
     assert verdict.match is not None and verdict.match.album == "Deliverance & Damnation Remixed"
 
@@ -154,7 +164,7 @@ def test_a_live_song_may_take_the_live_album() -> None:
     """DERIVED: the song and the hit both say `(Live)`: the live album is its release."""
     hit = hit_on(JA_RULE_LIVE)
     hit["title"] = "Always On Time (Live)"
-    verdict = choose_release(Song("Ja Rule", "Always On Time (Live)", 245_000), [hit], albums(JA_RULE_LIVE))
+    verdict = choose_release(Song("Ja Rule", "Always On Time (Live)", 245_000), *with_later_single([hit], albums(JA_RULE_LIVE)))
     assert (verdict.outcome, verdict.reason) == ("matched", "matched")
 
 
@@ -175,7 +185,7 @@ def test_the_labels_that_say_which_printing_it_is_do_not_refuse_a_release(label:
     """DERIVED: the studio album with each label added to its title."""
     answers = albums(PAIN_IS_LOVE)
     answers[PAIN_IS_LOVE]["album"]["title"] = f"Pain Is Love ({label})"
-    verdict = choose_release(ALWAYS_ON_TIME, [hit_on(PAIN_IS_LOVE)], answers)
+    verdict = choose_release(ALWAYS_ON_TIME, *with_later_single([hit_on(PAIN_IS_LOVE)], answers))
     assert (verdict.outcome, verdict.reason) == ("matched", "matched"), label
 
 

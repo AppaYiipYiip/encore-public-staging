@@ -1,0 +1,783 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/51694882",
+ "params": {},
+ "answer": {
+  "id": 51694882,
+  "title": "Hip Hop 2000",
+  "upc": "602567132547",
+  "link": "https://www.deezer.com/album/51694882",
+  "cover": "https://api.deezer.com/album/51694882/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Universal Music Enterprises",
+  "nb_tracks": 23,
+  "duration": 5895,
+  "fans": 61465,
+  "release_date": "2017-11-10",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/51694882/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 108420982,
+    "name": "Various Artists",
+    "link": "https://www.deezer.com/artist/108420982",
+    "picture": "https://api.deezer.com/artist/108420982/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 108420982,
+   "name": "Various Artists",
+   "picture": "https://api.deezer.com/artist/108420982/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/108420982/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 429125242,
+     "readable": true,
+     "title": "Beautiful",
+     "title_short": "Beautiful",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125242",
+     "duration": 298,
+     "rank": 477766,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3,
+      "name": "Snoop Dogg",
+      "tracklist": "https://api.deezer.com/artist/3/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125252,
+     "readable": true,
+     "title": "How We Do",
+     "title_short": "How We Do",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125252",
+     "duration": 235,
+     "rank": 317314,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125262,
+     "readable": true,
+     "title": "Like A Pimp",
+     "title_short": "Like A Pimp",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125262",
+     "duration": 255,
+     "rank": 521027,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 746,
+      "name": "David Banner",
+      "tracklist": "https://api.deezer.com/artist/746/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125272,
+     "readable": true,
+     "title": "Oh Boy",
+     "title_short": "Oh Boy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125272",
+     "duration": 204,
+     "rank": 295597,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 51,
+      "name": "Cam'ron",
+      "tracklist": "https://api.deezer.com/artist/51/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125282,
+     "readable": true,
+     "title": "It Wasn't Me",
+     "title_short": "It Wasn't Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125282",
+     "duration": 227,
+     "rank": 368825,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 461,
+      "name": "Shaggy",
+      "tracklist": "https://api.deezer.com/artist/461/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125292,
+     "readable": true,
+     "title": "Party Up",
+     "title_short": "Party Up",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125292",
+     "duration": 271,
+     "rank": 497025,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 267,
+      "name": "DMX",
+      "tracklist": "https://api.deezer.com/artist/267/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125302,
+     "readable": true,
+     "title": "Country Grammar (Hot Shit)",
+     "title_short": "Country Grammar (Hot Shit)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125302",
+     "duration": 289,
+     "rank": 337047,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 105,
+      "name": "Nelly",
+      "tracklist": "https://api.deezer.com/artist/105/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125312,
+     "readable": true,
+     "title": "In Da Club",
+     "title_short": "In Da Club",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125312",
+     "duration": 193,
+     "rank": 310359,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 66,
+      "name": "50 Cent",
+      "tracklist": "https://api.deezer.com/artist/66/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125322,
+     "readable": true,
+     "title": "What's Your Fantasy",
+     "title_short": "What's Your Fantasy",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125322",
+     "duration": 276,
+     "rank": 295515,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 78,
+      "name": "Ludacris",
+      "tracklist": "https://api.deezer.com/artist/78/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125332,
+     "readable": true,
+     "title": "Shake Ya Tailfeather (Radio Edit)",
+     "title_short": "Shake Ya Tailfeather",
+     "title_version": "(Radio Edit)",
+     "link": "https://www.deezer.com/track/429125332",
+     "duration": 297,
+     "rank": 464450,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 75533,
+      "name": "Murphy Lee",
+      "tracklist": "https://api.deezer.com/artist/75533/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125342,
+     "readable": true,
+     "title": "Hey Ma",
+     "title_short": "Hey Ma",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125342",
+     "duration": 230,
+     "rank": 272999,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 51,
+      "name": "Cam'ron",
+      "tracklist": "https://api.deezer.com/artist/51/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125352,
+     "readable": true,
+     "title": "Drop It Like It's Hot",
+     "title_short": "Drop It Like It's Hot",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125352",
+     "duration": 266,
+     "rank": 702410,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 3,
+      "name": "Snoop Dogg",
+      "tracklist": "https://api.deezer.com/artist/3/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125362,
+     "readable": true,
+     "title": "Always On Time",
+     "title_short": "Always On Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125362",
+     "duration": 243,
+     "rank": 485560,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125372,
+     "readable": true,
+     "title": "Wanna Get To Know You",
+     "title_short": "Wanna Get To Know You",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125372",
+     "duration": 267,
+     "rank": 264916,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2544,
+      "name": "G-Unit",
+      "tracklist": "https://api.deezer.com/artist/2544/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125382,
+     "readable": true,
+     "title": "Bunny Hop (Remix / Street)",
+     "title_short": "Bunny Hop",
+     "title_version": "(Remix / Street)",
+     "link": "https://www.deezer.com/track/429125382",
+     "duration": 237,
+     "rank": 157719,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2008381,
+      "name": "Da Entourage",
+      "tracklist": "https://api.deezer.com/artist/2008381/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125392,
+     "readable": true,
+     "title": "Ride Wit Me",
+     "title_short": "Ride Wit Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125392",
+     "duration": 291,
+     "rank": 462698,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 105,
+      "name": "Nelly",
+      "tracklist": "https://api.deezer.com/artist/105/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125402,
+     "readable": true,
+     "title": "Rollout (My Business)",
+     "title_short": "Rollout (My Business)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125402",
+     "duration": 296,
+     "rank": 224053,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 78,
+      "name": "Ludacris",
+      "tracklist": "https://api.deezer.com/artist/78/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125412,
+     "readable": true,
+     "title": "Lean Back",
+     "title_short": "Lean Back",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125412",
+     "duration": 251,
+     "rank": 374040,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2515,
+      "name": "Terror Squad",
+      "tracklist": "https://api.deezer.com/artist/2515/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125422,
+     "readable": true,
+     "title": "Welcome To Jamrock",
+     "title_short": "Welcome To Jamrock",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125422",
+     "duration": 214,
+     "rank": 381913,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 254,
+      "name": "Damian Marley",
+      "tracklist": "https://api.deezer.com/artist/254/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125432,
+     "readable": true,
+     "title": "P.I.M.P.",
+     "title_short": "P.I.M.P.",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125432",
+     "duration": 249,
+     "rank": 275120,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 66,
+      "name": "50 Cent",
+      "tracklist": "https://api.deezer.com/artist/66/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125442,
+     "readable": true,
+     "title": "Right Thurr",
+     "title_short": "Right Thurr",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125442",
+     "duration": 250,
+     "rank": 281918,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 735,
+      "name": "Chingy",
+      "tracklist": "https://api.deezer.com/artist/735/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125452,
+     "readable": true,
+     "title": "Oh I Think Dey Like Me",
+     "title_short": "Oh I Think Dey Like Me",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125452",
+     "duration": 274,
+     "rank": 216143,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 2624,
+      "name": "Dem Franchize Boyz",
+      "tracklist": "https://api.deezer.com/artist/2624/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 429125462,
+     "readable": true,
+     "title": "Go DJ",
+     "title_short": "Go DJ",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/429125462",
+     "duration": 282,
+     "rank": 258046,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 74309,
+      "name": "Lil Wayne",
+      "tracklist": "https://api.deezer.com/artist/74309/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 51694882,
+      "title": "Hip Hop 2000",
+      "cover": "https://api.deezer.com/album/51694882/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/b448b3ea65a447ea14a7bc0e6a0c6162/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/51694882/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

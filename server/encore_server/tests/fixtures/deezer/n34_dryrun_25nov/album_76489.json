@@ -1,0 +1,194 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/76489",
+ "params": {},
+ "answer": {
+  "id": 76489,
+  "title": "Hotel",
+  "upc": "828766258028",
+  "link": "https://www.deezer.com/album/76489",
+  "cover": "https://api.deezer.com/album/76489/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 132,
+  "genres": {
+   "data": [
+    {
+     "id": 132,
+     "name": "Pop",
+     "picture": "https://api.deezer.com/genre/132/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "J Records",
+  "nb_tracks": 4,
+  "duration": 1024,
+  "fans": 778,
+  "release_date": "1990-01-01",
+  "record_type": "ep",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/76489/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 2622,
+    "name": "Cassidy",
+    "link": "https://www.deezer.com/artist/2622",
+    "picture": "https://api.deezer.com/artist/2622/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 2622,
+   "name": "Cassidy",
+   "picture": "https://api.deezer.com/artist/2622/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/fccaf0f964651a3417ae520bc2a7c1af/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 600723,
+     "readable": true,
+     "title": "Hotel (feat. R.Kelly)",
+     "title_short": "Hotel (feat. R.Kelly)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/600723",
+     "duration": 247,
+     "rank": 333791,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 76489,
+      "title": "Hotel",
+      "cover": "https://api.deezer.com/album/76489/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/76489/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 600335,
+     "readable": true,
+     "title": "Hotel (Vacation) Remix (feat. R.Kelly & Trina)",
+     "title_short": "Hotel (Vacation) Remix (feat. R.Kelly & Trina)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/600335",
+     "duration": 346,
+     "rank": 125757,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 76489,
+      "title": "Hotel",
+      "cover": "https://api.deezer.com/album/76489/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/76489/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 600336,
+     "readable": true,
+     "title": "Take It (Dirty)",
+     "title_short": "Take It",
+     "title_version": "(Dirty)",
+     "link": "https://www.deezer.com/track/600336",
+     "duration": 184,
+     "rank": 48526,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 76489,
+      "title": "Hotel",
+      "cover": "https://api.deezer.com/album/76489/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/76489/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 600338,
+     "readable": true,
+     "title": "Hotel (feat. Kool Savas & R.Kelly)",
+     "title_short": "Hotel (feat. Kool Savas & R.Kelly)",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/600338",
+     "duration": 247,
+     "rank": 216989,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 2622,
+      "name": "Cassidy",
+      "tracklist": "https://api.deezer.com/artist/2622/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 76489,
+      "title": "Hotel",
+      "cover": "https://api.deezer.com/album/76489/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/787c64e34d3d7713b2dedab257a65813/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/76489/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

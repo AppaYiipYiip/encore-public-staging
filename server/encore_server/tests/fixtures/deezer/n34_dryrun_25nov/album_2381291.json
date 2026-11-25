@@ -1,0 +1,628 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/2381291",
+ "params": {},
+ "answer": {
+  "id": 2381291,
+  "title": "The Documentary",
+  "upc": "602498641453",
+  "link": "https://www.deezer.com/album/2381291",
+  "cover": "https://api.deezer.com/album/2381291/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Geffen",
+  "nb_tracks": 18,
+  "duration": 4206,
+  "fans": 1218,
+  "release_date": "2005-01-13",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/2381291/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 3,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 393,
+    "name": "The Game",
+    "link": "https://www.deezer.com/artist/393",
+    "picture": "https://api.deezer.com/artist/393/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 393,
+   "name": "The Game",
+   "picture": "https://api.deezer.com/artist/393/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/2ae3ca3551516cf84058ac22122658b3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 25017541,
+     "readable": true,
+     "title": "Intro To The Documentary",
+     "title_short": "Intro To The Documentary",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/25017541",
+     "duration": 33,
+     "rank": 33176,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017551,
+     "readable": true,
+     "title": "Westside Story (Album Version)",
+     "title_short": "Westside Story",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017551",
+     "duration": 224,
+     "rank": 43147,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017561,
+     "readable": true,
+     "title": "Dreams",
+     "title_short": "Dreams",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/25017561",
+     "duration": 287,
+     "rank": 108191,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017571,
+     "readable": true,
+     "title": "Hate It Or Love It (Album Version)",
+     "title_short": "Hate It Or Love It",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017571",
+     "duration": 209,
+     "rank": 216046,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017581,
+     "readable": true,
+     "title": "Higher (Album Version)",
+     "title_short": "Higher",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017581",
+     "duration": 245,
+     "rank": 119535,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017591,
+     "readable": true,
+     "title": "How We Do (Album Version)",
+     "title_short": "How We Do",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017591",
+     "duration": 235,
+     "rank": 227531,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017601,
+     "readable": true,
+     "title": "Don't Need Your Love (Album Version)",
+     "title_short": "Don't Need Your Love",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017601",
+     "duration": 266,
+     "rank": 101589,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017611,
+     "readable": true,
+     "title": "Church For Thugs (Album Version)",
+     "title_short": "Church For Thugs",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017611",
+     "duration": 241,
+     "rank": 54866,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017621,
+     "readable": true,
+     "title": "Put You On The Game (Album Version)",
+     "title_short": "Put You On The Game",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017621",
+     "duration": 254,
+     "rank": 53440,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017631,
+     "readable": true,
+     "title": "Start From Scratch (Album Version)",
+     "title_short": "Start From Scratch",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017631",
+     "duration": 247,
+     "rank": 43889,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017641,
+     "readable": true,
+     "title": "The Documentary (Album Version)",
+     "title_short": "The Documentary",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017641",
+     "duration": 251,
+     "rank": 25217,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017651,
+     "readable": true,
+     "title": "Runnin' (Album Version)",
+     "title_short": "Runnin'",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017651",
+     "duration": 266,
+     "rank": 39676,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017661,
+     "readable": true,
+     "title": "No More Fun And Games (Album Version)",
+     "title_short": "No More Fun And Games",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017661",
+     "duration": 158,
+     "rank": 36631,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017671,
+     "readable": true,
+     "title": "We Ain't (Album Version)",
+     "title_short": "We Ain't",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017671",
+     "duration": 287,
+     "rank": 54620,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017681,
+     "readable": true,
+     "title": "Where I'm From (Album Version)",
+     "title_short": "Where I'm From",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017681",
+     "duration": 188,
+     "rank": 65799,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017691,
+     "readable": true,
+     "title": "Special (Album Version)",
+     "title_short": "Special",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017691",
+     "duration": 237,
+     "rank": 31453,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017701,
+     "readable": true,
+     "title": "Don't Worry (Album Version)",
+     "title_short": "Don't Worry",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017701",
+     "duration": 251,
+     "rank": 20145,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 25017711,
+     "readable": true,
+     "title": "Like Father, Like Son (Album Version)",
+     "title_short": "Like Father, Like Son",
+     "title_version": "(Album Version)",
+     "link": "https://www.deezer.com/track/25017711",
+     "duration": 327,
+     "rank": 46289,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 393,
+      "name": "The Game",
+      "tracklist": "https://api.deezer.com/artist/393/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 2381291,
+      "title": "The Documentary",
+      "cover": "https://api.deezer.com/album/2381291/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/acc59621411f8e520d933e786e03eb8e/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/2381291/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

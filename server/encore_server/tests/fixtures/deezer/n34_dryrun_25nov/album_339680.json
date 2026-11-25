@@ -1,0 +1,566 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/339680",
+ "params": {},
+ "answer": {
+  "id": 339680,
+  "title": "Greatest Hits",
+  "upc": "093624976042",
+  "link": "https://www.deezer.com/album/339680",
+  "cover": "https://api.deezer.com/album/339680/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 85,
+  "genres": {
+   "data": [
+    {
+     "id": 85,
+     "name": "Alternative",
+     "picture": "https://api.deezer.com/genre/85/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Warner Records",
+  "nb_tracks": 16,
+  "duration": 3985,
+  "fans": 30342,
+  "release_date": "2003-11-17",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/339680/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 7,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 182,
+    "name": "Red Hot Chili Peppers",
+    "link": "https://www.deezer.com/artist/182",
+    "picture": "https://api.deezer.com/artist/182/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 182,
+   "name": "Red Hot Chili Peppers",
+   "picture": "https://api.deezer.com/artist/182/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/238f5524a401dfdd5cac685f0f7989bd/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 3599747,
+     "readable": true,
+     "title": "Under the Bridge",
+     "title_short": "Under the Bridge",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599747",
+     "duration": 264,
+     "rank": 270875,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599748,
+     "readable": true,
+     "title": "Give It Away",
+     "title_short": "Give It Away",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599748",
+     "duration": 282,
+     "rank": 180792,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599749,
+     "readable": true,
+     "title": "Californication",
+     "title_short": "Californication",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599749",
+     "duration": 329,
+     "rank": 346676,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599750,
+     "readable": true,
+     "title": "Scar Tissue",
+     "title_short": "Scar Tissue",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599750",
+     "duration": 215,
+     "rank": 330926,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599751,
+     "readable": true,
+     "title": "Soul to Squeeze",
+     "title_short": "Soul to Squeeze",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599751",
+     "duration": 289,
+     "rank": 203908,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599752,
+     "readable": true,
+     "title": "Otherside",
+     "title_short": "Otherside",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599752",
+     "duration": 255,
+     "rank": 300129,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599753,
+     "readable": true,
+     "title": "Suck My Kiss",
+     "title_short": "Suck My Kiss",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599753",
+     "duration": 215,
+     "rank": 162541,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 3,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599754,
+     "readable": true,
+     "title": "By the Way",
+     "title_short": "By the Way",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599754",
+     "duration": 215,
+     "rank": 225324,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599755,
+     "readable": true,
+     "title": "Parallel Universe",
+     "title_short": "Parallel Universe",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599755",
+     "duration": 269,
+     "rank": 163997,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599756,
+     "readable": true,
+     "title": "Breaking the Girl",
+     "title_short": "Breaking the Girl",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599756",
+     "duration": 295,
+     "rank": 162559,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599757,
+     "readable": true,
+     "title": "My Friends",
+     "title_short": "My Friends",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599757",
+     "duration": 248,
+     "rank": 196532,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599758,
+     "readable": true,
+     "title": "Higher Ground",
+     "title_short": "Higher Ground",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599758",
+     "duration": 203,
+     "rank": 110668,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599759,
+     "readable": true,
+     "title": "Universally Speaking",
+     "title_short": "Universally Speaking",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599759",
+     "duration": 256,
+     "rank": 195846,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599760,
+     "readable": true,
+     "title": "Road Trippin'",
+     "title_short": "Road Trippin'",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599760",
+     "duration": 204,
+     "rank": 202567,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599761,
+     "readable": true,
+     "title": "Fortune Faded",
+     "title_short": "Fortune Faded",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599761",
+     "duration": 201,
+     "rank": 165144,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 3599762,
+     "readable": true,
+     "title": "Save the Population",
+     "title_short": "Save the Population",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/3599762",
+     "duration": 245,
+     "rank": 118804,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 6,
+     "explicit_content_cover": 0,
+     "artist": {
+      "id": 182,
+      "name": "Red Hot Chili Peppers",
+      "tracklist": "https://api.deezer.com/artist/182/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 339680,
+      "title": "Greatest Hits",
+      "cover": "https://api.deezer.com/album/339680/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/47166f863c02270ecc7f606a334561d7/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/339680/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

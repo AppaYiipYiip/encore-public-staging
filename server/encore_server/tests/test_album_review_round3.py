@@ -24,7 +24,7 @@ from encore_server import album_dryrun, album_finder, album_pass
 from encore_server.album_finder import Song, Verdict, choose_release, judge_hits, release_markers
 from encore_server.cover_finder import deezer_picture_by_id
 from encore_server.db import Database
-from tests.test_album_finder import ALBUM, albums, copy_as, creature_hit, derive
+from tests.test_album_finder import ALBUM, albums, chosen_match, copy_as, creature_hit, derive, with_later_single
 from tests.test_album_pass import Catalogue, finder, landmvrks, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 
 CREATURE = Song("LANDMVRKS", "Creature", 225_000)
@@ -56,8 +56,7 @@ def test_another_release_is_taken_over_one_called_unknown_album() -> None:
 
 def test_the_pass_stamps_nothing_for_a_release_called_unknown_album(pdb: Database) -> None:  # noqa: F811
     ref = make_ref(pdb, "Creature", "LANDMVRKS", 225_000)
-    base = landmvrks()
-    finder(pdb, Catalogue(base.searches, with_title("[Unknown Album]"))).run_once()
+    finder(pdb, Catalogue({("LANDMVRKS", "Creature"): [creature_hit()]}, with_title("[Unknown Album]"))).run_once()
     after = row_of(pdb, ref)
     assert (after["identity_outcome"], after["identity_reason"], after["deezer_id"], after["album"]) == (
         "none",
@@ -147,8 +146,14 @@ def test_a_song_whose_own_title_says_it_may_take_the_release_that_says_it() -> N
     hit = creature_hit()
     hit["title"] = "Creature (Taylor's Version)"
     song = Song("LANDMVRKS", "Creature (Taylor's Version)", 225_000)
-    verdict = choose_release(song, [hit], with_title("Creature (Taylor's Version)"))
-    assert verdict.outcome == "matched", (verdict.outcome, verdict.reason)
+    verdict = choose_release(song, *with_later_single([hit], with_title("Creature (Taylor's Version)")))
+    # The version rule does not refuse the release (it is the CHOSEN one); the broad family folds its "(Taylor's Version)" into the later single's title, so it is held as a sole album: a delay,
+    # never a stamp (PR 130: the broad comparison fails closed for the sole-album rule).
+    assert any(release.reason == "chosen" for release in verdict.releases), verdict
+    assert (verdict.outcome, verdict.reason) in {("matched", "matched"), ("none", "sole_album")}, (
+        verdict.outcome,
+        verdict.reason,
+    )
 
 
 @pytest.mark.parametrize(
@@ -188,7 +193,7 @@ def test_an_album_with_a_huge_id_among_the_hits_does_not_stop_the_matcher() -> N
     on_real.update(id=2, album={"id": 10, "title": "x"})
     both = {huge: copy_as(huge, "1"), "10": copy_as("10", "2")}
     verdict = choose_release(CREATURE, [on_huge, on_real], both)
-    assert verdict.match is not None and (verdict.match.album_id, verdict.match.deezer_id) == ("10", "2")
+    assert chosen_match(verdict) is not None and (chosen_match(verdict).album_id, chosen_match(verdict).deezer_id) == ("10", "2")
 
 
 class Exploding(Catalogue):

@@ -1,0 +1,194 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/160871",
+ "params": {},
+ "answer": {
+  "id": 160871,
+  "title": "Wonderful",
+  "upc": "602498648896",
+  "link": "https://www.deezer.com/album/160871",
+  "cover": "https://api.deezer.com/album/160871/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/1000x1000-000000-80-0-0.jpg",
+  "genre_id": 116,
+  "genres": {
+   "data": [
+    {
+     "id": 116,
+     "name": "Rap/Hip Hop",
+     "picture": "https://api.deezer.com/genre/116/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "I.G. Records, Inc./Universal Records",
+  "nb_tracks": 4,
+  "duration": 1056,
+  "fans": 2462,
+  "release_date": "2004-01-01",
+  "record_type": "ep",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/160871/tracks",
+  "explicit_lyrics": true,
+  "explicit_content_lyrics": 4,
+  "explicit_content_cover": 2,
+  "contributors": [
+   {
+    "id": 138,
+    "name": "Ja Rule",
+    "link": "https://www.deezer.com/artist/138",
+    "picture": "https://api.deezer.com/artist/138/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 138,
+   "name": "Ja Rule",
+   "picture": "https://api.deezer.com/artist/138/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/7083577612567e2199a60ca1369e4cd3/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 1568093,
+     "readable": true,
+     "title": "Wonderful (12\" Version)",
+     "title_short": "Wonderful",
+     "title_version": "(12\" Version)",
+     "link": "https://www.deezer.com/track/1568093",
+     "duration": 272,
+     "rank": 251171,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 160871,
+      "title": "Wonderful",
+      "cover": "https://api.deezer.com/album/160871/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/160871/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1568096,
+     "readable": true,
+     "title": "Caught Up (12\" Version)",
+     "title_short": "Caught Up",
+     "title_version": "(12\" Version)",
+     "link": "https://www.deezer.com/track/1568096",
+     "duration": 269,
+     "rank": 75002,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 160871,
+      "title": "Wonderful",
+      "cover": "https://api.deezer.com/album/160871/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/160871/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1568100,
+     "readable": true,
+     "title": "Wonderful (Instrumental)",
+     "title_short": "Wonderful",
+     "title_version": "(Instrumental)",
+     "link": "https://www.deezer.com/track/1568100",
+     "duration": 272,
+     "rank": 128449,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 160871,
+      "title": "Wonderful",
+      "cover": "https://api.deezer.com/album/160871/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/160871/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 1568102,
+     "readable": true,
+     "title": "Always On Time",
+     "title_short": "Always On Time",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/1568102",
+     "duration": 243,
+     "rank": 157064,
+     "explicit_lyrics": true,
+     "explicit_content_lyrics": 1,
+     "explicit_content_cover": 2,
+     "artist": {
+      "id": 138,
+      "name": "Ja Rule",
+      "tracklist": "https://api.deezer.com/artist/138/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 160871,
+      "title": "Wonderful",
+      "cover": "https://api.deezer.com/album/160871/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/f1270050dfdb2ee6593e0f8faac41006/1000x1000-000000-80-0-0.jpg",
+      "tracklist": "https://api.deezer.com/album/160871/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

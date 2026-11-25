@@ -1,0 +1,104 @@
+{
+ "recorded": "2026-11-25",
+ "path": "/album/320868067/tracks",
+ "params": {
+  "limit": "100"
+ },
+ "answer": {
+  "data": [
+   {
+    "id": 1760963077,
+    "readable": true,
+    "title": "I Won't Be Home For Christmas",
+    "title_short": "I Won't Be Home For Christmas",
+    "title_version": "",
+    "isrc": "USCR29757153",
+    "link": "https://www.deezer.com/track/1760963077",
+    "duration": 196,
+    "track_position": 1,
+    "disk_number": 1,
+    "rank": 448889,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 409,
+     "name": "blink-182",
+     "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1760963087,
+    "readable": true,
+    "title": "All The Small Things",
+    "title_short": "All The Small Things",
+    "title_version": "",
+    "isrc": "USMC19959123",
+    "link": "https://www.deezer.com/track/1760963087",
+    "duration": 172,
+    "track_position": 2,
+    "disk_number": 1,
+    "rank": 172656,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 409,
+     "name": "blink-182",
+     "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1760963097,
+    "readable": true,
+    "title": "Josie",
+    "title_short": "Josie",
+    "title_version": "",
+    "isrc": "USCR29752443",
+    "link": "https://www.deezer.com/track/1760963097",
+    "duration": 199,
+    "track_position": 3,
+    "disk_number": 1,
+    "rank": 89072,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 409,
+     "name": "blink-182",
+     "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   },
+   {
+    "id": 1760963107,
+    "readable": true,
+    "title": "Please Take Me Home",
+    "title_short": "Please Take Me Home",
+    "title_version": "",
+    "isrc": "USMC10110883",
+    "link": "https://www.deezer.com/track/1760963107",
+    "duration": 185,
+    "track_position": 4,
+    "disk_number": 1,
+    "rank": 72501,
+    "explicit_lyrics": false,
+    "explicit_content_lyrics": 0,
+    "explicit_content_cover": 2,
+    "artist": {
+     "id": 409,
+     "name": "blink-182",
+     "tracklist": "https://api.deezer.com/artist/409/top?limit=50",
+     "type": "artist"
+    },
+    "type": "track"
+   }
+  ],
+  "total": 4
+ }
+}

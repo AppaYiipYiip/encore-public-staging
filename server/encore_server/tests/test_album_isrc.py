@@ -17,7 +17,7 @@ import pytest
 from encore_server import album_dryrun
 from encore_server.album_finder import Song, choose_release, judge_hits
 from encore_server.db import Database
-from tests.test_album_finder import ALBUM, albums, creature_hit
+from tests.test_album_finder import ALBUM, albums, creature_hit, with_later_single
 from tests.test_album_pass import Catalogue, finder, landmvrks, make_ref, pdb, row_of  # noqa: F401 - `pdb` is a fixture
 
 THE_RECORDING = "DEYO62300153"  # the recorded ISRC of "Creature" on the album (and on the single)
@@ -78,9 +78,10 @@ def test_a_search_row_that_carries_the_other_isrc_is_refused_at_the_hit_and_the_
 
 
 def test_the_same_isrc_still_matches() -> None:
-    verdict = choose_release(creature(THE_RECORDING), [creature_hit()], albums(ALBUM))
+    found, both = with_later_single([creature_hit()], albums(ALBUM))  # a single beside the album: no sole release (25 Nov 2026)
+    verdict = choose_release(creature(THE_RECORDING), found, both)
     assert (verdict.outcome, verdict.match is not None and verdict.match.isrc) == ("matched", THE_RECORDING)
-    assert choose_release(creature(None), [creature_hit()], albums(ALBUM)).outcome == "matched"
+    assert choose_release(creature(None), found, both).outcome == "matched"
 
 
 # ------------------------------------------------------------------------------------------------------------------ the pass
@@ -150,7 +151,10 @@ def test_a_song_that_holds_an_isrc_is_not_matched_with_the_catalogue_entry_of_an
     other = creature_hit()
     other.update(id=3116792060, isrc=ANOTHER)
     ref = make_ref(pdb, "Creature", "LANDMVRKS", 225_000, isrc=THE_RECORDING)
-    catalogue = Catalogue({("LANDMVRKS", "Creature"): [other, creature_hit()]}, albums(ALBUM))
+    found, both = with_later_single(
+        [creature_hit(), other], albums(ALBUM)
+    )  # the clean row first: the derived single takes its ISRC
+    catalogue = Catalogue({("LANDMVRKS", "Creature"): found}, both)
     finder(pdb, catalogue).run_once()
     after = row_of(pdb, ref)
     assert (after["identity_outcome"], after["deezer_id"], after["isrc"]) == ("matched", "3116792061", THE_RECORDING)
