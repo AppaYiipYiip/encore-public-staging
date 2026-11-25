@@ -427,6 +427,9 @@ def log_pair(conn: sqlite3.Connection, ref_id: str, row: sqlite3.Row, verdict: V
 #: stall a keep behind the repair's pass)"), for ONE call and in all for the whole question (the search and each album's answer share it). A keep that runs out of time is a
 #: keep without an album, exactly as before slice 3, and remembers nothing; the pass of slice 2 and the repair of slice 5 place the song later. PRICE, named: while the gate is busy
 #: (the hourly pass asks at the same pace) a keep may stay in `Singles` that a quieter moment would have filed under its album; a miss is re-askable, a wrong album is not.
+#: HONEST BOUND: the wait limits the turn at the gate and each album answer, NOT a request that has been sent (a background request has its own 8 s timeout), so a SLOW catalogue can
+#: hold a keep for the budget plus one request's timeout; an UNREACHABLE one (down, resting, switched off, refused) fails at once. Building a hard deadline was not done: it costs a
+#: thread that outlives the keep, and the bound is short.
 KEEP_CALL_WAIT_S = 10.0
 KEEP_BUDGET_S = 10.0
 
@@ -457,7 +460,7 @@ class KeepAsker:
 
     The calls are the caller's (`search(artist, title, wait_s)`, `album(id, wait_s)`: a test gives recorded ones; [on] gives the installed catalogue's, as background turns). Each call
     waits at most [call_wait_s], and the whole question [budget_s]: the time left is what a call is given, and a call after the time is spent is "could not ask". A keep is a
-    background job, but a person may be waiting for the file: the question never costs a keep more than its budget."""
+    background job, but a person may be waiting for the file: the question costs a keep its budget at most PLUS one request's own timeout (the wait bounds the turn at the gate and each album answer, not a request already sent)."""
 
     def __init__(
         self,

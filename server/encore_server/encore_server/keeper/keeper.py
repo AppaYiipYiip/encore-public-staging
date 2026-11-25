@@ -329,8 +329,8 @@ class Keeper:
         album, the track and the year, and is never filed under "Singles" to be moved later. The ref is ALWAYS read again after the question, whatever it came to: the pass may have stamped the song while it was asked (a `not_wanted` or `skipped` answer).
 
         **The permanence rules.** The question is `album_pass.KeepAsker`'s: the very selection, matcher and write rule of the album pass, so a keep files a song under an album
-        ONLY on a `matched` outcome the pass would have written too, and never rewrites an album the ref has. **A catalogue that cannot be asked, or any failure, never delays or
-        stops the keep**: it goes on exactly as it did before, without an album and with nothing remembered, and the pass of slice 2 (and the repair of slice 5) place the song later."""
+        ONLY on a `matched` outcome the pass would have written too, and never rewrites an album the ref has. **A catalogue that cannot be asked, or any failure, never stops the
+        keep** (an unreachable one fails at once; a slow one can delay it by the question's budget plus one request's own timeout): it goes on exactly as it did before, without an album and with nothing remembered, and the pass of slice 2 (and the repair of slice 5) place the song later."""
         if self._identify is None:
             return ref, None
         try:
