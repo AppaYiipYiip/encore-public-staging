@@ -394,7 +394,7 @@ class Report:
             "no_album_on_hit": "the hit names no album",
             "no_eligible_release": "no release of the hits is by the song's artist and an album, EP or single",
             "release_version_mismatch": "the only releases are live, remix or other-version records of a song that is not",
-            "single_only": "the only release of the hits is a SINGLE: never stamped (permanent; eight hits cannot prove no album carries it); the discography round is its remedy",
+            "single_only": "the only release of the hits is a SINGLE: never stamped (permanent; eight hits cannot prove no album carries it); an album that carries it is looked for in the artist's discography (N-48); a stamp of the single itself is a later item (N-51)",
             "isrc_differs": "the names agree and the catalogue's ISRC is another recording's",
         }
         for cause, count in sorted(causes.items(), key=lambda item: (-item[1], item[0])):

@@ -89,7 +89,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 23 | N-44 | Behind the scenes: a wrong song from the artist's channel is not accepted | M | todo | P2-25 | 14 to 28 |
 | 24 | N-46 | Behind the scenes: the phone compares names with the same fold | M | todo | none | 15 to 30 |
 | 25 | N-47 | Behind the scenes: two songs are merged only on a file the music server still lists | M | built | none | 15 to 30 |
-| 26 | N-48 | Behind the scenes: songs left at a single get their real album from the artist's discography | M | todo | N-34 | 17 to 32 |
+| 26 | N-48 | Behind the scenes: songs the album pass held back get their album from the artist's discography | M | todo | N-34 | 17 to 32 |
 | 27 | N-49 | Behind the scenes: the encore command no longer goes silent on a stopped server | S | built | none | 16 to 32 |
 | 28 | P1-26 | An imported song without a picture shows YouTube's thumbnail, not a letter | S | built | none | 16 to 32 |
 | 29 | P1-10 | Covers show everywhere, also when you are offline | M | built | P1-26 | 16 to 32 |
@@ -209,7 +209,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 143 | N-01 | Share a song, album or playlist as a link | M | todo | none | 102 to 204 |
 | 144 | N-02 | Export a playlist as a file | S | todo | none | 103 to 205 |
 
-**Later** (25 items: future work to keep in mind and not bother with now, D-58; no estimate)
+**Later** (27 items: future work to keep in mind and not bother with now, D-58; no estimate)
 
 | Item | What | Size | Needs |
 |------|------|------|-------|
@@ -238,6 +238,8 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | N-36 | Behind the scenes: the one-time repair of songs in other alphabets is deleted | S | P2-25 |
 | N-37 | Fix an imported playlist by reading its link again | M | P2-25 |
 | N-41 | The app speaks Arabic first (localisation) | L | none |
+| N-50 | Behind the scenes: a song's year comes from a measured rule | M | N-48 |
+| N-51 | Behind the scenes: single-only songs are filed under their single | M | N-48 |
 
 **Done** (26 items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)
 
