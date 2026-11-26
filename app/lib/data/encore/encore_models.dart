@@ -515,6 +515,10 @@ class EncoreInfo {
   /// find out (docs/17 "Versions").
   bool get hasKeepAsk => features.contains('keep-ask');
 
+  /// The server pushes `import.progress` when it STORES a song of an import, not only when it matches one (N-43), so the phone need not ask how an import goes every
+  /// few seconds. A server that does not list this still moves `kept` silently: the phone keeps asking there.
+  bool get hasImportKept => features.contains('import-kept');
+
   /// `POST refs/unavailable` also takes ref ids (`{"ids": [...]}`, B-128): the rows of the phone's own library are asked about by their exact identity.
   /// An N-13 server before that answers such a question with a 400, so the phone sends it only where this is listed (docs/17 "Versions").
   bool get hasUnavailableIds => features.contains('unavailable-ids');

@@ -894,7 +894,7 @@ def choose_release(
         # STOP-GAP(N-34 year): the year is NOT written by a stamp. The catalogue's dates of old releases are reissue dates and year-only placeholders (Weathered 2009, The Invisible Band 2009,
         # Contraband 1990-01-01) and no rule inside the hits can tell them from the real one; a wrong year is as permanent as a wrong album and reaches the Host's disk through the keeper's tags.
         # PRICE: a song stamped here has no year until a year rule exists. The artist's discography does NOT give it (measured 26 Nov 2026, the notes of N-48: its dates are the same reissue dates, Weathered 2009,
-        # The Invisible Band 2009). The ISRC's year digits (the year the recording was registered) were right in those three test cases and within a year of the catalogue's date for 91 of 112 songs, but
+        # The Invisible Band 2009). The ISRC's year digits (the year the recording was registered) were right in those three test cases and within a year of the catalogue's date for 83 of 101 songs, but
         # that sample holds no recording older than 1990, and a stamp's ISRC can be a re-registration (the chosen release's own track): a CANDIDATE, not a rule. Removal trigger and task: item N-50 (later), a year rule
         # measured on a labelled set that includes pre-1990 recordings and re-registered ISRCs.
         # The date stays in `release_date` for the report.
@@ -918,7 +918,7 @@ def choose_release(
     # `Buy U A Drank`). A stamp is PERMANENT and the later rounds (the artist's discography, a better rule) only ask `none` and `held` again, so a single stamped here can never be
     # corrected; and the eight hits of a search cannot prove that no album carries the recording. The song is a re-askable `none`. EPs stay accepted; an album that wins over an
     # earlier single is decided above (the window). **The cost is a delay**: the song stays in "Songs without an album" until the discography round finds an album that carries the recording
-    # (5 of the 32 such songs on 26 Nov 2026; for the other 27 none does, and a stamp of the single itself is a later item, N-51: a stamp is never asked again and a single is often followed by its album).
+    # (3 of the 32 such songs on 26 Nov 2026; for 27 more none does, and a stamp of the single itself is a later item, N-51: a stamp is never asked again and a single is often followed by its album).
     if release.record_type == _SINGLE:
         return Verdict(
             "none",
@@ -946,7 +946,7 @@ def choose_release(
         # the song (a compilation, a re-record). A stamp is permanent and a `none` is asked again, so doubt goes to `none`.
         # **STOP-GAP(N-34 date decided): the cost is a DELAY, and a correct stamp is delayed with the wrong ones.** A song whose original is the earliest release but whose artist has
         # another album or EP among the hits (a compilation with no telling word, a re-recording, a "Papercuts") stays in "Songs without an album", asked again every 7 days. Removal trigger
-        # and task: the artist's discography (item N-48) ends the delay where ONE release family carries the recording (74 of the 135 held songs on 26 Nov 2026) and these rules stay as the check under
+        # and task: the artist's discography (item N-48) ends the delay where ONE release family carries the recording under the strict 3 s AND the loose 20 s (63 of the 135 held songs on 26 Nov 2026) and these rules stay as the check under
         # it; it cannot say which of two families came first (the catalogue's dates are reissue dates), and a compilation with fresh ISRCs still keeps In the End, Numb and Breaking the Habit held.
         # Reminder: the dry run's report names both reasons and their cost. The same STOP-GAP covers `sole_album`.
         withhold = _doubted_by_the_dates(release, [known[ident] for ident in eligible if ident != chosen])
