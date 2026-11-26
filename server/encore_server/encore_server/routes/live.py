@@ -13,6 +13,7 @@ from .. import (
 )
 from ..auth import (
     hash_token,
+    web_session_over,
 )
 from ..ids import now_ms
 from ..live import END
@@ -38,12 +39,13 @@ async def live(websocket: WebSocket) -> None:
             return
         with svc.db.read() as conn:
             row = conn.execute(
-                "SELECT d.id AS device, d.person AS person FROM device d JOIN person p ON p.id = d.person"
+                "SELECT d.id AS device, d.person AS person, d.kind AS kind, d.created_at AS created, d.last_seen AS seen"
+                " FROM device d JOIN person p ON p.id = d.person"
                 " WHERE d.token_hash = ? AND d.revoked_at IS NULL AND p.locked = 0",
                 (hash_token(token),),
             ).fetchone()
             cursor = library.latest_cursor(conn, row["person"]) if row else 0
-        if row is None:
+        if row is None or (row["kind"] == "web" and web_session_over(row["created"], row["seen"], now_ms())):
             await websocket.close(code=4401)
             return
     except (TimeoutError, ValueError, WebSocketDisconnect):

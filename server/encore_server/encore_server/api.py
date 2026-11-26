@@ -57,6 +57,7 @@ from .notifications import Notifications
 from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
 from .ref_janitor import RefJanitor
+from .routes import admin_site as admin_site_routes
 from .routes import catalogue as catalogue_routes
 from .routes import imports as imports_routes
 from .routes import info as info_routes
@@ -384,12 +385,17 @@ def create_app(
         imports_routes,
         playback_routes,
         catalogue_routes,
+        admin_site_routes,
     ):
         app.include_router(group.router)
     app.add_api_route("/encore/stream/{ref_id}", media_routes.stream, methods=["GET", "HEAD"])
     app.add_api_route("/encore/cover/{cover_id}", media_routes.cover, methods=["GET", "HEAD"])
     # Before the music server's catch-all below: an invitation link must never reach it (D-39).
     app.add_api_route("/encore/join/{code}", people_routes.join_page, methods=["GET", "HEAD"], include_in_schema=False)
+    # The admin site (docs/36 section 2): under /encore/, before the music server's catch-all, a 404 to a public request. /admin is the address a Host is told to type.
+    app.add_api_route("/encore/admin", admin_site_routes.admin_page, methods=["GET", "HEAD"], include_in_schema=False)
+    app.add_api_route("/encore/web/{path:path}", admin_site_routes.web_file, methods=["GET", "HEAD"], include_in_schema=False)
+    app.add_api_route("/admin", admin_site_routes.short_admin, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_websocket_route("/encore/live", live_routes.live)
     gateway.mount(
         app, settings.navidrome_url, client=gateway_client, public=is_public_request, authorize_public=authorize_public_subsonic
