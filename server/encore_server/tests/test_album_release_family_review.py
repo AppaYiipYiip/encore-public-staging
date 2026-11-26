@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from encore_server.album_finder import broad_release_family, choose_release, release_family
+from encore_server.album_finder import broad_release_family, broadly_the_same_release, choose_release, release_family
 from tests.album_world import Rel, world
 
 NEVER_EMPTY = [
@@ -51,9 +51,9 @@ def test_a_symbol_title_and_its_labelled_edition_are_one_family(family) -> None:
 
 
 def test_a_year_with_a_label_is_the_year_for_the_broad_comparison() -> None:
-    assert (
-        broad_release_family("2001 Remastered") == broad_release_family("2001 (Expanded Edition)") == broad_release_family("2001")
-    )
+    assert broadly_the_same_release("2001 Remastered", "2001 (Expanded Edition)")
+    assert broadly_the_same_release("2001 (Expanded Edition)", "2001")
+    assert broadly_the_same_release("2001 Remastered", "2001")
 
 
 @pytest.mark.parametrize(
@@ -69,8 +69,9 @@ def test_a_year_with_a_label_is_the_year_for_the_broad_comparison() -> None:
     ],
 )
 def test_an_edition_label_the_narrow_list_has_never_seen_is_the_same_release_for_the_broad_comparison(label: str) -> None:
-    assert broad_release_family(f"Harbour ({label})") == broad_release_family("Harbour")
-    assert broad_release_family(f"Harbour - {label}") == broad_release_family("Harbour")
+    assert broadly_the_same_release(f"Harbour ({label})", "Harbour")
+    assert broadly_the_same_release(f"Harbour - {label}", "Harbour")
+    assert broadly_the_same_release(f"Harbour {label}", "Harbour"), "unbracketed: the label is extra words after the plain title"
 
 
 def test_an_edition_label_the_narrow_list_has_never_seen_is_a_rival_for_the_narrow_comparison() -> None:
@@ -126,3 +127,43 @@ def test_the_plain_title_is_the_name_of_the_album_when_an_edition_ties_it() -> N
     )
     verdict = choose_release(song, hits, answers)
     assert verdict.outcome == "matched" and verdict.match is not None and verdict.match.album == "By the Way"
+
+
+# ------------------------------------------------------------------------------------------------ the three failures the property test found (PR 132, 26 Nov 2026), pinned
+
+
+def test_an_unbracketed_label_the_lists_have_never_seen_does_not_make_a_second_release_for_the_sole_album_test() -> None:
+    """`Harbour` (album) beside `Harbour Japanese Version` (single): the narrow strip takes only the last edition word and leaves "harbour japanese"; the broad comparison reads it as an edition."""
+    song, hits, answers = world(
+        Rel("1", "Harbour", "album", "1998-01-01"), Rel("2", "Harbour Japanese Version", "single", "1998-01-01")
+    )
+    verdict = choose_release(song, hits, answers)
+    assert (verdict.outcome, verdict.reason) == ("none", "sole_album"), verdict
+
+
+def test_the_words_of_the_title_are_never_eaten_by_the_edition_label_after_them() -> None:
+    """`Gold Harbour 10th Anniversary Edition` was the key `gold`, not `gold harbour`: a run of words ending in an edition word ate the title's own, and one release became two."""
+    song, hits, answers = world(
+        Rel("1", "Gold Harbour", "album", None), Rel("2", "Gold Harbour 10th Anniversary Edition", "album", None)
+    )
+    verdict = choose_release(song, hits, answers)
+    assert verdict.outcome != "matched", verdict
+    assert broadly_the_same_release("Gold Harbour 10th Anniversary Edition", "Gold Harbour")
+
+
+def test_two_albums_that_differ_only_in_a_symbol_are_two_releases_whatever_label_they_carry() -> None:
+    """`÷ (Tour Edition)` and `+ (Tour Edition)` were both the key `tour` (the release key drops symbols and the unseen label's suffix): a rival disappeared and a stamp went through."""
+    assert release_family("÷ (Tour Edition)") != release_family("+ (Tour Edition)")
+    song, hits, answers = world(
+        Rel("1", "÷ (Tour Edition)", "album", "2005-01-01"),
+        Rel("2", "+ (Tour Edition)", "album", "2010-02-02"),
+        Rel("3", "Hit Single", "single", "2012-01-01"),
+    )
+    verdict = choose_release(song, hits, answers)
+    assert (verdict.outcome, verdict.reason) == ("none", "date_decided"), verdict
+
+
+def test_two_different_unseen_labels_of_one_title_are_one_release_and_a_title_that_merely_starts_with_it_is_not() -> None:
+    assert broadly_the_same_release("Harbour Deluxe Edition", "Harbour Japanese Version")
+    assert broadly_the_same_release("÷", "÷ Japanese Version")
+    assert not broadly_the_same_release("Harbour", "Harbour Lights"), "a single named after a song is not an edition of the album"

@@ -514,9 +514,14 @@ def _plain_text(text: str) -> str:
 
 
 def _key(text: str) -> str:
-    """`catalogue.release_key` of the text, or, where that is empty (a title of symbols such as "÷", "+", "!!!", or of labels only such as "Deluxe", "Remastered"), the text's own plain form: a family key is
-    never empty for a title that has any character, so two different such titles are never one release (the review of PR 130: they were, and a rival disappeared)."""
-    return release_key(text) or _plain_text(text)
+    """`catalogue.release_key` of the text with its standalone SYMBOLS kept (a word made of no letter or digit: "÷", "+", "!!!"), or, where nothing is left, the text's own plain form: a family key is
+    never empty for a title that has any character, and two titles that differ only in such a symbol are two releases ("÷ (Tour Edition)" and "+ (Tour Edition)" were both the key "tour": a rival
+    disappeared, found by the property test of PR 132). The release key alone drops them, by design, for the twin rule and the cover finder, which this does not change."""
+    base = release_key(text)
+    symbols = [word for word in _plain_text(text).split() if not any(ch.isalnum() for ch in word) and word != "&"]
+    if symbols:
+        return " ".join(part for part in (base, " ".join(symbols)) if part)
+    return base or _plain_text(text)
 
 
 def _strip_labels(title: str) -> str:
@@ -542,33 +547,68 @@ def release_family(title: str) -> str:
     return _key(_strip_labels(title))
 
 
-#: The BROAD family's extra tails: any trailing bracketed group, a dashed or colon group ("Harbour - Tour Edition", "Relapse: Refill"), or up to three words that end in an edition word
-#: ("Harbour Tour Edition", "Harbour Japanese Version", "Harbour Reissue 2009").
-_BROAD_TAIL = re.compile(
-    r"\s*[(\[][^()\[\]]*[)\]]\s*$"
-    r"|\s*:\s+\S.*$"
-    r"|\s+[-–—]\s+\S.*$"
-    r"|\s+(?:\S+\s+){0,3}(?:edition|version|reissue|reissued|remaster|remastered|remasters)(?:\s+(?:19|20)\d\d)?\s*$"
-)
+#: The BROAD key's extra tails: any trailing bracketed group, a dashed group, a colon group ("Harbour (Tour Edition)", "Harbour - Japan", "Relapse: Refill"). Never a run of words: a run that ends in
+#: an edition word and starts anywhere eats the title's own words ("Gold Harbour 10th Anniversary Edition" -> "gold": found by the property test of PR 132), which makes a SECOND release out of one.
+_BROAD_TAIL = re.compile(r"\s*[(\[][^()\[\]]*[)\]]\s*$|\s*:\s+\S.*$|\s+[-–—]\s+\S.*$")
 
 
 def broad_release_family(title: str) -> str:
-    """The BROAD family, for the sole-album test of `sole_album`: the narrow family with every trailing bracketed, dashed or "edition" group taken off as well, so that an edition label this code has never
-    seen ("(Tour Edition)", "(Collector's Edition)", "- Japan") is still the same release. **Its error direction is the other one**: it may call two different releases one, and then a song is held
-    as a sole album (a delay); it never makes a second release out of one, which would let a sole album through. Never empty for a title that has any character (`_key`)."""
+    """The BROAD key: the narrow family with every trailing bracketed, dashed or colon group taken off as well. It is NOT the whole comparison (see [broadly_the_same_release]): an unbracketed label this
+    code has never seen ("Harbour Japanese Version") is left as extra words after the plain title, and the comparison treats a title that continues another as the same release. Never empty for a
+    title that has any character (`_key`)."""
     text = fold(title.strip())
     while True:
-        shorter = _strip_labels(text)
+        shorter = _BROAD_TAIL.sub("", text, count=1)
         if shorter == text:
-            shorter = _BROAD_TAIL.sub("", text, count=1)
+            shorter = _strip_labels(text)
         if shorter == text or not _key(shorter):
             return _key(text)
         text = shorter
 
 
-def _family_of(facts: _Facts, *, broad: bool = False) -> str:
-    """A release's family key; a release with no title at all is a family of its own (its id), never one with every other untitled release."""
-    return (broad_release_family if broad else release_family)(facts.title) or f"#{facts.album_id}"
+#: The word that ENDS an edition label however many words come before it ("Tour Edition", "Japanese Version", "Reissue 2009"): the unbracketed labels this code has never seen all end in one.
+_EDITION_ENDS = frozenset({*_LABEL_ENDS, "reissue", "reissued"})
+
+
+def _broad_tokens(title: str) -> list[str]:
+    """The title as plain words (symbols kept: "÷" is a word), with only the bracketed, dashed and colon tails taken off; the labels the narrow list knows stay, they are judged as the extra words
+    they are."""
+    text = fold(title.strip())
+    while True:
+        shorter = _BROAD_TAIL.sub("", text, count=1)
+        if shorter == text or not _plain_text(shorter):
+            break
+        text = shorter
+    return _plain_text(text).split()
+
+
+def _edition_like(rest: list[str]) -> bool:
+    """Nothing, or a year, or one to four words that end in an edition word (and perhaps a year): what an edition label of a release looks like after the plain title."""
+    if rest and re.fullmatch(r"(?:19|20)\d\d", rest[-1]):
+        rest = rest[:-1]
+    return not rest or (len(rest) <= 4 and rest[-1] in _EDITION_ENDS)
+
+
+def broadly_the_same_release(one: str, other: str) -> bool:
+    """The BROAD comparison, for the sole-album test of `sole_album`: two titles are one release when they share a first word and what follows the words they share, in each, is nothing or an edition
+    label ("Harbour" and "Harbour Japanese Version", "Harbour Deluxe Edition" and "Harbour Tour Edition 2009", "÷" and "÷ Reissue"): extra words that END in an edition word. **Its error direction
+    is the other one from the narrow family's**: it may call two different releases one, and then a song is held as a sole album (a delay: the discography round, N-48, tells them apart); it never
+    makes a second release out of one, which would let a sole album through. "Harbour" and "Harbour Lights" are two releases. A title with no words at all is treated as the same release: when in
+    doubt, hold."""
+    first, second = _broad_tokens(one), _broad_tokens(other)
+    if not first or not second:
+        return True
+    if broad_release_family(one) == broad_release_family(other):
+        return True
+    common = 0
+    while common < min(len(first), len(second)) and first[common] == second[common]:
+        common += 1
+    return common > 0 and _edition_like(first[common:]) and _edition_like(second[common:])
+
+
+def _family_of(facts: _Facts) -> str:
+    """A release's NARROW family key; a release with no title at all is a family of its own (its id), never one with every other untitled release."""
+    return release_family(facts.title) or f"#{facts.album_id}"
 
 
 def _labelled(title: str) -> bool:
@@ -674,8 +714,7 @@ def _doubted_by_the_dates(chosen: _Facts, others: Sequence[_Facts]) -> tuple[str
         if rivals:
             shown = "; ".join(f"{rival.title} ({rival.record_type}, {rival.date or 'no date'})" for rival in rivals[:3])
             return "date_decided", f"{chosen.title} ({chosen.date or 'no date'}) was ahead of {shown} on the date order alone"
-    broad = _family_of(chosen, broad=True)
-    if chosen.record_type == "album" and all(_family_of(other, broad=True) == broad for other in others):
+    if chosen.record_type == "album" and all(broadly_the_same_release(chosen.title, other.title) for other in others):
         return "sole_album", f"{chosen.title} is the only release of the hits"
     return None
 
