@@ -4,7 +4,7 @@
 the later rounds (the artist's discography, a better rule) only ask `none` and `held` again, so a single stamped here can never be corrected; and the eight hits of a search cannot
 prove that no album carries the recording. So a song whose only same-recording release is a SINGLE is a re-askable `none` with the reason `single_only`, in the matcher AND again in
 the pass's write transaction. EPs stay accepted. An album that wins over an earlier single is as it was. **The cost is a delay**: the song stays in "Songs without an album" until the
-discography round finds an album that carries the recording (5 of the 32 such songs on 26 Nov 2026; for the other 27 none does, and a stamp of the single itself is a later item, N-51).
+discography round finds an album that carries the recording (3 of the 32 such songs on 26 Nov 2026; for 27 more none does, and a stamp of the single itself is a later item, N-51).
 
 The answers are the REAL ones of the live run (`tests/fixtures/deezer/n34_dryrun_24nov.json`).
 """
