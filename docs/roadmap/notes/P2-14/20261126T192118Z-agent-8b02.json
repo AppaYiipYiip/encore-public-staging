@@ -1,0 +1,9 @@
+{
+ "id": "20261126T192118Z-agent-8b02",
+ "item": "P2-14",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T19:21:18Z",
+ "type": "note",
+ "body": "26 Nov 2026 (lead): HEADS-UP for whoever picks up this held draft (#1, do not rebase it now). P3-31 (PR follows) split server/encore_server/encore_server/api.py into routes/<area>.py: every route you added in api.py now belongs in the module of its group (lyrics: probably routes/refs.py, docs/17 lists the group of each route), the registration is `app.include_router(<module>.router)` in create_app (api.py), and tests/fixtures/route_table.txt needs one line per new route (ENCORE_WRITE_ROUTE_TABLE=1 pytest tests/test_route_table.py rewrites it; read the difference). Shared helpers (services(), get_principal, _ok, json_body, require_owner...) are in routes/common.py. P3-31's own line 'the held lyrics branch is rebased on top' is NOT done: it waits for the release candidate with this draft."
+}

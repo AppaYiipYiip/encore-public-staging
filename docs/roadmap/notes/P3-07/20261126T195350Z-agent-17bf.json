@@ -1,0 +1,9 @@
+{
+ "id": "20261126T195350Z-agent-17bf",
+ "item": "P3-07",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T19:53:50Z",
+ "type": "note",
+ "body": "26 Nov 2026 (lead): the walk of P3-30 is part of this proof: see the note on P3-30 (the one-way re-encryption at the second encore update / encore secure on an install from before keys; check a real login after, the backup first, the saved backup key). Walk both doors, and update an install from before keys, on a clean VM, never VM 108 first."
+}

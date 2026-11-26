@@ -1,0 +1,12 @@
+{
+ "id": "20261126T185956Z-agent-bb16",
+ "item": "P3-06",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T18:59:56Z",
+ "type": "note",
+ "body": "26 Nov 2026: the owner (in chat, AFK) moved the work to the SERVER SIDE: admin pages + button installer. The advisor ruled the order: housekeeping, inventory (note follows), one docs PR designing P3-20/P3-21/P3-25 together + the admin API in docs/17, P3-31 (split api.py) now while no server PR is open, then P3-30. order.json is NOT edited (the page is the owner's alone): this is his chat instruction, shown here so the jump from #7-#9 to #68-#81 is not silent.",
+ "to": [
+  "owner"
+ ]
+}
