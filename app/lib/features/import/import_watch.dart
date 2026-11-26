@@ -188,13 +188,17 @@ class ImportWatch extends Notifier<ImportWatchState> {
   void _schedule() {
     _timer?.cancel();
     _timer = null;
-    // The server tells what it stores: nothing is asked in between.
-    if (_pushesKept ?? false) {
-      return;
-    }
     final active = state.saving.isNotEmpty ||
         state.imports.any((i) => i.isRunning && !state.stalled.contains(i.id));
     if (!active || _api == null) return;
+    // A server that tells what it stores is not asked in between, but the half hour of patience ([kImportPatience]) is judged only when the numbers are
+    // applied, and with nobody asking nothing would apply them: an import whose last songs never come would be "saving" for as long as the app is in
+    // front. So the phone looks at its OWN clock every [importPollProvider] and applies what it already has: no request, and it stops by itself as soon as
+    // nothing is saving or running any more (N-43, found by the advisor's read of #137).
+    if (_pushesKept ?? false) {
+      _timer = Timer(ref.read(importPollProvider), () => _apply(state.imports));
+      return;
+    }
     _timer = Timer(ref.read(importPollProvider), () => unawaited(resync()));
   }
 
