@@ -1,18 +1,10 @@
-// The admin site (docs/36 section 2, `15` section 4). This is the first brick: the sign-in and the frame the pages go in. Every word that comes from the server
-// (a name, a sentence) is written into the page as text, never as markup.
+// The admin site (docs/36 section 2, `15` section 4): the sign-in, the frame the pages go in (the rail of the drawings) and the pages that are built. Every word that
+// comes from the server (a name, a sentence) is written into the page as text, never as markup.
 import { Problem, api, hasSession, signIn, signOut } from "/encore/web/api.js";
+import { el, icon } from "/encore/web/dom.js";
+import { renderPeople } from "/encore/web/people.js";
 
 const app = document.getElementById("app");
-
-function el(tag, attributes = {}, ...children) {
-  const node = document.createElement(tag);
-  for (const [name, value] of Object.entries(attributes)) {
-    if (name === "class") node.className = value;
-    else node.setAttribute(name, value);
-  }
-  for (const child of children) node.append(child);
-  return node;
-}
 
 function show(...nodes) {
   app.replaceChildren(...nodes);
@@ -20,8 +12,8 @@ function show(...nodes) {
 
 function signInPage(message) {
   const problem = el("p", { class: "error", role: "alert" }, message || "");
-  const user = el("input", { type: "text", id: "user", autocomplete: "username", autocapitalize: "none", spellcheck: "false", required: "" });
-  const password = el("input", { type: "password", id: "password", autocomplete: "current-password", required: "" });
+  const user = el("input", { type: "text", id: "user", autocomplete: "username", autocapitalize: "none", spellcheck: "false", required: true });
+  const password = el("input", { type: "password", id: "password", autocomplete: "current-password", required: true });
   const button = el("button", { class: "primary", type: "submit" }, "Sign in");
   const form = el(
     "form",
@@ -52,29 +44,41 @@ function signInPage(message) {
   user.focus();
 }
 
-function frame(me) {
-  const out = el("button", { class: "small", type: "button" }, "Sign out");
+// The pages that exist. The rail lists only these: a page that is not built is not a dead button.
+const PAGES = [{ id: "people", label: "People", icon: "people", render: renderPeople }];
+
+function frame(me, serverName) {
+  const main = el("main", { class: "amain" });
+  const out = el("button", { type: "button", class: "navi" }, icon("logout"), el("span", {}, "Sign out"));
   out.addEventListener("click", async () => {
     await signOut();
     signInPage("");
   });
-  const when = me.session.expiresAt === null ? "" : "This browser stays signed in while you use it; it signs out after 12 hours unused.";
-  show(
-    el(
-      "header",
-      { class: "bar" },
-      el("div", { class: "brand" }, "Encore", el("span", {}, "your server")),
-      el("span", { class: "muted" }, me.person.name),
-      out,
-    ),
-    el(
-      "main",
-      {},
-      el("h1", {}, "Hello, " + me.person.name),
-      el("p", { class: "lead" }, "The pages for your people, your settings and your backups are being built; they will appear here."),
-      el("p", { class: "faint" }, when),
-    ),
+  const nav = PAGES.map((page) =>
+    el("button", { type: "button", class: "navi", "aria-current": "page" }, icon(page.icon), el("span", {}, page.label)),
   );
+  const rail = el(
+    "aside",
+    { class: "arail" },
+    el("div", { class: "brand-x" }, el("span", {}, "Encore"), el("span", { class: "tagadm" }, "ADMIN")),
+    ...nav,
+    el("span", { class: "sp" }),
+    out,
+    el("div", { class: "srv" }, el("span", { class: "nm" }, serverName), el("span", { class: "sm" }, `Signed in as ${me.person.name}`)),
+  );
+  show(el("div", { class: "adm" }, rail, main));
+  PAGES[0].render(main, me.person, serverName).catch(() => {
+    main.replaceChildren(el("p", { class: "error" }, "This page did not load. Reload it to try again."));
+  });
+}
+
+async function serverName() {
+  try {
+    const info = await api("GET", "/info");
+    return info.name || "your server";
+  } catch {
+    return "your server";
+  }
 }
 
 async function start() {
@@ -83,7 +87,8 @@ async function start() {
     return;
   }
   try {
-    frame(await api("GET", "/admin/session"));
+    const me = await api("GET", "/admin/session");
+    frame(me, await serverName());
   } catch (error) {
     if (error instanceof Problem && error.status === 403) {
       await signOut();
