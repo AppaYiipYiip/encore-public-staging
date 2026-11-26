@@ -330,5 +330,11 @@
   "evidence": "PR of N-44: scoring.plain_title_ok gates every plain (video) upload in lean.rank; tests/sources/test_plain_match_title.py: on the REAL uploads of tests/fixtures/ytm 1,468 pairs of two different songs of one artist at the same length were taken before, 6 after (one song spelled two ways and Pt. II vs Pt. 3, pinned); the audit's three runs; seven mutants red; MATCHER_REVISION unchanged (stricter only). Built, not walked.",
   "at": "2026-11-26T08:34:24Z",
   "by": "Claude"
+ },
+ "N-43": {
+  "state": "built",
+  "evidence": "PRs #136 (server: ImportWatch pushes import.progress when a song of an import is stored; info lists import-kept; tests/test_import_kept_push.py, five mutants red) and #137 (app: the phone asks every 10 s only on a server that does not list import-kept; tests/features/import_watch_test.dart, two mutants red). Built, not walked: not deployed to VM 108 nor installed on the A35.",
+  "at": "2026-11-26T08:50:31Z",
+  "by": "Claude"
  }
 }
