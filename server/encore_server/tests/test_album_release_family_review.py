@@ -167,3 +167,24 @@ def test_two_different_unseen_labels_of_one_title_are_one_release_and_a_title_th
     assert broadly_the_same_release("Harbour Deluxe Edition", "Harbour Japanese Version")
     assert broadly_the_same_release("÷", "÷ Japanese Version")
     assert not broadly_the_same_release("Harbour", "Harbour Lights"), "a single named after a song is not an edition of the album"
+
+
+@pytest.mark.parametrize(
+    ("edition", "plain"),
+    [
+        ("Legend - Remastered", "Legend"),
+        ("Legend - Remastered 2011", "Legend"),
+        ("Hybrid Theory - Deluxe Edition", "Hybrid Theory"),
+        ("Toxicity - Special Edition", "Toxicity"),
+        ("Meteora: 20th Anniversary Edition", "Meteora"),
+        ("Legend / Remastered", "Legend"),
+    ],
+)
+def test_an_edition_separated_by_punctuation_is_the_same_release_for_the_narrow_family(edition: str, plain: str) -> None:
+    """PR #133 kept every standalone symbol in the narrow key, so a separator (the dash of "Legend - Remastered") became part of the key and every such edition held its original as `date_decided`."""
+    assert release_family(edition) == release_family(plain)
+
+
+def test_a_symbol_that_is_the_title_is_still_a_symbol_and_a_lone_dash_is_never_an_empty_key() -> None:
+    assert release_family("\u00f7") != release_family("+")
+    assert release_family("-") != ""
