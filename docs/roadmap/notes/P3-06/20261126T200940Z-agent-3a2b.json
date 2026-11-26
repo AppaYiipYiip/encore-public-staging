@@ -1,0 +1,9 @@
+{
+ "id": "20261126T200940Z-agent-3a2b",
+ "item": "P3-06",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T20:09:40Z",
+ "type": "note",
+ "body": "FINDING 26 Nov 2026 (lead, while planning the People page, W-03): THE \"RESET PASSWORD\" BUTTON OF THE DRAWN PEOPLE PAGE HAS NOTHING ON THE OTHER END. docs/32 AC-6/AC-24 say \"Built (server)\": `POST people/{id}/reset` makes a one-hour code and `POST auth/reset` uses it, but NO client uses it: the app has no reset-code screen (grep of app/lib finds nothing) and the server has no browser page for the drawn link `/encore/reset/<code>` (W-03 frame \"Password link for Nina\"; the join page W-05 exists, a reset page does not). Consequence for the build: slice 2 (People) ships invite, lock/unlock and remove, and NOT the Reset password button; slice 2b = the reset page (public like the join page: a small page, a new password form, `POST auth/reset`, 'Done: open Encore and sign in'; it needs its own frames drawn first because W-05 has none) and then the button. Also: the drawn locked-person banner says 'locked after 20 wrong passwords', but the rule is that a wrong password NEVER locks an account (AUDIT B2, docs/21): the page says \"<name>'s account is locked.\" (the app and the server win over a drawing, D-43). The drawn 'link or QR code' needs a QR in the browser (a small MIT library): until then the page offers the link and says so."
+}

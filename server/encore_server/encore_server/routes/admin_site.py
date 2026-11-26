@@ -30,7 +30,9 @@ def admin_session(request: Request, _: None = Depends(refuse_public), p: Princip
     session: dict[str, Any] = {"kind": "device", "idleMs": None, "expiresAt": None}
     with services(request).db.read() as conn:
         row = (
-            conn.execute("SELECT kind, created_at, last_seen FROM device WHERE id = ?", (p.device_id,)).fetchone()
+            conn.execute(
+                "SELECT kind, created_at, last_seen FROM device WHERE id = ? AND person = ?", (p.device_id, p.person_id)
+            ).fetchone()
             if p.device_id
             else None
         )
