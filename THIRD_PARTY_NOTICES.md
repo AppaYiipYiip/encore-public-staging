@@ -17,6 +17,7 @@ services and the checks that are still open are in [`docs/25-licences-and-third-
 | Component | Licence |
 |-----------|---------|
 | FastAPI, Starlette, uvicorn | MIT, BSD-3-Clause, BSD-3-Clause |
+| `pyrage` (Python; wraps the `rage` library, the age file format) | MIT |
 | `cryptography` (Python) | Apache-2.0 or BSD-3-Clause |
 | mutagen (audio tags) | GPL-2.0-or-later (compatible with GPL-3.0) |
 | yt-dlp | The Unlicense |

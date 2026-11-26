@@ -342,5 +342,11 @@
   "evidence": "built in the P3-31 PR: api.py split into routes/ (13 modules), route + OpenAPI dump identical before and after, tests/test_route_table.py pins every route and its module; a pure move, nothing to walk",
   "at": "2026-11-26T19:20:40Z",
   "by": "Claude"
+ },
+ "P3-30": {
+  "state": "built",
+  "evidence": "built in the P3-30 PR: password key made by the installer and update (measured on a throwaway Navidrome 0.64.2, docs/evidence e08), backups locked to a public key (age), restore with the key; tests: test_backup_encryption, test_deploy_keys, test_deploy_flow (the real script + the real tool, Docker stood in); not walked on a real install (P3-07)",
+  "at": "2026-11-26T19:49:30Z",
+  "by": "Claude"
  }
 }

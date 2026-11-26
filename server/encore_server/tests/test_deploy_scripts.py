@@ -143,7 +143,10 @@ def test_the_scripts_parse(name: str) -> None:
 def test_the_help_text_lists_every_command() -> None:
     """The header comment is what `encore help` prints (lines 2 to 14): each command the script dispatches on is in it."""
     script = (DEPLOY / "encore").read_text(encoding="utf-8")
-    header = "\n".join(script.splitlines()[1:14])
+    lines = script.splitlines()[1:]
+    header = "\n".join(
+        lines[: next(i for i, line in enumerate(lines) if not line.startswith("#"))]
+    )  # every comment line up to the first that is not one
     dispatched = set(re.findall(r"^\s{4}(\w+)\)", script.split('case "${1:-help}" in')[1], flags=re.M))
     for command in dispatched - {"help", "version", "start", "stop", "restart", "logs"}:
         assert f"encore {command}" in header, command

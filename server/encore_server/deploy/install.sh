@@ -267,6 +267,10 @@ chmod 755 /usr/local/bin/encore.new
 mv /usr/local/bin/encore.new /usr/local/bin/encore
 
 if [ "$FRESH" = 1 ]; then
+    # The music server's data of an earlier install, locked with a key whose settings file is gone: a new key would lock everybody out for good (P3-30).
+    if [ -f "$DIR/navidrome/.encore-password-key.sha256" ]; then
+        die "$DIR/navidrome holds the accounts of an earlier install, locked with a key that was in the settings file ($DIR/.env) that is gone. Putting a new key here would lock everybody out for good. Restore the settings file from a backup (encore restore reads it), or move that folder away to start empty."
+    fi
     umask 077
     : >"$DIR/.setup-pending"
     {
@@ -278,6 +282,8 @@ if [ "$FRESH" = 1 ]; then
         echo "ENCORE_SERVER_NAME=$SERVER_NAME"
         echo "ENCORE_NAVIDROME_ADMIN_USER=encore-admin"
         echo "ENCORE_NAVIDROME_ADMIN_PASSWORD=$(head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | cut -c1-32)"
+        echo "# The key every person's password is stored under in the music server. Never change it, never lose it (it is in every backup)."
+        echo "ENCORE_PASSWORD_KEY=$(head -c 96 /dev/urandom | base64 -w0 | tr -d '/+=\n' | cut -c1-48)"
     } >"$DIR/.env"
     chmod 600 "$DIR/.env"
     umask 022
@@ -334,6 +340,13 @@ if [ "$NEED_OWNER" = 1 ]; then
     ok "Your account is made: ${OWNER}"
 fi
 
+# The keys of this install (P3-30): the music server's passwords are locked with the key made above (proved now that the start worked), and the backups are locked
+# to a public key whose secret half is shown ONCE, here, and kept nowhere on this computer. It is shown before the first backup is made, so every backup is locked.
+# Its output is NOT redirected to the log: the secret half goes to this screen only.
+if ! /usr/local/bin/encore secure --installer; then
+    die "The keys of this install could not be made. Run  sudo encore secure  to try again."
+fi
+
 # A copy of the accounts, playlists and likes every night (switched off for good by  encore autobackup off ), and one right now.
 if [ "$(sed -n 's/^ENCORE_AUTOBACKUP=//p' "$DIR/.env" | head -1)" != 0 ]; then
     if /usr/local/bin/encore autobackup on >>"$LOG" 2>&1 && /usr/local/bin/encore backup --quiet >>"$LOG" 2>&1; then
@@ -362,9 +375,12 @@ say ""
 say "        encore status             is it running, at which address, which version"
 say "        encore logs               what it is saying (Ctrl-C to stop)"
 say "        encore update             a backup first, then the newest version"
-say "        encore backup | restore   a copy of the accounts, playlists and likes; put one back"
+say "        encore backup | restore   a locked copy of the accounts, playlists and likes; put one back (restore asks for the backup key)"
+say "        encore secure --check     is the backup key you saved the right one"
 say "        encore start | stop       switch it on or off"
 say "        encore uninstall          remove it (your music is never touched)"
+say ""
+say "  ${BOLD}Your backup key${OFF} was shown above, once. Encore does not keep it: without it a backup cannot be opened. Check you have it:  sudo encore secure --check"
 say ""
 say "  ${BOLD}Away from home (optional):${OFF}   encore funnel on"
 say "  Lets your phone, and friends you invite, reach Encore from anywhere. It needs a free Tailscale"

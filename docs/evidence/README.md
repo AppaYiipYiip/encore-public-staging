@@ -1269,3 +1269,24 @@ Total on `main`: **S1 to S5 print 22 PASS and 16 FAIL**, every FAIL a register r
 ![The same list on emulator A, whose clock is 60 s behind the server](2026-11-07-e07-artists-pictures-emulator-build140.png)
 
 **What this entry does NOT cover, so the board keeps P1-10 ("Covers show everywhere, also when you are offline") at "todo":** the offline case (airplane mode) was not looked at; the renewal after a refusal (the second layer) is covered by unit and widget tests only, not seen on a phone (no ticket was refused in this run); build 140 is a merge of two open pull requests, not main, and the release-candidate pair has not been walked.
+
+<a id="e08"></a>
+## e08 · The music server's password key: what happens to every login when the key is set, changed or lost (26 Nov 2026; `e` = checked by running, on a throwaway Navidrome; P3-30)
+
+**The setup.** Navidrome 0.64.2 for Windows (the version `deploy/compose.yaml` pins; the release archive checked against the published SHA-256 `72e06c91…fee305`), run twice-over on a **throwaway data folder** on the dev PC (never VM 108, never a real install), with `docs/evidence/scripts/navidrome_password_key_proof.py`: it makes the administrator and one person through the music server's own API, then restarts the same data folder under different `ND_PASSWORDENCRYPTIONKEY` values and asks the Subsonic `ping` with a token login for each person (what the app and `POST auth/login` do).
+
+| # | State of the data folder and the key at the start | Both logins |
+|---|---|---|
+| 1 | a fresh install, no key set (the default key) | ok |
+| 2 | **the same install, a custom key set for the first time** | **ok** (the log says `New PasswordEncryptionKey set. Encrypting all passwords numUsers=2`, after two `Could not decrypt password … message authentication failed` lines that are the music server trying the new key first) |
+| 3 | restarted again with the same key | ok |
+| 4 | a **different** key | **failed (Subsonic error 40), both** |
+| 5 | **no key** after a key had been set (the settings file lost) | **failed, both** |
+| 6 | the first key back | ok again (nothing was lost: the failure is reversible) |
+| 7 | a copy of the data folder made **before** any custom key (an old backup) started under the custom key | **ok** (it encrypts them again) |
+| 8 | an install made with a custom key from the start, started without it | failed, both |
+| 9 | the variable **set to an empty string** (what `${ENCORE_PASSWORD_KEY:-}` hands over when the key is not in `.env`) on a default install | ok (the same as no key); on a custom-key install: failed, both, and the key back made them work again (nothing damaged) |
+
+**What it shows, and what the code does with it** (docs/tasks P3-30, `21` §4): a key can be added to an existing install without anybody losing a login (so `encore update` can give old installs one, a backup first, because the change is one way), and old backups still restore under a custom key; but a lost or changed key locks every account until it is back, so the key is made **once**, a fingerprint is kept beside the data, and `encore update`, `encore secure` and the installer **refuse** a missing or different key instead of making another. Row 9 is why `compose.yaml` allows an empty key and the `encore` command, not the file, refuses to start an install that once had one. It also means a rollback that restores only the old deployment file is wrong (the old file does not hand the key over): the way back is `encore restore` with the backup made first.
+
+**What this entry does NOT cover:** Navidrome in its container behind the new compose line (CI starts the real image in `encore-server-navidrome`; the walk P3-07 does `encore update` on an install from before keys); the Linux build of Navidrome (the same program and the same setting); more than two accounts.
