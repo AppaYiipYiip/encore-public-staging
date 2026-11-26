@@ -336,5 +336,11 @@
   "evidence": "PRs #136 (server: ImportWatch pushes import.progress when a song of an import is stored; info lists import-kept; tests/test_import_kept_push.py, five mutants red) and #137 (app: the phone asks every 10 s only on a server that does not list import-kept; tests/features/import_watch_test.dart, two mutants red). Built, not walked: not deployed to VM 108 nor installed on the A35.",
   "at": "2026-11-26T08:50:31Z",
   "by": "Claude"
+ },
+ "P3-31": {
+  "state": "built",
+  "evidence": "built in the P3-31 PR: api.py split into routes/ (13 modules), route + OpenAPI dump identical before and after, tests/test_route_table.py pins every route and its module; a pure move, nothing to walk",
+  "at": "2026-11-26T19:20:40Z",
+  "by": "Claude"
  }
 }

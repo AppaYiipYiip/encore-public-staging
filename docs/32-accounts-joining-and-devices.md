@@ -106,7 +106,7 @@ A device row is made at every sign-in that has no usable token (`issue_device`):
 | What | Limit | Where | Test |
 |------|-------|-------|------|
 | sign-in attempts (wrong answers) | 5 a minute per name from one address, 30 a minute per address; then a wait that says how long | `LoginGuard` (`accounts.py`), `api.py` `login` | `test_five_tries_a_minute_for_one_name_and_then_a_wait_that_says_how_long`, `test_one_address_trying_many_names_is_cut_off_too` |
-| joining, checking and resetting by link | 10 to 20 a minute per address | `api.py` | `test_joining_is_rate_limited_per_address` |
+| joining, checking and resetting by link | 10 to 20 a minute per address | `routes/people.py` | `test_joining_is_rate_limited_per_address` |
 | wrong answers before a wait | 5 a minute for one name from one address, 30 for one address | `LoginGuard.PAIR`, `LoginGuard.ADDRESS` | `test_public_edge.py` |
 | wrong sign-ins at the music server's Subsonic API, from the internet (`/rest/...`) | the same limits, applied before anything is passed on to the music server; a request with no token login (`u`,`t`,`s`) is refused; the home network is not asked | `api.py` `check_music_login`, `authorize_public_subsonic`; `gateway.py` `mount(authorize_public=...)` | `test_wrong_sign_ins_at_the_subsonic_door_are_slowed_and_never_reach_the_music_server`, `test_a_locked_account_is_refused_at_the_subsonic_door_before_its_password_is_looked_at` |
 | an invitation | 7 days, once | `INVITE_TTL_S` | `test_an_expired_or_revoked_invitation_does_not_work` |

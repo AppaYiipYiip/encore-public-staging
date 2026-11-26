@@ -21,10 +21,10 @@ import uvicorn
 from fastapi.testclient import TestClient
 from websockets.sync.client import connect
 
-from encore_server import api
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.db import Database
+from encore_server.routes import live as live_routes
 from encore_server.scheduler import Scheduler
 from encore_server.stopping import DOCKER_GRACE_S, UVICORN_GRACE_S, join_within, worst_case_stop_s
 from tests.conftest import creds
@@ -57,7 +57,7 @@ class Running:
 @pytest.fixture()
 def served(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[Running, dict[str, Any]]]:
     # The real ping is 25 s. Made longer here so that a stop which waits for the next ping can never look fast by luck.
-    monkeypatch.setattr(api, "PING_EVERY_S", 60.0)
+    monkeypatch.setattr(live_routes, "PING_EVERY_S", 60.0)
     music = MusicServer()
     settings = Settings(data_dir=tmp_path / "data", music_dir=tmp_path / "m", navidrome_url="http://music.invalid", youtube=False)
     app = create_app(settings, verifier=music.verifier(), navidrome_admin=FakeAdmin(music))  # type: ignore[arg-type]
