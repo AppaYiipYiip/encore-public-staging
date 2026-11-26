@@ -10,7 +10,8 @@ import 'fake_http.dart';
 class FakeEncoreServer {
   FakeEncoreServer({this.user = 'tester'}) {
     adapter = FakeHttpAdapter()..fallback = _dispatch;
-    _handlers['/encore/api/v1/info'] = (r) => _info();
+    _handlers['/encore/api/v1/info'] =
+        (r) => failInfo ? _error(500, 'down') : _info();
     _handlers['/encore/api/v1/server'] = (r) => _ok({
           'serverId': serverId,
           'name': 'Fake Encore',
@@ -194,6 +195,13 @@ class FakeEncoreServer {
   /// The server does not list `keep` / `keep-ask` in `info` (an older server, or one that keeps no songs).
   bool hasKeep = true;
   bool hasKeepAsk = true;
+
+  /// The server pushes `import.progress` when it STORES a song of an import too, and says so in `info` (`import-kept`, N-43). Off by default: an older server
+  /// moves `kept` silently, and the phone has to ask.
+  bool hasImportKept = false;
+
+  /// `GET info` fails (the phone could not read what the server can do).
+  bool failInfo = false;
 
   /// What each `PUT keep/watch`, `POST keep/ask` and `POST keep/retry` carried: the groups as `kind:id`, and the device header of the call.
   final List<List<String>> keepWatches = [];
@@ -695,6 +703,7 @@ class FakeEncoreServer {
           if (hasUnavailableIds) 'unavailable-ids',
           if (hasKeep) 'keep',
           if (hasKeep && hasKeepAsk) 'keep-ask',
+          if (hasKeep && hasImportKept) 'import-kept',
         ],
         'youtube': {'state': youtubeState, 'resumesInSec': 0},
       });
