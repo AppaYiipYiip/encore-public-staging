@@ -513,15 +513,28 @@ def _plain_text(text: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
 
 
+#: Punctuation that SEPARATES a title from its edition ("Hybrid Theory - Deluxe Edition", "Meteora: 20th Anniversary", "Legend / Remastered"), never a symbol of the title itself: not kept by [_key]
+#: (PR #133 kept every standalone symbol and made every dash-separated edition a rival: found by the advisor, 26 Nov 2026).
+_SEPARATORS = frozenset("-\u2013\u2014\u2212/:,.|\u00b7\u2022;")
+
+
 def _key(text: str) -> str:
     """`catalogue.release_key` of the text with its standalone SYMBOLS kept (a word made of no letter or digit: "÷", "+", "!!!"), or, where nothing is left, the text's own plain form: a family key is
     never empty for a title that has any character, and two titles that differ only in such a symbol are two releases ("÷ (Tour Edition)" and "+ (Tour Edition)" were both the key "tour": a rival
     disappeared, found by the property test of PR 132). The release key alone drops them, by design, for the twin rule and the cover finder, which this does not change."""
     base = release_key(text)
-    symbols = [word for word in _plain_text(text).split() if not any(ch.isalnum() for ch in word) and word != "&"]
+    symbols = [
+        word
+        for word in _plain_text(text).split()
+        if not any(ch.isalnum() for ch in word) and word != "&" and not set(word) <= _SEPARATORS
+    ]
     if symbols:
         return " ".join(part for part in (base, " ".join(symbols)) if part)
     return base or _plain_text(text)
+
+
+#: The separator that introduced a label ("Legend - Remastered", "÷: 20th Anniversary Edition") goes with the label.
+_TRAILING_SEPARATORS = re.compile(r"[\s\-\u2013\u2014\u2212/:,.|\u00b7\u2022;]+$")
 
 
 def _strip_labels(title: str) -> str:
@@ -531,7 +544,10 @@ def _strip_labels(title: str) -> str:
         shorter = _LABEL_BRACKETED.sub("", text, count=1)
         if shorter == text:
             shorter = _LABEL_TRAILING.sub("", text, count=1)
-        if shorter == text or not _key(shorter):
+        if shorter == text:
+            return text
+        shorter = _TRAILING_SEPARATORS.sub("", shorter)
+        if not _key(shorter):
             return text
         text = shorter
 
