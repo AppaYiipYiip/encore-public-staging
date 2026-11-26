@@ -1,0 +1,9 @@
+{
+ "id": "20261126T092114Z-agent-3ece",
+ "item": "N-44",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T09:21:14Z",
+ "type": "note",
+ "body": "N-44 RECALL CHECK, CORRECTION (26 Nov 2026, lead, after the advisor's read). (1) The 7 kept videos that 'ranked first' under the new rule were ATTACHED BY THE IMPORTER (the six KEXP imports carry their video id from the playlist; the Arabic Spacetoon title too), not FOUND by the plain search: so they show that the new gate does not refuse an upload the library already has, and say NOTHING about the recall of matches the plain search makes on its own. The recall evidence for the plain search is the eight real Arabic searches (64 candidates) alone, plus the corpus: a real-library recall of plain-search matches is still UNMEASURED (the owner's library holds too few Arabic songs found that way; it needs a stranger's library or a fresh sample of searches). (2) Found by the advisor in #141 and FIXED in the same PR: 'another script' was tested by ASCII; the fold leaves Latin letters it does not decompose (ɛ ɔ ŋ ɓ, the letters of Ghanaian and Congolese titles) as non-ASCII, so 'Mama ɛkɔ' on the artist's own channel at the same length passed as a title written twice. The script is now read by the letter's Unicode name: ONE function, textnorm.non_latin, shared with the album matcher (it was a private copy there: the B-37 bug class). Probe red with the ASCII test, green now."
+}

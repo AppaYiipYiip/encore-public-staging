@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from ...textnorm import is_dense_short, mentions_version, norm_artist, norm_title, ratio
+from ...textnorm import is_dense_short, mentions_version, non_latin, norm_artist, norm_title, ratio
 
 
 @dataclass(frozen=True)
@@ -149,7 +149,7 @@ def _only_another_script(rest: str, wt: str) -> bool:
     """Every word left of the upload's title (digits aside) is written in another script than the wanted title: the title said twice, as Arabic artists' own channels write it
     (`Wael Kfoury - Layel W Raad | وائل كفوري - ليل و رعد`). A word of the SAME script left over is another title (`Hurt Me`)."""
     words = [w for w in rest.split() if not w.isdigit()]
-    return bool(words) and all(w.isascii() != wt.isascii() for w in words)
+    return bool(words) and all(non_latin(w) != non_latin(wt) for w in words)
 
 
 def plain_title_similarity(want: Want, c: Candidate) -> float:

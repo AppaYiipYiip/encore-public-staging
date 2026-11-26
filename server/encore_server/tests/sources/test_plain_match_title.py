@@ -213,6 +213,17 @@ def test_a_title_in_two_scripts_needs_the_length_to_the_second() -> None:
     assert lean.rank(want, [upload]) == []
 
 
+def test_latin_letters_the_fold_leaves_alone_are_not_another_script() -> None:
+    """Found by the advisor's read of #141: `norm_title` maps `\u00fc \u0131 \u00f8 \u0142` to ASCII but leaves `\u025b \u0254 \u014b \u0253` (the letters of Ghanaian and Congolese titles) as they are: they are
+    not ASCII, and a test by ASCII called them "another script". Another SONG of the artist's own channel at the same length, whose title holds the wanted one and then words in those
+    letters, was taken as the title written twice. The script is read by the letter's Unicode name (`textnorm.non_latin`)."""
+    want = Want("Sarkodie", "Mama", None, 215)
+    other = Candidate("mama2", "Mama \u025bk\u0254", "Sarkodie", 215)
+    assert norm_title(other.title).isascii() is False
+    assert lean.rank(want, [other]) == []
+    assert lean.rank(want, [Candidate("mama3", "Mama | \u0645\u0627\u0645\u0627", "Sarkodie", 215)])
+
+
 def test_another_song_in_two_scripts_on_the_same_channel_is_not_taken() -> None:
     upload = real_video("ya-rab-wael-kfoury", "Safha We Tawaita")
     want = Want("Wael Kfoury", "Layel W Raad", None, upload.duration_s)  # the length is given away on purpose
