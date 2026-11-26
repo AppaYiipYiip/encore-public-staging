@@ -10,7 +10,8 @@ import '../../data/encore/encore_api.dart';
 import '../../data/encore/encore_models.dart';
 import '../downloads/keep_providers.dart';
 
-/// How often the server is asked while an import is still saving its songs.
+/// How often the server is asked while an import is still saving its songs, **on a server that does not say it pushes what it stores** (`import-kept`, N-43);
+/// a server that does is never asked in between.
 final importPollProvider =
     Provider<Duration>((ref) => const Duration(seconds: 10));
 
@@ -48,11 +49,11 @@ class ImportWatchState {
 /// The person's imports, kept in step for the card of the downloads (docs/design S-95, P2-29); one instance for the whole app.
 ///
 /// The server **pushes** `import.progress` (flat: `importId, state, total, matched, unmatched, pending, kept`) when a song of an import has been
-/// matched and when an import is stopped; it does **not** push when its keeper stores a song, so `kept` moves silently after the matching. The watch
-/// therefore reads `GET imports` at the start, at every (re)connection and every return to the app (events only make it faster, never correct, as
-/// `keep.progress` does), takes the pushes as they come, and asks again every [importPollProvider] **only while an import is still running or saving
-/// and has moved in the last [kImportPatience]**. Idle, or stuck, it asks nothing; a push or a look that finds a change makes it follow the import
-/// again.
+/// matched and when an import is stopped, **and, from N-43, when its keeper stores a song** (it lists `import-kept` in `info.features` then). The watch
+/// reads `GET imports` at the start, at every (re)connection and every return to the app (events only make it faster, never correct, as
+/// `keep.progress` does) and takes the pushes as they come. **Only on a server that does not list `import-kept`** (every older image: `kept` moves silently
+/// after the matching) does it also ask again every [importPollProvider], and then **only while an import is still running or saving and has moved in
+/// the last [kImportPatience]**. Idle, or stuck, it asks nothing; a push or a look that finds a change makes it follow the import again.
 final importWatchProvider =
     NotifierProvider<ImportWatch, ImportWatchState>(ImportWatch.new);
 
@@ -60,6 +61,9 @@ class ImportWatch extends Notifier<ImportWatchState> {
   EncoreApi? _api;
   int _generation = 0;
   Timer? _timer;
+
+  /// What the server's `info` said about `import-kept`, once it was read (`null` until then, and when it could not be read: the phone asks, the safe way).
+  bool? _pushesKept;
   final Map<String, String> _seen = {};
   final Map<String, DateTime> _changedAt = {};
 
@@ -67,6 +71,7 @@ class ImportWatch extends Notifier<ImportWatchState> {
   ImportWatchState build() {
     final generation = ++_generation;
     _timer?.cancel();
+    _pushesKept = null;
     _seen.clear();
     _changedAt.clear();
     final api = _api = ref.watch(keepApiProvider);
@@ -104,6 +109,11 @@ class ImportWatch extends Notifier<ImportWatchState> {
     final api = _api;
     final generation = _generation;
     if (api == null) return;
+    if (_pushesKept == null) {
+      final info = (await api.info()).valueOrNull;
+      if (generation != _generation) return;
+      _pushesKept = info?.hasImportKept;
+    }
     final result = await api.imports();
     if (generation != _generation) return;
     final list = result.valueOrNull;
@@ -178,6 +188,10 @@ class ImportWatch extends Notifier<ImportWatchState> {
   void _schedule() {
     _timer?.cancel();
     _timer = null;
+    // The server tells what it stores: nothing is asked in between.
+    if (_pushesKept ?? false) {
+      return;
+    }
     final active = state.saving.isNotEmpty ||
         state.imports.any((i) => i.isRunning && !state.stalled.contains(i.id));
     if (!active || _api == null) return;

@@ -15,9 +15,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fake_encore_server.dart';
 
 /// docs/design S-95 (P2-29): what the card of an import knows. The server pushes `import.progress` when a song has been matched and when an import is
-/// stopped (flat: `importId, state, total, matched, unmatched, pending, kept`), and says nothing when it stores a song: so the watch reads
+/// stopped (flat: `importId, state, total, matched, unmatched, pending, kept`); an older server says nothing when it stores a song, so the watch reads
 /// `GET imports` at the start, at every (re)connection and every return to the app, takes the pushes as they come, and asks again every few seconds
-/// ONLY while an import is still saving. Idle, it does nothing.
+/// ONLY while an import is still saving. Idle, it does nothing. A server that lists `import-kept` (N-43) pushes when it stores a song too: it is never
+/// asked in between.
 void main() {
   late FakeEncoreServer server;
   late EncoreApi api;
@@ -395,6 +396,89 @@ void main() {
       await settle();
 
       expect(c.read(importWatchProvider).stalled, isEmpty);
+    });
+  });
+
+  group('on a server that pushes what it stores (import-kept, N-43)', () {
+    setUp(() => server.hasImportKept = true);
+
+    Map<String, Object?> pushed(int kept) => {
+          'importId': 'im_1',
+          'state': 'done',
+          'total': 217,
+          'matched': 214,
+          'unmatched': 3,
+          'pending': 0,
+          'kept': kept,
+        };
+
+    test('a running import is read at the start and never asked about again',
+        () async {
+      server.importRows.add(row('im_1'));
+      start();
+      await settle();
+      final first = asked();
+      expect(first, greaterThan(0));
+      await settle();
+      await settle();
+
+      expect(asked(), first, reason: 'the server says what it stores');
+    });
+
+    test('done, songs still to keep: saving, and still not asked about',
+        () async {
+      server.importRows.add(row('im_1',
+          state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 150));
+      final c = start();
+      await settle();
+
+      expect(c.read(importWatchProvider).saving, {'im_1'});
+      final first = asked();
+      await settle();
+      await settle();
+      expect(asked(), first);
+    });
+
+    test('each stored song is a push and the card follows it with no request',
+        () async {
+      server.importRows.add(row('im_1',
+          state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 150));
+      final c = start();
+      await settle();
+      final first = asked();
+
+      for (final kept in [151, 152, 153]) {
+        events.add(LiveEvent('import.progress', pushed(kept)));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(c.read(importWatchProvider).imports.single.kept, kept);
+      }
+      expect(asked(), first);
+    });
+
+    test(
+        'a connection that comes back still reads the list: a push may be lost',
+        () async {
+      server.importRows.add(row('im_1'));
+      start();
+      await settle();
+      final before = asked();
+
+      connection.add(true);
+      await settle();
+
+      expect(asked(), greaterThan(before));
+    });
+
+    test('when what the server can do cannot be read, it asks as it always did',
+        () async {
+      server.failInfo = true;
+      server.importRows.add(row('im_1'));
+      start();
+      await settle();
+      final first = asked();
+      await settle();
+
+      expect(asked(), greaterThan(first));
     });
   });
 
