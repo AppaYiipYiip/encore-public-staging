@@ -30,7 +30,25 @@ Each has one plain message, owned by the server (`server/encore_server/encore_se
 
 ## 3. Endpoint inventory (v1): what is built and what is planned
 
-**Built** = a route on `main` (`server/encore_server/encore_server/api.py`, 57 routes under `/encore/api/v1`, plus the four outside it listed in the last row); this table is compared with the registered routes by hand (6 Nov 2026: 57 of 57, none missing, none extra); a test that does it on every build is the first step of P3-31 (register B-68). **Planned** = in the plan, no route yet, with the task that builds it. "v1" is the first *public* version (`03` §5), so a planned row is a target, not a promise for the next build.
+**Built** = a route on `main`: 65 routes under `/encore/api/v1` plus the five outside it (the signed stream and cover, the invitation page, the live channel and the music server's catch-all), registered by the modules of `server/encore_server/encore_server/routes/` and assembled in `api.py` (P3-31, 26 Nov 2026: a pure move, no route changed). **The table of every route with its handler's module is `server/encore_server/tests/fixtures/route_table.txt`, and `tests/test_route_table.py` compares it with the registered routes on every build**: a route cannot be added, removed, renamed or moved without a line of that file changing in the same pull request, so this inventory cannot drift from the code again (it was compared by hand until 26 Nov 2026; register B-68). Which module serves which group:
+
+| Group | Module (`server/encore_server/encore_server/routes/`) |
+|-------|--------|
+| `info`, `server` | `info.py` |
+| `auth/login`, `auth/logout`, `me`, `me/devices` | `session.py` |
+| invitations, `auth/join`, `auth/reset`, `people`, `me/password`, `PATCH me`, notifications, `migrate/navidrome`, the invitation page `/encore/join/{code}` | `people.py` |
+| `refs/resolve`, `refs/prepare`, `refs/unavailable`, `refs/{sr}` | `refs.py` |
+| `refs/{sr}/keep`, `keep/*`, `refs/{sr}/stream-url`, `covers/*` | `keep.py` |
+| the signed bytes `/encore/stream/{sr}` and `/encore/cover/{id}` | `media.py` |
+| `library/*`, `likes`, `saved-albums`, `follows` | `library.py` |
+| `playlists`, `plays` | `playlists.py` |
+| `imports` | `imports.py` |
+| `playback` | `playback.py` |
+| `catalogue/*` | `catalogue.py` |
+| the live channel `/encore/live` | `live.py` |
+| what every module shares (the services of a request, who is asking, answer shapes) | `common.py` |
+
+**Planned** = in the plan, no route yet, with the task that builds it. "v1" is the first *public* version (`03` §5), so a planned row is a target, not a promise for the next build.
 
 | Module | Built on `main` | Planned (no route yet) |
 |--------|-----------------|------------------------|
