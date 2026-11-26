@@ -306,6 +306,14 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: a
 fi
 
 dc() { docker compose --project-directory "$DIR" "$@"; }
+# An earlier install whose accounts were locked with a key: never start the music server under another one (every sign-in would fail until the right key is back).
+if [ -f "$DIR/navidrome/.encore-password-key.sha256" ]; then
+    mark="$(head -1 "$DIR/navidrome/.encore-password-key.sha256")"
+    key="$(env_value ENCORE_PASSWORD_KEY)"
+    if [ -z "$key" ] || [ "$(printf '%s' "$key" | sha256sum | cut -d' ' -f1)" != "$mark" ]; then
+        die "The accounts of this install are locked with a key that is missing from $DIR/.env or has been changed. Put the original line ENCORE_PASSWORD_KEY=... back (the settings file inside a backup has it; encore restore puts it back) before starting anything."
+    fi
+fi
 # The music server's own image is the second download (about as big as the first on a slow line): say so, rather than looking stuck in "Starting".
 say "  … Downloading the music server (about 95 MB the first time)"
 dc pull navidrome >>"$LOG" 2>&1 || die "The music server could not be downloaded. See the log."

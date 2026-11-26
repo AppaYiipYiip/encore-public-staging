@@ -205,3 +205,11 @@ def test_the_key_a_host_saved_can_be_checked_against_the_public_key_of_the_insta
     assert status == 1 and out == "" and "not the key of this install" in err and other not in err
     status, _, err = run(["--matches", str(keyfile)], stdin="a note, not a key\n", monkeypatch=monkeypatch)
     assert status == 1 and "not a backup key" in err
+
+
+def test_the_public_half_of_a_saved_key_is_what_a_restore_keeps_for_the_next_backups(monkeypatch: pytest.MonkeyPatch) -> None:
+    public, secret = new_key()
+    status, out, err = run(["--public-of"], stdin=secret + "\n", monkeypatch=monkeypatch)
+    assert status == 0 and out.strip() == f"public={public}" and err == "" and secret not in out
+    status, out, err = run(["--public-of"], stdin="not a key\n", monkeypatch=monkeypatch)
+    assert status == 1 and out == "" and "not a backup key" in err

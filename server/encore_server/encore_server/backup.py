@@ -186,12 +186,13 @@ def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: Te
     parser.add_argument("--decrypt", type=Path)
     parser.add_argument("--to", type=Path)
     parser.add_argument("--matches", type=Path)
+    parser.add_argument("--public-of", action="store_true")
     try:
         args = parser.parse_args(argv if argv is not None else sys.argv[2:])
     except SystemExit:
         print(
             "backup: use --encore-db FILE and/or --navidrome-db FILE with --out DIR, or --verify DIR, or --new-key, "
-            "or --encrypt FILE --to KEYFILE --out FILE, or --decrypt FILE --out FILE, or --matches KEYFILE",
+            "or --encrypt FILE --to KEYFILE --out FILE, or --decrypt FILE --out FILE, or --matches KEYFILE, or --public-of",
             file=err,
         )
         return 2
@@ -200,6 +201,12 @@ def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: Te
             public, secret = new_key()
             print(f"public={public}", file=out)
             print(f"secret={secret}", file=out)
+            return 0
+        if args.public_of:
+            # The public half of the secret key on standard input: what a restore keeps as the key the install's backups are locked with.
+            if sys.stdin is None or sys.stdin.isatty():
+                raise BackupError("The key is read from the standard input (one line), never typed as part of the command.")
+            print(f"public={parse_secret_key(sys.stdin.readline()).to_public()}", file=out)
             return 0
         if args.matches is not None:
             # "Is the key you saved the one that locks this install's backups?" The secret comes on standard input, and only the answer is printed.

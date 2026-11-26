@@ -15,6 +15,7 @@
 set -Eeuo pipefail
 
 DIR="${ENCORE_DIR:-/opt/encore}"
+ENCORE_BIN="${ENCORE_BIN:-/usr/local/bin/encore}"
 
 # Everything here needs Docker and the install's private settings, so ask for the administrator's rights once, up front.
 if [ "$(id -u)" != 0 ] && [ "${1:-help}" != help ] && [ "${1:-help}" != "--help" ] && [ "${1:-help}" != "-h" ]; then
@@ -115,6 +116,26 @@ ensure_password_key() {
         different) die "The key in $DIR/.env is not the one the accounts of this install were locked with: it was changed. Put the original back (the settings file inside a backup has it); another key makes every sign-in fail." ;;
     esac
 }
+# A start that "answers" proves nothing about the key (Encore answers with a wrong one too). This asks the music server, through this server's own door and from this
+# computer, to sign in its own administrator with the login in .env: the one check that tests the key against the accounts.
+prove_password_key() {
+    local user pass salt token answer
+    user="$(env_value ENCORE_NAVIDROME_ADMIN_USER)"
+    pass="$(env_value ENCORE_NAVIDROME_ADMIN_PASSWORD)"
+    [ -n "$user" ] && [ -n "$pass" ] || return 1
+    salt="$(new_secret 8)"
+    token="$(printf '%s%s' "$pass" "$salt" | md5sum | cut -d' ' -f1)"
+    answer="$(curl -s -m 10 "http://127.0.0.1:${PORT}/rest/ping?u=${user}&t=${token}&s=${salt}&v=1.16.1&c=encore&f=json" 2>/dev/null | tr -d ' ' || true)"
+    case "$answer" in *'"status":"ok"'*) return 0 ;; *) return 1 ;; esac
+}
+# Called after a start with the key: when the music server signs its administrator in with it, this key is the one from then on (the mark makes a missing or
+# different key a refusal, so it is written only on proof). When it does not, the mark is NOT written and the key can still be put right.
+prove_and_confirm_password_key() {
+    if [ ! -f "$KEY_MARK" ]; then
+        prove_password_key || die "The music server did not accept its own administrator's login with the key of this install, so the key was NOT marked as the right one. See: encore logs. To go back: encore restore with the backup made first."
+        confirm_password_key
+    fi
+}
 # Called after a start with the key has worked: from then on this key is the one.
 confirm_password_key() {
     if [ ! -f "$KEY_MARK" ]; then
@@ -134,7 +155,19 @@ lock_archive() {
     backup_tool 0:0 -v "$(dirname "$plain"):/s" -v "$BACKUP_DIR:/b" -v "$BACKUP_PUB:/key/backup.pub:ro" "$(image_ref)" \
         -m encore_server backup --encrypt "/s/$(basename "$plain")" --to /key/backup.pub --out "/b/$(basename "$plain").age" >/dev/null 2>&1 || return 1
     chmod 600 "$BACKUP_DIR/$(basename "$plain").age"
+    touch -r "$plain" "$BACKUP_DIR/$(basename "$plain").age"
     rm -f -- "$plain"
+}
+# The backups made before this install had a backup key are plain files holding the accounts and the keys in the clear: lock them where they are.
+lock_old_backups() {
+    local f n=0
+    backup_is_locked || return 0
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        lock_archive "$f" || die "The older backup $(basename "$f") could not be locked: it is still there, in the clear."
+        n=$((n + 1))
+    done < <(find "$BACKUP_DIR" -maxdepth 1 -name 'encore-backup-*.tar.gz' 2>/dev/null)
+    if [ "$n" -gt 0 ]; then ok "$n older backup(s) were locked too (they held your accounts and keys in the clear)"; fi
 }
 # The settings file after a restore: this computer's own settings (port, music folder, name) as they are, with what the backup carries over put in the place
 # of the same names. Only the backup's key replaces the install's key: a backup made before keys existed carries none, and the install keeps its own.
@@ -200,20 +233,20 @@ cmd_update() {
         if [ "$(password_key_state)" = none ]; then made_key=1; fi
         ensure_password_key
     fi
-    docker run --rm --entrypoint cat "$image:$tag" /app/deploy/encore >/usr/local/bin/encore.new 2>/dev/null || die "The new version has no encore command."
+    docker run --rm --entrypoint cat "$image:$tag" /app/deploy/encore >"$ENCORE_BIN.new" 2>/dev/null || die "The new version has no encore command."
     cp -p "$DIR/compose.yaml" "$DIR/compose.yaml.before-update"
     mv "$DIR/compose.yaml.new" "$DIR/compose.yaml"
-    chmod 755 /usr/local/bin/encore.new
+    chmod 755 "$ENCORE_BIN.new"
     refresh_home_url
     dc up -d >/dev/null 2>&1 || die "The new version could not be started. To go back: copy $DIR/compose.yaml.before-update over $DIR/compose.yaml and run  encore restore  with the backup made first."
     wait_answers || die "The new version did not answer in 3 minutes. See: encore logs"
-    if grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml"; then confirm_password_key; fi
+    if grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml"; then prove_and_confirm_password_key; fi
     if [ "$made_key" = 1 ]; then note "The music server's passwords are now locked with a key of this install (in $DIR/.env, and in every backup)."; fi
     if ! backup_is_locked; then note "Your backups are not locked yet: run  sudo encore secure  once to lock them and to get the key that opens them."; fi
     after="$(server_version)"
     ok "Encore is up to date${before:+ (was $before, now $after)}"
     # Replacing the file this is running from last: bash has read it already.
-    mv /usr/local/bin/encore.new /usr/local/bin/encore
+    mv "$ENCORE_BIN.new" "$ENCORE_BIN"
 }
 
 # The server tells its phones where it can be reached (GET /encore/api/v1/server): remember the away address (or forget it) and let the server read it.
@@ -296,6 +329,7 @@ cmd_backup() {
     stamp="$(date -u +%Y%m%d-%H%M%S)"
     mkdir -p "$BACKUP_DIR"
     chmod 700 "$BACKUP_DIR"
+    find "$BACKUP_DIR" -maxdepth 1 -name 'encore-backup-*.part' -delete 2>/dev/null || true
     work="$(mktemp -d "$DIR/.backup-XXXXXX")"
     stage="$(mktemp -d "$DIR/.backup-stage-XXXXXX")"
     # shellcheck disable=SC2064
@@ -355,10 +389,11 @@ cmd_restore() {
         if [ "$want_key_file" = 1 ]; then key_file_arg="$arg"; want_key_file=0; continue; fi
         case "$arg" in --yes | -y) yes=1 ;; --key-file) want_key_file=1 ;; -*) die "Unknown option: $arg" ;; *) file="$arg" ;; esac
     done
+    [ "$want_key_file" = 0 ] || die "--key-file needs the file that holds the backup key."
     [ -n "$file" ] || die "Say which backup:  encore restore FILE   (they are in $BACKUP_DIR; the newest is $(basename "$(newest_backup)" 2>/dev/null))"
     [ -f "$file" ] || die "There is no file $file."
     file="$(realpath -- "$file")"
-    local work opened stamp aside made answer f keep key_file="$key_file_arg" secret archive="$file"
+    local work opened stamp aside made answer f keep key_file="$key_file_arg" secret archive="$file" restored_public=""
     work="$(mktemp -d "$DIR/.restore-XXXXXX")"
     opened="$(mktemp -d "$DIR/.restore-opened-XXXXXX")"
     # shellcheck disable=SC2064
@@ -371,6 +406,9 @@ cmd_restore() {
             printf '%s\n' "$secret" | backup_tool 0:0 -i -v "$(dirname "$file"):/s:ro" -v "$opened:/o" "$(image_ref)" \
                 -m encore_server backup --decrypt "/s/$(basename "$file")" --out /o/archive.tar.gz >"$opened/tool.log" 2>&1 \
                 || { secret=""; die "$(sed -n 's/^backup: //p' "$opened/tool.log" | head -1 | grep . || echo "The backup could not be opened.")"; }
+            # The key that opened this backup becomes the one the install's backups are locked with (below, once the restore has worked): backups made from now on
+            # are then opened by the key the Host just used, not by one nobody saved.
+            restored_public="$(printf '%s\n' "$secret" | backup_tool 0:0 -i "$(image_ref)" -m encore_server backup --public-of 2>/dev/null | sed -n 's/^public=//p' | head -1)"
             secret=""
             archive="$opened/archive.tar.gz"
             ;;
@@ -418,10 +456,45 @@ cmd_restore() {
     mv -- "$DIR/.env.new" "$DIR/.env"
     dc up -d >/dev/null 2>&1 || die "Encore could not be started again. The data from before is in $aside."
     wait_answers || die "Encore did not answer after the restore. See: encore logs. The data from before is in $aside."
-    if grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml"; then confirm_password_key; fi
+    if grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml"; then prove_and_confirm_password_key; fi
     ok "Restored from the backup of ${made}"
+    if [ -n "$restored_public" ]; then
+        printf '# The key that locks Encore backups: the key of the backup restored on %s. Its secret half is NOT kept on this computer.\n%s\n' "$(date -u +%F)" "$restored_public" >"$BACKUP_PUB"
+        chmod 644 "$BACKUP_PUB"
+        note "Your backups are now locked with the key you just used, so the one key you saved opens all of them."
+    fi
     note "What was here before is in $aside: delete that folder when you are happy with the result."
     say ""
+}
+
+# The backup key (P3-30): made once, its public half kept on this computer and its secret half shown ONCE and kept nowhere.
+ensure_backup_key() {
+    local installer="$1" pair public secret
+    if backup_is_locked; then
+        ok "Backups are locked (backup key made $(date -d "@$(stat -c %Y "$BACKUP_PUB")" +%F))"
+        note "To check you still have the key:  sudo encore secure --check"
+        return 0
+    fi
+    pair="$(backup_tool 0:0 "$(image_ref)" -m encore_server backup --new-key 2>/dev/null)" || die "A backup key could not be made."
+    public="$(printf '%s\n' "$pair" | sed -n 's/^public=//p' | head -1)"
+    secret="$(printf '%s\n' "$pair" | sed -n 's/^secret=//p' | head -1)"
+    pair=""
+    [ -n "$public" ] && [ -n "$secret" ] || die "A backup key could not be made."
+    printf '# The key that locks Encore backups, made %s. Its secret half is NOT kept on this computer.\n%s\n' "$(date -u +%F)" "$public" >"$BACKUP_PUB"
+    chmod 644 "$BACKUP_PUB"
+    say ""
+    say "  ${BOLD}Your backup key${OFF}. Save it now (a password manager, or on paper in a safe place):"
+    say ""
+    say "        $secret"
+    say ""
+    say "  Every backup is locked so that a copy taken away (a USB stick, a cloud folder) or stolen cannot be opened."
+    say "  ${BOLD}Encore does not keep this key.${OFF} Without it a backup cannot be opened, by anybody, and nobody can make it again."
+    say "  It is shown only this once."
+    secret=""
+    if [ "$installer" != 1 ]; then
+        read -r -p "  Press Enter when you have saved it: " _ </dev/tty || true
+    fi
+    ok "Backups are locked from now on"
 }
 
 # `encore secure`: the two keys of this install (P3-30). Safe to run again: what exists is left alone and said so.
@@ -446,7 +519,9 @@ cmd_secure() {
     fi
     grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml" || die "This install is older than the password key: run  sudo encore update  first (it does this too)."
     say ""
-    # 1. The music server's password key.
+    # 1. The backup key FIRST: the copy taken before the passwords are locked again, and every copy after it, is then locked too.
+    ensure_backup_key "$installer"
+    # 2. The music server's password key.
     case "$(password_key_state)" in
         none)
             # Locking the accounts again is one way: a copy first, so that nothing is lost if anything goes wrong.
@@ -458,42 +533,17 @@ cmd_secure() {
             say "  … Locking the music server's passwords with a key of this install"
             dc up -d >/dev/null 2>&1 || die "The music server could not be started with the new key. The key is in $DIR/.env; the backup made first holds the old state."
             wait_answers || die "Encore did not answer after the change. See: encore logs"
-            confirm_password_key
+            prove_and_confirm_password_key
             ok "The music server's passwords are locked with a key of this install (in $DIR/.env and in every backup)"
             ;;
-        ok | unmarked) confirm_password_key; ok "The music server's passwords are locked with a key of this install" ;;
+        ok | unmarked)
+            prove_and_confirm_password_key
+            ok "The music server's passwords are locked with a key of this install"
+            ;;
         *) ensure_password_key ;;
     esac
-    # 2. The backup key.
-    if backup_is_locked; then
-        ok "Backups are locked (backup key made $(date -d "@$(stat -c %Y "$BACKUP_PUB")" +%F))"
-        note "To check you still have the key:  sudo encore secure --check"
-    else
-        local pair public secret
-        pair="$(backup_tool 0:0 "$(image_ref)" -m encore_server backup --new-key 2>/dev/null)" || die "A backup key could not be made."
-        public="$(printf '%s\n' "$pair" | sed -n 's/^public=//p' | head -1)"
-        secret="$(printf '%s\n' "$pair" | sed -n 's/^secret=//p' | head -1)"
-        pair=""
-        [ -n "$public" ] && [ -n "$secret" ] || die "A backup key could not be made."
-        printf '# The key that locks Encore backups, made %s. Its secret half is NOT kept on this computer.\n%s\n' "$(date -u +%F)" "$public" >"$BACKUP_PUB"
-        chmod 644 "$BACKUP_PUB"
-        say ""
-        say "  ${BOLD}Your backup key${OFF}. Save it now (a password manager, or on paper in a safe place):"
-        say ""
-        say "        $secret"
-        say ""
-        say "  Every backup is locked so that a copy taken away (a USB stick, a cloud folder) or stolen cannot be opened."
-        say "  ${BOLD}Encore does not keep this key.${OFF} Without it a backup cannot be opened, by anybody, and nobody can make it again."
-        say "  It is shown only this once."
-        secret=""
-        if [ "$installer" != 1 ]; then
-            read -r -p "  Press Enter when you have saved it: " _ </dev/tty || true
-        fi
-        ok "Backups are locked from now on"
-        if [ "$installer" != 1 ]; then
-            if (cmd_backup --quiet) 2>/dev/null; then ok "A locked backup was made now"; else note "A backup could not be made now; the nightly one will."; fi
-        fi
-    fi
+    # 3. What was made before there was a backup key.
+    lock_old_backups
     say ""
 }
 
