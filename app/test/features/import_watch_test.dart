@@ -455,6 +455,55 @@ void main() {
       expect(asked(), first);
     });
 
+    test('half an hour with no push ends the saving card, with no request',
+        () async {
+      // The 30-minute patience is judged when the numbers are applied; on a server that pushes nothing else applies them, so the phone looks at its own clock.
+      server.importRows.add(row('im_1',
+          state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 150));
+      final c = start();
+      await settle();
+      expect(c.read(importWatchProvider).saving, {'im_1'});
+      final first = asked();
+
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+
+      expect(c.read(importWatchProvider).saving, isEmpty,
+          reason:
+              'it did not move for half an hour: the card is not kept for ever');
+      expect(asked(), first, reason: 'and nothing was asked to find out');
+    });
+
+    test('a running import that moves no more becomes stuck, with no request',
+        () async {
+      server.importRows.add(row('im_1', matched: 117, pending: 100));
+      final c = start();
+      await settle();
+      expect(c.read(importWatchProvider).stalled, isEmpty);
+      final first = asked();
+
+      clock.advance(const Duration(minutes: 31));
+      await settle();
+
+      expect(c.read(importWatchProvider).stalled, {'im_1'});
+      expect(asked(), first);
+    });
+
+    test('a push inside the half hour keeps the card alive', () async {
+      server.importRows.add(row('im_1',
+          state: 'done', matched: 214, unmatched: 3, pending: 0, kept: 150));
+      final c = start();
+      await settle();
+
+      clock.advance(const Duration(minutes: 29));
+      events.add(LiveEvent('import.progress', pushed(151)));
+      await settle();
+      clock.advance(const Duration(minutes: 29));
+      await settle();
+
+      expect(c.read(importWatchProvider).saving, {'im_1'});
+    });
+
     test(
         'a connection that comes back still reads the list: a push may be lost',
         () async {
