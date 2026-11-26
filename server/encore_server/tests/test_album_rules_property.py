@@ -39,6 +39,10 @@ BASES = [
     "2001",
     "1989",
 ]
+# Bases that are themselves made of label words or a year: with an UNBRACKETED label after them the narrow fold cannot tell the base from the label ("Deluxe 10th Anniversary Edition" is all
+# label), so it holds the song (a delay, the safe direction). The forward checks (a stamp is never wrong) still run on them; only the reverse check ("the hold was justified") does not.
+SYMBOL_BASES = {"\u00f7", "+", "=", "!!!"}
+LABEL_LIKE_BASES = {"Deluxe", "Remastered", "2001", "1989"}
 # Labels the NARROW list knows (the rule is exact about them) and labels it has never seen (the rule must fail CLOSED about them: a hold, never a stamp).
 UNLISTED_LABELS = [
     " (Tour Edition)",
@@ -96,7 +100,9 @@ def catalogues(draw: st.DrawFn) -> list[Made]:
     made: list[Made] = []
     number = 0
     for family, base in enumerate(bases):
-        compilation = draw(st.booleans()) and draw(st.booleans())
+        # A symbol base is a whole title on its own ("÷", "+"); beside a word ("Gold ÷" and "Gold +") the shared `catalogue.release_key` drops punctuation BY DESIGN and makes them one release, which
+        # is not something the generator's ground truth may call two. So a symbol base is never given a prefix word.
+        compilation = (draw(st.booleans()) and draw(st.booleans())) and base not in SYMBOL_BASES
         foreign = not compilation and draw(st.integers(0, 5)) == 0
         live = not compilation and not foreign and draw(st.integers(0, 6)) == 0
         title = (draw(st.sampled_from(COMPILATION_PREFIXES)) if compilation else "") + base + (" (Live)" if live else "")
@@ -112,7 +118,13 @@ def catalogues(draw: st.DrawFn) -> list[Made]:
                 artist="Somebody Else" if foreign else None,
             )
             made.append(
-                Made(rel, family, eligible=not foreign and not live, compilation=compilation, listed=label not in UNLISTED_LABELS)
+                Made(
+                    rel,
+                    family,
+                    eligible=not foreign and not live,
+                    compilation=compilation,
+                    listed=label not in UNLISTED_LABELS and base not in LABEL_LIKE_BASES,
+                )
             )
     return made
 
@@ -154,7 +166,9 @@ def test_a_matched_verdict_has_no_date_competitor_and_is_not_a_sole_album_and_ea
         assert verdict.withheld is not None
         _, competitors, _ = _facts(made, verdict.withheld.album_id)
         assert competitors, "date_decided said no competitor exists"
-    elif (verdict.outcome, verdict.reason) == ("none", "sole_album"):
+    elif (verdict.outcome, verdict.reason) == ("none", "sole_album") and all(m.listed for m in made):
+        # (the broad comparison may call two releases one - "Gold Deluxe" and "Gold Remastered", or an unseen label - and hold the song: the safe direction, so the reverse check runs only on
+        # worlds whose labels and bases are unambiguous)
         assert verdict.withheld is not None
         chosen, competitors, families = _facts(made, verdict.withheld.album_id)
         assert chosen.rel.type == "album" and families == 1 and not competitors, (

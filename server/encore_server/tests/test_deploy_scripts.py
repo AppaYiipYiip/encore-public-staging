@@ -225,3 +225,47 @@ def test_the_installer_writes_the_home_address_on_every_run_and_the_funnel_comma
     assert "ENCORE_HOME_URL=http://${HOST_IP}:${PORT}" in install
     assert encore.count("tell_server_away") >= 4, "turning Funnel on (both ways) and off tell the server"
     assert "Your server > Add an address" not in encore, "the person is no longer asked to type the address into the app"
+
+
+# ------------------------------------------------------------------------------------------------ a stopped server (B-139, 26 Nov 2026)
+
+
+def test_the_version_of_a_server_that_does_not_answer_is_empty_and_never_an_error() -> None:
+    """Found on a real install (26 Nov 2026): with the server STOPPED, `encore update` printed nothing and did nothing, and `encore status` printed nothing. `server_version` is `curl | sed | head`
+    and the script runs under `set -Eeuo pipefail`: curl cannot connect (exit 7), the pipeline fails, and `before="$(server_version)"` ends the script without a word. The version is a nicety,
+    never a reason to stop: nothing answering is an empty version."""
+    functions = script_lines("server_version() {")
+    # a port nothing listens on; the same strict mode as the script; the three ways the script reads the version (a variable, an echo argument, the `version` command)
+    script = f'set -Eeuo pipefail; PORT=1; {functions}\nbefore="$(server_version)"; echo "encore=$(server_version)"; server_version; echo "reached:[$before]"'
+    assert BASH is not None
+    result = subprocess.run([BASH, "-c", script], capture_output=True, text=True, check=False, timeout=60)
+    assert result.returncode == 0, (result.returncode, result.stdout, result.stderr)
+    assert result.stdout.strip().splitlines()[-1] == "reached:[]"
+
+
+def test_a_server_that_answers_gives_its_version() -> None:
+    """The control of the test above: the fix must not hide a version that IS there (a throwaway local server stands in for the Encore server)."""
+    import http.server
+    import threading
+
+    class Info(http.server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802 - the name http.server calls
+            body = b'{"name":"x","serverVersion":"9.8.7"}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args: object) -> None:
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Info)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        functions = script_lines("server_version() {")
+        script = f"set -Eeuo pipefail; PORT={server.server_port}; {functions}\nserver_version"
+        assert BASH is not None
+        result = subprocess.run([BASH, "-c", script], capture_output=True, text=True, check=False, timeout=60)
+    finally:
+        server.shutdown()
+    assert result.returncode == 0 and result.stdout.strip() == "9.8.7", (result.returncode, result.stdout, result.stderr)
