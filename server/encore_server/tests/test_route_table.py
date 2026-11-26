@@ -45,7 +45,9 @@ def test_the_routes_are_the_routes_of_the_table(client: TestClient) -> None:
     if os.environ.get("ENCORE_WRITE_ROUTE_TABLE") == "1":
         TABLE.write_text("\n".join(found) + "\n", encoding="utf-8")
     expected = TABLE.read_text(encoding="utf-8").splitlines()
-    assert found == expected, "the registered routes differ from tests/fixtures/route_table.txt: if the change is deliberate, rewrite the table and docs/17 with it"
+    assert found == expected, (
+        "the registered routes differ from tests/fixtures/route_table.txt: if the change is deliberate, rewrite the table and docs/17 with it"
+    )
 
 
 def test_every_api_route_lives_in_a_route_module_and_the_assembly_has_none(client: TestClient) -> None:
