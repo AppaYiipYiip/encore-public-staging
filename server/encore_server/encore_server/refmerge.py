@@ -22,8 +22,14 @@ import rows, the work the server still means to do, the songs of a saved release
 the song playing must not shift), and the two change feeds. The files merge key by key (a replaced `meta` would have lost the only picture id of
 some survivors). The survivor takes only what it LACKS from the other ref, and never the placeholder album.
 
-**Safety.** It runs once at start-up, right after the migrations and before any thread, as ONE transaction preceded by its own backup (kept, its
-path logged). A failure rolls everything back, is logged, and never stops the server. A second run finds nothing to merge. It is not an admin
+**When it is decided (N-47, audit B-138).** A shared file counts only when the pass leaves it ALIVE (`link_listing.Listing.alive`: the music server lists its id, or the row was
+attached after the pass began, or it has no music server id: the ONE definition `scanner._prune` and the rehome use). A merge cannot be undone, and a row the music server no longer lists is
+removed by the next pass, so it is no evidence that two refs are one song. That can only be shown while a COMPLETE listing is in hand, so the repair runs at the end of every complete pass of
+the library link (`scanner.link_library`, and the rehome's merge debt inside it) and **decides nothing without one**: the start-up writes nothing, and a pass the music server cut short
+writes nothing. (A pair that shared a file before part A is merged by the first complete pass after the start, minutes later, instead of by the start itself.)
+
+**Safety.** Each run is ONE transaction preceded by its own backup (kept, its
+path logged); a run with nothing to merge takes no backup and writes nothing. A failure rolls everything back, is logged, and never stops the server. A second run finds nothing to merge. It is not an admin
 action: a person who upgrades needs it and must not have to know. What is left of a merged ref is a row of `ref_merge`: old ids keep working on
 the server (`refs.canonical`), the same song described again finds the survivor (`refs.find`), and the phone learns the merge from the files feed.
 """
@@ -40,6 +46,7 @@ from typing import Any
 from . import library, refs
 from .db import Database
 from .ids import now_ms
+from .link_listing import Listing
 
 log = logging.getLogger("encore_server.refmerge")
 
@@ -117,14 +124,21 @@ class RepairReport:
 # ------------------------------------------------------------------------------------------------------------------ what to merge
 
 
-def _components(conn: sqlite3.Connection) -> list[tuple[str, list[str]]]:
+def _components(conn: sqlite3.Connection, listing: Listing | None) -> list[tuple[str, list[str]]]:
     """`[(survivor, [losers...])]`: the refs that share a file, as groups (a ref in two groups joins them). The survivor is the ref whose file row
-    of the SHARED file was attached first (lowest `added_at`, then the row's place), the losers follow in that order."""
+    of the SHARED file was attached first (lowest `added_at`, then the row's place), the losers follow in that order. **With a [listing], only the rows it leaves alive count, and a file that
+    is then held by one ref alone is shared by nobody** (N-47); with `None` every row counts (a read-only look, never a merge)."""
     rows = conn.execute(
         "SELECT ref, navidrome_song_id AS nd, added_at, rowid AS place FROM song_file WHERE navidrome_song_id IN"
         " (SELECT navidrome_song_id FROM song_file WHERE navidrome_song_id IS NOT NULL AND navidrome_song_id <> '' GROUP BY navidrome_song_id HAVING COUNT(DISTINCT ref) > 1)"
         " ORDER BY added_at, rowid"
     ).fetchall()
+    if listing is not None:
+        rows = [row for row in rows if listing.alive(row["nd"], row["added_at"])]
+        sharers: dict[str, set[str]] = {}
+        for row in rows:
+            sharers.setdefault(row["nd"], set()).add(row["ref"])
+        rows = [row for row in rows if len(sharers[row["nd"]]) > 1]
     parent: dict[str, str] = {}
 
     def root(ref: str) -> str:
@@ -179,11 +193,11 @@ def _row(conn: sqlite3.Connection, ref_id: str) -> sqlite3.Row:
     return row  # type: ignore[no-any-return]
 
 
-def _is_there_anything_to_merge(conn: sqlite3.Connection) -> tuple[bool, list[Held]]:
+def _is_there_anything_to_merge(conn: sqlite3.Connection, listing: Listing | None) -> tuple[bool, list[Held]]:
     """A look that changes nothing: whether any loser may be merged, and the pairs that are held (against the survivors as they are now)."""
     held: list[Held] = []
     mergeable = False
-    for survivor, losers in _components(conn):
+    for survivor, losers in _components(conn, listing):
         for loser in losers:
             reason = _hold_reason(conn, _row(conn, survivor), _row(conn, loser))
             if reason is None:
@@ -193,22 +207,27 @@ def _is_there_anything_to_merge(conn: sqlite3.Connection) -> tuple[bool, list[He
     return mergeable, held
 
 
-def look(conn: sqlite3.Connection) -> tuple[bool, list[Held]]:
+def look(conn: sqlite3.Connection, listing: Listing | None = None) -> tuple[bool, list[Held]]:
     """The public form of the read the repair starts with (a look that changes nothing): whether any loser may be merged right now, and the pairs that are held, each
-    with its reason. `rekey_audit.py` reads it to count the pairs the worklist holds back."""
-    return _is_there_anything_to_merge(conn)
+    with its reason. `rekey_audit.py` reads it to count the pairs the worklist holds back. Without a [listing] every shared file row counts: this is a count, never a decision to merge."""
+    return _is_there_anything_to_merge(conn, listing)
 
 
 # ------------------------------------------------------------------------------------------------------------------ the repair
 
 
-def repair(db: Database) -> RepairReport:
-    """Merges what can be merged; always returns, never raises (a server that cannot repair itself still has to start). See the module's docstring."""
+def repair(db: Database, listing: Listing | None) -> RepairReport:
+    """Merges what can be merged; always returns, never raises (a server that cannot repair itself still has to start). See the module's docstring. **[listing] is required on purpose** (N-47):
+    the pass's COMPLETE listing, from which "alive" is judged. `None`, or a listing the music server did not finish, decides nothing and writes nothing: a merge on a file nobody can show is
+    still there cannot be undone."""
     report = RepairReport()
     held: list[Held] = []
+    if listing is None or not listing.complete:
+        log.debug("ref merge: no complete listing of the music server in hand, nothing is decided")
+        return report
     try:
         with db.read() as conn:
-            mergeable, held = _is_there_anything_to_merge(conn)
+            mergeable, held = _is_there_anything_to_merge(conn, listing)
         report.held = held
         if not mergeable:
             _say_held(held)
@@ -217,7 +236,7 @@ def repair(db: Database) -> RepairReport:
         log.info("ref merge: a copy of the database before the repair is kept at %s", report.backup)
         with db.tx() as conn:
             report.held = []
-            for survivor, losers in _components(conn):
+            for survivor, losers in _components(conn, listing):
                 for loser in losers:
                     # Judged against the survivor as it is NOW: it may have taken an id from an earlier loser of this group.
                     reason = _hold_reason(conn, _row(conn, survivor), _row(conn, loser))

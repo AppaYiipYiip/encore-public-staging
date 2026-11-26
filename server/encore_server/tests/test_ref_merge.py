@@ -22,12 +22,22 @@ from encore_server.api import create_app
 from encore_server.auth import sign_stream
 from encore_server.config import Settings
 from encore_server.db import Database
+from encore_server.ids import now_ms
+from encore_server.link_listing import Listing
 from encore_server.scanner import link_library
 from tests.conftest import FakeVerifier, creds
-from tests.test_scanner import FakeLibrary
+from tests.test_scanner import FakeLibrary, entry
 
 V1 = "/encore/api/v1"
 COVER = "https://e-cdns-images.dzcdn.net/images/cover/synthetic/500x500.jpg"
+
+
+def everything_listed(db: Database) -> Listing:
+    """A COMPLETE listing that lists every file row of the database: the world every test of the repair lived in before N-47 (every shared file counts). The repair now REQUIRES a listing
+    (`refmerge.repair(db, listing)`): the tests of what is NOT listed are in `test_ref_merge_alive.py`."""
+    with db.read() as conn:
+        ids = {str(row[0]) for row in conn.execute("SELECT navidrome_song_id FROM song_file WHERE navidrome_song_id IS NOT NULL")}
+    return Listing(began=now_ms() + 10**9, seen=ids, complete=True)
 
 
 def rid(prefix: str, n: int) -> str:
@@ -383,7 +393,7 @@ def test_the_lookups_the_repair_and_find_make_are_answered_by_an_index_not_a_sca
 def test_only_the_pairs_that_are_the_same_song_are_merged_and_the_rest_are_held(seeded: Database) -> None:
     assert duplicates(seeded) == 8
 
-    report = refmerge.repair(seeded)
+    report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert report.failed is False
     assert {pair.loser: pair.survivor for pair in report.merged} == MERGED
@@ -403,7 +413,7 @@ def test_the_survivor_is_the_ref_whose_file_was_attached_first_not_the_older_ref
         add_file(c, S1, "nd-1", 5000, source="library", path="a.opus")
         add_file(c, L1, "nd-1", 4000, source="youtube", path="b.opus")
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert [(p.survivor, p.loser) for p in report.merged] == [(L1, S1)]
 
@@ -417,7 +427,7 @@ def test_two_refs_with_different_isrc_or_catalogue_ids_are_two_recordings_and_ar
         for ref, nd, at in ((S1, "nd-1", 1), (L1, "nd-1", 2), (S2, "nd-2", 1), (L2, "nd-2", 2)):
             add_file(c, ref, nd, at, source="library", path=f"{ref}.opus")
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert report.merged == [] and {h.reason for h in report.held} == {"different_isrc", "different_deezer_id"}
     assert report.backup is None  # nothing to merge: nothing is backed up
@@ -440,7 +450,7 @@ def test_two_nameless_songs_are_never_merged_by_their_shared_placeholder_name(db
         add_file(c, S2, "nd-3", 3, source="youtube", path="Encore/Unknown Artist/c.opus")
         add_file(c, L2, "nd-3", 4, source="library", path="Encore/Unknown Artist/c.opus")
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert report.merged == []
     assert {h.reason for h in report.held} == {"different_source_video"}
@@ -461,7 +471,7 @@ def merge_pair(db: Database, survivor: dict[str, Any], loser: dict[str, Any]) ->
         add_ref(c, L1, "Heartbeat", loser.pop("artists", ["Nneka"]), duration_ms=245000, **loser)
         add_file(c, S1, "nd-1", 1, source="youtube", path="Encore/Nneka/a.opus")
         add_file(c, L1, "nd-1", 2, source="library", path="Nneka/b.opus")
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
     assert report.merged, "the pair was merged"
     return S1
 
@@ -513,7 +523,7 @@ def test_the_new_columns_are_classified_in_the_copy_rules_and_not_copied_by_the_
 def test_entries_and_plays_per_person_are_unchanged_and_the_likes_that_changed_are_explained(seeded: Database) -> None:
     before = per_person(seeded)
 
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     after = per_person(seeded)
     assert after[P1] == before[P1]
@@ -534,7 +544,7 @@ def test_no_row_anywhere_points_at_a_song_that_is_gone(seeded: Database) -> None
     with seeded.read() as conn:
         assert refs_pointed_at(conn) >= set(MERGED)  # people's rows do point at the songs that are about to go
 
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     with seeded.read() as conn:
         assert refs_pointed_at(conn) - live_refs(conn) == set()
@@ -544,7 +554,7 @@ def test_no_row_anywhere_points_at_a_song_that_is_gone(seeded: Database) -> None
 
 
 def test_playlist_entries_follow_to_the_survivor_the_removed_one_too(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     assert {r["id"]: r["ref"] for r in q(seeded, "SELECT id, ref FROM playlist_entry")} == {
         rid("pe", 1): S1,
@@ -559,7 +569,7 @@ def test_playlist_entries_follow_to_the_survivor_the_removed_one_too(seeded: Dat
 
 
 def test_plays_imports_and_the_servers_copy_of_the_saved_queue_follow(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     assert {r["id"]: r["ref"] for r in q(seeded, "SELECT id, ref FROM play_event")} == {
         "play-1": S2,
@@ -580,7 +590,7 @@ def test_plays_imports_and_the_servers_copy_of_the_saved_queue_follow(seeded: Da
 
 
 def test_a_saved_release_that_held_both_songs_holds_the_survivor_once(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     assert [(r["person"], r["album"], r["ref"]) for r in q(seeded, "SELECT * FROM saved_album_ref ORDER BY person, album")] == [
         (P1, "alb-1", S1),
@@ -589,7 +599,7 @@ def test_a_saved_release_that_held_both_songs_holds_the_survivor_once(seeded: Da
 
 
 def test_work_for_the_loser_moves_joins_the_survivors_or_is_dropped(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     items = {r["id"]: (r["kind"], r["ref"], r["state"]) for r in q(seeded, "SELECT * FROM work_item")}
     # wk_1 (keep L1) joined wk_2 (keep S1): one item for the song, wanted by both people; wk_3 moved; wk_4 was history of the loser; wk_5 moved
@@ -608,7 +618,7 @@ def test_an_unreadable_saved_queue_or_file_meta_does_not_stop_the_repair_of_ever
         c.execute("UPDATE playback_state SET queue = ?", (broken_queue,))
         c.execute("UPDATE song_file SET meta = '{broken' WHERE ref = ?", (S1,))
 
-    report = refmerge.repair(seeded)
+    report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert report.failed is False and {m.loser: m.survivor for m in report.merged} == MERGED
     assert q(seeded, "SELECT queue, ref FROM playback_state")[0]["queue"] == broken_queue  # left as it was
@@ -616,7 +626,7 @@ def test_an_unreadable_saved_queue_or_file_meta_does_not_stop_the_repair_of_ever
 
 
 def test_the_survivor_is_enriched_only_with_what_it_lacks_and_never_with_an_unknown_album(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     with seeded.read() as conn:
         first, second, third, fourth = (refs.get_ref(conn, r) for r in (S1, S2, S3, S3B))
@@ -653,7 +663,7 @@ def test_a_column_added_to_song_ref_later_is_enriched_too_and_the_cover_is_never
         add_file(c, S1, "nd-1", 1, source="youtube", path="a.opus")
         add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
 
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
 
     row = q(db, "SELECT cover_url, thumb_url FROM song_ref WHERE id = ?", S1)[0]
     assert (row["cover_url"], row["thumb_url"]) == (COVER, other)
@@ -666,7 +676,7 @@ def test_a_loser_with_an_id_the_survivor_lacks_hands_it_over(db: Database) -> No
         add_file(c, S1, "nd-1", 1, source="youtube", path="a.opus")
         add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
 
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
 
     with db.read() as conn:
         row = refs.get_ref(conn, S1)
@@ -674,7 +684,7 @@ def test_a_loser_with_an_id_the_survivor_lacks_hands_it_over(db: Database) -> No
 
 
 def test_the_files_are_merged_key_by_key_and_the_survivor_keeps_its_path_and_its_only_cover_id(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     rows = q(seeded, "SELECT * FROM song_file WHERE ref = ?", S1)
     assert len(rows) == 1  # the same file of the music server: one row, not two
@@ -702,7 +712,7 @@ def test_a_file_the_survivor_does_not_have_moves_over_and_one_file_stays_preferr
         add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
         add_file(c, L1, "nd-2", 3, source="library", path="c.flac")  # another file of the loser's: a better copy
 
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
 
     rows = q(db, "SELECT navidrome_song_id, preferred FROM song_file WHERE ref = ? ORDER BY added_at", S1)
     assert [r["navidrome_song_id"] for r in rows] == ["nd-1", "nd-2"] and sum(r["preferred"] for r in rows) == 1
@@ -713,7 +723,7 @@ def test_the_feeds_tell_every_phone_that_has_the_song(seeded: Database) -> None:
         files_before = int(conn.execute("SELECT MAX(seq) FROM file_log").fetchone()[0])
         changes_before = {p: library.latest_cursor(conn, p) for p in (P1, P2)}
 
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
 
     with seeded.read() as conn:
         files = library.files_since(conn, files_before)
@@ -736,12 +746,12 @@ def test_the_feeds_tell_every_phone_that_has_the_song(seeded: Database) -> None:
 
 
 def test_the_second_run_is_a_no_op_and_takes_no_backup(seeded: Database, caplog: pytest.LogCaptureFixture) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
     backups = sorted(seeded.backups.glob("*"))
     state = dump(seeded)
 
     with caplog.at_level(logging.INFO, logger="encore_server.refmerge"):
-        again = refmerge.repair(seeded)
+        again = refmerge.repair(seeded, everything_listed(seeded))
 
     assert again.merged == [] and again.failed is False and again.backup is None
     assert {frozenset({h.survivor, h.loser}) for h in again.held} == HELD  # still held, still said
@@ -753,7 +763,7 @@ def test_it_takes_its_own_backup_first_keeps_it_and_says_where(seeded: Database,
     before = dump(seeded)
 
     with caplog.at_level(logging.INFO, logger="encore_server.refmerge"):
-        report = refmerge.repair(seeded)
+        report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert report.backup is not None and report.backup.parent == seeded.backups and report.backup.is_file()
     assert "before-ref-merge" in report.backup.name
@@ -768,7 +778,7 @@ def test_held_pairs_are_logged_at_info_on_every_start_and_are_not_a_failure(
     for _ in range(2):
         caplog.clear()
         with caplog.at_level(logging.INFO, logger="encore_server.refmerge"):
-            report = refmerge.repair(seeded)
+            report = refmerge.repair(seeded, everything_listed(seeded))
         held = [r for r in caplog.records if "held" in r.getMessage() and r.levelno == logging.INFO]
         assert len(held) >= len(HELD)
         assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
@@ -784,7 +794,7 @@ def test_nothing_to_merge_takes_no_backup_and_writes_nothing(db: Database) -> No
         add_file(c, S1, "nd-1", 1, source="library", path="a.opus")
     state = dump(db)
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert report.merged == [] and report.held == [] and report.backup is None and dump(db) == state
     assert not db.backups.exists() or list(db.backups.glob("*")) == []
@@ -806,7 +816,7 @@ def test_a_failure_half_way_rolls_everything_back_and_does_not_raise(
     monkeypatch.setattr(refmerge, "_merge_pair", failing)
 
     with caplog.at_level(logging.INFO, logger="encore_server.refmerge"):
-        report = refmerge.repair(seeded)
+        report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert len(calls) == 3 and report.failed is True and report.merged == []
     assert dump(seeded) == before  # two merges had been made inside the transaction: none of it is left
@@ -822,12 +832,24 @@ def test_a_failed_backup_means_no_merge(seeded: Database, monkeypatch: pytest.Mo
 
     monkeypatch.setattr(seeded, "backup", no_room)
 
-    report = refmerge.repair(seeded)
+    report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert report.failed is True and report.merged == [] and dump(seeded) == before
 
 
-def test_the_repair_runs_at_start_up_before_anything_else_and_a_failure_does_not_stop_the_server(
+def music_server_listing(db: Database) -> FakeLibrary:
+    """A music server that lists every file the database holds (each `nd-N` as a song), so a complete pass leaves every row alive."""
+    with db.read() as conn:
+        numbers = sorted(
+            {
+                int(str(row[0]).split("-")[1])
+                for row in conn.execute("SELECT navidrome_song_id FROM song_file WHERE navidrome_song_id IS NOT NULL")
+            }
+        )
+    return FakeLibrary([entry(n) for n in numbers])
+
+
+def test_the_start_up_merges_nothing_a_complete_pass_does_and_a_failed_repair_stops_nothing(
     tmp_path: Path, db: Database, verifier: FakeVerifier, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     seed(db)
@@ -837,14 +859,17 @@ def test_the_repair_runs_at_start_up_before_anything_else_and_a_failure_does_not
 
     app = create_app(settings, verifier=verifier, db=db)
 
-    assert duplicates(db) == 3  # done by the time the app exists: before any thread of the lifespan starts
+    assert (
+        duplicates(db) == 8
+    )  # the start-up decides nothing: a merge cannot be undone and it has no listing to show the files are still there (N-47, audit B-138)
     with TestClient(app) as client:
         assert client.get(f"{V1}/info").status_code == 200
+    link_library(db, music_server_listing(db))
+    assert duplicates(db) == 3  # the first COMPLETE pass merges what a listed file shows is one song
 
     broken = Database(tmp_path / "other" / "encore.db")
     broken.migrate()
     seed(broken)
-    before = dump(broken)
 
     def explode(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
         raise RuntimeError("injected")
@@ -854,11 +879,12 @@ def test_the_repair_runs_at_start_up_before_anything_else_and_a_failure_does_not
         data_dir=broken.path.parent, music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
     )
     with TestClient(create_app(other, verifier=verifier, db=broken)) as client:
-        assert client.get(f"{V1}/info").status_code == 200  # the server starts, and says what happened in its log
-    # nothing of the people's data changed (the server wrote its own key into `setting` when it started: that is not part of the repair)
-    assert {t: rows for t, rows in dump(broken).items() if t != "setting"} == {
-        t: rows for t, rows in before.items() if t != "setting"
-    }
+        assert client.get(f"{V1}/info").status_code == 200
+    report = link_library(
+        broken, music_server_listing(broken)
+    )  # the repair fails inside the pass: the pass itself still finishes
+    assert report.complete is True
+    assert duplicates(broken) == 8, "a failed repair changed nothing of the people's data (the transaction rolled back)"
 
 
 # ------------------------------------------------------------------------------------------------------------------ nothing comes back
@@ -881,7 +907,7 @@ def tagged(song_id: str, title: str, artist: str, **extra: Any) -> dict[str, Any
 
 
 def test_a_scan_after_the_repair_creates_no_ref_and_keeps_one_song_one_ref(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
     with seeded.read() as conn:
         count = conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0]
     library_now = FakeLibrary(
@@ -908,7 +934,7 @@ def test_a_scan_after_the_repair_creates_no_ref_and_keeps_one_song_one_ref(seede
 
 
 def test_a_loser_described_again_the_way_it_was_lands_on_the_survivor_and_makes_no_ref(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
     with seeded.read() as conn:
         count = conn.execute("SELECT COUNT(*) FROM song_ref").fetchone()[0]
     again = [  # each loser as its own description said it (joined artists, its own length, the placeholder album)
@@ -936,7 +962,7 @@ def test_a_merged_ref_is_found_by_the_ids_it_had(db: Database) -> None:
         add_ref(c, S2, "Another Song", ["Dee Roy"])  # a live ref that the loser's title could be mistaken for
         add_file(c, S1, "nd-1", 1, source="youtube", path="a.opus")
         add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
     with db.tx() as c:  # the survivor took the ids over: take them away again to prove the TABLE answers, not the live row
         c.execute("UPDATE song_ref SET isrc = NULL, deezer_id = NULL, ytm_video_id = NULL WHERE id = ?", (S1,))
         by = [
@@ -949,14 +975,14 @@ def test_a_merged_ref_is_found_by_the_ids_it_had(db: Database) -> None:
 
 
 def test_a_survivor_that_is_merged_in_turn_takes_the_old_tombstones_with_it(seeded: Database) -> None:
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
     with (
         seeded.tx() as c
     ):  # a new ref whose file row for `nd-1` is older than the survivor's: it becomes the survivor of the survivor
         add_ref(c, rid("sr", 50), "Neon Harbor", ["Ana Vale, Bo Lin, Cy Mar"], duration_ms=249000)
         add_file(c, rid("sr", 50), "nd-1", 1, source="library", path="Elsewhere/Neon Harbor.opus")
 
-    report = refmerge.repair(seeded)
+    report = refmerge.repair(seeded, everything_listed(seeded))
 
     assert [(p.survivor, p.loser) for p in report.merged] == [(rid("sr", 50), S1)]
     assert {
@@ -997,7 +1023,7 @@ def merged_pair(client: TestClient) -> tuple[str, str, str]:
         add_ref(c, L1, "Old Id", ["Ana Vale"], album="[Unknown Album]")
         add_file(c, S1, "nd-1", 1, source="youtube", path="a.opus")
         add_file(c, L1, "nd-1", 2, source="library", path="b.opus")
-    assert refmerge.repair(db).merged
+    assert refmerge.repair(db, everything_listed(db)).merged
     return S1, L1, str(person)
 
 
@@ -1151,7 +1177,7 @@ def test_a_made_up_id_still_fails_where_it_always_did(client: TestClient, merged
 
 def test_library_functions_resolve_the_old_id_too(seeded: Database) -> None:
     """The routes are not the only way in: the library functions themselves resolve (an import, a migration)."""
-    refmerge.repair(seeded)
+    refmerge.repair(seeded, everything_listed(seeded))
     with seeded.tx() as conn:
         assert library.set_item(conn, P2, "like", L2) is True  # ben never liked this song
         library.record_play(conn, P2, play_id="x", ref=L2, at=1, ms_played=5, device=None, context=None)
@@ -1176,7 +1202,7 @@ def files(client: TestClient, **params: str) -> dict[str, Any]:
 def test_the_files_feed_carries_the_merges_after_a_cursor_of_their_own(client: TestClient) -> None:
     db: Database = client.app.state.services.db  # type: ignore[attr-defined]
     seed(db)
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
     pairs = {(r["old_id"], r["into_id"]): r["seq"] for r in q(db, "SELECT seq, old_id, into_id FROM ref_merge")}
 
     everything = files(client, mergesSince="0")
@@ -1194,7 +1220,7 @@ def test_the_files_feed_carries_the_merges_after_a_cursor_of_their_own(client: T
 def test_an_app_that_does_not_ask_for_merges_is_not_sent_them(client: TestClient) -> None:
     db: Database = client.app.state.services.db  # type: ignore[attr-defined]
     seed(db)
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
 
     body = files(client)
 
@@ -1205,7 +1231,7 @@ def test_an_app_that_does_not_ask_for_merges_is_not_sent_them(client: TestClient
 def test_the_merges_come_in_pages_like_the_songs_do(client: TestClient) -> None:
     db: Database = client.app.state.services.db  # type: ignore[attr-defined]
     seed(db)
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
 
     first = files(client, mergesSince="0", limit="4")
     second = files(client, mergesSince=first["mergesCursor"], limit="4")
@@ -1236,7 +1262,7 @@ def test_the_files_response_with_merges_is_the_saved_fixture_the_phones_parser_r
 
     db: Database = client.app.state.services.db  # type: ignore[attr-defined]
     seed(db)
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
     body = files(client, mergesSince="0")
     body.pop("serverTime")  # the one value that is different every time
     text = json.dumps(body, indent=2, ensure_ascii=False) + "\n"

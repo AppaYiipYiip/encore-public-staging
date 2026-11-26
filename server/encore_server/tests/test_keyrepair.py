@@ -23,6 +23,7 @@ from encore_server import db as db_module
 from encore_server import keyrepair, library, refmerge, refs, textnorm
 from encore_server.db import Database
 from tests import legacy_fold as legacy
+from tests.test_ref_merge import everything_listed
 
 DEEZER_COVER = "https://e-cdns-images.dzcdn.net/images/cover/synthetic/500x500.jpg"
 YT_COVER = "https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"
@@ -992,7 +993,7 @@ def test_refmerge_holds_a_pair_when_either_ref_is_on_the_worklist(db: Database) 
         _share_a_file(c, ABBA, LUKASZ, "nd-2")
     keyrepair.repair(db)
     assert worklist(db) == {FAIRUZ, HABIBI}
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
     held = {(h.survivor, h.loser): h.reason for h in report.held}
     assert held.get((FAIRUZ, HABIBI)) == "recheck_pending"
     assert [(m.survivor, m.loser) for m in report.merged] == [(ABBA, LUKASZ)], "a pair no worklist ref is in merges as before"
@@ -1023,7 +1024,7 @@ def test_refmerge_holds_a_pair_when_only_one_of_the_two_refs_is_on_the_worklist(
     )
     before = snapshot(db)
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert [(h.survivor, h.loser, h.reason) for h in report.held] == [(first, second, "recheck_pending")]
     assert report.merged == [] and report.backup is None, "nothing was merged, so no copy was taken either"
@@ -1032,7 +1033,7 @@ def test_refmerge_holds_a_pair_when_only_one_of_the_two_refs_is_on_the_worklist(
     # the control: the worklist is the ONLY thing that held it (slice 4 empties it by re-judging the file); the same pair then merges, the survivor being the same one
     with db.tx() as c:
         c.execute("DELETE FROM ref_recheck")
-    again = refmerge.repair(db)
+    again = refmerge.repair(db, everything_listed(db))
     assert [(m.survivor, m.loser) for m in again.merged] == [(first, second)] and again.held == []
 
 
@@ -1043,20 +1044,23 @@ def test_a_merge_now_remembers_the_title_and_the_artist_of_the_ref_it_removes(db
         add_ref(c, LUKASZ, "Dancing Queen", ["ABBA, Someone"], duration_ms=201_000)
         _share_a_file(c, ABBA, LUKASZ, "nd-1")
     keyrepair.repair(db)
-    refmerge.repair(db)
+    refmerge.repair(db, everything_listed(db))
     with db.read() as conn:
         row = conn.execute("SELECT title, artist, norm_key FROM ref_merge WHERE old_id = ?", (LUKASZ,)).fetchone()
     assert row["title"] == "Dancing Queen" and row["artist"] == "ABBA, Someone"
 
 
-def test_the_start_runs_the_rekey_before_the_merge_and_before_any_thread(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_start_runs_the_rekey_before_any_thread_and_merges_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """N-47 (audit B-138): the merge is no longer a start-up repair (it needs a complete listing of the music server: `scanner.link_library` runs it); the keys are rewritten first, as before."""
     from encore_server.api import create_app
     from encore_server.config import Settings
 
     order: list[str] = []
     real_rekey, real_merge = keyrepair.repair, refmerge.repair
     monkeypatch.setattr(keyrepair, "repair", lambda database: (order.append("rekey"), real_rekey(database))[1])
-    monkeypatch.setattr(refmerge, "repair", lambda database: (order.append("merge"), real_merge(database))[1])
+    monkeypatch.setattr(
+        refmerge, "repair", lambda database, listing=None: (order.append("merge"), real_merge(database, listing))[1]
+    )
     settings = Settings(
         data_dir=tmp_path / "data",
         music_dir=tmp_path / "music",
@@ -1065,7 +1069,9 @@ def test_the_start_runs_the_rekey_before_the_merge_and_before_any_thread(tmp_pat
         workers=False,
     )
     create_app(settings)
-    assert order == ["rekey", "merge"]
+    assert order == ["rekey"], (
+        "the start-up merges nothing: it has no listing of the music server to show a shared file is still there"
+    )
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------

@@ -682,7 +682,7 @@ class Rehome:
                 )
         self._summary()
         if release:
-            pay_merge_debt(self._db)
+            pay_merge_debt(self._db, self._listing)
         return report
 
     def _release(self, conn: sqlite3.Connection, part: Sequence[str], kept_back: list[tuple[str, int, int]]) -> tuple[int, int]:
@@ -784,7 +784,7 @@ class Rehome:
 # ---------------------------------------------------------------------------------------------------------------------------------- what a pass owes after it
 
 
-def pay_merge_debt(db: Database) -> bool:
+def pay_merge_debt(db: Database, listing: Listing | None) -> bool:
     """Runs the merge repair when the rehome owes it (`MERGE_PENDING_SETTING`: a worklist ref was released and the pairs held for it were not judged yet) and clears the
     debt ONLY when the repair ran and did not fail. `refmerge.repair` answers `failed` instead of raising; a raise is covered too. A failure is a log line and the debt stays,
     so the next pass of the library link (not only the next restart) tries again. Returns whether the debt is paid (or there was none)."""
@@ -792,7 +792,7 @@ def pay_merge_debt(db: Database) -> bool:
         if repair_copy.setting(conn, MERGE_PENDING_SETTING) is None:
             return True
     try:
-        outcome = refmerge.repair(db)
+        outcome = refmerge.repair(db, listing)
     except Exception:  # noqa: BLE001 - the repair never raises by its own contract; a pass must still end whatever it does
         log.exception("rehome: the merge repair raised; it is still owed and the next pass of the library link tries again")
         return False
@@ -806,7 +806,7 @@ def pay_merge_debt(db: Database) -> bool:
     return True
 
 
-def idle(db: Database) -> None:
+def idle(db: Database, listing: Listing | None) -> None:
     """What a library pass with NO worklist still owes (the end of every pass that has no rehome to run): the record of an attempt that did not finish is spent (the pass that
     emptied the worklist, or the janitor retiring the last ref on it, is what ended it; left standing, the next change of the fold would reuse a copy taken before the state of
     that day), and the merge the last pass owed is run. A worklist that is not empty is none of its business (a rehome that could not start)."""
@@ -817,4 +817,4 @@ def idle(db: Database) -> None:
     if pending is not None:
         with db.tx() as conn:
             repair_copy.settle(conn, pending_key=BACKUP_PENDING_SETTING, used_key=BACKUP_USED_SETTING, copy=None)
-    pay_merge_debt(db)
+    pay_merge_debt(db, listing)

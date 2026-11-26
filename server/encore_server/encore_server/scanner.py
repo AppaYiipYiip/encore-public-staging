@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from . import library, refs, rehome, textnorm
+from . import library, refmerge, refs, rehome, textnorm
 from .db import Database
 from .errors import ApiError
 from .ids import now_ms
@@ -168,15 +168,33 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
             )
     else:
         _rehome_idle(
-            db
+            db, listing
         )  # no worklist to rehome: what the last pass left owing (the merge repair, the record of a copy nobody will use again) is paid now
+    # And the songs that share a file the music server still LISTS are merged now (N-47), in every complete pass, worklist or not: a pair of a ref that is on the key repair's worklist is
+    # held (`recheck_pending`) and the rehome pays its own merge debt after it releases a ref, but a worklist that never empties must not stop every other pair from ever merging.
+    _merge_repair(db, listing)
     return report
 
 
-def _rehome_idle(db: Database) -> None:
+def _merge_repair(db: Database, listing: Listing) -> None:
+    """The songs that share a file the music server STILL LISTS are one song shown twice: merged at the end of every COMPLETE pass, judged by this pass's own listing (N-47, audit B-138: a
+    merge cannot be undone, so a row the music server no longer lists is no evidence). **It looks first and runs the repair only when a pair can be merged**: the repair logs every held pair at
+    INFO each time it runs, which was once per start and would be every hour here. Never stops the link; the repair itself never raises."""
+    try:
+        with db.read() as conn:
+            mergeable, _ = refmerge.look(conn, listing)
+        if mergeable:
+            refmerge.repair(db, listing)
+    except Exception:  # noqa: BLE001 - the link is done and committed; the repair is tried again at the end of the next pass
+        log.exception(
+            "the merge of songs that share a listed file raised; the library link is done and the next pass tries again"
+        )
+
+
+def _rehome_idle(db: Database, listing: Listing) -> None:
     """The end of a pass with no worklist (`rehome.idle`): never stops the link."""
     try:
-        rehome.idle(db)
+        rehome.idle(db, listing)
     except Exception:  # noqa: BLE001 - the link goes on; what is owed stays owed and the next pass tries again
         log.exception(
             "what the rehome owes after its last pass could not be paid; the library link goes on and the next pass tries again"
