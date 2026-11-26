@@ -11,6 +11,7 @@ import uvicorn
 from . import textnorm
 from .api import create_app
 from .config import Settings
+from .db import MigrationFailed
 from .sources.youtube.tools import ToolStore, activate
 from .stopping import UVICORN_GRACE_S
 
@@ -59,8 +60,14 @@ def main(argv: list[str] | None = None) -> None:
     configure_logging(settings.log_level)
     # A newer yt-dlp the server fetched and checked earlier (docs/11 ADR-R39) must be first on the import path before anything imports yt_dlp.
     active = activate(ToolStore(settings.data_dir / "tools" / "yt-dlp")) if settings.auto_tools and settings.youtube else None
+    try:
+        app = create_app(settings, tools_active=active)
+    except MigrationFailed as refusal:
+        # A server that must not start on its data says why in one sentence (what `encore logs` shows), not in a stack trace.
+        sys.stderr.write(f"encore_server: {refusal}\n")
+        raise SystemExit(1) from None
     uvicorn.run(
-        create_app(settings, tools_active=active),
+        app,
         host=settings.host,
         port=settings.port,
         log_level=settings.log_level.lower(),
