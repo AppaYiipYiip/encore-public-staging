@@ -2,7 +2,7 @@
 Stop You`: it was the SOLE release among the eight hits of the search, and the album the song is really on was not among them. A sole ALBUM among the hits proves nothing about the other albums
 the catalogue may carry the song on (a compilation, a re-record such as Papa Roach's 2020 `20/20`), and a stamp is permanent. So a song whose only same-recording release is an ALBUM
 (one release family among the eligible releases, editions folded) is a re-askable `none`, `sole_album`. **The price is a delay** (the song waits in "Songs without an album" until the artist's
-discography, item N-48, can say whether it is the original); a sole EP stays accepted (the artist's own EPs; a compilation EP is rare) and a sole single is `single_only` already.
+discography (item N-48) shows that ONE release family carries the recording); a sole EP stays accepted (the artist's own EPs; a compilation EP is rare) and a sole single is `single_only` already.
 
 The real answers are the second live dry run's (`tests/album_world.py`); the made catalogue states what each release is.
 """

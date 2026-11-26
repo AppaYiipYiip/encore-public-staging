@@ -1214,8 +1214,8 @@
  },
  "N-48": {
   "kind": "plumbing",
-  "title": "Behind the scenes: songs left at a single get their real album from the artist's discography",
-  "note": "The follow-up that N-34 slice 2 (PR #125) leaves on purpose (the advisor's ruling of 24 Nov 2026, after the live dry run of 672 songs on VM 108's library): slice 2 never stamps a SINGLE (a song whose only same-recording release is a single is a re-askable none/single_only: 40 of the 150 first stamps were singles, and two of them were album tracks) and accepts a sole same-artist compilation only when its title does not say so. A stamped album is permanent and a later round re-asks only none and held, so the search's eight hits cannot be trusted to prove that no album carries the recording. The remedy is the artist's DISCOGRAPHY: ask the catalogue for the artist's albums (a request per album, for every artist) and look for the recording there, as a new identity_rev round whose first measured target is the songs left at single_only and compilation_title; it is also the removal trigger of the compilation-marker and single stop-gaps in the design (docs/tasks/P2-songs-as-references.md). Measure first (a dry run over the same library: how many of the 40 find an album, how many requests), server only, fakes and recorded answers for the tests; a live run only by the lead.",
+  "title": "Behind the scenes: songs the album pass held back get their album from the artist's discography",
+  "note": "Measured 26 Nov 2026 (two result notes on this item; the tool is handoff-2026-11-03/scripts/session-26nov/n48_measure.py): the artist's discography gives 74 of the 135 held songs an album where exactly ONE release family carries the recording (single_before_album 22 of 27, sole_album 41 of 49, date_decided 6 of 24, single_only 5 of 32); 0 wrong on the 11 labelled songs, 0 contradictions on the 41 good stamps. It does NOT give a year (the dates are reissue dates: item N-50) and does NOT tell an original from a compilation with fresh ISRCs (Papercuts keeps In the End held). BUILD SCOPE as ruled (advisor, 26 Nov 2026): a BACKGROUND artist-releases call (priority and deadline like Catalogue.album; the artist page asks as a person and failed 18 of 18); fail closed on a cut list (total above what came), a track list at the 100-track limit, an artist with no releases, an album that could not be asked; strict 3 s AND loose 20 s: the recording must be carried by exactly ONE family under both (Welcome to the Black Parade); no by_share, no single stamp (single_only stays a re-askable none: item N-51), no year; a name-only carrier (4 of the 74: Hotel, What's My Age Again?, Misery Business, I Bet You Look Good) may decide the album but writes no ISRC and no deezer_id (Hotel: the song's ISRC differs from the 2024 release's track); acceptance = a fresh dry run over songs the rule was NOT shaped on, every answer read. Permanent-data code: builder, one combined reviewer-attacker, one fix round.",
   "proposal": true,
   "size": "M",
   "needs": [
@@ -1233,6 +1233,34 @@
   "proposal": true,
   "size": "S",
   "needs": [],
+  "from": "agent"
+ },
+ "N-50": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: a song's year comes from a measured rule",
+  "note": "Found 26 Nov 2026 (N-48 measurement). The album pass writes NO year (the catalogue's dates of old albums are reissue dates: Weathered 2009 for 2001, The Invisible Band 2009 for 2001), and the artist's discography gives the same dates. The ISRC's year digits (characters 6-7, the year the recording was registered) were right in the three test cases and within one year of the catalogue's date for 91 of 112 songs, with no new outside service: a CANDIDATE only. Open: a stamp carries the chosen release's own track ISRC, which can be a re-registration (Cassidy 2024); the sample holds nothing older than 1990 and an old recording usually carries the year of its remaster. The task: a year rule measured on a labelled set that includes pre-1990 recordings and re-registered ISRCs, then the removal of the 'no year in a stamp' stop-gap (album_finder.choose_release). Server only.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "N-48",
+    "mark": "b"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-51": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: single-only songs are filed under their single",
+  "note": "Found 26 Nov 2026 (N-48 measurement): 27 of the 32 single_only songs have NO album, EP or compilation of their artist that carries them. Today they stay 'none/single_only' and are asked again every 7 days. A single stamp would be truthful only when the artist's list is complete, but a single is often followed by its album (3 of the 27 are dated in the last 18 months) and a stamp is never asked again. Needs a design question answered first: an outcome that is a fact AND can be re-asked (for example a 'single' outcome with its own re-ask window), and the decision whether Songs without an album should keep these songs. Not part of N-48. Server and design.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "N-48",
+    "mark": "b"
+   }
+  ],
   "from": "agent"
  }
 }

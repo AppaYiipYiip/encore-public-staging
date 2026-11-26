@@ -85,9 +85,10 @@ SINGLE_BEFORE_ALBUM_WINDOW_DAYS: int | None = None
 #: again), not `matched`; a best-of called "Gold" or "Legend" passes, and nothing is refused for good.
 #:
 #: **STOP-GAP(N-34 compilation markers): English words, a guess on a title.** Price: a song whose real album is called "Collection" or "Hits" stays unfiled and is
-#: asked again every 7 days; a compilation with no such word is accepted (the ruling's case 1). Removal trigger: the artist's discography (the earliest release
-#: among ALL the albums of the artist that hold the recording), which the ruling defers to a later `identity_rev` round if the dry run shows a large unresolved
-#: remainder; then this list goes. Task: N-34 itself.
+#: asked again every 7 days; a compilation with no such word is accepted (the ruling's case 1). Removal trigger: a rule that tells an original from a compilation
+#: WITHOUT a word. The artist's discography (item N-48) does not do that alone (measured 26 Nov 2026, the notes of N-48): a compilation whose tracks carry fresh ISRCs
+#: (Linkin Park's `Papercuts`) shares nothing by ISRC with the originals, and an original shares its song names with every best-of; the discography ends a delay only where
+#: ONE release family carries the recording. So this list stays until such a rule is measured. Task: none yet.
 COMPILATION_MARKERS: tuple[str, ...] = (
     "greatest hits",
     "best of",
@@ -108,7 +109,8 @@ COMPILATION_MARKERS: tuple[str, ...] = (
 #: **A SEPARATE list on purpose**: [COMPILATION_MARKERS] decide `compilation_title` for the CHOSEN release, where a best-of called "Gold" or a set called "Singles" is accepted (the advisor's
 #: ruling of 17 Nov 2026: the markers only downgrade, never refuse, and are never the whole rule); a word here exempts a rival from a rule that delays songs, and costs only a missed delay.
 #: **STOP-GAP(N-34 date decided): English words, a guess on a title.** Price: a rival ORIGINAL whose title holds one of them ("Greatest Hitz" is not one, "Gold" is) does not delay the song.
-#: Removal trigger and task: the artist's discography (item N-48), which tells an original from a compilation by what the catalogue says of the artist's albums, not by a word; then this list goes.
+#: Removal trigger: a rule that tells an original from a compilation without a word. The artist's discography (item N-48) does not (measured 26 Nov 2026, the notes of N-48, see the compilation markers
+#: above); it ends the delay where ONE release family carries the recording, and this list stays as the check under it. Task: none yet.
 PLAIN_COMPILATION_WORDS: tuple[str, ...] = (
     "greatest",
     "best of",
@@ -464,7 +466,7 @@ _VERSION_FORMS = {
 
 #: Marks a title can carry that `textnorm.VERSION_WORDS` does not list: another RECORDING of the song, which the library's file is not unless the song's own title says so.
 #: (`textnorm` is the pinned fold and its list feeds the YouTube matcher, so these are the album matcher's own.) **`Sessions` and `Tribute` are left out on purpose**: they are in too
-#: many real album names, the cost of a miss is a re-askable `none`, and the artist's discography (the remedy named on 17 Nov) tells such a release apart. A possessive "Version"
+#: many real album names, the cost of a miss is a re-askable `none`; the artist's discography (N-48) ends that delay where only ONE release family carries the recording, and does not tell such a release apart by itself. A possessive "Version"
 #: (Taylor's Version, Mine's Version) is a re-recording by its own convention.
 _EXTRA_MARKS: tuple[tuple[str, str], ...] = (
     ("unplugged", r"\bunplugged\b"),
@@ -608,7 +610,7 @@ def _edition_like(rest: list[str]) -> bool:
 def broadly_the_same_release(one: str, other: str) -> bool:
     """The BROAD comparison, for the sole-album test of `sole_album`: two titles are one release when they share a first word and what follows the words they share, in each, is nothing or an edition
     label ("Harbour" and "Harbour Japanese Version", "Harbour Deluxe Edition" and "Harbour Tour Edition 2009", "÷" and "÷ Reissue"): extra words that END in an edition word. **Its error direction
-    is the other one from the narrow family's**: it may call two different releases one, and then a song is held as a sole album (a delay: the discography round, N-48, tells them apart); it never
+    is the other one from the narrow family's**: it may call two different releases one, and then a song is held as a sole album (a delay: the artist's discography, N-48, ends it where ONE release family carries the recording); it never
     makes a second release out of one, which would let a sole album through. "Harbour" and "Harbour Lights" are two releases. A title with no words at all is treated as the same release: when in
     doubt, hold."""
     first, second = _broad_tokens(one), _broad_tokens(other)
@@ -891,7 +893,10 @@ def choose_release(
         release_date=release.date,
         # STOP-GAP(N-34 year): the year is NOT written by a stamp. The catalogue's dates of old releases are reissue dates and year-only placeholders (Weathered 2009, The Invisible Band 2009,
         # Contraband 1990-01-01) and no rule inside the hits can tell them from the real one; a wrong year is as permanent as a wrong album and reaches the Host's disk through the keeper's tags.
-        # PRICE: a song stamped here has no year until another source fills it. Removal trigger and task: the artist's discography (item N-48), whose album list can say the first year.
+        # PRICE: a song stamped here has no year until a year rule exists. The artist's discography does NOT give it (measured 26 Nov 2026, the notes of N-48: its dates are the same reissue dates, Weathered 2009,
+        # The Invisible Band 2009). The ISRC's year digits (the year the recording was registered) were right in those three test cases and within a year of the catalogue's date for 91 of 112 songs, but
+        # that sample holds no recording older than 1990, and a stamp's ISRC can be a re-registration (the chosen release's own track): a CANDIDATE, not a rule. Removal trigger and task: item N-50 (later), a year rule
+        # measured on a labelled set that includes pre-1990 recordings and re-registered ISRCs.
         # The date stays in `release_date` for the report.
         year=None,
         track_no=track.get("trackNo"),
@@ -912,8 +917,8 @@ def choose_release(
     # SLICE 2 NEVER STAMPS A SINGLE (the advisor's ruling after the live dry run of 24 Nov 2026, where 40 of 150 stamps were singles and two of them album tracks: `What's Luv?`,
     # `Buy U A Drank`). A stamp is PERMANENT and the later rounds (the artist's discography, a better rule) only ask `none` and `held` again, so a single stamped here can never be
     # corrected; and the eight hits of a search cannot prove that no album carries the recording. The song is a re-askable `none`. EPs stay accepted; an album that wins over an
-    # earlier single is decided above (the window). **The cost is a delay**: the song stays in "Songs without an album" until the discography round, whose first measured target
-    # these songs are.
+    # earlier single is decided above (the window). **The cost is a delay**: the song stays in "Songs without an album" until the discography round finds an album that carries the recording
+    # (5 of the 32 such songs on 26 Nov 2026; for the other 27 none does, and a stamp of the single itself is a later item, N-51: a stamp is never asked again and a single is often followed by its album).
     if release.record_type == _SINGLE:
         return Verdict(
             "none",
@@ -941,7 +946,8 @@ def choose_release(
         # the song (a compilation, a re-record). A stamp is permanent and a `none` is asked again, so doubt goes to `none`.
         # **STOP-GAP(N-34 date decided): the cost is a DELAY, and a correct stamp is delayed with the wrong ones.** A song whose original is the earliest release but whose artist has
         # another album or EP among the hits (a compilation with no telling word, a re-recording, a "Papercuts") stays in "Songs without an album", asked again every 7 days. Removal trigger
-        # and task: the artist's discography (item N-48), which can say which album came first from the catalogue's list of the artist's albums; then both rules become a check on its answer.
+        # and task: the artist's discography (item N-48) ends the delay where ONE release family carries the recording (74 of the 135 held songs on 26 Nov 2026) and these rules stay as the check under
+        # it; it cannot say which of two families came first (the catalogue's dates are reissue dates), and a compilation with fresh ISRCs still keeps In the End, Numb and Breaking the Habit held.
         # Reminder: the dry run's report names both reasons and their cost. The same STOP-GAP covers `sole_album`.
         withhold = _doubted_by_the_dates(release, [known[ident] for ident in eligible if ident != chosen])
     if withhold is not None:
