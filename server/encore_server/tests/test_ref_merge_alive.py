@@ -173,3 +173,85 @@ def test_a_worklist_that_never_empties_does_not_stop_the_other_pairs_from_mergin
 
     merged = {row["old_id"] for row in q(db, "SELECT old_id FROM ref_merge")}
     assert merged & {S1, L1}, "the pair of refs that are not on the worklist was merged"
+
+
+# ------------------------------------------------------------------------------------------------------------------ the review round of PR 132 (26 Nov 2026)
+
+
+def test_the_write_transaction_judges_with_the_listing_too_a_live_pair_beside_a_dead_pair(db: Database) -> None:
+    """A mutant that took the listing away inside the write transaction merged BOTH pairs and no test noticed: the look (with the listing) said one pair, the transaction merged two."""
+    other_a, other_b = rid("sr", 5), rid("sr", 6)
+    two_refs_one_file(db)  # S1 and L1 share nd-1: listed
+    with db.tx() as c:
+        add_ref(c, other_a, "Requiem", ["LANDMVRKS"])
+        add_ref(c, other_b, "Requiem", ["LANDMVRKS"])
+        add_file(c, other_a, "nd-2", 4000, source="youtube", path="b.opus")  # nd-2 is NOT listed
+        add_file(c, other_b, "nd-2", 5000, source="library", path="b.opus")
+
+    report = refmerge.repair(db, listing_of("nd-1"))
+
+    merged = {m.loser for m in report.merged} | {m.survivor for m in report.merged}
+    assert len(report.merged) == 1 and merged == {S1, L1}, "only the pair whose file is listed was merged"
+    assert {other_a, other_b} <= live_refs(db)
+
+
+def test_the_survivor_is_chosen_on_the_alive_shared_rows_and_not_on_a_row_nobody_shares(db: Database) -> None:
+    """A holds an alive row (nd-9) that C's dead row no longer shares; its date is earlier than the pair's file. It must not make A the survivor of the pair A-B (nd-1, B's row is earlier)."""
+    a, b, c_ref = rid("sr", 1), rid("sr", 2), rid("sr", 3)
+    with db.tx() as c:
+        add_ref(c, a, "Creature", ["LANDMVRKS"])
+        add_ref(c, b, "Creature", ["LANDMVRKS"])
+        add_ref(c, c_ref, "Requiem", ["LANDMVRKS"])
+        add_file(c, a, "nd-1", 5000, source="library", path="a.opus")
+        add_file(c, b, "nd-1", 4000, source="youtube", path="b.opus")  # B's row of the SHARED file is the earlier: B survives
+        add_file(
+            c, a, "nd-9", 1500, source="library", path="a2.opus"
+        )  # alive (added after the pass began), shared with nobody once C's row is dead
+        add_file(c, c_ref, "nd-9", 500, source="library", path="c.opus")  # dead: added before the pass began and not listed
+
+    report = refmerge.repair(db, listing_of("nd-1", began=1_000))
+
+    assert [(m.survivor, m.loser) for m in report.merged] == [(b, a)]
+
+
+@pytest.mark.parametrize("listing", [None, listing_of("nd-1", complete=False)])
+def test_a_merge_debt_is_never_cleared_by_a_repair_that_decided_nothing(db: Database, listing: Listing | None) -> None:
+    """`pay_merge_debt` clears the debt ONLY when the repair ran; with no complete listing it cannot have, so the debt stays owed."""
+    from encore_server import rehome
+
+    with db.tx() as conn:
+        conn.execute("INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)", (rehome.MERGE_PENDING_SETTING, "1"))
+
+    assert rehome.pay_merge_debt(db, listing) is False
+    assert one(db, "SELECT COUNT(*) FROM setting WHERE key = ?", rehome.MERGE_PENDING_SETTING) == 1
+
+
+def test_a_repair_that_keeps_failing_keeps_a_bounded_number_of_copies(db: Database, monkeypatch: pytest.MonkeyPatch) -> None:
+    """It runs in every complete pass now: a failure that repeats took one whole copy of the database each hour, for ever."""
+    two_refs_one_file(db)
+
+    def explode(conn: object, survivor: str, loser: str) -> None:
+        raise RuntimeError("injected")
+
+    monkeypatch.setattr(refmerge, "_merge_pair", explode)
+
+    for _ in range(12):
+        assert refmerge.repair(db, listing_of("nd-1")).failed is True
+
+    assert len(db.copies("before-ref-merge")) <= 8
+
+
+def test_held_pairs_are_written_out_once_while_the_set_does_not_change(db: Database, caplog: pytest.LogCaptureFixture) -> None:
+    """Nothing is mergeable, so the repair does not run (no hourly noise); the Host still sees the held pairs once, and again when the set changes."""
+    with db.tx() as c:
+        add_ref(c, S1, "Creature", ["LANDMVRKS"], ytm_video_id="aaaaaaaaaaa")
+        add_ref(c, L1, "Creature", ["LANDMVRKS"], ytm_video_id="bbbbbbbbbbb")
+        add_file(c, S1, "nd-1", 4000, source="youtube", path="a.opus")
+        add_file(c, L1, "nd-1", 5000, source="library", path="a.opus")
+
+    with caplog.at_level("INFO", logger="encore_server.refmerge"):
+        for _ in range(3):
+            link_library(db, FakeLibrary([entry(1)]))
+
+    held_lines = [r for r in caplog.records if "held back" in r.getMessage()]
+    assert len(held_lines) == 1, [r.getMessage() for r in held_lines]

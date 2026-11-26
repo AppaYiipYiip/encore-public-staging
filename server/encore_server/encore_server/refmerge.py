@@ -8,7 +8,7 @@ unknown album), and the phone downloaded it twice. Part A (`scanner.link_library
 **The rule.** Refs that share a file of the music server (`song_file.navidrome_song_id`) are one song shown twice. The survivor is the ref whose
 file row was attached FIRST (the keeper's, which carries the proper description). Never on the name alone: two recordings can share a name.
 
-**Held, never merged** (logged at INFO on every start; expected, not a failure):
+**Held, never merged** (logged at INFO whenever the repair runs and whenever the set of held pairs changes; expected, not a failure):
 
 * the two refs name different source items (their `ytm_video_id` differ, or their ISRC or Deezer id): two recordings, and the keeper's habit of
   handing a file to a second ref (`keeper/keeper.py`, a separate fix) is what put them on one file;
@@ -67,7 +67,11 @@ FOREIGN_KEY_COLUMNS = frozenset(
 #: a catalogue id or a playlist id), `playback_state.ref` and the ids inside its `queue`, and `file_log.ref`.
 
 _BACKUP_LABEL = "before-ref-merge"
-#: How many held pairs are written out one by one at every start; the rest are counted.
+#: How many of the merge's own copies of the database are kept: it takes one each time it MERGES (or fails to), and now runs in every complete pass, so a failure that repeats must not fill the disk.
+_KEEP_COPIES = 8
+#: The held pairs the last pass wrote out, per database file, so that an unchanged set is not written out every hour (`say_held_if_changed`).
+_held_said: dict[str, frozenset[tuple[str, str, str]]] = {}
+#: How many held pairs are written out one by one each time they are written out; the rest are counted.
 _LOG_HELD = 30
 #: What the survivor never takes from the other ref (its identity, or handled by its own rule below).
 _NOT_COPIED = frozenset(
@@ -207,6 +211,17 @@ def _is_there_anything_to_merge(conn: sqlite3.Connection, listing: Listing | Non
     return mergeable, held
 
 
+def say_held_if_changed(db: Database, held: list[Held]) -> None:
+    """The pass-end merge looks first and runs the repair only when a pair can be merged, which would leave the held pairs unmentioned for ever (they used to be written out at every start).
+    This writes them out when the set CHANGED since the last time for this database file (and never again while it stays the same), so a Host can still see them and the log is not hourly noise."""
+    now = frozenset((h.survivor, h.loser, h.reason) for h in held)
+    if _held_said.get(str(db.path)) == now:
+        return
+    _held_said[str(db.path)] = now
+    if held:
+        _say_held(held)
+
+
 def look(conn: sqlite3.Connection, listing: Listing | None = None) -> tuple[bool, list[Held]]:
     """The public form of the read the repair starts with (a look that changes nothing): whether any loser may be merged right now, and the pairs that are held, each
     with its reason. `rekey_audit.py` reads it to count the pairs the worklist holds back. Without a [listing] every shared file row counts: this is a count, never a decision to merge."""
@@ -234,6 +249,7 @@ def repair(db: Database, listing: Listing | None) -> RepairReport:
             return report
         report.backup = db.backup(_BACKUP_LABEL)
         log.info("ref merge: a copy of the database before the repair is kept at %s", report.backup)
+        db.prune_backups(_BACKUP_LABEL, _KEEP_COPIES, protect=[report.backup])
         with db.tx() as conn:
             report.held = []
             for survivor, losers in _components(conn, listing):
@@ -252,14 +268,14 @@ def repair(db: Database, listing: Listing | None) -> RepairReport:
         report.held = held
         report.failed = True
         log.exception(
-            "ref merge FAILED and changed nothing (the songs that share a file stay as they are; the repair is tried again at the next start)%s",
+            "ref merge FAILED and changed nothing (the songs that share a file stay as they are; the repair is tried again at the end of the next complete pass of the library link)%s",
             f"; the copy taken before it is {report.backup}" if report.backup else "",
         )
     return report
 
 
 def _say_held(held: list[Held]) -> None:
-    """The pairs left alone, written out at every start so nobody has to wonder (ids only: a line can be looked up, and carries no title)."""
+    """The pairs left alone, written out whenever the repair runs so nobody has to wonder (ids only: a line can be looked up, and carries no title)."""
     for pair in held[:_LOG_HELD]:
         log.info("ref merge: held back, not merged (%s): %s and %s hold the same file", pair.reason, pair.survivor, pair.loser)
     if len(held) > _LOG_HELD:

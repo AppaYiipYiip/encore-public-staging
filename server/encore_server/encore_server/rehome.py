@@ -93,7 +93,7 @@ transaction held the write lock for 4.7 s; a chunk of 500 holds it for a median 
 17 to 19 s instead of 5 s there (on a quiet machine 3.9 s, the lead's run, instead of 1.2 s, the first round's), because every transaction opens its own connection), each read inside its transaction. **The merge it owes is a durable debt** (`MERGE_PENDING_SETTING`), written in the SAME transaction as the first release, cleared only when
 `refmerge.repair` ran and did not fail: the pairs it held for `recheck_pending` are judged by the normal rules at the end of the pass, and when it failed, or the process died, or the
 worklist was already empty, the NEXT pass of the library link pays it (`pay_merge_debt`, from `idle` when there is no worklist), not only the next restart. **`refmerge.repair` was
-written for the start-up, before any thread; it now also runs with live threads.** That is safe because it is one `BEGIN IMMEDIATE` transaction (every other writer waits for it) and
+written for the start-up, before any thread; it now ONLY runs with live threads (N-47 moved the merge out of the start-up).** That is safe because it is one `BEGIN IMMEDIATE` transaction (every other writer waits for it) and
 every route reads a song id through `refs.canonical`; the cost is that a keeper job that holds the id of a merged-away ref in memory finds it gone when it finishes and
 fails that one keep, which is retried (the janitor retires refs under a running keeper the same way). **A pass that failed releases nothing, spends nothing and merges nothing.**
 
@@ -791,6 +791,8 @@ def pay_merge_debt(db: Database, listing: Listing | None) -> bool:
     with db.read() as conn:
         if repair_copy.setting(conn, MERGE_PENDING_SETTING) is None:
             return True
+    if listing is None or not listing.complete:
+        return False  # the repair would decide nothing: the debt is cleared ONLY when the repair ran (and did not fail), so it stays owed
     try:
         outcome = refmerge.repair(db, listing)
     except Exception:  # noqa: BLE001 - the repair never raises by its own contract; a pass must still end whatever it does

@@ -14,7 +14,7 @@ repair writes nothing and this reads only.
   `tests/test_rehome_held_text.py` checks it against what the pass does); the log of the pass says which reason each ref has;
 * the pairs of refs that hold one file and are held back by the merge repair, by reason, and how many of them for the worklist (`recheck_pending`): wanted 0 for the
   worklist (the other reasons are not failures: a pair with different YouTube ids is two recordings);
-* whether any pair can be merged right now and has not been (the merge runs at every start and after a pass that emptied the worklist).
+* whether any pair can be merged right now and has not been (the merge runs at the end of every complete pass of the library link).
 
 **Exit code**: 0 `PASS` (nothing wanted is missing), 1 `FAIL` (the lines say what), 2 it did not look (this Python's Unicode is not the pin, so every non-Latin key would
 look stale; the file is missing; the database is at an older schema than this code and was never started by it: let the server migrate it, or `Database.migrate` on a COPY).
@@ -84,7 +84,7 @@ class Audit:
             )
         if self.mergeable:
             found.append(
-                "refs that hold one file can be merged now and have not been (the merge repair runs at every start and after a pass that emptied the worklist)"
+                "refs that hold one file can be merged now and have not been (the merge repair runs at the end of every complete pass of the library link)"
             )
         return found
 

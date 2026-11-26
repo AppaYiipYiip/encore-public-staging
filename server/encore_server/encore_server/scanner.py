@@ -182,9 +182,11 @@ def _merge_repair(db: Database, listing: Listing) -> None:
     INFO each time it runs, which was once per start and would be every hour here. Never stops the link; the repair itself never raises."""
     try:
         with db.read() as conn:
-            mergeable, _ = refmerge.look(conn, listing)
+            mergeable, held = refmerge.look(conn, listing)
         if mergeable:
             refmerge.repair(db, listing)
+        else:
+            refmerge.say_held_if_changed(db, held)
     except Exception:  # noqa: BLE001 - the link is done and committed; the repair is tried again at the end of the next pass
         log.exception(
             "the merge of songs that share a listed file raised; the library link is done and the next pass tries again"
