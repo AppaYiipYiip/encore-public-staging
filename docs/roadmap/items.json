@@ -1225,5 +1225,14 @@
    }
   ],
   "from": "agent"
+ },
+ "N-49": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the encore command no longer goes silent on a stopped server",
+  "note": "Found 26 Nov 2026 on VM 108 (audit B-139): with the server STOPPED, `sudo encore update` printed nothing and did nothing, and `encore status` printed nothing. `server_version` is `curl | sed | head`, the script runs under `set -Eeuo pipefail`, curl cannot connect (exit 7), and `before=\"$(server_version)\"` ends the script without a word. A Host who stops the server and then updates it (or looks at its status) gets silence. Fixed at the source: the version is best-effort (an empty version, status 0), with a test that runs the very function in strict mode against a closed port, and a control against a server that answers. Server only; built, not walked.",
+  "proposal": true,
+  "size": "S",
+  "needs": [],
+  "from": "agent"
  }
 }
