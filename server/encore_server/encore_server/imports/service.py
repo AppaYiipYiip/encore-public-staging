@@ -32,6 +32,10 @@ log = logging.getLogger("encore_server.imports")
 #: A file of songs the app parsed is cut here (a person's whole history can be long; the link readers have their own limit).
 MAX_SONGS = 10_000
 _SOURCES = ("youtube", "spotify", "file")
+#: What a phone shows of an import (the `import.progress` event's own fields): what is compared to know whether there is anything to say.
+PROGRESS_KEYS = ("state", "total", "matched", "unmatched", "pending", "kept")
+#: An import is followed for this long after it was made (a day: the app's own word for 'recent'); older ones are history.
+FOLLOW_MS = 24 * 3_600_000
 _REST = {"blocked": 900.0, "timeout": 300.0, "slow": 300.0, "search_failed": 300.0}
 
 
@@ -126,6 +130,8 @@ class ImportService:
         self._scheduler: Scheduler | None = None
         self._finder = finder
         self._read = read if read is not None else default_reader()
+        #: What each person's phones were last TOLD of each import (`import.progress`, by anybody: the matching, Stop, the watch of stored songs): the watch pushes only what differs.
+        self._shown: dict[tuple[str, str], tuple[Any, ...]] = {}
 
     def use(self, scheduler: Scheduler | None) -> None:
         """The scheduler that runs this service's matching (made after the service, because it needs the service's handler)."""
@@ -276,6 +282,27 @@ class ImportService:
             ]
             return [r for r in (self._record(conn, person, i) for i in ids) if r is not None]
 
+    def following(self, person: str, *, now: int | None = None) -> list[dict[str, Any]]:
+        """The imports of this person that can still change under the phone's eyes: made in the last [FOLLOW_MS], their songs not purged, and running, or
+        with a matched song that no copy is kept of yet, or with numbers the phone was not told yet. (An import whose last songs the keeper gave up on stays here for
+        the day: a recount costs a few small queries and happens only when the feed of file changes moved.)"""
+        since = (now_ms() if now is None else now) - FOLLOW_MS
+        with self._db.read() as conn:
+            ids = [
+                r["id"]
+                for r in conn.execute(
+                    "SELECT id FROM import WHERE person = ? AND created_at >= ? AND entries_purged_at IS NULL ORDER BY created_at DESC LIMIT 50",
+                    (person, since),
+                )
+            ]
+            records = [r for r in (self._record(conn, person, i) for i in ids) if r is not None]
+        return [r for r in records if r["state"] == "running" or r["kept"] < r["matched"] or self._owes(person, r)]
+
+    def _owes(self, person: str, record: dict[str, Any]) -> bool:
+        """An import that is over, but whose last numbers the phone was not told yet (the last song was stored a moment ago): once more, then it is no longer followed."""
+        shown = self._shown.get((person, record["id"]))
+        return shown is not None and shown != tuple(record[key] for key in PROGRESS_KEYS)
+
     def entries(self, person: str, import_id: str) -> list[dict[str, Any]]:
         """Each song of the import and where it stands (the app's "Not found" rows and its "Find it" search come from here)."""
         with self._db.read() as conn:
@@ -401,7 +428,17 @@ class ImportService:
                 "UPDATE import SET state = 'done', updated_at = ? WHERE id = ? AND state = 'running'", (now_ms(), import_id)
             )
 
+    def publish_if_changed(self, person: str, record: dict[str, Any]) -> bool:
+        """Tells the person's devices this import's numbers when they are not what they were last told (or were never told: a server that restarted in the middle of an
+        import). `True` when it did. Safe to call as often as the caller likes: an import that did not change says nothing."""
+        shown = tuple(record[key] for key in PROGRESS_KEYS)
+        if self._shown.get((person, record["id"])) == shown:
+            return False
+        self._publish(person, record)
+        return True
+
     def _publish(self, person: str, record: dict[str, Any]) -> None:
+        self._shown[(person, record["id"])] = tuple(record[key] for key in PROGRESS_KEYS)
         self._hub.publish(
             person,
             {

@@ -71,6 +71,7 @@ from .errors import ApiError
 from .identity import NONCE_PATTERN, ServerIdentity, load_or_create
 from .ids import is_id, now_ms
 from .imports.service import ImportService
+from .imports.watch import ImportWatch
 from .keep_progress import MAX_RELEASE_SONGS, askable_refs, parse_group, parse_groups, progress, retryable_refs
 from .keep_watch import KeepWatch, fingerprint
 from .keeper.failures import describe_failure, describe_wait
@@ -100,9 +101,10 @@ from .verdicts import RefVerdicts
 log = logging.getLogger("encore_server.api")
 
 FEATURES = ["library", "playback", "live", "refs", "unavailable-ids", "ref-gone"]
-#: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`) and `keep-ask` (`POST keep/ask`, a
-#: whole download asked for at once). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
-KEEP_FEATURES = ["keep", "keep-ask"]
+#: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`), `keep-ask` (`POST keep/ask`, a
+#: whole download asked for at once) and `import-kept` (`import.progress` is pushed when a song of an import is STORED too, not only when one is matched: a phone that finds
+#: the word may stop asking `GET imports` every few seconds, N-43). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").
+KEEP_FEATURES = ["keep", "keep-ask", "import-kept"]
 #: What a server whose Host has not switched the catalogue off adds (`ENCORE_CATALOGUE=0`): the routes under `catalogue/` (docs/17 section 3).
 CATALOGUE_FEATURES = ["catalogue"]
 
@@ -135,6 +137,8 @@ class Services:
     stream_key: bytes = b""
     #: Tells a device how its downloads are going (`PUT keep/watch`, the live event `keep.progress`); `None` when this server does not keep songs.
     keep_watch: KeepWatch | None = None
+    #: Tells a person's devices when a song of an import is stored (`import.progress`, N-43); `None` when this server does not keep songs.
+    import_watch: ImportWatch | None = None
     #: Finds pictures for the artists the music server has none for (N-15); one of the background errands, `None` when there is no music-server account.
     artist_finder: ArtistFinder | None = None
     #: What the phones' search, artist and album pages are answered from (P2-12): the one gate to the catalogue, its cache and its shapes.
@@ -1707,6 +1711,11 @@ def create_app(
         if scheduler is not None and scheduler.handles("keep")
         else None
     )
+    import_watch = (
+        ImportWatch(database, scheduler, hub, imports)
+        if scheduler is not None and imports is not None and scheduler.handles("keep")
+        else None
+    )
     the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
 
     def ended(person_id: str, user: str | None) -> None:
@@ -1780,6 +1789,8 @@ def create_app(
                 tools.start()
             if keep_watch is not None:
                 keep_watch.start()
+            if import_watch is not None:
+                import_watch.start()
         try:
             yield
         finally:
@@ -1790,6 +1801,8 @@ def create_app(
             def room() -> float:
                 return max(MIN_JOIN_S, deadline - time.monotonic())
 
+            if import_watch is not None:
+                import_watch.stop(timeout=room())
             if keep_watch is not None:
                 keep_watch.stop(timeout=room())
             if tools is not None:
@@ -1822,6 +1835,7 @@ def create_app(
         identity=identity,
         music=client,
         keep_watch=keep_watch,
+        import_watch=import_watch,
         stream_key=stream_key,
         artist_finder=artist_finder,
         catalogue=catalogue,

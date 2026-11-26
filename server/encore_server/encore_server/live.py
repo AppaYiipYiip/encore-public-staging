@@ -1,7 +1,7 @@
 """The live channel (docs/17 section 4): one websocket per running app; events make things faster, never correct.
 
 Events (server to app) are `library.changed {cursor}`, `playback.changed {state}`, `device.takeover {by}`, `keep.progress {groups, youtube, serverTime}` (to the one device that
-watches, `keep_watch.py`), later `import.progress`.
+watches, `keep_watch.py`), `import.progress {importId, state, total, matched, unmatched, pending, kept}` (when a song is matched, when an import is stopped and when a song of it is stored: `imports/watch.py`, N-43).
 Writes happen in worker threads and the sockets live on the event loop, so [Hub.publish] is safe to call from any thread.
 """
 
@@ -65,6 +65,11 @@ class Hub:
         """Is this device listening right now?"""
         with self._lock:
             return any(c.device == device and not c.ended for c in self._connections.get(person, ()))
+
+    def persons(self) -> list[str]:
+        """The people with at least one listening device right now (a watch that works only for people who can hear it asks this first)."""
+        with self._lock:
+            return [person for person, members in self._connections.items() if members]
 
     def count(self, person: str | None = None) -> int:
         with self._lock:
