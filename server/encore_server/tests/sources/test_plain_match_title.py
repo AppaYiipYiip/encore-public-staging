@@ -23,11 +23,18 @@ from encore_server.sources.youtube.scoring import Candidate, Want
 from encore_server.textnorm import norm_title
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "ytm"
+#: Real VIDEO results for well-known Arabic songs (N-44 recall check, 26 Nov 2026). Kept apart from `ytm/` on purpose: `test_import_upload_corpus` judges EVERY upload recorded under `ytm/` for the
+#: importer's artist reading (N-26), which is another question than the one these answer.
+ARABIC_VIDEOS = Path(__file__).resolve().parent.parent / "fixtures" / "ytm_videos_n44"
 
 
 def recorded_rows() -> list[tuple[str, dict[str, Any]]]:
     rows: list[tuple[str, dict[str, Any]]] = []
-    for path in sorted(FIXTURES.glob("*.songs.json")) + sorted(FIXTURES.glob("*.videos.json")):
+    for path in (
+        sorted(FIXTURES.glob("*.songs.json"))
+        + sorted(FIXTURES.glob("*.videos.json"))
+        + sorted(ARABIC_VIDEOS.glob("*.videos.json"))
+    ):
         kind = "video" if path.name.endswith(".videos.json") else "song"
         for raw in json.loads(path.read_text(encoding="utf-8"))["results"]:
             rows.append((kind, raw))
@@ -187,8 +194,8 @@ def test_a_short_dense_script_artist_is_not_found_inside_another_name() -> None:
 
 
 def real_video(fixture: str, title_has: str) -> Candidate:
-    """A REAL video result (`tests/fixtures/ytm/<fixture>.videos.json`) as the plain path sees it."""
-    for raw in json.loads((FIXTURES / f"{fixture}.videos.json").read_text(encoding="utf-8"))["results"]:
+    """A REAL video result (`tests/fixtures/ytm_videos_n44/<fixture>.videos.json`) as the plain path sees it."""
+    for raw in json.loads((ARABIC_VIDEOS / f"{fixture}.videos.json").read_text(encoding="utf-8"))["results"]:
         if title_has in raw["title"]:
             candidate = as_plain("video", raw)
             assert candidate is not None
