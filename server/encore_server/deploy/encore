@@ -42,7 +42,9 @@ wait_answers() {
     for _ in $(seq 1 90); do answers && return 0; sleep 2; done
     return 1
 }
-server_version() { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null | sed -n 's/.*"serverVersion":"\([^"]*\)".*/\1/p' | head -1; }
+# The version is a nicety, never a reason to stop: a server that does not answer (stopped, starting) gives an EMPTY version and status 0. Under `set -Eeuo pipefail` a failing curl here ended
+# `encore update` and `encore status` without a word (B-139, found 26 Nov 2026 on a stopped server).
+server_version() { { curl -s -m 5 "http://127.0.0.1:${PORT}/encore/api/v1/info" 2>/dev/null | sed -n 's/.*"serverVersion":"\([^"]*\)".*/\1/p' | head -1; } || true; }
 host_ip() { ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}'; }
 # The address the phones are told for this computer on the home network (they also learn it from the server: GET /encore/api/v1/server).
 refresh_home_url() { local ip; ip="$(host_ip)"; if [ -n "$ip" ]; then set_env ENCORE_HOME_URL "http://${ip}:${PORT}"; fi; }
