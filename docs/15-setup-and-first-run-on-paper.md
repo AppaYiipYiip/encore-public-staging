@@ -6,7 +6,7 @@ Owner, 2026-10-21: *"did we already think of how many pages the setup would have
 on paper before code."* This page is that paper. Agents build exactly these pages (tasks P3-05, P3-06, P2-10); a change to a page is
 first a change here. Look and feel (art, motion, words): `16`. Stories: US-01…US-05.
 
-**Optional things (songs from YouTube, the higher-quality source, an existing music server, the away address, where backups go, friends on other servers) are all one model with three states: `35`. How the pages are served, how the button door and the command door make the same installation, and what the helper on the computer may do: `36`.**
+**The wizard has one page more than drawn first (P3-22, W-09 "Two keys to keep": the owner's recovery key and the backup key, shown once, before "All set"): its progress line reads "Step n of 9" from then on.** **Optional things (songs from YouTube, the higher-quality source, an existing music server, the away address, where backups go, friends on other servers) are all one model with three states: `35`. How the pages are served, how the button door and the command door make the same installation, and what the helper on the computer may do: `36`.**
 
 Principles for every page: **one decision per page**; a sensible choice is already selected so "Continue" always works; every
 optional page has "Skip for now"; plain words (no "Docker", "container", "port", "Navidrome", "Funnel"); a progress line

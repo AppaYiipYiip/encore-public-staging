@@ -116,6 +116,8 @@ A new screen is drawn at **C** and **X** before it is built (**M and T are parke
 | W-06 | **The web player** (everything in S-10 to S-52 at class X) | new (P6) | as the app | X | |
 | W-07 | **Admin: settings** (the server's name and colour, the feature switches the app follows: "Friends on other servers", recommendations, the quality tier, plays any song; YouTube state and rest) | admin | loaded, a switch changed, a switch the server cannot honour (said in words) | X | |
 | W-08 | **Admin: logs and diagnostics** (what the server has been saying, a copy to send to somebody, the versions) | admin | loaded, empty, a long log | X | |
+| W-09 | **Admin: the pages the new rules change** (drawn 26 Nov 2026, P3-22; D-61, `35`, `36`): Backups locked with Restore as a button, the question before a restore, restoring; Updates with an Update button; Away from home with the page running the steps; Settings as the add-ons list (three states); one add-on opened (Yours) and its failed check; the plain risk text before a risky add-on; Storage; the wizard's new page of the owner's two keys | `admin` (not built) | each frame is one state, see its caption | X | |
+| W-10 | **Password reset page** (drawn 26 Nov 2026, P3-22): the page the drawn password link opens; the server's reset (AC-6, AC-24) has no client today | server (not built) | a valid link, done (a dead link is W-05's identical page) | C | |
 | T-01 | **The terminal** (text, not drawn: the installer's output from the first line to "Encore is ready" with the pairing link and QR, and what each `encore` command prints) | `server/encore_server/deploy/install.sh`, `encore` | written in `15` §1 and §1b | text | |
 
 ## What this list does not contain, on purpose
