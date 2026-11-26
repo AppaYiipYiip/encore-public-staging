@@ -333,8 +333,12 @@ def test_a_second_scan_after_the_fix_still_creates_nothing(db: Database) -> None
     assert file_rows(db) == [(ref, "nd-1", KEPT_PATH, "youtube")]
 
 
-def test_a_file_that_two_refs_already_have_is_refreshed_on_the_first_and_makes_nothing_new(db: Database) -> None:
-    """The 178 pairs the old scan left behind: the pass neither crashes on them nor makes a third ref; it keeps to the first holder (the repair is separate)."""
+def test_a_file_that_two_refs_already_have_is_refreshed_on_the_first_and_makes_nothing_new(
+    db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The 178 pairs the old scan left behind: the pass neither crashes on them nor makes a third ref; it keeps to the first holder. (The merge of such a pair is its own step at the end of a
+    complete pass, `scanner._merge_repair`, tested in `test_ref_merge_alive.py`: switched off here so that this test is about the link alone.)"""
+    monkeypatch.setattr("encore_server.scanner._merge_repair", lambda database, listing: None)
     first = kept(db)
     with db.tx() as conn:
         second = refs.resolve(conn, {"title": "Rick the Bruiser", "artists": [", ".join(ARTISTS)], "durationMs": 261000})["id"]

@@ -318,5 +318,11 @@
   "evidence": "PR of N-49: deploy/encore server_version never fails; tests/test_deploy_scripts.py::test_the_version_of_a_server_that_does_not_answer_is_empty_and_never_an_error (red before: exit 7 with no output) and its control; built, not walked: the script is also exercised for real on VM 108 (encore update with the server stopped)",
   "at": "2026-11-26T00:14:42Z",
   "by": "lead (Claude Sonnet 5.5)"
+ },
+ "N-47": {
+  "state": "built",
+  "evidence": "PR #132 of N-47: refmerge.repair(db, listing) counts only rows Listing.alive leaves alive, decides nothing without a complete listing, runs at the end of every complete pass (looks first, copies capped at 8); tests/test_ref_merge_alive.py (red before: add-only then pruning pass merged two songs on a file the music server no longer lists; four mutants red); combined reviewer-attacker: no code defect, fuzz of ~7,500 worlds 0 violations; built, not walked",
+  "at": "2026-11-26T01:12:35Z",
+  "by": "helper-n47 (Claude Sonnet 5.5)"
  }
 }

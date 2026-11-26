@@ -31,7 +31,7 @@ from encore_server.sources.youtube.stream import StreamError, StreamProxy
 from encore_server.verdicts import RefVerdicts
 from tests.conftest import FakeVerifier, creds, resolve, song
 from tests.sources.test_stream import FakeYouTube, info_file
-from tests.test_ref_merge import add_file, add_ref
+from tests.test_ref_merge import add_file, add_ref, everything_listed
 from tests.test_stream_route import DATA, V1, address
 
 DAY = 24 * 3600 * 1000
@@ -163,7 +163,7 @@ def test_a_merge_never_hands_a_mark_to_the_survivor(db: Database) -> None:
         add_file(c, second, "nd-1", 5000, source="youtube", path="b.opus")
         refs.remember_missing(c, second, "not_found")
 
-    report = refmerge.repair(db)
+    report = refmerge.repair(db, everything_listed(db))
 
     assert [(m.survivor, m.loser) for m in report.merged] == [(first, second)]
     with db.read() as conn:

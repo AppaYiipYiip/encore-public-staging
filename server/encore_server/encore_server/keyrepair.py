@@ -6,7 +6,7 @@ was made with a fold that kept `a-z0-9` and DROPPED every other letter: two diff
 (`||`), a Latin artist with two different Arabic titles that start alike were `fairuz|habibi|`, and `Bjork` with a stroked o was `bjrk`. The stored keys are the
 old fold's; the code now makes keys with the new one (`textnorm.py`), so a song described again would not find its own ref and would make a duplicate.
 
-**What this does, at every start, after the migrations and BEFORE `refmerge.repair` (so the tombstones that run writes carry new keys), before any thread.**
+**What this does, at every start, after the migrations, before any thread (the merge repair no longer runs at start-up, N-47: it runs at the end of a complete pass, after the keys are new, so the tombstones it writes carry them).**
 The PLAN (a read, `plan`) runs at EVERY start, and its cost is the cost of every start: 0.07 s for 3,394 refs, 3.4 s for 200,000 synthetic refs (the WHOLE repair, once, with
 its copy and its writes, is another number: 0.28 s and 8.3 s). Only when it finds something is anything written, and only then is a copy
 taken. What it finds depends on which start it is:

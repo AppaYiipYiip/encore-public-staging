@@ -1,0 +1,9 @@
+{
+ "id": "20261126T011034Z-agent-a7b3",
+ "item": "N-34",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T01:10:34Z",
+ "type": "note",
+ "body": "26 Nov 2026, lead: the widened property test of the N-34 matcher, run under 150 Hypothesis seeds (it had passed CI with the one seed CI draws), found THREE flaws in the family comparisons merged in #130: (1) an unbracketed unseen edition label (\"Harbour Japanese Version\") left a sole album stamped; (2) a run of words ending in an edition word ate the title's own words (\"Gold Harbour 10th Anniversary Edition\" -> \"gold\"); (3) two albums differing only in a symbol (\"Ã· (Tour Edition)\", \"+ (Tour Edition)\") had one key and a rival vanished. PR #133 fixes them: the broad comparison is a relation (shared first word, extra words end in an edition word), the narrow key keeps standalone symbols. Replay of the fresh live answers: the SAME 41 stamps; the running server (sha-4dc359f) has the older comparison, so its stamps are safe (the fix only adds holds), and #133 reaches it with the next image. Rule worth keeping: a property test is run under many seeds before it is trusted."
+}

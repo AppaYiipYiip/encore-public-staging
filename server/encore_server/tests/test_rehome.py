@@ -42,6 +42,7 @@ from encore_server.ref_janitor import AGE_MS, RefJanitor
 from encore_server.scanner import LinkReport, described, link_library
 from tests import legacy_fold as legacy
 from tests.conftest import creds
+from tests.test_ref_merge import everything_listed
 
 V1 = "/encore/api/v1"
 LOG = "encore_server.rehome"
@@ -869,7 +870,7 @@ def test_the_hold_of_refmerge_is_released_in_the_same_link_and_the_pair_merges_b
     make_world(db, build)
     listed(db, scan_ref)
     with caplog.at_level(logging.INFO, logger="encore_server.refmerge"):
-        before = refmerge.repair(db)
+        before = refmerge.repair(db, everything_listed(db))
     assert before.merged == [] and [h.reason for h in before.held] == ["recheck_pending"]
 
     report = link_library(db, Music([tags]))
@@ -889,7 +890,9 @@ def test_the_hold_of_refmerge_is_released_in_the_same_link_and_the_pair_merges_b
 def test_refmerge_is_not_run_when_the_pass_released_nothing(old_world: Database, monkeypatch: pytest.MonkeyPatch) -> None:
     """A pass that did not empty a worklist row has nothing to release: the merge repair (which logs every held pair) must not run every hour."""
     calls: list[int] = []
-    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    # The pass-end merge of `scanner._merge_repair` (N-47) is its own call of the repair (and looks first); this test counts the DEBT's calls only, as it always did.
+    monkeypatch.setattr("encore_server.scanner._merge_repair", lambda database, listing: None)
+    monkeypatch.setattr(refmerge, "repair", lambda database, listing=None: calls.append(1) or refmerge.RepairReport())
     without_last = [s for s in listing() if s["id"] != "nd-4"]
 
     one_pass(old_world, without_last, prune=False)
@@ -1039,7 +1042,7 @@ def test_a_pass_that_failed_after_the_copy_releases_nothing_spends_no_copy_and_r
     is emptied only by a complete pass), must not spend the copy it relies on (the next pass reuses it) and must not run the merge repair; the next pass finishes the job."""
     listing_ = a_kept_and_a_moving_song(db)
     calls: list[int] = []
-    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    monkeypatch.setattr(refmerge, "repair", lambda database, listing=None: calls.append(1) or refmerge.RepairReport())
     real = library.touch_ref_holders
 
     def disk_full(conn: sqlite3.Connection, ref: str) -> None:
@@ -1569,7 +1572,7 @@ def test_a_pass_cut_between_two_chunks_is_resumed_by_the_next_one_and_the_merge_
     judged yet' was written in the SAME transaction as that release, so it survives; the next pass finishes the worklist and then runs the merge repair (once)."""
     tags = five_kept_songs(db)
     calls: list[int] = []
-    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    monkeypatch.setattr(refmerge, "repair", lambda database, listing=None: calls.append(1) or refmerge.RepairReport())
     monkeypatch.setattr(rehome, "RELEASE_CHUNK", 2, raising=False)
 
     with watching_transactions(monkeypatch, cut_after=1) as sizes, caplog.at_level(logging.ERROR, logger="encore_server.scanner"):
@@ -1579,7 +1582,7 @@ def test_a_pass_cut_between_two_chunks_is_resumed_by_the_next_one_and_the_merge_
     assert len(worklist(db)) == 3, "two refs are released, three are not"
     assert calls == [], "the merge repair waits for the end of the worklist"
     monkeypatch.undo()
-    monkeypatch.setattr(refmerge, "repair", lambda database: calls.append(1) or refmerge.RepairReport())
+    monkeypatch.setattr(refmerge, "repair", lambda database, listing=None: calls.append(1) or refmerge.RepairReport())
 
     again = link_library(db, Music(tags))
 
@@ -1593,7 +1596,7 @@ def test_the_merge_owed_is_written_in_the_same_transaction_as_the_first_release(
 ) -> None:
     """If the flag were written after the release, a process killed between the two would leave refs released and no memory that the pairs held for them were never judged."""
     tags = five_kept_songs(db)
-    monkeypatch.setattr(refmerge, "repair", lambda database: refmerge.RepairReport())
+    monkeypatch.setattr(refmerge, "repair", lambda database, listing=None: refmerge.RepairReport())
     monkeypatch.setattr(rehome, "RELEASE_CHUNK", 2, raising=False)
 
     with watching_transactions(monkeypatch, cut_after=1):
@@ -1626,14 +1629,16 @@ def test_a_merge_repair_that_failed_after_the_worklist_was_emptied_is_retried_at
     real = refmerge.repair
     calls: list[int] = []
 
-    def flaky(database: Database) -> refmerge.RepairReport:
+    def flaky(database: Database, listing: Listing | None = None) -> refmerge.RepairReport:
         calls.append(1)
         if len(calls) == 1:
             if how == "raises":
                 raise RuntimeError("the database is busy")
             return refmerge.RepairReport(failed=True)
-        return real(database)
+        return real(database, listing)
 
+    # The pass-end merge of `scanner._merge_repair` (N-47) is its own call of the repair; this test counts the DEBT's calls only, as it always did.
+    monkeypatch.setattr("encore_server.scanner._merge_repair", lambda database, listing: None)
     monkeypatch.setattr(refmerge, "repair", flaky)
 
     first = link_library(db, Music([tags]))

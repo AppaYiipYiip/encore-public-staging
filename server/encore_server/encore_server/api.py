@@ -35,7 +35,6 @@ from . import (
     library,
     netaddr,
     playback,
-    refmerge,
     refs,
     textnorm,
 )
@@ -1679,12 +1678,12 @@ def create_app(
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
-    # Right after the migrations and before anything else runs (no thread has started, no request can come), two repairs, each with its own backup, each one
-    # transaction, neither ever stopping the server from starting. FIRST the stored keys that are not what the fold makes now are rewritten (P2-25: a song in another
-    # alphabet was the key `||`; the plan runs at every start, so the keys of a rollback image are caught too); THEN the songs the old library scan made twice are
-    # merged (N-11), so the tombstones carry the new keys.
+    # Right after the migrations and before anything else runs (no thread has started, no request can come), the stored keys that are not what the fold makes now are
+    # rewritten (P2-25: a song in another alphabet was the key `||`; the plan runs at every start, so the keys of a rollback image are caught too), with its own backup, in
+    # one transaction, never stopping the server from starting. The songs the old library scan made twice (N-11) are NOT merged here any more (N-47, audit B-138): a merge
+    # cannot be undone and is judged on files the music server still lists, which only a COMPLETE pass of the library link can show (`refmerge.repair(db, listing)`, called at
+    # the end of every such pass in `scanner.link_library`); the keys are already new by then, so the tombstones a merge writes carry them.
     keyrepair.repair(database)
-    refmerge.repair(database)
     if youtube is None and settings.youtube:
         youtube = _default_youtube(settings, database)
     if isinstance(youtube, YoutubeSource) and youtube.verdicts is None:
