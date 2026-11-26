@@ -98,6 +98,8 @@ def test_the_page_is_served_at_home_with_the_whole_policy(rig: TestClient) -> No
     [
         ("admin.js", "text/javascript"),
         ("api.js", "text/javascript"),
+        ("dom.js", "text/javascript"),
+        ("people.js", "text/javascript"),
         ("admin.css", "text/css"),
         ("tokens.css", "text/css"),
         ("fonts/Figtree-Regular.ttf", "font/ttf"),
