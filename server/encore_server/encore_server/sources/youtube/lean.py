@@ -30,7 +30,7 @@ from typing import Any, Protocol
 
 from ...textnorm import artist_parts, norm_artist, norm_title, ratio, version_signature
 from .errors import FORMAT, DownloadError, classify_failure
-from .scoring import ACCEPT, Candidate, Resolver, Scored, Want, score
+from .scoring import ACCEPT, MIN_TITLE_SIMILARITY, Candidate, Resolver, Scored, Want, plain_title_ok, score
 
 log = logging.getLogger("encore_fetch.lean")
 
@@ -146,9 +146,6 @@ def queries_for(want: Want) -> list[str]:
     return [first] if first == second else [first, second]
 
 
-#: How alike two titles must be for a song result to be "the same song" (the scoring alone let a 0.21 title through on the artist's name).
-MIN_TITLE_SIMILARITY = 0.6
-
 #: How alike two artist names must be to be the same artist ("Oum" is not "Oum Dermam Stars").
 MIN_ARTIST_SIMILARITY = 0.9
 
@@ -173,8 +170,14 @@ def title_matches(want: Want, c: Candidate) -> bool:
 
 def rank(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> list[Scored]:
     """Every acceptable candidate, best first. A song result is only considered when it is by the artist asked for and has a similar
-    title: a wrong song is worse than "not found"."""
-    kept = [c for c in candidates if not c.structured or (artist_matches(want.artist, c.artists) and title_matches(want, c))]
+    title; an upload seen only by its title, channel and length (the plain path) is held to the same bar for its title (N-44, B-136): a wrong song is worse than
+    "not found"."""
+    kept = [
+        c
+        for c in candidates
+        if (c.structured and artist_matches(want.artist, c.artists) and title_matches(want, c))
+        or (not c.structured and plain_title_ok(want, c))
+    ]
     scored = sorted((score(want, c, max_duration_s) for c in kept), key=lambda s: s.score, reverse=True)
     return [s for s in scored if s.score >= ACCEPT]
 

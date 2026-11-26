@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from ...textnorm import mentions_version, norm_artist, norm_title, ratio
+from ...textnorm import is_dense_short, mentions_version, norm_artist, norm_title, ratio
 
 
 @dataclass(frozen=True)
@@ -60,6 +60,9 @@ class Scored:
 #: remembered for a week (`missing.py`) together with this number, and an answer made by an older revision is not believed. **Change it by one whenever a
 #: change here could make the matcher find what it did not find before** (a looser threshold, a better query, a new rule); a change that only makes it
 #: stricter, or that touches no decision, leaves it. One number voids every older "not found" at once: no sweep, no migration.
+#: **N-44 (audit B-136) did NOT raise it: it only makes the matcher STRICTER** (the plain path needs the title too, a title bar worked out word by word), and a stricter rule leaves the revision. (The
+#: item's first text said the revision would make songs already matched be asked again: it does not, it voids only a remembered "not found". A wrong upload already KEPT has no re-ask path; the
+#: raw upload title is not stored either, so finding them is a network audit of the kept videos: a later item.)
 #: 2 (P2-25): the text fold under every comparison now keeps the letters of every alphabet (before, an Arabic, Russian, Korean or Japanese title was `''` and an exact
 #: result was REJECTED), and a title of up to four dense-script characters is compared for equality (`textnorm.ratio`): a "not found" earned under revision 1 for a song
 #: in another alphabet was a wrong answer, so it is not believed any more.
@@ -68,6 +71,15 @@ MATCHER_REVISION = 2
 # A candidate must reach this to be used; below it the answer is "not found"
 # rather than a wrong song.
 ACCEPT = 4.0
+
+#: How alike two titles must be for an upload to be "the same song" (the scoring alone let a 0.21 title through on the artist's name). The structured path and the plain path are
+#: held to the same bar (N-44, audit B-136: the plain path had none, so another song of the artist's own channel at the same length scored 7.5 and was kept under the wrong name).
+MIN_TITLE_SIMILARITY = 0.6
+#: The bar for an upload seen only by its title, channel and length. HIGHER than the structured path's, because nothing else corroborates it, and because 0.6 is where two UNRELATED short titles
+#: meet by chance: measured on the real uploads of `tests/fixtures/ytm` (1,342 pairs of two different titles by one artist), the most alike two different songs are is 0.609 ("Enta Wana"
+#: and "Malekna Wassal", transliterated Arabic), while one song spelled two ways is 0.84 and above ("Kifak Inta" and "Kifak Enta" 0.90). **FINDING for the structured bar** (not changed here: it
+#: has the declared artist beside it, and a change of what is found needs its own measurement): the same 0.609 pair passes `MIN_TITLE_SIMILARITY` there.
+PLAIN_MIN_TITLE_SIMILARITY = 0.7
 
 # A plain-search hit this good (right title, the artist's own or Topic
 # channel, the right length to the second) is taken at once: the slower
@@ -98,16 +110,69 @@ def _duration_points(want: Want, c: Candidate, max_duration_s: int, reasons: lis
     return pts
 
 
+def _contains(name: str, text: str) -> bool:
+    """Whether a normalised [name] is in a normalised [text]. A short dense-script name (see `textnorm.is_dense_short`) is only found as a WHOLE WORD: it is compared for equality everywhere
+    else, and a substring would let two different short names share a character (B-136: "嵐" in "嵐 Fan Channel" was an artist match worth 2.0)."""
+    if not name:
+        return False
+    return name in text.split() if is_dense_short(name) else name in text
+
+
+#: From this length on, an upload that is the wanted length to the second counts as the same recording whatever else its title says (a recitation, a mix, a long set).
+LONG_CONTENT_S = 1200
+
+
+def _long_and_same_length(want: Want, c: Candidate) -> bool:
+    return bool(
+        want.duration_s and c.duration_s and want.duration_s >= LONG_CONTENT_S and abs(want.duration_s - c.duration_s) <= 2
+    )
+
+
+def _words_alike(a: str, b: str) -> float:
+    """How alike two normalised titles are WORD BY WORD, in order: 0 unless they have the same number of words, then the weakest word's `ratio`. One song spelled two ways keeps its words
+    ("kifak inta" and "kifak enta" 0.75); another song does not ("hurt" and "hurt me", "ny state of mind" and "ny state of mind pt 3": an extra word is another title). The character
+    similarity of whole strings (`difflib` over the full title) let a short title plus a short word through at 0.73 and two unrelated transliterated titles at 0.61."""
+    xs, ys = a.split(), b.split()
+    if not xs or not ys or len(xs) != len(ys):
+        return 0.0
+    return min(ratio(x, y) for x, y in zip(xs, ys, strict=True))
+
+
+def plain_title_similarity(want: Want, c: Candidate) -> float:
+    """How like the wanted title an upload's title is (0 to 1), as the plain path reads it (N-44, B-136): the titles alike word by word, or alike once the artist's name is taken out
+    (\"Radiohead - Creep\"), or the same letters with the spaces and dots moved (\"N.Y.\" and \"NY\", at 0.9 or more), or the wanted title IN the upload's title **with nothing else of the
+    song left** (after the title and the artist's name are taken out no word remains), or, for long content, the same length to the second whatever else the title says."""
+    wt, ct = norm_title(want.title), norm_title(c.title)
+    wa = norm_artist(want.artist)
+    bare = ct.replace(wa, " ").strip() if wa else ct
+    sim = max(_words_alike(wt, ct), _words_alike(wt, bare))
+    squashed_want, squashed_bare = wt.replace(" ", ""), bare.replace(" ", "")
+    if squashed_want and ratio(squashed_want, squashed_bare) >= 0.9:
+        sim = max(sim, 0.9)
+    if wt and wt in ct:
+        rest = ct.replace(wt, " ", 1)
+        if wa:
+            rest = rest.replace(wa, " ")
+        # What else the upload's title says is the evidence that it is ANOTHER song ("Hurt Me"), except for long content: an upload of hours that is the wanted length to the second is its
+        # own fingerprint, and such titles are long and descriptive on purpose (a recitation: "Surah Al-Baqarah Mishary Rashed Alafasy 1422H ...", the recorded case).
+        if not rest.split() or _long_and_same_length(want, c):
+            sim = max(sim, 0.9)
+    return sim
+
+
+def plain_title_ok(want: Want, c: Candidate) -> bool:
+    """The upload's title is the wanted song's: a wrong song is worse than \"not found\"."""
+    return plain_title_similarity(want, c) >= PLAIN_MIN_TITLE_SIMILARITY
+
+
 def score_plain(want: Want, c: Candidate, max_duration_s: int = 2700) -> Scored:
     """Title / channel / duration only (the fallback source)."""
     reasons: list[str] = []
     s = 0.0
-    wt, ct = norm_title(want.title), norm_title(c.title)
+    ct = norm_title(c.title)
     wa, ca = norm_artist(want.artist), norm_artist(c.channel)
 
-    title_sim = max(ratio(wt, ct), ratio(wt, ct.replace(wa, "").strip()))
-    if wt and wt in ct:
-        title_sim = max(title_sim, 0.9)
+    title_sim = plain_title_similarity(want, c)
     s += 5.0 * title_sim
     reasons.append(f"title={title_sim:.2f}")
 
@@ -118,7 +183,7 @@ def score_plain(want: Want, c: Candidate, max_duration_s: int = 2700) -> Scored:
     elif artist_sim >= 0.9:
         s += 2.5  # the artist's own channel
         reasons.append("artist channel")
-    if artist_sim >= 0.8 or (wa and wa in ct) or (wa and wa in ca):
+    if artist_sim >= 0.8 or _contains(wa, ct) or _contains(wa, ca):
         s += 2.0
         reasons.append("artist")
 
@@ -171,7 +236,7 @@ def score(want: Want, c: Candidate, max_duration_s: int = 2700) -> Scored:
 
 def best(want: Want, candidates: list[Candidate], max_duration_s: int = 2700) -> Scored | None:
     scored = sorted(
-        (score(want, c, max_duration_s) for c in candidates),
+        (score(want, c, max_duration_s) for c in candidates if c.structured or plain_title_ok(want, c)),
         key=lambda x: x.score,
         reverse=True,
     )
