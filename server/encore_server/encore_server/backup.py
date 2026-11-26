@@ -8,7 +8,18 @@ copies again with `--verify` before it puts them in place.
     python -m encore_server backup --encore-db /data/encore.db --navidrome-db /nd/navidrome.db --out /out
     python -m encore_server backup --verify /somewhere
 
-Nothing here prints a row of data: only file names, sizes and the word that the copy is whole.
+A backup is secret material (P3-30): it holds the accounts, the server's private identity key, the key that signs song addresses and the music
+server's administrator login. So the archive `encore backup` packs is **encrypted to a public key** (age, X25519) kept on this computer, while the
+secret half is shown to the Host once and never stored here: the nightly backup runs with nobody to ask for a passphrase, a copy taken away (a
+USB stick, a cloud folder) cannot be opened by whoever finds it, and even a thief of this computer cannot open the old copies. Opening one needs
+the key the Host saved:
+
+    python -m encore_server backup --new-key                       prints `public=age1...` and `secret=AGE-SECRET-KEY-1...`, once
+    python -m encore_server backup --encrypt ARCHIVE --to KEYFILE --out ARCHIVE.age
+    python -m encore_server backup --decrypt ARCHIVE.age --out ARCHIVE       (the secret key on standard input, one line)
+    python -m encore_server backup --matches KEYFILE                          (the secret key on standard input: is it the one for this public key?)
+
+Nothing here prints a row of data or a secret except `--new-key`, which exists to show one: only file names, sizes and the word that the copy is whole.
 """
 
 from __future__ import annotations
@@ -18,6 +29,9 @@ import sqlite3
 import sys
 from pathlib import Path
 from typing import TextIO
+
+import pyrage
+from pyrage import x25519
 
 #: The names the databases have inside a backup, whatever they are called where they came from.
 ENCORE_DB = "encore.db"
@@ -76,6 +90,88 @@ def copy_database(source: Path, target: Path) -> int:
     return target.stat().st_size
 
 
+#: What the encrypted archive is called: the plain one with `.age` after it (so `encore restore` knows without opening it which kind it holds).
+ENCRYPTED_SUFFIX = ".age"
+
+
+def new_key() -> tuple[str, str]:
+    """A new pair for the backups: the public half (`age1...`, kept on the computer, can only lock) and the secret half (`AGE-SECRET-KEY-1...`,
+    shown to the Host once, can open every backup made with the public half)."""
+    identity = x25519.Identity.generate()
+    return str(identity.to_public()), str(identity)
+
+
+def read_public_key(path: Path) -> x25519.Recipient:
+    """The public key in [path] (comment lines starting with `#` and blank lines are ignored)."""
+    try:
+        lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
+    except (OSError, UnicodeDecodeError) as error:
+        raise BackupError(f"The backup key file {path.name} could not be read ({type(error).__name__}).") from error
+    keys = [line for line in lines if line and not line.startswith("#")]
+    if len(keys) != 1:
+        raise BackupError(f"{path.name} should hold one backup key (a line that starts with age1), and holds {len(keys)}.")
+    try:
+        return x25519.Recipient.from_str(keys[0])
+    except pyrage.RecipientError as error:
+        raise BackupError(f"{path.name} does not hold a backup key this Encore knows (it should start with age1).") from error
+
+
+def parse_secret_key(text: str) -> x25519.Identity:
+    """The secret key a Host typed or pasted. The text is never part of a message: only that it is not a key."""
+    try:
+        return x25519.Identity.from_str(text.strip())
+    except pyrage.IdentityError as error:
+        raise BackupError("That is not a backup key. It is one long line that starts with AGE-SECRET-KEY-.") from error
+
+
+def encrypt_file(source: Path, target: Path, recipient: x25519.Recipient) -> int:
+    """Writes [source] encrypted to [recipient] as a new file [target] (through a `.part` file, so a cut run leaves nothing that looks whole) and
+    returns its size. The source is not touched: whoever called this removes it once the result is in place."""
+    if not source.is_file():
+        raise BackupError(f"{source.name} was not found.")
+    if target.exists():
+        raise BackupError(f"{target.name} already exists.")
+    part = target.with_name(target.name + ".part")
+    try:
+        with source.open("rb") as reader, part.open("wb") as writer:
+            pyrage.encrypt_io(reader, writer, [recipient])
+        part.replace(target)
+    except (OSError, pyrage.EncryptError) as error:
+        part.unlink(missing_ok=True)
+        raise BackupError(f"{source.name} could not be encrypted ({type(error).__name__}).") from error
+    return target.stat().st_size
+
+
+def decrypt_file(source: Path, target: Path, identity: x25519.Identity) -> int:
+    """Opens [source] with the secret key into a new file [target] and returns its size. Two different sentences for the two different reasons it can
+    fail, because the Host's next step differs: a key that is not the one (look for the right one) and a file that is damaged (use another backup)."""
+    if not source.is_file():
+        raise BackupError(f"{source.name} was not found.")
+    if target.exists():
+        raise BackupError(f"{target.name} already exists.")
+    part = target.with_name(target.name + ".part")
+    try:
+        with source.open("rb") as reader, part.open("wb") as writer:
+            pyrage.decrypt_io(reader, writer, [identity])
+        part.replace(target)
+    except pyrage.DecryptError as error:
+        part.unlink(missing_ok=True)
+        # age says "No matching keys found" for a key that is not the one (and also when the first bytes of the file were changed: the Host's next step,
+        # trying the key they are sure of and then another backup, is the same); anything else is a file that is not a whole backup.
+        if "no matching keys" in str(error).lower():
+            raise BackupError(
+                "That key does not open this backup. It must be the key that was shown when backups were first protected."
+            ) from error
+        raise BackupError("This backup file is damaged or was changed after it was made: it cannot be opened.") from error
+    except OSError as error:
+        part.unlink(missing_ok=True)
+        # The body of the file is checked as it is read, and a changed or cut body comes back as an OSError without an error number.
+        if getattr(error, "errno", None) is None and "decryption error" in str(error).lower():
+            raise BackupError("This backup file is damaged or was changed after it was made: it cannot be opened.") from error
+        raise BackupError(f"{source.name} could not be opened ({type(error).__name__}).") from error
+    return target.stat().st_size
+
+
 def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: TextIO | None = None) -> int:
     """Entry point of `python -m encore_server backup`. Returns the exit status; a sentence goes to standard error on failure."""
     out = out or sys.stdout
@@ -85,12 +181,57 @@ def command(argv: list[str] | None = None, *, out: TextIO | None = None, err: Te
     parser.add_argument("--navidrome-db", type=Path)
     parser.add_argument("--out", type=Path)
     parser.add_argument("--verify", type=Path)
+    parser.add_argument("--new-key", action="store_true")
+    parser.add_argument("--encrypt", type=Path)
+    parser.add_argument("--decrypt", type=Path)
+    parser.add_argument("--to", type=Path)
+    parser.add_argument("--matches", type=Path)
+    parser.add_argument("--public-of", action="store_true")
     try:
         args = parser.parse_args(argv if argv is not None else sys.argv[2:])
     except SystemExit:
-        print("backup: use --encore-db FILE and/or --navidrome-db FILE with --out DIR, or --verify DIR", file=err)
+        print(
+            "backup: use --encore-db FILE and/or --navidrome-db FILE with --out DIR, or --verify DIR, or --new-key, "
+            "or --encrypt FILE --to KEYFILE --out FILE, or --decrypt FILE --out FILE, or --matches KEYFILE, or --public-of",
+            file=err,
+        )
         return 2
     try:
+        if args.new_key:
+            public, secret = new_key()
+            print(f"public={public}", file=out)
+            print(f"secret={secret}", file=out)
+            return 0
+        if args.public_of:
+            # The public half of the secret key on standard input: what a restore keeps as the key the install's backups are locked with.
+            if sys.stdin is None or sys.stdin.isatty():
+                raise BackupError("The key is read from the standard input (one line), never typed as part of the command.")
+            print(f"public={parse_secret_key(sys.stdin.readline()).to_public()}", file=out)
+            return 0
+        if args.matches is not None:
+            # "Is the key you saved the one that locks this install's backups?" The secret comes on standard input, and only the answer is printed.
+            if sys.stdin is None or sys.stdin.isatty():
+                raise BackupError("The key is read from the standard input (one line), never typed as part of the command.")
+            saved = parse_secret_key(sys.stdin.readline())
+            if str(saved.to_public()) != str(read_public_key(args.matches)):
+                raise BackupError("That is not the key of this install's backups.")
+            print("that is the key", file=out)
+            return 0
+        if args.encrypt is not None:
+            if args.to is None or args.out is None:
+                raise BackupError("Say which key locks it and where the result goes (--to KEYFILE and --out FILE).")
+            size = encrypt_file(args.encrypt, args.out, read_public_key(args.to))
+            print(f"{args.out.name} {size} bytes, locked", file=out)
+            return 0
+        if args.decrypt is not None:
+            if args.out is None:
+                raise BackupError("Say where the opened backup goes (--out FILE).")
+            if sys.stdin is None or sys.stdin.isatty():
+                raise BackupError("The key is read from the standard input (one line), never typed as part of the command.")
+            secret_key = parse_secret_key(sys.stdin.readline())
+            size = decrypt_file(args.decrypt, args.out, secret_key)
+            print(f"{args.out.name} {size} bytes, opened", file=out)
+            return 0
         if args.verify is not None:
             found = [name for name in (ENCORE_DB, MUSIC_SERVER_DB) if (args.verify / name).exists()]
             if ENCORE_DB not in found:

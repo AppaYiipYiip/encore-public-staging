@@ -77,7 +77,19 @@ $ sudo encore funnel on
 $ sudo encore backup
   … Copying the databases
   ✓ Backup made: /opt/encore/backups/encore-backup-20261024-031200.tar.gz (14M)
-    It holds the accounts, playlists and likes, and a login this install needs: keep it private. Your music is not in it.
+    It holds the accounts, playlists and likes, and the keys this install needs. Only the backup key you saved can open it. Your music is not in it.
+```
+```
+$ sudo encore secure                    (the installer runs it; an install from before keys runs it once: encore update says so)
+  ✓ The music server's passwords are locked with a key of this install (in /opt/encore/.env and in every backup)
+
+  Your backup key. Save it now (a password manager, or on paper in a safe place):
+
+        AGE-SECRET-KEY-1...
+
+  Every backup is locked so that a copy taken away or stolen cannot be opened.
+  Encore does not keep this key. Without it a backup cannot be opened, by anybody, and nobody can make it again.
+  It is shown only this once.
 ```
 ```
 $ sudo encore pair                      (after P2-20; ADR-R40 slice B)

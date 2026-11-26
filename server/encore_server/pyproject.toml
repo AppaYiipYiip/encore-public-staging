@@ -12,6 +12,8 @@ dependencies = [
   "httpx>=0.27",
   # The server's identity: an Ed25519 key pair (docs/11 ADR-R40). Apache-2.0 OR BSD-3-Clause; wheels for x86-64 and aarch64.
   "cryptography>=43",
+  # The backups are encrypted to a public key kept on the computer (P3-30): age (X25519), the standard format, in Rust. MIT; abi3 wheels for Windows, x86-64 and aarch64 Linux.
+  "pyrage>=1.2",
 ]
 
 [project.optional-dependencies]

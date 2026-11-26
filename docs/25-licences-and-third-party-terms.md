@@ -20,6 +20,7 @@ P5-06 and this table corrected.
 | FFmpeg | LGPL-2.1+ or GPL depending on the build (*verify the build used*) | inside the server image (remux, loudness, transcoding) | notice + source offer for the exact build |
 | mutagen (tags) | GPL-2.0-or-later | server | compatible with GPL-3.0 |
 | FastAPI / Starlette / uvicorn | MIT / BSD-3 / BSD-3 | server | notice |
+| `pyrage` (Python) | MIT (it wraps `rage`, MIT OR Apache-2.0) | server (in use, P3-30: backups are locked to a public key, age format; `pyproject.toml`); abi3 wheels for Windows and manylinux x86-64 and aarch64 | notice |
 | `cryptography` (Python) | Apache-2.0 OR BSD-3-Clause | server (in use, ADR-R40: the server's Ed25519 key; `pyproject.toml`); wheels for manylinux x86-64 and aarch64 | notice; compatible with GPL-3.0 |
 | `cryptography` (Dart) | Apache-2.0 | app (in use, ADR-R40: verifying the server's signature, `server_identity.dart`; also runs on web) | notice |
 | Tailscale client | BSD-3-Clause | optional; installed on the Host's computer by `encore funnel on` when it is absent (ADR-R25), not a container | notice |

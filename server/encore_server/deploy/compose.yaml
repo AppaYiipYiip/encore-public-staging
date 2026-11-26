@@ -20,6 +20,11 @@ services:
       # Nothing about this server is sent to anybody.
       ND_ENABLEINSIGHTSCOLLECTOR: "false"
       ND_LYRICSPRIORITY: ".lrc,embedded"
+      # The key every person's password is stored under in the music server (P3-30). Without one it uses a key that is the same in every install and is in its public code.
+      # The installer makes this install's own into .env. NEVER change it, and never lose it: every sign-in fails without the key the accounts were locked with.
+      # Empty is allowed on purpose: it is the same as no key (measured on Navidrome 0.64.2), so an install from before keys that is updated by its OLD `encore` command
+      # still starts, and `encore update` or `encore secure` then makes the key. What refuses to start without a key that the install once had is the `encore` command, not this file.
+      ND_PASSWORDENCRYPTIONKEY: ${ENCORE_PASSWORD_KEY:-}
       # Its own nightly copy of its database (accounts, play counts) in the data folder, seven kept.
       ND_BACKUP_PATH: /data/backup
       ND_BACKUP_SCHEDULE: "0 3 * * *"
