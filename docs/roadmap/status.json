@@ -324,5 +324,11 @@
   "evidence": "PR #132 of N-47: refmerge.repair(db, listing) counts only rows Listing.alive leaves alive, decides nothing without a complete listing, runs at the end of every complete pass (looks first, copies capped at 8); tests/test_ref_merge_alive.py (red before: add-only then pruning pass merged two songs on a file the music server no longer lists; four mutants red); combined reviewer-attacker: no code defect, fuzz of ~7,500 worlds 0 violations; built, not walked",
   "at": "2026-11-26T01:12:35Z",
   "by": "helper-n47 (Claude Sonnet 5.5)"
+ },
+ "N-43": {
+  "state": "built",
+  "evidence": "PRs #136 (server: ImportWatch pushes import.progress when a song of an import is stored; info lists import-kept; tests/test_import_kept_push.py, five mutants red) and #137 (app: the phone asks every 10 s only on a server that does not list import-kept; tests/features/import_watch_test.dart, two mutants red). Built, not walked: not deployed to VM 108 nor installed on the A35.",
+  "at": "2026-11-26T08:44:09Z",
+  "by": "Claude"
  }
 }
