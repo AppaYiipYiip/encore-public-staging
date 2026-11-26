@@ -195,6 +195,19 @@ def require(principal: Principal | None) -> Principal:
 # ---- signed stream addresses (docs/17 section 1): a player cannot always set headers, so the address carries a signature.
 
 #: How long a stream address works. Long, because a player keeps using the same address for a whole listen (a two-hour recitation).
+#: A browser is signed in for a short while (docs/36 section 2): the page keeps its device token for the life of the tab, and the server ends a browser
+#: device ("web") that has not been used for this long, or that is older than this, whatever the tab says. A phone is a device that stays.
+WEB_SESSION_IDLE_MS = 12 * 3600 * 1000
+WEB_SESSION_LIFETIME_MS = 7 * 24 * 3600 * 1000
+
+
+def web_session_over(created_ms: int, seen_ms: int | None, now: int) -> bool:
+    """Is a browser device past either limit? `seen_ms` is written at most once a minute, so the idle limit is exact to the minute."""
+    return (
+        now - (seen_ms if seen_ms is not None else created_ms) > WEB_SESSION_IDLE_MS or now - created_ms > WEB_SESSION_LIFETIME_MS
+    )
+
+
 STREAM_URL_TTL_S = 6 * 3600
 
 #: How long a cover pass works: a week. One pass opens every picture (a screen shows thirty), so the phone asks for it rarely.

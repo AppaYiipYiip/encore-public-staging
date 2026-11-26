@@ -1,7 +1,7 @@
 """Writes the admin website's colours, spacing, radii and motion from the app's own design file, so the two cannot drift apart.
 
-    python tool/gen_admin_tokens.py            # rewrites server/encore-admin/encore_admin/static/tokens.css
-    python tool/gen_admin_tokens.py --check    # exits 1 when the file is not what the design file says (the tests run this)
+    python tools/gen_admin_tokens.py            # rewrites the tokens.css of the admin site (and of the frozen legacy admin)
+    python tools/gen_admin_tokens.py --check    # exits 1 when a file is not what the design file says (the tests run this)
 """
 from __future__ import annotations
 
@@ -11,7 +11,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "app" / "lib" / "design" / "tokens.dart"
-TARGET = ROOT / "server" / "legacy" / "encore-admin" / "encore_admin" / "static" / "tokens.css"
+#: Each file and the address its fonts are served at: the admin site is under /encore/ (docs/36 section 2); the frozen legacy one served them from /fonts.
+TARGETS = [
+    (ROOT / "server" / "encore_server" / "encore_server" / "web" / "tokens.css", "/encore/web/fonts"),
+    (ROOT / "server" / "legacy" / "encore-admin" / "encore_admin" / "static" / "tokens.css", "/fonts"),
+]
 
 FIELDS = ["bg", "surface", "surfaceHigh", "outline", "onBg", "onBgMuted", "onBgFaint", "accent", "onAccent", "danger", "warning"]
 
@@ -73,16 +77,19 @@ def render() -> str:
 
 
 def main() -> int:
-    wanted = render()
-    if "--check" in sys.argv:
-        have = TARGET.read_text(encoding="utf-8") if TARGET.exists() else ""
-        if have.replace("\r\n", "\n") != wanted:
-            print("tokens.css is out of date: run python tool/gen_admin_tokens.py", file=sys.stderr)
-            return 1
-        return 0
-    TARGET.write_text(wanted, encoding="utf-8", newline="\n")
-    print(f"wrote {TARGET.relative_to(ROOT)}")
-    return 0
+    base = render()
+    stale = False
+    for target, fonts in TARGETS:
+        wanted = base.replace("url('/fonts/", f"url('{fonts}/")
+        if "--check" in sys.argv:
+            have = target.read_text(encoding="utf-8") if target.exists() else ""
+            if have.replace("\r\n", "\n") != wanted:
+                print(f"{target.relative_to(ROOT)} is out of date: run python tools/gen_admin_tokens.py", file=sys.stderr)
+                stale = True
+        else:
+            target.write_text(wanted, encoding="utf-8", newline="\n")
+            print(f"wrote {target.relative_to(ROOT)}")
+    return 1 if stale else 0
 
 
 if __name__ == "__main__":

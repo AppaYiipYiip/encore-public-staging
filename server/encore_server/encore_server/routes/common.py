@@ -26,6 +26,7 @@ from ..auth import (
     bearer_token,
     hash_token,
     subsonic_credentials,
+    web_session_over,
 )
 from ..catalogue import Catalogue
 from ..config import Settings
@@ -114,12 +115,15 @@ def get_principal(request: Request) -> Principal:
     if token is not None:
         with svc.db.read() as conn:
             row = conn.execute(
-                "SELECT d.id AS device, d.last_seen AS seen, p.id AS person, p.navidrome_user AS user, p.role AS role, p.locked AS locked"
+                "SELECT d.id AS device, d.kind AS kind, d.created_at AS created, d.last_seen AS seen, p.id AS person, p.navidrome_user AS user,"
+                " p.role AS role, p.locked AS locked"
                 " FROM device d JOIN person p ON p.id = d.person WHERE d.token_hash = ? AND d.revoked_at IS NULL",
                 (hash_token(token),),
             ).fetchone()
         if row is None or row["locked"]:
             raise ApiError("unauthorized", "This device is not signed in any more. Sign in again.")
+        if row["kind"] == "web" and web_session_over(row["created"], row["seen"], now_ms()):
+            raise ApiError("unauthorized", "This browser was signed out after a while. Sign in again.")
         _note_device_seen(svc, row["device"], row["seen"])
         return Principal(row["person"], row["user"], row["role"], row["device"])
 
@@ -279,6 +283,14 @@ def limiter_of(request: Request) -> Limiter:
     limiter = services(request).limiter
     assert limiter is not None
     return limiter
+
+
+def refuse_public(request: Request) -> None:
+    """A dependency of every admin route and page (docs/36 section 2, `15` section 4: "home network only; never on the public address"): a request that came in
+    from the internet gets the very answer an unknown route of ours gets, so it learns nothing about what is here. Declared BEFORE the sign-in dependency, so a
+    stranger without a token is told "not found", not "sign in"."""
+    if is_public_request(request):
+        raise ApiError("not_found")
 
 
 def require_owner(p: Principal) -> None:

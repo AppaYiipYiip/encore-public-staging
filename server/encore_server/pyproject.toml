@@ -24,7 +24,7 @@ dev = ["pytest>=8", "hypothesis>=6", "ruff", "mypy"]
 include = ["encore_server*"]
 
 [tool.setuptools.package-data]
-encore_server = ["migrations/*.sql"]
+encore_server = ["migrations/*.sql", "web/*", "web/fonts/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
