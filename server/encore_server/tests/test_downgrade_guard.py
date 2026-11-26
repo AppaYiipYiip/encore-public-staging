@@ -66,6 +66,27 @@ def test_a_step_that_is_unknown_but_lower_than_the_newest_is_refused_too(tmp_pat
     assert path.read_bytes() == before
 
 
+def test_a_step_with_the_same_number_and_another_name_is_refused(tmp_path: Path) -> None:
+    """Two branches took the same number: the data's step 20 is not this code's step 20, and a comparison of numbers alone would let it through."""
+    path = tmp_path / "encore.db"
+    Database(path).migrate(migrations=[*steps(1, 2), (20, "0020_a.sql", STEP.format(name="ta"))])
+    before = path.read_bytes()
+    with pytest.raises(MigrationFailed, match="newer version"):
+        Database(path).migrate(migrations=[*steps(1, 2), (20, "0020_b.sql", STEP.format(name="tb"))])
+    assert path.read_bytes() == before
+
+
+def test_every_step_of_a_real_database_has_the_name_the_code_has(tmp_path: Path) -> None:
+    """The check of names is safe on a real install only while no step was ever renamed in the code: a database made by this code is the code's own."""
+    path = tmp_path / "encore.db"
+    Database(path).migrate()
+    conn = sqlite3.connect(path)
+    stored = {row[0]: row[1] for row in conn.execute("SELECT version, name FROM schema_migrations")}
+    conn.close()
+    assert stored == {number: name for number, name, _ in Database._migrations()}
+    assert Database(path).migrate() == []
+
+
 def test_an_older_database_and_the_codes_own_database_still_start(tmp_path: Path) -> None:
     path = tmp_path / "encore.db"
     assert Database(path).migrate(migrations=steps(1, 2)) == [1, 2]

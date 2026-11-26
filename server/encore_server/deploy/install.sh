@@ -377,8 +377,11 @@ say ""
 # No QR code here: it used to encode the bare address, which a phone's camera opens in the browser as the music server's own page, not Encore,
 # and the app cannot scan it. A QR that carries an Encore setup link comes with the pairing link (docs/tasks AUDIT F16, P2-19 slice B).
 say "  Please do not open that address in a browser: it shows the music server's own page, not Encore."
-say "  There is no Encore admin page yet (it is being built). Until then this computer's command line"
-say "  is how you look after the server:"
+say "  The pages that look after the server are on your home network, in a browser on this network:"
+say ""
+say "        http://${HOST_IP}:${PORT}/admin      sign in with the owner account (people and invitations first; the rest is being built)"
+say ""
+say "  The same things are commands on this computer:"
 say ""
 say "        encore status             is it running, at which address, which version"
 say "        encore logs               what it is saying (Ctrl-C to stop)"

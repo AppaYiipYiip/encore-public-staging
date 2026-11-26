@@ -78,6 +78,15 @@ image_ref() {
 }
 # The backups' file names are made here (no spaces or odd characters), newest first.
 # A locked backup is the plain one with .age after it (P3-30); backups made before keys existed stay plain files, and both are restored and kept.
+# The way back after an update, in one sentence. It needs TWO things together: the program that was running (kept as the local image tag `before-update`, because `dc pull`
+# moves the tag `main`, so the old deployment file alone would start the NEW program again, which would migrate the restored data forward once more) and the databases of the
+# backup made first.
+way_back() {
+    local record="$DIR/update-record.txt" file=""
+    if [ -f "$record" ]; then file="$(sed -n 's/^backup=//p' "$record" | head -1)"; fi
+    printf 'To go back: put ENCORE_TAG=before-update in %s/.env (the program that was running is kept under that name), copy %s/compose.yaml.before-update over %s/compose.yaml, then run  sudo encore restore %s  (the backup made first).' \
+        "$DIR" "$DIR" "$DIR" "${file:-FILE}"
+}
 backups_newest_first() { find "$BACKUP_DIR" -maxdepth 1 \( -name 'encore-backup-*.tar.gz' -o -name 'encore-backup-*.tar.gz.age' \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-; }
 newest_backup() { backups_newest_first | head -1 || true; }
 last_backup_text() {
@@ -132,7 +141,7 @@ prove_password_key() {
 # different key a refusal, so it is written only on proof). When it does not, the mark is NOT written and the key can still be put right.
 prove_and_confirm_password_key() {
     if [ ! -f "$KEY_MARK" ]; then
-        prove_password_key || die "The music server did not accept its own administrator's login with the key of this install, so the key was NOT marked as the right one. See: encore logs. To go back: encore restore with the backup made first."
+        prove_password_key || die "The music server did not accept its own administrator's login with the key of this install, so the key was NOT marked as the right one. See: encore logs. $(way_back)"
         confirm_password_key
     fi
 }
@@ -223,6 +232,9 @@ cmd_update() {
     if [ -f "$DIR/data/encore.db" ] && [ -f "$DIR/navidrome/navidrome.db" ]; then
         if (cmd_backup --quiet) 2>/dev/null; then ok "A backup was made first"; else note "A backup could not be made first; updating anyway."; fi
     fi
+    # The program that is running now stays on this computer under its own name: `dc pull` moves the tag, and going back needs it (way_back).
+    if docker image inspect "$image:$tag" >/dev/null 2>&1; then docker tag "$image:$tag" "$image:before-update" >/dev/null 2>&1 || true; fi
+    (umask 077 && { echo "made=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo "was=${before:-unknown}"; echo "image=$image:before-update"; echo "backup=$(newest_backup)"; } >"$DIR/update-record.txt") || true
     say "  … Looking for a newer version"
     dc pull encore-server >/dev/null 2>&1 || die "The newest version could not be downloaded (are you signed in to the image registry? see: encore logs, or run the installer's sign-in step again)."
     # The deployment files travel in the image: take the ones that match what was just downloaded.
@@ -238,8 +250,8 @@ cmd_update() {
     mv "$DIR/compose.yaml.new" "$DIR/compose.yaml"
     chmod 755 "$ENCORE_BIN.new"
     refresh_home_url
-    dc up -d >/dev/null 2>&1 || die "The new version could not be started. To go back: copy $DIR/compose.yaml.before-update over $DIR/compose.yaml and run  encore restore  with the backup made first."
-    wait_answers || die "The new version did not answer in 3 minutes. See: encore logs"
+    dc up -d >/dev/null 2>&1 || die "The new version could not be started. $(way_back)"
+    wait_answers || die "The new version did not answer in 3 minutes. See: encore logs. $(way_back)"
     if grep -q ND_PASSWORDENCRYPTIONKEY "$DIR/compose.yaml"; then prove_and_confirm_password_key; fi
     if [ "$made_key" = 1 ]; then note "The music server's passwords are now locked with a key of this install (in $DIR/.env, and in every backup)."; fi
     if ! backup_is_locked; then note "Your backups are not locked yet: run  sudo encore secure  once to lock them and to get the key that opens them."; fi
@@ -639,6 +651,7 @@ cmd_uninstall() {
         cd /
         rm -rf -- "$DIR"
         docker rmi "$image_ref" >/dev/null 2>&1 || true
+        docker rmi "${image_ref%:*}:before-update" >/dev/null 2>&1 || true
     fi
     rm -f /usr/local/bin/encore
     ok "Encore is removed"

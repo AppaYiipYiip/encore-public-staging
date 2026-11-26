@@ -148,7 +148,7 @@ def test_a_path_that_is_not_a_listed_file_is_the_same_404_as_any_unknown_route(r
         "..",
         "/etc/passwd",
         "C:/x.js",
-        "fonts\..\admin.js",
+        "fonts\\..\\admin.js",
         "admin.js\x00.css",
         "admin.html",
         "",

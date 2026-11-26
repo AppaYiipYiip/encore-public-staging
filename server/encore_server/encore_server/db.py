@@ -119,17 +119,21 @@ class Database:
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, at INTEGER NOT NULL)"
             )
-            done = {row["version"] for row in conn.execute("SELECT version FROM schema_migrations")}
+            stored = {row["version"]: row["name"] for row in conn.execute("SELECT version, name FROM schema_migrations")}
         finally:
             conn.close()
+        done = set(stored)
         # A database that has run steps this version does not know was made by a NEWER version (a rollback to an older image, or an old backup of the program on new
         # data). Starting on it would read tables and columns the old code does not understand and could write over what the newer version meant: refuse, in words, before
         # anything is read or changed (P3-29 part 2). There is no setting that turns this off: the way back is a backup made by this version.
-        known = {m[0] for m in pending_source}
-        unknown = sorted(done - known)
+        # The NAME of a step is compared as well as its number: two branches that took the same number make a database whose step N is not the code's step N, and a number
+        # alone would let it through (the duplicate-number check above guards the code, this one the data).
+        known = {m[0]: m[1] for m in pending_source}
+        unknown = sorted(done - known.keys()) + sorted(n for n in done & known.keys() if stored[n] != known[n])
         if unknown and known:
             raise MigrationFailed(
-                f"The data of this server was made by a newer version of Encore (it has database step {unknown[-1]:04d}; this version knows only up to {max(known):04d}). "
+                f"The data of this server was made by a newer version of Encore (it has database step {max(unknown):04d}, or a step this version numbers differently; "
+                f"this version knows only up to {max(known):04d}). "
                 "Starting this older version on it could damage the data, so it did not start and nothing was changed. "
                 "Start the newer version again (encore update), or go back by restoring a backup made by this version (encore restore FILE)."
             )
