@@ -250,6 +250,12 @@ def _dense(text: str) -> bool:
     return 0 < len(letters) <= DENSE_EXACT_MAX and all(any(lo <= ord(ch) <= hi for lo, hi in _DENSE) for ch in letters)
 
 
+def is_dense_short(text: str) -> bool:
+    """Whether a NORMALISED name is a short name in a dense script (four characters or fewer of Han, Kana or Hangul): such a name is compared for EQUALITY (see [ratio]), so it must
+    never be taken for a part of a longer name either (a title "白日" is not found inside "白日の夢")."""
+    return _dense(text)
+
+
 def ratio(a: str, b: str) -> float:
     """How alike two normalised names are, 0 to 1. Either one empty is 0 (nothing is never like nothing). **A short name in a dense script (four characters or
     fewer of Han, Kana or Hangul) is compared for equality**: one syllable off is another word, not a typo."""

@@ -1174,7 +1174,7 @@
  "N-44": {
   "kind": "plumbing",
   "title": "Behind the scenes: a wrong song from the artist's channel is not accepted",
-  "note": "Found by helper-p225s23 while building P2-25 slices 2+3 (16 Nov 2026; audit row B-136, registered in PR #110): the plain YouTube scorer (sources/youtube/scoring.py) accepts ANOTHER song uploaded on the artist's own channel at the same length (Latin names too), and its substring branches (wt in ct, wa in a) bypass the dense-script equality rule of P2-25 for names of 1 to 4 letters in Han or Kana. Fix at the source: a recorded corpus of wrong-song uploads FIRST (real answers, never invented), the TITLE gates acceptance, the substring branches respect the dense-script equality rule, MATCHER_REVISION is raised so the songs already matched are asked again. Cost of leaving it: a wrong song can be kept under a right name, which is a permanent identity; the rule of the owner says the fix is not a stop-gap.",
+  "note": "Found by helper-p225s23 while building P2-25 slices 2+3 (16 Nov 2026; audit row B-136, registered in PR #110): the plain YouTube scorer (sources/youtube/scoring.py) accepts ANOTHER song uploaded on the artist's own channel at the same length (Latin names too), and its substring branches (wt in ct, wa in a) bypass the dense-script equality rule of P2-25 for names of 1 to 4 letters in Han or Kana. Fix at the source: a recorded corpus of wrong-song uploads FIRST (real answers, never invented), the TITLE gates acceptance, the substring branches respect the dense-script equality rule, MATCHER_REVISION is raised so the songs already matched are asked again. Cost of leaving it: a wrong song can be kept under a right name, which is a permanent identity; the rule of the owner says the fix is not a stop-gap. BUILT 26 Nov 2026 (PR of this item; the first text above is corrected): MATCHER_REVISION is NOT raised (a stricter rule leaves it; it voids only a remembered 'not found', so it never asked matched songs again); wrong uploads already kept are item N-52. FINDINGS for later: the structured bar `MIN_TITLE_SIMILARITY` 0.6 passes the same unrelated pair as the old plain one ('Enta Wana' / 'Malekna Wassal' 0.609), a part number written two ways is one song to any title bar.",
   "proposal": true,
   "size": "M",
   "needs": [
@@ -1258,6 +1258,20 @@
   "needs": [
    {
     "id": "N-48",
+    "mark": "b"
+   }
+  ],
+  "from": "agent"
+ },
+ "N-52": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: kept uploads that are the wrong song are found",
+  "note": "Found 26 Nov 2026 (N-44): the plain match took ANOTHER song of the artist's own channel at the same length until N-44, and a kept upload is a permanent identity. N-44 stops new ones; the ones already kept have no re-ask path (`MATCHER_REVISION` voids only a remembered 'not found', and the raw upload title is not stored on the ref). The task: an AUDIT of the kept videos (read-only first): re-read each kept upload's title and channel through yt-dlp metadata (a network look-up per video: paced, capped, the Host's decision), run the new title bar, and LIST the songs whose upload fails it for the Host to see; never delete or re-key by itself. Needs a design question answered first: what a Host can do with the list (re-keep from a better upload, keep, or remove). Server only.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "N-44",
     "mark": "b"
    }
   ],
