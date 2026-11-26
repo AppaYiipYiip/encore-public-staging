@@ -1,0 +1,9 @@
+{
+ "id": "20261126T204013Z-agent-5b09",
+ "item": "P3-30",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T20:40:13Z",
+ "type": "note",
+ "body": "CORRECTION 26 Nov 2026 to the \"UNDO\" in the note above (the advisor found it false): putting compose.yaml.before-update back does NOT start the old program, because the compose file pins ghcr.io/.../encore-server:main and `encore update` pulls, which moves that tag: the old file would start the NEW program on the restored data. THE TRUE WAY BACK needs the program AND the databases together: `encore update` now keeps the running program as the local image tag `before-update` (before it pulls) and writes /opt/encore/update-record.txt; to go back put ENCORE_TAG=before-update in /opt/encore/.env, copy compose.yaml.before-update over compose.yaml, then `sudo encore restore <the backup named in update-record.txt> --key-file ...` (a pre-key backup is plain: no key needed). This holds only for updates made by the script of the PR that follows (#150): the FIRST update of VM 108 runs the OLD script, which keeps no image: before THAT update, on VM 108 or any real server, run `docker tag ghcr.io/appayiipyiip/encore-server:main ghcr.io/appayiipyiip/encore-server:before-update` by hand and write it in the homelab log. And an older program on newer data is now refused (P3-29 part 2): that is why the backup's databases must come back with it."
+}

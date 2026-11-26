@@ -67,7 +67,9 @@ def test_a_failed_migration_restores_the_database_and_says_so_plainly(tmp_path: 
 
     broken = [(999, "0999_broken.sql", "CREATE TABLE half (x INTEGER); INSERT INTO nowhere VALUES (1);")]
     with pytest.raises(MigrationFailed) as caught:
-        db.migrate(migrations=[(1, "0001_initial.sql", "")] + broken)
+        db.migrate(
+            migrations=Database._migrations() + broken
+        )  # every step the code has, then one more (a list that left steps out would be a database from a NEWER version: refused)
 
     assert "left as it was" in str(caught.value)
     with db.read() as conn:
@@ -79,7 +81,7 @@ def test_a_failed_migration_restores_the_database_and_says_so_plainly(tmp_path: 
 def test_a_backup_is_taken_before_a_pending_migration(tmp_path: Path) -> None:
     db = Database(tmp_path / "encore.db")
     db.migrate()
-    db.migrate(version="9.9", migrations=[(1, "0001_initial.sql", ""), (999, "0999_more.sql", "CREATE TABLE extra (x INTEGER);")])
+    db.migrate(version="9.9", migrations=Database._migrations() + [(999, "0999_more.sql", "CREATE TABLE extra (x INTEGER);")])
 
     backups = list((tmp_path / "backups").glob("encore-9.9-*.db"))
     assert len(backups) == 1

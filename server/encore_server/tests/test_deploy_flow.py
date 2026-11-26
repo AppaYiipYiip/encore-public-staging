@@ -45,7 +45,11 @@ if [[ " $* " == *" --entrypoint cat "* ]]; then
     cat "$FAKE_IMAGE_DIR/$(basename "$last")"
     exit $?
 fi
-[ "${1:-}" = run ] || { echo "docker:${*:1:4}" >>"$FAKE_LOG"; exit 0; }
+if [ "${1:-}" != run ]; then
+    echo "docker:${*:1:4}" >>"$FAKE_LOG"
+    if [ "${FAKE_FAIL:-}" = up ] && [[ " $* " == *" up "* ]]; then exit 1; fi
+    exit 0
+fi
 shift
 mounts=()
 while [ $# -gt 0 ]; do
@@ -170,7 +174,7 @@ class Install:
     def calls(self) -> list[str]:
         return self.log.read_text(encoding="utf-8").splitlines()
 
-    def encore(self, *args: str, stdin: str = "", ping: str = "ok") -> subprocess.CompletedProcess[str]:
+    def encore(self, *args: str, stdin: str = "", ping: str = "ok", fail: str = "") -> subprocess.CompletedProcess[str]:
         assert BASH is not None
         env = {
             "PATH": f"{msys(self.bin)}:/usr/bin:/bin",
@@ -180,6 +184,7 @@ class Install:
             "FAKE_IMAGE_DIR": msys(self.image),
             "FAKE_LOG": msys(self.log),
             "FAKE_PING": ping,
+            "FAKE_FAIL": fail,
             "PYTHONPATH": SERVER_DIR.as_posix(),
             "PYTHONUTF8": "1",
             "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
@@ -414,6 +419,12 @@ def test_update_of_an_install_from_before_keys_backs_up_first_then_makes_the_key
     first_backup = next(i for i, call in enumerate(calls) if call == "tool:--encore-db")
     first_fetch = next(i for i, call in enumerate(calls) if call.startswith("fetch:"))
     assert first_backup < first_fetch, f"the backup must come before anything is fetched or replaced: {calls}"
+    kept = next(i for i, call in enumerate(calls) if call.startswith("docker:tag ") and call.endswith(":before-update"))
+    pulled = next(i for i, call in enumerate(calls) if " pull" in call and call.startswith("docker:compose"))
+    assert first_backup < kept < pulled, f"the running program is kept under its own name before the pull moves the tag: {calls}"
+    record = (install.root / "update-record.txt").read_text(encoding="utf-8")
+    assert "image=ghcr.io/appayiipyiip/encore-server:before-update" in record
+    assert f"backup={install.backups}" in record.replace("\\", "/") or "backup=" in record and ".tar.gz" in record
     assert "A backup was made first" in result.stdout
     assert list(install.backups.iterdir()), "the backup exists"
     assert (install.root / "compose.yaml").read_text(encoding="utf-8") == NEW_COMPOSE
@@ -447,3 +458,28 @@ def test_update_of_an_install_whose_key_was_changed_is_refused_too(tmp_path: Pat
     result = install.encore("update")
     assert result.returncode != 0 and "is not the one" in result.stderr
     assert f"ENCORE_PASSWORD_KEY={KEY_B}" in install.env
+
+
+def test_when_the_new_version_does_not_start_the_way_back_names_the_old_program_the_old_file_and_the_backup(
+    tmp_path: Path,
+) -> None:
+    """The old deployment file alone starts the NEW program again (the tag moves), so the sentence needs the kept image, the file and the backup made first."""
+    install = Install(tmp_path, None, "stuck", compose=OLD_COMPOSE)
+    result = install.encore("update", fail="up")
+    assert result.returncode != 0
+    text = result.stderr
+    assert (
+        "ENCORE_TAG=before-update" in text
+        and "compose.yaml.before-update" in text
+        and "sudo encore restore" in text
+        and ".tar.gz" in text
+    ), text
+    record = (install.root / "update-record.txt").read_text(encoding="utf-8")
+    assert "backup=" in record and ".tar.gz" in record and "image=" in record
+    assert (install.root / "compose.yaml.before-update").read_text(encoding="utf-8") == OLD_COMPOSE
+
+
+def test_the_installer_tells_the_host_where_the_admin_pages_are() -> None:
+    install = (DEPLOY / "install.sh").read_text(encoding="utf-8")
+    assert "There is no Encore admin page" not in install
+    assert "http://${HOST_IP}:${PORT}/admin" in install
