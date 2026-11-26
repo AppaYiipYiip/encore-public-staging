@@ -1,0 +1,12 @@
+{
+ "id": "20261126T202210Z-agent-3d7a",
+ "item": "P3-22",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T20:22:10Z",
+ "type": "note",
+ "body": "FOR THE OWNER (a pink item, 26 Nov 2026): APPROVE OR CHANGE 13 NEW DRAWINGS. About 15 minutes; nothing needs a terminal. They are the pages that your rule \"two doors, buttons and commands\" changes, drawn in the same style as the ones you already approved, so you can look at them beside the old ones.\n1. Open File Explorer, go to  C:\\Users\\marwa\\Desktop\\better audio player\\encore-live\\docs\\design\\directions  and double-click  screens-server-and-browser.html  (it opens in your browser). The file is there once this pull request is merged; the board says when.\n2. At the top, the box named Screen: choose \"W-09 Admin: the pages the new rules change (P3-22)\". In the row of letters on the right, the green one must be X.\n3. The box named State, next to it, lists 11 pictures: Backups (locked, Restore is a button) Â· the question before a restore Â· restoring Â· Updates with an Update button Â· Away from home (the page runs the steps) Â· the add-ons list Â· an add-on opened (Yours) Â· the same when the check fails Â· the risk text before a risky add-on Â· Storage Â· the wizard's page \"Two keys to keep\". Pick them one by one. Under each picture a short text says what changed and why.\n4. Back in Screen choose \"W-10 Password reset page (P3-22)\": the green letter becomes C (a phone). Look at its two states: a valid link, and done.\n5. Tell Claude in the chat: \"approved\" for everything, or the picture's name and a few words for what to change (for example: \"the restore question: Cancel should be bigger\"). Nothing else is asked of you: whether it can be built, and the legal side of the words, are the advisor's.\nWHAT IS NEW AND WHY: Restore and Update become buttons (before, only commands). The Settings page becomes one list of every optional thing with three states: Encore runs it, Yours (you already run one), Off. The wizard gets one more page that shows two keys once. The password reset page is new because the \"Password link\" of the People page had nothing behind it.",
+ "to": [
+  "owner"
+ ]
+}
