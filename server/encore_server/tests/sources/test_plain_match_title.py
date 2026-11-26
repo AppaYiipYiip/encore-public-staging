@@ -23,11 +23,18 @@ from encore_server.sources.youtube.scoring import Candidate, Want
 from encore_server.textnorm import norm_title
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "ytm"
+#: Real VIDEO results for well-known Arabic songs (N-44 recall check, 26 Nov 2026). Kept apart from `ytm/` on purpose: `test_import_upload_corpus` judges EVERY upload recorded under `ytm/` for the
+#: importer's artist reading (N-26), which is another question than the one these answer.
+ARABIC_VIDEOS = Path(__file__).resolve().parent.parent / "fixtures" / "ytm_videos_n44"
 
 
 def recorded_rows() -> list[tuple[str, dict[str, Any]]]:
     rows: list[tuple[str, dict[str, Any]]] = []
-    for path in sorted(FIXTURES.glob("*.songs.json")) + sorted(FIXTURES.glob("*.videos.json")):
+    for path in (
+        sorted(FIXTURES.glob("*.songs.json"))
+        + sorted(FIXTURES.glob("*.videos.json"))
+        + sorted(ARABIC_VIDEOS.glob("*.videos.json"))
+    ):
         kind = "video" if path.name.endswith(".videos.json") else "song"
         for raw in json.loads(path.read_text(encoding="utf-8"))["results"]:
             rows.append((kind, raw))
@@ -123,7 +130,7 @@ def test_another_song_of_the_artist_at_the_same_length_is_never_taken() -> None:
 def test_the_right_upload_is_still_taken_in_the_forms_uploads_come_in() -> None:
     lost: list[str] = []
     for upload in real_uploads():
-        if not norm_title(upload.title) or "(" in artist_of(upload):
+        if not norm_title(upload.title) or "(" in artist_of(upload) or any(sep in upload.title for sep in (" - ", " | ")):
             continue  # a title that is only a bracketed phrase (see the test below), and a channel called `Phill (Italy)`, which is no artist name a person asks for
         want = Want(artist_of(upload), upload.title, None, upload.duration_s)
         forms = [
@@ -184,6 +191,58 @@ def test_a_short_dense_script_artist_is_not_found_inside_another_name() -> None:
     assert "artist" not in inside.reasons and "artist channel" not in inside.reasons, inside.reasons
     whole = score_plain(Want("嵐", "Happiness", None, 240), Candidate("own1", "嵐 - Happiness", "嵐", 240))
     assert "artist" in whole.reasons
+
+
+def real_video(fixture: str, title_has: str) -> Candidate:
+    """A REAL video result (`tests/fixtures/ytm_videos_n44/<fixture>.videos.json`) as the plain path sees it."""
+    for raw in json.loads((ARABIC_VIDEOS / f"{fixture}.videos.json").read_text(encoding="utf-8"))["results"]:
+        if title_has in raw["title"]:
+            candidate = as_plain("video", raw)
+            assert candidate is not None
+            return candidate
+    raise AssertionError(f"no recorded video with {title_has!r} in {fixture}")
+
+
+def test_a_title_in_two_scripts_on_the_artists_own_channel_is_taken() -> None:
+    """THE RECALL CASE the advisor named (26 Nov 2026), on real answers: Arabic artists' own channels write `Latin title | Arabic title` as a matter of course
+    (Wael Kfoury's `Wael Kfoury - Layel W Raad | وائل كفوري - ليل و رعد`). Before N-44 such an upload was taken on the artist and the length; the word-by-word bar alone would refuse
+    it, which for an Arabic library is a song never found."""
+    upload = real_video("ya-rab-wael-kfoury", "Layel W Raad")
+    assert upload.channel == "Wael Kfoury" and "|" in upload.title
+    want = Want("Wael Kfoury", "Layel W Raad", None, upload.duration_s)
+    assert lean.rank(want, [upload])
+
+
+def test_a_title_in_two_scripts_needs_the_length_to_the_second() -> None:
+    """The twice-written title is taken on the artist's own channel AND the wanted length to the second: ten seconds off is another cut (a live take, an extended one)."""
+    upload = real_video("ya-rab-wael-kfoury", "Layel W Raad")
+    want = Want("Wael Kfoury", "Layel W Raad", None, (upload.duration_s or 0) + 10)
+    assert lean.rank(want, [upload]) == []
+
+
+def test_latin_letters_the_fold_leaves_alone_are_not_another_script() -> None:
+    """Found by the advisor's read of #141: `norm_title` maps `\u00fc \u0131 \u00f8 \u0142` to ASCII but leaves `\u025b \u0254 \u014b \u0253` (the letters of Ghanaian and Congolese titles) as they are: they are
+    not ASCII, and a test by ASCII called them "another script". Another SONG of the artist's own channel at the same length, whose title holds the wanted one and then words in those
+    letters, was taken as the title written twice. The script is read by the letter's Unicode name (`textnorm.non_latin`)."""
+    want = Want("Sarkodie", "Mama", None, 215)
+    other = Candidate("mama2", "Mama \u025bk\u0254", "Sarkodie", 215)
+    assert norm_title(other.title).isascii() is False
+    assert lean.rank(want, [other]) == []
+    assert lean.rank(want, [Candidate("mama3", "Mama | \u0645\u0627\u0645\u0627", "Sarkodie", 215)])
+
+
+def test_another_song_in_two_scripts_on_the_same_channel_is_not_taken() -> None:
+    upload = real_video("ya-rab-wael-kfoury", "Safha We Tawaita")
+    want = Want("Wael Kfoury", "Layel W Raad", None, upload.duration_s)  # the length is given away on purpose
+    assert lean.rank(want, [upload]) == []
+
+
+def test_a_title_in_two_scripts_on_a_fans_channel_is_not_taken_on_the_rendering_alone() -> None:
+    """The same form on somebody else's channel (a fan, a cover, an AI version) is no evidence of the artist's own recording: the old rule gave it 3.0, under the bar, and so does this one."""
+    upload = real_video("kifak-inta-fairuz", "Kifak Enta | ")
+    assert upload.channel != "Fairouz"
+    want = Want("Fairouz", "Kifak Enta", None, upload.duration_s)
+    assert lean.rank(want, [upload]) == []
 
 
 @pytest.mark.parametrize(

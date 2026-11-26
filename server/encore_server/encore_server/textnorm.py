@@ -250,6 +250,15 @@ def _dense(text: str) -> bool:
     return 0 < len(letters) <= DENSE_EXACT_MAX and all(any(lo <= ord(ch) <= hi for lo, hi in _DENSE) for ch in letters)
 
 
+def non_latin(text: str) -> bool:
+    """Whether the text holds a letter of another script than the Latin one (Arabic, Cyrillic, Hangul, kana, ideographs, Greek...). **By the letter's Unicode NAME, not by ASCII**: the fold
+    leaves Latin letters it does not decompose (`\u025b \u0254 \u014b \u0253`, the letters of Ghanaian and Congolese titles) as they are, and they are not ASCII but they are still Latin. The ONE test
+    of the server (the album matcher's `latin_spelling_only` and the plain match's written-twice rule both ask it): a third copy is the bug class of audit B-37."""
+    return any(
+        unicodedata.category(ch) in ("Lu", "Ll", "Lt", "Lo") and not unicodedata.name(ch, "").startswith("LATIN") for ch in text
+    )
+
+
 def is_dense_short(text: str) -> bool:
     """Whether a NORMALISED name is a short name in a dense script (four characters or fewer of Han, Kana or Hangul): such a name is compared for EQUALITY (see [ratio]), so it must
     never be taken for a part of a longer name either (a title "白日" is not found inside "白日の夢")."""

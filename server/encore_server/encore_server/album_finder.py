@@ -44,7 +44,7 @@ from typing import Any, Literal, Protocol
 from . import refs
 from .catalogue import map_track, release_key
 from .deezer import LookupUnavailable, NotInCatalogue
-from .textnorm import fold, is_unknown_artist, mentions_version, norm_artist, norm_title, survives_fold_whole, words
+from .textnorm import fold, is_unknown_artist, mentions_version, non_latin, norm_artist, norm_title, survives_fold_whole, words
 
 #: How far a song's length may be from the catalogue's for the two to be the same recording, in milliseconds. It starts as the one number the server
 #: already uses for "the same recording" (`refs.DURATION_TOLERANCE_MS`, imported, never copied).
@@ -737,21 +737,14 @@ def _doubted_by_the_dates(chosen: _Facts, others: Sequence[_Facts]) -> tuple[str
     return None
 
 
-def _non_latin(text: str) -> bool:
-    """Whether the text holds a letter of another script than the Latin one (Arabic, Cyrillic, Hangul, kana, ideographs, Greek...)."""
-    return any(
-        unicodedata.category(ch) in ("Lu", "Ll", "Lt", "Lo") and not unicodedata.name(ch, "").startswith("LATIN") for ch in text
-    )
-
-
 def _latin_spelling_only(song: Song, verdicts: Sequence[HitVerdict]) -> bool:
     """A song with a name in another script, and a catalogue that answered with hits spelled in Latin letters ONLY: era 1 compares names in the alphabet they
     are written in and transliterates nothing, so the Latin spelling of an Arabic song can never be proved to be the song. Told apart so that the dry run and the
     database count the songs the catalogue cannot place by that cause."""
     readable = [hit for hit in verdicts if hit.reason != "unreadable"]
-    if not readable or not (_non_latin(song.artist) or _non_latin(song.title)):
+    if not readable or not (non_latin(song.artist) or non_latin(song.title)):
         return False
-    return not any(_non_latin(hit.artist) or _non_latin(hit.title) for hit in readable)
+    return not any(non_latin(hit.artist) or non_latin(hit.title) for hit in readable)
 
 
 def _held(match: Match, own_key: str, release: str, holdings: Holdings) -> str | None:

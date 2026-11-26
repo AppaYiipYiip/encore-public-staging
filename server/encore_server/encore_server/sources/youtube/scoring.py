@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from ...textnorm import is_dense_short, mentions_version, norm_artist, norm_title, ratio
+from ...textnorm import is_dense_short, mentions_version, non_latin, norm_artist, norm_title, ratio
 
 
 @dataclass(frozen=True)
@@ -138,6 +138,20 @@ def _words_alike(a: str, b: str) -> float:
     return min(ratio(x, y) for x, y in zip(xs, ys, strict=True))
 
 
+def _own_channel_same_length(want: Want, c: Candidate) -> bool:
+    """The upload is on the artist's own (or an auto-generated Topic) channel and is the wanted length to the second: the evidence a title written TWICE may rest on."""
+    channel = norm_artist(c.channel)
+    own = c.is_topic or channel.endswith("topic") or ratio(norm_artist(want.artist), channel) >= 0.9
+    return own and bool(want.duration_s and c.duration_s and abs(want.duration_s - c.duration_s) <= 2)
+
+
+def _only_another_script(rest: str, wt: str) -> bool:
+    """Every word left of the upload's title (digits aside) is written in another script than the wanted title: the title said twice, as Arabic artists' own channels write it
+    (`Wael Kfoury - Layel W Raad | وائل كفوري - ليل و رعد`). A word of the SAME script left over is another title (`Hurt Me`)."""
+    words = [w for w in rest.split() if not w.isdigit()]
+    return bool(words) and all(non_latin(w) != non_latin(wt) for w in words)
+
+
 def plain_title_similarity(want: Want, c: Candidate) -> float:
     """How like the wanted title an upload's title is (0 to 1), as the plain path reads it (N-44, B-136): the titles alike word by word, or alike once the artist's name is taken out
     (\"Radiohead - Creep\"), or the same letters with the spaces and dots moved (\"N.Y.\" and \"NY\", at 0.9 or more), or the wanted title IN the upload's title **with nothing else of the
@@ -155,7 +169,12 @@ def plain_title_similarity(want: Want, c: Candidate) -> float:
             rest = rest.replace(wa, " ")
         # What else the upload's title says is the evidence that it is ANOTHER song ("Hurt Me"), except for long content: an upload of hours that is the wanted length to the second is its
         # own fingerprint, and such titles are long and descriptive on purpose (a recitation: "Surah Al-Baqarah Mishary Rashed Alafasy 1422H ...", the recorded case).
-        if not rest.split() or _long_and_same_length(want, c):
+        # A title written twice (Latin and Arabic) is the same song when the rest is ALL in the other script and the upload is on the artist's own channel at the wanted length.
+        if (
+            not rest.split()
+            or _long_and_same_length(want, c)
+            or (_only_another_script(rest, wt) and _own_channel_same_length(want, c))
+        ):
             sim = max(sim, 0.9)
     return sim
 
