@@ -142,6 +142,8 @@ Kinds: `entry`, `truth`, `decision`, `plan`, `history`, `evidence`, `guide`, `re
 | `docs/32-accounts-joining-and-devices.md` | truth | Every way an account comes to exist, every way a phone joins, invitation / person / device states, limits | keep |
 | `docs/33-playback-sources-states-and-failures.md` | truth | Every way a song plays, the server's stream answers, the player's states, the failure matrix (internet cut mid-song and the rest), what is saved | clean on touch (long) |
 | `docs/34-conflicts-and-offline-edits.md` | truth | The life of a queued edit, every pair of operations from two devices, other disagreements, the gaps | keep |
+| `docs/35-add-ons.md` | truth | Every optional thing as one model: the three states (Encore runs it / Yours / Off), the manifest an agent writes for the next add-on, where the Host's choices live, the pages the model changes | keep |
+| `docs/36-installer-helper-and-admin-site.md` | truth | One operation two doors (button and command), the admin site (static pages over a JSON admin API, one session model), the helper with a fixed list of actions, the button installer and its first target, the forgotten owner password, what the coming features need from the server | keep |
 | `docs/README.md` | entry | This map and the rules for the documents | keep |
 | `docs/design/00-screen-inventory.md` | truth | Every screen and the states each must show | keep |
 | `docs/design/README.md` | entry | How the drawings are organised | keep |
