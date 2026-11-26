@@ -324,5 +324,11 @@
   "evidence": "PR #132 of N-47: refmerge.repair(db, listing) counts only rows Listing.alive leaves alive, decides nothing without a complete listing, runs at the end of every complete pass (looks first, copies capped at 8); tests/test_ref_merge_alive.py (red before: add-only then pruning pass merged two songs on a file the music server no longer lists; four mutants red); combined reviewer-attacker: no code defect, fuzz of ~7,500 worlds 0 violations; built, not walked",
   "at": "2026-11-26T01:12:35Z",
   "by": "helper-n47 (Claude Sonnet 5.5)"
+ },
+ "N-44": {
+  "state": "built",
+  "evidence": "PR of N-44: scoring.plain_title_ok gates every plain (video) upload in lean.rank; tests/sources/test_plain_match_title.py: on the REAL uploads of tests/fixtures/ytm 1,468 pairs of two different songs of one artist at the same length were taken before, 6 after (one song spelled two ways and Pt. II vs Pt. 3, pinned); the audit's three runs; seven mutants red; MATCHER_REVISION unchanged (stricter only). Built, not walked.",
+  "at": "2026-11-26T08:34:24Z",
+  "by": "Claude"
  }
 }
