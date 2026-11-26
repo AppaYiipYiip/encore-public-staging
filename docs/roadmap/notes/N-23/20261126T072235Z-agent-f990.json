@@ -1,0 +1,9 @@
+{
+ "id": "20261126T072235Z-agent-f990",
+ "item": "N-23",
+ "role": "agent",
+ "by": "lead (Claude Sonnet 5.5)",
+ "at": "2026-11-26T07:22:35Z",
+ "type": "note",
+ "body": "26 Nov 2026 (lead, with the advisor): NOTHING MERGEABLE TODAY. N-23 has two halves. N-23a (the phone's own library search guesses a mistyped artist) is SHIPPED (app/lib/domain/artist_typo.dart, docs/19). N-23b (the server half, a typo of a band the catalogue does not return) is slice 5 of P2-12 and is HELD by D-51 as the owner worded it on 14 Nov 2026 (the hold covers P2-12 as a whole; only slices 1 and 4 may merge before b11), and it also needs P2-12 slice 4 (the drawing of the 'Also showing results for' line). The design is complete in docs/tasks/P2-songs-as-references.md ('Typo forgiving (N-23b), on the server'); the one rule, the shared typo-rule.json table and the allowance (under 5 letters never, 5 to 8 one edit, 9 or more two) are written. Nothing to build until b11 lifts the hold; the next builder starts from that section, reproduces a mistyped band against the real catalogue first, and keeps the rule out of identity keys and the N-34 matcher. The board state stays todo."
+}
