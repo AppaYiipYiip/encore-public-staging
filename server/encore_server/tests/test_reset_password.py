@@ -1,4 +1,4 @@
-"""Getting back in (P3-16; docs/36 section 6): a new password made at the server's own computer, the owner's recovery key, and the audit line.
+"""Getting back in (P3-16; docs/36 section 6; docs/32 AC-28, the Host forgot their own password): a new password made at the server's own computer, the owner's recovery key, and the audit line.
 
 Proved here: the key (format, only a hash kept, constant-time); `reset_password` for a member, for an owner with a key (right, wrong, none), for an owner made before keys, with every
 refusal in words and **nothing changed** when it fails (the music server refusing, a bad password, a wrong key); every device of the person signed out; a lock cleared; the owner's key
