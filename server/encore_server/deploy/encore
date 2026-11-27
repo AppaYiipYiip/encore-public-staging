@@ -216,7 +216,7 @@ backup_tool() {
 }
 
 cmd_status() {
-    local version away link
+    local version away link keyless
     version="$(server_version)"
     say ""
     say "  ${BOLD}Encore${OFF} ${version:+$version }(version ${TAG:-$(env_value ENCORE_TAG)})"
@@ -229,6 +229,9 @@ cmd_status() {
     if [ -f "$DIR/.setup-pending" ]; then printf '  %s✗%s The first install was cut short before your account was made: run the installer again (sudo bash install.sh).\n' "$RED" "$OFF"; fi
     link="$(setup_link)"
     if [ -n "$link" ]; then printf '  %s!%s Your account is not made yet. Open this link in a browser on your home network:  %s\n' "$BOLD" "$OFF" "$link"; fi
+    # An owner made before recovery keys existed (or by the headless door) has no way back in from a forgotten password but root's: say so. Silent when the server does not answer.
+    keyless="$(dc exec -T encore-server python -m encore_server op recovery-key --check </dev/null 2>/dev/null | head -n 3 | tr '\n' ' ' || true)"
+    if [ -n "${keyless// /}" ]; then printf '  %s!%s No recovery key yet for: %s. Make one now with:  sudo encore recovery-key\n' "$BOLD" "$OFF" "${keyless% }"; fi
     say ""
     say "        On your home network:  $(host_ip):${PORT}"
     away="$(funnel_address)"

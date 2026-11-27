@@ -368,3 +368,17 @@ def test_the_command_does_nothing_before_the_server_has_started(tmp_path: Path) 
     err = io.StringIO()
     assert ops_cli.command(["reset-password", "x", "--info"], settings=settings, err=err) == 1
     assert "has not started yet" in err.getvalue()
+
+
+def test_the_owners_without_a_key_are_the_ones_the_status_command_names(world: World) -> None:
+    assert ops_reset.owners_without_key(world.db) == [], "the wizard made the owner's key with the owner"
+    with world.db.tx() as conn:
+        conn.execute("DELETE FROM recovery_key")
+    assert ops_reset.owners_without_key(world.db) == ["riley"]
+    world.verifier.passwords["nina"] = "pw-nina"
+    world.sign_in("nina")
+    assert ops_reset.owners_without_key(world.db) == ["riley"], "a member has no key and is not named"
+    code, out, err = run_command(world, ["recovery-key", "--check"])
+    assert (code, out, err) == (0, "riley" + chr(10), "")
+    ops_reset.new_recovery_key(world.db)
+    assert run_command(world, ["recovery-key", "--check"]) == (0, "", "")

@@ -6,6 +6,7 @@ container, so the Host's terminal and (where there is one) the admin page run th
     python -m encore_server op reset-password NAME --info          what the command must ask: owner-with-key | owner | member
     python -m encore_server op reset-password NAME                 {"password": "...", "recoveryKey": "..."} on standard input; never on the command line
     python -m encore_server op recovery-key [NAME]                 a new recovery key for an owner
+    python -m encore_server op recovery-key --check                the owners who have none, one name a line
 
 The answer is a few readable lines on standard output (`--json`: the very JSON the admin route answers with; the password operations answer `name=value` lines, which the shell reads); a
 refusal is the same sentence the page shows, on standard error, with exit status 1.
@@ -104,6 +105,10 @@ def _reset_password(argv: Sequence[str], db: Database, admin: NavidromeAdmin, st
 
 
 def _recovery_key(argv: Sequence[str], db: Database, out: TextIO) -> int:
+    if len(argv) > 1 and argv[1] == "--check":  # the owners who have no key, one name a line (what `encore status` reads)
+        for name in ops_reset.owners_without_key(db):
+            print(name, file=out)
+        return 0
     made = ops_reset.new_recovery_key(db, argv[1] if len(argv) > 1 else None)
     print(f"name={made['name']}", file=out)
     print(f"recovery-key={made['recoveryKey']}", file=out)
