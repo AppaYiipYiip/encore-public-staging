@@ -168,7 +168,8 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
             report.held_back,
         )
     if rehomer is not None:
-        # After the prune: a file the listing did not have is gone by now, so its ref is not waited for.
+        # After the prune: a file the listing did not have is gone by now (or, in a pass the prune did not trust, held back: not alive either, which is what the rehome counts by), so its ref is
+        # not waited for.
         try:
             report.rehome = rehomer.finish()
         except Exception:  # noqa: BLE001 - the scan did its work and committed it; the worklist is kept and the next pass tries again
@@ -223,8 +224,9 @@ CONFIRM_AFTER_MS = 24 * 3600 * 1000
 def _prune(db: Database, listing: Listing) -> tuple[int, int]:
     """Files the music server no longer LISTS: their rows go; the refs stay, so nothing a person has changes. Everybody who had the song is told that it now has to be
     streamed again. A file attached after the pass began (the keeper, mid-scan) is left alone. **A file the music server lists is never "gone", whatever its tags are**
-    (`listing` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4). What
-    stays is what `Listing.alive` says: the same test the rehome counts files by.
+    (`listing` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4). Whether a row is ALIVE
+    is what `Listing.alive` says, the same test the rehome counts files by; **a row the pass held back (below) is not alive and stays**: the rehome counts a person's last file by `alive`,
+    not by the rows present, so it never takes a held-back row for a file.
 
     **An empty or partial answer never wipes the link (P3-33, audit B-40).** A pass that finds at least [PLAUSIBLE_SHARE] of the linked files is trusted. A pass that finds LESS removes nothing
     now: it writes down when it first missed each file (`missing_since`) and removes a file only once it has been absent for [CONFIRM_AFTER_MS] while the music server lists something; a pass
@@ -238,7 +240,9 @@ def _prune(db: Database, listing: Listing) -> tuple[int, int]:
             (listing.began,),
         ).fetchall()
         absent = [row for row in judged if not listing.alive(row["navidrome_song_id"], row["added_at"])]
-        found = len(judged) - len(absent)
+        # What the music server LISTED, not how many of the old rows it listed: a Host who reorganised the library gets new ids for every file, and a pass that lists a full library of new ids is
+        # trusted although none of the old rows is in it. The same listing is trusted or not whatever the pass attached itself (a count of old rows only would change from one pass to the next).
+        listed = len(listing.seen)
         back = [
             row["id"]
             for row in judged
@@ -247,9 +251,9 @@ def _prune(db: Database, listing: Listing) -> tuple[int, int]:
         for start in range(0, len(back), 500):
             chunk = back[start : start + 500]
             conn.execute(f"UPDATE song_file SET missing_since = NULL WHERE id IN ({','.join('?' for _ in chunk)})", chunk)  # noqa: S608 - only placeholders are formatted in
-        trusted = found > 0 and found >= len(judged) * PLAUSIBLE_SHARE
+        trusted = listed > 0 and listed >= len(judged) * PLAUSIBLE_SHARE
         for row in absent:
-            confirmed = row["missing_since"] is not None and now - row["missing_since"] >= CONFIRM_AFTER_MS and found > 0
+            confirmed = row["missing_since"] is not None and now - row["missing_since"] >= CONFIRM_AFTER_MS and listed > 0
             if not (trusted or confirmed):
                 if row["missing_since"] is None:
                     conn.execute("UPDATE song_file SET missing_since = ? WHERE id = ?", (now, row["id"]))

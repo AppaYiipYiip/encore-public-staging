@@ -140,3 +140,22 @@ def test_the_report_says_how_many_files_were_held_back(db: Database) -> None:
     report: LinkReport = link_library(db, FakeLibrary([entry(0), entry(1)]), prune=True)
 
     assert (report.seen, report.pruned, report.held_back) == (2, 0, 8)
+
+
+def test_a_library_reorganised_under_new_ids_is_a_library_not_an_outage(db: Database) -> None:
+    """The music server lists a FULL library whose ids are all new (the Host moved the folders): the pass is trusted by what the music server listed, so the old rows go in THIS pass, and the next
+    pass over the same listing writes nothing (the trust must not change from one pass to the next)."""
+    linked(db, 10)
+    reorganised = FakeLibrary([entry(n) for n in range(100, 110)])
+
+    first = link_library(db, reorganised, prune=True)
+
+    assert first.pruned == 10 and first.held_back == 0
+    with db.read() as conn:
+        ids = {r[0] for r in conn.execute("SELECT navidrome_song_id FROM song_file")}
+        before = [tuple(r) for r in conn.execute("SELECT * FROM song_file ORDER BY id")]
+    assert ids == {f"nd-{n}" for n in range(100, 110)}
+    second = link_library(db, reorganised, prune=True)
+    with db.read() as conn:
+        after = [tuple(r) for r in conn.execute("SELECT * FROM song_file ORDER BY id")]
+    assert second.pruned == 0 and second.held_back == 0 and after == before, "the same listing, trusted again, changes nothing"
