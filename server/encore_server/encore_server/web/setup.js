@@ -44,6 +44,37 @@ function askForCode(message) {
   input.focus();
 }
 
+// The recovery key (docs/36 section 6): shown once, with the way to use it, a print button, and a "saved it" box that has to be ticked before going on. The server keeps only a
+// hash of it; a lost one is replaced from the computer (sudo encore recovery-key), never looked up.
+function recoveryKeyPage(username, key) {
+  const saved = el("input", { type: "checkbox", id: "saved" });
+  const go = el("button", { class: "primary", type: "button", disabled: true }, "Continue to the admin pages");
+  const print = el("button", { class: "small", type: "button" }, "Print this page");
+  saved.addEventListener("change", () => {
+    go.disabled = !saved.checked;
+  });
+  print.addEventListener("click", () => window.print());
+  go.addEventListener("click", () => window.location.replace("/encore/admin"));
+  show(
+    el(
+      "main",
+      { class: "login" },
+      el("h1", {}, "Your recovery key"),
+      el(
+        "p",
+        { class: "muted" },
+        `If you ever forget your password, this key is how you get back in: on the computer where Encore is installed, run  sudo encore reset-password ${username}  and type it when asked. Write it down or print this page and keep it somewhere safe. Encore keeps no copy of it, so this is the only time it is shown.`,
+      ),
+      el("p", { class: "keybox", id: "key", "aria-label": "Your recovery key" }, key),
+      print,
+      el("p", { class: "muted" }, "If you lose it, make a new one on that computer with  sudo encore recovery-key  (the old one stops working)."),
+      el("label", { class: "check", for: "saved" }, saved, " I have saved my recovery key"),
+      go,
+    ),
+  );
+  go.focus();
+}
+
 function ownerForm(serverName) {
   const problem = el("p", { class: "error", role: "alert" });
   const name = el("input", { type: "text", id: "name", autocomplete: "name", maxlength: "80" });
@@ -87,7 +118,8 @@ function ownerForm(serverName) {
       keepSession(answer.deviceToken);
       password.value = again.value = "";
       code = "";
-      window.location.replace("/encore/admin");
+      if (answer.recoveryKey) recoveryKeyPage(body.username, answer.recoveryKey);
+      else window.location.replace("/encore/admin");
     } catch (error) {
       problem.textContent = error instanceof Problem ? error.message : "Your account could not be made. Try again.";
       if (error instanceof Problem && error.status === 404) closed();

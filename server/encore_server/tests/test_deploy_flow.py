@@ -49,6 +49,10 @@ if [[ " $* " == *" --entrypoint cat "* ]]; then
     cat "$FAKE_IMAGE_DIR/$(basename "$last")"
     exit $?
 fi
+if [[ " $* " == *" exec "* ]] && [ -n "${FAKE_EXEC:-}" ]; then
+    echo "docker:exec" >>"$FAKE_LOG"
+    exec "$FAKE_EXEC" "$@"
+fi
 if [ "${1:-}" != run ]; then
     echo "docker:${*:1:4}" >>"$FAKE_LOG"
     if [ "${FAKE_FAIL:-}" = up ] && [[ " $* " == *" up "* ]]; then exit 1; fi
@@ -178,9 +182,12 @@ class Install:
     def calls(self) -> list[str]:
         return self.log.read_text(encoding="utf-8").splitlines()
 
-    def encore(self, *args: str, stdin: str = "", ping: str = "ok", fail: str = "") -> subprocess.CompletedProcess[str]:
+    def encore(
+        self, *args: str, stdin: str = "", ping: str = "ok", fail: str = "", extra_env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
         assert BASH is not None
         env = {
+            **(extra_env or {}),
             "PATH": f"{msys(self.bin)}:/usr/bin:/bin",
             "ENCORE_DIR": msys(self.root),
             "ENCORE_BIN": msys(self.root / "encore-command"),

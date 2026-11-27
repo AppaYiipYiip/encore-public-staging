@@ -209,3 +209,11 @@ dialog.sheet .row.end { margin-top: var(--space-lg); }
 .card.need { display: flex; gap: var(--space-md); align-items: flex-start; border-color: var(--warning); }
 .card.need .ic { color: var(--warning); margin-top: 3px; }
 .card.need p { margin: 0 0 var(--space-xs); }
+
+/* the first-run recovery key: shown once, large, easy to copy by hand */
+.keybox {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; font-size: 22px; letter-spacing: 0.08em; text-align: center;
+  background: var(--surface); border: 1px solid var(--outline); border-radius: var(--radius-hero); padding: var(--space-lg); margin: var(--space-md) 0; user-select: all;
+}
+.check { font-weight: 400; display: flex; align-items: center; gap: var(--space-sm); margin: var(--space-md) 0; }
+@media print { .login > :not(h1):not(.keybox):not(p.muted:first-of-type) { display: none; } }

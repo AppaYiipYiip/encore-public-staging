@@ -9,6 +9,7 @@ server's login.
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
 import urllib.error
@@ -282,6 +283,15 @@ def test_the_first_run_page_makes_the_owner_and_lands_signed_in(fresh_server: Se
         # a good one: the owner is made and the Host lands on Home, signed in
         fill(browser, user="riley")
         browser.js("document.querySelector('form').requestSubmit();")
+        # the recovery key is shown once, with the way to use it; the Host cannot go on until they say they saved it
+        browser.wait("document.getElementById('key')")
+        shown = browser.text("#key")
+        assert re.fullmatch(r"[2-9A-HJ-KM-NP-Z]{4}(-[2-9A-HJ-KM-NP-Z]{4}){4}", shown), shown
+        assert "sudo encore reset-password riley" in browser.text(".login") and "Encore keeps no copy" in browser.text(".login")
+        assert browser.js("document.querySelector('button.primary').disabled") is True
+        browser.js("document.getElementById('saved').click();")
+        assert browser.js("document.querySelector('button.primary').disabled") is False
+        browser.js("document.querySelector('button.primary').click();")
         browser.wait("document.querySelector('.hrow')")
         assert browser.text(".amain h1") == "Home"
         assert "Everything is working." in browser.text(".ahead") or "need" in browser.text(".ahead")

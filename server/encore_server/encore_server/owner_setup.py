@@ -8,6 +8,7 @@ The rules, each of them proved by a test:
   post at the same moment (the one who holds the code and anybody who watched it go by) make ONE owner; the loser is told the server is already set up.
 * The music server's account is made first (the same function the command door uses, `setup.run_setup`), so a half-made install is finished by trying again with the same name and
   password; nothing is ever made twice.
+* The owner's **recovery key** (`recovery.py`) is made in that same transaction and returned once in the answer; only its hash is kept.
 * What comes back is a **browser session** (a device of kind `web`, which the server ends after 12 hours unused), exactly what signing in would have made.
 * When the owner exists, a marker file (`setup-complete`) is left in the data folder: the `encore` command on the computer sees it and takes the code out of `.env` (the server cannot
   write that file, and ignores the line once a person exists, so a line that lingers is harmless).
@@ -19,7 +20,7 @@ import logging
 import threading
 from typing import Any
 
-from . import library
+from . import library, recovery
 from .accounts import clean_password, clean_username
 from .auth import issue_device
 from .errors import ApiError
@@ -66,10 +67,13 @@ def create_owner(svc: Services, body: dict[str, Any]) -> dict[str, Any]:
             person = library.ensure_person(conn, username, admin=True)
             conn.execute("UPDATE person SET display_name = ? WHERE id = ?", (display[:80], person["id"]))
             device_id, token = issue_device(conn, person["id"], DEVICE_NAME, "web", None)
+            # The recovery key is made in the same breath (docs/36 section 6): shown once, in this answer, and kept only as a hash. An owner is never made without one.
+            key = recovery.store(conn, person["id"])
             answer = {
                 "deviceToken": token,
                 "device": {"id": device_id, "name": DEVICE_NAME},
                 "person": {"id": person["id"], "name": display[:80], "role": "owner"},
+                "recoveryKey": key,
             }
         _leave_marker(svc)
         log.info("the owner of this server was made in the browser")
