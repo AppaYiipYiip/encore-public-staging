@@ -270,6 +270,11 @@ class Downloads extends Table {
 
   /// `Tracks.audioKey` at download time; differs from the live value => stale.
   TextColumn get sourceAudioKey => text().withDefault(const Constant(''))();
+
+  /// (v10, N-38) The key of the OLD formula (it hashes the file's size) of the file this copy was made from, at the time it was made or last confirmed to be
+  /// the same file. Empty for a copy made before v10. It lets the app tell, when the server stops serving keys of the audio or serves another file for the song,
+  /// whether the copy is still the same file (`downloadAudioKeyVerdict`).
+  TextColumn get sourceLegacyKey => text().withDefault(const Constant(''))();
   BoolColumn get stale => boolean().withDefault(const Constant(false))();
   TextColumn get lastError => text().nullable()();
   IntColumn get updatedAtMs => integer()();

@@ -9,6 +9,7 @@ DownloadRow row(
   int state = DownloadState.done,
   bool stale = false,
   String sourceAudioKey = 'k1',
+  String sourceLegacyKey = '',
   int updatedAtMs = 0,
   int? orphanedAtMs,
   int attempts = 0,
@@ -23,6 +24,7 @@ DownloadRow row(
       expectedBytes: 100,
       quality: quality,
       sourceAudioKey: sourceAudioKey,
+      sourceLegacyKey: sourceLegacyKey,
       stale: stale,
       lastError: null,
       updatedAtMs: updatedAtMs,
@@ -393,19 +395,25 @@ void main() {
     const served = 'a1:0123456789abcdef0123456789abcdef';
     const other = 'a1:ffffffffffffffffffffffffffffffff';
 
-    DownloadPlan plan(String stored, String live, {String legacy = ''}) =>
+    // [storedLegacy]: the old-formula key the copy's row remembers; [legacy]: the old-formula key of the file behind the song now.
+    DownloadPlan plan(String stored, String live,
+            {String storedLegacy = '', String legacy = ''}) =>
         planDownloads(
           desired: {'a': want('a', audioKey: live, legacyAudioKey: legacy)},
-          existing: {'a': row('a', sourceAudioKey: stored)},
+          existing: {
+            'a': row('a', sourceAudioKey: stored, sourceLegacyKey: storedLegacy)
+          },
           nowMs: now,
         );
 
     test(
-        'a copy made under the old kind of key, whose file is as it was, adopts the new key and is not fetched',
+        'a copy made under the old kind of key, whose file is as it was, adopts the new keys and is not fetched',
         () {
       final p = plan('old1', served, legacy: 'old1');
       expect(p.toRefresh, isEmpty);
-      expect(p.toAdopt, {'a': served});
+      expect(p.toAdopt.keys, ['a']);
+      expect(p.toAdopt['a']!.key, served);
+      expect(p.toAdopt['a']!.legacy, 'old1');
       expect(p.isEmpty, isFalse, reason: 'the adoption is a thing to write');
     });
 
@@ -417,31 +425,55 @@ void main() {
       expect(p.toAdopt, isEmpty);
     });
 
+    test('the same key of the audio and the same file is the same copy', () {
+      expect(plan(served, served, storedLegacy: 'o1', legacy: 'o1').isEmpty,
+          isTrue);
+    });
+
     test(
-        'the same key of the audio is the same copy, however the file was tagged',
+        'the same key of the audio after the server rewrote the tags: the copy stays and its row learns the new old-formula key',
         () {
-      final p = plan(served, served, legacy: 'whatever-the-size-is-now');
-      expect(p.isEmpty, isTrue);
+      final p = plan(served, served, storedLegacy: 'o1', legacy: 'o2');
+      expect(p.toRefresh, isEmpty);
+      expect(p.toAdopt['a']!.key, served);
+      expect(p.toAdopt['a']!.legacy, 'o2');
     });
 
     test('another key of the audio is another sound', () {
-      expect(plan(served, other).toRefresh, ['a']);
+      expect(plan(served, other, storedLegacy: 'o1', legacy: 'o1').toRefresh,
+          ['a']);
     });
 
     test('a key from another way of making keys is never compared', () {
-      final p = plan(served, 'a2:0123456789abcdef0123456789abcdef');
+      final p = plan(served, 'a2:0123456789abcdef0123456789abcdef',
+          storedLegacy: 'o1', legacy: 'o2');
       expect(p.toRefresh, isEmpty);
       expect(p.toAdopt, isEmpty);
     });
 
-    test('a server that stops serving a key does not make the copy stale', () {
-      final p = plan(served, 'old1', legacy: 'old1');
+    test(
+        'the server stops serving a key for the SAME file (a rollback): the copy stays',
+        () {
+      final p = plan(served, 'o1', storedLegacy: 'o1', legacy: 'o1');
       expect(p.isEmpty, isTrue);
+    });
+
+    test(
+        'the song is served from ANOTHER file that has no key (a second file of the song became the preferred one): the copy is fetched again',
+        () {
+      final p = plan(served, 'o9', storedLegacy: 'o1', legacy: 'o9');
+      expect(p.toRefresh, ['a']);
+    });
+
+    test(
+        'a copy that remembers no old-formula key cannot be compared with an unkeyed file: it stays',
+        () {
+      expect(plan(served, 'o9', legacy: 'o9').isEmpty, isTrue);
     });
 
     test('two keys of the old kind that differ are a changed file, as before',
         () {
-      expect(plan('old1', 'old2').toRefresh, ['a']);
+      expect(plan('old1', 'old2', legacy: 'old2').toRefresh, ['a']);
     });
 
     test('nothing to compare is no change, as before', () {

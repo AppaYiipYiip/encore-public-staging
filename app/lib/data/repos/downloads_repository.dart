@@ -5,7 +5,7 @@ import '../../core/clock.dart';
 import '../../domain/audio_quality.dart';
 import '../db/app_database.dart';
 import '../downloads/download_planner.dart';
-import '../sync/fingerprint.dart';
+import '../sync/legacy_key_columns.dart';
 
 /// What a "Download" toggle can point at.
 enum PinTargetType { playlist, album, artist, liked, track }
@@ -488,10 +488,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
       if (type == null) continue;
       final quality = AudioQuality.byId(pin.quality);
       final rows = await _db.customSelect(
-        'SELECT m.id AS id, t.audio_key AS audio_key, t.size AS size, '
-        't.suffix AS suffix, t.bit_rate AS bit_rate, '
-        't.duration_sec AS duration_sec, t.sampling_rate AS sampling_rate, '
-        't.bit_depth AS bit_depth '
+        'SELECT m.id AS id, t.audio_key AS audio_key, ${legacyKeyColumns()} '
         'FROM (${_membersSql(type)}) m '
         'JOIN tracks t ON t.server_id = ?1 AND t.id = m.id '
         'AND t.deleted_at_ms IS NULL AND t.missing = 0',
@@ -512,14 +509,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           quality: best.id,
           audioKey: row.read<String?>('audio_key') ?? '',
           // The old-formula key of the same columns: what a copy made before the server served keys is compared with (N-38).
-          legacyAudioKey: legacyAudioKey(
-            size: row.read<int?>('size'),
-            suffix: row.read<String?>('suffix'),
-            bitRate: row.read<int?>('bit_rate'),
-            durationSec: row.read<int?>('duration_sec'),
-            samplingRate: row.read<int?>('sampling_rate'),
-            bitDepth: row.read<int?>('bit_depth'),
-          ),
+          legacyAudioKey: legacyKeyOfRow(row),
           held: held.contains(id),
         );
       }
@@ -587,7 +577,10 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
                   d.serverId.equals(serverId) &
                   d.trackId.equals(entry.key) &
                   d.state.equals(DownloadState.done)))
-            .write(DownloadsCompanion(sourceAudioKey: Value(entry.value)));
+            .write(DownloadsCompanion(
+          sourceAudioKey: Value(entry.value.key),
+          sourceLegacyKey: Value(entry.value.legacy),
+        ));
       }
       if (plan.toOrphan.isNotEmpty) {
         await (_db.update(_db.downloads)
@@ -653,6 +646,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
     required String localPath,
     required int bytes,
     required String audioKey,
+    String legacyKey = '',
     required String quality,
   }) =>
       _update(
@@ -663,6 +657,7 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           bytes: Value(bytes),
           expectedBytes: Value(bytes),
           sourceAudioKey: Value(audioKey),
+          sourceLegacyKey: Value(legacyKey),
           quality: Value(quality),
           refreshQuality: const Value(null),
           stale: const Value(false),

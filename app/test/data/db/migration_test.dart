@@ -77,6 +77,9 @@ void main() {
       expect(downloads.single.quality, 'original',
           reason:
               'the quality the copy was made at is not changed by the upgrade');
+      expect(downloads.single.sourceLegacyKey, '',
+          reason:
+              'v10 (N-38): a copy made before remembers no old-formula key; the app treats that as nothing to compare');
 
       final pins = await db.select(db.pins).get();
       expect(pins.single.targetId, 'p1');

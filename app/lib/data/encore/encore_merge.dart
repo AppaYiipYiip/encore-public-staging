@@ -10,6 +10,7 @@ import '../../playback/playback_state_store.dart' show DbPlaybackStateStore;
 import '../db/app_database.dart';
 import '../downloads/download_planner.dart' show DownloadState;
 import '../repos/release_store.dart';
+import '../sync/legacy_key_columns.dart';
 import '../sync/sync_state_store.dart';
 import 'encore_models.dart';
 
@@ -125,18 +126,31 @@ class RefMerger {
     if (outcome.moves.isEmpty) return;
     final ids = {for (final m in outcome.moves) m.survivorId}.toList();
     final marks = List.filled(ids.length, '?').join(',');
-    await _db.customUpdate(
-      'UPDATE downloads SET source_audio_key = COALESCE('
-      "(SELECT t.audio_key FROM tracks t WHERE t.server_id = downloads.server_id AND t.id = downloads.track_id AND t.audio_key != ''), "
-      'source_audio_key) '
-      'WHERE server_id = ? AND state = ${DownloadState.done} AND track_id IN ($marks)',
+    // The survivor's key and the old-formula key of ITS file (the downloaded copy is of that one file; N-38), both from the survivor's own row.
+    final moved = await _db.customSelect(
+      'SELECT d.track_id AS id, t.audio_key AS live, ${legacyKeyColumns()} '
+      'FROM downloads d JOIN tracks t ON t.server_id = d.server_id AND t.id = d.track_id '
+      "WHERE d.server_id = ? AND d.state = ${DownloadState.done} AND d.track_id IN ($marks) AND t.audio_key != ''",
       variables: [
         Variable<int>(serverId),
         for (final id in ids) Variable<String>(id)
       ],
-      updates: {_db.downloads},
-      updateKind: UpdateKind.update,
-    );
+      readsFrom: {_db.downloads, _db.tracks},
+    ).get();
+    for (final row in moved) {
+      await _db.customUpdate(
+        'UPDATE downloads SET source_audio_key = ?3, source_legacy_key = ?4 '
+        'WHERE server_id = ?1 AND track_id = ?2 AND state = ${DownloadState.done}',
+        variables: [
+          Variable<int>(serverId),
+          Variable<String>(row.read<String>('id')),
+          Variable<String>(row.read<String>('live')),
+          Variable<String>(legacyKeyOfRow(row)),
+        ],
+        updates: {_db.downloads},
+        updateKind: UpdateKind.update,
+      );
+    }
   }
 
   /// After the transaction committed: the file work. A file that cannot be moved or deleted is left where it is: the row names the file

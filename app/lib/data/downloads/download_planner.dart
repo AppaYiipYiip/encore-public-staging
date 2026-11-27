@@ -4,6 +4,17 @@ import '../../domain/audio_quality.dart';
 import '../db/app_database.dart';
 import '../sync/fingerprint.dart';
 
+/// The key a downloaded copy's row is given when the copy is kept and its keys are brought up to date (`AudioKeyVerdict.adopt`).
+class AdoptedKeys {
+  const AdoptedKeys(this.key, this.legacy);
+
+  /// `Tracks.audioKey` now.
+  final String key;
+
+  /// The old-formula key of the same file now.
+  final String legacy;
+}
+
 /// What a pin asks for one track.
 class DesiredDownload {
   const DesiredDownload({
@@ -58,9 +69,9 @@ class DownloadPlan {
   /// Grace over (or user removed the pin) -> delete file and row.
   final List<String> toDelete;
 
-  /// A downloaded copy that is current and carries the old kind of key while the server now serves a key of the audio: the copy stays, its row takes the new key
-  /// (track id -> the key). Nothing is fetched (N-38).
-  final Map<String, String> toAdopt;
+  /// A downloaded copy that is the same file as when it was made, whose row should say so in the new terms (the server now serves a key of the audio, or rewrote the
+  /// tags and the size moved): the copy stays, its row takes the keys (track id -> keys). Nothing is fetched (N-38).
+  final Map<String, AdoptedKeys> toAdopt;
 
   bool get isEmpty =>
       toQueue.isEmpty &&
@@ -113,7 +124,7 @@ DownloadPlan planDownloads({
   final toOrphan = <String>[];
   final toRescue = <String>[];
   final toDelete = <String>[];
-  final toAdopt = <String, String>{};
+  final toAdopt = <String, AdoptedKeys>{};
 
   // Exponential back-off: 5 min, 10, 20, ... capped at 6 h.
   int backoffMs(int attempts) =>
@@ -134,13 +145,14 @@ DownloadPlan planDownloads({
       case DownloadState.done:
         final verdict = downloadAudioKeyVerdict(
           stored: row.sourceAudioKey,
+          storedLegacy: row.sourceLegacyKey,
           live: want.audioKey,
           liveLegacy: want.legacyAudioKey,
         );
         final changed = row.stale || verdict == AudioKeyVerdict.changed;
         // The copy is the file it was when it was downloaded: keep it and give its row the key the server serves now (no fetch, no state change).
         if (!changed && verdict == AudioKeyVerdict.adopt) {
-          toAdopt[id] = want.audioKey;
+          toAdopt[id] = AdoptedKeys(want.audioKey, want.legacyAudioKey);
         }
         // A refresh that did not arrive leaves the copy playable and counts an attempt: the next try waits the back-off of a failed download,
         // so a refresh that keeps failing is not started again at every network change, sync or pin edit.
