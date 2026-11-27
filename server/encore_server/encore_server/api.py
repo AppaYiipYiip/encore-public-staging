@@ -55,6 +55,7 @@ from .imports.watch import ImportWatch
 from .keep_watch import KeepWatch
 from .keeper.keeper import Keeper, KeepSettings
 from .live import Hub
+from .login_vouch import SqliteVouchStore
 from .navidrome import NavidromeClient
 from .navidrome_admin import NavidromeAdmin
 from .notifications import Notifications
@@ -265,7 +266,7 @@ def create_app(
         if scheduler is not None and imports is not None and scheduler.handles("keep")
         else None
     )
-    the_verifier = verifier or NavidromeVerifier(settings.navidrome_url)
+    the_verifier = verifier or NavidromeVerifier(settings.navidrome_url, store=SqliteVouchStore(database))
 
     def ended(person_id: str, user: str | None) -> None:
         # Locked, removed or given a new password: the live connections of the person close and the music server's remembered yes is forgotten.

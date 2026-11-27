@@ -54,11 +54,17 @@ The server's logs never contain song titles tied to a person (only ids), passwor
   never signs a device out**; only an owner locks an account (S1, AUDIT B2). Navidrome's own limiter sees real client addresses (the existing secret-header rule, ADR's D-2).
   **What "a device the server already knows" means (P3-34 slice 2a), so that a stranger's guesses can never lock the owner out:** (1) an Encore **device token** (`Authorization: Bearer`)
   never goes through the guess limits at all; (2) a music-server token login (`u`, `t`, `s`) that the music server **accepted within the last day** is remembered
-  (`NavidromeVerifier.vouched`, a keyed digest with a key made per process, no token, salt or name in the clear, at most 5,000 entries, renewed by every use, dropped when the person's
-  password is changed, the person is removed or locked, or the music server later refuses it) and such a login **skips the three refusals and nothing else**: the music server still checks
-  it. **Where it does not help, and what that costs:** a NEW sign-in (a new phone, `POST auth/login`) has no remembered yes and is slowed while its account is under attack; a Subsonic app
+  (`NavidromeVerifier.vouched`: an HMAC digest, no token, salt or password in the clear, at most 5,000 entries and 32 per name, renewed by every use, dropped when the person's password is
+  changed, the person is removed or locked, or the music server later refuses it) and such a login **skips the three refusals and nothing else**: the music server still checks it. **The
+  memory is kept in the database across a restart** (`login_vouch`, migration 0025: the digest, the name in lower case and the time of the last use, written at most once an hour per entry; the key of
+  the digests is in the server's `setting` table beside the key that signs song addresses): a restart happens on every update and every crash, and a guesser would otherwise refill the account's
+  limit within seconds of the server coming back and lock the owner's app out. A write that cannot be made is dropped and never refuses a login. A stolen database already holds the music
+  server's administrator login (a backup is secret material); a digest can be tested only by someone who has the name, the token AND the salt, and the salt is never stored.
+  **Where it does not help, and what that costs:** a NEW sign-in (a new phone, `POST auth/login`) has no remembered yes and is slowed while its account is under attack; a Subsonic app
   that makes a fresh salt for every call, as the Subsonic documentation advises, is never "known" (the Encore app keeps one salt per install, so it is) and is slowed while its account
-  is under attack; a restart forgets the memory. Where Docker hides the visitor's address everybody shares one address, and B-56 measured thirty wrong tries from it refusing the right
+  is under attack. **Who can trigger that slowdown:** anybody, from one connection, where Docker hides addresses (the server believes the `X-Forwarded-For` the gateway sends, so one
+  connection can look like many addresses; the account limit does not depend on any address, and twenty wrong tries a minute is all it takes); elsewhere, from four addresses. Nobody is locked
+  and nobody is signed out by it, and it lasts a minute after the guessing stops. Where Docker hides the visitor's address everybody shares one address, and B-56 measured thirty wrong tries from it refusing the right
   password for everyone behind it: the memory is what keeps the owner's app answering then. Counting wrong logins at HOME on `/rest` (where the music server, not this one, checks them) is slice 2b.
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).

@@ -205,3 +205,73 @@ def test_one_stranger_cannot_use_the_account_limit_alone_to_slow_everybody(rig: 
         rig.wrong("marwa", i, address="203.0.113.9")
 
     assert rig.sign_in("marwa", "pw-marwa", address="198.51.100.9").status_code == 200
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------- a restart (review of 2a)
+
+PERSIST = True  # the real verifier is given the database's store; False is how it was before the review (and how the lockout below is shown)
+
+
+def restartable_app(tmp_path: Path, music, clock: list[float], *, persist: bool = PERSIST):  # type: ignore[no-untyped-def]
+    """A server process: the real verifier (its own memory, not a fake's) over a fake music server, and a fresh in-memory limiter. Calling it again on the same folder is a restart."""
+    from encore_server.auth import NavidromeVerifier
+    from encore_server.db import Database
+    from tests.test_revocation import MusicServer  # noqa: F401 - the music server's fake lives there
+
+    extra = {}
+    if persist:
+        from encore_server.login_vouch import SqliteVouchStore
+
+        extra["store"] = SqliteVouchStore(Database(tmp_path / "data" / "encore.db"))
+    verifier = NavidromeVerifier(
+        "http://music.invalid", client=httpx.Client(transport=httpx.MockTransport(music.handle)), clock=lambda: clock[0], **extra
+    )
+    config = Settings(data_dir=tmp_path / "data", music_dir=tmp_path / "m", navidrome_url="http://music.invalid", youtube=False)
+    app = create_app(config, verifier=verifier, navidrome_admin=FakeAdmin(music))  # type: ignore[arg-type]
+    return app, verifier
+
+
+def test_the_owners_app_keeps_answering_after_a_restart_while_a_stranger_is_still_guessing(tmp_path: Path) -> None:
+    """A restart happens on every update and every crash and clears the in-memory memories. A scripted guesser refills the account's twenty within seconds of the server coming back: the
+    owner's app, which this server had seen the music server accept that morning, must not be the one that waits. On main it never did (a stranger's guesses counted against the stranger)."""
+    from tests.test_revocation import MusicServer
+
+    clock = [1000.0]
+    music = MusicServer()
+    app, _ = restartable_app(tmp_path, music, clock)
+    with TestClient(app, client=(GATEWAY, 50000)) as client:
+        assert client.get(f"{V1}/me", params=creds("marwa")).status_code == 200  # accepted by the music server, remembered
+    clock[0] += 3600  # an hour: an update, a crash, a night
+
+    app2, _ = restartable_app(tmp_path, music, clock)  # the restart: a new verifier, a new limiter, the same folder
+    with TestClient(app2, client=(GATEWAY, 50000)) as client:
+        for n in range(5):
+            for i in range(5):
+                client.get(
+                    f"{V1}/me",
+                    params={"u": "marwa", "t": f"{n * 10 + i:032x}", "s": f"salt{i:04d}"},
+                    headers={"X-Forwarded-For": f"203.0.113.{10 + n}"},
+                )
+        assert (
+            client.get(
+                f"{V1}/me", params={"u": "marwa", "t": "f" * 32, "s": "saltffff"}, headers={"X-Forwarded-For": "198.51.100.9"}
+            ).status_code
+            == 429
+        ), "the account is under attack"
+
+        answer = client.get(f"{V1}/me", params=creds("marwa"), headers={"X-Forwarded-For": "192.168.1.5"})
+
+        assert answer.status_code == 200, "the owner's app is a device the server already knew, restart or not"
+
+
+def test_a_guesser_who_writes_a_new_forwarded_address_on_every_request_is_still_held_to_the_accounts_twenty_a_minute(
+    rig: Rig,
+) -> None:
+    """Where Docker hides the visitor, `client_address` believes `X-Forwarded-For` from the private gateway, so a stranger can write a new made-up address on every request and get five
+    tries per name per fake address: unlimited on main. The account limit does not depend on any address: at most twenty of a hundred reach the music server in a minute."""
+    asked = rig.verifier.checks
+
+    for i in range(100):
+        rig.wrong("marwa", i, address=f"203.0.{i // 250}.{i % 250 + 1}")
+
+    assert rig.verifier.checks - asked <= 20, "the music server is asked about at most twenty of the hundred"

@@ -125,14 +125,14 @@ def test_two_processes_do_not_share_a_digest() -> None:
     assert set(first.verifier._vouched) != set(second.verifier._vouched)  # noqa: SLF001
 
 
-def test_the_memory_is_capped_and_keeps_the_newest() -> None:
-    rig = Rig(vouch_cap=50)
+def test_one_name_keeps_only_its_newest_logins() -> None:
+    rig = Rig(vouch_per_name=5)
     logins = [rig.login("marwa", salt=f"salt{i:05d}") for i in range(80)]
     for login in logins:
         rig.now[0] += 1
         assert rig.verifier.verify(*login)
 
-    assert len(rig.verifier._vouched) <= 50  # noqa: SLF001
+    assert len(rig.verifier._vouched) == 5  # noqa: SLF001
     assert rig.verifier.vouched(*logins[-1]) is True, "the newest is kept"
     assert rig.verifier.vouched(*logins[0]) is False, "the oldest made room"
 
