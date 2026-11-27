@@ -21,7 +21,7 @@ from encore_server.config import Settings
 from encore_server.health import DAY_MS, Facts, build
 from encore_server.host_status import HostStatus, LastBackup
 from encore_server.ids import now_ms
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 
 NOW = 1_795_000_000_000
 V1 = "/encore/api/v1"
@@ -338,7 +338,7 @@ def test_the_owner_gets_the_home_page_and_nobody_else_does(rig: tuple[TestClient
     assert client.get(f"{V1}/admin/health", headers=member).status_code == 403
     assert client.get(f"{V1}/admin/health", headers=HOME).status_code == 401
     unknown = client.get(f"{V1}/nothing-here", headers=STRANGER)
-    assert client.get(f"{V1}/admin/health", headers={**owner, **STRANGER}).json() == unknown.json()
+    assert says(client.get(f"{V1}/admin/health", headers={**owner, **STRANGER}).json()) == says(unknown.json())
 
 
 def test_the_route_says_what_the_computer_told_it_and_counts_what_people_did_without_a_title(

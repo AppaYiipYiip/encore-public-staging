@@ -8,7 +8,7 @@ caused, the emulator setup lives in memory notes, and the only test servers are 
 
 ## 1. One request, followed end to end
 
-* **Target, not built today (register B-73; P1-19 builds the ids and the log line; the header in code is `X-Encore-Device`):** every app request carries `X-Request-Id` (ULID) and `X-Device-Id`; the server logs them in **structured JSON lines**
+* **SERVER HALF BUILT 27 Nov 2026 (`encore_server/request_id.py`, P1-19; the app's half, sending the ids and showing the id in Diagnostics, is still owed; the log line is text with the id as ` [id]` and a one-line `event=request ...` for a failed or slow request, not yet JSON lines). Target, register B-73 (the header in code is `X-Encore-Device`):** every app request carries `X-Request-Id` (ULID) and `X-Device-Id`; the server logs them in **structured JSON lines**
   (`time, level, module, request_id, device, person_id, event, ms, error_code`), never titles, passwords, tokens or signed URLs (`21` §2).
 * The app keeps a **ring buffer** of its last 2,000 log lines (same request ids, perf spans like `play.audible`, errors) on the phone.
 * **Debug bundle (on hold, ADR-R35: not built):** Settings → About → "Report a problem" (opt-in per report) would send the phone's ring buffer + device facts (model,

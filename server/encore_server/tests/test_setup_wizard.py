@@ -26,7 +26,7 @@ from encore_server import owner_setup, setup_code
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.setup import SetupError, SetupResult
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 
 V1 = "/encore/api/v1"
 CODE = "7KQ-4MZ"
@@ -124,7 +124,7 @@ def from_address(client: TestClient, address: str) -> TestClient:
 
 
 def unknown(client: TestClient) -> dict[str, Any]:
-    return dict(client.get(f"{V1}/nothing-here", headers=HOME).json())
+    return dict(says(client.get(f"{V1}/nothing-here", headers=HOME).json()))
 
 
 def test_with_the_right_code_the_server_says_it_waits_for_its_owner(rig: tuple[TestClient, Maker, Settings]) -> None:
@@ -144,7 +144,7 @@ def test_no_code_configured_means_the_first_run_does_not_exist(tmp_path: Path) -
             client.get(f"{V1}/setup/state", headers=code()),
             client.post(f"{V1}/setup/owner", json=OWNER, headers=code()),
         ):
-            assert answer.status_code == 404 and answer.json() == unknown(client)
+            assert answer.status_code == 404 and says(answer.json()) == unknown(client)
         assert client.get("/encore/setup", headers=HOME, follow_redirects=False).status_code == 302
 
 
@@ -159,7 +159,7 @@ def test_from_the_internet_every_first_run_address_is_the_unknown_route(rig: tup
         client.get("/setup", headers=STRANGER, follow_redirects=False),
     ):
         assert answer.status_code == 404
-    assert client.get(f"{V1}/setup/state", headers=away).json() == expected
+    assert says(client.get(f"{V1}/setup/state", headers=away).json()) == expected
     assert maker.calls == [], "nothing was made for a stranger who even had the code"
 
 
@@ -229,7 +229,7 @@ def test_the_owner_is_made_once_with_a_working_browser_session(rig: tuple[TestCl
         client.get(f"{V1}/setup/state", headers=code()),
         client.post(f"{V1}/setup/owner", json=OWNER, headers=code()),
     ):
-        assert finished.status_code == 404 and finished.json() == unknown(client)
+        assert finished.status_code == 404 and says(finished.json()) == unknown(client)
     assert len(maker.calls) == 1
 
 

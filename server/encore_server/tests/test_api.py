@@ -26,7 +26,9 @@ class TestInfoAndErrors:
         response = client.get(f"{V1}/library/changes")
         assert response.status_code == 401
         error = response.json()["error"]
-        assert set(error) == {"code", "message", "retryable", "retryAfterMs", "details"}
+        # `requestId` (P1-19) is additive: every answer of a request names the request, so a phone can show the id and `encore logs` holds the same one.
+        assert set(error) == {"code", "message", "retryable", "retryAfterMs", "details", "requestId"}
+        assert error["requestId"] == response.headers["x-request-id"]
         assert error["code"] == "unauthorized" and error["retryable"] is False
 
     def test_a_body_that_is_not_json_is_a_validation_error_not_a_crash(self, client: TestClient) -> None:

@@ -197,3 +197,11 @@ def _the_catalogue_is_never_really_asked(monkeypatch: pytest.MonkeyPatch) -> Ite
     monkeypatch.setattr("encore_server.artist_finder.deezer_artist_picture", nobody)
     yield
     assert not asked, f"this test asked the real catalogue {len(asked)} time(s): {asked[:2]}"
+
+
+def says(body: Any) -> Any:
+    """What an error answer SAYS, without the id of the request it answered. `requestId` (P1-19) differs on every request by design; the tests that pin two answers as the same answer (no way to tell
+    a refused route from an unknown one, a right password from a wrong one) are about what the answers say, and a random id tells a stranger nothing."""
+    if isinstance(body, dict) and isinstance(body.get("error"), dict):
+        return {**body, "error": {k: v for k, v in body["error"].items() if k != "requestId"}}
+    return body

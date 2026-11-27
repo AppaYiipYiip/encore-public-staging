@@ -61,6 +61,8 @@ from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
 from .real_paths import RealPaths
 from .ref_janitor import RefJanitor
+from .request_id import RequestIdMiddleware
+from .request_id import of as request_id_of
 from .routes import admin_addons as admin_addons_routes
 from .routes import admin_health as admin_health_routes
 from .routes import admin_helper as admin_helper_routes
@@ -395,6 +397,9 @@ def create_app(
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
+    app.add_middleware(
+        RequestIdMiddleware
+    )  # the outermost: every layer inside it, and every log line it writes, has the request's id (P1-19)
     # The order is the order of the groups in docs/17; a path that could match two routes is matched by the first.
     for group in (
         info_routes,
@@ -430,23 +435,23 @@ def create_app(
     )
 
     @app.exception_handler(ApiError)
-    async def api_error(_: Request, error: ApiError) -> JSONResponse:
-        return JSONResponse(error.body(), status_code=error.status)
+    async def api_error(request: Request, error: ApiError) -> JSONResponse:
+        return JSONResponse(error.body(request_id_of(request)), status_code=error.status)
 
     @app.exception_handler(MusicServerUnavailable)
-    async def music_server_away(_: Request, error: MusicServerUnavailable) -> JSONResponse:
+    async def music_server_away(request: Request, error: MusicServerUnavailable) -> JSONResponse:
         # Not a wrong password and not counted as a guess (the handler runs before anything counts it): a retryable 503 the phone waits out (AUDIT B-41).
         log.info("the music server could not check a login: %s", error)
         away = ApiError("server_busy", "The music server is not answering just now. Try again in a moment.")
-        return JSONResponse(away.body(), status_code=away.status)
+        return JSONResponse(away.body(request_id_of(request)), status_code=away.status)
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(_: Request, error: RequestValidationError) -> JSONResponse:
-        return JSONResponse(ApiError("validation").body(), status_code=400)
+    async def validation_error(request: Request, error: RequestValidationError) -> JSONResponse:
+        return JSONResponse(ApiError("validation").body(request_id_of(request)), status_code=400)
 
     @app.exception_handler(Exception)
-    async def unexpected(_: Request, error: Exception) -> JSONResponse:
+    async def unexpected(request: Request, error: Exception) -> JSONResponse:
         log.exception("unexpected error: %s", error)
-        return JSONResponse(ApiError("internal").body(), status_code=500)
+        return JSONResponse(ApiError("internal").body(request_id_of(request)), status_code=500)
 
     return app
