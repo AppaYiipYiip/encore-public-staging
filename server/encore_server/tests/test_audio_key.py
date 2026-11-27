@@ -1,0 +1,418 @@
+"""N-38: the audio-only key (`audio_key.py`): made, stored, served, carried over a tag rewrite, and made again only when the SOUND changes.
+
+These tests need no ffmpeg: the hash is given (a hash of the bytes). The same promises on the real ffmpeg, with real tag rewrites in four containers, are in `tests/integration/test_audio_key.py`.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sqlite3
+import subprocess
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from encore_server import audio_key, refs
+from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of, carry, ffmpeg_command
+from encore_server.db import Database
+
+HEX = "ab" * 32
+
+
+def done(returncode: int = 0, stdout: str = f"SHA256={HEX}\n", stderr: str = "") -> Any:
+    return lambda *a, **k: subprocess.CompletedProcess(a, returncode, stdout, stderr)
+
+
+def of_bytes(path: Path) -> str:
+    return "a1:" + hashlib.sha256(path.read_bytes()).hexdigest()[:32]
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the key
+
+
+def test_the_command_copies_the_first_audio_stream_and_hashes_it_so_no_tag_can_be_in_it() -> None:
+    path = Path("/music/Encore/A/B.opus")
+    command = ffmpeg_command(path)
+    assert "ffmpeg" in command
+    joined = " ".join(command)
+    assert "-map 0:a:0 -c copy -f hash -hash sha256 -" in joined, (
+        "the audio stream only (a cover is a video stream), copied as it is, hashed"
+    )
+    assert f"-i {path} -map" in joined
+
+
+def test_the_key_is_the_prefix_and_the_first_32_digits_of_the_sha256() -> None:
+    assert audio_key_of(Path("x.opus"), runner=done()) == "a1:" + HEX[:32]
+
+
+@pytest.mark.parametrize(
+    "runner",
+    [
+        done(1, "", "Invalid data found when processing input"),
+        done(0, "nothing useful"),
+        done(0, f"sha256={HEX}"),
+        done(0, "SHA256=abc"),
+    ],
+)
+def test_a_file_ffmpeg_cannot_hash_is_unreadable_never_a_made_up_key(runner: Any) -> None:
+    with pytest.raises(Unreadable):
+        audio_key_of(Path("x.opus"), runner=runner)
+
+
+def test_a_missing_ffmpeg_and_a_timeout_say_nothing_about_the_file_so_they_are_not_unreadable() -> None:
+    def no_ffmpeg(*a: Any, **k: Any) -> Any:
+        raise FileNotFoundError("ffmpeg")
+
+    def too_slow(*a: Any, **k: Any) -> Any:
+        raise subprocess.TimeoutExpired("ffmpeg", 1)
+
+    with pytest.raises(FileNotFoundError):
+        audio_key_of(Path("x.opus"), runner=no_ffmpeg)
+    with pytest.raises(subprocess.TimeoutExpired):
+        audio_key_of(Path("x.opus"), runner=too_slow)
+
+
+def test_the_prefix_is_frozen() -> None:
+    """Phones keep the key they were served for as long as a download lives. A new way of making keys is a new prefix and a migration on the phone, never an edit of this one."""
+    assert audio_key.KEY_PREFIX == "a1:" and audio_key.KEY_DIGITS == 32
+
+
+# ---------------------------------------------------------------------------------------------------------------------- serving and attaching
+
+
+def one_ref(db: Database, title: str = "Weird Fishes") -> str:
+    with db.tx() as conn:
+        return str(refs.resolve(conn, {"title": title, "artists": ["Radiohead"]})["id"])
+
+
+def file_of(db: Database, ref: str) -> dict[str, Any]:
+    with db.read() as conn:
+        return dict(refs.get_ref(conn, ref)["file"])
+
+
+def feed(db: Database) -> int:
+    with db.read() as conn:
+        return int(conn.execute("SELECT COUNT(*) FROM file_log").fetchone()[0])
+
+
+def test_the_key_is_served_when_there_is_one_and_absent_when_there_is_none(db: Database) -> None:
+    ref = one_ref(db)
+    with db.tx() as conn:
+        refs.attach_file(
+            conn, ref, navidrome_song_id="nd1", path="Encore/R/W.opus", codec="opus", bitrate_kbps=128, meta={"size": 100}
+        )
+    assert "audioKey" not in file_of(db, ref), "nothing made yet: nothing served, and the phone does what it did"
+    with db.tx() as conn:
+        conn.execute("UPDATE song_file SET audio_key = '', audio_key_size = 100")
+    assert "audioKey" not in file_of(db, ref), "unreadable is not served either"
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=128,
+            meta={"size": 100},
+            audio_key="a1:" + "c" * 32,
+            audio_key_size=100,
+        )
+    assert file_of(db, ref)["audioKey"] == "a1:" + "c" * 32
+
+
+def test_attach_file_stores_the_keepers_key_and_tells_the_phones_only_when_the_key_is_new_or_changed(db: Database) -> None:
+    ref = one_ref(db)
+    key = "a1:" + "d" * 32
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 10},
+            audio_key=key,
+            audio_key_size=10,
+        )
+    assert file_of(db, ref)["audioKey"] == key
+    before = feed(db)
+    # the same key at another size: a tag rewrite. The file's meta changes (the feed says so for the new size), the key does not.
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 12},
+            audio_key=key,
+            audio_key_size=12,
+        )
+    assert file_of(db, ref)["audioKey"] == key
+    after_meta = feed(db)
+    assert after_meta == before + 1, "the changed meta is one feed row, as before this change"
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 12},
+            audio_key=key,
+            audio_key_size=12,
+        )
+    assert feed(db) == after_meta, "attaching what is attached writes nothing"
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 12},
+            audio_key="a1:" + "e" * 32,
+            audio_key_size=12,
+        )
+    assert feed(db) == after_meta + 1 and file_of(db, ref)["audioKey"] == "a1:" + "e" * 32, "another key is told"
+
+
+def test_a_scan_that_describes_the_file_again_never_loses_the_key(db: Database) -> None:
+    ref = one_ref(db)
+    key = "a1:" + "d" * 32
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="p.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 10},
+            audio_key=key,
+            audio_key_size=10,
+        )
+        refs.attach_file(
+            conn, ref, navidrome_song_id="nd1", path="p.opus", codec="opus", bitrate_kbps=1, meta={"size": 99, "suffix": "opus"}
+        )
+    assert file_of(db, ref)["audioKey"] == key and file_of(db, ref)["meta"]["size"] == 99
+
+
+def test_carry_moves_only_the_size_a_key_is_recorded_at_and_only_when_there_is_a_key(db: Database) -> None:
+    ref = one_ref(db)
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="p.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 10},
+            audio_key="a1:" + "d" * 32,
+            audio_key_size=10,
+        )
+        sid = str(conn.execute("SELECT id FROM song_file").fetchone()["id"])
+        carry(conn, sid, 14)
+    with db.read() as conn:
+        row = conn.execute("SELECT audio_key, audio_key_size FROM song_file").fetchone()
+    assert (row["audio_key"], row["audio_key_size"]) == ("a1:" + "d" * 32, 14)
+    other = one_ref(db, "Other")
+    with db.tx() as conn:
+        refs.attach_file(conn, other, navidrome_song_id="nd2", path="q.opus", codec="opus", bitrate_kbps=1, meta={"size": 10})
+        sid2 = str(conn.execute("SELECT id FROM song_file WHERE ref = ?", (other,)).fetchone()["id"])
+        carry(conn, sid2, 14)
+        assert (
+            conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE id = ?", (sid2,)).fetchone()["audio_key_size"]
+            is None
+        )
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the hourly errand
+
+
+class Bench:
+    """A music folder and a database; files are put in, rows attached as the library link does (a path, the music server's own size in `meta`)."""
+
+    def __init__(self, tmp: Path, db: Database) -> None:
+        self.music = tmp / "music"
+        self.music.mkdir()
+        self.db = db
+        self.n = 0
+        self.hashed: list[str] = []
+        self.now = 0.0
+
+    def add(self, content: bytes = b"sound", *, name: str | None = None, preferred: bool = True) -> tuple[str, Path]:
+        self.n += 1
+        ref = one_ref(self.db, f"Song {self.n}")
+        path = self.music / (name or f"Artist/Song {self.n}.opus")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        with self.db.tx() as conn:
+            refs.attach_file(
+                conn,
+                ref,
+                navidrome_song_id=f"nd{self.n}",
+                path=path.relative_to(self.music).as_posix(),
+                codec="opus",
+                bitrate_kbps=1,
+                meta={"size": len(content)},
+            )
+            if not preferred:
+                conn.execute("UPDATE song_file SET preferred = 0 WHERE ref = ?", (ref,))
+        return ref, path
+
+    def hash_(self, path: Path) -> str:
+        self.hashed.append(path.name)
+        return of_bytes(path)
+
+    def keys(self, **more: Any) -> AudioKeys:
+        return AudioKeys(self.db, self.music, hash_=more.pop("hash_", self.hash_), clock=lambda: self.now, **more)
+
+    def row(self, ref: str) -> sqlite3.Row:
+        with self.db.read() as conn:
+            row: sqlite3.Row = conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchone()
+        return row
+
+    def scan_says_size(self, ref: str, size: int) -> None:
+        """The music server's next scan: the file has another size now."""
+        with self.db.tx() as conn:
+            conn.execute("UPDATE song_file SET meta = ? WHERE ref = ?", (json.dumps({"size": size}), ref))
+
+
+@pytest.fixture()
+def bench(tmp_path: Path, db: Database) -> Bench:
+    return Bench(tmp_path, db)
+
+
+def test_a_library_file_gets_its_key_once_and_the_phones_are_told(bench: Bench) -> None:
+    ref, path = bench.add(b"one")
+    before = feed(bench.db)
+
+    first = bench.keys().run_once()
+
+    assert (first.made, first.unreadable, first.left) == (1, 0, 0)
+    assert bench.row(ref)["audio_key"] == of_bytes(path) and bench.row(ref)["audio_key_size"] == 3
+    assert file_of(bench.db, ref)["audioKey"] == of_bytes(path)
+    assert feed(bench.db) == before + 1, "a phone learns the key through the files feed"
+    assert bench.keys().run_once() == (0, 0, 0) and bench.hashed == ["Song 1.opus"], "a second pass hashes nothing"
+
+
+def test_a_tag_rewrite_by_somebody_else_is_one_hash_and_no_news_for_the_phones(bench: Bench) -> None:
+    """The size changed (the music server says so), the sound did not: the pass hashes the file once, finds the same key and writes down the new size. It tells no phone."""
+    ref, path = bench.add(b"sound-bytes")
+    bench.keys().run_once()
+    key = bench.row(ref)["audio_key"]
+    news = feed(bench.db)
+    path.write_bytes(
+        b"sound-bytes" + b"+ a picture and longer tags"
+    )  # a retag grew the file; the music server's next scan says so
+    bench.scan_says_size(ref, path.stat().st_size)
+    again = bench.keys(hash_=lambda p: key).run_once()  # ffmpeg's answer for the same sound
+    assert again.made == 0 and bench.row(ref)["audio_key"] == key and bench.row(ref)["audio_key_size"] == path.stat().st_size
+    assert feed(bench.db) == news, "same key: nothing to tell"
+    assert bench.keys().run_once() == (0, 0, 0), "and the size is recorded, so it is not looked at again"
+
+
+def test_a_replaced_file_gets_another_key_and_the_phones_are_told(bench: Bench) -> None:
+    ref, path = bench.add(b"old sound")
+    bench.keys().run_once()
+    old = bench.row(ref)["audio_key"]
+    path.write_bytes(b"a different recording altogether")
+    bench.scan_says_size(ref, path.stat().st_size)
+    news = feed(bench.db)
+
+    assert bench.keys().run_once().made == 1
+
+    assert bench.row(ref)["audio_key"] != old and feed(bench.db) == news + 1
+
+
+def test_the_old_key_is_served_until_the_pass_has_made_the_new_one(bench: Bench) -> None:
+    ref, path = bench.add(b"old sound")
+    bench.keys().run_once()
+    key = file_of(bench.db, ref)["audioKey"]
+    bench.scan_says_size(ref, 4242)  # the scan saw a new size: until the pass runs the ref still answers with the key it has
+    assert file_of(bench.db, ref)["audioKey"] == key
+
+
+def test_a_file_ffmpeg_cannot_read_is_marked_at_its_size_and_not_asked_about_again_until_it_changes(bench: Bench) -> None:
+    ref, path = bench.add(b"not audio")
+
+    def broken(p: Path) -> str:
+        raise Unreadable("Invalid data")
+
+    assert bench.keys(hash_=broken).run_once() == (0, 1, 0), "nothing new to tell a phone: no key was made"
+    assert bench.row(ref)["audio_key"] == "" and bench.row(ref)["audio_key_size"] == 9
+    assert "audioKey" not in file_of(bench.db, ref)
+    assert bench.keys().run_once() == (0, 0, 0) and bench.hashed == [], "not looked at again at the same size"
+    path.write_bytes(b"now it is a song, a longer one")
+    bench.scan_says_size(ref, path.stat().st_size)
+    assert bench.keys().run_once().made == 1 and file_of(bench.db, ref)["audioKey"].startswith("a1:")
+
+
+def test_what_is_not_on_the_disk_or_not_in_the_music_folder_is_left_and_never_remembered(bench: Bench, tmp_path: Path) -> None:
+    gone, path = bench.add(b"here today")
+    path.unlink()
+    outside = tmp_path / "secret.opus"
+    outside.write_bytes(b"outside")
+    ref = one_ref(bench.db, "Sneaky")
+    with bench.db.tx() as conn:
+        refs.attach_file(
+            conn, ref, navidrome_song_id="ndx", path="../secret.opus", codec="opus", bitrate_kbps=1, meta={"size": 7}
+        )
+
+    done_ = bench.keys().run_once()
+
+    assert (done_.made, done_.left) == (0, 2) and bench.hashed == [], "a path that leaves the music folder is never read"
+    assert bench.row(gone)["audio_key"] is None and bench.row(ref)["audio_key"] is None
+
+
+def test_a_file_that_changes_while_it_is_read_is_left_for_the_next_pass(bench: Bench) -> None:
+    ref, path = bench.add(b"live recording")
+
+    def grows(p: Path) -> str:
+        key = of_bytes(p)
+        p.write_bytes(p.read_bytes() + b"more")
+        return key
+
+    assert bench.keys(hash_=grows).run_once() == (0, 0, 1) and bench.row(ref)["audio_key"] is None
+
+
+def test_a_missing_program_or_a_stuck_disk_stops_the_pass_and_marks_nothing(bench: Bench) -> None:
+    first, _ = bench.add(b"a")
+    second, _ = bench.add(b"b")
+
+    def no_ffmpeg(p: Path) -> str:
+        raise FileNotFoundError("ffmpeg")
+
+    result = bench.keys(hash_=no_ffmpeg).run_once()
+
+    assert result == (0, 0, 2) and bench.row(first)["audio_key_size"] is None and bench.row(second)["audio_key_size"] is None
+
+
+def test_the_pass_takes_at_most_a_batch_and_a_budget_and_the_preferred_file_first(bench: Bench) -> None:
+    old, _ = bench.add(b"old copy", preferred=False)
+    wanted, _ = bench.add(b"wanted copy")
+    third, _ = bench.add(b"third")
+
+    assert bench.keys(batch=2).run_once().made == 2
+    assert bench.row(old)["audio_key"] is None, "the file a phone downloads is keyed before the old copy"
+    assert bench.row(wanted)["audio_key"] and bench.row(third)["audio_key"]
+
+    def slow(p: Path) -> str:
+        bench.now += 30.0
+        return of_bytes(p)
+
+    bench.add(b"fourth")
+    bench.add(b"fifth")
+    result = bench.keys(
+        hash_=slow, budget_s=40.0
+    ).run_once()  # two files are keyed (30 s each); the third is over the 40 s budget
+    assert result == (2, 0, 1), "the budget stops the pass; the rest waits for the next"
+    assert bench.row(old)["audio_key"] is None, "the old copy is the one left"

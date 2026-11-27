@@ -8,6 +8,7 @@ likes, playlists and history point at the *ref*; this only adds a row to `song_f
 from __future__ import annotations
 
 import logging
+import subprocess
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -19,6 +20,7 @@ from typing import Any, Protocol
 from .. import library, refs
 from ..album_pass import KeepAnswer, file_or_listing_length
 from ..artist_basis import is_performer
+from ..audio_key import Unreadable, audio_key_of
 from ..db import Database
 from ..deezer import LookupUnavailable
 from ..errors import ApiError
@@ -140,6 +142,7 @@ class Keeper:
         *,
         runner: Runner | None = None,
         write_tags_: Callable[..., bool] = write_tags,
+        audio_key_: Callable[[Path], str] = audio_key_of,
         fetch_cover_: Callable[[str | None], bytes | None] | None = None,
         find_cover_: Callable[..., str | None] | None = None,
         on_changed: Callable[[dict[str, int]], None] | None = None,
@@ -155,6 +158,7 @@ class Keeper:
         self._work = work_dir
         self._run = runner if runner is not None else run_command
         self._write_tags = write_tags_
+        self._make_audio_key = audio_key_
         # Looked up when the keeper is made, not when this module is loaded, so a test can put its own in (B27): a rig that keeps a song with a picture
         # address otherwise fetched it from the real picture host (found by the network guard of P2-12).
         self._cover = fetch_cover_ if fetch_cover_ is not None else fetch_cover
@@ -397,6 +401,7 @@ class Keeper:
         )
         navidrome_id = self._wait_for_music_server(ref, relative, size)
         meta = file_meta(self._navidrome.get_song(navidrome_id) or {}) if navidrome_id else None
+        audio_key = self._audio_key(path)  # of the file as it is NOW (tagged, placed): the size is the one it is recorded at
         with self._db.tx() as conn:
             refs.attach_file(
                 conn,
@@ -407,6 +412,8 @@ class Keeper:
                 bitrate_kbps=kbps,
                 source="youtube",
                 meta=meta,
+                audio_key=audio_key,
+                audio_key_size=size if audio_key is not None else None,
             )
             touched = library.touch_ref_holders(conn, ref["id"]) if navidrome_id else {}
         if navidrome_id is None:
@@ -415,6 +422,14 @@ class Keeper:
             raise Retry(MUSIC_SERVER_DID_NOT_FIND)
         if touched and self._on_changed is not None:
             self._on_changed(touched)
+
+    def _audio_key(self, path: Path) -> str | None:
+        """The audio-only key of the file just placed (N-38). A song that cannot be keyed now is kept all the same: the hourly errand makes the key later (`audio_key.AudioKeys`)."""
+        try:
+            return self._make_audio_key(path)
+        except (Unreadable, OSError, subprocess.TimeoutExpired) as error:
+            log.warning("no audio key made when %s was kept (%s); the hourly pass will try again", path.name, error)
+            return None
 
     def _wait_for_music_server(self, ref: dict[str, Any], relative: str, size: int) -> str | None:
         """Tells the music server there is a new file at once (it is told here, not left to its schedule), waits for its scan to end,

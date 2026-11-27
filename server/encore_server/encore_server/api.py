@@ -31,6 +31,7 @@ from . import (
 from .accounts import Accounts, Limiter
 from .album_pass import AlbumFinder, KeepAsker
 from .artist_finder import ArtistFinder, ArtistLookup
+from .audio_key import AudioKeys
 from .auth import (
     MusicServerUnavailable,
     NavidromeVerifier,
@@ -288,6 +289,7 @@ def create_app(
     )
 
     tombstone_purge = TombstonePurge(database)
+    audio_keys = AudioKeys(database, settings.music_dir)
     ref_janitor = RefJanitor(database)
 
     def errands() -> None:
@@ -296,6 +298,7 @@ def create_app(
             *((album_pass.run_once,) if album_pass is not None else ()),
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
+            audio_keys.run_once,  # N-38: the audio-only key of the files the keeper did not make (the library's own), so a tag rewrite never makes a phone download a song again
             tombstone_purge.run_once,  # N-31: old tombstones and old import lists go, so that the janitor below finds their songs unpointed
             ref_janitor.run_once,  # N-27: the song refs nobody points at (after the finders: they look at refs too)
         ):
