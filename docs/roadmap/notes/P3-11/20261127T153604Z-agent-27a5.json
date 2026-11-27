@@ -1,0 +1,12 @@
+{
+ "id": "20261127T153604Z-agent-27a5",
+ "item": "P3-11",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T15:36:04Z",
+ "type": "note",
+ "body": "27 Nov, lead (from P3-34): the Year in Music history now comes from the Encore server's own play_event; a Tinkerer who attaches an EXISTING Navidrome has scrobbles there that Encore never recorded. Trigger to build: a one-time import of the music server's scrobbles into play_event (needs an admin-read measurement of /api/scrobble on Navidrome 0.64.2 first, or the person's own login at attach time).",
+ "to": [
+  "agent"
+ ]
+}

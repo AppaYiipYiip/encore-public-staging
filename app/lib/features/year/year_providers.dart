@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/session.dart';
 import '../../core/result.dart';
 import '../../data/db/app_database.dart';
+import '../../data/encore/encore_play_history.dart';
 import '../../domain/album_names.dart';
 import '../../domain/year_in_music.dart';
 
@@ -27,6 +29,20 @@ SongFacts songFactsOf(TrackRow t) => SongFacts(
 final playHistoryKeepProvider =
     Provider<Duration>((ref) => const Duration(minutes: 2));
 
+/// Where the person's plays are read from (P3-34 slice 0). On an Encore server that lists `my-plays` it is the server's OWN record of what this person's phones
+/// reported (`GET me/plays`): it works at home and away, needs no sign-in to the music server, and is what the server's gateway can keep shut. A route that is not
+/// listed is never tried to find out; a plain Navidrome server, or an Encore server from before the route, is read the old way, through the music server's own list.
+Future<Result<List<Listen>>> readPlayHistory(ServerSession session) async {
+  final api = session.encoreApi;
+  if (api != null) {
+    final info = (await api.info()).valueOrNull;
+    if (info != null && info.hasMyPlays) {
+      return EncorePlayHistory(api).fetchAll();
+    }
+  }
+  return session.playHistory.fetchAll();
+}
+
 /// Every play of this person, read from their server when the screen opens
 /// (it can be long) and kept for a couple of minutes, so that flipping between
 /// month, year and all time is free but a song listened to in the meantime
@@ -44,7 +60,7 @@ final playHistoryProvider =
 
   final session = await ref.watch(sessionProvider.future);
   if (session == null) return const [];
-  final result = await session.playHistory.fetchAll();
+  final result = await readPlayHistory(session);
   final listens = result.valueOrNull;
   if (listens != null) return listens;
   final failure = result.failureOrNull!;
