@@ -360,5 +360,17 @@
   "evidence": "PR #169 merged 27 Nov 2026: the native API names the real place (measured on the real music server 0.64.2), path_real + errand + trusted_file; integration job proves the finding, 105 ids whole, a moved file found again; not walked",
   "at": "2026-11-27T10:07:06Z",
   "by": "Claude"
+ },
+ "N-46": {
+  "state": "built",
+  "evidence": "PR #177 merged 27 Nov 2026: normalizeForMatch on the shared fold; ten rows of real Arabic, Hebrew, Hindi, Thai, Russian and decomposed-accent names failed before and pass; matching, search-rank, typo and fold suites pass; full app gate and CI verify green; not walked",
+  "at": "2026-11-27T11:53:01Z",
+  "by": "Claude"
+ },
+ "P2-25": {
+  "state": "built",
+  "evidence": "Server (#104 #110 #115 #118: the one fold, the rekey, the rehome, the dry run on a copy of the real database) and phone (N-46 #177: normalizeForMatch on the Dart twin of the fold) both merged by 27 Nov 2026, each proved by tests (the shared fixture over every code point, real non-Latin names); NOT deployed and NOT walked: the first real deploy (backup first, Python 3.12, read the dry-run report) and the walk of an Arabic song on the owner's phone are owed",
+  "at": "2026-11-27T11:53:14Z",
+  "by": "Claude"
  }
 }
