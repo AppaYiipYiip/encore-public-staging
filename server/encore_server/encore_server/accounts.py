@@ -83,7 +83,30 @@ class Limiter:
     def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._inflight: dict[str, int] = {}
         self._lock = threading.Lock()
+
+    def reserve(self, key: str, ceiling: int) -> bool:
+        """Takes one slot of [key] for a check that is about to start, unless [ceiling] are already taken. Given back by [release]."""
+        with self._lock:
+            taken = self._inflight.get(key, 0)
+            if taken >= ceiling:
+                return False
+            self._inflight[key] = taken + 1
+            return True
+
+    def release(self, key: str) -> None:
+        with self._lock:
+            left = self._inflight.get(key, 0) - 1
+            if left > 0:
+                self._inflight[key] = left
+            else:
+                self._inflight.pop(key, None)
+
+    def in_flight(self) -> int:
+        """How many slots are taken, all keys together (for the tests and the Health page)."""
+        with self._lock:
+            return sum(self._inflight.values())
 
     def allow(self, key: str, limit: int, window_s: float) -> int | None:
         now = self._clock()
@@ -130,6 +153,27 @@ class Limiter:
                     del self._hits[stale]
 
 
+class Attempt:
+    """A check of a login that is under way: the slots it holds, given back by [release] (once) or by leaving a `with` (P3-34 slice 2d)."""
+
+    def __init__(self, limiter: Limiter, keys: list[str]) -> None:
+        self._limiter = limiter
+        self._keys = keys
+        self._lock = threading.Lock()
+
+    def release(self) -> None:
+        with self._lock:
+            keys, self._keys = self._keys, []
+        for key in keys:
+            self._limiter.release(key)
+
+    def __enter__(self) -> Attempt:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.release()
+
+
 class LoginGuard:
     """Wrong guesses are **slowed**, never punished with a lock (AUDIT B1 and B2, docs/32 AC-21).
 
@@ -144,6 +188,13 @@ class LoginGuard:
     ADDRESS = (30, 60.0)
     #: Across all addresses: a guesser spread over many addresses is slowed for the name (one address alone can add five a minute, its pair limit, so it takes four to reach this).
     ACCOUNT = (20, 60.0)
+
+    #: How many checks of an unknown login may be under way AT ONCE (P3-34 slice 2d): a wrong answer is counted only once the music server has given it, so sixty guesses sent together all met a count
+    #: of zero and all passed. Far above what an app does in parallel (a screen of covers is a dozen or two, and Dart, OkHttp and the browsers keep 5 to 10 connections to a host), so a fresh-salt
+    #: app is not held up; far below a script's burst, which is held to these instead of to its own size, and counted as wrong afterwards like any other. A known device reserves nothing.
+    IN_FLIGHT_PAIR = 16  # one name from one address
+    IN_FLIGHT_ACCOUNT = 32  # one name from anywhere
+    IN_FLIGHT_ADDRESS = 48  # one address (where Docker hides the visitor, everybody shares it)
 
     def __init__(self, limiter: Limiter) -> None:
         self._limiter = limiter
@@ -169,6 +220,25 @@ class LoginGuard:
             raise ApiError(
                 "rate_limited", "Too many wrong passwords from here. Wait a moment and try again.", retry_after_ms=wait
             )
+
+    def begin(self, name: str, address: str, *, vouched: bool = False) -> Attempt:
+        """[refuse], and then a slot for the check that is about to start: use as `with guard.begin(...):` around the music server's check and the [failed] that follows it, so the slot is given
+        back on every way out (accepted, refused, an error, a music server that does not answer). Raises the same `rate_limited` when too many checks of this login are under way at once."""
+        self.refuse(name, address, vouched=vouched)
+        if vouched:
+            return Attempt(self._limiter, [])
+        taken: list[str] = []
+        for key, ceiling in (
+            (f"inflight-pair:{self._pair(name, address)}", self.IN_FLIGHT_PAIR),
+            (f"inflight-address:{address}", self.IN_FLIGHT_ADDRESS),
+            (f"inflight-account:{self._account(name)}", self.IN_FLIGHT_ACCOUNT),
+        ):
+            if not self._limiter.reserve(key, ceiling):
+                for held in taken:
+                    self._limiter.release(held)
+                raise ApiError("rate_limited", "Too many tries at once. Wait a moment and try again.", retry_after_ms=1000)
+            taken.append(key)
+        return Attempt(self._limiter, taken)
 
     def failed(self, name: str, address: str) -> None:
         self._limiter.hit(self._pair(name, address), self.PAIR[1])

@@ -19,7 +19,7 @@ from .. import (
     netaddr,
     subsonic_guard,
 )
-from ..accounts import Accounts, Limiter, LoginGuard
+from ..accounts import Accounts, Attempt, Limiter, LoginGuard
 from ..artist_finder import ArtistFinder
 from ..auth import (
     Principal,
@@ -191,12 +191,14 @@ def check_music_login(request: Request, user: str, subsonic: str, salt: str) -> 
     guard = LoginGuard(limiter_of(request))
     # A device the server already knows (a login the music server accepted within the day) is not refused by the guess limits; the music server still checks it just below.
     vouched = getattr(svc.verifier, "vouched", None)
-    guard.refuse(user, address, vouched=bool(callable(vouched) and vouched(user, subsonic, salt)))
-    _refuse_locked(svc, user)
-    if not svc.verifier.verify(user, subsonic, salt):
-        guard.failed(user, address)
-        log.info("a wrong music-server login was refused: name %r, counted against address %s", user, address)
-        raise ApiError("unauthorized", "The music server did not accept that login.")
+    with guard.begin(
+        user, address, vouched=bool(callable(vouched) and vouched(user, subsonic, salt))
+    ):  # a slot while the music server is asked (P3-34 slice 2d)
+        _refuse_locked(svc, user)
+        if not svc.verifier.verify(user, subsonic, salt):
+            guard.failed(user, address)
+            log.info("a wrong music-server login was refused: name %r, counted against address %s", user, address)
+            raise ApiError("unauthorized", "The music server did not accept that login.")
 
 
 async def authorize_public_subsonic(request: Request, login: subsonic_guard.HomeLogin | None) -> None:
@@ -301,6 +303,18 @@ def music_web_page_open(request: Request) -> bool:
     )
 
 
+class HomeAttempt:
+    """What [HomeLoginGuard.begin] hands the gateway: the refusal to answer with (or `None`), and the slot the check holds, given back by [release] once the music server has answered."""
+
+    def __init__(self, refusal: tuple[int, dict[str, str], bytes] | None, attempt: Attempt | None) -> None:
+        self.refusal = refusal
+        self._attempt = attempt
+
+    def release(self) -> None:
+        if self._attempt is not None:
+            self._attempt.release()
+
+
 class HomeLoginGuard:
     """Wrong logins at HOME on `/rest`, counted from the music server's own answer (P3-34 slice 2b, audit B-56; `subsonic_guard.py` is the pure half).
 
@@ -309,19 +323,20 @@ class HomeLoginGuard:
     server already knows (a login the music server accepted within the day: the memory of `NavidromeVerifier.vouched`, which this renews and drops from what the gateway SEES). AFTER: a small,
     sized json or xml answer with a login-refused code is a wrong guess and is counted; anything else that is a 200 or a 206 is the music server accepting the login."""
 
-    def refuse(self, request: Request, login: subsonic_guard.HomeLogin) -> tuple[int, dict[str, str], bytes] | None:
-        """The refusal to answer instead of passing the call on, or `None` to pass it on."""
+    def begin(self, request: Request, login: subsonic_guard.HomeLogin) -> HomeAttempt:
+        """The refusal to answer instead of passing the call on (a name, address or account with too many wrong answers, or too many checks of it under way at once), or the slot the check holds
+        while the music server answers (P3-34 slice 2d): the gateway gives it back with `release`, on every way out."""
         svc = services(request)
         vouched = getattr(svc.verifier, "vouched", None)
         known = bool(callable(vouched) and vouched(login.user, login.token, login.salt))
         try:
-            LoginGuard(limiter_of(request)).refuse(login.user, client_address(request), vouched=known)
+            attempt = LoginGuard(limiter_of(request)).begin(login.user, client_address(request), vouched=known)
         except ApiError as refusal:
             fmt, callback = subsonic_guard.format_of(dict(request.query_params.items()))
             body, kind = subsonic_guard.refusal_body(fmt, callback, "Too many wrong tries. Wait a moment and try again.")
             wait_s = max(1, -(-(refusal.retry_after_ms or 1000) // 1000))
-            return 429, {"Content-Type": kind, "Retry-After": str(wait_s), "Cache-Control": "no-store"}, body
-        return None
+            return HomeAttempt((429, {"Content-Type": kind, "Retry-After": str(wait_s), "Cache-Control": "no-store"}, body), None)
+        return HomeAttempt(None, attempt)
 
     def settle(self, request: Request, login: subsonic_guard.HomeLogin, *, refused: bool) -> None:
         svc = services(request)

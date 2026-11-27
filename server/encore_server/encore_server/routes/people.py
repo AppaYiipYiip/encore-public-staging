@@ -167,12 +167,12 @@ def change_password(
         raise ApiError("validation", "Enter your current password.")
     address = client_address(request)
     guard = LoginGuard(limiter_of(request))
-    guard.refuse(p.navidrome_user, address)
     salt = secrets.token_hex(6)
-    if not services(request).verifier.verify(p.navidrome_user, subsonic_token(old, salt), salt):
-        guard.failed(p.navidrome_user, address)
-        accounts_of(request).failed_login(p.navidrome_user)
-        raise ApiError("unauthorized", "The current password was not accepted.")
+    with guard.begin(p.navidrome_user, address):  # a slot while the music server is asked (P3-34 slice 2d)
+        if not services(request).verifier.verify(p.navidrome_user, subsonic_token(old, salt), salt):
+            guard.failed(p.navidrome_user, address)
+            accounts_of(request).failed_login(p.navidrome_user)
+            raise ApiError("unauthorized", "The current password was not accepted.")
     accounts_of(request).change_password(p.navidrome_user, body.get("newPassword"))
     with services(request).db.tx() as conn:
         conn.execute(

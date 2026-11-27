@@ -58,21 +58,20 @@ def test_the_same_with_a_salt_of_one_character(rig: Rig) -> None:
     assert short_salt[:5] == [200] * 5 and set(short_salt[5:]) == {429}, "the music server takes any salt"
 
 
-def test_what_the_real_music_server_says_to_a_name_that_does_not_exist_is_shown(
-    rig: Rig, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """The first run of the check for a name with a space found it NOT counted: what the music server answers for a name it does not know was never measured. Shown here, through the gateway,
-    until the measurement (`test_subsonic_login_answers.py`) says what to do; the counting assertion follows it."""
-    shown = []
-    for i in range(7):
-        got = rig.client.get("/rest/ping.view", params={"u": "José Maria", "p": f"guess-{i}", "f": "json"})
-        shown.append((got.status_code, got.headers.get("content-type"), got.headers.get("content-length"), got.text[:160]))
+def test_a_name_the_music_server_does_not_know_is_counted_like_any_wrong_login(rig: Rig) -> None:
+    """Measured on the real music server: a name that does not exist (ASCII, with a space, with an accent, in capitals) gets the same answer as a wrong password, code 40 of 194 bytes, so it is
+    counted: a guesser cannot go through names for free. (The first run of this check left out `v` and `c`, and the music server answered code 10, a parameter missing, which is rightly not counted.)"""
+    answers = [
+        int(
+            rig.client.get(
+                "/rest/ping.view",
+                params={"u": "Jos\u00e9 Maria", "p": f"guess-{i}", "f": "json", "v": "1.16.1", "c": "encore-test"},
+            ).status_code
+        )
+        for i in range(12)
+    ]
 
-    with capsys.disabled():
-        print("\n=== an unknown name through the gateway, seven wrong logins")
-        for row in shown:
-            print("   ", row)
-    assert shown
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
 
 
 def test_a_name_given_twice_never_reaches_the_music_server(rig: Rig) -> None:
