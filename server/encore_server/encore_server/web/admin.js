@@ -27,6 +27,7 @@ function signInPage(message) {
     password,
     problem,
     button,
+    el("p", { class: "faint" }, "Forgot your password? On the computer where Encore is installed, run  sudo encore reset-password YOURUSERNAME"),
   );
   form.addEventListener("submit", async (event) => {
     event.preventDefault();

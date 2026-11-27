@@ -10,6 +10,8 @@
 #   encore restore FILE         put such a copy back (asks for the backup key; what is here now is set aside, not deleted)
 #   encore autobackup on|off|status   the nightly backup (on by default)
 #   encore addon list | ID STATE   the optional things Encore does (docs/35): who runs each, and change one (the admin pages do the same)
+#   encore reset-password NAME  a new password for somebody who cannot sign in (an owner is asked for the recovery key shown once at setup; none is allowed here)
+#   encore recovery-key [NAME]  a new recovery key for an owner (the old one stops working)
 #   encore secure [--check]     lock the music server's passwords and the backups with keys of this install (--check: is the key you saved the right one)
 #   encore uninstall [--everything]   remove it; the music is never touched
 # (it asks for the administrator's password itself when it needs it)
@@ -583,6 +585,109 @@ write_host_status() {
     if chmod 644 "$tmp" && mv -f -- "$tmp" "$out"; then :; else rm -f -- "$tmp"; fi
 }
 
+# A question whose answer is not shown on the screen (a password). Nothing when there is no terminal to ask on.
+ask_secret() {
+    local answer=""
+    [ -r /dev/tty ] || return 1
+    read -r -s -p "  $1 " answer </dev/tty || true
+    printf '\n' >&2
+    printf '%s' "$answer"
+}
+
+# `encore reset-password NAME`: a new password for a person who cannot sign in (docs/36 section 6). Being at this computer, as root, is the proof of ownership. For an owner who has a recovery
+# key it is asked (a wrong one is refused; none may be given if it is lost, and the audit line says so). The new password goes to the server on standard input from a file only this account
+# can read, never on a command line or in the environment. An owner is given a NEW recovery key afterwards, shown here once: the old one has been typed on a terminal and is spent.
+json_string() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+
+# What the person at the terminal sees of a finished act: the lines the server answered, as sentences. The recovery key is shown here and nowhere else.
+show_new_recovery_key() {
+    local key="$1"
+    say ""
+    say "  ${BOLD}Recovery key${OFF} (shown once; Encore keeps no copy, so write it down or print it and keep it somewhere safe):"
+    say ""
+    say "        ${BOLD}${key}${OFF}"
+    say ""
+    say "  If it is lost, make a new one with:  sudo encore recovery-key"
+}
+
+cmd_reset_password() {
+    need_root reset-password
+    local name="" pwfile="" keyfile="" state first="" second="" key="" details message out newkey ended infoerr
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --password-file) pwfile="${2:?--password-file needs a file}"; shift 2 ;;
+            --recovery-key-file) keyfile="${2:?--recovery-key-file needs a file}"; shift 2 ;;
+            -*) die "Unknown option $1. Use:  encore reset-password NAME [--password-file FILE] [--recovery-key-file FILE]" ;;
+            *) [ -z "$name" ] || die "Use:  encore reset-password NAME"; name="$1"; shift ;;
+        esac
+    done
+    [ -n "$name" ] || die "Use:  encore reset-password NAME   (NAME is the person's username, the one they sign in with)"
+    infoerr="$(mktemp)"
+    if ! state="$(dc exec -T encore-server python -m encore_server op reset-password "$name" --info </dev/null 2>"$infoerr")"; then
+        message="$(tail -n 1 "$infoerr")"
+        rm -f "$infoerr"
+        die "${message:-Encore is not running: start it with  sudo encore start}"
+    fi
+    rm -f "$infoerr"
+    if [ -n "$pwfile" ]; then
+        [ -r "$pwfile" ] || die "The password file $pwfile cannot be read."
+        first="$(head -n 1 "$pwfile")"; second="$first"
+        if [ -n "$keyfile" ]; then
+            [ -r "$keyfile" ] || die "The recovery key file $keyfile cannot be read."
+            key="$(head -n 1 "$keyfile")"
+        elif [ "$state" = owner-with-key ]; then
+            note "Going on without the recovery key (none was given); the audit log says so."
+        fi
+    else
+        [ -t 0 ] || die "This asks for the new password: run it in a terminal, or give  --password-file FILE  (the first line of the file)."
+        say ""
+        first="$(ask_secret "New password for ${name} (8 or more characters):")" || die "A password is needed."
+        second="$(ask_secret 'Type it again:')" || die "A password is needed."
+        if [ "$state" = owner-with-key ]; then
+            say ""
+            say "  ${name} is an owner with a recovery key. Type it, or press Enter if it is lost (that is allowed here, at this computer; it is written in the audit log)."
+            read -r -p "  Recovery key: " key </dev/tty || key=""
+        fi
+    fi
+    [ "$first" = "$second" ] || die "The two passwords are not the same. Nothing was changed."
+    case "$first$key" in *[[:cntrl:]]*) die "A password or a key cannot hold control characters. Nothing was changed." ;; esac
+    details="$(mktemp)"
+    chmod 600 "$details"
+    printf '{"password":"%s","recoveryKey":"%s"}' "$(json_string "$first")" "$(json_string "$key")" >"$details"
+    if ! out="$(dc exec -T encore-server python -m encore_server op reset-password "$name" <"$details" 2>"$details.err")"; then
+        message="$(tail -n 1 "$details.err")"
+        rm -f "$details" "$details.err"
+        die "${message:-The password could not be changed. Nothing was changed. See: encore logs}"
+    fi
+    rm -f "$details" "$details.err"
+    ended="$(printf '%s\n' "$out" | sed -n 's/^devicesEnded=//p' | head -1)"
+    newkey="$(printf '%s\n' "$out" | sed -n 's/^recovery-key=//p' | head -1)"
+    ok "The password of ${name} is changed"
+    say "  ${ended:-0} signed-in device(s) were signed out; ${name} signs in again with the new password."
+    say "  (A music app that signs every request with the OLD password may still be let in for up to ten minutes.)"
+    if [ -n "$newkey" ]; then show_new_recovery_key "$newkey"; fi
+    say ""
+}
+
+# `encore recovery-key [NAME]`: a new recovery key for an owner (one made before keys existed, or one who lost theirs); the password is not touched. Shown once, here.
+cmd_recovery_key() {
+    need_root recovery-key
+    local out message newkey who keyerr
+    keyerr="$(mktemp)"
+    if ! out="$(dc exec -T encore-server python -m encore_server op recovery-key "$@" </dev/null 2>"$keyerr")"; then
+        message="$(tail -n 1 "$keyerr")"
+        rm -f "$keyerr"
+        die "${message:-Encore is not running: start it with  sudo encore start}"
+    fi
+    rm -f "$keyerr"
+    newkey="$(printf '%s\n' "$out" | sed -n 's/^recovery-key=//p' | head -1)"
+    who="$(printf '%s\n' "$out" | sed -n 's/^name=//p' | head -1)"
+    [ -n "$newkey" ] || die "The server did not make a key. See: encore logs"
+    ok "A new recovery key is made for ${who}; the old one no longer works"
+    show_new_recovery_key "$newkey"
+    say ""
+}
+
 # `encore secure`: the two keys of this install (P3-30). Safe to run again: what exists is left alone and said so.
 cmd_secure() {
     need_root secure
@@ -747,6 +852,8 @@ case "${1:-help}" in
     autobackup) shift; cmd_autobackup "${1:-status}" ;;
     secure) shift; cmd_secure "$@" ;;
     addon) shift; cmd_addon "$@" ;;
+    reset-password) shift; cmd_reset_password "$@" ;;
+    recovery-key) shift; cmd_recovery_key "$@" ;;
     uninstall) shift; cmd_uninstall "$@" ;;
     version) server_version ;;
     help | -h | --help) sed -n '2,$p' "$0" | sed '/^[^#]/,$d' | sed 's/^# \{0,1\}//' ;;
