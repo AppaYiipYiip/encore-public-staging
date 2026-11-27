@@ -558,6 +558,11 @@ class EncoreApi {
 
   // ------------------------------------------------------------------ plays
 
+  /// A page of the person's own plays, newest first (`GET me/plays`, feature `my-plays`); [cursor] is the last page's `nextCursor`, unchanged.
+  Future<Result<EncorePlaysPage>> myPlays({String? cursor, int limit = 500}) =>
+      guard(() async => EncorePlaysPage.fromJson(await _send('GET', '/me/plays',
+          query: {'limit': limit, if (cursor != null) 'cursor': cursor})));
+
   /// One listening, for history, "recently played", Year in Music and recommendations. [id] is made by the phone: a retried report is one play.
   Future<Result<void>> play({
     required String id,

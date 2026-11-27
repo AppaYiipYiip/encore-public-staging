@@ -124,6 +124,16 @@ def reorder_playlist(
     return _ok({"cursor": str(cursor)})
 
 
+@router.get("/me/plays")
+def my_plays(
+    request: Request, limit: int = 500, cursor: str | None = None, p: Principal = Depends(get_principal)
+) -> JSONResponse:
+    """The person's own plays, newest first, in pages (`{items, nextCursor}`): the history Year in Music counts (P3-34 slice 0, docs/17). The person is the token's,
+    never a parameter."""
+    with services(request).db.read() as conn:
+        return _ok(library.my_plays(conn, p.person_id, limit=limit, cursor=cursor))
+
+
 @router.post("/plays")
 def post_play(request: Request, body: dict[str, Any] = Depends(json_body), p: Principal = Depends(get_principal)) -> JSONResponse:
     with services(request).db.tx() as conn:

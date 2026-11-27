@@ -1,0 +1,12 @@
+{
+ "id": "20261127T153604Z-agent-6185",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T15:36:04Z",
+ "type": "note",
+ "body": "27 Nov, lead: ORDER 0,1,2,3. Finding: the phone's Year in Music (PlayHistoryClient) signs in to the music server's own /auth/login and reads /api/scrobble through the gateway, so slice 1 (shut by default) would break it; away from home it ALREADY gets 404 there (only /rest passes) and falls back to this phone's own plays. In Encore mode the phone reports plays only to the Encore API (play_event, since the first Encore slice 6e01cbb0), never to /rest/scrobble, so the music server's list holds little for it. DECISION (advisor): serve the history from play_event (GET me/plays, cursor on (at,id)), not by reading the music server as admin (the server has no plaintext person password; an admin read of /api/scrobble is unmeasured on 0.64.2). COST, written down: plays only the music server recorded (another Subsonic app, a Tinkerer's existing Navidrome P3-11, plays before the phone reported to Encore) will not show in Year; they are not lost; removal is a one-time import of scrobbles into play_event after an admin-read measurement on 0.64.2 (trigger: P3-11 or a Host report). Docker Desktop's daemon is not running on this PC: audit_stack check homedoor was NOT run (not started unasked); the bridge-gateway unit tests carry the proof until then.",
+ "to": [
+  "agent"
+ ]
+}

@@ -340,6 +340,48 @@ def record_play(
 #: A play shorter than this is a skip, not a listen: it does not count towards keeping a song nobody saved.
 MIN_COUNTED_PLAY_MS = 30_000
 
+#: The most plays one page of [my_plays] holds (the lists of docs/17 section 1: `?limit=` up to 500).
+MAX_PLAYS_PAGE = 500
+
+
+def _play_cursor(value: str | None) -> tuple[int, str] | None:
+    """`<at>:<id>` as [my_plays] made it; nothing for the first page. A cursor that is anything else is the client's mistake, said as such."""
+    if value is None or value == "":
+        return None
+    at_text, _, play_id = value.partition(":")
+    try:
+        at = int(at_text)
+    except ValueError:
+        raise ApiError("validation", "The cursor is the one the server gave, unchanged.") from None
+    if not play_id or at < 0:
+        raise ApiError("validation", "The cursor is the one the server gave, unchanged.")
+    return at, play_id
+
+
+def my_plays(conn: sqlite3.Connection, person: str, *, limit: int, cursor: str | None) -> dict[str, Any]:
+    """The person's own plays, newest first (`GET me/plays`, P3-34 slice 0): what the phone reported to `POST plays` and nothing else, the song as the survivor of a
+    merge (refmerge rewrites `play_event.ref`). The page is cut at `(at, id)`, not at `at` alone, because plays of one millisecond happen (a queue played offline and
+    reported together) and a cut at `at` would skip or repeat them; the index `play_event_person (person, at)` carries the walk."""
+    size = min(max(limit, 1), MAX_PLAYS_PAGE)
+    after = _play_cursor(cursor)
+    where = "person = ?"
+    args: list[object] = [person]
+    if after is not None:
+        where += " AND (at < ? OR (at = ? AND id < ?))"
+        args += [after[0], after[0], after[1]]
+    rows = conn.execute(
+        f"SELECT id, ref, at, ms_played, context FROM play_event WHERE {where} ORDER BY at DESC, id DESC LIMIT ?",  # noqa: S608 - only fixed text is formatted in
+        (*args, size + 1),
+    ).fetchall()
+    more = len(rows) > size
+    page = rows[:size]
+    return {
+        "items": [
+            {"id": r["id"], "ref": r["ref"], "at": r["at"], "msPlayed": r["ms_played"], "context": r["context"]} for r in page
+        ],
+        "nextCursor": f"{page[-1]['at']}:{page[-1]['id']}" if more else None,
+    }
+
 
 def played_on_days(conn: sqlite3.Connection, ref_id: str) -> int:
     """On how many different days (UTC) the song was really listened to, by anybody: the rule that keeps a song after the second one."""
