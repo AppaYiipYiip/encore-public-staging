@@ -65,7 +65,16 @@ The server's logs never contain song titles tied to a person (only ids), passwor
   is under attack. **Who can trigger that slowdown:** anybody, from one connection, where Docker hides addresses (the server believes the `X-Forwarded-For` the gateway sends, so one
   connection can look like many addresses; the account limit does not depend on any address, and twenty wrong tries a minute is all it takes); elsewhere, from four addresses. Nobody is locked
   and nobody is signed out by it, and it lasts a minute after the guessing stops. Where Docker hides the visitor's address everybody shares one address, and B-56 measured thirty wrong tries from it refusing the right
-  password for everyone behind it: the memory is what keeps the owner's app answering then. Counting wrong logins at HOME on `/rest` (where the music server, not this one, checks them) is slice 2b.
+  password for everyone behind it: the memory is what keeps the owner's app answering then. **At home on `/rest` (P3-34 slice 2b)** the music server, not this one, checks a login, and the apps that send a plain password (`p=`, `p=enc:`) must keep working, so the gateway does not
+  check it: it **counts the music server's own answers**. A call that carries a login (a token, `p=` or `p=enc:`, in the address or in a form body) is refused BEFORE it is passed on, with
+  HTTP 429 and a `Retry-After`, in a small Subsonic answer of its own (error code 0, in the format the app asked for: xml, `f=json`, `f=jsonp` with its callback), when its name, its address or its
+  account has had too many wrong answers, unless it is a device the server already knows; and after the music server answers, a **small, sized json or xml answer with a login-refused code**
+  (40 to 44) is a wrong guess and is counted. Measured on Navidrome 0.64.2 (the log of PR 186): a wrong login is ALWAYS HTTP 200 with a `Content-Length` of 194 to 241 bytes, never chunked, whatever
+  the form of the credential, the format and the endpoint; so only an answer of at most 2,048 bytes, sized, of a json or xml type, is ever read, and a song, a picture, a large list or an
+  answer without a length streams untouched and counts as accepted. A right login that asks for something that is not there (code 70) is never a guess. A 200 that is not a refusal is the music
+  server accepting the login, and the login becomes a device the server knows (the same memory as above); a login the music server later refuses loses it. An API key is not a login on this music server
+  (it answers code 10), so there is nothing to count. **What it costs:** a music app that makes a new salt for every call, or sends a plain password, is "known" only by that exact credential (a
+  plain password is the same every time, so such an app IS known; a fresh salt every call is never) and is slowed while its account is under attack; the answer it gets is still a Subsonic answer.
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).
 

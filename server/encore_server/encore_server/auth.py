@@ -188,6 +188,20 @@ class NavidromeVerifier:
         if write:
             self._persist(lambda store: store.put(digest, name, int(wall * 1000)))
 
+    def note_accepted(self, user: str, token: str, salt: str) -> None:
+        """The gateway saw the music server ACCEPT this login at the home door (P3-34 slice 2b): it is a device this server now knows, exactly as if [verify] had asked. [token] and [salt] are the
+        `t` and `s` of a token login, or `p:` and the password as written and an empty salt for a plain one: they only ever go into the keyed digest."""
+        self._vouch(user, token, salt)
+
+    def drop_vouch(self, user: str, token: str, salt: str) -> None:
+        """The gateway saw the music server REFUSE a login that was known: it was good once and is not any more (the password changed), a guess like any other from now on."""
+        digest = self._fingerprint(user, token, salt)
+        with self._vouch_lock:
+            known = self._vouched.pop(digest, None) is not None
+            self._written.pop(digest, None)
+        if known:
+            self._persist_drop(digest)
+
     def vouched(self, user: str, token: str, salt: str) -> bool:
         """Is this a device the server already knows: a login the music server ACCEPTED within the last day (P3-34 slice 2a, docs/21)? Such a login skips the refusals of the guess limits (the
         address that everybody behind a hiding Docker shares, and the account), and NOTHING else: the music server still checks it. Kept across a restart; [forget] drops a person's."""

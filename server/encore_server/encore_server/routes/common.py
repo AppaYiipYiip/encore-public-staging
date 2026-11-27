@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 from .. import (
     library,
     netaddr,
+    subsonic_guard,
 )
 from ..accounts import Accounts, Limiter, LoginGuard
 from ..artist_finder import ArtistFinder
@@ -293,6 +294,50 @@ def music_web_page_open(request: Request) -> bool:
     return netaddr.provably_home(
         peer, request.headers.get("x-forwarded-for"), svc.own_network, netaddr.networks(svc.settings.trusted_proxies)
     )
+
+
+class HomeLoginGuard:
+    """Wrong logins at HOME on `/rest`, counted from the music server's own answer (P3-34 slice 2b, audit B-56; `subsonic_guard.py` is the pure half).
+
+    At home the music server checks a login, not this one, so the gateway passes the call on; this is what it asks of the guard around it. BEFORE: a call that carries a login (a token, `p=`,
+    `p=enc:`, in the address or in a form body) is refused, in the format the app asked for, when its name, address or account has had too many wrong answers, unless it is a device this
+    server already knows (a login the music server accepted within the day: the memory of `NavidromeVerifier.vouched`, which this renews and drops from what the gateway SEES). AFTER: a small,
+    sized json or xml answer with a login-refused code is a wrong guess and is counted; anything else that is a 200 or a 206 is the music server accepting the login."""
+
+    def login_of(self, request: Request, form: dict[str, str] | None) -> subsonic_guard.HomeLogin | None:
+        return subsonic_guard.login_of(dict(request.query_params.items()), form)
+
+    def refuse(self, request: Request, login: subsonic_guard.HomeLogin) -> tuple[int, dict[str, str], bytes] | None:
+        """The refusal to answer instead of passing the call on, or `None` to pass it on."""
+        svc = services(request)
+        vouched = getattr(svc.verifier, "vouched", None)
+        known = bool(callable(vouched) and vouched(login.user, login.token, login.salt))
+        try:
+            LoginGuard(limiter_of(request)).refuse(login.user, client_address(request), vouched=known)
+        except ApiError as refusal:
+            fmt, callback = subsonic_guard.format_of(dict(request.query_params.items()))
+            body, kind = subsonic_guard.refusal_body(fmt, callback, "Too many wrong tries. Wait a moment and try again.")
+            wait_s = max(1, -(-(refusal.retry_after_ms or 1000) // 1000))
+            return 429, {"Content-Type": kind, "Retry-After": str(wait_s), "Cache-Control": "no-store"}, body
+        return None
+
+    def settle(self, request: Request, login: subsonic_guard.HomeLogin, *, refused: bool) -> None:
+        svc = services(request)
+        if refused:
+            address = client_address(request)
+            LoginGuard(limiter_of(request)).failed(login.user, address)
+            log.info(
+                "a wrong music-server login at the home door was counted: name %r, counted against address %s",
+                login.user,
+                address,
+            )
+            drop = getattr(svc.verifier, "drop_vouch", None)
+            if callable(drop):
+                drop(login.user, login.token, login.salt)
+            return
+        note = getattr(svc.verifier, "note_accepted", None)
+        if callable(note):
+            note(login.user, login.token, login.salt)
 
 
 def accounts_of(request: Request) -> Accounts:
