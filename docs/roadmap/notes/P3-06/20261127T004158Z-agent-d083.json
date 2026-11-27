@@ -1,0 +1,12 @@
+{
+ "id": "20261127T004158Z-agent-d083",
+ "item": "P3-06",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T00:41:58Z",
+ "type": "note",
+ "body": "Slice 5a (PR #153) review findings and one open item.\nFIXED in the PR: the browser door left the music server with NO account until the Host finished the wizard page. A music server with no account gives its first one, as an administrator, to whoever calls /auth/createAdmin, and the gateway forwarded that call from the home network; ensure_person makes a first/administrator sign-in the owner, so a LAN visitor (or a web page the Host visits) could have taken the server without the setup code. The keys step (encore secure --installer) signs in with that account too, so every browser-door install would have died there. Now: install.sh makes the account (setup --administrator-only) in every install and run, and the gateway never passes /auth/createAdmin on (any network, any spelling).\nLESSON: CI never runs the install sequence (Docker, the real music server): install.sh is covered by block-level tests with stubs. P3-07's clean-machine walk of BOTH doors is the real proof and is still owed; do not call 5a walked before it.\nOPEN (filed, not changed): signing in to Encore as the configured music-server administrator (encore-admin) while the setup is open makes that account the owner (library.ensure_person: first person / administrator) and closes the wizard to the Host. Only root knows its password (the .env), so it was already true before this slice. A refusal at login would conflict with P3-11 (\"Yours\": the Host's own music-server administrator account is the one who signs in as owner), so decide it WITH P3-11: either refuse only the generated encore-admin name in the installed (Encore-owned) mode, or make the Encore administrator an account that can never be a person.",
+ "to": [
+  "owner"
+ ]
+}
