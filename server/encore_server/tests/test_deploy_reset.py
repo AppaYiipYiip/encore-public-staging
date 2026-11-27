@@ -43,6 +43,10 @@ case "${op[*]}" in
         [ "${FAKE_DOWN:-}" = 1 ] && exit 1
         [ -n "${FAKE_KEYLESS:-}" ] && echo "$FAKE_KEYLESS"
         ;;
+    "library --check")
+        [ "${FAKE_DOWN:-}" = 1 ] && exit 1
+        [ -n "${FAKE_LOST:-}" ] && echo "$FAKE_LOST"
+        ;;
     recovery-key*)
         if [ "${FAKE_REFUSE:-}" = 1 ]; then echo "Only an owner has a recovery key." >&2; exit 1; fi
         echo "name=riley"; echo "recovery-key=ABCD-EFGH-JKMN-PQRS-TUVW"
@@ -193,3 +197,15 @@ def test_status_tells_an_owner_without_a_recovery_key_how_to_make_one(tmp_path: 
     )
     two = install.encore("status", extra_env={**env, "FAKE_KEYLESS": "riley" + chr(10) + "sara"}).stdout
     assert "No recovery key yet for: riley sara." in two
+
+
+def test_status_says_when_the_music_folder_looks_empty_and_is_silent_otherwise(tmp_path: Path) -> None:
+    """P3-33: the library link removed nothing because the music server listed too little (a disk that is not mounted); `encore status` says it in the server's own words."""
+    install, env, _ = rig(tmp_path)
+    words = "The music server lists 1 of the 10 songs this server knows. Nothing was removed."
+    shown = install.encore("status", extra_env={**env, "FAKE_LOST": words}).stdout
+    assert words in shown, shown
+    assert "lists 1 of the 10" not in install.encore("status", extra_env=env).stdout, "nothing missing: nothing said"
+    assert "lists 1 of the 10" not in install.encore("status", extra_env={**env, "FAKE_LOST": words, "FAKE_DOWN": "1"}).stdout, (
+        "silent when the server does not answer"
+    )

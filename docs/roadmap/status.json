@@ -381,8 +381,8 @@
  },
  "P3-33": {
   "state": "built",
-  "evidence": "The audit probe prune prints file rows left=300 and PASS (before: 0 and FAIL); tests/test_link_prune_guard.py (10: an empty answer removes nothing however often it comes, at least half listed removes at once, less than half marks and holds, a day of absence removes, a file that comes back forgets, an add-only pass and a music server that did not answer change nothing, a library reorganised under new ids is trusted by what was listed); the Home row; the line in encore status and audit_stack check prune (needs Docker) are not done; not walked",
-  "at": "2026-11-27T13:01:10Z",
+  "evidence": "The audit probe prune prints file rows left=300 and PASS (before: 0 and FAIL); tests/test_link_prune_guard.py (14: an empty answer removes nothing however often it comes, at least half listed removes at once, less than half marks and holds, a day of absence removes, a file that comes back forgets (also in a pass that only adds), a library reorganised under new ids is trusted by what was listed, Home and encore status read the count from the database so the warning survives an add-only pass and a restart); test_deploy_reset.py runs encore status with a stand-in server; audit_stack check prune needs Docker and was not run; not walked",
+  "at": "2026-11-27T13:14:46Z",
   "by": "Claude"
  }
 }

@@ -429,3 +429,28 @@ def test_a_music_folder_that_looks_empty_is_said_in_words_and_nothing_is_said_wh
     need = next(n for n in held["needsYou"] if n["id"] == "library")
     assert held["summary"]["state"] == "needs"
     assert "mounted" in need["detail"]
+
+
+def test_home_warns_about_a_music_folder_that_looks_empty_after_the_pass_that_found_it_and_in_a_fresh_app(tmp_path: Path) -> None:
+    """Review of #180: Home read the last pass's report, so the warning cleared whenever the add-only pass of a rescan ran, and a restart forgot it. It reads the database."""
+    from encore_server.db import Database
+    from encore_server.scanner import link_library
+    from tests.test_scanner import FakeLibrary, entry
+
+    settings = Settings(
+        data_dir=tmp_path / "data", music_dir=tmp_path / "music", navidrome_url="http://navidrome.invalid", youtube=False
+    )
+    with TestClient(create_app(settings, verifier=FakeVerifier()), client=PROXY) as client:
+        owner = sign_in(client, "marwa")
+        db = Database(settings.db_path)
+        link_library(db, FakeLibrary([entry(n) for n in range(10)]), prune=True)
+        assert all(r["id"] != "library" for r in client.get(f"{V1}/admin/health", headers=owner).json()["rows"])
+        link_library(db, FakeLibrary([entry(0)]), prune=True)  # the disk is not there: 1 of 10 listed
+        assert row(client.get(f"{V1}/admin/health", headers=owner).json(), "library")["state"] == "warn"
+        link_library(db, FakeLibrary([entry(0)]), prune=False)  # the add-only pass of the rescan that follows
+        assert row(client.get(f"{V1}/admin/health", headers=owner).json(), "library")["state"] == "warn"
+
+    with TestClient(create_app(settings, verifier=FakeVerifier()), client=PROXY) as fresh:  # a restart
+        assert row(fresh.get(f"{V1}/admin/health", headers=sign_in(fresh, "marwa")).json(), "library")["state"] == "warn"
+        link_library(Database(settings.db_path), FakeLibrary([entry(n) for n in range(10)]), prune=False)  # the disk is back
+        assert all(r["id"] != "library" for r in fresh.get(f"{V1}/admin/health", headers=sign_in(fresh, "marwa")).json()["rows"])

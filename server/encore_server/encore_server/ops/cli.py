@@ -24,13 +24,14 @@ from ..config import Settings
 from ..db import Database
 from ..errors import ApiError
 from ..host_settings import HostSettings
+from ..link_listing import held_back, held_back_words
 from ..navidrome_admin import NavidromeAdmin
 from . import addon as ops_addon
 from . import reset as ops_reset
 
 USAGE = (
     "usage: op addon list [--json] | op addon set ID STATE [--risk-version N] [--json]"
-    " | op reset-password NAME [--info] | op recovery-key [NAME]"
+    " | op reset-password NAME [--info] | op recovery-key [NAME] | op library --check"
 )
 
 
@@ -60,7 +61,7 @@ def command(
     as_json = "--json" in argv
     argv = [a for a in argv if a != "--json"]
     head = argv[0] if argv else ""
-    if head not in ("addon", "reset-password", "recovery-key"):
+    if head not in ("addon", "reset-password", "recovery-key", "library"):
         print(USAGE, file=err)
         return 2
     settings = settings or Settings.from_env()
@@ -70,6 +71,8 @@ def command(
     db = Database(settings.db_path)
     if head == "addon":
         return _addon(argv, db, settings, as_json, out, err)
+    if head == "library":
+        return _library(argv, db, out)
     the_admin = admin or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password)
     try:
         if head == "reset-password":
@@ -101,6 +104,19 @@ def _reset_password(argv: Sequence[str], db: Database, admin: NavidromeAdmin, st
     print(f"usedKey={'true' if done['usedKey'] else 'false'}", file=out)
     if done["recoveryKey"]:
         print(f"recovery-key={done['recoveryKey']}", file=out)
+    return 0
+
+
+def _library(argv: Sequence[str], db: Database, out: TextIO) -> int:
+    """`op library --check`: one sentence when the library link is holding files back (a music folder that looks empty or partly missing, P3-33), nothing otherwise (what `encore status` reads)."""
+    if argv[1:] != ["--check"]:
+        print(USAGE, file=sys.stderr)
+        return 2
+    with db.read() as conn:
+        missed, linked = held_back(conn)
+    words = held_back_words(missed, linked)
+    if words:
+        print(words, file=out)
     return 0
 
 

@@ -216,7 +216,7 @@ backup_tool() {
 }
 
 cmd_status() {
-    local version away link keyless
+    local version away link keyless lost
     version="$(server_version)"
     say ""
     say "  ${BOLD}Encore${OFF} ${version:+$version }(version ${TAG:-$(env_value ENCORE_TAG)})"
@@ -232,6 +232,9 @@ cmd_status() {
     # An owner made before recovery keys existed (or by the headless door) has no way back in from a forgotten password but root's: say so. Silent when the server does not answer.
     keyless="$(dc exec -T encore-server python -m encore_server op recovery-key --check </dev/null 2>/dev/null | head -n 3 | tr '\n' ' ' || true)"
     if [ -n "${keyless// /}" ]; then printf '  %s!%s No recovery key yet for: %s. Make one now with:  sudo encore recovery-key\n' "$BOLD" "$OFF" "${keyless% }"; fi
+    # A music folder that looks empty or partly missing (a disk or share that is not mounted): the library link removed nothing, and says so. Silent when the server does not answer.
+    lost="$(dc exec -T encore-server python -m encore_server op library --check </dev/null 2>/dev/null | head -n 2 | tr '\n' ' ' || true)"
+    if [ -n "${lost// /}" ]; then printf '  %s!%s %s\n' "$BOLD" "$OFF" "${lost% }"; fi
     say ""
     say "        On your home network:  $(host_ip):${PORT}"
     away="$(funnel_address)"

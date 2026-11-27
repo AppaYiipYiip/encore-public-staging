@@ -13,6 +13,7 @@ its row; the ref, and every like and playlist entry pointing at it, stays.
 from __future__ import annotations
 
 import logging
+import sqlite3
 import threading
 import time
 from collections.abc import Callable
@@ -159,7 +160,12 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
         offset += len(songs)
     report.complete = True
     listing.complete = True
-    report.pruned, report.held_back = _prune(db, listing) if prune else (0, 0)
+    if prune:
+        report.pruned, report.held_back = _prune(db, listing)
+    else:
+        _forget_misses(
+            db, listing
+        )  # a pass that only adds removes nothing and marks nothing, but a file it lists is no longer missed: Home's warning follows the database, not one pass
     if report.held_back:
         log.warning(
             "the music server listed %d of the files this server has linked and not the other %d: nothing was removed because that looks like a music folder that is not there (a disk or share "
@@ -213,6 +219,22 @@ def _rehome_idle(db: Database, listing: Listing) -> None:
         )
 
 
+def _clear_misses(conn: sqlite3.Connection, back: list[sqlite3.Row]) -> None:
+    ids = [row["id"] for row in back]
+    for start in range(0, len(ids), 500):
+        chunk = ids[start : start + 500]
+        conn.execute(f"UPDATE song_file SET missing_since = NULL WHERE id IN ({','.join('?' for _ in chunk)})", chunk)  # noqa: S608 - only placeholders are formatted in
+
+
+def _forget_misses(db: Database, listing: Listing) -> None:
+    """The files this pass LISTS are not missed any more (a pass that only adds, the one after a rescan). Forgetting a miss never removes anything."""
+    with db.tx() as conn:
+        missed = conn.execute(
+            "SELECT id, navidrome_song_id, added_at FROM song_file WHERE missing_since IS NOT NULL AND navidrome_song_id IS NOT NULL"
+        ).fetchall()
+        _clear_misses(conn, [row for row in missed if listing.alive(row["navidrome_song_id"], row["added_at"])])
+
+
 #: A pass that finds at least this share of the linked files in the music server's listing is trusted: what it does not find is removed at once (a Host who deleted some music).
 PLAUSIBLE_SHARE = 0.5
 #: What a pass that saw LESS did not find is removed only after it has been absent this long (the first miss is written down in `song_file.missing_since`). A day, not an hour: keeping the row of a
@@ -243,14 +265,14 @@ def _prune(db: Database, listing: Listing) -> tuple[int, int]:
         # What the music server LISTED, not how many of the old rows it listed: a Host who reorganised the library gets new ids for every file, and a pass that lists a full library of new ids is
         # trusted although none of the old rows is in it. The same listing is trusted or not whatever the pass attached itself (a count of old rows only would change from one pass to the next).
         listed = len(listing.seen)
-        back = [
-            row["id"]
-            for row in judged
-            if row["missing_since"] is not None and listing.alive(row["navidrome_song_id"], row["added_at"])
-        ]
-        for start in range(0, len(back), 500):
-            chunk = back[start : start + 500]
-            conn.execute(f"UPDATE song_file SET missing_since = NULL WHERE id IN ({','.join('?' for _ in chunk)})", chunk)  # noqa: S608 - only placeholders are formatted in
+        _clear_misses(
+            conn,
+            [
+                row
+                for row in judged
+                if row["missing_since"] is not None and listing.alive(row["navidrome_song_id"], row["added_at"])
+            ],
+        )
         trusted = listed > 0 and listed >= len(judged) * PLAUSIBLE_SHARE
         for row in absent:
             confirmed = row["missing_since"] is not None and now - row["missing_since"] >= CONFIRM_AFTER_MS and listed > 0
