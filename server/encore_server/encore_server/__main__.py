@@ -27,7 +27,7 @@ def configure_logging(level: str) -> None:
 USAGE = """usage: python -m encore_server [command]
 
   (no command)   run the server (what the container does)
-  setup          the first-install steps (reads its details from standard input)
+  setup          the first-install steps (reads its details from standard input); `setup --administrator-only` makes only the music server's own account
   backup         copy the databases (`encore backup` uses it)
   op             a Host's operation, the command door (`encore addon` uses it)
 """
@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> None:
     if args[:1] == ["setup"]:
         from .setup import command
 
-        raise SystemExit(command())
+        raise SystemExit(command(administrator_only=args[1:] == ["--administrator-only"]))
     if args[:1] == ["op"]:
         from .ops.cli import command as op_command
 

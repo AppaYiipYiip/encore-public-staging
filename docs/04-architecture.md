@@ -218,7 +218,7 @@ only route. A new client should need no server change beyond ordinary additions 
 
 Tailscale Funnel publishes the Encore server's port. `encore funnel on` uses the computer's own Tailscale (installing it if it is absent):
 **no sidecar container and no auth key** (`11` ADR-R25). The Encore server decides what a request from the public internet may reach: of the
-music server it passes on only the Subsonic API under `/rest/` (S1, B12; `gateway.py`). The wizard (planned) guides the two console clicks and
+music server it passes on only the Subsonic API under `/rest/` (S1, B12; `gateway.py`). **To nobody, from no network, in no spelling, it passes on the music server's `/auth/createAdmin`**, the call that hands a music server's first administrator to whoever asks while it has no account (`gateway.is_first_account_request`); the install makes that account before the server can be reached, and Encore's own calls go to the music server's internal address, never through the gateway. The wizard (planned) guides the two console clicks and
 the sign-in; health checks the expiry of the computer's Tailscale sign-in. Caddy with a domain stays an Advanced option. The websocket and audio
 streaming go through the same address (verify websockets through Funnel: experiment X-7).
 

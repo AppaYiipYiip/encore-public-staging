@@ -363,6 +363,20 @@ done
 ok "Encore is running"
 log "encore running after $(since) s"
 
+# The music server's own account for Encore, in EVERY install and on every run, whichever door makes the owner and before anything else can reach the music server: a music server
+# with no account at all hands its first one to whoever asks (its /auth/createAdmin; the gateway refuses that address as well, but the account must exist). Safe to repeat: an
+# account that already signs in is left as it is. On a first install it is fatal, because the keys step below signs in with it; on a re-run of a working install it is a warning.
+admin_error="$(mktemp)"
+if dc exec -T encore-server python -m encore_server setup --administrator-only >>"$LOG" 2>"$admin_error"; then
+    rm -f "$admin_error"
+else
+    message="$(sed -n 's/^setup: //p' "$admin_error" | head -1)"
+    rm -f "$admin_error"
+    [ -n "$message" ] || message="The music server's account for Encore could not be made. See the log."
+    if [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ] || [ "$BROWSER_OWNER" = 1 ]; then die "$message"; fi
+    note "$message"
+fi
+
 if [ "$NEED_OWNER" = 1 ]; then
     # The owner's details go in on standard input from a file only this account can read, never on a command line.
     details="$(mktemp)"

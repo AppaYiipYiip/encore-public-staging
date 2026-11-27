@@ -44,6 +44,18 @@ def music_server() -> FastAPI:
             headers={"Content-Range": f"bytes {start}-{end}/{len(AUDIO)}", "Accept-Ranges": "bytes"},
         )
 
+    app.state.first_account_calls = []
+
+    @app.api_route("/auth/createAdmin", methods=["GET", "POST"])
+    async def create_admin(request: Request) -> dict[str, str]:
+        """The music server's "make the first administrator" call, which a server with no account at all grants to whoever asks."""
+        app.state.first_account_calls.append(request.url.path)
+        return {"token": "a stranger is now the administrator"}
+
+    @app.post("/auth/login")
+    def sign_in() -> dict[str, str]:
+        return {"token": "t"}
+
     @app.post("/api/user/echo")
     async def echo(request: Request) -> dict[str, object]:
         return {"got": (await request.body()).decode(), "type": request.headers.get("content-type")}
@@ -142,3 +154,46 @@ def test_the_phones_own_choice_of_compression_is_what_the_music_server_sees(rig:
     client.get("/rest/ping.view", headers={"accept-encoding": "br"})
 
     assert upstream.state.seen[0]["accept-encoding"] == "br"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the first-account address (the browser door)
+
+SPELLINGS = [
+    "/auth/createAdmin",
+    "/auth/createAdmin/",
+    "/auth/createadmin",
+    "/AUTH/CREATEADMIN",
+    "//auth//createAdmin",
+    "/x/../auth/createAdmin",
+    "/./auth/createAdmin",
+    "/auth/%63reateAdmin",
+    "/auth%2FcreateAdmin",
+    "/auth/%2563reateAdmin",
+    "/auth/createAdmin?x=1",
+]
+
+
+@pytest.mark.parametrize("path", SPELLINGS)
+def test_the_first_account_address_is_never_passed_on_to_anybody(rig: tuple[TestClient, FastAPI], path: str) -> None:
+    """A music server with no account at all gives its first administrator to whoever asks: the install makes that account before the server is reachable, and the gateway
+    refuses the address as well, from the home network and from the internet, in whatever spelling (a second layer that stays correct)."""
+    client, upstream = rig
+    public = TestClient(client.app, client=("203.0.113.9", 4000))
+    for who in (client, public):
+        for method in ("post", "get"):
+            # an absolute address: a relative one that starts with two slashes is read by the client as a host name
+            answer = getattr(who, method)(
+                f"http://testserver{path}",
+                **({"json": {"username": "mallory", "password": "x" * 12}} if method == "post" else {}),
+            )
+            assert answer.status_code == 404 and answer.json()["error"]["code"] == "not_found", (path, method)
+    assert upstream.state.first_account_calls == [], "nothing ever reached the music server"
+
+
+def test_the_refusal_does_not_touch_the_addresses_around_it(rig: tuple[TestClient, FastAPI]) -> None:
+    client, upstream = rig
+    assert client.post("/auth/login", json={}).json() == {"token": "t"}
+    assert client.get("/auth/createAdminX").status_code == 404 and upstream.state.first_account_calls == [], (
+        "a different address is the music server's to answer"
+    )
+    assert client.get("/rest/ping.view").status_code == 200

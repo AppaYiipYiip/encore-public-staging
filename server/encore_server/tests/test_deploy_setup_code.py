@@ -138,3 +138,63 @@ def test_a_settings_file_that_cannot_be_copied_is_never_emptied(tmp_path: Path) 
     install.encore("status")
     assert install.env == "ENCORE_SETUP_CODE=7KQ-4MZ\n"
     assert not list(install.root.glob(".env.*"))
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the music server's own account (found by review: the browser door had none)
+
+
+def administrator_block() -> str:
+    """The block of `install.sh` that makes the music server's own account: from its first line to the owner step that follows."""
+    start = INSTALL.index('admin_error="$(mktemp)"')
+    end = INSTALL.index('if [ "$NEED_OWNER" = 1 ]; then', start)
+    return INSTALL[start:end]
+
+
+def run_block(*, fresh: int, pending: int, browser: int, succeeds: bool, tmp_path: Path) -> subprocess.CompletedProcess[str]:
+    lines = [
+        "set -Eeuo pipefail",
+        f"succeed={int(succeeds)}; FRESH={fresh}; PENDING={pending}; BROWSER_OWNER={browser}",
+        'dc() { if [ "$succeed" = 1 ]; then echo "administrator=created"; return 0; fi; echo "setup: The music server is not answering." >&2; return 2; }',
+        'die() { echo "DIED: $*"; exit 9; }',
+        'note() { echo "NOTE: $*"; }',
+        "LOG=/dev/null",
+        administrator_block(),
+        'echo "CONTINUED"',
+    ]
+    return run(chr(10).join(lines))
+
+
+def test_the_administrator_is_made_in_every_install_before_the_keys_and_before_any_owner() -> None:
+    """A music server with no account at all hands its first one to whoever asks (its `/auth/createAdmin`, reachable from the home network until the install has made one): the
+    browser door used to leave it empty until the Host finished a page, and the keys step signs in with that account, so the step could not even finish."""
+    assert "setup --administrator-only" in INSTALL
+    admin = INSTALL.index('admin_error="$(mktemp)"')
+    owner = INSTALL.index('if [ "$NEED_OWNER" = 1 ]; then', admin)
+    keys = INSTALL.index("/usr/local/bin/encore secure --installer")
+    running = INSTALL.index('ok "Encore is running"')
+    assert running < admin < owner < keys, "after the server answers, before the owner, before the keys"
+    assert re.search(r"^if dc exec -T encore-server python -m encore_server setup --administrator-only", INSTALL, re.M), (
+        "not under any condition: it is at the top level"
+    )
+
+
+def test_the_administrator_step_goes_on_when_it_works(tmp_path: Path) -> None:
+    result = run_block(fresh=1, pending=0, browser=1, succeeds=True, tmp_path=tmp_path)
+    assert result.returncode == 0 and "CONTINUED" in result.stdout and "DIED" not in result.stdout, result.stdout + result.stderr
+
+
+def test_a_first_install_that_cannot_make_it_stops_with_the_sentence(tmp_path: Path) -> None:
+    for fresh, pending, browser in ((1, 0, 1), (0, 1, 1), (1, 0, 0), (0, 0, 1)):
+        result = run_block(fresh=fresh, pending=pending, browser=browser, succeeds=False, tmp_path=tmp_path)
+        assert (
+            result.returncode == 9
+            and "DIED: The music server is not answering." in result.stdout
+            and "CONTINUED" not in result.stdout
+        ), (fresh, pending, browser)
+
+
+def test_a_rerun_of_a_working_install_is_only_warned(tmp_path: Path) -> None:
+    result = run_block(fresh=0, pending=0, browser=0, succeeds=False, tmp_path=tmp_path)
+    assert (
+        result.returncode == 0 and "NOTE: The music server is not answering." in result.stdout and "CONTINUED" in result.stdout
+    ), result.stdout
