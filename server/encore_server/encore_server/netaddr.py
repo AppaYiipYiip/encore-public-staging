@@ -172,7 +172,8 @@ def provably_home(peer: str | None, forwarded_for: str | None, own: OwnNetwork |
       machine and no visitor); whatever it writes in `X-Forwarded-For` is ignored, in both directions;
     * what a client writes in `X-Forwarded-For` is read only when the connection comes from a **proxy the Host listed** (`ENCORE_TRUSTED_PROXIES`): the right-most address
       in it that is not itself a listed proxy is the visitor (a proxy appends what it saw; the first value is the client's own), and it must pass the same test;
-    * when the server cannot read its own network, no direct visitor is proved (fail shut); a listed proxy is the Host's own word and does not need it.
+    * a listed proxy that is the server's own gateway or own address proves nothing (every visitor arrives as the gateway where the address is hidden), and when the server cannot
+      read its own network it cannot rule that out: no direct visitor and no listed proxy is believed (fail shut).
 
     Tailscale's range, link-local, IPv6 and public addresses are never proved. This is NOT [client_address], which believes the header from any private neighbour (right for
     counting guesses, wrong as proof of where somebody is)."""
@@ -180,6 +181,10 @@ def provably_home(peer: str | None, forwarded_for: str | None, own: OwnNetwork |
     if found is None:
         return False
     if any(found in net for net in extra):
+        # A listed proxy is believed about who it forwarded ONLY when it is a proxy of its own. Where the visitor's address is hidden, EVERY visitor arrives as the server's gateway:
+        # listing that address (or the server's own) would let any visitor write `X-Forwarded-For: 192.168.1.50` and be home. Without its own network the server cannot rule that out.
+        if own is None or found in own.gateways or found in own.addresses:
+            return False
         visitor = None
         for hop in reversed([h.strip() for h in (forwarded_for or "").split(",") if h.strip()]):
             candidate = _address(hop)
@@ -189,5 +194,5 @@ def provably_home(peer: str | None, forwarded_for: str | None, own: OwnNetwork |
                 continue
             visitor = candidate
             break
-        return visitor is not None and _home_lan(visitor, own or OwnNetwork(frozenset(), frozenset()))
+        return visitor is not None and _home_lan(visitor, own)
     return own is not None and _home_lan(found, own)

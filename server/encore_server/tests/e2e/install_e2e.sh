@@ -80,6 +80,19 @@ expect "the server answers" "$(status_of "$API/info")" 200
 step "the music server's first-account address is closed to everybody (the takeover the review found)"
 expect "POST /auth/createAdmin is refused" "$(status_of -X POST "$BASE/auth/createAdmin" -H 'Content-Type: application/json' -d '{"username":"mallory","password":"x-x-x-x-x-x-x-x"}')" 404
 expect "and in another spelling" "$(status_of -X POST "$BASE//auth/createAdmin/" -H 'Content-Type: application/json' -d '{"username":"mallory","password":"x-x-x-x-x-x-x-x"}')" 404
+step "the music server's own web page, sign-in and API are shut by default (P3-34, audit B-56): asked through the Docker bridge, which hides who is asking"
+# This is `audit_stack.py check homedoor` on a real Linux Docker: the request arrives from the bridge's gateway, a private address the old gateway took for the home network.
+for path in / /app/ /app/index.html /api/user /api/scrobble /share/abc /ping; do
+    expect "GET $path is a 404" "$(status_of "$BASE$path")" 404
+done
+expect "POST /auth/login is a 404" "$(status_of -X POST "$BASE/auth/login" -H 'Content-Type: application/json' -d '{"username":"x","password":"y"}')" 404
+for path in '/rest/%2e%2e/app/' '/rest/%2e%2e/auth/login' '/rest/%2e%2e%2fapp/' '/rest%2f..%2fapp'; do
+    expect "GET $path (a dot segment under /rest) is a 404" "$(status_of --path-as-is "$BASE$path")" 404
+done
+OWN_NET="$(docker compose --project-directory "$DIR" exec -T encore-server python -c 'from encore_server import netaddr; o = netaddr.read_own_network(); print("none" if o is None else ",".join(sorted(map(str, o.gateways))) + " | " + ",".join(sorted(map(str, o.addresses))))')"
+echo "  the server's own network, as it read it inside the real image: $OWN_NET"
+[ "$OWN_NET" != none ] || fail "the server could not read its own network inside the real image: the way back to the page would silently never open"
+expect_match "it found a gateway and addresses of its own" "$OWN_NET" '^[0-9.,]+ \| [0-9.,]+'
 step "the keys of the install were made (the step that signs in with the music server's own account)"
 [ -f "$DIR/backup.pub" ] || fail "no backup.pub: the keys step did not run"
 ok "the backup key's public half is there"
@@ -184,6 +197,21 @@ expect "the music server row says working" "$(printf '%s' "$HEALTH" | jq -r '.ro
 step "encore addon list (the command door into the running server)"
 ADDONS="$(encore addon list 2>&1)" || fail "encore addon list failed: $ADDONS"
 expect_match "the add-ons are listed" "$ADDONS" "youtube"
+expect_match "the music server's own web page is an add-on, off" "$ADDONS" "music-web-page"
+step "the way back to the music server's own web page: the command the CHANGELOG names, a restart, and it is STILL shut from here"
+# The runner arrives through the Docker bridge, which hides who is asking: even switched on, the server cannot PROVE this visitor is in the house, so the page stays shut.
+if encore addon music-web-page runs >"$WORK/webpage-refused.out" 2>&1; then fail "the page was switched on without the warning being read"; fi
+expect_match "the warning is asked for first" "$(cat "$WORK/webpage-refused.out")" "Read the warning"
+WEB_ON="$(encore addon music-web-page runs --risk-version 1 2>&1)" || fail "encore addon music-web-page runs --risk-version 1 failed: $WEB_ON"
+printf '%s\n' "$WEB_ON"
+encore restart >"$WORK/restart.out" 2>&1 || { cat "$WORK/restart.out"; fail "encore restart failed"; }
+for _ in $(seq 1 60); do [ "$(status_of "$API/info")" = 200 ] && break; sleep 2; done
+expect "the server is back" "$(status_of "$API/info")" 200
+expect "the switch is on in the running server" "$(curl -s "$API/admin/addons" -H "Authorization: Bearer $TOKEN" | jq -r '.items[] | select(.id == "music-web-page") | .running')" runs
+expect "GET /app/ is still a 404 from the bridge" "$(status_of "$BASE/app/")" 404
+expect "POST /auth/login is still a 404 from the bridge" "$(status_of -X POST "$BASE/auth/login" -H 'Content-Type: application/json' -d '{"username":"x","password":"y"}')" 404
+expect "GET /api/user is still a 404 from the bridge" "$(status_of "$BASE/api/user")" 404
+expect "and a forged header from the bridge opens nothing" "$(status_of "$BASE/app/" -H 'X-Forwarded-For: 192.168.1.50')" 404
 step "the audit log holds the acts, and no secret"
 AUDIT="$(docker compose --project-directory "$DIR" exec -T encore-server python -c "import sqlite3; print(chr(10).join(r[0] for r in sqlite3.connect('/data/encore.db').execute('select detail from audit_log')))")"
 printf '%s\n' "$AUDIT"

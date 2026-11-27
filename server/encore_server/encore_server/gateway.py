@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import posixpath
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from urllib.parse import unquote
 
@@ -39,11 +40,10 @@ _HOP = frozenset(
 _CHUNK = 64 * 1024
 
 
-def is_first_account_request(path: str) -> bool:
-    """Is this the music server's "make the first administrator" address (`/auth/createAdmin`), however it is written? A music server with no accounts hands its first one to
-    whoever asks, so the gateway **never passes that address on, to anybody, from any network** (a second layer: the install makes the administrator before it ever lets the
-    server be reached, and Encore's own calls to the music server go to its internal address, never through here). The path is decoded as often as it changes (an address
-    written twice-encoded), its dots and doubled slashes resolved, and compared without regard to case or a trailing slash, so no spelling of it gets by."""
+def resolved(path: str) -> str:
+    """The path as the music server's own router will read it: every percent-escape decoded as often as it changes (an address written twice-encoded), backslashes as slashes,
+    dot segments and doubled slashes resolved, a trailing slash dropped; case is kept. **What the gateway decides on, and what it passes on for the Subsonic API**: the upstream
+    URL builder resolves `/rest/%2e%2e/app/` to `/app/`, so a decision made on how the path STARTS would let the music server's shut doors be opened through `/rest/`."""
     text = path
     for _ in range(4):
         decoded = unquote(text)
@@ -51,7 +51,25 @@ def is_first_account_request(path: str) -> bool:
             break
         text = decoded
     # normpath keeps a doubled leading slash ("//x" stays "//x"), so every leading slash goes first
-    return posixpath.normpath("/" + text.replace("\\", "/").lstrip("/")).lower().rstrip("/") == "/auth/createadmin"
+    return posixpath.normpath("/" + text.replace("\\", "/").lstrip("/"))
+
+
+#: A Subsonic address as the gateway passes it on: `/rest` and plain names under it. Anything else that resolves under `/rest` (an escaped `?` or `#`, a space, a control character) is
+#: not a name the music server's API has, and is not passed on: decoded text put back into an address could change what the address means.
+_SUBSONIC = re.compile(r"/rest(?:/[A-Za-z0-9._~-]+)*")
+
+
+def _not_found(request: Request) -> JSONResponse:
+    """The one answer for every address the gateway will not pass on, whichever rule refused it: an unknown route of ours, the first-account address, a shut door."""
+    return JSONResponse(ApiError("not_found").body(request_id_of(request)), status_code=404)
+
+
+def is_first_account_request(path: str) -> bool:
+    """Is this the music server's "make the first administrator" address (`/auth/createAdmin`), however it is written? A music server with no accounts hands its first one to
+    whoever asks, so the gateway **never passes that address on, to anybody, from any network** (a second layer: the install makes the administrator before it ever lets the
+    server be reached, and Encore's own calls to the music server go to its internal address, never through here). The path is decoded as often as it changes (an address
+    written twice-encoded), its dots and doubled slashes resolved, and compared without regard to case or a trailing slash, so no spelling of it gets by."""
+    return resolved(path).lower().rstrip("/") == "/auth/createadmin"
 
 
 def _forward(headers: httpx.Headers | dict[str, str] | object) -> dict[str, str]:
@@ -87,14 +105,18 @@ def mount(
     async def pass_on(path: str, request: Request) -> Response:
         if path.startswith("encore/") or path == "encore":
             # An unknown route of our own is ours to say "not found" about, not Navidrome's.
-            return JSONResponse(ApiError("not_found").body(), status_code=404)
+            return _not_found(request)
         if is_first_account_request(path):
-            return JSONResponse(ApiError("not_found").body(), status_code=404)
-        if path == "rest" or path.startswith("rest/"):
+            return _not_found(request)
+        where = resolved(path)
+        if where == "/rest" or where.startswith("/rest/"):
+            if not _SUBSONIC.fullmatch(where):
+                return _not_found(request)
             if public is not None and public(request) and authorize_public is not None:
                 await authorize_public(request)  # raises ApiError: the app's handler answers in the usual envelope
+            path = where[1:]  # what was judged is what the music server is asked
         elif web_page_open is None or not web_page_open(request):
-            return JSONResponse(ApiError("not_found").body(request_id_of(request)), status_code=404)
+            return _not_found(request)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
         headers = _forward(request.headers)
         # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see.

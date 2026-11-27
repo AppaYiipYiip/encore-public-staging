@@ -1,0 +1,12 @@
+{
+ "id": "20261127T161510Z-agent-f2b9",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T16:15:10Z",
+ "type": "note",
+ "body": "27 Nov, lead, slice 1: doors that STILL depend on the seen visitor address (same B-56 root; P3-34 fixes only the music server's doors): routes/common.py refuse_public (every admin route, helper route and page: /encore/admin, /admin, /encore/web, admin addons/health/helper) and is_public_request; routes/setup.py (/setup, /encore/setup, the setup POST: refuse_public + a per-address limiter); routes/people.py (join pages: per-address limits 'join-address:'); routes/session.py (the login limiter), routes/common.py check_music_login (the per-address throttle of the music login). Where Docker hides the address these see every visitor as the bridge gateway: 'home' for the admin pages' 404-to-public rule, and ONE address for every limiter. The admin pages need the owner's sign-in and setup needs the one-time code, so this is not an open door, but a stranger can reach the admin SHELL and the limiters count everybody together. Slice 3 (the seen-address sentence) shows the Host; a durable fix is to let refuse_public use netaddr.provably_home as well (the admin pages would then also say 404 where the server cannot prove the visitor is home: needs a decision, because a Windows Docker Desktop Host could then not open /admin from his own browser except through a listed proxy).",
+ "to": [
+  "agent"
+ ]
+}

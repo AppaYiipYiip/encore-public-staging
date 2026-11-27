@@ -14,13 +14,13 @@ from pathlib import Path
 
 import httpx
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
 
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.netaddr import OwnNetwork
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 from tests.test_gateway import music_server
 
 GATEWAY = "172.19.0.1"  # where Docker hides the visitor: the network's own gateway
@@ -42,10 +42,29 @@ SHUT_PATHS = [
 ]
 
 
+def recording_upstream() -> FastAPI:
+    """Stands in for the music server and writes down every path that reaches it, whatever it is: what must never reach it is what the tests below look for."""
+    app = FastAPI()
+    app.state.paths = []
+
+    @app.api_route("/{p:path}", methods=["GET", "POST", "HEAD"])
+    async def anything(p: str, request: Request) -> Response:
+        app.state.paths.append(request.url.path)
+        return Response("UPSTREAM", media_type="text/plain")
+
+    return app
+
+
 def app_with(
-    tmp_path: Path, verifier: FakeVerifier, *, on: bool, trusted: tuple[str, ...] = (), own: OwnNetwork | None = OWN
+    tmp_path: Path,
+    verifier: FakeVerifier,
+    *,
+    on: bool,
+    trusted: tuple[str, ...] = (),
+    own: OwnNetwork | None = OWN,
+    upstream: FastAPI | None = None,
 ) -> tuple[FastAPI, FastAPI]:
-    upstream = music_server()
+    upstream = upstream or music_server()
     settings = Settings(
         data_dir=tmp_path / "data",
         music_dir=tmp_path / "m",
@@ -65,9 +84,18 @@ def door(tmp_path: Path, verifier: FakeVerifier) -> Iterator[Callable[..., TestC
     """`door(on=..., peer=...)`: a client whose connection comes from `peer`, against a server whose switch is `on`."""
     opened: list[TestClient] = []
 
-    def make(*, on: bool, peer: str, trusted: tuple[str, ...] = (), own: OwnNetwork | None = OWN, sub: str = "a") -> TestClient:
-        app, _ = app_with(tmp_path / sub, verifier, on=on, trusted=trusted, own=own)
+    def make(
+        *,
+        on: bool,
+        peer: str,
+        trusted: tuple[str, ...] = (),
+        own: OwnNetwork | None = OWN,
+        sub: str = "a",
+        upstream: FastAPI | None = None,
+    ) -> TestClient:
+        app, used = app_with(tmp_path / sub, verifier, on=on, trusted=trusted, own=own, upstream=upstream)
         client = TestClient(app, client=(peer, 50000))
+        client.upstream = used  # type: ignore[attr-defined]
         client.__enter__()
         opened.append(client)
         return client
@@ -97,7 +125,11 @@ def test_what_is_shut_looks_exactly_like_an_unknown_route_of_ours(door) -> None:
     unknown = client.get("/encore/api/v1/no-such-route")
 
     assert shut.status_code == unknown.status_code == 404
-    assert shut.json()["error"]["code"] == unknown.json()["error"]["code"]
+    assert says(shut.json()) == says(unknown.json()), "the same body, the same fields"
+    assert says(client.post("/auth/createAdmin", json={}).json()) == says(shut.json()), (
+        "the three 404s of the gateway are one answer"
+    )
+    assert says(client.get("/encore/no-such-thing").json()) == says(shut.json())
     assert "navidrome" not in shut.text.lower() and "music server" not in shut.text.lower()
 
 
@@ -158,11 +190,66 @@ def test_with_the_switch_on_a_forged_forwarded_address_from_the_gateway_opens_no
 
 
 def test_a_proxy_the_host_listed_can_say_who_it_forwarded(door) -> None:  # type: ignore[no-untyped-def]
-    client = door(on=True, peer=GATEWAY, trusted=(GATEWAY,))
+    """A proxy of its own: another container on the server's network (172.19.0.9), not the gateway that hides the visitors."""
+    client = door(on=True, peer="172.19.0.9", trusted=("172.19.0.9",))
 
     assert client.post("/auth/login", json={}, headers={"X-Forwarded-For": LAN}).status_code == 200
     assert refused(client.post("/auth/login", json={}, headers={"X-Forwarded-For": INTERNET}))
     assert refused(client.post("/auth/login", json={}))
+
+
+def test_listing_the_servers_own_gateway_as_a_proxy_does_not_open_the_page_to_everybody(door) -> None:  # type: ignore[no-untyped-def]
+    """Where the address is hidden every visitor arrives as the gateway: believing its header would let any visitor write a LAN address and be home."""
+    client = door(on=True, peer=GATEWAY, trusted=(GATEWAY,))
+
+    assert refused(client.post("/auth/login", json={}, headers={"X-Forwarded-For": LAN}))
+    assert refused(client.get("/app/", headers={"X-Forwarded-For": f"{INTERNET}, {LAN}"}))
+
+
+def test_a_listed_proxy_is_not_believed_when_the_server_cannot_read_its_own_network(door) -> None:  # type: ignore[no-untyped-def]
+    client = door(on=True, peer="172.19.0.9", trusted=("172.19.0.9",), own=None)
+
+    assert refused(client.post("/auth/login", json={}, headers={"X-Forwarded-For": LAN}))
+
+
+# A path that starts with /rest and climbs out of it: the gateway decides "Subsonic" on what the path means once its dot segments are resolved (the way the music server's own
+# router will read it), not on how it starts. Before, `/rest/%2e%2e/app/` was passed on as Subsonic and the upstream URL builder resolved it to `/app/`.
+DOT_PATHS = [
+    "/rest/%2e%2e/app/",
+    "/rest/%2E%2E/app/",
+    "/rest/%2e%2e/auth/login",
+    "/rest/%2e%2e/api/user",
+    "/rest/%2e%2e/%2e%2e/auth/login",
+    "/rest/./%2e%2e/app/",
+    "/rest%2f..%2fapp",
+    "/rest/..%2fapp/",
+    "/rest/%2e%2e%2fapp/",
+    "/rest/..%5capp/",
+    "/rest/%2e%2e%5cauth%5clogin",
+    "//rest/%2e%2e/app/",
+    "/rest/%252e%252e/app/",
+    "/rest/ping.view/%2e%2e/%2e%2e/app/",
+]
+
+
+@pytest.mark.parametrize("peer", [INTERNET, GATEWAY, LAN])
+@pytest.mark.parametrize("path", DOT_PATHS)
+def test_a_path_that_climbs_out_of_rest_is_not_a_way_to_the_shut_doors(door, peer: str, path: str) -> None:  # type: ignore[no-untyped-def]
+    client = door(on=False, peer=peer, upstream=recording_upstream())
+
+    response = client.get(path)
+
+    assert refused(response), (path, response.status_code, response.text[:80])
+    assert client.upstream.state.paths == [], f"{path} reached the music server as {client.upstream.state.paths}"  # type: ignore[attr-defined]
+
+
+def test_what_is_passed_on_as_subsonic_is_what_was_decided_on_not_what_was_written(door) -> None:  # type: ignore[no-untyped-def]
+    """A harmless dot segment inside /rest is resolved BEFORE it is passed on, so what the gateway judged is what the music server sees."""
+    client = door(on=False, peer=LAN, upstream=recording_upstream())
+
+    assert client.get("/rest/%2e/ping.view").text == "UPSTREAM"
+    assert client.get("/rest/getCoverArt.view/%2e%2e/ping.view").text == "UPSTREAM"
+    assert client.upstream.state.paths == ["/rest/ping.view", "/rest/ping.view"]  # type: ignore[attr-defined]
 
 
 def test_when_the_server_cannot_read_its_own_network_the_page_stays_shut_even_from_a_lan_address(door) -> None:  # type: ignore[no-untyped-def]

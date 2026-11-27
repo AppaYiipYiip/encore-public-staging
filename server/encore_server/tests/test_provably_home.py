@@ -100,6 +100,33 @@ def test_a_listed_proxy_that_forwards_the_servers_own_gateway_is_no() -> None:
     assert home("172.19.0.9", "172.19.0.1", listed=LISTED) is False
 
 
+def test_listing_the_servers_own_gateway_or_own_address_as_a_proxy_proves_nothing() -> None:
+    """Where the address is hidden, EVERY visitor arrives as the gateway: a Host who lists it as a proxy would let any visitor write `X-Forwarded-For: 192.168.1.50` and be home.
+    A listed proxy is believed only when it is neither the server's gateway nor its own address, i.e. a proxy of its own (a container on the server's network, another machine)."""
+    gateway_listed = netaddr.networks(["172.19.0.1"])
+    assert home("172.19.0.1", "192.168.1.50", listed=gateway_listed) is False
+    assert home("172.19.0.1", "8.8.8.8, 192.168.1.50", listed=gateway_listed) is False
+    own_listed = netaddr.networks(["172.19.0.3"])
+    assert home("172.19.0.3", "192.168.1.50", listed=own_listed) is False
+    whole_bridge = netaddr.networks(["172.19.0.0/16"])  # the whole network listed: the gateway is inside it
+    assert home("172.19.0.1", "192.168.1.50", listed=whole_bridge) is False
+    assert home("172.19.0.9", "192.168.1.50", listed=whole_bridge) is True, (
+        "a proxy of its own inside the listed network is believed"
+    )
+
+
+def test_the_address_measured_on_the_owners_docker_desktop_is_the_gateway_and_is_not_home() -> None:
+    """Audit B-56, measured on this project's own PC (Docker Desktop): a wrong login made through the PC's own address was counted by the server "against address 172.19.0.1",
+    the Docker gateway of the compose network. That is the value the rule must exclude; the same value is the default gateway in the route table a container there reads."""
+    measured = "172.19.0.1"
+    own = netaddr.OwnNetwork(
+        gateways=netaddr.default_gateways(DOCKER_BRIDGE) or frozenset(), addresses=frozenset({ipaddress.ip_address("172.19.0.3")})
+    )
+    assert ipaddress.ip_address(measured) in own.gateways
+    assert home(measured, own=own) is False
+    assert home(measured, "192.168.1.50", own=own) is False, "the forged header the same visitor could add"
+
+
 def test_tailscales_range_is_not_proved_home() -> None:
     """Decided: a Tailscale address is a device on the Host's tailnet, which may be shared with other people; the page stays shut to it (the Host can list a proxy)."""
     assert home("100.64.1.5") is False
@@ -124,8 +151,9 @@ def test_when_the_server_cannot_read_its_own_network_a_direct_visitor_is_no() ->
     assert home("172.19.0.1", own=None) is False
 
 
-def test_a_listed_proxy_is_the_hosts_own_word_and_does_not_need_the_servers_own_network() -> None:
-    assert home("172.19.0.9", "192.168.1.50", own=None, listed=LISTED) is True
+def test_a_listed_proxy_is_not_believed_either_when_the_server_cannot_read_its_own_network() -> None:
+    """Without its own gateway the server cannot rule out that the listed address IS the gateway that hides the visitors: fail shut, for the listed path too."""
+    assert home("172.19.0.9", "192.168.1.50", own=None, listed=LISTED) is False
 
 
 # --------------------------------------------------------------------------------------------------------------------- reading the server's own network
