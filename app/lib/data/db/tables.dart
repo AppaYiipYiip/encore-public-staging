@@ -279,6 +279,13 @@ class Downloads extends Table {
   TextColumn get lastError => text().nullable()();
   IntColumn get updatedAtMs => integer()();
 
+  /// (v11, N-45) The name of the download task that makes this copy, written in the same statement that makes the row "downloading" and BEFORE the
+  /// downloader is asked, so a word of the downloader always finds the attempt it is about. Every attempt has a task name of its own
+  /// (`enc2:<server>:<attempt>:<track>`), which is what lets a late word of an attempt that was switched off be told from the word of the attempt that
+  /// replaced it. Null for a row an older build made: its task, if the downloader still has one, is named from the song alone (`enc:<server>:<track>`).
+  /// Kept after the attempt ends (a repeated last word of it is still about it); the next attempt writes its own.
+  TextColumn get taskId => text().nullable()();
+
   /// Set (v2) when no pin includes this track any more; the file is deleted
   /// once the grace period passes, so a smart playlist that is regenerated
   /// does not make the phone throw away and re-download the same songs.

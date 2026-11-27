@@ -69,9 +69,12 @@ class _MemoryStorage implements PersistentStorage {
   Future<void> initialize() async {}
 }
 
-DownloadTask _task(int serverId, String trackId, {String metaData = ''}) =>
+/// A task of the downloader. Named from the song alone (`enc:<server>:<track>`) unless [taskId] says otherwise: that is the name an OLDER build handed
+/// over, and what the downloader may still hold, or have kept updates of, across the upgrade to the build that names every attempt (N-45).
+DownloadTask _task(int serverId, String trackId,
+        {String metaData = '', String? taskId}) =>
     DownloadTask(
-      taskId: 'enc:$serverId:$trackId',
+      taskId: taskId ?? 'enc:$serverId:$trackId',
       url: 'https://srv/get?id=$trackId',
       filename: '$trackId.opus',
       directory: 'downloads/$serverId',
@@ -315,8 +318,13 @@ void main() {
     ]);
   });
 
-  // The process that ended had handed four songs to the downloader; a new process starts a manager on the real transport.
-  Future<DownloadManager> newProcess() async {
+  // The process that ended had handed four songs to the downloader; a new process starts a manager on the real transport. By default that process was an
+  // OLDER build (N-45): its rows have no task name of their own and the downloader's tasks carry the old name, which is what the upgrade meets. With
+  // [olderBuild] false the process that ended named every attempt, and [kept] (called with the transport that process used) sets up what the downloader
+  // holds under those names.
+  Future<DownloadManager> newProcess(
+      {bool olderBuild = true,
+      void Function(FakeDownloadTransport before)? kept}) async {
     final before = FakeDownloadTransport();
     final first = DownloadManager(
       db: db,
@@ -333,6 +341,10 @@ void main() {
     await first.reconcile();
     expect(before.started.length, 4);
     await first.dispose();
+    if (olderBuild) {
+      await db.customStatement('UPDATE downloads SET task_id = NULL');
+    }
+    kept?.call(before);
 
     final manager = DownloadManager(
       db: db,
@@ -390,6 +402,67 @@ void main() {
     for (final id in ['t1', 't2']) {
       expect((await repo.rowsFor([id])).single.state, DownloadState.downloading,
           reason: id);
+    }
+    await manager.dispose();
+  });
+
+  // N-45: the same two cases when the process that ended already named every attempt (the names the rows hold are the names the downloader keeps).
+  test(
+      "N-45: on the plugin's real code, a cancel kept under an attempt's own name ends that song as one that did not come, and nothing is started again",
+      () async {
+    final manager = await newProcess(
+        olderBuild: false,
+        kept: (before) {
+          stored = {
+            for (final id in ['t1', 't2'])
+              before.taskOf(id): jsonEncode(TaskStatusUpdate(
+                      _task(serverId, id, taskId: before.taskOf(id)),
+                      TaskStatus.canceled)
+                  .toJson()),
+          };
+          running = [
+            for (final id in ['t3', 't4'])
+              _task(serverId, id, taskId: before.taskOf(id)),
+          ];
+        });
+
+    expect(calls, isNot(contains('enqueue')),
+        reason: 'the next start put the cancelled songs back in the queue');
+    for (final id in ['t1', 't2']) {
+      final r = (await repo.rowsFor([id])).single;
+      expect(r.state, DownloadState.failed, reason: id);
+      expect(r.lastError, kDownloadStoppedReason, reason: id);
+    }
+    for (final id in ['t3', 't4']) {
+      expect((await repo.rowsFor([id])).single.state, DownloadState.downloading,
+          reason: id);
+    }
+    await manager.dispose();
+  });
+
+  test(
+      "N-45: a cancel kept under the name of an attempt the row has left is about that attempt, not the one the row is on",
+      () async {
+    // The downloader kept the last word of an attempt that was replaced: it must not end the song the row says is downloading under another name.
+    final manager = await newProcess(
+        olderBuild: false,
+        kept: (before) {
+          stored = {
+            'enc2:$serverId:1:t1': jsonEncode(TaskStatusUpdate(
+                    _task(serverId, 't1', taskId: 'enc2:$serverId:1:t1'),
+                    TaskStatus.canceled)
+                .toJson()),
+          };
+          running = [
+            for (final id in ['t1', 't2', 't3', 't4'])
+              _task(serverId, id, taskId: before.taskOf(id)),
+          ];
+        });
+
+    expect(calls, isNot(contains('enqueue')));
+    for (final id in ['t1', 't2', 't3', 't4']) {
+      expect((await repo.rowsFor([id])).single.state, DownloadState.downloading,
+          reason: '$id is still running under its own name');
     }
     await manager.dispose();
   });

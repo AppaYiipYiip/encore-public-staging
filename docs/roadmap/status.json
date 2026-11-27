@@ -384,5 +384,11 @@
   "evidence": "The audit probe prune prints file rows left=300 and PASS (before: 0 and FAIL); tests/test_link_prune_guard.py (10: an empty answer removes nothing however often it comes, at least half listed removes at once, less than half marks and holds, a day of absence removes, a file that comes back forgets, an add-only pass and a music server that did not answer change nothing, a library reorganised under new ids is trusted by what was listed); the Home row; the line in encore status and audit_stack check prune (needs Docker) are not done; not walked",
   "at": "2026-11-27T13:01:10Z",
   "by": "Claude"
+ },
+ "N-45": {
+  "state": "built",
+  "evidence": "download_manager_attempt_test.dart (18 tests): a late failed, canceled or complete word of an attempt that was switched off, stopped or replaced does not end the new attempt; the six costs of docs/33 (a) to (f) each have a test; (a) to (e) and the other order of (f) (the old attempt's completion first, fixed by remembering the superseded attempt) fail on main's manager, the first order of (f) was already held by the .new guard; the upgrade: a row of an older build (task_id NULL) with a task of the old name still running survives the start and ends with its own word (background_downloader_replay_test.dart keeps old-form names, plus new-form variants); schema v11 with snapshot and migration test from v1..v10; the stop and cancel tests now say WHICH attempt a word is about (taskOf throws when a song has had several); N-40 (a download that keeps going after the app is closed) is still owed and needs the real phone; not walked",
+  "at": "2026-11-27T15:02:40Z",
+  "by": "Claude"
  }
 }

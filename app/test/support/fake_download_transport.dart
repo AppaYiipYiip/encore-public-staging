@@ -113,6 +113,29 @@ class FakeDownloadTransport implements DownloadTransport {
   TransferRequest requestFor(String trackId) =>
       started.lastWhere((r) => r.taskId.endsWith(':$trackId'));
 
+  /// The task names this transport was asked to start for a song, oldest first (N-45: every attempt has a name of its own).
+  List<String> attemptsOf(String trackId) => [
+        for (final r in started)
+          if (r.taskId.endsWith(':$trackId')) r.taskId
+      ];
+
+  /// The name of the FIRST attempt of a song: what a late word of an attempt that was stopped, switched off or replaced is about.
+  String firstTaskOf(String trackId) => attemptsOf(trackId).first;
+
+  /// The name of the newest attempt of a song: what the transfer that runs now is called.
+  String latestTaskOf(String trackId) => attemptsOf(trackId).last;
+
+  /// The name of the ONE attempt a song has had. It throws when there were several: a test that has Stopped and Resumed (or switched off and on) must
+  /// say WHICH attempt it means, or a word of an earlier attempt would silently become a word of the one that runs and the test would change meaning.
+  String taskOf(String trackId) {
+    final all = attemptsOf(trackId);
+    if (all.length != 1) {
+      throw StateError(
+          '$trackId has had ${all.length} attempts: say firstTaskOf or latestTaskOf');
+    }
+    return all.single;
+  }
+
   void complete(String trackId, {int size = 4096}) {
     final req = requestFor(trackId);
     files['/app/${req.relativePath}'] = size;
