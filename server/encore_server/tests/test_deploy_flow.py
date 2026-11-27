@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import os
 import re
 import sqlite3
@@ -21,7 +22,9 @@ from pathlib import Path
 
 import pytest
 
+from encore_server import host_status
 from encore_server.backup import decrypt_file, new_key, parse_secret_key
+from encore_server.ids import now_ms
 from tests.test_deploy_scripts import BASH, DEPLOY
 
 pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
@@ -483,3 +486,41 @@ def test_the_installer_tells_the_host_where_the_admin_pages_are() -> None:
     install = (DEPLOY / "install.sh").read_text(encoding="utf-8")
     assert "There is no Encore admin page" not in install
     assert "http://${HOST_IP}:${PORT}/admin" in install
+
+
+def test_a_backup_tells_the_server_what_only_the_computer_knows(tmp_path: Path) -> None:
+    """The container sees only /data and /music: the computer leaves host-status.json in /data (docs/36 section 2) and the server reads it as the Home page's facts."""
+    install = Install(tmp_path, KEY_A, "told")
+    public, _ = new_key()
+    install.lock_with(public)
+    install.set_env(install.env + "ENCORE_AWAY_URL=https://our-music.tail1234.ts.net\n")
+    assert install.encore("backup", "--quiet").returncode == 0
+    data = install.root / "data"
+    assert json.loads((data / "host-status.json").read_text(encoding="utf-8"))["writtenAt"] > 0
+    status = host_status.read(data)
+    assert status is not None and status.fresh(now_ms() + 1000)
+    assert status.last_backup is not None and status.last_backup.locked is True and status.last_backup.bytes > 0
+    assert abs(status.last_backup.at - now_ms()) < 120_000
+    assert status.away_address == "https://our-music.tail1234.ts.net" and status.away_key_expires_at is None, (
+        "no tailscale here: no invented expiry"
+    )
+    assert status.backup_key_made_at is not None
+    assert not list(data.glob(".host-status-*")), "no half-written file is left"
+
+
+def test_a_plain_backup_is_told_as_not_locked_and_an_odd_address_is_never_written(tmp_path: Path) -> None:
+    install = Install(tmp_path, KEY_A, "odd")
+    install.set_env(install.env + "ENCORE_AWAY_URL=https://x.example/$(touch /tmp/pwned);\n")
+    assert install.encore("backup", "--quiet").returncode == 0
+    raw = json.loads((install.root / "data" / "host-status.json").read_text(encoding="utf-8"))
+    assert raw["lastBackup"]["locked"] is False and "away" not in raw and "backupKey" not in raw
+
+
+def test_update_restore_and_secure_write_the_status_too(tmp_path: Path) -> None:
+    install = Install(tmp_path, KEY_A, "all")
+    assert install.encore("secure", "--installer").returncode == 0
+    assert host_status.read(install.root / "data") is not None
+    status_file = install.root / "data" / "host-status.json"
+    status_file.unlink()
+    assert install.encore("update").returncode == 0
+    assert host_status.read(install.root / "data") is not None, "update writes it"

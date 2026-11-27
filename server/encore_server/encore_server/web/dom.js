@@ -24,6 +24,8 @@ const ICONS = {
   copy: ["rect", "M5 15V5a1 1 0 0 1 1-1h10"],
   lock: ["rect2", "M8 11V8a4 4 0 0 1 8 0v3"],
   check: ["M5 12l5 5 9-10"],
+  home: ["M3 11l9-8 9 8", "M5 10v10h14V10"],
+  alert: ["M12 3l10 18H2z", "M12 10v5", "M12 18v.5"],
 };
 
 export function icon(name) {

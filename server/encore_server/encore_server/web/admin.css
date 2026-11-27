@@ -191,3 +191,21 @@ dialog.sheet .row.end { margin-top: var(--space-lg); }
   .pt-r { grid-template-columns: 1fr auto; }
   .pt-r > .sm { display: none; }
 }
+
+/* ---- the Home page (W-02): a sentence, what needs the Host, one row per part ---- */
+.hlist { padding: 0; overflow: hidden; }
+.hrow { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--outline); }
+.hrow:last-child { border-bottom: 0; }
+.hrow .dot { margin-top: 7px; }
+.hrow .tx { gap: 2px; }
+.dot.ok { background: var(--accent); }
+.dot.warn { background: var(--warning); }
+.dot.down { background: var(--danger); }
+.stt { font-weight: 600; }
+.stt.ok { color: var(--accent); }
+.stt.warn, .stt.resting { color: var(--warning); }
+.stt.down { color: var(--danger); }
+.stt.off, .stt.unknown { color: var(--on-bg-muted); }
+.card.need { display: flex; gap: var(--space-md); align-items: flex-start; border-color: var(--warning); }
+.card.need .ic { color: var(--warning); margin-top: 3px; }
+.card.need p { margin: 0 0 var(--space-xs); }

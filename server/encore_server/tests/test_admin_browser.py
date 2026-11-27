@@ -120,8 +120,20 @@ def test_the_sign_in_the_people_page_an_invitation_a_lock_and_a_removal_in_a_rea
         assert browser.js("localStorage.length") == 0 and browser.js("document.cookie") == ""
 
         # -- the owner alone: one sentence and the one button
-        browser.wait("document.querySelector('.amain h1')")
+        # -- Home is the first page: a sentence, no invented "all good" for what only the computer knows, counts and never titles
+        browser.wait("document.querySelector('.hrow')")
+        assert browser.text(".amain h1") == "Home" and "Everything is working." in browser.text(".ahead")
+        home = browser.text(".hlist")
+        assert "This computer has not told Encore yet." in home and "Counts only, never titles." in home
+        assert "1 person" in home and "Not set up" in home and "GB free" in home and "Version " in home
+        assert browser.js("document.querySelector('.arail [aria-current=page]').innerText") == "Home"
+        # -- People: the rail switches, the address names the page
+        browser.click(".arail button", "People")
         browser.wait("document.querySelector('.ptab .card')")
+        assert (
+            browser.js("location.hash") == "#/people"
+            and browser.js("document.querySelector('.arail [aria-current=page]').innerText") == "People"
+        )
         assert "Nobody else yet." in browser.text(".ptab") and "Invite someone with a link" in browser.text(".ptab")
         assert "marwa" in browser.text(".ptab") and "Owner" in browser.text(".ptab") and "You" in browser.text(".ptab")
 
@@ -131,7 +143,9 @@ def test_the_sign_in_the_people_page_an_invitation_a_lock_and_a_removal_in_a_rea
         owner = server.sign_in("marwa")
         mia = next(p["id"] for p in server.api("GET", "/people", token=owner)["items"] if p["username"] == "mia")
         assert server.api("PATCH", f"/people/{mia}", {"locked": True}, token=owner)["person"]["locked"] is True
-        browser.go(f"{server.base}/encore/admin")
+        browser.go(
+            f"{server.base}/encore/admin?again=1#/people"
+        )  # a different address: a navigation that only adds a fragment would not reload the page
         browser.wait("document.querySelectorAll('.pt-r').length === 3")
         assert "mia's account is locked." in browser.text(".ptab") and "Unlock mia" in browser.text(".ptab")
         assert "Locked" in browser.text(".ptab") and "never what anybody plays" in browser.text(".amain")

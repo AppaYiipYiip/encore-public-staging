@@ -66,6 +66,7 @@ GET /encore/api/v1/catalogue/genres/{genre_id} catalogue_genre routes.catalogue
 GET /encore/api/v1/admin/session admin_session routes.admin_site
 GET /encore/api/v1/admin/addons list_addons routes.admin_addons
 PUT /encore/api/v1/admin/addons/{addon_id} put_addon routes.admin_addons
+GET /encore/api/v1/admin/health health routes.admin_health
 GET,HEAD /encore/stream/{ref_id} stream routes.media
 GET,HEAD /encore/cover/{cover_id} cover routes.media
 GET,HEAD /encore/join/{code} join_page routes.people

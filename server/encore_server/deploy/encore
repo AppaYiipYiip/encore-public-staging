@@ -260,6 +260,7 @@ cmd_update() {
     ok "Encore is up to date${before:+ (was $before, now $after)}"
     # Replacing the file this is running from last: bash has read it already.
     mv "$ENCORE_BIN.new" "$ENCORE_BIN"
+    write_host_status || true
 }
 
 # The server tells its phones where it can be reached (GET /encore/api/v1/server): remember the away address (or forget it) and let the server read it.
@@ -270,6 +271,7 @@ tell_server_away() {
         lost | different) note "The server was not restarted: the key its accounts are locked with is missing or changed (run  sudo encore secure  to see what to do)."; return 0 ;;
     esac
     dc up -d >/dev/null 2>&1 || note "The server could not be restarted to learn the new address; it will on the next  encore update."
+    write_host_status || true
 }
 
 cmd_funnel() {
@@ -392,6 +394,7 @@ cmd_backup() {
         fi
         say ""
     fi
+    write_host_status || true
 }
 
 cmd_restore() {
@@ -477,6 +480,7 @@ cmd_restore() {
         note "Your backups are now locked with the key you just used, so the one key you saved opens all of them."
     fi
     note "What was here before is in $aside: delete that folder when you are happy with the result."
+    write_host_status || true
     say ""
 }
 
@@ -519,6 +523,38 @@ cmd_addon() {
         list) shift; dc exec -T encore-server python -m encore_server op addon list "$@" ;;
         *) local id="$1"; shift; dc exec -T encore-server python -m encore_server op addon set "$id" "$@" ;;
     esac
+}
+
+# What this computer tells the server (docs/36 section 2, "Facts the server cannot see"): a small file in the data folder, written whenever something that changes these facts
+# was done here (a backup, a restore, the away address on or off, an update, the keys), and only READ by the server. The Encore container sees only /data and /music, so it
+# cannot know when the last backup was made, when the away address's key ends or whether the backup key was made. It holds no secret and no path outside the install, and the
+# server reads it as untrusted input (host_status.py): an old or odd file says "this computer has not told Encore yet", never "all good".
+write_host_status() {
+    local out="$DIR/data/host-status.json" tmp now backup at="" bytes="" locked=false address key="" made="" expiry
+    [ -d "$DIR/data" ] || return 0
+    now="$(date +%s)000"
+    backup="$(newest_backup)"
+    if [ -n "$backup" ]; then
+        at="$(stat -c %Y "$backup")000"; bytes="$(stat -c %s "$backup")"
+        case "$backup" in *.age) locked=true ;; esac
+    fi
+    address="$(env_value ENCORE_AWAY_URL)"
+    # only an address that is plain text of the kind the server accepts
+    case "$address" in https://*[!A-Za-z0-9.:/_-]* | http://*[!A-Za-z0-9.:/_-]*) address="" ;; https://* | http://*) ;; *) address="" ;; esac
+    if [ -n "$address" ] && command -v tailscale >/dev/null 2>&1; then
+        expiry="$(tailscale status --json 2>/dev/null | sed -n 's/.*"KeyExpiry": *"\([0-9T:.Z+-]*\)".*/\1/p' | head -1 || true)"
+        if [ -n "$expiry" ] && key="$(date -d "$expiry" +%s 2>/dev/null)"; then key="${key}000"; else key=""; fi
+    fi
+    if [ -s "$BACKUP_PUB" ]; then made="$(stat -c %Y "$BACKUP_PUB")000"; fi
+    tmp="$(mktemp "$DIR/data/.host-status-XXXXXX")" || return 0
+    {
+        printf '{"writtenAt":%s' "$now"
+        if [ -n "$at" ]; then printf ',"lastBackup":{"at":%s,"bytes":%s,"locked":%s}' "$at" "$bytes" "$locked"; fi
+        if [ -n "$address" ]; then printf ',"away":{"address":"%s"%s}' "$address" "${key:+,\"keyExpiresAt\":$key}"; fi
+        if [ -n "$made" ]; then printf ',"backupKey":{"madeAt":%s}' "$made"; fi
+        printf '}\n'
+    } >"$tmp"
+    if chmod 644 "$tmp" && mv -f -- "$tmp" "$out"; then :; else rm -f -- "$tmp"; fi
 }
 
 # `encore secure`: the two keys of this install (P3-30). Safe to run again: what exists is left alone and said so.
@@ -568,6 +604,7 @@ cmd_secure() {
     esac
     # 3. What was made before there was a backup key.
     lock_old_backups
+    write_host_status || true
     say ""
 }
 
