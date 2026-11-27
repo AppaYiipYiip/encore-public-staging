@@ -240,7 +240,8 @@ def test_the_owners_app_keeps_answering_after_a_restart_while_a_stranger_is_stil
     music = MusicServer()
     app, _ = restartable_app(tmp_path, music, clock)
     with TestClient(app, client=(GATEWAY, 50000)) as client:
-        assert client.get(f"{V1}/me", params=creds("marwa")).status_code == 200  # accepted by the music server, remembered
+        for _ in range(2):  # a login is remembered from its second accepted sighting
+            assert client.get(f"{V1}/me", params=creds("marwa")).status_code == 200  # accepted by the music server, remembered
     clock[0] += 3600  # an hour: an update, a crash, a night
 
     app2, _ = restartable_app(tmp_path, music, clock)  # the restart: a new verifier, a new limiter, the same folder

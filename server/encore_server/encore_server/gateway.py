@@ -12,12 +12,15 @@ import logging
 import posixpath
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
-from urllib.parse import unquote
+from typing import Any, Protocol
+from urllib.parse import parse_qsl, unquote
 
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from starlette.concurrency import run_in_threadpool
 
+from . import subsonic_guard
 from .errors import ApiError
 from .request_id import of as request_id_of
 
@@ -77,14 +80,50 @@ def _forward(headers: httpx.Headers | dict[str, str] | object) -> dict[str, str]
     return {k: v for k, v in items if k.lower() not in _HOP and k.lower() != "content-length"}
 
 
+#: The methods whose body a music server reads a login from (Go's `ParseForm`: a POST, a PUT, a PATCH; a DELETE's body is passed on but never read).
+_FORM_METHODS = ("POST", "PUT", "PATCH")
+
+Pairs = list[tuple[str, str]]
+
+
+async def read_subsonic_call(request: Request) -> tuple[Pairs, Pairs | None, bool]:
+    """What a call to the Subsonic API says, read the way the music server reads it (P3-34 slice 2b review): the address's pairs IN ORDER, the form body's pairs in order (only an
+    `application/x-www-form-urlencoded` body of a POST, PUT or PATCH is a form: it is what the music server parses), and whether this server CAN read the call at all (a multipart body is
+    not read here, so a login could hide in it: not readable). The one reader for both doors, so what is judged is what the music server will be asked."""
+    query = parse_qsl(request.url.query, keep_blank_values=True)
+    if request.method not in _FORM_METHODS:
+        return query, None, True
+    kind = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if kind == "application/x-www-form-urlencoded":
+        return query, parse_qsl((await request.body()).decode("utf-8", "replace"), keep_blank_values=True), True
+    return query, None, not kind.startswith("multipart/")
+
+
+def _ambiguous_answer(query: Pairs) -> Response:
+    """The refusal of a call whose login the music server and this server could read differently: a Subsonic answer with code 10, in the format the app asked for."""
+    fmt, callback = subsonic_guard.format_of(dict(query))
+    body, kind = subsonic_guard.refusal_body(fmt, callback, "Send your name and your password once, in one place.", code=10)
+    return Response(body, status_code=400, headers={"Content-Type": kind, "Cache-Control": "no-store"})
+
+
+class HomeGuard(Protocol):
+    """What the gateway asks of the guard at the home door (P3-34 slice 2b): a refusal to answer with instead of passing the call on, and the outcome once the music server has answered. See
+    `routes.common.HomeLoginGuard`."""
+
+    def refuse(self, request: Request, login: Any) -> tuple[int, dict[str, str], bytes] | None: ...
+
+    def settle(self, request: Request, login: Any, *, refused: bool) -> None: ...
+
+
 def mount(
     app: FastAPI,
     upstream: str,
     *,
     client: httpx.AsyncClient | None = None,
     public: Callable[[Request], bool] | None = None,
-    authorize_public: Callable[[Request], Awaitable[None]] | None = None,
+    authorize_public: Callable[[Request, Any], Awaitable[None]] | None = None,
     web_page_open: Callable[[Request], bool] | None = None,
+    home_guard: HomeGuard | None = None,
 ) -> None:
     """Adds the catch-all route that passes everything not handled by this server to [upstream]. Call it after every other route.
 
@@ -94,9 +133,12 @@ def mount(
     app and the Subsonic apps people already use ask for. Before, they were passed to anything that looked private: through a port forward to a Docker Desktop host they would
     have put a second, unguarded front door on the internet (AUDIT B12, B-56).
 
-    The Subsonic API that is left is guarded as well (AUDIT B12b): [authorize_public] is awaited for such a request before anything is passed on,
-    and raises an `ApiError` to refuse it. Without it the music server would be the only door where wrong passwords are not slowed (measured:
-    40 wrong sign-ins in 0.6 s, none refused). A request from the home network is never asked.
+    The Subsonic API that is left is guarded as well (AUDIT B12b): [authorize_public] is awaited for such a request, with the login the call carries, before anything is passed on,
+    and raises an `ApiError` to refuse it. BOTH doors decide the login from one reader (`read_subsonic_call`: the address and the form body, never a header, a repeated name or a second kind of
+    secret refused): what the guard judges is what the music server will check. Without it the music server would be the only door where wrong passwords are not slowed (measured:
+    40 wrong sign-ins in 0.6 s, none refused). A request from the home network is not asked to sign in that way (the apps that send `p=` must keep working), but with [home_guard] its wrong
+    logins are COUNTED from the music server's own answer and a guesser is refused before the call is passed on (P3-34 slice 2b): only a small, sized json or xml answer is ever read
+    (`subsonic_guard`); a song, a picture or a large list streams untouched.
     """
     base = upstream.rstrip("/")
     http = client or httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0), follow_redirects=False)
@@ -109,18 +151,36 @@ def mount(
         if is_first_account_request(path):
             return _not_found(request)
         where = resolved(path)
+        login = None  # the login a Subsonic call carries at the home door, when the guard counts it (P3-34 slice 2b)
         if where == "/rest" or where.startswith("/rest/"):
             if not _SUBSONIC.fullmatch(where):
                 return _not_found(request)
-            if public is not None and public(request) and authorize_public is not None:
-                await authorize_public(request)  # raises ApiError: the app's handler answers in the usual envelope
+            query, form, readable = await read_subsonic_call(request)
+            if not readable or subsonic_guard.is_ambiguous(query, form):
+                return _ambiguous_answer(query)
+            carried = subsonic_guard.read_login(query, form)
+            from_the_internet = public is not None and public(request)
+            if from_the_internet and authorize_public is not None:
+                await authorize_public(request, carried)  # raises ApiError: the app's handler answers in the usual envelope
             path = where[1:]  # what was judged is what the music server is asked
+            if home_guard is not None and not from_the_internet and carried is not None:
+                login = carried
+                # In a worker thread, not on the event loop: the first accepted login and an hourly renewal are written to the database, and a busy database must not stall every other call.
+                refusal = await run_in_threadpool(home_guard.refuse, request, login)
+                if refusal is not None:
+                    status, headers, content = refusal
+                    return Response(content, status_code=status, headers=headers)
         elif web_page_open is None or not web_page_open(request):
             return _not_found(request)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
         headers = _forward(request.headers)
-        # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see.
-        headers.setdefault("accept-encoding", "identity")
+        # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see. EXCEPT a call whose login is being counted: the music server compresses its
+        # answers for a client that asks (measured, 0.64.2: a wrong-login answer of 168 bytes, gzip), and a refusal that cannot be read must not be mistaken for a login that passed. Those calls are
+        # answered uncompressed (a list at home is a few kilobytes more on a local network; a song is not affected, it is never compressed).
+        if login is not None:
+            headers["accept-encoding"] = "identity"
+        else:
+            headers.setdefault("accept-encoding", "identity")
         headers["x-forwarded-for"] = request.client.host if request.client else ""
         headers["x-forwarded-proto"] = request.url.scheme
         # The request's id goes to the music server too (it logs it as its `requestId`): what the phone sent when it was a plain id, else the one this server made (P1-19).
@@ -150,6 +210,27 @@ def mount(
         for keep in ("content-length", "content-encoding"):
             if keep in answer.headers:
                 out[keep] = answer.headers[keep]
+        if login is not None and home_guard is not None:
+            # What the music server said about the login, decided on EVIDENCE (`subsonic_guard.how_to_read`): only a small, sized, uncompressed json or xml answer is read (a wrong login is always
+            # exactly that, measured) and is a refusal, an acceptance (an ok, or an error that can only come after the login passed) or nothing we can tell; a song, a picture or a list far larger
+            # than any refusal is an acceptance and streams untouched below. Anything else (compressed, chunked, an unknown type, a code 10) is neither counted nor remembered.
+            encoding = answer.headers.get("content-encoding", "identity").strip().lower()
+            mode = subsonic_guard.how_to_read(
+                answer.status_code,
+                answer.headers.get("content-type", ""),
+                answer.headers.get("content-length"),
+                "chunked" in answer.headers.get("transfer-encoding", "").lower(),
+                encoding not in ("", "identity"),
+            )
+            if mode == "read":
+                content = b"".join([piece async for piece in answer.aiter_raw(_CHUNK)])
+                await answer.aclose()
+                verdict = subsonic_guard.judge(content)
+                if verdict != "unknown":
+                    await run_in_threadpool(home_guard.settle, request, login, refused=verdict == "refused")
+                return Response(content, status_code=answer.status_code, headers=out)
+            if mode == "accepted":
+                await run_in_threadpool(home_guard.settle, request, login, refused=False)
         if request.method == "HEAD":
             await answer.aclose()
             return Response(status_code=answer.status_code, headers=out)

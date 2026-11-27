@@ -47,6 +47,11 @@ class Rig:
         return user, subsonic_token(password or f"pw-{user}", salt), salt
 
 
+def accept(verifier: NavidromeVerifier, login: tuple[str, str, str]) -> bool:
+    """Two accepted calls: a login is remembered on its SECOND sighting (a credential with a fresh salt on every call never is; the review of 2b)."""
+    return bool(verifier.verify(*login) and verifier.verify(*login))
+
+
 def test_a_login_the_music_server_accepted_is_vouched_for_a_day_and_known_good_for_ten_minutes() -> None:
     rig = Rig()
     login = rig.login()
@@ -54,9 +59,13 @@ def test_a_login_the_music_server_accepted_is_vouched_for_a_day_and_known_good_f
         "nothing is known before it was accepted"
     )
 
-    assert rig.verifier.verify(*login) is True
+    assert rig.verifier.verify(*login)
 
-    assert rig.verifier.vouched(*login) is True and rig.verifier.known_good(*login) is True
+    assert rig.verifier.vouched(*login) is False, (
+        "the first accepted call is seen once: a fresh salt every call would never be remembered"
+    )
+    assert rig.verifier.known_good(*login) is True
+    assert rig.verifier.vouched(*login) is True, "the second sighting is remembered"
     rig.now[0] += TEN_MINUTES + 1
     assert rig.verifier.known_good(*login) is False, "the short memory, which skips the music server's check, ran out"
     assert rig.verifier.vouched(*login) is True, "the long one, which only skips refusals, did not"
@@ -76,7 +85,7 @@ def test_a_vouched_credential_that_the_music_server_now_refuses_loses_its_exempt
     """The password was changed at the music server without Encore hearing of it: the next check says no, and the old credential is a guess like any other."""
     rig = Rig()
     login = rig.login()
-    assert rig.verifier.verify(*login) is True
+    assert accept(rig.verifier, login)
     rig.now[0] += TEN_MINUTES + 1
     rig.music.passwords["marwa"] = "a new password"
 
@@ -87,7 +96,7 @@ def test_a_vouched_credential_that_the_music_server_now_refuses_loses_its_exempt
 def test_forgetting_a_person_drops_what_was_vouched_for_them_and_nobody_else() -> None:
     rig = Rig()
     owner, other = rig.login("marwa"), rig.login("nina")
-    assert rig.verifier.verify(*owner) and rig.verifier.verify(*other)
+    assert accept(rig.verifier, owner) and accept(rig.verifier, other)
 
     rig.verifier.forget("MARWA")
 
@@ -99,7 +108,7 @@ def test_a_device_that_keeps_being_known_stays_vouched_beyond_a_day() -> None:
     """Each use of a remembered yes renews the day: an app that talks every few minutes never falls out of the memory while a stranger guesses."""
     rig = Rig()
     login = rig.login()
-    assert rig.verifier.verify(*login)
+    assert accept(rig.verifier, login)
     for _ in range(30 * 12):  # thirty hours, a call every five minutes
         rig.now[0] += 300
         assert rig.verifier.known_good(*login) or rig.verifier.verify(*login)
@@ -120,7 +129,7 @@ def test_two_processes_do_not_share_a_digest() -> None:
     """The key is made per process: a memory of digests is of no use outside it."""
     first, second = Rig(), Rig()
     login = first.login()
-    assert first.verifier.verify(*login) and second.verifier.verify(*login)
+    assert accept(first.verifier, login) and accept(second.verifier, login)
 
     assert set(first.verifier._vouched) != set(second.verifier._vouched)  # noqa: SLF001
 
@@ -130,7 +139,7 @@ def test_one_name_keeps_only_its_newest_logins() -> None:
     logins = [rig.login("marwa", salt=f"salt{i:05d}") for i in range(80)]
     for login in logins:
         rig.now[0] += 1
-        assert rig.verifier.verify(*login)
+        assert accept(rig.verifier, login)
 
     assert len(rig.verifier._vouched) == 5  # noqa: SLF001
     assert rig.verifier.vouched(*logins[-1]) is True, "the newest is kept"
@@ -140,7 +149,7 @@ def test_one_name_keeps_only_its_newest_logins() -> None:
 def test_a_music_server_that_gives_no_answer_vouches_for_nothing_and_forgets_nothing() -> None:
     rig = Rig()
     login = rig.login()
-    assert rig.verifier.verify(*login)
+    assert accept(rig.verifier, login)
     rig.now[0] += TEN_MINUTES + 1
     rig.verifier._client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(503)))  # noqa: SLF001
     from encore_server.auth import MusicServerUnavailable
@@ -149,3 +158,47 @@ def test_a_music_server_that_gives_no_answer_vouches_for_nothing_and_forgets_not
         rig.verifier.verify(*login)
 
     assert rig.verifier.vouched(*login) is True, "an outage says nothing about the password"
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ the second sighting (review of 2b)
+
+
+def test_a_login_with_a_fresh_salt_on_every_call_is_never_remembered_and_cannot_push_the_owners_out() -> None:
+    """An app that follows the Subsonic documentation makes a new salt for every call. Remembering each would be a digest, a database write and an eviction a call, and two hundred of them
+    under the owner's name would push the owner's own entry out. A credential is remembered on its SECOND sighting; one that never repeats never is."""
+    rig = Rig(vouch_per_name=32)
+    owner = rig.login("marwa")
+    assert accept(rig.verifier, owner)
+
+    for i in range(200):
+        rig.now[0] += 1
+        assert rig.verifier.verify(*rig.login("marwa", salt=f"fresh{i:05d}")) is True
+
+    assert rig.verifier.vouched(*owner) is True, "the owner's is still there"
+    assert len(rig.verifier._vouched) == 1, "and nothing was added: every one of the two hundred was seen once"  # noqa: SLF001
+
+
+def test_the_second_sighting_may_come_through_either_door_and_a_day_apart_counts_as_a_first() -> None:
+    rig = Rig()
+    login = rig.login()
+
+    assert rig.verifier.verify(*login) and rig.verifier.vouched(*login) is False
+    rig.verifier.note_accepted(*login)  # the home door saw the music server accept it again
+    assert rig.verifier.vouched(*login) is True
+
+    other = rig.login("nina")
+    assert rig.verifier.verify(*other)
+    rig.now[0] += DAY + 1
+    rig.verifier.note_accepted(*other)  # a day later: the first sighting has expired, so this is a first again
+    assert rig.verifier.vouched(*other) is False
+
+
+def test_the_logins_seen_once_are_held_in_a_bounded_memory_only() -> None:
+    from encore_server import auth
+
+    rig = Rig()
+    for i in range(auth.SEEN_ONCE_CAP + 50):
+        rig.verifier.note_accepted("flood", f"{i:032x}", "saltaaaa")
+
+    assert len(rig.verifier._seen_once) <= auth.SEEN_ONCE_CAP  # noqa: SLF001
+    assert len(rig.verifier._vouched) == 0  # noqa: SLF001

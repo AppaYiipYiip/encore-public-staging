@@ -84,6 +84,7 @@ from .routes import session as session_routes
 from .routes import setup as setup_routes
 from .routes.common import (
     API_PREFIX,
+    HomeLoginGuard,
     Services,
     _youtube_status,
     authorize_public_subsonic,
@@ -441,6 +442,7 @@ def create_app(
         public=is_public_request,
         authorize_public=authorize_public_subsonic,
         web_page_open=music_web_page_open,
+        home_guard=HomeLoginGuard(),
     )
 
     @app.exception_handler(ApiError)

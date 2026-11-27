@@ -43,6 +43,8 @@ VOUCH_TTL_S = 24 * 3600.0
 VOUCH_CAP = 5000
 #: At most this many remembered logins for one name: a member who sends the right password with a fresh salt on every call must not push the owner's out of the memory.
 VOUCH_PER_NAME = 32
+#: How many logins seen once (not yet remembered) are held, in memory only.
+SEEN_ONCE_CAP = 5000
 #: A remembered login that is used again is written to the database again at most this often (the memory in the process is renewed by every use).
 VOUCH_RENEW_S = 3600.0
 
@@ -100,6 +102,10 @@ class NavidromeVerifier:
         self._vouch_key = secrets.token_bytes(32)
         self._vouched: dict[bytes, tuple[str, float]] = {}
         self._written: dict[bytes, float] = {}  # digest -> wall-clock seconds of its last write to the store
+        # A login is remembered on its SECOND accepted sighting, not its first (P3-34 2b review): an app that follows the Subsonic documentation makes a fresh salt for every call, so each call
+        # would be a new digest, a database write and an eviction, and a flood of them under one name would push the owner's real entry out. A digest seen once is held here, in memory only and
+        # bounded; a credential that never repeats never leaves it, and one that does (the Encore app keeps one salt per install, a plain password never changes) is known from its second call.
+        self._seen_once: dict[bytes, float] = {}
         self._store = store
         self._wall = wall_clock
         self._loaded = store is None
@@ -165,6 +171,13 @@ class NavidromeVerifier:
         now, wall = self._clock(), self._wall()
         dropped: list[bytes] = []
         with self._vouch_lock:
+            if digest not in self._vouched:
+                first = self._seen_once.pop(digest, None)
+                if first is None or now - first >= self._vouch_ttl:
+                    self._seen_once[digest] = now  # the first sighting: remembered here only
+                    while len(self._seen_once) > SEEN_ONCE_CAP:
+                        self._seen_once.pop(next(iter(self._seen_once)))
+                    return
             fresh = digest not in self._vouched
             self._vouched[digest] = (name, now)
             if fresh:
@@ -187,6 +200,20 @@ class NavidromeVerifier:
             self._persist_drop(d)
         if write:
             self._persist(lambda store: store.put(digest, name, int(wall * 1000)))
+
+    def note_accepted(self, user: str, token: str, salt: str) -> None:
+        """The gateway saw the music server ACCEPT this login at the home door (P3-34 slice 2b): it is a device this server now knows, exactly as if [verify] had asked. [token] and [salt] are the
+        `t` and `s` of a token login, or `p:` and the password as written and an empty salt for a plain one: they only ever go into the keyed digest."""
+        self._vouch(user, token, salt)
+
+    def drop_vouch(self, user: str, token: str, salt: str) -> None:
+        """The gateway saw the music server REFUSE a login that was known: it was good once and is not any more (the password changed), a guess like any other from now on."""
+        digest = self._fingerprint(user, token, salt)
+        with self._vouch_lock:
+            known = self._vouched.pop(digest, None) is not None
+            self._written.pop(digest, None)
+        if known:
+            self._persist_drop(digest)
 
     def vouched(self, user: str, token: str, salt: str) -> bool:
         """Is this a device the server already knows: a login the music server ACCEPTED within the last day (P3-34 slice 2a, docs/21)? Such a login skips the refusals of the guess limits (the

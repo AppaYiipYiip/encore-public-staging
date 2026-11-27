@@ -149,3 +149,117 @@ def test_a_right_login_and_a_missing_login_are_told_apart_from_a_wrong_one(
         print("\n=== P3-34 2b: how the music server answers a RIGHT login, and none")
         print("\n".join(table))
     assert missing["code"] is not None, f"a call with no credential at all was not an error answer: {missing}"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------- review of 2b: what the guard must not assume
+
+
+def ask_raw(
+    endpoint: str,
+    pairs: list[tuple[str, str]],
+    *,
+    post: list[tuple[str, str]] | None = None,
+    headers: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Like [ask], but with the parameters as a LIST (a name may repeat), an optional form body and optional headers: what the music server does with things an app should never send."""
+    import gzip
+
+    url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
+    data = urllib.parse.urlencode(post).encode() if post is not None else None
+    request = urllib.request.Request(url, data=data, headers=headers or {}, method="POST" if post is not None else "GET")
+    if post is not None:
+        request.add_header("Content-Type", "application/x-www-form-urlencoded")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
+            status, answer_headers, body = response.status, response.headers, response.read()
+    except urllib.error.HTTPError as error:
+        status, answer_headers, body = error.code, error.headers, error.read()
+    encoding = answer_headers.get("content-encoding") or ""
+    shown = gzip.decompress(body) if encoding == "gzip" else body
+    text = shown[:600].decode("utf-8", "replace")
+    found = re.search(r'"code"\s*:\s*(\d+)', text) or re.search(r'code="(\d+)"', text)
+    return {
+        "status": status,
+        "type": (answer_headers.get("content-type") or "").split(";")[0].strip(),
+        "encoding": encoding or "-",
+        "length": answer_headers.get("content-length"),
+        "chunked": "chunked" in (answer_headers.get("transfer-encoding") or ""),
+        "size": len(body),
+        "code": int(found.group(1)) if found else None,
+        "ok": '"status":"ok"' in text.replace(" ", "") or 'status="ok"' in text,
+    }
+
+
+def test_how_a_compressed_answer_a_form_post_login_and_a_repeated_name_are_answered(
+    accounts: dict[str, str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The guard reads a small sized answer and decides on what the music server will read. What it must NOT assume, measured here and only printed (the design follows what is found): does the
+    music server compress an answer for a client that asks (a compressed refusal cannot be read), does it read a login from a form body, and WHICH of two values of one name does it check?"""
+    person, password = accounts["person"], accounts["person_pw"]
+    salt = secrets.token_hex(6)
+    right_t, wrong_t = token(password, salt), token("not-the-password", salt)
+    gzip_ = {"Accept-Encoding": "gzip"}
+    rows: list[tuple[str, dict[str, Any]]] = []
+
+    def record(label: str, got: dict[str, Any]) -> None:
+        rows.append((label, got))
+
+    record(
+        "gzip   WRONG t/s  ping json",
+        ask_raw("ping.view", [("u", person), ("t", wrong_t), ("s", salt), ("f", "json")], headers=gzip_),
+    )
+    record("gzip   WRONG p=   ping xml", ask_raw("ping.view", [("u", person), ("p", "nope")], headers=gzip_))
+    record(
+        "gzip   RIGHT t/s  ping json",
+        ask_raw("ping.view", [("u", person), ("t", right_t), ("s", salt), ("f", "json")], headers=gzip_),
+    )
+    record(
+        "gzip   RIGHT t/s  getAlbumList2 json",
+        ask_raw(
+            "getAlbumList2.view", [("u", person), ("t", right_t), ("s", salt), ("f", "json"), ("type", "newest")], headers=gzip_
+        ),
+    )
+    record("form   WRONG p=   body only json", ask_raw("ping.view", [], post=[("u", person), ("p", "nope"), ("f", "json")]))
+    record("form   RIGHT p=   body only json", ask_raw("ping.view", [], post=[("u", person), ("p", password), ("f", "json")]))
+    record(
+        "form   RIGHT t/s  body only json",
+        ask_raw("ping.view", [], post=[("u", person), ("t", right_t), ("s", salt), ("f", "json")]),
+    )
+    record(
+        "both   query RIGHT, body WRONG",
+        ask_raw("ping.view", [("u", person), ("p", password), ("f", "json")], post=[("u", person), ("p", "nope")]),
+    )
+    record(
+        "both   query WRONG, body RIGHT",
+        ask_raw("ping.view", [("u", person), ("p", "nope"), ("f", "json")], post=[("u", person), ("p", password)]),
+    )
+    record(
+        "repeat u=nobody&u=person, p RIGHT",
+        ask_raw("ping.view", [("u", "nobody"), ("u", person), ("p", password), ("f", "json")]),
+    )
+    record(
+        "repeat u=person&u=nobody, p RIGHT",
+        ask_raw("ping.view", [("u", person), ("u", "nobody"), ("p", password), ("f", "json")]),
+    )
+    record(
+        "repeat u=person, p=WRONG&p=RIGHT", ask_raw("ping.view", [("u", person), ("p", "nope"), ("p", password), ("f", "json")])
+    )
+    record(
+        "repeat u=person, p=RIGHT&p=WRONG", ask_raw("ping.view", [("u", person), ("p", password), ("p", "nope"), ("f", "json")])
+    )
+    record(
+        "repeat u=person, t=RIGHT&t=WRONG",
+        ask_raw("ping.view", [("u", person), ("t", right_t), ("t", wrong_t), ("s", salt), ("f", "json")]),
+    )
+    record(
+        "repeat u=person, t=WRONG&t=RIGHT",
+        ask_raw("ping.view", [("u", person), ("t", wrong_t), ("t", right_t), ("s", salt), ("f", "json")]),
+    )
+
+    with capsys.disabled():
+        print("\n=== P3-34 2b review: compressed answers, form-post logins and repeated names on 0.64.2")
+        for label, got in rows:
+            print(
+                f"{label:44} -> {got['status']} {got['type']:22} enc={got['encoding']:5} length={got['length']} chunked={got['chunked']} size={got['size']:6} ok={got['ok']} code={got['code']}"
+            )
+    assert all(got["status"] < 500 for _, got in rows), "the music server answered every one of them"
