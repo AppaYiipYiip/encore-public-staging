@@ -378,5 +378,11 @@
   "evidence": "PR #179: the claim chooses by person in SQL; the audit probe fair-share prints nina's 20 at positions 2..40 (was 1,802 to 1,840) and PASS; tests/test_scheduler.py holds docs/07 section 6's example at full size, the claim's lock, look-again, nobody-turn and query-plan rules; the cost of a claim is measured (11 ms at 2,020 queued, 39 ms at 20,000, 105 ms at 60,000); not walked",
   "at": "2026-11-27T12:15:30Z",
   "by": "Claude"
+ },
+ "P3-33": {
+  "state": "built",
+  "evidence": "The audit probe prune prints file rows left=300 and PASS (before: 0 and FAIL); tests/test_link_prune_guard.py (10: an empty answer removes nothing however often it comes, at least half listed removes at once, less than half marks and holds, a day of absence removes, a file that comes back forgets, an add-only pass and a music server that did not answer change nothing, a library reorganised under new ids is trusted by what was listed); the Home row; the line in encore status and audit_stack check prune (needs Docker) are not done; not walked",
+  "at": "2026-11-27T13:01:10Z",
+  "by": "Claude"
  }
 }

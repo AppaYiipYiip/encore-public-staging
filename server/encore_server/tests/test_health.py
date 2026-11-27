@@ -413,3 +413,19 @@ def test_a_helper_that_is_there_but_cannot_be_opened_is_not_ready_and_needs_the_
     )
     assert [n["id"] for n in stuck["needsYou"]] == ["helper"] and stuck["summary"]["state"] == "needs"
     assert row(stuck, "helper")["words"] != "Ready"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- P3-33: a music folder that looks empty
+
+
+def test_a_music_folder_that_looks_empty_is_said_in_words_and_nothing_is_said_when_all_is_listed() -> None:
+    quiet = build(facts())
+    held = build(facts(library_held_back=300, library_listed=0))
+
+    assert all(r["id"] != "library" for r in quiet["rows"])
+    shown = row(held, "library")
+    assert shown["state"] == "warn" and shown["words"] == "Looks empty or partly missing"
+    assert "0 songs" in shown["detail"] and "300 others" in shown["detail"] and "Nothing was removed" in shown["detail"]
+    need = next(n for n in held["needsYou"] if n["id"] == "library")
+    assert held["summary"]["state"] == "needs"
+    assert "mounted" in need["detail"]

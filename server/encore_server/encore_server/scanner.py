@@ -47,6 +47,8 @@ class LinkReport:
     pruned: int = 0
     skipped: int = 0
     complete: bool = False
+    #: Files whose rows were KEPT although this pass did not find them in the music server's listing (P3-33): a pass that saw less than half of what is linked does not remove anything at once.
+    held_back: int = 0
     #: What the rehome of the files the old text fold glued onto the wrong song did in this pass (P2-25 slice 4); `None` when there was nothing to do (an empty worklist).
     rehome: rehome.Report | None = None
 
@@ -157,9 +159,17 @@ def link_library(db: Database, navidrome: Library, *, page: int = PAGE, prune: b
         offset += len(songs)
     report.complete = True
     listing.complete = True
-    report.pruned = _prune(db, listing) if prune else 0
+    report.pruned, report.held_back = _prune(db, listing) if prune else (0, 0)
+    if report.held_back:
+        log.warning(
+            "the music server listed %d of the files this server has linked and not the other %d: nothing was removed because that looks like a music folder that is not there (a disk or share "
+            "that is not mounted, a restart in the middle of a scan); a file that stays absent for a day while the rest is listed is removed",
+            len(listing.seen),
+            report.held_back,
+        )
     if rehomer is not None:
-        # After the prune: a file the listing did not have is gone by now, so its ref is not waited for.
+        # After the prune: a file the listing did not have is gone by now (or, in a pass the prune did not trust, held back: not alive either, which is what the rehome counts by), so its ref is
+        # not waited for.
         try:
             report.rehome = rehomer.finish()
         except Exception:  # noqa: BLE001 - the scan did its work and committed it; the worklist is kept and the next pass tries again
@@ -203,18 +213,51 @@ def _rehome_idle(db: Database, listing: Listing) -> None:
         )
 
 
-def _prune(db: Database, listing: Listing) -> int:
+#: A pass that finds at least this share of the linked files in the music server's listing is trusted: what it does not find is removed at once (a Host who deleted some music).
+PLAUSIBLE_SHARE = 0.5
+#: What a pass that saw LESS did not find is removed only after it has been absent this long (the first miss is written down in `song_file.missing_since`). A day, not an hour: keeping the row of a
+#: file that is really gone costs nothing (a kept song whose file is gone streams from YouTube again, CF-31), and removing the rows of a library that was only not mounted for a night costs every
+#: phone its downloads and the keeper's own rows their `youtube` source.
+CONFIRM_AFTER_MS = 24 * 3600 * 1000
+
+
+def _prune(db: Database, listing: Listing) -> tuple[int, int]:
     """Files the music server no longer LISTS: their rows go; the refs stay, so nothing a person has changes. Everybody who had the song is told that it now has to be
     streamed again. A file attached after the pass began (the keeper, mid-scan) is left alone. **A file the music server lists is never "gone", whatever its tags are**
-    (`listing` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4). What
-    stays is what `Listing.alive` says: the same test the rehome counts files by."""
+    (`listing` holds every listed id, also the ones `described` cannot make anything of): its row stays, and so does the worklist ref that holds it (P2-25 slice 4). Whether a row is ALIVE
+    is what `Listing.alive` says, the same test the rehome counts files by; **a row the pass held back (below) is not alive and stays**: the rehome counts a person's last file by `alive`,
+    not by the rows present, so it never takes a held-back row for a file.
+
+    **An empty or partial answer never wipes the link (P3-33, audit B-40).** A pass that finds at least [PLAUSIBLE_SHARE] of the linked files is trusted. A pass that finds LESS removes nothing
+    now: it writes down when it first missed each file (`missing_since`) and removes a file only once it has been absent for [CONFIRM_AFTER_MS] while the music server lists something; a pass
+    that finds NOTHING while files are linked never removes anything. A file that is listed again forgets that it was missed. Returns (removed, held back)."""
     removed = 0
+    held = 0
+    now = now_ms()
     with db.tx() as conn:
-        for row in conn.execute(
-            "SELECT id, ref, navidrome_song_id, added_at FROM song_file WHERE navidrome_song_id IS NOT NULL AND added_at < ?",
+        judged = conn.execute(
+            "SELECT id, ref, navidrome_song_id, added_at, missing_since FROM song_file WHERE navidrome_song_id IS NOT NULL AND added_at < ?",
             (listing.began,),
-        ).fetchall():
-            if listing.alive(row["navidrome_song_id"], row["added_at"]):
+        ).fetchall()
+        absent = [row for row in judged if not listing.alive(row["navidrome_song_id"], row["added_at"])]
+        # What the music server LISTED, not how many of the old rows it listed: a Host who reorganised the library gets new ids for every file, and a pass that lists a full library of new ids is
+        # trusted although none of the old rows is in it. The same listing is trusted or not whatever the pass attached itself (a count of old rows only would change from one pass to the next).
+        listed = len(listing.seen)
+        back = [
+            row["id"]
+            for row in judged
+            if row["missing_since"] is not None and listing.alive(row["navidrome_song_id"], row["added_at"])
+        ]
+        for start in range(0, len(back), 500):
+            chunk = back[start : start + 500]
+            conn.execute(f"UPDATE song_file SET missing_since = NULL WHERE id IN ({','.join('?' for _ in chunk)})", chunk)  # noqa: S608 - only placeholders are formatted in
+        trusted = listed > 0 and listed >= len(judged) * PLAUSIBLE_SHARE
+        for row in absent:
+            confirmed = row["missing_since"] is not None and now - row["missing_since"] >= CONFIRM_AFTER_MS and listed > 0
+            if not (trusted or confirmed):
+                if row["missing_since"] is None:
+                    conn.execute("UPDATE song_file SET missing_since = ? WHERE id = ?", (now, row["id"]))
+                held += 1
                 continue
             conn.execute("DELETE FROM song_file WHERE id = ?", (row["id"],))
             # A song keeps exactly ONE preferred file: the one it has, or the newest remaining copy when the preferred one was the file that went (`refs.ensure_one_preferred`,
@@ -224,7 +267,7 @@ def _prune(db: Database, listing: Listing) -> int:
             refs.touch_file(conn, row["ref"])
             library.touch_ref_holders(conn, row["ref"])
             removed += 1
-    return removed
+    return removed, held
 
 
 class LibraryLinker:
