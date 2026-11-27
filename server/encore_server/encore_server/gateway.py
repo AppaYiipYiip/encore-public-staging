@@ -80,6 +80,10 @@ def _forward(headers: httpx.Headers | dict[str, str] | object) -> dict[str, str]
     return {k: v for k, v in items if k.lower() not in _HOP and k.lower() != "content-length"}
 
 
+#: The methods whose answer is not read for its body (measured on 0.64.2: a HEAD and an OPTIONS say in their headers what a GET says, a wrong login being 194 bytes of json and every right
+#: answer another length): a call that carries a login with one of them is judged by a ping of the same login instead (`judge_head`, P3-34 slice 2c).
+_NO_BODY_METHODS = ("HEAD", "OPTIONS")
+
 #: The methods whose body a music server reads a login from (Go's `ParseForm`: a POST, a PUT, a PATCH; a DELETE's body is passed on but never read).
 _FORM_METHODS = ("POST", "PUT", "PATCH")
 
@@ -202,7 +206,7 @@ def mount(
                 if refusal is not None:
                     status, headers, content = refusal
                     return Response(content, status_code=status, headers=headers)
-                if request.method == "HEAD":
+                if request.method in _NO_BODY_METHODS:
                     await judge_head(request, login, query)
         elif web_page_open is None or not web_page_open(request):
             return _not_found(request)
@@ -244,7 +248,9 @@ def mount(
         for keep in ("content-length", "content-encoding"):
             if keep in answer.headers:
                 out[keep] = answer.headers[keep]
-        if login is not None and home_guard is not None and request.method != "HEAD":  # a HEAD was judged by its ping above
+        if (
+            login is not None and home_guard is not None and request.method not in _NO_BODY_METHODS
+        ):  # those were judged by their ping above
             # What the music server said about the login, decided on EVIDENCE (`subsonic_guard.how_to_read`): only a small, sized, uncompressed json or xml answer is read (a wrong login is always
             # exactly that, measured) and is a refusal, an acceptance (an ok, or an error that can only come after the login passed) or nothing we can tell; a song, a picture or a list far larger
             # than any refusal is an acceptance and streams untouched below. Anything else (compressed, chunked, an unknown type, a code 10) is neither counted nor remembered.

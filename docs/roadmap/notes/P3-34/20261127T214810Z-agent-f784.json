@@ -1,0 +1,13 @@
+{
+ "id": "20261127T214810Z-agent-f784",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T21:48:10Z",
+ "type": "note",
+ "body": "CLOSED by PR 188 (27 Nov 2026), and what is still open before P3-34 can be marked built. MEASURED on Navidrome 0.64.2: a HEAD and an OPTIONS say in their headers what a GET says (a wrong login is application/json of 194 bytes, 168 with gzip; right answers differ: ping 131, stream 32,515 bytes of audio/ogg, getAlbumList2 698), so both were a password oracle at home. FIXED: a HEAD or OPTIONS that carries a login is judged by a GET ping of the same login through the same guard before it is passed on; the first login reader also missed names with a space or an accent, short or odd salts and long passwords (uncounted though the music server checks them): it now reads what the music server reads. STILL OPEN (slice 2d, do not `mark P3-34 built` before it): (1) what the real music server answers for a NAME THAT DOES NOT EXIST (the integration check found a made-up name with a space not counted), (2) which spellings of a real name the music server accepts with the right password and whether the per-account limit folds them to the same key, (3) a burst of concurrent wrong logins probably passes the limit before any is counted (refuse checks failures counted so far; failed only counts after the answer): reserve an in-flight slot at refuse and release it on every path, with a separate ceiling from measured app parallelism. Then slice 3.",
+ "to": [
+  "agent"
+ ],
+ "replaces": "20261127T204326Z-agent-a7b9"
+}

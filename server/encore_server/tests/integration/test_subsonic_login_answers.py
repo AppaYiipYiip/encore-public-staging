@@ -362,3 +362,52 @@ def ask_full(endpoint: str, pairs: list[tuple[str, str]]) -> str:
     url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
     with urllib.request.urlopen(url, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
         return str(response.read().decode("utf-8", "replace"))
+
+
+# --------------------------------------------------------------------------------------------------------------------------------- names: unknown, and the spellings the music server maps to a user
+
+
+def test_what_an_unknown_name_gets_and_which_spellings_of_a_real_name_the_music_server_accepts(
+    accounts: dict[str, str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Two questions the guard depends on, printed (the design follows what is found): (1) what the music server answers for a name that does not exist (a different answer would let a guesser
+    list the names that do, and the guard must count whatever it is); (2) which other spellings of a real name it accepts with the RIGHT password (a spelling it accepts that the account limit does not
+    fold to the same key is a way past the account limit)."""
+    person, password = accounts["person"], accounts["person_pw"]
+    salt = secrets.token_hex(6)
+    right, wrong = token(password, salt), token("not-the-password", salt)
+    rows: list[tuple[str, dict[str, Any]]] = []
+
+    def record(label: str, **params: str) -> None:
+        rows.append((label, ask("ping.view", f="json", **params)))
+
+    unknown = "nobody-" + secrets.token_hex(3)
+    for name in (unknown, "José Maria", "two words", "UPPER-" + secrets.token_hex(2).upper()):
+        record(f"UNKNOWN {name!r:22} t/s", u=name, t=wrong, s=salt)
+        record(f"UNKNOWN {name!r:22} p=", u=name, p="guess")
+        record(f"UNKNOWN {name!r:22} p=enc:", u=name, p="enc:" + b"guess".hex())
+    rows.append(("UNKNOWN name, xml (the default)", ask("ping.view", u=unknown, t=wrong, s=salt)))
+
+    spellings = {
+        "exact": person,
+        "UPPER": person.upper(),
+        "Capitalised": person.capitalize(),
+        "trailing space": person + " ",
+        "leading space": " " + person,
+        "long s U+017F for an s": person.replace("s", "ſ", 1),
+        "fullwidth t U+FF54": person.replace("t", "ｔ", 1),
+        "Kelvin sign for a k": person + "K",
+        "trailing dot": person + ".",
+        "NUL after the name": person + "\x00",
+    }
+    for label, name in spellings.items():
+        record(f"RIGHT password, {label:24} t/s", u=name, t=right, s=salt)
+        record(f"RIGHT password, {label:24} p=", u=name, p=password)
+
+    with capsys.disabled():
+        print("\n=== P3-34 2d: unknown names and spellings of a real name (an accepted spelling prints ok=True)")
+        for label, got in rows:
+            print(
+                f"{label:52} -> {got['status']} {got['type']:22} length={got['length']} chunked={got['chunked']} code={got['code']} ok={got['ok']}"
+            )
+    assert rows

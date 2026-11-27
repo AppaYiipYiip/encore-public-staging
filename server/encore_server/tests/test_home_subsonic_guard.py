@@ -103,8 +103,8 @@ class Music:
         if self.fail_get and request.method == "GET":
             raise httpx.ConnectError("the music server is not answering", request=request)
         answered = self.misbehave(self.answer_for(request, params))
-        if request.method == "HEAD":
-            # As measured on 0.64.2: the headers of the GET answer (its content type and its length), and no body.
+        if request.method in ("HEAD", "OPTIONS"):
+            # As measured on 0.64.2: the headers of the GET answer (its content type and its length); no body is read.
             return httpx.Response(answered.status_code, headers=dict(answered.headers), stream=httpx.ByteStream(b""))
         return answered
 
@@ -726,3 +726,14 @@ def test_from_the_internet_a_salt_or_a_token_of_a_shape_this_server_does_not_mak
         assert got.status_code == 401, params
 
     assert rig.reached() == 0
+
+
+def test_an_options_call_with_a_login_is_judged_by_a_ping_like_a_head(rig: Rig) -> None:
+    """Measured on 0.64.2 (the log of PR 188): an OPTIONS answers with the GET's headers too (131 bytes for a right login, 194 for a wrong one), the same oracle as a HEAD."""
+    answers = [
+        rig.client.request("OPTIONS", "/rest/ping.view", params=[("u", "marwa"), ("p", f"guess-{i}"), ("f", "json")]).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+    assert rig.reached("marwa") <= 10
