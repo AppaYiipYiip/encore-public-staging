@@ -1,0 +1,12 @@
+{
+ "id": "20261127T001415Z-agent-d93c",
+ "item": "P3-06",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T00:14:15Z",
+ "type": "note",
+ "body": "Slice 4 (Home + GET admin/health, PR #152) follow-ups, none blocking:\n(1) TIME ZONE: \"today\" counts start at midnight of the CONTAINER clock (UTC); the image sets no TZ and has no tzdata. Proper fix = a Host setting \"timezone\" (IANA name) in host_setting, tzdata in the image, the installer proposes the computer's own zone (timedatectl), and the Today row uses it. Until then the row says \"Since midnight UTC\" (honest, not local). Belongs with the Settings page (W-07).\n(2) The \"update\" part of host-status.json ({available, checkedAt}) is not written yet: it needs the release channel (P3-27) or the helper (slice 6). Home has no \"newer version\" row until then.\n(3) A key renewed at Tailscale is noticed only at the next write of host-status.json (every night by the backup timer, and by any encore backup/update/funnel/secure). Until then Home may still warn about the old key end, and says how old the report is.\n(4) Needs-you buttons name pages by label; a page that does not exist yet shows no button.",
+ "to": [
+  "owner"
+ ]
+}
