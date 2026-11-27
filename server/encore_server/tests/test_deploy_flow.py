@@ -183,7 +183,7 @@ class Install:
         return self.log.read_text(encoding="utf-8").splitlines()
 
     def encore(
-        self, *args: str, stdin: str = "", ping: str = "ok", fail: str = "", extra_env: dict[str, str] | None = None
+        self, *args: str, stdin: str | bytes = "", ping: str = "ok", fail: str = "", extra_env: dict[str, str] | None = None
     ) -> subprocess.CompletedProcess[str]:
         assert BASH is not None
         env = {
@@ -200,16 +200,24 @@ class Install:
             "PYTHONUTF8": "1",
             "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
         }
-        return subprocess.run(
+        exact = isinstance(
+            stdin, bytes
+        )  # byte for byte: text mode would turn a newline into CR LF on Windows, and the helper's grammar is exact
+        done = subprocess.run(
             [BASH, str(DEPLOY / "encore"), *args],
             input=stdin,
             capture_output=True,
-            text=True,
+            text=not exact,
             check=False,
             timeout=120,
             env=env,
             cwd=SERVER_DIR,
         )
+        if exact:
+            return subprocess.CompletedProcess(
+                done.args, done.returncode, done.stdout.decode("utf-8", "replace"), done.stderr.decode("utf-8", "replace")
+            )
+        return done
 
 
 def secret_in(text: str) -> str:

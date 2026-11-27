@@ -10,6 +10,7 @@
 #   encore restore FILE         put such a copy back (asks for the backup key; what is here now is set aside, not deleted)
 #   encore autobackup on|off|status   the nightly backup (on by default)
 #   encore addon list | ID STATE   the optional things Encore does (docs/35): who runs each, and change one (the admin pages do the same)
+#   encore helper install       let the admin pages make a backup and switch the away address (a socket only the Encore server can open; docs/36 section 3)
 #   encore reset-password NAME  a new password for somebody who cannot sign in (an owner is asked for the recovery key shown once at setup; none is allowed here)
 #   encore recovery-key [NAME]  a new recovery key for an owner (the old one stops working)
 #   encore secure [--check]     lock the music server's passwords and the backups with keys of this install (--check: is the key you saved the right one)
@@ -32,7 +33,14 @@ note() { printf '  %s%s%s\n' "$DIM" "$*" "$OFF"; }
 die() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$OFF" >&2; exit 1; }
 
 [ -f "$DIR/compose.yaml" ] || die "Encore is not installed here (no $DIR/compose.yaml)."
-dc() { docker compose --project-directory "$DIR" "$@"; }
+# The compose override of the helper (docs/36 section 3) is part of the install only once `encore helper install` has written it: an install without it runs exactly as before.
+dc() {
+    if [ -f "$DIR/compose.helper.yaml" ]; then
+        docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" "$@"
+    else
+        docker compose --project-directory "$DIR" "$@"
+    fi
+}
 env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
 # Writing one setting of the install (ENV_FILE, by default its .env): replace the line or add it; unset_env removes it. The values are plain addresses,
 # never anything with a | or & in it. The file keeps the private mode the installer gave it.
@@ -73,6 +81,9 @@ funnel_address() {
 
 BACKUP_DIR="$(env_value ENCORE_BACKUP_DIR)"; BACKUP_DIR="${BACKUP_DIR:-$DIR/backups}"
 KEEP_BACKUPS=7
+# The backups a web page asked for live in a pool of their own (docs/36 section 3): the newest 3, at most one in ten minutes, and never in the folder of the nightly and the terminal's, so that no
+# number of requests can rotate a good backup out.
+HELPER_POOL="$BACKUP_DIR/helper"; HELPER_KEEP=3; HELPER_EVERY_S="${ENCORE_HELPER_EVERY_S:-600}"
 image_ref() {
     local image tag
     image="$(env_value ENCORE_IMAGE)"; image="${image:-ghcr.io/appayiipyiip/encore-server}"
@@ -90,6 +101,7 @@ way_back() {
     printf 'To go back: put ENCORE_TAG=before-update in %s/.env (the program that was running is kept under that name), copy %s/compose.yaml.before-update over %s/compose.yaml, then run  sudo encore restore %s  (the backup made first).' \
         "$DIR" "$DIR" "$DIR" "${file:-FILE}"
 }
+backups_in() { find "$1" -maxdepth 1 \( -name 'encore-backup-*.tar.gz' -o -name 'encore-backup-*.tar.gz.age' \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-; }
 backups_newest_first() { find "$BACKUP_DIR" -maxdepth 1 \( -name 'encore-backup-*.tar.gz' -o -name 'encore-backup-*.tar.gz.age' \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-; }
 newest_backup() { backups_newest_first | head -1 || true; }
 last_backup_text() {
@@ -163,11 +175,11 @@ guard_password_key() {
 backup_is_locked() { [ -s "$BACKUP_PUB" ]; }
 # Locks the archive FILE to the public key of this install: FILE.age is made next to it and FILE is removed. The secret half is not on this computer.
 lock_archive() {
-    local plain="$1"
-    backup_tool 0:0 -v "$(dirname "$plain"):/s" -v "$BACKUP_DIR:/b" -v "$BACKUP_PUB:/key/backup.pub:ro" "$(image_ref)" \
+    local plain="$1" into="${2:-$BACKUP_DIR}"
+    backup_tool 0:0 -v "$(dirname "$plain"):/s" -v "$into:/b" -v "$BACKUP_PUB:/key/backup.pub:ro" "$(image_ref)" \
         -m encore_server backup --encrypt "/s/$(basename "$plain")" --to /key/backup.pub --out "/b/$(basename "$plain").age" >/dev/null 2>&1 || return 1
-    chmod 600 "$BACKUP_DIR/$(basename "$plain").age"
-    touch -r "$plain" "$BACKUP_DIR/$(basename "$plain").age"
+    chmod 600 "$into/$(basename "$plain").age"
+    touch -r "$plain" "$into/$(basename "$plain").age"
     rm -f -- "$plain"
 }
 # The backups made before this install had a backup key are plain files holding the accounts and the keys in the clear: lock them where they are.
@@ -283,6 +295,11 @@ cmd_funnel() {
     local what="${1:-status}" port="${PORT}"
     case "$what" in
         on)
+            # Asked by a web page (the helper, docs/36 section 3): only for a Tailscale that is already installed and signed in. Installing it or signing in is for the person at the terminal: a sign-in
+            # link joins the computer to the network of whoever completes it, and nothing a page asks may put a link in front of a stranger.
+            if [ "${ENCORE_HELPER:-}" = 1 ]; then
+                { command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1; } || die "Set up the away address once at the computer: sudo encore funnel on"
+            fi
             if ! command -v tailscale >/dev/null 2>&1; then
                 say ""
                 say "  Tailscale is not on this computer. It is what lets your phone reach Encore from anywhere, with a proper https address."
@@ -339,16 +356,22 @@ cmd_funnel() {
 
 cmd_backup() {
     need_root backup
-    local quiet=0 stamp work stage archive
+    local quiet=0 stamp work stage archive pool="$BACKUP_DIR" keep="$KEEP_BACKUPS"
     for arg in "$@"; do
-        case "$arg" in --quiet | -q) quiet=1 ;; *) die "Unknown option: $arg" ;; esac
+        case "$arg" in --quiet | -q) quiet=1 ;; --pool=helper) pool="$HELPER_POOL"; keep="$HELPER_KEEP" ;; *) die "Unknown option: $arg" ;; esac
     done
+    if [ "$pool" != "$BACKUP_DIR" ]; then
+        local last now
+        mkdir -p "$pool"; chmod 700 "$pool"
+        last="$(backups_in "$pool" | head -1)"; now="$(date +%s)"
+        if [ -n "$last" ] && [ $((now - $(stat -c %Y "$last"))) -lt "$HELPER_EVERY_S" ]; then die "A backup was made a moment ago from the admin pages. Wait ten minutes, or make one at the computer: sudo encore backup"; fi
+    fi
     [ -f "$DIR/data/encore.db" ] || die "Encore has no database yet in $DIR/data: nothing to back up."
     [ -f "$DIR/navidrome/navidrome.db" ] || die "The music server's database was not found in $DIR/navidrome."
     stamp="$(date -u +%Y%m%d-%H%M%S)"
     mkdir -p "$BACKUP_DIR"
     chmod 700 "$BACKUP_DIR"
-    find "$BACKUP_DIR" -maxdepth 1 -name 'encore-backup-*.part' -delete 2>/dev/null || true
+    find "$pool" -maxdepth 1 -name 'encore-backup-*.part' -delete 2>/dev/null || true
     work="$(mktemp -d "$DIR/.backup-XXXXXX")"
     stage="$(mktemp -d "$DIR/.backup-stage-XXXXXX")"
     # shellcheck disable=SC2064
@@ -378,16 +401,16 @@ cmd_backup() {
     } >"$work/manifest.txt"
     # The archive holds the accounts, the server's private identity key, the key that signs song addresses, the music server's administrator login and its password
     # key (P3-30): it is made in a private staging folder and, when this install has a backup key, only the LOCKED copy ever reaches the backups folder.
-    archive="$BACKUP_DIR/encore-backup-$stamp.tar.gz"
+    archive="$pool/encore-backup-$stamp.tar.gz"
     if backup_is_locked; then
         (umask 077 && tar -C "$work" -czf "$stage/encore-backup-$stamp.tar.gz" .)
-        lock_archive "$stage/encore-backup-$stamp.tar.gz" || die "The backup could not be locked, so it was not kept (a copy that is not locked would hold your accounts and keys in the clear)."
+        lock_archive "$stage/encore-backup-$stamp.tar.gz" "$pool" || die "The backup could not be locked, so it was not kept (a copy that is not locked would hold your accounts and keys in the clear)."
         archive="$archive.age"
     else
         (umask 077 && tar -C "$work" -czf "$archive.part" . && mv "$archive.part" "$archive")
     fi
-    # Keep the newest seven.
-    backups_newest_first | tail -n +$((KEEP_BACKUPS + 1)) | while IFS= read -r old; do rm -f -- "$old"; done
+    # Keep the newest seven (the helper's pool: the newest three, in its own folder).
+    backups_in "$pool" | tail -n +$((keep + 1)) | while IFS= read -r old; do rm -f -- "$old"; done
     if [ "$quiet" != 1 ]; then
         if backup_is_locked; then
             ok "Backup made and locked: $archive ($(du -h "$archive" | cut -f1))"
@@ -688,6 +711,206 @@ cmd_recovery_key() {
     say ""
 }
 
+# ---------------------------------------------------------------------------------------------------------------------------------------- the helper (docs/36 section 3)
+# What the admin pages may ask of this computer: SEVEN actions, each narrower than the command it calls, over a local socket that only the Encore server's container can open. The
+# session below runs as root, one request per connection, and is a `case` and nothing else: no `eval`, no `sh -c`, no argument that is a path, a command or an image (no action takes
+# an argument at all). Restore and update are NOT here, on purpose (docs/36: a restore needs the backup key's secret half, an update a release channel that can be verified).
+HELPER_LOCK="${ENCORE_HELPER_LOCK:-/run/encore/helper.lock}"
+HELPER_JOBS="${ENCORE_JOBS_DIR:-$DIR/jobs}"
+HELPER_UNIT_DIR="${ENCORE_UNIT_DIR:-/etc/systemd/system}"
+HELPER_TMPFILES_DIR="${ENCORE_TMPFILES_DIR:-/etc/tmpfiles.d}"
+
+# One line of the answer, and never more than one: no line break, no control character, at most 300 characters.
+helper_say() { printf '%s\n' "$(printf '%s' "$1" | tr -d '\000-\037' | cut -c1-300)"; }
+# The helper's own record of a request (the authoritative one: outside every container), and a line in the system log.
+helper_job() {
+    local at
+    at="$(date +%s)"
+    mkdir -p "$HELPER_JOBS" 2>/dev/null && chmod 700 "$HELPER_JOBS" 2>/dev/null || true
+    printf '{"at":%s,"action":"%s","result":"%s"}\n' "$at" "$1" "$2" >"$HELPER_JOBS/$at-$$-$1.json" 2>/dev/null || true
+    logger -t encore-helper -- "$1 $2" 2>/dev/null || true
+    # the newest 200 records are kept
+    find "$HELPER_JOBS" -maxdepth 1 -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -rn | tail -n +201 | cut -d' ' -f2- | while IFS= read -r old; do rm -f -- "$old"; done
+}
+helper_refuse() {
+    logger -t encore-helper -- "refused: $1" 2>/dev/null || true
+    helper_job refused refused
+    helper_say "failed: That request was refused."
+}
+# The sentence a failed action said, for the page: the last line that `die` wrote, without its marks.
+helper_message() {
+    local text
+    text="$(printf '%s
+' "$1" | tr -d '' | LC_ALL=C sed -n 's/^[^A-Za-z0-9]*//;/./p' | tail -n 1)"
+    printf '%s' "${text:-The action did not finish. See: sudo encore logs}"
+}
+helper_tailscale_state() {
+    if ! command -v tailscale >/dev/null 2>&1; then printf missing; elif tailscale status >/dev/null 2>&1; then printf ready; else printf signedout; fi
+}
+# Runs one fixed function of this script and answers `done:` or `failed:` with its own sentence.
+helper_run() { # helper_run ACTION "what it did" function args...
+    local action="$1" words="$2" out
+    shift 2
+    if out="$( ("$@") 2>&1)"; then
+        helper_say "done: $words"
+        helper_job "$action" ok
+    else
+        helper_say "failed: $(helper_message "$out")"
+        helper_job "$action" failed
+    fi
+}
+helper_status() {
+    local newest
+    newest="$(newest_backup)"
+    helper_say "result: helper=1"
+    helper_say "result: encoreServer=$(state_of encore-server | tr -c 'A-Za-z0-9._() -' '_' | cut -c1-40)"
+    helper_say "result: musicServer=$(state_of navidrome | tr -c 'A-Za-z0-9._() -' '_' | cut -c1-40)"
+    helper_say "result: away=$(funnel_address)"
+    helper_say "result: tailscale=$(helper_tailscale_state)"
+    helper_say "result: lastBackup=${newest:+$(stat -c %Y "$newest")}"
+    helper_say "done: ok"
+    helper_job status ok
+}
+helper_backup_list() {
+    local pool file label
+    for pool in "$BACKUP_DIR" "$HELPER_POOL"; do
+        if [ "$pool" = "$HELPER_POOL" ]; then label="admin"; else label="computer"; fi
+        while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            helper_say "item: $label $(basename "$file") $(stat -c %s "$file") $(stat -c %Y "$file") $(case "$file" in *.age) echo locked ;; *) echo plain ;; esac)"
+        done < <(backups_in "$pool")
+    done
+    helper_say "done: ok"
+    helper_job backup.list ok
+}
+helper_restart() {
+    local out
+    # `encore restart` refuses, in words, when the key of the accounts is not the one they were locked with; nothing here can ask a question (no terminal is behind the helper)
+    if ! out="$( (guard_password_key) 2>&1)"; then
+        helper_say "failed: $(helper_message "$out")"
+        helper_job restart failed
+        return 0
+    fi
+    helper_say "done: Restarting. The admin pages will not answer for about a minute."
+    helper_job restart ok
+    if command -v systemd-run >/dev/null 2>&1; then
+        systemd-run --no-block --collect --quiet --unit "encore-helper-restart-$(date +%s)" "$ENCORE_BIN" restart >/dev/null 2>&1 || true
+    fi
+}
+
+# `encore helper-session`: ONE request line on standard input, ONE answer on standard output, then it ends. Started by systemd for every connection of the socket, as root.
+#   request:  TOKEN ACTION            (a token of 32 to 128 letters, digits, - and _; an action from the list; one space; nothing else; at most 256 bytes; read within 5 seconds)
+#   answer:   result: key=value ...   then   done: a sentence   or   failed: a sentence       (`item:` lines for backup.list)
+cmd_helper_session() {
+    local line expected token action
+    set -f
+    expected="$(env_value ENCORE_HELPER_TOKEN)"
+    IFS= read -r -t 5 -n 257 line || { helper_refuse "no request"; return 0; }
+    if [ "${#line}" -gt 256 ]; then helper_refuse "too long"; return 0; fi
+    if ! [[ "$line" =~ ^([A-Za-z0-9_-]{32,128})\ ([a-z]+(\.[a-z]+)?)$ ]]; then helper_refuse "not a request"; return 0; fi
+    token="${BASH_REMATCH[1]}"
+    action="${BASH_REMATCH[2]}"
+    if [ "${#expected}" -lt 32 ] || [ "$token" != "$expected" ]; then helper_refuse "token"; return 0; fi
+    case "$action" in
+        backup.make | away.on | away.off | restart)
+            # one change at a time: a second request is told so, not queued
+            exec 9>"$HELPER_LOCK" 2>/dev/null || { helper_say "failed: The helper could not take its lock."; helper_job "$action" failed; return 0; }
+            flock -n 9 || { helper_say "failed: Another request is running. Try again in a minute."; helper_job "$action" busy; return 0; }
+            ;;
+    esac
+    case "$action" in
+        status) helper_status ;;
+        backup.list) helper_backup_list ;;
+        away.status)
+            helper_say "result: address=$(funnel_address)"
+            helper_say "result: tailscale=$(helper_tailscale_state)"
+            helper_say "done: ok"
+            helper_job away.status ok
+            ;;
+        backup.make) helper_run backup.make "A backup was made." cmd_backup --quiet --pool=helper ;;
+        away.on) helper_run away.on "The away address is on." helper_funnel_on ;;
+        away.off) helper_run away.off "The away address is off." cmd_funnel off ;;
+        restart) helper_restart ;;
+        *) helper_refuse "unknown action" ;;
+    esac
+}
+# `away.on` as the helper asks it: never installs Tailscale, never signs in, never asks (see cmd_funnel).
+helper_funnel_on() { ENCORE_HELPER=1 cmd_funnel on; }
+
+# `encore helper install`: the group, the socket, the token and the compose override, once (safe to run again). `--files-only` writes the files and the settings and touches no group,
+# no unit and no container (what the tests, and `install.sh` before it starts anything, use).
+helper_write_files() {
+    local gid
+    gid="$(env_value ENCORE_HELPER_GID)"
+    [ -n "$gid" ] || die "The helper has no group id (ENCORE_HELPER_GID)."
+    [ -n "$(env_value ENCORE_HELPER_TOKEN)" ] || set_env ENCORE_HELPER_TOKEN "$(new_secret 40)"
+    mkdir -p "$HELPER_UNIT_DIR" "$HELPER_TMPFILES_DIR"
+    # /run/encore exists at every boot BEFORE the containers do, with the right owner: Docker must find a directory to mount, never make one in the place of a socket
+    printf 'd /run/encore 0750 root encore-helper -\n' >"$HELPER_TMPFILES_DIR/encore-helper.conf"
+    cat >"$HELPER_UNIT_DIR/encore-helper.socket" <<UNIT
+[Unit]
+Description=Encore helper: the few things the admin pages may ask of this computer
+
+[Socket]
+ListenStream=/run/encore/helper.sock
+SocketMode=0660
+SocketUser=root
+SocketGroup=encore-helper
+Accept=yes
+MaxConnections=8
+
+[Install]
+WantedBy=sockets.target
+UNIT
+    cat >"$HELPER_UNIT_DIR/encore-helper@.service" <<UNIT
+[Unit]
+Description=Encore helper session
+
+[Service]
+ExecStart=$ENCORE_BIN helper-session
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeMaxSec=300
+UNIT
+    # The container opens the DIRECTORY (a bind mount of a file that is not there yet would make Docker create a directory in its place), as a member of the socket's group. `dc` reads this
+    # file only when it exists, so an install that has not run this is untouched.
+    cat >"$DIR/compose.helper.yaml" <<'COMPOSE'
+# Written by `encore helper install` (docs/36 section 3): what lets the Encore server reach the helper's socket. Nothing else in it.
+services:
+  encore-server:
+    group_add:
+      - "${ENCORE_HELPER_GID}"
+    environment:
+      ENCORE_HELPER_TOKEN: ${ENCORE_HELPER_TOKEN}
+      ENCORE_HELPER_SOCKET: /run/encore/helper.sock
+    volumes:
+      - /run/encore:/run/encore
+COMPOSE
+    chmod 644 "$DIR/compose.helper.yaml"
+}
+cmd_helper() {
+    need_root helper
+    case "${1:-}" in
+        install)
+            if [ "${2:-}" = --files-only ]; then
+                helper_write_files
+                return 0
+            fi
+            timer_available || die "This computer has no systemd, which the helper needs. Encore works without it; the admin pages just cannot make a backup or switch the away address."
+            getent group encore-helper >/dev/null 2>&1 || groupadd --system encore-helper || die "The group of the helper could not be made."
+            set_env ENCORE_HELPER_GID "$(getent group encore-helper | cut -d: -f3)"
+            helper_write_files
+            systemd-tmpfiles --create "$HELPER_TMPFILES_DIR/encore-helper.conf" || die "/run/encore could not be made."
+            systemctl daemon-reload
+            systemctl enable --now encore-helper.socket >/dev/null 2>&1 || die "The helper's socket could not be started. See: journalctl -u encore-helper.socket"
+            dc up -d >/dev/null 2>&1 || die "Encore could not be restarted with the helper's socket. See: encore logs"
+            ok "The helper is installed: the admin pages can now make a backup and switch the away address"
+            ;;
+        *) die "Use:  encore helper install" ;;
+    esac
+}
+
 # `encore secure`: the two keys of this install (P3-30). Safe to run again: what exists is left alone and said so.
 cmd_secure() {
     need_root secure
@@ -852,6 +1075,8 @@ case "${1:-help}" in
     autobackup) shift; cmd_autobackup "${1:-status}" ;;
     secure) shift; cmd_secure "$@" ;;
     addon) shift; cmd_addon "$@" ;;
+    helper-session) cmd_helper_session ;;
+    helper) shift; cmd_helper "$@" ;;
     reset-password) shift; cmd_reset_password "$@" ;;
     recovery-key) shift; cmd_recovery_key "$@" ;;
     uninstall) shift; cmd_uninstall "$@" ;;

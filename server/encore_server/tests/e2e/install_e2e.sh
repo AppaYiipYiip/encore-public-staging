@@ -184,4 +184,82 @@ for secret in "$PASSWORD" "$NEW_PASSWORD" "$KEY2"; do
 done
 ok "no secret in the audit log"
 
+# ------------------------------------------------------------------------------------------------------------------------------------ the helper (docs/36 section 3)
+step "the helper: the socket, its owner and mode, and the token"
+[ -S /run/encore/helper.sock ] || fail "the helper's socket is not there"
+expect "the socket is root:encore-helper, mode 660" "$(stat -c '%a %U %G' /run/encore/helper.sock)" "660 root encore-helper"
+expect "the directory is private to that group" "$(stat -c '%a %U %G' /run/encore)" "750 root encore-helper"
+env_has ENCORE_HELPER_TOKEN || fail "no helper token in .env"
+HTOKEN="$(sed -n 's/^ENCORE_HELPER_TOKEN=//p' "$DIR/.env")"
+[ -f "$DIR/compose.helper.yaml" ] || fail "no compose override for the helper"
+ok "the install has its helper"
+
+helper_call() { # helper_call ACTION [TOKEN]: the answer, asked from THIS side of the socket (root on the computer)
+    python3 - "$1" "${2:-$HTOKEN}" <<'PY'
+import socket, sys
+s = socket.socket(socket.AF_UNIX)
+s.settimeout(120)
+s.connect("/run/encore/helper.sock")
+s.sendall(f"{sys.argv[2]} {sys.argv[1]}\n".encode())
+out = b""
+while True:
+    chunk = s.recv(4096)
+    if not chunk:
+        break
+    out += chunk
+sys.stdout.write(out.decode())
+PY
+}
+container_call() { # container_call ACTION [TOKEN]: the answer, asked from INSIDE the Encore server's container, as the server would
+    docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" exec -T encore-server python - "$1" "${2:-}" <<'PY'
+import os, socket, sys
+token = sys.argv[2] or os.environ["ENCORE_HELPER_TOKEN"]
+s = socket.socket(socket.AF_UNIX)
+s.settimeout(120)
+s.connect("/run/encore/helper.sock")
+s.sendall(f"{token} {sys.argv[1]}\n".encode())
+out = b""
+while True:
+    chunk = s.recv(4096)
+    if not chunk:
+        break
+    out += chunk
+sys.stdout.write(out.decode())
+PY
+}
+
+step "the helper answers root on the computer"
+expect_match "status: done" "$(helper_call status)" "^done: ok$"
+step "and the Encore server's container, through the real socket, as a member of the group"
+CONTAINER_STATUS="$(container_call status)" || fail "the container could not reach the helper"
+expect_match "status from inside the container" "$CONTAINER_STATUS" "^done: ok$"
+expect_match "the server is running" "$CONTAINER_STATUS" "result: encoreServer=running"
+BACKUP_ANSWER="$(container_call backup.make)"
+expect_match "a backup is made from inside the container" "$BACKUP_ANSWER" "done: A backup was made."
+LIST="$(container_call backup.list)"
+expect_match "it is in the admin pool, apart from the computer's own" "$LIST" "^item: admin encore-backup-"
+expect_match "and the computer's backup is still there" "$LIST" "^item: computer encore-backup-"
+[ -d "$DIR/backups/helper" ] || fail "no helper pool folder"
+expect "a second one inside ten minutes is refused in words" "$(container_call backup.make | grep -c 'Wait ten minutes')" 1
+step "what the container cannot do"
+expect_match "a wrong token is refused" "$(container_call status WRONGTOKENWRONGTOKENWRONGTOKENWRONGTOKEN)" "^failed: That request was refused.$"
+expect_match "restore is not on the list" "$(container_call restore.apply)" "^failed: That request was refused.$"
+expect_match "update is not on the list" "$(container_call update.apply)" "^failed: That request was refused.$"
+expect_match "the away address is not set up by a page (no Tailscale here)" "$(container_call away.on)" "Set up the away address once at the computer: sudo encore funnel on"
+if docker compose --project-directory "$DIR" exec -T encore-server test -e /opt/encore/.env; then fail "the container can see the install's settings file"; fi
+ok "the container cannot see .env"
+if docker compose --project-directory "$DIR" exec -T encore-server test -e /var/run/docker.sock; then fail "the Docker socket is inside the container"; fi
+ok "the Docker socket is in no container"
+if docker compose --project-directory "$DIR" exec -T encore-server sh -c 'command -v docker' >/dev/null 2>&1; then fail "there is a docker command in the container"; fi
+ok "no docker command in the container"
+step "the helper's own record"
+JOBS="$(find "$DIR/jobs" -name "*.json" | wc -l)"
+[ "$JOBS" -ge 5 ] || fail "the helper wrote only $JOBS job files"
+grep -qh '"result":"refused"' "$DIR"/jobs/*.json || fail "the refused requests are not in the helper's record"
+ok "every request, refused ones included, is in the helper's record ($JOBS files)"
+step "a run of the installer again keeps the helper (safe to repeat)"
+bash "$DEPLOY/install.sh" --yes --image "$IMAGE" --tag "$TAG" --name "CI music" --music-dir /srv/music >"$WORK/again.out" 2>&1 || { cat "$WORK/again.out"; fail "install.sh did not run twice"; }
+expect "the token is kept" "$(sed -n 's/^ENCORE_HELPER_TOKEN=//p' "$DIR/.env")" "$HTOKEN"
+expect_match "and the helper still answers" "$(helper_call status)" "^done: ok$"
+
 step "ALL GOOD ($DOOR door)"

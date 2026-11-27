@@ -401,6 +401,12 @@ if ! /usr/local/bin/encore secure --installer; then
     die "The keys of this install could not be made. Run  sudo encore secure  to try again."
 fi
 
+# The helper (docs/36 section 3): a socket that only the Encore server's container can open, through which the admin pages may make a backup or switch the away address on or off, and
+# nothing else. Not fatal: Encore works without it (those buttons then say how to get it).
+if ! /usr/local/bin/encore helper install >>"$LOG" 2>&1; then
+    note "The admin pages cannot make a backup or switch the away address until you run  sudo encore helper install  (see the log). Everything else works."
+fi
+
 # A copy of the accounts, playlists and likes every night (switched off for good by  encore autobackup off ), and one right now.
 if [ "$(sed -n 's/^ENCORE_AUTOBACKUP=//p' "$DIR/.env" | head -1)" != 0 ]; then
     if /usr/local/bin/encore autobackup on >>"$LOG" 2>&1 && /usr/local/bin/encore backup --quiet >>"$LOG" 2>&1; then
