@@ -82,9 +82,38 @@ def test_only_a_small_sized_json_or_xml_answer_is_ever_read(
 
 
 def test_a_token_login_is_read_from_the_query() -> None:
-    login = guard.login_of({"u": "marwa", "t": "A" * 32, "s": "salt1234", "v": "1.16.1"})
+    login = guard.login_of({"u": "marwa", "t": "a" * 32, "s": "salt1234", "v": "1.16.1"})
 
     assert login == guard.HomeLogin("marwa", "a" * 32, "salt1234")
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"u": "mar wa", "p": "x"},  # a name with a space (an attached music server may have them; this server makes none)
+        {"u": "José Maria", "t": "a" * 32, "s": "salt1234"},
+        {"u": "marwa", "t": "a" * 32, "s": "x"},  # a salt of one character: the music server takes any salt
+        {"u": "marwa", "t": "a" * 32, "s": "a-b_c!"},
+        {
+            "u": "marwa",
+            "t": "short",
+            "s": "salt1234",
+        },  # a token that can never be right is still a wrong answer the music server gives
+        {"u": "marwa", "t": "a" * 32},
+        {"u": "x" * 65, "p": "x"},
+        {"u": "marwa", "p": "x" * 3000},
+    ],
+)
+def test_whatever_the_music_server_checks_is_a_login_the_guard_counts(params: dict[str, str]) -> None:
+    """The guard decides on what the music server READS, not on what an app of this server would send (P3-34 slice 2c): a login the guard did not recognise was a free guess."""
+    login = guard.login_of(params)
+
+    assert login is not None and login.user == params["u"]
+
+
+@pytest.mark.parametrize("name", ["", "mar\x00wa", "mar\nwa", "x" * 257])
+def test_a_name_with_a_control_character_or_far_too_long_is_not_a_login(name: str) -> None:
+    assert guard.login_of({"u": name, "p": "x"}) is None
 
 
 def test_a_plain_password_login_is_read_as_p_whatever_its_spelling() -> None:
@@ -109,13 +138,9 @@ def test_a_token_login_wins_when_an_app_sends_both() -> None:
         {"u": "marwa"},
         {"p": "hunter2"},
         {"u": "marwa", "apiKey": "ndk-abcdef"},
-        {"u": "mar wa", "p": "x"},
         {"u": "", "p": "x"},
-        {"u": "marwa", "t": "short", "s": "salt1234"},
-        {"u": "marwa", "t": "a" * 32},
         {"u": "marwa", "p": ""},
-        {"u": "x" * 65, "p": "x"},
-        {"u": "marwa", "p": "x" * 300},
+        {"u": "marwa", "t": "", "s": ""},
     ],
 )
 def test_what_is_not_a_login_is_none_and_left_alone(params: dict[str, str]) -> None:

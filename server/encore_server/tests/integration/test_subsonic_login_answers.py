@@ -263,3 +263,151 @@ def test_how_a_compressed_answer_a_form_post_login_and_a_repeated_name_are_answe
                 f"{label:44} -> {got['status']} {got['type']:22} enc={got['encoding']:5} length={got['length']} chunked={got['chunked']} size={got['size']:6} ok={got['ok']} code={got['code']}"
             )
     assert all(got["status"] < 500 for _, got in rows), "the music server answered every one of them"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------- HEAD: is it a password oracle? (P3-34 slice 2c)
+
+
+def ask_head(
+    endpoint: str, pairs: list[tuple[str, str]], *, headers: dict[str, str] | None = None, method: str = "HEAD"
+) -> dict[str, Any]:
+    """One HEAD of `/rest/<endpoint>`: only what a HEAD carries (status, content type, content length, encoding): a guesser's whole view of the answer when the gateway cannot read a body."""
+    url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
+    request = urllib.request.Request(url, headers=headers or {}, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
+            status, answer_headers = response.status, response.headers
+    except urllib.error.HTTPError as error:
+        status, answer_headers = error.code, error.headers
+    return {
+        "status": status,
+        "type": (answer_headers.get("content-type") or "").split(";")[0].strip(),
+        "length": answer_headers.get("content-length"),
+        "encoding": answer_headers.get("content-encoding") or "-",
+        "ranges": answer_headers.get("accept-ranges") or "-",
+    }
+
+
+def test_what_a_head_with_a_right_and_a_wrong_login_looks_like(
+    accounts: dict[str, str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The gateway cannot read the body of a HEAD, so a HEAD with a login is not counted. Whether that lets a guesser try passwords without being counted depends on what a HEAD says: if a right and
+    a wrong login look the same in status, content type and content length, a HEAD is no oracle. Printed, not asserted (the design follows what is found)."""
+    from tests.integration.conftest import MUSIC, make_audio, scan_and_wait
+
+    person, password = accounts["person"], accounts["person_pw"]
+    admin = accounts["admin"], accounts["admin_pw"]
+    make_audio(
+        MUSIC / "HeadProbe" / "Head Album" / "01 Head Song.opus", title="Head Song", artist="Head Probe", album="Head Album"
+    )
+    from encore_server.navidrome import NavidromeClient
+
+    client = NavidromeClient(URL, *admin)
+    scan_and_wait(client)
+    found = ask_full(
+        "search3.view",
+        [("u", admin[0]), ("t", token(admin[1], "headsalt1")), ("s", "headsalt1"), ("f", "json"), ("query", "Head Song")],
+    )
+    song = re.search(r'"song":\[\{"id":"([^"]+)"', found) or re.search(r'"id":"([^"]+)"[^}]*"title":"Head Song"', found)
+    song_id = song.group(1) if song else "no-such-song"
+
+    def login(right: bool, salt: str) -> list[tuple[str, str]]:
+        guess = password if right else "not-the-password-" + secrets.token_hex(2)
+        return [("u", person), ("t", token(guess, salt)), ("s", salt), ("f", "json")]
+
+    cases: list[tuple[str, str, list[tuple[str, str]]]] = [
+        ("ping", "ping.view", []),
+        ("stream, a missing song", "stream.view", [("id", "no-such-song")]),
+        ("stream, a real song", "stream.view", [("id", song_id)]),
+        ("getAlbumList2", "getAlbumList2.view", [("type", "newest"), ("size", "1")]),
+        ("getCoverArt, a missing id", "getCoverArt.view", [("id", "no-such-cover")]),
+    ]
+    rows: list[tuple[str, str, dict[str, Any]]] = []
+    for label, endpoint, extra in cases:
+        for right in (True, False):
+            for how, headers in (("plain", None), ("gzip", {"Accept-Encoding": "gzip"})):
+                rows.append(
+                    (
+                        f"HEAD {label}",
+                        f"{'RIGHT' if right else 'WRONG'} {how}",
+                        ask_head(endpoint, [*login(right, "headsalt2"), *extra], headers=headers),
+                    )
+                )
+    for right in (True, False):  # the other method that carries no answer of its own to read
+        rows.append(
+            (
+                "OPTIONS ping",
+                f"{'RIGHT' if right else 'WRONG'} plain",
+                ask_head("ping.view", login(right, "headsalt4"), method="OPTIONS"),
+            )
+        )
+    rows.append(
+        (
+            "GET stream, a real song",
+            "RIGHT plain",
+            {**ask("stream.view", **dict(login(True, "headsalt3")), id=song_id), "encoding": "-", "ranges": "-"},
+        )
+    )
+
+    with capsys.disabled():
+        print("\n=== P3-34 2c: what a HEAD says (song id found: " + ("yes" if song_id != "no-such-song" else "NO") + ")")
+        for label, how, got in rows:
+            print(
+                f"{label:30} {how:12} -> {got['status']} {got['type']:26} length={got['length']} enc={got['encoding']} ranges={got['ranges']}"
+            )
+    assert rows
+
+
+def ask_full(endpoint: str, pairs: list[tuple[str, str]]) -> str:
+    url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
+    with urllib.request.urlopen(url, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
+        return str(response.read().decode("utf-8", "replace"))
+
+
+# --------------------------------------------------------------------------------------------------------------------------------- names: unknown, and the spellings the music server maps to a user
+
+
+def test_what_an_unknown_name_gets_and_which_spellings_of_a_real_name_the_music_server_accepts(
+    accounts: dict[str, str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Two questions the guard depends on, printed (the design follows what is found): (1) what the music server answers for a name that does not exist (a different answer would let a guesser
+    list the names that do, and the guard must count whatever it is); (2) which other spellings of a real name it accepts with the RIGHT password (a spelling it accepts that the account limit does not
+    fold to the same key is a way past the account limit)."""
+    person, password = accounts["person"], accounts["person_pw"]
+    salt = secrets.token_hex(6)
+    right, wrong = token(password, salt), token("not-the-password", salt)
+    rows: list[tuple[str, dict[str, Any]]] = []
+
+    def record(label: str, **params: str) -> None:
+        rows.append((label, ask("ping.view", f="json", **params)))
+
+    unknown = "nobody-" + secrets.token_hex(3)
+    for name in (unknown, "José Maria", "two words", "UPPER-" + secrets.token_hex(2).upper()):
+        record(f"UNKNOWN {name!r:22} t/s", u=name, t=wrong, s=salt)
+        record(f"UNKNOWN {name!r:22} p=", u=name, p="guess")
+        record(f"UNKNOWN {name!r:22} p=enc:", u=name, p="enc:" + b"guess".hex())
+    rows.append(("UNKNOWN name, xml (the default)", ask("ping.view", u=unknown, t=wrong, s=salt)))
+
+    spellings = {
+        "exact": person,
+        "UPPER": person.upper(),
+        "Capitalised": person.capitalize(),
+        "trailing space": person + " ",
+        "leading space": " " + person,
+        "long s U+017F for an s": person.replace("s", "ſ", 1),
+        "fullwidth t U+FF54": person.replace("t", "ｔ", 1),
+        "Kelvin sign for a k": person + "K",
+        "trailing dot": person + ".",
+        "NUL after the name": person + "\x00",
+    }
+    for label, name in spellings.items():
+        record(f"RIGHT password, {label:24} t/s", u=name, t=right, s=salt)
+        record(f"RIGHT password, {label:24} p=", u=name, p=password)
+
+    with capsys.disabled():
+        print("\n=== P3-34 2d: unknown names and spellings of a real name (an accepted spelling prints ok=True)")
+        for label, got in rows:
+            print(
+                f"{label:52} -> {got['status']} {got['type']:22} length={got['length']} chunked={got['chunked']} code={got['code']} ok={got['ok']}"
+            )
+    assert rows

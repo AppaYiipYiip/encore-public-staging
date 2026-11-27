@@ -84,8 +84,12 @@ The server's logs never contain song titles tied to a person (only ids), passwor
   server ignores). Before, a visitor with one valid account could put their own login where the door looked and a guess at somebody else's where the music server looked.
   **What it costs:** a music app that makes a new salt for every call is never "known" and is slowed while its account is under attack (a plain password is the same every time, so such an app IS
   known from its second call); the answer it gets is still a Subsonic answer. A music server that compresses its answers whatever the client asks, or sends them without a length, leaves the guard
-  with nothing to count (it fails safe: nobody is refused and nobody is vouched for). **Not covered:** a `HEAD` call carries no answer to read, so a guesser could still try passwords with it at
-  home uncounted (the public door covers it from the internet); a board note tracks it.
+  with nothing to count (it fails safe: nobody is refused and nobody is vouched for). **HEAD and OPTIONS (slice 2c):** a HEAD carries no body to read, and measured on 0.64.2 it says in its headers what a GET says (an OPTIONS does the same: 131 bytes for a right login, 194 for a wrong one) (a wrong login is always `application/json`
+  of 194 bytes, 168 with gzip; every right answer differs in type or length), so a guesser who sent only HEADs could tell a right password from a wrong one without being counted. A HEAD or OPTIONS that carries a
+  login at home is therefore **judged by a GET `ping` of the same login** (the very values the HEAD carried) through the same guard before the HEAD is passed on: one tiny extra call, and such a
+  HEAD is rare. **The guard reads what the music server reads, not what this server's apps send:** a name with a space or an accent, a salt of any length or shape, a token of any shape and a
+  password of any length are counted too (the first reader asked for letters and digits, a 32-hex token, a salt of 4 to 64 letters and digits and a password of 256 characters at most, and
+  everything else was a free guess); only a name with a control character, or of more than 256 characters, is not a login. The internet door stays as strict as it was (the shapes this server's apps make).
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).
 

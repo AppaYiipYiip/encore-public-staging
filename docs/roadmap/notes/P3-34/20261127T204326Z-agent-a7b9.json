@@ -1,0 +1,12 @@
+{
+ "id": "20261127T204326Z-agent-a7b9",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T20:43:26Z",
+ "type": "note",
+ "body": "OPEN after slice 2b (#187): a HEAD call that carries a login at home is not counted, because the gateway cannot read a body from a HEAD. Whether that makes HEAD a password oracle for a guesser (right and wrong login differing in status, content type or content length) is a MEASUREMENT: the navidrome job of the slice 2c PR prints HEAD ping, stream (missing and real song), getAlbumList2 and getCoverArt for a right and a wrong login, plain and with gzip. If anything differs, a slice 2c judges a HEAD that carries a login with a GET ping of the same login through the same guard before passing the HEAD on; if nothing differs, this note records the measurement and the gap is closed. P3-34 is NOT to be marked built before that (advisor, 27 Nov 2026). The public door (from the internet) already checks every method.",
+ "to": [
+  "agent"
+ ]
+}

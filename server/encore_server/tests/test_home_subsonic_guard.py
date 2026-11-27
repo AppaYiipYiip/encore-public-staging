@@ -66,6 +66,8 @@ class Music:
         self.passwords = {"marwa": "pw-marwa", "nina": "pw-nina", "mia": "pw-mia"}
         self.asked: list[tuple[str, str]] = []
         self.encodings: list[str] = []  # the Accept-Encoding of each call that reached it
+        self.methods: list[str] = []  # the method of each call that reached it
+        self.fail_get = False  # a GET is not answered (the connection fails)
         #: What a music server (a newer one, another one) might do that 0.64.2 was measured NOT to: compress an answer, send it without a length, ignore a login in a form body.
         self.compress = False  # compresses every small answer, asked or not
         self.compress_when_asked = False  # like the real one: only for a client that sends Accept-Encoding: gzip
@@ -97,7 +99,14 @@ class Music:
         for name, value in pairs:
             params.setdefault(name, value)
         self.encodings.append(request.headers.get("accept-encoding", ""))
-        return self.misbehave(self.answer_for(request, params))
+        self.methods.append(request.method)
+        if self.fail_get and request.method == "GET":
+            raise httpx.ConnectError("the music server is not answering", request=request)
+        answered = self.misbehave(self.answer_for(request, params))
+        if request.method in ("HEAD", "OPTIONS"):
+            # As measured on 0.64.2: the headers of the GET answer (its content type and its length); no body is read.
+            return httpx.Response(answered.status_code, headers=dict(answered.headers), stream=httpx.ByteStream(b""))
+        return answered
 
     def misbehave(self, response: httpx.Response) -> httpx.Response:
         """The answer as this music server sends it: as measured, or compressed, or without a length."""
@@ -609,3 +618,122 @@ def test_from_the_internet_a_right_token_login_in_the_address_still_works(rig: R
     got = rig.token_call("marwa", "pw-marwa", headers=PUBLIC)
 
     assert got.status_code == 200 and got.json()["subsonic-response"]["status"] == "ok"
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ slice 2c: a HEAD has no body to read
+
+
+def test_a_head_with_a_wrong_login_is_counted_like_a_get(rig: Rig) -> None:
+    """Measured on 0.64.2: a HEAD says what a GET says in its HEADERS (a wrong login is always application/json of 194 bytes, 168 with gzip; every right answer differs), so a guesser who only
+    sends HEADs could tell a right password from a wrong one without ever being counted. A HEAD that carries a login is judged by a GET ping of the same login first."""
+    answers = [
+        rig.client.head(
+            "/rest/ping.view",
+            params=[("u", "marwa"), ("t", subsonic_token(f"guess-{i}", f"salt{i:04d}")), ("s", f"salt{i:04d}"), ("f", "json")],
+        ).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5, "the music server's own answer for the first five"
+    assert set(answers[5:]) == {429}
+    assert rig.reached("marwa") <= 10, "at most five pings and five HEADs reached the music server"
+
+
+def test_the_same_with_a_plain_password_and_with_gzip_asked_for(rig: Rig) -> None:
+    for i in range(60):
+        rig.client.head("/rest/ping.view", params=[("u", "marwa"), ("p", f"guess-{i}")], headers={"Accept-Encoding": "gzip"})
+
+    assert rig.reached("marwa") <= 10
+    assert all("gzip" not in asked for asked in rig.music.encodings)
+
+
+def test_a_head_that_the_music_server_accepts_still_gets_the_music_servers_headers_and_the_login_becomes_known(rig: Rig) -> None:
+    got = rig.client.head(
+        "/rest/ping.view",
+        params=[("u", "marwa"), ("t", subsonic_token("pw-marwa", "salt1234")), ("s", "salt1234"), ("f", "json")],
+    )
+    again = rig.client.head(
+        "/rest/ping.view",
+        params=[("u", "marwa"), ("t", subsonic_token("pw-marwa", "salt1234")), ("s", "salt1234"), ("f", "json")],
+    )
+
+    assert got.status_code == 200 and again.status_code == 200
+    assert got.headers["content-type"] == "application/json" and got.content == b""
+    assert vouched(rig), "seen twice, accepted both times"
+    assert rig.music.methods.count("HEAD") == 2 and rig.music.methods.count("GET") == 2, (
+        "one ping each, then the HEAD itself, passed on"
+    )
+
+
+def test_a_head_with_no_login_is_passed_on_alone(rig: Rig) -> None:
+    rig.client.head("/rest/ping.view", params={"f": "json"})
+
+    assert rig.music.methods == ["HEAD"]
+
+
+def test_a_music_server_that_does_not_answer_the_ping_does_not_stop_the_head_from_being_passed_on(rig: Rig) -> None:
+    rig.music.fail_get = True
+
+    got = rig.client.head("/rest/ping.view", params=[("u", "marwa"), ("p", "pw-marwa"), ("f", "json")])
+
+    assert got.status_code == 200
+    assert "HEAD" in rig.music.methods
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ a login is what the music server reads
+
+
+def test_a_wrong_login_for_a_name_with_a_space_or_a_letter_with_an_accent_is_counted_too(rig: Rig) -> None:
+    """The first reader only knew names of letters, digits and . _ @ -: the music server takes any (an attached one may have `José Maria`), so those were free guesses."""
+    answers = [
+        rig.client.get("/rest/ping.view", params=[("u", "José Maria"), ("p", f"guess-{i}"), ("f", "json")]).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+
+
+@pytest.mark.parametrize("salt", ["x", "ab", "a-b_c!", "s" * 100])
+def test_a_wrong_token_login_with_a_salt_the_old_reader_did_not_know_is_counted_too(rig: Rig, salt: str) -> None:
+    """The first reader asked for a salt of 4 to 64 letters and digits; the music server takes any salt, and a guesser who picked a one-character salt was never counted."""
+    answers = [
+        rig.client.get(
+            "/rest/ping.view", params=[("u", "marwa"), ("t", subsonic_token(f"guess-{i}", salt)), ("s", salt), ("f", "json")]
+        ).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+
+
+def test_a_very_long_wrong_password_is_counted_too(rig: Rig) -> None:
+    answers = [
+        rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("p", "x" * 3000 + str(i)), ("f", "json")]).status_code
+        for i in range(30)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+
+
+def test_from_the_internet_a_salt_or_a_token_of_a_shape_this_server_does_not_make_is_still_refused(rig: Rig) -> None:
+    """The internet door stays as strict as it was: only a token login of the shape the apps make."""
+    for params in (
+        [("u", "marwa"), ("t", subsonic_token("pw-marwa", "x")), ("s", "x"), ("f", "json")],
+        [("u", "marwa"), ("t", "short"), ("s", "salt1234"), ("f", "json")],
+        [("u", "mar wa"), ("t", subsonic_token("pw", "salt1234")), ("s", "salt1234"), ("f", "json")],
+    ):
+        got = rig.client.get("/rest/ping.view", params=params, headers=PUBLIC)
+        assert got.status_code == 401, params
+
+    assert rig.reached() == 0
+
+
+def test_an_options_call_with_a_login_is_judged_by_a_ping_like_a_head(rig: Rig) -> None:
+    """Measured on 0.64.2 (the log of PR 188): an OPTIONS answers with the GET's headers too (131 bytes for a right login, 194 for a wrong one), the same oracle as a HEAD."""
+    answers = [
+        rig.client.request("OPTIONS", "/rest/ping.view", params=[("u", "marwa"), ("p", f"guess-{i}"), ("f", "json")]).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+    assert rig.reached("marwa") <= 10
