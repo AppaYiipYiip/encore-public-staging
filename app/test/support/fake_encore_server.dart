@@ -32,6 +32,7 @@ class FakeEncoreServer {
     _handlers['/encore/api/v1/library/changes'] = _changes;
     _handlers['/encore/api/v1/library/files'] = _files;
     _handlers['/encore/api/v1/plays'] = _plays;
+    _handlers['/encore/api/v1/me/plays'] = _myPlays;
     _handlers['/encore/api/v1/migrate/navidrome'] = (r) {
       migrations++;
       return failMigration
@@ -241,6 +242,18 @@ class FakeEncoreServer {
   /// [hasUnavailableIds] false it is the N-13 server before that: no such feature, and a question by ids is answered 400, as the real one does.
   /// [unavailableIdsAsked] is each question's ids, in order; [idsSentToAServerWithoutThem] counts the questions that should never have been sent.
   bool hasUnavailableIds = true;
+
+  /// P3-34 slice 0: `GET me/plays` and the feature word `my-plays`. Off, the server is one from before it (the route is unknown there).
+  bool hasMyPlays = true;
+
+  /// How many pages of `GET me/plays` were asked for, and the cursors they carried.
+  final List<String?> myPlaysCursors = [];
+
+  /// The route is listed and answers 500 (the server is in trouble): the phone must not show an error for it.
+  bool failMyPlays = false;
+
+  /// A server that never says it is done: every page names this as the next cursor (the reader must stop by itself).
+  String? stuckCursor;
   final List<List<String>> unavailableIdsAsked = [];
   int idsSentToAServerWithoutThem = 0;
 
@@ -701,6 +714,7 @@ class FakeEncoreServer {
           'live',
           'refs',
           if (hasUnavailableIds) 'unavailable-ids',
+          if (hasMyPlays) 'my-plays',
           if (hasKeep) 'keep',
           if (hasKeep && hasKeepAsk) 'keep-ask',
           if (hasKeep && hasImportKept) 'import-kept',
@@ -849,6 +863,51 @@ class FakeEncoreServer {
             '${gonePage.isEmpty ? int.parse(goneSince ?? '0') : gonePage.last.seq}',
         'goneMore': goneAfter.length > gonePage.length,
       },
+    });
+  }
+
+  /// `GET me/plays?limit=&cursor=`: what `POST plays` stored, newest first, cut at `(at, id)` like the real server (docs/17).
+  FakeResponse _myPlays(RecordedRequest r) {
+    if (!hasMyPlays) return _error(404, 'not_found');
+    if (failMyPlays) return _error(500, 'internal');
+    final query = r.uri.queryParameters;
+    final limit = (int.tryParse(query['limit'] ?? '') ?? 500).clamp(1, 500);
+    final cursor = query['cursor'];
+    myPlaysCursors.add(cursor);
+    final sorted = [...plays]..sort((a, b) {
+        final byAt = (b['at'] as int).compareTo(a['at'] as int);
+        return byAt != 0
+            ? byAt
+            : (b['id'] as String).compareTo(a['id'] as String);
+      });
+    var rest = sorted;
+    if (cursor != null) {
+      final split = cursor.indexOf(':');
+      final at = int.parse(cursor.substring(0, split));
+      final id = cursor.substring(split + 1);
+      rest = [
+        for (final p in sorted)
+          if ((p['at'] as int) < at ||
+              ((p['at'] as int) == at && (p['id'] as String).compareTo(id) < 0))
+            p
+      ];
+    }
+    final page = rest.take(limit).toList();
+    return _ok({
+      'items': [
+        for (final p in page)
+          {
+            'id': p['id'],
+            'ref': p['ref'],
+            'at': p['at'],
+            'msPlayed': p['msPlayed'],
+            'context': p['context'],
+          }
+      ],
+      'nextCursor': stuckCursor ??
+          (rest.length > limit
+              ? '${page.last['at']}:${page.last['id']}'
+              : null),
     });
   }
 

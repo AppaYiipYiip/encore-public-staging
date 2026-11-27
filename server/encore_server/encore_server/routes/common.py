@@ -55,7 +55,7 @@ log = logging.getLogger("encore_server.api")
 
 API_PREFIX = "/encore/api/v1"
 
-FEATURES = ["library", "playback", "live", "refs", "unavailable-ids", "ref-gone"]
+FEATURES = ["library", "playback", "live", "refs", "unavailable-ids", "ref-gone", "my-plays"]
 #: What a server that keeps songs adds: `keep` (the song-by-song calls and `keep/progress`, `keep/watch`, `keep/retry`), `keep-ask` (`POST keep/ask`, a
 #: whole download asked for at once) and `import-kept` (`import.progress` is pushed when a song of an import is STORED too, not only when one is matched: a phone that finds
 #: the word may stop asking `GET imports` every few seconds, N-43). An app that finds a feature missing does without it; it never tries a route to find out (docs/17 "Versions").

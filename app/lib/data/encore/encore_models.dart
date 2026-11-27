@@ -528,6 +528,56 @@ class EncoreInfo {
   /// `POST refs/unavailable` also takes ref ids (`{"ids": [...]}`, B-128): the rows of the phone's own library are asked about by their exact identity.
   /// An N-13 server before that answers such a question with a 400, so the phone sends it only where this is listed (docs/17 "Versions").
   bool get hasUnavailableIds => features.contains('unavailable-ids');
+
+  /// `GET me/plays`: the person's own plays from the server's own record, newest first (P3-34, docs/17). Year in Music reads them here, not from the music server's own
+  /// `/auth` and `/api`, which the server's gateway no longer passes on by default. A server that does not list it is read the old way.
+  bool get hasMyPlays => features.contains('my-plays');
+}
+
+/// One play the server has on record for the person (`GET me/plays`).
+@immutable
+class EncorePlay {
+  const EncorePlay(
+      {required this.id,
+      required this.refId,
+      required this.atMs,
+      required this.msPlayed});
+
+  final String id;
+
+  /// The song (the survivor of a merge).
+  final String refId;
+
+  /// UTC milliseconds.
+  final int atMs;
+  final int msPlayed;
+}
+
+/// One page of [EncorePlay], newest first; [nextCursor] is null on the last.
+@immutable
+class EncorePlaysPage {
+  const EncorePlaysPage({required this.items, required this.nextCursor});
+
+  factory EncorePlaysPage.fromJson(Map<String, dynamic> json) =>
+      EncorePlaysPage(
+        items: [
+          for (final row in (json['items'] as List? ?? const []))
+            if (row is Map &&
+                readString(row['id']) != null &&
+                readString(row['ref']) != null &&
+                readInt(row['at']) != null)
+              EncorePlay(
+                id: readString(row['id'])!,
+                refId: readString(row['ref'])!,
+                atMs: readInt(row['at'])!,
+                msPlayed: readInt(row['msPlayed']) ?? 0,
+              ),
+        ],
+        nextCursor: readString(json['nextCursor']),
+      );
+
+  final List<EncorePlay> items;
+  final String? nextCursor;
 }
 
 /// What bringing a person's library over from the music server did on the Encore server.

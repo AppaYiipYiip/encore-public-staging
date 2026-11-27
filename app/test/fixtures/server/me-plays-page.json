@@ -1,0 +1,26 @@
+{
+  "items": [
+    {
+      "id": "play-0",
+      "ref": "sr_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "at": 1700000300000,
+      "msPlayed": 180000,
+      "context": null
+    },
+    {
+      "id": "play-2",
+      "ref": "sr_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "at": 1700000200000,
+      "msPlayed": 182000,
+      "context": null
+    },
+    {
+      "id": "play-1",
+      "ref": "sr_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "at": 1700000200000,
+      "msPlayed": 181000,
+      "context": "album"
+    }
+  ],
+  "nextCursor": "1700000200000:play-1"
+}
