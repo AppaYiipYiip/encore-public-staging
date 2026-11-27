@@ -32,6 +32,11 @@ _SALT = re.compile(r"^[A-Za-z0-9]{4,64}$")
 
 VERIFY_TTL_S = 600.0
 
+#: How long a login the music server ACCEPTED is remembered as "a device this server already knows" (P3-34 slice 2a): long enough that the owner's app still answers when a stranger's
+#: guesses are being slowed (the ten minutes of [VERIFY_TTL_S] are not), and renewed by every use. It only skips the guess limits' refusals, never the music server's own check.
+VOUCH_TTL_S = 24 * 3600.0
+VOUCH_CAP = 5000
+
 #: The Subsonic error codes that mean "that login is no good": wrong username or password (40), token authentication not supported for this
 #: account (41), a mechanism that is not supported (42, 43) and a wrong API key (44). Any other answer says nothing about the login.
 _REFUSED = frozenset({40, 41, 42, 43, 44})
@@ -66,12 +71,20 @@ class NavidromeVerifier:
         client: httpx.Client | None = None,
         ttl: float = VERIFY_TTL_S,
         clock: Callable[[], float] = time.monotonic,
+        vouch_ttl: float = VOUCH_TTL_S,
+        vouch_cap: int = VOUCH_CAP,
     ) -> None:
         self._base = base_url.rstrip("/")
         self._client = client or httpx.Client(timeout=8.0)
         self._ttl = ttl
         self._clock = clock
         self._ok: dict[tuple[str, str, str], float] = {}
+        # The longer memory (see [vouched]): a keyed digest of the credentials, made with a key that lives only in this process, so what is held is of no use outside it and holds no token,
+        # salt or name in the clear; the name is kept apart, in lower case, only so that [forget] can drop a person's entries.
+        self._vouch_ttl = vouch_ttl
+        self._vouch_cap = vouch_cap
+        self._vouch_key = secrets.token_bytes(32)
+        self._vouched: dict[bytes, tuple[str, float]] = {}
 
     def _call(self, method: str, user: str, token: str, salt: str, **extra: str) -> dict[str, object]:
         """The music server's answer, or [MusicServerUnavailable] when it gave none a login can be judged by."""
@@ -87,11 +100,31 @@ class NavidromeVerifier:
             raise MusicServerUnavailable("the music server's answer was not understood")
         return body
 
+    def _fingerprint(self, user: str, token: str, salt: str) -> bytes:
+        return hmac.new(self._vouch_key, f"{user.lower()}\0{token}\0{salt}".encode(), hashlib.sha256).digest()
+
+    def _vouch(self, user: str, token: str, salt: str) -> None:
+        now = self._clock()
+        self._vouched[self._fingerprint(user, token, salt)] = (user.lower(), now)
+        if len(self._vouched) > self._vouch_cap:
+            self._vouched = {k: v for k, v in self._vouched.items() if now - v[1] < self._vouch_ttl}
+            for stale in sorted(self._vouched, key=lambda k: self._vouched[k][1])[: max(0, len(self._vouched) - self._vouch_cap)]:
+                del self._vouched[stale]
+
+    def vouched(self, user: str, token: str, salt: str) -> bool:
+        """Is this a device the server already knows: a login the music server ACCEPTED within the last day (P3-34 slice 2a, docs/21)? Such a login skips the refusals of the guess limits (the
+        address that everybody behind a hiding Docker shares, and the account), and NOTHING else: the music server still checks it. A restart forgets it; [forget] drops a person's."""
+        entry = self._vouched.get(self._fingerprint(user, token, salt))
+        return entry is not None and self._clock() - entry[1] < self._vouch_ttl
+
     def known_good(self, user: str, token: str, salt: str) -> bool:
         """Has the music server already said yes to exactly these credentials, a moment ago? Such a login is never held up by a limit: the limit is
         for guesses, and a guess is by definition not a login the music server has vouched for (AUDIT B1)."""
         seen = self._ok.get((user, token, salt))
-        return seen is not None and self._clock() - seen < self._ttl
+        known = seen is not None and self._clock() - seen < self._ttl
+        if known:
+            self._vouch(user, token, salt)  # a device that keeps being known keeps its day
+        return known
 
     def forget(self, user: str) -> None:
         """Drops what is remembered about [user]: after the person was removed or locked, or their password changed, the music server's earlier
@@ -99,21 +132,28 @@ class NavidromeVerifier:
         wanted = user.lower()
         for key in [k for k in self._ok if k[0].lower() == wanted]:
             del self._ok[key]
+        for digest in [d for d, entry in self._vouched.items() if entry[0] == wanted]:
+            del self._vouched[digest]
 
     def verify(self, user: str, token: str, salt: str) -> bool:
         key = (user, token, salt)
         seen = self._ok.get(key)
         if seen is not None and self._clock() - seen < self._ttl:
+            self._vouch(user, token, salt)
             return True
         body = self._call("ping", user, token, salt)
         if body.get("status") == "ok":
             self._ok[key] = self._clock()
             if len(self._ok) > 2000:
                 self._ok = {k: v for k, v in self._ok.items() if self._clock() - v < self._ttl}
+            self._vouch(user, token, salt)
             return True
         error = body.get("error")
         code = error.get("code") if isinstance(error, dict) else None
         if code in _REFUSED:
+            self._vouched.pop(
+                self._fingerprint(user, token, salt), None
+            )  # it was good once and is not any more (the password changed): a guess like any other
             return False
         # A "failed" with any other code (or none) is not the music server saying the login is wrong: nobody is told so.
         raise MusicServerUnavailable(f"the music server could not check the login (code {code!r})")

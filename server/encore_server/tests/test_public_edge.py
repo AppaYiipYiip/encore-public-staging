@@ -41,16 +41,16 @@ class VouchingVerifier(FakeVerifier):
 
     def __init__(self) -> None:
         super().__init__()
-        self.vouched: set[tuple[str, str, str]] = set()
+        self.accepted: set[tuple[str, str, str]] = set()
 
     def verify(self, user: str, token: str, salt: str) -> bool:
         ok = super().verify(user, token, salt)
         if ok:
-            self.vouched.add((user, token, salt))
+            self.accepted.add((user, token, salt))
         return ok
 
     def known_good(self, user: str, token: str, salt: str) -> bool:
-        return (user, token, salt) in self.vouched
+        return (user, token, salt) in self.accepted
 
 
 class Rig:
