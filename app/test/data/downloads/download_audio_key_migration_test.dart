@@ -9,6 +9,7 @@ import 'package:encore/data/downloads/download_manager.dart';
 import 'package:encore/data/downloads/download_planner.dart';
 import 'package:encore/data/repos/downloads_repository.dart';
 import 'package:encore/data/sync/fingerprint.dart';
+import 'package:encore/data/sync/library_writer.dart';
 import 'package:encore/domain/audio_quality.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -86,8 +87,11 @@ void main() {
 
   Future<DownloadRow> row() async => (await repo.rowsFor(['t1'])).single;
 
+  /// What a sync does to a song and its copy: the new description is written, THEN the sync's own stale marking runs (`LibraryWriter.markStaleDownloads`), THEN the
+  /// download manager reconciles. The marking decides by the same verdict as the planner: a key that merely differs must not flag the copy.
   Future<void> sync(TracksCompanion change) async {
     await (db.update(db.tracks)..where((t) => t.id.equals('t1'))).write(change);
+    await LibraryWriter(db).markStaleDownloads(serverId: serverId, nowMs: 1000);
     await manager.reconcile();
     await manager.settled();
   }
@@ -96,6 +100,9 @@ void main() {
     final r = await row();
     expect(r.state, DownloadState.done);
     expect(r.sourceAudioKey, _oldKey());
+    expect(r.sourceLegacyKey, _oldKey(),
+        reason:
+            'a download made now remembers the old-formula key of its file');
   });
 
   test(
@@ -108,6 +115,9 @@ void main() {
     final r = await row();
     expect(r.state, DownloadState.done, reason: 'no refresh was started');
     expect(r.sourceAudioKey, _served, reason: 'adopted in place');
+    expect(r.stale, isFalse,
+        reason: 'the sync\'s own stale marking did not flag it either');
+    expect(r.sourceLegacyKey, _oldKey());
     expect(r.localPath, before.localPath);
     expect(r.bytes, before.bytes);
     expect(transport.renamed, isEmpty);
@@ -156,17 +166,58 @@ void main() {
   });
 
   test(
-      'a server that stops serving keys for the file does not make the copy stale',
+      'a server rolled back to one without keys (the same file) does not make the copy stale',
       () async {
     await sync(const TracksCompanion(audioKey: Value(_served)));
 
-    // A server downgrade, or a file it cannot read now: the phone computes the old-formula key again.
     await sync(TracksCompanion(audioKey: Value(_oldKey())));
 
     final r = await row();
     expect(r.state, DownloadState.done);
+    expect(r.stale, isFalse);
     expect(r.sourceAudioKey, _served,
         reason: 'a key from a way that cannot be computed now says nothing');
     expect(transport.renamed, isEmpty);
+  });
+
+  test(
+      'a rollback AFTER the server rewrote the tags: still the same copy (the row learned the new size when the key was equal)',
+      () async {
+    await sync(const TracksCompanion(audioKey: Value(_served)));
+    await sync(const TracksCompanion(size: Value(5321))); // the retag
+
+    await sync(
+        TracksCompanion(audioKey: Value(_oldKey(size: 5321)))); // rollback
+
+    final r = await row();
+    expect(r.state, DownloadState.done);
+    expect(r.stale, isFalse);
+    expect(transport.renamed, isEmpty);
+    expect(r.sourceLegacyKey, _oldKey(size: 5321));
+  });
+
+  test(
+      'the song is later served from ANOTHER file with no key (a second file of the song became the preferred one): the copy is fetched again',
+      () async {
+    await sync(const TracksCompanion(audioKey: Value(_served)));
+
+    // A FLAC the library link attached to the same song became its preferred file: another size, another duration, no key of its audio.
+    await sync(TracksCompanion(
+        size: const Value(31000),
+        suffix: const Value('flac'),
+        bitRate: const Value(1011),
+        audioKey: Value(legacyAudioKey(
+          size: 31000,
+          suffix: 'flac',
+          bitRate: 1011,
+          durationSec: 200,
+          samplingRate: 44100,
+          bitDepth: 16,
+        ))));
+
+    final refresh = transport.requestFor('t1');
+    expect(refresh.relativePath, endsWith('.opus.new'),
+        reason:
+            'before this change the two legacy keys differed and the copy was refreshed; it still is');
   });
 }

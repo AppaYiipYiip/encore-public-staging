@@ -145,9 +145,10 @@ String refLegacyAudioKey(EncoreRef r) {
   );
 }
 
-/// What to do with a downloaded copy, from the key stored when it was downloaded ([stored]), the key the track has now ([live]) and what the old-formula key of the
-/// track is now ([liveLegacy]; the size in it is the file's size as the server reports it). The migration of N-38: **a copy made before the server served keys must not
-/// be downloaded again just because the formula changed.**
+/// What to do with a downloaded copy, from what its row remembers ([stored]: the key stored when it was downloaded; [storedLegacy]: the old-formula key of the file it
+/// was made from, empty for a copy made before the app recorded it) and what the track says now ([live]: its key; [liveLegacy]: its old-formula key, which contains
+/// the file's size). The migration of N-38: **a copy made before the server served keys must not be downloaded again just because the formula changed**, and
+/// **a copy must not be kept for ever when the file behind the song is another file**.
 enum AudioKeyVerdict {
   /// The copy is the same sound (or nothing can be said): leave it.
   same,
@@ -155,31 +156,42 @@ enum AudioKeyVerdict {
   /// The sound changed (or the file was replaced or re-encoded): download it again.
   changed,
 
-  /// The copy is the same file as when it was downloaded (its old-formula key still matches), and the server now serves a key of it: keep the copy and store the
-  /// new key in its row, so that a later tag rewrite, which changes the size and not the key, is invisible.
+  /// The copy is the same file as when it was downloaded, and its row should say so in the new terms: keep the copy and write [live] and [liveLegacy] in its row (the
+  /// first key the server serves for it, or the old-formula key after the server rewrote the tags, so that a later rollback to a server without keys still recognises
+  /// the copy).
   adopt,
 }
 
 AudioKeyVerdict downloadAudioKeyVerdict({
   required String stored,
+  required String storedLegacy,
   required String live,
   required String liveLegacy,
 }) {
-  if (live.isEmpty || stored.isEmpty || stored == live) {
-    return AudioKeyVerdict.same; // nothing to compare, or the same
+  if (live.isEmpty || stored.isEmpty) {
+    return AudioKeyVerdict.same; // nothing to compare
   }
   final storedIsServer = isServerAudioKey(stored);
   final liveIsServer = isServerAudioKey(live);
   if (storedIsServer && liveIsServer) {
-    // Two server keys: equal means the same sound. Two different WAYS of making a key (a1 and a2) are never compared (a new way brings its own migration here):
-    // they say nothing about each other, and the copy stays.
-    return _wayOf(stored) == _wayOf(live)
-        ? AudioKeyVerdict.changed
+    // Two different WAYS of making a key (a1 and a2) are never compared (a new way brings its own migration here): they say nothing about each other.
+    if (_wayOf(stored) != _wayOf(live)) return AudioKeyVerdict.same;
+    if (stored != live) return AudioKeyVerdict.changed;
+    // The same sound. A tag rewrite changed the file's size, so the old-formula key moved: say so in the row (no fetch), or a later rollback would take the copy for
+    // another file.
+    return storedLegacy != liveLegacy
+        ? AudioKeyVerdict.adopt
         : AudioKeyVerdict.same;
   }
   if (storedIsServer) {
-    // The server stopped serving keys for this file (a server downgrade, a file it cannot read now): a key from a way that cannot be computed here says nothing.
-    return AudioKeyVerdict.same;
+    // The track has no key of the audio now: the server was rolled back or no longer serves one for this file, OR the file behind the song is another one (a second
+    // file of the song was linked and became the preferred one). The old-formula keys tell them apart: the same file has the same one.
+    if (storedLegacy.isEmpty) {
+      return AudioKeyVerdict.same; // nothing recorded to compare
+    }
+    return storedLegacy == liveLegacy
+        ? AudioKeyVerdict.same
+        : AudioKeyVerdict.changed;
   }
   if (liveIsServer) {
     // The copy carries an old-formula key, the server now serves a key of the audio: the copy is current if the file is as it was.
@@ -187,7 +199,7 @@ AudioKeyVerdict downloadAudioKeyVerdict({
         ? AudioKeyVerdict.adopt
         : AudioKeyVerdict.changed;
   }
-  return AudioKeyVerdict.changed; // two old-formula keys that differ: as before
+  return stored == live ? AudioKeyVerdict.same : AudioKeyVerdict.changed;
 }
 
 String _wayOf(String serverKey) =>

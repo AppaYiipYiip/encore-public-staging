@@ -42,8 +42,9 @@ void main() {
     ]);
   });
 
-  // Every shipped version before the current one (v8 is in the list since N-39: its step to v9 adds the stopped mark of a pin).
-  for (final from in const [1, 2, 3, 4, 5, 6, 7, 8]) {
+  // Every shipped version before the current one (v8 is in the list since N-39: its step to v9 adds the stopped mark of a pin; v9 since N-38: its step to v10 adds the
+  // old-formula key a downloaded copy remembers, and v9 is the schema the phones have today).
+  for (final from in const [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
     test('v$from upgrades to the current schema and keeps its rows', () async {
       final schema = await verifier.schemaAt(from);
 
@@ -77,6 +78,9 @@ void main() {
       expect(downloads.single.quality, 'original',
           reason:
               'the quality the copy was made at is not changed by the upgrade');
+      expect(downloads.single.sourceLegacyKey, '',
+          reason:
+              'v10 (N-38): a copy made before remembers no old-formula key; the app treats that as nothing to compare');
 
       final pins = await db.select(db.pins).get();
       expect(pins.single.targetId, 'p1');

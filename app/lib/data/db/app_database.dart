@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// Bump together with a migration step *and* a schema snapshot
   /// (`dart run drift_dev schema dump ...`) so migrations are testable.
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +97,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 9) {
             // v9: the person's own Stop of a download (N-39): when it was pressed, or null. Every pin starts as not stopped.
             await m.addColumn(pins, pins.stoppedAtMs);
+          }
+          if (from < 10) {
+            // v10 (N-38): the old-formula key of the file a downloaded copy was made from, next to the key of its audio. Empty for a copy made before.
+            await m.addColumn(downloads, downloads.sourceLegacyKey);
           }
         },
         beforeOpen: (details) async {

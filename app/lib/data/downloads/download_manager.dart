@@ -10,6 +10,7 @@ import '../../domain/download_line.dart' show kDownloadStoppedReason;
 import '../../domain/storage_guard.dart';
 import '../db/app_database.dart';
 import '../repos/downloads_repository.dart';
+import '../sync/fingerprint.dart' show legacyAudioKey;
 import 'disk_space.dart';
 import 'download_planner.dart';
 import 'download_transport.dart';
@@ -697,6 +698,17 @@ class DownloadManager {
       localPath: finalPath,
       bytes: size,
       audioKey: track?.audioKey ?? '',
+      // The old-formula key of the same file (N-38): what lets the app tell later whether this copy is still the file behind the song.
+      legacyKey: track == null
+          ? ''
+          : legacyAudioKey(
+              size: track.size,
+              suffix: track.suffix,
+              bitRate: track.bitRate,
+              durationSec: track.durationSec,
+              samplingRate: track.samplingRate,
+              bitDepth: track.bitDepth,
+            ),
       // What the file is made at: the quality the transfer was asked at (Data saver may have lowered the wanted one), recorded for the upgrade.
       quality: made.id,
     );

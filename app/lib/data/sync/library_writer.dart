@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../api/opensubsonic/models.dart';
 import '../db/app_database.dart';
 import 'fingerprint.dart';
+import 'legacy_key_columns.dart';
 import 'pending_intent.dart';
 
 /// Writes server DTOs into the local database.
@@ -260,22 +261,67 @@ class LibraryWriter {
   Future<int> seenByRunCount(int serverId, int runId) async =>
       (await seenCounts(serverId, runId)).tracks;
 
-  /// Flags downloaded copies whose source audio changed on the server.
+  /// Flags downloaded copies whose source audio changed on the server. A key that differs is not always a change (N-38): a copy made under the old kind of key
+  /// whose file is as it was, now that the server serves keys of the audio, is the same copy, and its row takes the new keys (`downloadAudioKeyVerdict`). Returns how
+  /// many copies were flagged.
   Future<int> markStaleDownloads({
     required int serverId,
     required int nowMs,
   }) {
-    return _db.customUpdate(
-      'UPDATE downloads SET stale = 1, updated_at_ms = ?2 '
-      'WHERE server_id = ?1 AND state = 2 AND stale = 0 '
-      "AND source_audio_key != '' AND EXISTS ("
-      '  SELECT 1 FROM tracks t WHERE t.server_id = downloads.server_id '
-      '  AND t.id = downloads.track_id AND t.deleted_at_ms IS NULL '
-      '  AND t.audio_key != downloads.source_audio_key)',
-      variables: [Variable<int>(serverId), Variable<int>(nowMs)],
-      updates: {_db.downloads},
-      updateKind: UpdateKind.update,
-    );
+    return _db.transaction(() async {
+      final rows = await _db.customSelect(
+        'SELECT d.track_id AS id, d.source_audio_key AS stored, d.source_legacy_key AS stored_legacy, '
+        't.audio_key AS live, ${legacyKeyColumns()} '
+        'FROM downloads d JOIN tracks t ON t.server_id = d.server_id AND t.id = d.track_id '
+        'WHERE d.server_id = ?1 AND d.state = 2 AND d.stale = 0 '
+        "AND d.source_audio_key != '' AND t.deleted_at_ms IS NULL "
+        'AND t.audio_key != d.source_audio_key',
+        variables: [Variable<int>(serverId)],
+        readsFrom: {_db.downloads, _db.tracks},
+      ).get();
+      var flagged = 0;
+      for (final row in rows) {
+        final live = row.read<String>('live');
+        final liveLegacy = legacyKeyOfRow(row);
+        final verdict = downloadAudioKeyVerdict(
+          stored: row.read<String>('stored'),
+          storedLegacy: row.read<String>('stored_legacy'),
+          live: live,
+          liveLegacy: liveLegacy,
+        );
+        final id = row.read<String>('id');
+        switch (verdict) {
+          case AudioKeyVerdict.changed:
+            flagged += await _db.customUpdate(
+              'UPDATE downloads SET stale = 1, updated_at_ms = ?3 '
+              'WHERE server_id = ?1 AND track_id = ?2 AND state = 2 AND stale = 0',
+              variables: [
+                Variable<int>(serverId),
+                Variable<String>(id),
+                Variable<int>(nowMs),
+              ],
+              updates: {_db.downloads},
+              updateKind: UpdateKind.update,
+            );
+          case AudioKeyVerdict.adopt:
+            await _db.customUpdate(
+              'UPDATE downloads SET source_audio_key = ?3, source_legacy_key = ?4 '
+              'WHERE server_id = ?1 AND track_id = ?2 AND state = 2',
+              variables: [
+                Variable<int>(serverId),
+                Variable<String>(id),
+                Variable<String>(live),
+                Variable<String>(liveLegacy),
+              ],
+              updates: {_db.downloads},
+              updateKind: UpdateKind.update,
+            );
+          case AudioKeyVerdict.same:
+            break;
+        }
+      }
+      return flagged;
+    });
   }
 }
 
