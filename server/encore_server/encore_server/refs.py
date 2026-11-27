@@ -85,7 +85,9 @@ def parse_item(raw: object) -> dict[str, Any]:
         "title": title,
         "artists": artists,
         "album": _clean(raw.get("album")),
-        "album_artist": _clean(raw.get("albumArtist"), 200),
+        # The placeholder "Unknown Artist" is not a fact about who an album is by (it is what the keeper tags a channel song with, N-26 slice 3: the music server's own answer for such a
+        # file must never come back as the ref's album artist, where it would flow into the cover key and the album pass).
+        "album_artist": None if (cleaned := _clean(raw.get("albumArtist"), 200)) and is_unknown_artist(cleaned) else cleaned,
         "track_no": _int(raw.get("trackNo"), 1, 999),
         "disc_no": _int(raw.get("discNo"), 1, 99),
         "year": _int(raw.get("year"), 1900, 2100),

@@ -52,10 +52,13 @@ def album_artist_of(ref: dict[str, Any]) -> str:
     ARTIST = a channel and ALBUMARTIST = anything else is NOT in the Artists list (`getArtists` lists album artists), where ALBUMARTIST = the channel (what the keeper wrote for every
     song) made every channel an artist of its own. The song's ARTIST tag stays the channel: the ref, the link to the song and the match are unchanged. New keeps only: a file already on
     the disk keeps the tags it has (retagging kept files is a repair, N-26 slice 5, and waits for the audio-only download key, N-38)."""
+    # `artistBasis` is REQUIRED (a KeyError when the dict has none): a ref read without its facts (`refs.get_ref` without `facts=True`) would be planned under the first artist
+    # while the keeper filed the same song under `Unknown Artist`, and a repair that compares the two would move a file for no reason. A caller that forgets fails, loudly.
+    basis = ref["artistBasis"]
     explicit = ref.get("albumArtist")
     if explicit:
         return str(explicit)
-    if ref.get("artistBasis") in NOT_PERFORMERS:
+    if basis in NOT_PERFORMERS:
         return UNKNOWN_ARTIST
     return str(ref["artists"][0])
 

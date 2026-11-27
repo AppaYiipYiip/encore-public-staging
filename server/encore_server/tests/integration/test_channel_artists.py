@@ -18,9 +18,11 @@ from typing import Any
 
 import pytest
 
+from encore_server import refs
 from encore_server.keeper.placement import plan_for_ref
 from encore_server.keeper.tagging import tags_of, write_tags
 from encore_server.navidrome import NavidromeClient
+from encore_server.scanner import link_library
 from tests.integration.conftest import MUSIC, Rig, make_audio, scan_and_wait
 
 pytestmark = pytest.mark.integration
@@ -96,14 +98,11 @@ def test_the_keepers_own_tags_for_a_channel_song_keep_the_channel_out_of_the_art
     rig: Rig, navidrome: NavidromeClient
 ) -> None:
     channel = unique("Zxqv KEXP")
-    ref = {
-        "title": "Full Performance",
-        "artists": [channel],
-        "albumArtist": None,
-        "album": None,
-        "artistBasis": "channel",
-        "uploader": channel,
-    }
+    with rig.svc.db.tx() as conn:
+        made = refs.resolve(conn, {"title": "Full Performance", "artists": [channel]}, artist_basis="channel", uploader=channel)
+        ref_id = str(made["id"])
+    with rig.svc.db.read() as conn:
+        ref = refs.get_ref(conn, ref_id, facts=True)  # the dict the keeper itself plans and tags with
     placement = plan_for_ref(MUSIC / "Encore", ref, ".opus")
     audio = make_audio(placement.path)
     assert placement.path.relative_to(MUSIC).as_posix() == "Encore/Unknown Artist/Singles/Full Performance.opus"
@@ -116,3 +115,10 @@ def test_the_keepers_own_tags_for_a_channel_song_keep_the_channel_out_of_the_art
     assert [s.get("artist") for s in found.get("song") or []] == [channel], (
         "the song is still the channel's: the link by name is unchanged"
     )
+    # The scanner describes every file from the music server's OWN answer, which now says ALBUMARTIST = Unknown Artist: the file links to the ref, and the placeholder never becomes the
+    # ref's album artist (it would flow into the cover key, the album pass and the artist finder's own-songs query: the class of the N-34 incident).
+    link_library(rig.svc.db, navidrome)
+    with rig.svc.db.read() as conn:
+        linked = refs.get_ref(conn, ref_id)
+    assert (linked["file"] or {}).get("navidromeSongId"), "the file is linked to the ref by its name"
+    assert linked["albumArtist"] is None, "and the placeholder did not come back as a fact"

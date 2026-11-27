@@ -22,6 +22,7 @@ def ref_of(**more: Any) -> dict[str, Any]:
         "title": "Heartbeat",
         "artists": ["KEXP"],
         "albumArtist": None,
+        "artistBasis": None,
         "album": None,
         "trackNo": None,
         "discNo": None,
@@ -37,7 +38,6 @@ def ref_of(**more: Any) -> dict[str, Any]:
         ({"artistBasis": "declared"}, "KEXP"),
         ({"artistBasis": "title"}, "KEXP"),
         ({"artistBasis": None}, "KEXP"),
-        ({}, "KEXP"),
         ({"artistBasis": "channel", "albumArtist": "Nneka"}, "Nneka"),
         ({"artistBasis": "unknown", "albumArtist": ""}, "Unknown Artist"),
         ({"artistBasis": "declared", "albumArtist": "Various Artists"}, "Various Artists"),
@@ -46,6 +46,16 @@ def ref_of(**more: Any) -> dict[str, Any]:
 )
 def test_the_album_artist_of_a_song(more: dict[str, Any], expected: str) -> None:
     assert album_artist_of(ref_of(**more)) == expected
+
+
+def test_a_ref_without_its_facts_is_refused_loudly_never_filed_by_another_rule() -> None:
+    """Review of #163: a plain `refs.get_ref` dict (no `artistBasis`) would have been planned under the first artist while the keeper filed the same song under Unknown Artist."""
+    bare = {"title": "Heartbeat", "artists": ["KEXP"], "albumArtist": None, "album": None}
+    for call in (album_artist_of, tags_of, lambda r: plan_for_ref(Path("/music/Encore"), r)):
+        with pytest.raises(KeyError, match="artistBasis"):
+            call(bare)
+    with pytest.raises(KeyError, match="artistBasis"):
+        album_artist_of({**bare, "albumArtist": "Nneka"})  # even when the ref names an album artist: one rule, always
 
 
 def test_the_tags_and_the_folder_ask_the_same_definition() -> None:
@@ -71,3 +81,20 @@ def test_the_facts_are_for_the_server_and_never_for_an_api_answer(db: Database) 
     assert "artistBasis" not in plain and "uploader" not in plain, "the API shape did not change"
     assert with_facts["artistBasis"] == "channel" and with_facts["uploader"] == "KEXP"
     assert {k: v for k, v in with_facts.items() if k not in ("artistBasis", "uploader")} == plain
+
+
+@pytest.mark.parametrize("placeholder", ["Unknown Artist", "unknown artist", "  UNKNOWN ARTIST ", "[Unknown Artist]"])
+def test_the_placeholder_is_never_stored_as_an_album_artist(db: Database, placeholder: str) -> None:
+    """Review of #163: the music server's answer for a channel song the keeper tagged ALBUMARTIST = Unknown Artist must never come back as the ref's album artist: it would flow into the cover key
+    and the album pass. The scanner describes every file from the music server's own answer, so this is the one place the rule lives (`refs.parse_item`)."""
+    with db.tx() as conn:
+        first = refs.resolve(
+            conn, {"title": "Heartbeat", "artists": ["KEXP"], "albumArtist": placeholder}, artist_basis="channel", uploader="KEXP"
+        )
+        assert first["albumArtist"] is None
+        # a later description (the scanner's) of an existing ref with no album artist does not fill it either
+        again = refs.resolve(conn, {"title": "Heartbeat", "artists": ["KEXP"], "albumArtist": placeholder})
+        assert again["id"] == first["id"] and again["albumArtist"] is None
+        # while a real album artist still fills what is empty
+        real = refs.resolve(conn, {"title": "Heartbeat", "artists": ["KEXP"], "albumArtist": "Nneka"})
+        assert real["id"] == first["id"] and real["albumArtist"] == "Nneka"
