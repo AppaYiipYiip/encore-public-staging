@@ -87,8 +87,8 @@ def test_a_song_whose_keep_failed_is_never_tried_again_by_asking_only_by_retry(r
 
 
 def test_a_download_asked_for_goes_before_older_keeps_and_behind_a_single_tap(rig: Rig) -> None:
-    """The reason it is a level of its own: if the whole download were promoted like one tap, 200 songs would stand in front of the next person's
-    tap (the scheduler looks at the first 200 items only, B-39)."""
+    """The reason it is a level of its own: if the whole download were promoted like one tap, a person's own next tap would wait for the rest of their download (inside one priority a
+    person's items go oldest first, and items asked for in the same millisecond keep the order they were written in)."""
     older, tapped, first, second = rig.songs("marwa", "Older", "Tapped", "First", "Second")
     rig.client.put(f"{V1}/likes/{older}", params=creds("marwa"))  # asked long ago, in the background
     playlist = rig.playlist("nina", [first, second])
