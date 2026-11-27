@@ -96,6 +96,15 @@ def reset_password(
     return {"name": username, "role": person["role"], "usedKey": used_key, "devicesEnded": ended, "recoveryKey": new_key}
 
 
+def owners_without_key(db: Database) -> list[str]:
+    """The usernames of the owners who have no recovery key (an owner made before keys existed, or by the headless door): what `encore status` tells the Host about."""
+    with db.read() as conn:
+        rows = conn.execute(
+            "SELECT p.navidrome_user AS name FROM person p WHERE p.role = 'owner' AND NOT EXISTS (SELECT 1 FROM recovery_key k WHERE k.person = p.id) ORDER BY p.created_at"
+        ).fetchall()
+    return [row["name"] for row in rows]
+
+
 def new_recovery_key(db: Database, name: object = None) -> dict[str, Any]:
     """A new key for an owner, replacing any old one; the password is not touched. Without a name: the one owner, or a sentence when there are several."""
     with db.tx() as conn:

@@ -39,6 +39,10 @@ case "${op[*]}" in
         echo "name=${op[1]}"; echo "devicesEnded=2"; echo "usedKey=false"
         if [ "$FAKE_STATE" != member ]; then echo "recovery-key=ABCD-EFGH-JKMN-PQRS-TUVW"; fi
         ;;
+    "recovery-key --check")
+        [ "${FAKE_DOWN:-}" = 1 ] && exit 1
+        [ -n "${FAKE_KEYLESS:-}" ] && echo "$FAKE_KEYLESS"
+        ;;
     recovery-key*)
         if [ "${FAKE_REFUSE:-}" = 1 ]; then echo "Only an owner has a recovery key." >&2; exit 1; fi
         echo "name=riley"; echo "recovery-key=ABCD-EFGH-JKMN-PQRS-TUVW"
@@ -176,3 +180,16 @@ def test_a_warning_on_standard_error_does_not_change_what_the_script_asks_or_say
     assert refused.returncode == 1 and "That recovery key is not right." in refused.stderr and "WARN" not in refused.stderr
     key_made = install.encore("recovery-key", extra_env={**noisy, "FAKE_STATE": "owner"})
     assert key_made.returncode == 0 and key_made.stdout.count(NEW_KEY) == 1
+
+
+def test_status_tells_an_owner_without_a_recovery_key_how_to_make_one(tmp_path: Path) -> None:
+    """An owner made before keys existed, or by the headless door, has no way back from a forgotten password but root's own: `encore status` says so, once, in words."""
+    install, env, _ = rig(tmp_path)
+    shown = install.encore("status", extra_env={**env, "FAKE_KEYLESS": "riley"}).stdout
+    assert "No recovery key yet for: riley. Make one now with:  sudo encore recovery-key" in shown, shown
+    assert "No recovery key yet" not in install.encore("status", extra_env=env).stdout, "an owner who has a key is not nagged"
+    assert "No recovery key yet" not in install.encore("status", extra_env={**env, "FAKE_DOWN": "1"}).stdout, (
+        "silent when the server does not answer"
+    )
+    two = install.encore("status", extra_env={**env, "FAKE_KEYLESS": "riley" + chr(10) + "sara"}).stdout
+    assert "No recovery key yet for: riley sara." in two

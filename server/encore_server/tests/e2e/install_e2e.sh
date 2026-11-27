@@ -129,6 +129,15 @@ expect "the owner's role" "$(printf '%s' "$SIGN_IN" | jq -r '.person.role // emp
 TOKEN="$(printf '%s' "$SIGN_IN" | jq -r '.deviceToken')"
 expect "a wrong password is refused" "$(status_of -X POST "$API/auth/login" -H 'Content-Type: application/json' -d '{"username":"riley","password":"not the password"}')" 401
 
+step "encore status tells an owner who has no recovery key (the headless door makes none) and does not nag one who has"
+STATUS_NOW="$(encore status 2>&1)" || fail "encore status failed: $STATUS_NOW"
+if [ "$DOOR" = headless ]; then
+    expect_match "the headless owner is told" "$STATUS_NOW" "No recovery key yet for: ${OWNER}\. Make one now with:  sudo encore recovery-key"
+else
+    if printf '%s' "$STATUS_NOW" | grep -q "No recovery key yet"; then fail "an owner with a key is told they have none"; fi
+    ok "the browser owner, who has a key, is not told"
+fi
+
 # ------------------------------------------------------------------------------------------------------------------------------------ the way back
 step "encore reset-password (the first real run of the music server's password change through the command door)"
 printf '%s\n' "$NEW_PASSWORD" >"$WORK/pw2"
