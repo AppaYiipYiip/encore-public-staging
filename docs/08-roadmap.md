@@ -209,7 +209,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | 143 | N-01 | Share a song, album or playlist as a link | M | todo | none | 100 to 199 |
 | 144 | N-02 | Export a playlist as a file | S | todo | none | 100 to 200 |
 
-**Later** (28 items: future work to keep in mind and not bother with now, D-58; no estimate)
+**Later** (29 items: future work to keep in mind and not bother with now, D-58; no estimate)
 
 | Item | What | Size | Needs |
 |------|------|------|-------|
@@ -241,6 +241,7 @@ The conditions of the twelve phases the first draft had (history, D-57), and the
 | N-50 | Behind the scenes: a song's year comes from a measured rule | M | N-48 |
 | N-51 | Behind the scenes: single-only songs are filed under their single | M | N-48 |
 | N-52 | Behind the scenes: kept uploads that are the wrong song are found | M | N-44 |
+| N-53 | Behind the scenes: the server knows where a library song's file really lies | M | N-38 |
 
 **Done** (26 items with their proof; what is left inside them is in `history/reviews-2026-10-31.md#audit`)
 

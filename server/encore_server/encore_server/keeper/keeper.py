@@ -414,6 +414,7 @@ class Keeper:
                 meta=meta,
                 audio_key=audio_key,
                 audio_key_size=size if audio_key is not None else None,
+                path_real=True,  # the keeper placed it there: this is where the file lies, whatever path the scanner stored first (N-53)
             )
             touched = library.touch_ref_holders(conn, ref["id"]) if navidrome_id else {}
         if navidrome_id is None:

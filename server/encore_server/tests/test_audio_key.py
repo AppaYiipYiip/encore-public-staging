@@ -268,6 +268,7 @@ class Bench:
                 codec="opus",
                 bitrate_kbps=1,
                 meta={"size": len(content)},
+                path_real=True,  # a row whose path was checked (N-53): the errand takes no other
             )
             if not preferred:
                 conn.execute("UPDATE song_file SET preferred = 0 WHERE ref = ?", (ref,))
@@ -369,7 +370,14 @@ def test_what_is_not_on_the_disk_or_not_in_the_music_folder_is_left_and_never_re
     ref = one_ref(bench.db, "Sneaky")
     with bench.db.tx() as conn:
         refs.attach_file(
-            conn, ref, navidrome_song_id="ndx", path="../secret.opus", codec="opus", bitrate_kbps=1, meta={"size": 7}
+            conn,
+            ref,
+            navidrome_song_id="ndx",
+            path="../secret.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            meta={"size": 7},
+            path_real=True,  # even a path marked checked is never read when it leaves the music folder
         )
 
     done_ = bench.keys().run_once()
@@ -434,7 +442,14 @@ def test_a_file_that_cannot_be_found_never_keeps_the_others_from_their_turn(benc
         ref = one_ref(bench.db, f"Unfindable {n}")
         with bench.db.tx() as conn:
             refs.attach_file(
-                conn, ref, navidrome_song_id=f"ndx{n}", path=f"Nowhere/{n}.opus", codec="opus", bitrate_kbps=1, meta={"size": 10}
+                conn,
+                ref,
+                navidrome_song_id=f"ndx{n}",
+                path=f"Nowhere/{n}.opus",
+                codec="opus",
+                bitrate_kbps=1,
+                meta={"size": 10},
+                path_real=True,
             )
         bad.append(ref)
 
@@ -534,4 +549,16 @@ def test_a_row_with_no_size_from_the_music_server_is_keyed_when_the_path_names_a
     ref, path = bench.add(b"a keeper row the music server never described")
     with bench.db.tx() as conn:
         conn.execute("UPDATE song_file SET meta = NULL WHERE ref = ?", (ref,))
+    assert bench.keys().run_once().made == 1 and bench.row(ref)["audio_key"] == of_bytes(path)
+
+
+def test_a_path_nobody_has_checked_is_never_looked_at(bench: Bench) -> None:
+    """N-53: the scanner's path is the music server's tag-built one, not a location. A row is keyed only after `real_paths` (or the keeper) has said where its file really lies."""
+    ref, path = bench.add(b"a library song")
+    with bench.db.tx() as conn:
+        conn.execute("UPDATE song_file SET path_real = 0 WHERE ref = ?", (ref,))
+
+    assert bench.keys().run_once() == (0, 0, 0) and bench.hashed == [] and bench.row(ref)["audio_key"] is None
+    with bench.db.tx() as conn:
+        conn.execute("UPDATE song_file SET path_real = 1 WHERE ref = ?", (ref,))
     assert bench.keys().run_once().made == 1 and bench.row(ref)["audio_key"] == of_bytes(path)

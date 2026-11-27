@@ -715,23 +715,27 @@ def attach_file(
     meta: dict[str, Any] | None = None,
     audio_key: str | None = None,
     audio_key_size: int | None = None,
+    path_real: bool = False,
 ) -> str:
-    """The server has (or now keeps) a copy of this song. [audio_key] (with the size it was taken at) is the keeper's own, made from the file it just placed (`audio_key.py`). Replacing a file changes only this: likes and playlists never move.
+    """The server has (or now keeps) a copy of this song. **[path_real] says [path] is where the file really lies** (the keeper placed it): it then WINS over a path the row already has (the scanner's
+    is the music server's tag-built one, N-53), and the row is marked checked. The scanner never says so: a path it stores is unverified, and never overwrites one the row has. [audio_key] (with the size it was taken at) is the keeper's own, made from the file it just placed (`audio_key.py`). Replacing a file changes only this: likes and playlists never move.
     Attaching what is already attached changes nothing (and writes nothing to the feed), so a scan can run as often as it likes."""
     if not ref_exists(conn, ref_id):
         raise ApiError("not_found", "That song is not known to this server.")
     meta_json = json.dumps(meta, separators=(",", ":"), sort_keys=True) if meta else None
     clear_missing(conn, ref_id)  # the server has a file of this song now: whatever was remembered about its absence is void
     existing = conn.execute(
-        "SELECT id, navidrome_song_id, path, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
+        "SELECT id, navidrome_song_id, path, path_real, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
         " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
         (ref_id, navidrome_song_id, path),
     ).fetchone()
     if existing is not None:
         changed = False
+        place, checked = (path, 1) if path_real and path else (existing["path"] or path, existing["path_real"])
         merged = (
             navidrome_song_id or existing["navidrome_song_id"],
-            existing["path"] or path,
+            place,
+            checked,
             codec or existing["codec"],
             bitrate_kbps if bitrate_kbps is not None else existing["bitrate_kbps"],
             meta_json or existing["meta"],
@@ -739,12 +743,13 @@ def attach_file(
         if merged != (
             existing["navidrome_song_id"],
             existing["path"],
+            existing["path_real"],
             existing["codec"],
             existing["bitrate_kbps"],
             existing["meta"],
         ):
             conn.execute(
-                "UPDATE song_file SET navidrome_song_id = ?, path = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
+                "UPDATE song_file SET navidrome_song_id = ?, path = ?, path_real = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
                 (*merged, existing["id"]),
             )
             changed = True
@@ -761,9 +766,22 @@ def attach_file(
     file_id = new_id("sf")
     conn.execute("UPDATE song_file SET preferred = 0 WHERE ref = ?", (ref_id,))
     conn.execute(
-        "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta, audio_key, audio_key_size)"
-        " VALUES (?,?,?,?,?,?,?,1,?,?,?,?)",
-        (file_id, ref_id, navidrome_song_id, path, codec, bitrate_kbps, source, now_ms(), meta_json, audio_key, audio_key_size),
+        "INSERT INTO song_file (id, ref, navidrome_song_id, path, path_real, codec, bitrate_kbps, source, preferred, added_at, meta, audio_key, audio_key_size)"
+        " VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?)",
+        (
+            file_id,
+            ref_id,
+            navidrome_song_id,
+            path,
+            1 if path_real and path else 0,
+            codec,
+            bitrate_kbps,
+            source,
+            now_ms(),
+            meta_json,
+            audio_key,
+            audio_key_size,
+        ),
     )
     touch_file(conn, ref_id)
     return file_id

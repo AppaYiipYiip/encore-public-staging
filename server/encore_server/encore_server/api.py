@@ -59,6 +59,7 @@ from .navidrome_admin import NavidromeAdmin
 from .notifications import Notifications
 from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
+from .real_paths import RealPaths
 from .ref_janitor import RefJanitor
 from .routes import admin_addons as admin_addons_routes
 from .routes import admin_health as admin_health_routes
@@ -267,10 +268,12 @@ def create_app(
         hub.end(person_id)
         forget_credentials(the_verifier, user)
 
+    music_admin = navidrome_admin or NavidromeAdmin(
+        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password
+    )
     accounts = Accounts(
         database,
-        navidrome_admin
-        or NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password),
+        music_admin,
         notifications=notifications,
         server_name=settings.server_name,
         on_ended=ended,
@@ -290,6 +293,7 @@ def create_app(
 
     tombstone_purge = TombstonePurge(database)
     audio_keys = AudioKeys(database, settings.music_dir)
+    real_paths = RealPaths(database, settings.music_dir, music_admin)
     ref_janitor = RefJanitor(database)
 
     def errands() -> None:
@@ -298,6 +302,7 @@ def create_app(
             *((album_pass.run_once,) if album_pass is not None else ()),
             finder.run_once,
             *((artist_finder.run_once,) if artist_finder is not None else ()),
+            real_paths.run_once,  # N-53: the real place of every library file (the music server's Subsonic path is built from the tags), BEFORE the audio keys, which need it
             audio_keys.run_once,  # N-38: the audio-only key of the files the keeper did not make (the library's own), so a tag rewrite never makes a phone download a song again
             tombstone_purge.run_once,  # N-31: old tombstones and old import lists go, so that the janitor below finds their songs unpointed
             ref_janitor.run_once,  # N-27: the song refs nobody points at (after the finders: they look at refs too)

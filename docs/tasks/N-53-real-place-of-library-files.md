@@ -1,0 +1,32 @@
+# N-53: the server knows where a library song's file really lies
+
+*Status: built 27 Nov 2026 (server only; built, not walked). Found by the CI of N-38 on the real music server; it gates the audio-key errand for library files, N-34's repair and N-26 slice 5.*
+
+## 1. The finding, with the proof
+
+`song_file.path` is read by everything that wants to find a kept file on the disk: the keeper (`_own_file`, the held-by-another test), the cover finder (`_folder_picture`, which writes a `cover.jpg` beside the file), the album pass, the audio-key errand, and the repairs to come. All of them assume it is the file's **location**, relative to the music folder. For a file the keeper placed it is. For every other file the scanner stores the `path` the music server's **Subsonic API** reports, and that is **built from the song's tags** (`Artist/Album/Title.opus`), not the place the file lies.
+
+**Measured** on the real music server (0.64.2, the integration job, 27 Nov 2026): a file at `Zxqv misc 3196d9/random-name-1234.opus` was reported by Subsonic as `Zxqv Artist 3196d9/Zxqv Album 3196d9/Zxqv Elsewhere 3196d9.opus`. And because `attach_file` keeps the path a row already has, **a file the keeper placed, whose row the scanner made first** (between the music server finding the file and the keeper's own link), keeps the built path for ever: `_own_file` cannot see it (the B-110 fix needs `Encore/` in front), and a repair that finds files by path would not find it.
+
+The music server has a setting that makes the Subsonic API report real paths (`Subsonic.DefaultReportRealPath`): **off by default, global to every client, and a security trade-off** the docs warn about. A Host who points Encore at his own music server has not turned it on and the product must not ask him to. So the server does not count on it.
+
+## 2. The answer: ask the music server's native API for the real place, and mark what was checked
+
+**Measured on the same server (a probe in CI, the same day):** the NATIVE API the server already signs in to as the administrator (`navidrome_admin.py`) returns the real place: `GET /api/song/{id}` and `GET /api/song?id=a&id=b` (several ids at once) give `path` (relative to the library), `libraryPath` and `libraryId` for each song. The Subsonic and the native ids are the same.
+
+* **`song_file.path_real`** (migration 0023; 0 or 1) says `path` is the file's real place relative to the music folder: either the keeper placed it there itself, or the music server's native API said so and the file was found there. **0 means "unverified": the scanner's tag-built path, or a path nobody has checked yet.** `song_file.path_checked_at` says when the errand last tried a row (so a row that can never be resolved goes to the back of the queue and cannot keep the others from their turn).
+* **The keeper's own link writes the real path and `path_real = 1`**, and it **wins** over a path the scanner stored first (`attach_file(..., path_real=True)`). The scanner's attach never overwrites an existing path, and a path it stores is `path_real = 0`.
+* **`real_paths.py`: an errand of the hourly library link** (before the audio keys): takes the rows with `path_real = 0` and a music-server id, asks the native API 100 ids at a time, and stores `path` and `path_real = 1` **only if the file is on the disk at that place inside the music folder** (a music server whose library is another folder, a disk not mounted, a library that is not this server's). It is also the **re-link of the rows that already exist**: every row starts at 0 after the migration and is checked over a few passes. It writes with compare-and-set (the row must still be the one it read, still unchecked), stamps what it could not resolve, and stops the pass when the music server does not answer without stamping anything.
+* **Readers trust only a checked path.** The audio-key errand takes rows with `path_real = 1` only. (The keeper's `_own_file` and the cover finder already require `Encore/` and a `youtube` source; a checked real path now makes a raced row visible to them. They are not changed.)
+* **The API shape does not change** (`path` was never in a ref's `file`), so no phone is told anything.
+
+## 3. What this costs and what it does not do
+
+* One native request per 100 files, once per file (and once for a new one), a few seconds for a library of 20 000 songs spread over a few hourly passes; nothing at all when everything is checked.
+* A music server that cannot be asked (an older version without the route, the administrator's login refused) leaves rows at 0 and says so once in the log: the audio keys are not made for library files and nothing else changes. **A newer music server could change or remove the native route**: the integration job pins the version (compose) and its test (`test_real_paths.py`) fails loudly when the answer changes.
+* It does not move or retag anything. The repairs that do (N-34, N-26 slice 5) find a file through `path_real = 1` and still check the size.
+* A library song in a second library of the music server whose root is not the music folder stays unchecked (its path does not name a file here): no key, as before.
+
+## 4. Tests
+
+`tests/test_real_paths.py` (the errand with a given native client: fills and verifies; a path that is not on the disk or leaves the folder is stamped and not trusted; compare-and-set; unknown ids stamped; a music server that does not answer stops the pass and stamps nothing; the queue is fair; the keeper's real path wins over the scanner's, the scanner never overwrites; the audio keys take checked rows only); `tests/integration/test_real_paths.py` (the real music server: the Subsonic path is tag-built for a file elsewhere, the errand stores the real place, the audio-key errand then keys it; and the native route's shape is pinned).
