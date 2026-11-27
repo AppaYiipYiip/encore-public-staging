@@ -263,3 +263,92 @@ def test_how_a_compressed_answer_a_form_post_login_and_a_repeated_name_are_answe
                 f"{label:44} -> {got['status']} {got['type']:22} enc={got['encoding']:5} length={got['length']} chunked={got['chunked']} size={got['size']:6} ok={got['ok']} code={got['code']}"
             )
     assert all(got["status"] < 500 for _, got in rows), "the music server answered every one of them"
+
+
+# ---------------------------------------------------------------------------------------------------------------------------- HEAD: is it a password oracle? (P3-34 slice 2c)
+
+
+def ask_head(endpoint: str, pairs: list[tuple[str, str]], *, headers: dict[str, str] | None = None) -> dict[str, Any]:
+    """One HEAD of `/rest/<endpoint>`: only what a HEAD carries (status, content type, content length, encoding): a guesser's whole view of the answer when the gateway cannot read a body."""
+    url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
+    request = urllib.request.Request(url, headers=headers or {}, method="HEAD")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
+            status, answer_headers = response.status, response.headers
+    except urllib.error.HTTPError as error:
+        status, answer_headers = error.code, error.headers
+    return {
+        "status": status,
+        "type": (answer_headers.get("content-type") or "").split(";")[0].strip(),
+        "length": answer_headers.get("content-length"),
+        "encoding": answer_headers.get("content-encoding") or "-",
+        "ranges": answer_headers.get("accept-ranges") or "-",
+    }
+
+
+def test_what_a_head_with_a_right_and_a_wrong_login_looks_like(
+    accounts: dict[str, str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The gateway cannot read the body of a HEAD, so a HEAD with a login is not counted. Whether that lets a guesser try passwords without being counted depends on what a HEAD says: if a right and
+    a wrong login look the same in status, content type and content length, a HEAD is no oracle. Printed, not asserted (the design follows what is found)."""
+    from tests.integration.conftest import MUSIC, make_audio, scan_and_wait
+
+    person, password = accounts["person"], accounts["person_pw"]
+    admin = accounts["admin"], accounts["admin_pw"]
+    make_audio(
+        MUSIC / "HeadProbe" / "Head Album" / "01 Head Song.opus", title="Head Song", artist="Head Probe", album="Head Album"
+    )
+    from encore_server.navidrome import NavidromeClient
+
+    client = NavidromeClient(URL, *admin)
+    scan_and_wait(client)
+    found = ask_full(
+        "search3.view",
+        [("u", admin[0]), ("t", token(admin[1], "headsalt1")), ("s", "headsalt1"), ("f", "json"), ("query", "Head Song")],
+    )
+    song = re.search(r'"song":\[\{"id":"([^"]+)"', found) or re.search(r'"id":"([^"]+)"[^}]*"title":"Head Song"', found)
+    song_id = song.group(1) if song else "no-such-song"
+
+    def login(right: bool, salt: str) -> list[tuple[str, str]]:
+        guess = password if right else "not-the-password-" + secrets.token_hex(2)
+        return [("u", person), ("t", token(guess, salt)), ("s", salt), ("f", "json")]
+
+    cases: list[tuple[str, str, list[tuple[str, str]]]] = [
+        ("ping", "ping.view", []),
+        ("stream, a missing song", "stream.view", [("id", "no-such-song")]),
+        ("stream, a real song", "stream.view", [("id", song_id)]),
+        ("getAlbumList2", "getAlbumList2.view", [("type", "newest"), ("size", "1")]),
+        ("getCoverArt, a missing id", "getCoverArt.view", [("id", "no-such-cover")]),
+    ]
+    rows: list[tuple[str, str, dict[str, Any]]] = []
+    for label, endpoint, extra in cases:
+        for right in (True, False):
+            for how, headers in (("plain", None), ("gzip", {"Accept-Encoding": "gzip"})):
+                rows.append(
+                    (
+                        f"HEAD {label}",
+                        f"{'RIGHT' if right else 'WRONG'} {how}",
+                        ask_head(endpoint, [*login(right, "headsalt2"), *extra], headers=headers),
+                    )
+                )
+    rows.append(
+        (
+            "GET stream, a real song",
+            "RIGHT plain",
+            {**ask("stream.view", **dict(login(True, "headsalt3")), id=song_id), "encoding": "-", "ranges": "-"},
+        )
+    )
+
+    with capsys.disabled():
+        print("\n=== P3-34 2c: what a HEAD says (song id found: " + ("yes" if song_id != "no-such-song" else "NO") + ")")
+        for label, how, got in rows:
+            print(
+                f"{label:30} {how:12} -> {got['status']} {got['type']:26} length={got['length']} enc={got['encoding']} ranges={got['ranges']}"
+            )
+    assert rows
+
+
+def ask_full(endpoint: str, pairs: list[tuple[str, str]]) -> str:
+    url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
+    with urllib.request.urlopen(url, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
+        return str(response.read().decode("utf-8", "replace"))
