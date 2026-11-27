@@ -19,7 +19,7 @@ from encore_server import netaddr
 from encore_server.accounts import Limiter
 from encore_server.api import create_app
 from encore_server.config import Settings
-from tests.conftest import FakeVerifier, creds
+from tests.conftest import FakeVerifier, creds, says
 from tests.test_accounts import V1, FakeAdmin
 
 STRANGER = "203.0.113.9"
@@ -198,7 +198,7 @@ def test_a_lock_the_owner_made_is_checked_before_the_password_so_it_never_says_w
     wrong_that_way = rig.wrong("nina", 1, address=OWNER_AWAY)
 
     assert right.status_code == wrong.status_code == through_the_music_server.status_code == wrong_that_way.status_code == 403
-    assert right.json() == wrong.json(), "a right password and a wrong one get the same answer"
+    assert says(right.json()) == says(wrong.json()), "a right password and a wrong one get the same answer"
     assert rig.verifier.checks == before, "the password was not even looked at"
 
 
@@ -422,7 +422,7 @@ def test_a_locked_account_is_refused_at_the_subsonic_door_before_its_password_is
     wrong = subsonic(rig, wrong_login(1, "nina"), address=OWNER_AWAY)
 
     assert right.status_code == wrong.status_code == 403
-    assert right.json() == wrong.json(), "a right password and a wrong one get the same answer"
+    assert says(right.json()) == says(wrong.json()), "a right password and a wrong one get the same answer"
     assert rig.verifier.checks == before and not rig.music.asked
 
 

@@ -16,7 +16,7 @@ from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.errors import ApiError
 from encore_server.navidrome_admin import NameTaken
-from tests.conftest import FakeVerifier, creds
+from tests.conftest import FakeVerifier, creds, says
 
 V1 = "/encore/api/v1"
 
@@ -529,7 +529,7 @@ def test_asking_again_still_needs_the_password_and_the_same_name(rig: Rig) -> No
     assert wrong_password.status_code == 404 and other_name.status_code == 404, (
         "the same answer as any dead code: nothing is confirmed"
     )
-    assert wrong_password.json() == other_name.json()
+    assert says(wrong_password.json()) == says(other_name.json())
     assert _devices_of(rig, "sara") == devices, "nobody got a device"
     assert "sara2" not in rig.verifier.passwords, "and no second account"
 

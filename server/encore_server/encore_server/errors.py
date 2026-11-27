@@ -1,4 +1,4 @@
-"""One error shape everywhere (docs/17 sections 1 and 2): `{"error": {"code", "message", "retryable", "retryAfterMs", "details"}}`.
+"""One error shape everywhere (docs/17 sections 1 and 2): `{"error": {"code", "message", "retryable", "retryAfterMs", "details", "requestId"}}` (the id only inside a request).
 
 `message` is a plain sentence a client may show as it is; `code` is for logic. The list of codes is closed: a new one needs a doc change.
 """
@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 from typing import Any
+
+from .request_id import request_id_var
 
 #: code -> (HTTP status, the sentence, whether trying again can help)
 CODES: dict[str, tuple[int, str, bool]] = {
@@ -50,13 +52,17 @@ class ApiError(Exception):
         self.retry_after_ms = retry_after_ms
         self.details = details or {}
 
-    def body(self) -> dict[str, Any]:
-        return {
-            "error": {
-                "code": self.code,
-                "message": self.message,
-                "retryable": self.retryable,
-                "retryAfterMs": self.retry_after_ms,
-                "details": self.details,
-            }
+    def body(self, request_id: str | None = None) -> dict[str, Any]:
+        """The one error shape. **`requestId` is the id of the request that failed** (P1-19; docs/17): the phone shows it, and `encore logs` holds the same id. It is given by the handler that has the
+        request in hand, else read from the request being handled; absent outside a request (additive: an app from before ignores it)."""
+        shown = request_id if request_id is not None else request_id_var.get()
+        error: dict[str, Any] = {
+            "code": self.code,
+            "message": self.message,
+            "retryable": self.retryable,
+            "retryAfterMs": self.retry_after_ms,
+            "details": self.details,
         }
+        if shown and shown != "-":
+            error["requestId"] = shown
+        return {"error": error}

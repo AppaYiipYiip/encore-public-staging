@@ -12,12 +12,16 @@ from . import textnorm
 from .api import create_app
 from .config import Settings
 from .db import MigrationFailed
+from .request_id import RequestIdFilter
 from .sources.youtube.tools import ToolStore, activate
 from .stopping import UVICORN_GRACE_S
 
 
 def configure_logging(level: str) -> None:
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # `%(rid)s` is ` [<request id>]` while a request is handled (P1-19: a failure is followed from the phone to this log by that id), nothing otherwise.
+    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s%(rid)s: %(message)s")
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(RequestIdFilter())
     # The music server is asked with the person's login token in the address, and httpx logs every address at INFO: that would put
     # a value anyone could guess the password from (token = md5 of password and salt) into the log. Warnings and errors only.
     for noisy in ("httpx", "httpcore"):

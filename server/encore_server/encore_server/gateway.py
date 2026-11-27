@@ -18,6 +18,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from .errors import ApiError
+from .request_id import of as request_id_of
 
 log = logging.getLogger("encore_server.gateway")
 
@@ -97,6 +98,9 @@ def mount(
         headers.setdefault("accept-encoding", "identity")
         headers["x-forwarded-for"] = request.client.host if request.client else ""
         headers["x-forwarded-proto"] = request.url.scheme
+        # The request's id goes to the music server too (it logs it as its `requestId`): what the phone sent when it was a plain id, else the one this server made (P1-19).
+        if (rid := request_id_of(request)) is not None:
+            headers["x-request-id"] = rid
         body = await request.body() if request.method in ("POST", "PUT", "PATCH", "DELETE") else None
         try:
             built = http.build_request(request.method, url, headers=headers, content=body)
