@@ -114,7 +114,7 @@ class HomeGuard(Protocol):
     """What the gateway asks of the guard at the home door (P3-34 slice 2b): a refusal to answer with instead of passing the call on, and the outcome once the music server has answered. See
     `routes.common.HomeLoginGuard`."""
 
-    def refuse(self, request: Request, login: Any) -> tuple[int, dict[str, str], bytes] | None: ...
+    def begin(self, request: Request, login: Any) -> Any: ...
 
     def settle(self, request: Request, login: Any, *, refused: bool) -> None: ...
 
@@ -188,6 +188,7 @@ def mount(
             return _not_found(request)
         where = resolved(path)
         login = None  # the login a Subsonic call carries at the home door, when the guard counts it (P3-34 slice 2b)
+        attempt: Any = None  # the slot that check holds while the music server answers (slice 2d): given back in the `finally` below, on every way out
         if where == "/rest" or where.startswith("/rest/"):
             if not _SUBSONIC.fullmatch(where):
                 return _not_found(request)
@@ -202,76 +203,82 @@ def mount(
             if home_guard is not None and not from_the_internet and carried is not None:
                 login = carried
                 # In a worker thread, not on the event loop: the first accepted login and an hourly renewal are written to the database, and a busy database must not stall every other call.
-                refusal = await run_in_threadpool(home_guard.refuse, request, login)
-                if refusal is not None:
-                    status, headers, content = refusal
+                attempt = await run_in_threadpool(home_guard.begin, request, login)
+                if attempt.refusal is not None:
+                    status, headers, content = attempt.refusal
                     return Response(content, status_code=status, headers=headers)
-                if request.method in _NO_BODY_METHODS:
-                    await judge_head(request, login, query)
         elif web_page_open is None or not web_page_open(request):
             return _not_found(request)
-        url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
-        headers = _forward(request.headers)
-        # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see. EXCEPT a call whose login is being counted: the music server compresses its
-        # answers for a client that asks (measured, 0.64.2: a wrong-login answer of 168 bytes, gzip), and a refusal that cannot be read must not be mistaken for a login that passed. Those calls are
-        # answered uncompressed (a list at home is a few kilobytes more on a local network; a song is not affected, it is never compressed).
-        if login is not None:
-            headers["accept-encoding"] = "identity"
-        else:
-            headers.setdefault("accept-encoding", "identity")
-        headers["x-forwarded-for"] = request.client.host if request.client else ""
-        headers["x-forwarded-proto"] = request.url.scheme
-        # The request's id goes to the music server too (it logs it as its `requestId`): what the phone sent when it was a plain id, else the one this server made (P1-19).
-        if (rid := request_id_of(request)) is not None:
-            headers["x-request-id"] = rid
-        body = await request.body() if request.method in ("POST", "PUT", "PATCH", "DELETE") else None
         try:
-            built = http.build_request(request.method, url, headers=headers, content=body)
-            answer = await http.send(built, stream=True)
-        except httpx.HTTPError as error:
-            log.info("the music server did not answer %s %s: %s", request.method, path, type(error).__name__)
-            return JSONResponse(
-                ApiError("server_busy", "The music server is not answering. Try again in a moment.").body(), status_code=503
-            )
-
-        async def chunks() -> AsyncIterator[bytes]:
+            if attempt is not None and request.method in _NO_BODY_METHODS:
+                await judge_head(request, login, query)
+            url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
+            headers = _forward(request.headers)
+            # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see. EXCEPT a call whose login is being counted: the music server compresses its
+            # answers for a client that asks (measured, 0.64.2: a wrong-login answer of 168 bytes, gzip), and a refusal that cannot be read must not be mistaken for a login that passed. Those calls are
+            # answered uncompressed (a list at home is a few kilobytes more on a local network; a song is not affected, it is never compressed).
+            if login is not None:
+                headers["accept-encoding"] = "identity"
+            else:
+                headers.setdefault("accept-encoding", "identity")
+            headers["x-forwarded-for"] = request.client.host if request.client else ""
+            headers["x-forwarded-proto"] = request.url.scheme
+            # The request's id goes to the music server too (it logs it as its `requestId`): what the phone sent when it was a plain id, else the one this server made (P1-19).
+            if (rid := request_id_of(request)) is not None:
+                headers["x-request-id"] = rid
+            body = await request.body() if request.method in ("POST", "PUT", "PATCH", "DELETE") else None
             try:
-                async for piece in answer.aiter_raw(_CHUNK):
-                    yield piece
-            except httpx.HTTPError as error:  # the music server went away half-way: the client sees a short body and asks again
-                log.info("the music server stopped sending %s: %s", path, type(error).__name__)
-            finally:
-                await answer.aclose()
+                built = http.build_request(request.method, url, headers=headers, content=body)
+                answer = await http.send(built, stream=True)
+            except httpx.HTTPError as error:
+                log.info("the music server did not answer %s %s: %s", request.method, path, type(error).__name__)
+                return JSONResponse(
+                    ApiError("server_busy", "The music server is not answering. Try again in a moment.").body(), status_code=503
+                )
 
-        out = _forward(answer.headers)
-        # The body is passed on as it came (still compressed if it was), so its length and encoding headers stay true.
-        for keep in ("content-length", "content-encoding"):
-            if keep in answer.headers:
-                out[keep] = answer.headers[keep]
-        if (
-            login is not None and home_guard is not None and request.method not in _NO_BODY_METHODS
-        ):  # those were judged by their ping above
-            # What the music server said about the login, decided on EVIDENCE (`subsonic_guard.how_to_read`): only a small, sized, uncompressed json or xml answer is read (a wrong login is always
-            # exactly that, measured) and is a refusal, an acceptance (an ok, or an error that can only come after the login passed) or nothing we can tell; a song, a picture or a list far larger
-            # than any refusal is an acceptance and streams untouched below. Anything else (compressed, chunked, an unknown type, a code 10) is neither counted nor remembered.
-            encoding = answer.headers.get("content-encoding", "identity").strip().lower()
-            mode = subsonic_guard.how_to_read(
-                answer.status_code,
-                answer.headers.get("content-type", ""),
-                answer.headers.get("content-length"),
-                "chunked" in answer.headers.get("transfer-encoding", "").lower(),
-                encoding not in ("", "identity"),
-            )
-            if mode == "read":
-                content = b"".join([piece async for piece in answer.aiter_raw(_CHUNK)])
+            async def chunks() -> AsyncIterator[bytes]:
+                try:
+                    async for piece in answer.aiter_raw(_CHUNK):
+                        yield piece
+                except (
+                    httpx.HTTPError
+                ) as error:  # the music server went away half-way: the client sees a short body and asks again
+                    log.info("the music server stopped sending %s: %s", path, type(error).__name__)
+                finally:
+                    await answer.aclose()
+
+            out = _forward(answer.headers)
+            # The body is passed on as it came (still compressed if it was), so its length and encoding headers stay true.
+            for keep in ("content-length", "content-encoding"):
+                if keep in answer.headers:
+                    out[keep] = answer.headers[keep]
+            if (
+                login is not None and home_guard is not None and request.method not in _NO_BODY_METHODS
+            ):  # those were judged by their ping above
+                # What the music server said about the login, decided on EVIDENCE (`subsonic_guard.how_to_read`): only a small, sized, uncompressed json or xml answer is read (a wrong login is always
+                # exactly that, measured) and is a refusal, an acceptance (an ok, or an error that can only come after the login passed) or nothing we can tell; a song, a picture or a list far larger
+                # than any refusal is an acceptance and streams untouched below. Anything else (compressed, chunked, an unknown type, a code 10) is neither counted nor remembered.
+                encoding = answer.headers.get("content-encoding", "identity").strip().lower()
+                mode = subsonic_guard.how_to_read(
+                    answer.status_code,
+                    answer.headers.get("content-type", ""),
+                    answer.headers.get("content-length"),
+                    "chunked" in answer.headers.get("transfer-encoding", "").lower(),
+                    encoding not in ("", "identity"),
+                )
+                if mode == "read":
+                    content = b"".join([piece async for piece in answer.aiter_raw(_CHUNK)])
+                    await answer.aclose()
+                    verdict = subsonic_guard.judge(content)
+                    if verdict != "unknown":
+                        await run_in_threadpool(home_guard.settle, request, login, refused=verdict == "refused")
+                    return Response(content, status_code=answer.status_code, headers=out)
+                if mode == "accepted":
+                    await run_in_threadpool(home_guard.settle, request, login, refused=False)
+            if request.method == "HEAD":
                 await answer.aclose()
-                verdict = subsonic_guard.judge(content)
-                if verdict != "unknown":
-                    await run_in_threadpool(home_guard.settle, request, login, refused=verdict == "refused")
-                return Response(content, status_code=answer.status_code, headers=out)
-            if mode == "accepted":
-                await run_in_threadpool(home_guard.settle, request, login, refused=False)
-        if request.method == "HEAD":
-            await answer.aclose()
-            return Response(status_code=answer.status_code, headers=out)
-        return StreamingResponse(chunks(), status_code=answer.status_code, headers=out)
+                return Response(status_code=answer.status_code, headers=out)
+            return StreamingResponse(chunks(), status_code=answer.status_code, headers=out)
+        finally:
+            if attempt is not None:
+                attempt.release()

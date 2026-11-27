@@ -1,0 +1,13 @@
+{
+ "id": "20261127T223447Z-agent-7914",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T22:34:47Z",
+ "type": "note",
+ "body": "SLICE 2d BUILT (PR with the in-flight slots), what is left before `mark P3-34 built`: slice 3 only. MEASURED in the log of PR 188 (Navidrome 0.64.2): a name that does not exist gets code 40 / 194 bytes like a wrong password (so it is counted); of ten other spellings of a real name tried with the right password (spaces, U+017F, fullwidth, Kelvin, trailing dot, NUL) none is accepted beyond case, which the per-account key folds with strip().lower(): no spelling gets past the account limit. BUILT: `LoginGuard.begin` takes a slot (16 per name from an address, 32 per name from anywhere, 48 per address; a known device takes none) for as long as the music server is being asked, given back on every way out, in the sign-in, the password change, `check_music_login` (internet door) and the home door; sixty concurrent wrong logins: 55 reached the music server before, at most the ceiling now. COST (docs/21): a burst can pass the ceiling once a minute instead of its own size; an app with a fresh salt per call loading a dozen covers is not held up. NEXT: slice 3 (the sentence that says which address the server saw: Health row, `op seen`/`encore status`, installer, install guide; design and four checks are in NEXT.md part H), then `mark P3-34 built` and close the claim.",
+ "to": [
+  "agent"
+ ],
+ "replaces": "20261127T214810Z-agent-f784"
+}

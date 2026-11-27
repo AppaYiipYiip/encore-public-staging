@@ -90,6 +90,16 @@ The server's logs never contain song titles tied to a person (only ids), passwor
   HEAD is rare. **The guard reads what the music server reads, not what this server's apps send:** a name with a space or an accent, a salt of any length or shape, a token of any shape and a
   password of any length are counted too (the first reader asked for letters and digits, a 32-hex token, a salt of 4 to 64 letters and digits and a password of 256 characters at most, and
   everything else was a free guess); only a name with a control character, or of more than 256 characters, is not a login. The internet door stays as strict as it was (the shapes this server's apps make).
+  **Measured and closed (slice 2d, the log of PR 188):** a name that does not exist gets the same answer as a wrong password (code 40, 194 bytes), so it is counted and a guesser cannot go through names
+  for free; and of ten other spellings of a real name tried with the RIGHT password (a space either side, U+017F for an `s`, a fullwidth letter, the Kelvin sign, a trailing dot, a NUL) the music
+  server accepts none beyond a change of case, which the account limit already folds (`strip().lower()`), so there is no spelling that gets past the per-account limit.
+  **A burst of concurrent wrong logins (slice 2d):** a wrong answer is counted only once the music server has given it, so sixty sent together all met a count of zero and all passed (55 of 60
+  reached the music server in the test, against the limit of five). A check of a login that is not a known device now also takes a **slot** for as long as the music server is being asked
+  (`LoginGuard.begin`, a `with` around the check, given back on every way out: accepted, refused, an error, a music server that does not answer, a cancelled call), and is refused when
+  **16 checks of that name from that address, 32 of that name from anywhere, or 48 from that address** are already under way. The numbers are far above what an app does at once (a screen of
+  covers is a dozen or two; Dart, OkHttp and the browsers keep 5 to 10 connections to a host), so an app that makes a fresh salt for every call is not held up, and far below a script's burst,
+  which is held to them (and then counted as wrong like any other, so the minute's limit holds): a burst can pass at most the ceiling, once a minute, instead of its own size. A known device
+  takes no slot. It covers the sign-in, the password change, the internet door of `/rest` and the home door.
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).
 

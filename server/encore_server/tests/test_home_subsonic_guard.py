@@ -8,9 +8,12 @@ the day). Everything that is not a small sized answer of that kind (a song, a pi
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
-from collections.abc import Iterator
+import time
+from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import parse_qsl
 
@@ -18,7 +21,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from encore_server.accounts import Limiter
+from encore_server.accounts import Limiter, LoginGuard
 from encore_server.api import create_app
 from encore_server.auth import NavidromeVerifier, subsonic_token
 from encore_server.config import Settings
@@ -68,6 +71,8 @@ class Music:
         self.encodings: list[str] = []  # the Accept-Encoding of each call that reached it
         self.methods: list[str] = []  # the method of each call that reached it
         self.fail_get = False  # a GET is not answered (the connection fails)
+        self.fail_all = False  # nothing is answered
+        self.delay = 0.0  # seconds the music server takes to answer: what lets a burst overlap
         #: What a music server (a newer one, another one) might do that 0.64.2 was measured NOT to: compress an answer, send it without a length, ignore a login in a form body.
         self.compress = False  # compresses every small answer, asked or not
         self.compress_when_asked = False  # like the real one: only for a client that sends Accept-Encoding: gzip
@@ -100,7 +105,7 @@ class Music:
             params.setdefault(name, value)
         self.encodings.append(request.headers.get("accept-encoding", ""))
         self.methods.append(request.method)
-        if self.fail_get and request.method == "GET":
+        if self.fail_all or (self.fail_get and request.method == "GET"):
             raise httpx.ConnectError("the music server is not answering", request=request)
         answered = self.misbehave(self.answer_for(request, params))
         if request.method in ("HEAD", "OPTIONS"):
@@ -157,6 +162,11 @@ class Rig:
     def __init__(self, client: TestClient, music: Music, clock: list[float], verifier: NavidromeVerifier) -> None:
         self.client, self.music, self.clock, self.verifier = client, music, clock, verifier
 
+    @property
+    def in_flight(self) -> int:
+        """The checks that hold a slot right now (P3-34 slice 2d): nothing, once every call has been answered."""
+        return int(self.client.app.state.services.limiter.in_flight())  # type: ignore[attr-defined]
+
     def token_call(
         self,
         user: str,
@@ -195,11 +205,24 @@ class Rig:
 def rig(tmp_path: Path) -> Iterator[Rig]:
     music = Music()
     clock = [1000.0]
+
+    def slow_sync(
+        request: httpx.Request,
+    ) -> httpx.Response:  # the verifier's calls run in worker threads: a sleep lets them overlap
+        time.sleep(music.delay)
+        return music.handle(request)
+
+    async def slow(
+        request: httpx.Request,
+    ) -> httpx.Response:  # the gateway's calls share the event loop: only an await lets them overlap
+        await asyncio.sleep(music.delay)
+        return music.handle(request)
+
     verifier = NavidromeVerifier(
-        "http://music.invalid", client=httpx.Client(transport=httpx.MockTransport(music.handle)), clock=lambda: clock[0]
+        "http://music.invalid", client=httpx.Client(transport=httpx.MockTransport(slow_sync)), clock=lambda: clock[0]
     )
     settings = Settings(data_dir=tmp_path / "data", music_dir=tmp_path / "m", navidrome_url="http://music.invalid", youtube=False)
-    gateway_client = httpx.AsyncClient(transport=httpx.MockTransport(music.handle))
+    gateway_client = httpx.AsyncClient(transport=httpx.MockTransport(slow))
     app = create_app(settings, verifier=verifier, navidrome_admin=FakeAdmin(music), gateway_client=gateway_client)  # type: ignore[arg-type]
     with TestClient(app, client=(GATEWAY, 50000)) as client:  # every visitor arrives as the gateway: the address is hidden
         app.state.services.limiter = Limiter(lambda: clock[0])
@@ -415,7 +438,7 @@ def test_the_guard_runs_in_a_worker_thread_never_on_the_event_loop(rig: Rig, mon
     assert rig.token_call("marwa", "pw-marwa").status_code == 200  # a right login: refuse, then settle
     assert rig.token_call("marwa", "wrong", salt="aaaa0001").status_code == 200  # a wrong one: refuse, then settle (counted)
 
-    assert through == ["refuse", "settle", "refuse", "settle"]
+    assert through == ["begin", "settle", "begin", "settle"]
 
 
 # ------------------------------------------------------------------------------------------------------------------------------ review of 2b (the advisor)
@@ -737,3 +760,90 @@ def test_an_options_call_with_a_login_is_judged_by_a_ping_like_a_head(rig: Rig) 
 
     assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
     assert rig.reached("marwa") <= 10
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ slice 2d: a burst of concurrent wrong logins
+
+
+BURST = 60
+
+
+def burst(calls: list[Callable[[], httpx.Response]]) -> list[int]:
+    """All of them at the same time: a thread each, every one waiting for the music server for a fifth of a second."""
+    with ThreadPoolExecutor(len(calls)) as pool:
+        return list(pool.map(lambda call: int(call().status_code), calls))
+
+
+def test_sixty_concurrent_wrong_logins_at_home_are_held_to_the_ceiling_not_to_their_own_size(rig: Rig) -> None:
+    """A wrong answer is counted when the music server has given it, so sixty sent together all met a count of zero and all reached it (the advisor's burst). Now the checks under way are limited
+    too: only a few more than the ceiling reach the music server, and the rest are refused."""
+    rig.music.delay = 0.3
+
+    answers = burst([lambda i=i: rig.token_call("marwa", f"guess-{i}", salt=f"salt{i:04d}") for i in range(BURST)])
+
+    assert rig.reached("marwa") <= LoginGuard.IN_FLIGHT_PAIR + LoginGuard.PAIR[0], (
+        "held to the ceiling (plus the few counted while they ran)"
+    )
+    assert answers.count(429) >= BURST - LoginGuard.IN_FLIGHT_PAIR - LoginGuard.PAIR[0]
+    assert rig.in_flight == 0, "every slot was given back"
+
+
+def test_the_same_burst_from_the_internet_is_held_too(rig: Rig) -> None:
+    """The internet door checks the login itself (`check_music_login`, in a worker thread): the same slots."""
+    rig.music.delay = 0.3
+
+    burst([lambda i=i: rig.token_call("marwa", f"guess-{i}", salt=f"salt{i:04d}", headers=PUBLIC) for i in range(BURST)])
+
+    assert rig.reached("marwa") <= LoginGuard.IN_FLIGHT_PAIR + LoginGuard.PAIR[0]
+    assert rig.in_flight == 0
+
+
+def test_the_same_burst_of_sign_ins_is_held_too(rig: Rig) -> None:
+    rig.music.delay = 0.3
+
+    burst(
+        [
+            lambda i=i: rig.client.post(
+                "/encore/api/v1/auth/login", json={"username": "marwa", "password": f"guess-{i}", "deviceName": "x"}
+            )
+            for i in range(BURST)
+        ]
+    )
+
+    assert rig.reached("marwa") <= LoginGuard.IN_FLIGHT_PAIR + LoginGuard.PAIR[0]
+    assert rig.in_flight == 0
+
+
+def test_an_app_that_loads_a_screen_of_covers_with_a_fresh_salt_each_is_not_held_up(rig: Rig) -> None:
+    """Twelve at once, every one a login nobody has seen before (a fresh salt each, as the Subsonic documentation says): all answered."""
+    rig.music.delay = 0.3
+
+    answers = burst(
+        [
+            lambda i=i: rig.token_call("marwa", "pw-marwa", salt=f"cover{i:04d}", endpoint="getCoverArt.view", id=f"al{i}")
+            for i in range(12)
+        ]
+    )
+
+    assert set(answers) == {200}
+    assert rig.in_flight == 0
+
+
+def test_a_known_device_is_never_held_by_a_burst_around_it(rig: Rig) -> None:
+    accepted_twice(rig)
+    rig.music.delay = 0.3
+
+    burst([lambda i=i: rig.token_call("marwa", f"guess-{i}", salt=f"salt{i:04d}") for i in range(BURST)])
+    rig.music.delay = 0.0
+
+    assert rig.token_call("marwa", "pw-marwa").status_code == 200, "the owner's app still gets through"
+
+
+def test_the_slot_is_given_back_when_the_music_server_does_not_answer(rig: Rig) -> None:
+    rig.music.fail_all = True
+
+    got = rig.token_call("marwa", "pw-marwa")
+    head = rig.client.head("/rest/ping.view", params=[("u", "marwa"), ("p", "x"), ("f", "json")])
+
+    assert got.status_code == 503 and head.status_code == 503
+    assert rig.in_flight == 0

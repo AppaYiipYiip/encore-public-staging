@@ -46,14 +46,14 @@ def _sign_in(request: Request, body: dict[str, Any], *, status: int = 200) -> JS
         raise ApiError("validation", "Enter your username and password.")
     address = client_address(request)
     guard = LoginGuard(limiter_of(request))
-    guard.refuse(user, address)
-    _refuse_locked(svc, user)
-    salt = secrets.token_hex(6)
-    token = subsonic_token(password, salt)
-    if subsonic_credentials({"u": user, "t": token, "s": salt}, {}) is None or not svc.verifier.verify(user, token, salt):
-        guard.failed(user, address)
-        accounts_of(request).failed_login(user)
-        raise ApiError("unauthorized", "The username or the password was not accepted.")
+    with guard.begin(user, address):  # a slot while the music server is asked (P3-34 slice 2d)
+        _refuse_locked(svc, user)
+        salt = secrets.token_hex(6)
+        token = subsonic_token(password, salt)
+        if subsonic_credentials({"u": user, "t": token, "s": salt}, {}) is None or not svc.verifier.verify(user, token, salt):
+            guard.failed(user, address)
+            accounts_of(request).failed_login(user)
+            raise ApiError("unauthorized", "The username or the password was not accepted.")
     name = body.get("deviceName") if isinstance(body.get("deviceName"), str) else "Phone"
     kind = body.get("deviceKind") if isinstance(body.get("deviceKind"), str) else "phone"
     version = body.get("appVersion") if isinstance(body.get("appVersion"), str) else None
