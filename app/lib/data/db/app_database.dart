@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// Bump together with a migration step *and* a schema snapshot
   /// (`dart run drift_dev schema dump ...`) so migrations are testable.
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +101,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10) {
             // v10 (N-38): the old-formula key of the file a downloaded copy was made from, next to the key of its audio. Empty for a copy made before.
             await m.addColumn(downloads, downloads.sourceLegacyKey);
+          }
+          if (from < 11) {
+            // v11 (N-45): the name of the download task of each attempt. Null for a row made before: its task, if the downloader still has one, keeps the name it
+            // was handed under (`enc:<server>:<track>`), and a word of that name is read as the word of that row's attempt.
+            await m.addColumn(downloads, downloads.taskId);
           }
         },
         beforeOpen: (details) async {

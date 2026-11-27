@@ -85,7 +85,8 @@ void main() {
       transport.started.where((r) => r.taskId.endsWith(':$id')).length;
   Future<PinState> albumState() =>
       repo.watchPinState(PinTargetType.album, 'al1').first;
-  String taskOf(String id) => 'enc:$serverId:$id';
+  String taskOf(String id) => transport.taskOf(id);
+  String latestTaskOf(String id) => transport.latestTaskOf(id);
 
   group("a transfer cancelled by something that is not the manager", () {
     test(
@@ -403,7 +404,7 @@ void main() {
         ..files['/app/$partial'] = 100
         ..active = {taskOf('t2'), taskOf('t3'), taskOf('t4')}
         ..replayOnResume.add(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.canceled,
           relativePath: partial,
         ));
@@ -465,7 +466,7 @@ void main() {
       await refreshInFlight();
       final (next, fresh) = await newProcess([
         TransferUpdate(
-            taskId: taskOf('t1'),
+            taskId: latestTaskOf('t1'),
             status: TransferStatus.canceled,
             relativePath: livePath),
       ]);
@@ -486,7 +487,7 @@ void main() {
       await refreshInFlight();
       final (next, fresh) = await newProcess([
         TransferUpdate(
-            taskId: taskOf('t1'),
+            taskId: latestTaskOf('t1'),
             status: TransferStatus.failed,
             error: 'HTTP 500',
             relativePath: livePath),
@@ -514,7 +515,7 @@ void main() {
       final live = transport.requestFor('t1').relativePath;
 
       transport.send(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.failed,
           error: 'HTTP 500',
           relativePath: live));
@@ -542,7 +543,7 @@ void main() {
           .write(const TracksCompanion(size: Value(30000)));
 
       transport.send(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.complete,
           relativePath: livePath));
       await manager.settled();
@@ -579,7 +580,7 @@ void main() {
           .write(const DownloadsCompanion(refreshQuality: Value('original')));
 
       transport.send(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.complete,
           relativePath: livePath));
       await manager.settled();
@@ -600,7 +601,7 @@ void main() {
       final before = await row('t1');
 
       transport.send(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.complete,
           relativePath: livePath));
       await manager.settled();

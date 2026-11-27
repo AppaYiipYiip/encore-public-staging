@@ -70,7 +70,7 @@ abstract interface class DownloadTransport {
   /// `complete` or `failed` of a transfer that ended in the very moment), and `false` when it knew no such task: then it sent nothing and no word will
   /// come for this cancel (the Stop's memory of late words counts on it, see `DownloadManager.stop`). Read in `BDPlugin.kt`: the downloader sends one
   /// `canceled` for EVERY unfinished work it still holds under the task id, so for an id that was cancelled before (the work is not enqueued as unique
-  /// work) it can be more than one word; exactness is item N-45's (a task id per attempt).
+  /// work) it can be more than one word. Since N-45 every attempt has a name of its own, so a cancel of one attempt cannot bring words about another.
   Future<bool> cancel(String taskId);
 
   /// Absolute path for [relativePath].

@@ -92,7 +92,9 @@ void main() {
       transport.started.where((r) => r.taskId.endsWith(':$id')).length;
   List<String> startOrder() =>
       [for (final r in transport.started) r.taskId.split(':').last];
-  String taskOf(String id) => 'enc:$serverId:$id';
+  String taskOf(String id) => transport.taskOf(id);
+  String firstTaskOf(String id) => transport.firstTaskOf(id);
+  String latestTaskOf(String id) => transport.latestTaskOf(id);
   Future<void> pinAlbum() async {
     await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
     await manager.reconcile();
@@ -317,14 +319,21 @@ void main() {
 
   group("the Stop's own late word, after Resume (review of PR 119, pin 2)", () {
     // The downloader answers a cancel with ONE word for the task: `canceled` (or, when the transfer ended in the very moment, `failed` or `complete`).
-    // It can arrive after Resume has started the song again under the SAME task id (enc:<server>:<track>): a word about the old attempt, about a row that
-    // says downloading for the new one. The manager keeps, in memory, how many attempts its own Stop interrupted whose last word has not come yet, for
-    // each task id, and spends one on the first word that arrives. These tests send the late word by hand (`acknowledgeCancels` stays off, so the word
-    // is not delivered inside the Stop's own step).
-    TransferUpdate word(String id, TransferStatus status, [String? error]) =>
-        TransferUpdate(taskId: taskOf(id), status: status, error: error);
-    void lateCancel(String id) =>
-        transport.send(word(id, TransferStatus.canceled));
+    // It can arrive after Resume has started the song again: a word about the old attempt, about a row that says downloading for the new one. Since N-45
+    // every attempt has a task name of its own, so the word NAMES the attempt it is about; the manager keeps, in memory, which attempts its own Stop
+    // interrupted whose last word has not come yet, and spends the one the word names. These tests send the late word by hand (`acknowledgeCancels` stays
+    // off, so the word is not delivered inside the Stop's own step). [attempt] is the index of the attempt the word is about (0 the first, -1 the newest).
+    TransferUpdate word(String id, TransferStatus status,
+        [String? error, int attempt = 0]) {
+      final all = transport.attemptsOf(id);
+      return TransferUpdate(
+          taskId: all[attempt < 0 ? all.length + attempt : attempt],
+          status: status,
+          error: error);
+    }
+
+    void lateCancel(String id, [int attempt = 0]) =>
+        transport.send(word(id, TransferStatus.canceled, null, attempt));
 
     test(
         "N-39: the Stop's own cancel acknowledgement that comes AFTER Resume is not an outside cancel: the resumed transfers stay and no song starts over the limit",
@@ -369,8 +378,8 @@ void main() {
       expect(startOrder().length, 6, reason: 'three attempts for each song');
 
       for (final id in ['t1', 't2']) {
-        lateCancel(id);
-        lateCancel(id);
+        lateCancel(id, 0);
+        lateCancel(id, 1);
       }
       await manager.settled();
 
@@ -382,8 +391,8 @@ void main() {
       expect(startOrder().length, 6);
       expect(manager.debugStoppedAttempts, isEmpty);
 
-      // A third word is not the answer to any cancel the manager sent: it is the outside cancel of PR 113.
-      lateCancel('t1');
+      // A word of the newest attempt is not the answer to any cancel the manager sent: it is the outside cancel of PR 113.
+      lateCancel('t1', -1);
       await manager.settled();
       final cut = await row('t1');
       expect(cut.state, DownloadState.failed);
@@ -422,7 +431,7 @@ void main() {
       const t1 = (PinTargetType.track, 't1');
       await manager.stop([t1]);
       await manager.resume([t1]);
-      expect(manager.debugStoppedAttempts.keys, [taskOf('t1')],
+      expect(manager.debugStoppedAttempts.keys, [firstTaskOf('t1')],
           reason: 'one attempt of one song, not a flag for the download');
 
       lateCancel('t2');
@@ -465,7 +474,7 @@ void main() {
       expect(manager.debugInFlight, contains('t1'));
       expect(startOrder().length, 4);
 
-      transport.send(word('t1', TransferStatus.failed, 'HTTP 500'));
+      transport.send(word('t1', TransferStatus.failed, 'HTTP 500', -1));
       await manager.settled();
       expect((await row('t1')).state, DownloadState.failed,
           reason: 'only ONE word was the old attempt\'s');
@@ -512,14 +521,15 @@ void main() {
       // The old attempt had finished the file in the very moment of the Stop; its word comes only now.
       transport.files['/app/$written'] = 8000;
       transport.send(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: firstTaskOf('t1'),
           status: TransferStatus.complete,
           relativePath: written));
       await manager.settled();
 
       expect((await row('t1')).state, DownloadState.done,
           reason: 'a finished file is a song');
-      expect(transport.active, isNot(contains(taskOf('t1'))),
+      expect(transport.canceled, contains(latestTaskOf('t1')));
+      expect(transport.active, isNot(contains(latestTaskOf('t1'))),
           reason:
               'the transfer Resume started for t1 is work already done: it is cancelled, not left to write the same file again');
       expect(transport.active.length, lessThanOrEqualTo(2),
@@ -532,11 +542,14 @@ void main() {
       expect(transport.deleted, isEmpty);
 
       // The cancel of that transfer has its one last word too: swallowed, and the song stays what it is.
-      lateCancel('t1');
+      lateCancel('t1', -1);
       await manager.settled();
       expect((await row('t1')).state, DownloadState.done);
       expect((await row('t1')).attempts, 0);
-      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))));
+      expect(manager.debugStoppedAttempts, isNot(contains(latestTaskOf('t1'))));
+      expect(manager.debugStoppedAttempts, isNot(contains(firstTaskOf('t1'))),
+          reason:
+              'both attempts of t1 that were cancelled have had their word (the completion and the late cancel); t2\'s own is still to come');
     });
 
     test(
@@ -596,7 +609,8 @@ void main() {
       expect(startsOf('t1'), 3,
           reason: 'the first download, the refresh, and the refresh again');
 
-      lateCancel('t1');
+      lateCancel('t1',
+          1); // the word of the refresh the Stop cancelled, the second attempt
       await manager.settled();
 
       final r = await row('t1');
@@ -621,8 +635,9 @@ void main() {
       await second.start();
       expect(after.canceled, [taskOf('t1')]);
       await second.resume([album]);
-      expect(
-          after.started.where((r) => r.taskId == taskOf('t1')), hasLength(1));
+      expect(after.attemptsOf('t1'), hasLength(1),
+          reason:
+              'Resume started the song again, under an attempt name of its own');
 
       after.send(word('t1', TransferStatus.canceled));
       await second.settled();
@@ -1126,8 +1141,15 @@ void main() {
     // (failed, canceled) used to be dropped by the "stopped" early return, which left the row "downloading" with no task behind it and its place given away
     // (stuck until the next start of the app). The invariant: a held song has no live transfer, enforced in EVERY pass (reconcile and pump), through the
     // same counted cancel as the Stop; and the second layer: a stray word of a held song puts the row where a held song stands.
-    TransferUpdate wordOf(String id, TransferStatus status, [String? error]) =>
-        TransferUpdate(taskId: taskOf(id), status: status, error: error);
+    TransferUpdate wordOf(String id, TransferStatus status,
+        [String? error, int attempt = 0]) {
+      final all = transport.attemptsOf(id);
+      return TransferUpdate(
+          taskId: all[attempt < 0 ? all.length + attempt : attempt],
+          status: status,
+          error: error);
+    }
+
     Future<void> ownPin(String id) =>
         repo.pin(PinTargetType.track, id, quality: AudioQuality.high);
     Future<void> insertTrack(String id, {String? albumId}) =>
@@ -1248,7 +1270,7 @@ void main() {
       expect(r.lastError, isNull);
       expect(manager.debugInFlight, contains('t1'));
       expect(startsOf('t1'), 2);
-      expect(manager.debugStoppedAttempts, isNot(contains(taskOf('t1'))));
+      expect(manager.debugStoppedAttempts, isNot(contains(firstTaskOf('t1'))));
     });
 
     test(
@@ -1514,12 +1536,13 @@ void main() {
       await removeOwnPinOfT1(); // and now it is, with its refresh still running
       await manager.dispose(); // the app is killed before any pass
 
-      final after = FakeDownloadTransport()..active = {taskOf('t1')};
+      final after = FakeDownloadTransport()..active = {latestTaskOf('t1')};
       final second = newManager(after);
       extra.add(second);
       await second.start();
 
-      expect(after.canceled, [taskOf('t1')]);
+      expect(after.canceled, [latestTaskOf('t1')],
+          reason: 'the refresh is the task the kill left running');
       expect(after.started, isEmpty);
       final r = await row('t1');
       expect(r.state, DownloadState.done,
@@ -1597,7 +1620,8 @@ void main() {
       expect(manager.debugInFlight, {'t1'});
       await repo.unpin(PinTargetType.track, 't1');
       await manager.reconcile(immediateRemoval: true);
-      expect(transport.canceled, contains(taskOf('t1')));
+      expect(transport.canceled, contains(latestTaskOf('t1')),
+          reason: 'the refresh is the transfer that was cancelled');
       expect((await row('t1')).refreshQuality, isNull);
 
       transport.complete('t1', size: 30 * 1024 * 1024);
@@ -1620,7 +1644,7 @@ void main() {
         ..files.addAll(transport.files)
         ..files['/app/$written'] = 30 * 1024 * 1024
         ..replayOnResume.add(TransferUpdate(
-          taskId: taskOf('t1'),
+          taskId: latestTaskOf('t1'),
           status: TransferStatus.complete,
           relativePath: written,
           qualityId: 'original',
@@ -1631,7 +1655,7 @@ void main() {
 
       expectTheFileIsWhatTheRowSays(await row('t1'));
       await second.resume([album]);
-      expect(after.started.where((r) => r.taskId == taskOf('t1')), isEmpty,
+      expect(after.attemptsOf('t1'), isEmpty,
           reason: 'the song is on the phone at the quality that was asked for');
     });
 

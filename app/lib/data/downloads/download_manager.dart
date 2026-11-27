@@ -130,23 +130,84 @@ class DownloadManager {
   /// pass (a pin change, a finished sync, a finished transfer) asks again.
   final Set<String> _waitingForServer = <String>{};
 
-  /// For each task id, how many attempts the person's own Stop interrupted whose LAST word has not come yet (N-39, review of PR 119). The downloader
-  /// ends a task it cancels with a last word (`canceled` for a cancel that reached it; `failed` or `complete` when the transfer ended in the very moment
-  /// of the cancel; for an id that was cancelled before it may send more than one `canceled`, which the second layer absorbs while the song is stopped
-  /// and N-45 makes exact), and it can arrive AFTER Resume has started the song again under the same task id: a word about the old attempt, read against a row
-  /// that says "downloading" for the new one. Without this it was read as a cancel from outside: the new transfer's row failed with a back-off, and the
-  /// place it gave away let another song start over the limit. A word spends one, the first that comes (see [_spendStoppedAttempt]); in memory only: a
-  /// word that outlives the process is replayed to a manager that starts with the row stopped, and the task id per attempt in the row (N-45) is what
-  /// would make this exact for good. Bounded: one entry per attempt that was in flight at a Stop, gone with its word.
+  /// For each task id (the name of ONE attempt since N-45), how many cancels of the person's own Stop (or of a pass that holds a song back) are still
+  /// owed their LAST word (N-39, review of PR 119). The downloader ends a task it cancels with a last word (`canceled` for a cancel that reached it; `failed`
+  /// or `complete` when the transfer ended in the very moment of the cancel), and it can arrive AFTER Resume has started the song again: a word about the
+  /// old attempt. Since N-45 that word NAMES its attempt, so it is told from the words of the attempt that replaced it ([_onWordOfAnEarlierAttempt]) and
+  /// can no longer fail the new transfer's row or give away its place. What stays here is the exact second layer: the word of an attempt the row is STILL
+  /// on that the Stop interrupted (the song is held, or Resume has not started it yet) is swallowed once, and a cancel is owed one word per cancel sent
+  /// (an old build's task name may still be sent more than one `canceled` by the downloader for an id cancelled before, see `DownloadTransport.cancel`).
+  /// A word spends one (see [_spendStoppedAttempt]); in memory only: a word that outlives the process is replayed to a manager that starts with the row
+  /// stopped. Bounded: one entry per attempt that was in flight at a Stop, gone with its word. No test showed it redundant, so it stays.
   final Map<String, int> _stoppedAttempts = {};
 
-  static String _taskId(int serverId, String trackId) =>
+  /// Attempts that were cancelled because an OLDER attempt of the same song had already finished the file (the Stop's cancel lost the race to it, and
+  /// Resume had started the song again, N-45 [_onWordOfAnEarlierAttempt]). The cancel may have lost the race too: the newer attempt can have finished in
+  /// transit and written the same file name, at another quality (Data saver), and its own `complete` then comes. That word is the last writer's and
+  /// decides what the file IS, so it is handled although the song has its copy by then (which a word naming the live copy is otherwise never allowed to
+  /// touch, see [_onComplete]); without it the older attempt's quality stayed on the newer attempt's file and no upgrade was ever planned. In memory
+  /// only; one entry per such cancel, gone with the attempt's last word (whichever it is).
+  final Set<String> _supersededAttempts = {};
+
+  /// The name of a task an OLDER build handed to the downloader: from the song alone. A row such a build made has no task name of its own, and the
+  /// downloader may still hold its task across the upgrade; a word of this name is read as the word of that row's attempt (and only of such a row).
+  static String _legacyTaskId(int serverId, String trackId) =>
       'enc:$serverId:$trackId';
 
+  /// The name of the task of ONE attempt (N-45): `enc2:<server>:<attempt>:<track>`. The attempt number has no colon, so what follows it is the song
+  /// whatever the song's id holds; it is never the same twice (see [_nextAttempt]), also when the row was deleted and made again in between.
+  static String _attemptTaskId(int serverId, int attempt, String trackId) =>
+      'enc2:$serverId:$attempt:$trackId';
+
+  /// The song a task name is about, whichever build named it; null for a task that is not this server's.
   String? _trackIdOf(String taskId) {
-    final prefix = 'enc:$serverId:';
-    return taskId.startsWith(prefix) ? taskId.substring(prefix.length) : null;
+    final legacy = 'enc:$serverId:';
+    if (taskId.startsWith(legacy)) return taskId.substring(legacy.length);
+    final own = 'enc2:$serverId:';
+    if (!taskId.startsWith(own)) return null;
+    final rest = taskId.substring(own.length);
+    final colon = rest.indexOf(':');
+    if (colon <= 0 || int.tryParse(rest.substring(0, colon)) == null) {
+      return null;
+    }
+    return rest.substring(colon + 1);
   }
+
+  /// The attempt number of a task name made by [_attemptTaskId], or null for any other name.
+  static int? _attemptOf(String taskId) {
+    final parts = taskId.split(':');
+    if (parts.length < 4 || parts.first != 'enc2') return null;
+    return int.tryParse(parts[2]);
+  }
+
+  /// The highest attempt number issued so far by this manager (seeded from the rows at [start]).
+  int _lastAttempt = 0;
+
+  /// A number no attempt of this manager has had: the clock's milliseconds, or one more than the last issued when the clock has not moved (a test's fixed
+  /// clock, two songs started in the same millisecond). It is per manager and NOT per row: the row is deleted and made again when a download is switched
+  /// off and on, and a counter that restarted with it would give the new attempt the old attempt's name, which is the bug this removes.
+  int _nextAttempt() {
+    final now = _clock.now().millisecondsSinceEpoch;
+    return _lastAttempt = now > _lastAttempt ? now : _lastAttempt + 1;
+  }
+
+  /// The task name of the attempt a row is on: its own, or the old name from the song when an older build made the row.
+  String _currentTaskId(DownloadRow row) =>
+      row.taskId ?? _legacyTaskId(serverId, row.trackId);
+
+  /// [_currentTaskId] of a song's row; the old name when there is no row (nothing runs for it then: a cancel of that name finds nothing).
+  Future<String> _currentTaskIdOf(String trackId) async {
+    final rows = await _repo.rowsFor([trackId]);
+    return rows.isEmpty
+        ? _legacyTaskId(serverId, trackId)
+        : _currentTaskId(rows.first);
+  }
+
+  /// Whether a word of the downloader is about the attempt the row is on (N-45): the row's own task name, or, for a row an older build made (no task
+  /// name), the old name from the song. Any other word is about an attempt the row has left: one that was switched off and whose row was made again, one
+  /// a Stop and a Resume replaced, one from before a restart.
+  bool _isCurrentAttempt(String taskId, DownloadRow row) =>
+      taskId == _currentTaskId(row);
 
   /// Why the queue is not moving, as of the last scheduling pass.
   StorageVerdict get verdict => _verdict;
@@ -162,6 +223,10 @@ class DownloadManager {
 
   /// Starts listening (pins, transport). Safe to call once.
   Future<void> start() async {
+    for (final id in await _repo.taskIds()) {
+      final n = _attemptOf(id);
+      if (n != null && n > _lastAttempt) _lastAttempt = n;
+    }
     _updates = _transport.updates.listen(_enqueueUpdate);
     await _transport.resume();
     // What the downloader kept while the app was not running (a finished file, a cancel pressed on a card of an older build) is handled first: it
@@ -190,7 +255,7 @@ class DownloadManager {
       }
       final stuck = await _repo.rowsInState(DownloadState.downloading);
       for (final row in stuck) {
-        if (!active.contains(_taskId(serverId, row.trackId))) {
+        if (!active.contains(_currentTaskId(row))) {
           await _repo.markQueued(row.trackId);
         } else {
           _inFlight.add(row.trackId);
@@ -216,6 +281,7 @@ class DownloadManager {
   Future<void> dispose() async {
     _disposed = true;
     _stoppedAttempts.clear();
+    _supersededAttempts.clear();
     _debounce?.cancel();
     await _updates?.cancel();
     await _pins?.cancel();
@@ -296,10 +362,12 @@ class DownloadManager {
   ) async {
     final suffixes = await _suffixesOf(trackIds);
     for (final id in trackIds) {
-      await _transport.cancel(_taskId(serverId, id));
-      // The song is gone, so is the attempt of it the Stop interrupted: no word of it matters now, and one kept would shield the next attempt of the
-      // same task id from a real cancel.
-      _stoppedAttempts.remove(_taskId(serverId, id));
+      final row = existing[id];
+      final taskId =
+          row == null ? _legacyTaskId(serverId, id) : _currentTaskId(row);
+      await _transport.cancel(taskId);
+      // The song is gone, so is the attempt of it the Stop interrupted: no word of it matters now.
+      _stoppedAttempts.remove(taskId);
       _inFlight.remove(id);
       final path = existing[id]?.localPath;
       if (path != null) {
@@ -505,9 +573,11 @@ class DownloadManager {
       final target = _relativeFor(row, track.suffix, quality);
       _plannedPath[row.trackId] = target;
       _inFlight.add(row.trackId);
-      await _repo.markDownloading(row.trackId);
+      // The attempt's own name is written with the state, before the downloader is asked: a word of it always finds the row it is about (N-45).
+      final taskId = _attemptTaskId(serverId, _nextAttempt(), row.trackId);
+      await _repo.markDownloading(row.trackId, taskId: taskId);
       await _transport.start(TransferRequest(
-        taskId: _taskId(serverId, row.trackId),
+        taskId: taskId,
         url: url,
         relativePath: target,
         // An upgrade is only ever fetched on Wi-Fi, whatever the person allowed for downloads: if the link changes mid-way it waits instead of
@@ -540,21 +610,34 @@ class DownloadManager {
   Future<void> _onUpdate(TransferUpdate update) async {
     final trackId = _trackIdOf(update.taskId);
     if (trackId == null || _disposed) return;
+    // A last word is read against the attempt it names (N-45). One about an attempt the row has left (a download that was switched off and on again, a
+    // Stop and a Resume, a start of the app) must not end the attempt that replaced it: it cannot fail its row, give away its place or complete it.
+    var laterWriter = false;
+    if (update.status == TransferStatus.complete ||
+        update.status == TransferStatus.failed ||
+        update.status == TransferStatus.canceled) {
+      final rows = await _repo.rowsFor([trackId]);
+      if (rows.isNotEmpty && !_isCurrentAttempt(update.taskId, rows.first)) {
+        return _onWordOfAnEarlierAttempt(update, trackId, rows.first);
+      }
+      // The last word of an attempt that an older attempt's completion cancelled (see [_supersededAttempts]): spent here, whichever word it is.
+      laterWriter = _supersededAttempts.remove(update.taskId);
+    }
     switch (update.status) {
       case TransferStatus.complete:
         // The cancel lost the race to the file: this IS the last word of the attempt the Stop interrupted. A finished file is a song, never swallowed
         // (a swallowed word that was the new attempt's own would leave its row "downloading" with no task, the bug N-39 is about): it is spent and
-        // handled as a completion. When Resume has started the song again since, the transfer that runs now (same task id) is work already done: it is
-        // cancelled the way the Stop cancels (its own last word is remembered and swallowed) BEFORE the completion hands its place to the next song,
-        // or the pump would start one song more than the limit beside it (measured in the stop test, and a place that was kept for it would never be
-        // given back: the completion of a song that already has its copy is ignored as a stale word). What else an old word can do to a newer attempt
-        // of the same id is N-45's (a task id per attempt in the row).
+        // handled as a completion. When Resume has started the song again since, the word is not about the attempt the row is on and takes the path of
+        // [_onWordOfAnEarlierAttempt] (N-45), which does the same: the transfer that runs now is work already done and is cancelled the way the Stop
+        // cancels (its own last word is remembered and swallowed) BEFORE the completion hands its place to the next song, or the pump would start one
+        // song more than the limit beside it (a place that was kept for it would never be given back: the completion of a song that already has its copy
+        // is ignored as a stale word).
         if (_spendStoppedAttempt(update.taskId) &&
             _inFlight.contains(trackId)) {
           await _cancelForStop(update.taskId);
         }
         await _onComplete(trackId, update.relativePath,
-            qualityId: update.qualityId);
+            qualityId: update.qualityId, laterWriter: laterWriter);
       case TransferStatus.failed:
         // FIRST layer, before anything is touched (the place of a transfer that runs is [_inFlight]'s): the transfer the Stop cancelled failed in the
         // very moment of the cancel, and its last word is this one. It is not a failed song with a wait, deletes nothing, and a song Resume has
@@ -595,6 +678,41 @@ class DownloadManager {
     }
   }
 
+  /// The last word of an attempt the row is no longer on (N-45). It changes nothing of the attempt that runs: the row, its place and its transfer are
+  /// left as they are. What it owes is spent: the memory of a Stop's cancel of THAT attempt is its word. A completion is the one word that can still
+  /// matter, because a file is a file: when the cancel of the Stop lost the race to it, the song is done (the transfer that runs now is work already
+  /// done: it is cancelled the way the Stop cancels, BEFORE the completion gives its place to the next song). Any other completion of an earlier
+  /// attempt is ignored: the attempt that runs writes the same file and ends the song itself.
+  Future<void> _onWordOfAnEarlierAttempt(
+      TransferUpdate update, String trackId, DownloadRow row) async {
+    final stopped = _spendStoppedAttempt(update.taskId);
+    if (update.status == TransferStatus.complete && stopped) {
+      if (_inFlight.contains(trackId)) {
+        // The attempt that runs is cancelled for work already done, but it may have finished in transit over the same file name: if its own completion
+        // comes, it is the LAST writer of the file and its word decides what the file is (see [_supersededAttempts]).
+        final newer = _currentTaskId(row);
+        _supersededAttempts.add(newer);
+        await _cancelForStop(newer);
+      }
+      await _onComplete(trackId, update.relativePath,
+          qualityId: update.qualityId);
+      return;
+    }
+    // A completion nobody owed and NO newer attempt running (the download was switched off and on again off Wi-Fi or with no place free, so the new row
+    // only waits in the queue, or the newer attempt has ended): the file is a finished song and the song is done with it, as it was before N-45.
+    // Dropping it would download the song again in full, maybe over mobile data, while the finished file sat at the song's path with no row for it. The
+    // guards of [_onComplete] still hold for a row that already has its copy (a refresh, a song a newer attempt finished). Only when a newer attempt
+    // IS running is the word ignored: that attempt writes the same file and ends the song itself.
+    if (update.status == TransferStatus.complete &&
+        !_inFlight.contains(trackId)) {
+      await _onComplete(trackId, update.relativePath,
+          qualityId: update.qualityId);
+      return;
+    }
+    Log.info('downloads',
+        'ignored the ${update.status.name} word of an earlier attempt (${update.taskId}); $trackId is on ${_currentTaskId(row)}');
+  }
+
   /// A transfer that ended without a file. A refresh (an upgrade of a Data saver copy, or a changed song) leaves the copy that is on the phone
   /// playable: it is not a failed download, and the old file is never lost to a retry (a first download is retried from scratch, a refresh is not).
   Future<void> _onAttemptEnded(String trackId, String reason,
@@ -618,15 +736,16 @@ class DownloadManager {
   }
 
   Future<void> _onComplete(String trackId, String? reportedPath,
-      {String? qualityId}) async {
+      {String? qualityId, bool laterWriter = false}) async {
     final rows = await _repo.rowsFor([trackId]);
     // A song that has a copy on the phone (a refresh in flight, one waiting in the queue, or a song that is done) is only ever completed by a `.new`
-    // file. A completion that names another file is the copy that is on the phone, from the acknowledgement of an older task with the same id (item
-    // N-45): it is not about any transfer that runs, and it must neither check that copy against what the refresh asked for and delete it when it does
-    // not pass, nor record the refresh as made, nor give away the place of a transfer that still runs. Found on 17 Nov 2026 while looking for every
-    // other place that deletes, after the review's `.new` guard of `_onAttemptEnded`; a second layer that stays correct once a task id per attempt
-    // (N-45) keeps such words from arriving.
+    // file. A completion that names another file is the copy that is on the phone, from the acknowledgement of an older task: it is not about any
+    // transfer that runs, and it must neither check that copy against what the refresh asked for and delete it when it does not pass, nor record the
+    // refresh as made, nor give away the place of a transfer that still runs. Found on 17 Nov 2026 while looking for every other place that deletes,
+    // after the review's `.new` guard of `_onAttemptEnded`. Since N-45 a word of an attempt the row has left never gets here ([_isCurrentAttempt]); this
+    // stays as a second layer, for a word whose name is the row's own (a task an older build made keeps the old name, and the row of such a build has none).
     if (rows.isNotEmpty &&
+        !laterWriter &&
         _isRefresh(rows.first) &&
         reportedPath != null &&
         !reportedPath.endsWith('.new')) {
@@ -754,7 +873,9 @@ class DownloadManager {
   Future<void> _cancelHeld(Iterable<String> trackIds) async {
     for (final id in trackIds) {
       _estimates.remove(id);
-      if (_inFlight.remove(id)) await _cancelForStop(_taskId(serverId, id));
+      if (_inFlight.remove(id)) {
+        await _cancelForStop(await _currentTaskIdOf(id));
+      }
     }
   }
 
@@ -770,7 +891,7 @@ class DownloadManager {
   Future<void> _endedForHeldSong(String trackId) async {
     _estimates.remove(trackId);
     await _repo.parkHeld([trackId]);
-    await _cancelForStop(_taskId(serverId, trackId));
+    await _cancelForStop(await _currentTaskIdOf(trackId));
     await _pump();
   }
 

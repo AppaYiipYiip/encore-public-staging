@@ -634,12 +634,26 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
     return q.get();
   }
 
-  Future<void> markDownloading(String trackId) => _update(
-      trackId,
-      DownloadsCompanion(
-        state: const Value(DownloadState.downloading),
-        updatedAtMs: Value(_nowMs),
-      ));
+  /// The row says "downloading" and names the task of this attempt in the SAME statement (N-45): the manager writes it BEFORE the downloader is asked,
+  /// so a word of the downloader never comes for a task name the row does not hold.
+  Future<void> markDownloading(String trackId, {required String taskId}) =>
+      _update(
+          trackId,
+          DownloadsCompanion(
+            state: const Value(DownloadState.downloading),
+            taskId: Value(taskId),
+            updatedAtMs: Value(_nowMs),
+          ));
+
+  /// The task names the rows of this server hold (N-45): the manager reads the highest attempt number among them at its start.
+  /// Reads the one column: it runs at every start of the app, and a phone can hold thousands of downloads.
+  Future<List<String>> taskIds() async {
+    final column = _db.downloads.taskId;
+    final query = _db.selectOnly(_db.downloads)
+      ..addColumns([column])
+      ..where(_db.downloads.serverId.equals(serverId) & column.isNotNull());
+    return [for (final r in await query.get()) r.read(column)!];
+  }
 
   Future<void> markDone(
     String trackId, {
