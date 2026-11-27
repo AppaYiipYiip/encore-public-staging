@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import time
@@ -36,7 +37,11 @@ FAKE_TAILSCALE = r"""#!/usr/bin/env bash
 echo "tailscale $*" >>"$TS_LOG"
 case "$1" in
     status) [ "${TS_STATE:-ready}" = ready ] && exit 0 || exit 1 ;;
-    funnel) if [ "${2:-}" = status ]; then exit 0; fi; exit 0 ;;
+    funnel)
+        if [ "${2:-}" = status ]; then exit 0; fi
+        # a tailnet without Funnel prints a link and waits for a person
+        if [ "${TS_HANG:-}" = 1 ]; then echo "To enable Funnel visit https://login.tailscale.com/f/funnel"; sleep 30; fi
+        exit 0 ;;
     *) exit 0 ;;
 esac
 """
@@ -384,3 +389,103 @@ def test_the_session_has_no_eval_no_sh_c_and_no_action_takes_an_argument() -> No
     for word in ("status", "backup.list", "away.status", "backup.make", "away.on", "away.off", "restart"):
         assert re.search(rf"^\s+{re.escape(word)}\)", body, re.M) or word in body, word
     assert "restore" not in body and "update" not in body, "deliberately not on the list"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- what the review of the code found
+
+
+def test_a_client_that_hangs_up_cannot_erase_the_record_or_stop_the_act(tmp_path: Path) -> None:
+    """Review: the answer was written first and the record after, under `set -e`; a client that closed its end made the first write fail and the session end, so the backup happened and
+    no record existed. Now the record is written before the act, a failed write is never fatal, and SIGPIPE is ignored."""
+    rig = Rig(tmp_path)
+    env = {
+        "PATH": f"{msys(rig.bin)}:/usr/bin:/bin",
+        "ENCORE_DIR": msys(rig.install.root),
+        "FAKE_PYTHON": msys(rig.bin / "fakepython"),
+        "FAKE_IMAGE_DIR": msys(rig.install.image),
+        "FAKE_LOG": msys(rig.install.log),
+        "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
+        "PYTHONUTF8": "1",
+        "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
+        **rig.env(),
+    }
+    assert BASH is not None
+    process = subprocess.Popen(
+        [BASH, str(Path(__file__).resolve().parent.parent / "deploy" / "encore"), "helper-session"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        env=env,
+    )
+    assert process.stdin is not None and process.stdout is not None
+    process.stdout.close()  # the client has hung up
+    process.stdin.write(f"{TOKEN} backup.make\n".encode())
+    process.stdin.close()
+    process.wait(timeout=120)
+    assert len(list((rig.install.root / "backups" / "helper").glob("encore-backup-*"))) == 1, "the act happened"
+    assert [j["result"] for j in rig.jobs_of()] == ["started", "ok"], "and the helper's own record says so, before and after"
+
+
+def test_every_change_is_recorded_before_it_is_done(tmp_path: Path) -> None:
+    rig = Rig(tmp_path)
+    rig.ask(f"{TOKEN} backup.make\n")
+    assert [(j["action"], j["result"]) for j in rig.jobs_of()] == [("backup.make", "started"), ("backup.make", "ok")]
+
+
+def test_the_away_address_recreates_the_server_only_after_the_answer_and_by_a_detached_unit(tmp_path: Path) -> None:
+    """Review: `tell_server_away` ran `dc up -d`, which replaces the Encore container that is waiting for the answer. In helper mode it only leaves a mark; the session recreates after answering."""
+    rig = Rig(tmp_path)
+    result = rig.ask(f"{TOKEN} away.on\n", TS_STATE="ready")
+    assert "done: The away address is on." in lines_of(result), result.stdout + result.stderr
+    assert not any(" up" in c for c in rig.install.calls() if c.startswith("docker:compose")), (
+        "the session did not recreate the container itself"
+    )
+    ran = rig.run_log.read_text(encoding="utf-8")
+    assert "encore-helper-apply-" in ran and ran.strip().endswith("apply"), "a detached unit does it, after"
+    assert not (rig.install.root / ".helper-recreate").exists(), "the mark is consumed"
+    assert [j["result"] for j in rig.jobs_of()][-2:] == ["started", "ok"]
+
+
+def test_a_tailscale_that_waits_for_a_person_does_not_hold_the_helper(tmp_path: Path) -> None:
+    """Review: a tailnet without Funnel prints a link and waits; behind the helper that would hold the lock until the unit's time limit."""
+    rig = Rig(tmp_path)
+    started = time.monotonic()
+    result = rig.ask(f"{TOKEN} away.on\n", TS_STATE="ready", TS_HANG="1", ENCORE_HELPER_TS_TIMEOUT="1")
+    assert time.monotonic() - started < 25, "it did not wait for the person"
+    failed = [ln for ln in lines_of(result) if ln.startswith("failed: ")]
+    assert failed and "Tailscale would not turn Funnel on" in failed[0], result.stdout
+    assert "login.tailscale.com/f/funnel" not in result.stdout, "the link tailscale itself printed never reaches the caller"
+    assert not (rig.install.root / ".helper-recreate").exists()
+    assert rig.jobs_of()[-1]["result"] == "failed"
+
+
+def test_the_session_never_writes_where_the_container_can_write() -> None:
+    """Review: root truncated a lock inside the directory the container could write (a planted symlink would have made it truncate a host file), and made a temporary file in `data/`
+    before renaming it. The container runs as root (no USER in the image), so this was a way to damage the host."""
+    script = (Path(__file__).resolve().parent.parent / "deploy" / "encore").read_text(encoding="utf-8")
+    assert 'HELPER_LOCK="${ENCORE_HELPER_LOCK:-/run/lock/encore-helper.lock}"' in script, "the lock is root's alone"
+    assert "/run/encore/helper.lock" not in script
+    assert 'mktemp "$DIR/.host-status-XXXXXX"' in script and 'mktemp "$DIR/data/' not in script, (
+        "temporary files are made in root's own folder and renamed into data/"
+    )
+    override = script[script.index('cat >"$DIR/compose.helper.yaml"') :]
+    assert "- /run/encore:/run/encore:ro\nCOMPOSE" in override, "the socket's directory is read-only inside the container"
+    session = script[script.index("cmd_helper_session() {") : script.index("# `away.on` as the helper asks it")]
+    assert "trap '' PIPE" in session and "exec 0</dev/null" in session
+    assert session.index("exec 0</dev/null") < session.index('case "$action" in'), (
+        "nothing the session starts can read the client's bytes"
+    )
+
+
+def test_the_helper_session_is_dispatched_before_anything_else_runs_as_root() -> None:
+    script = (Path(__file__).resolve().parent.parent / "deploy" / "encore").read_text(encoding="utf-8")
+    assert script.index('if [ "${1:-}" = helper-session ]; then') < script.index("tidy_setup_code || true\n\ncase")
+
+
+def test_the_installers_own_dc_reads_the_helpers_override_too() -> None:
+    """Review: any recreate that skips the override silently drops the socket mount, the group and the token."""
+    install = (Path(__file__).resolve().parent.parent / "deploy" / "install.sh").read_text(encoding="utf-8")
+    assert '-f "$DIR/compose.helper.yaml"' in install
+    assert len(re.findall(r"docker compose (?!version)", install)) == 2, (
+        "only dc itself calls docker compose (once with the override, once without)"
+    )

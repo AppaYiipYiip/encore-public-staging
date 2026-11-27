@@ -248,6 +248,9 @@ expect_match "update is not on the list" "$(container_call update.apply)" "^fail
 expect_match "the away address is not set up by a page (no Tailscale here)" "$(container_call away.on)" "Set up the away address once at the computer: sudo encore funnel on"
 if docker compose --project-directory "$DIR" exec -T encore-server test -e /opt/encore/.env; then fail "the container can see the install's settings file"; fi
 ok "the container cannot see .env"
+echo "the Encore container runs as uid $(docker compose --project-directory "$DIR" exec -T encore-server id -u)"
+if docker compose --project-directory "$DIR" exec -T encore-server sh -c 'touch /run/encore/x 2>/dev/null'; then fail "the container can write in the helper's directory"; fi
+ok "the helper's directory is read-only inside the container"
 if docker compose --project-directory "$DIR" exec -T encore-server test -e /var/run/docker.sock; then fail "the Docker socket is inside the container"; fi
 ok "the Docker socket is in no container"
 if docker compose --project-directory "$DIR" exec -T encore-server sh -c 'command -v docker' >/dev/null 2>&1; then fail "there is a docker command in the container"; fi
@@ -257,6 +260,10 @@ JOBS="$(find "$DIR/jobs" -name "*.json" | wc -l)"
 [ "$JOBS" -ge 5 ] || fail "the helper wrote only $JOBS job files"
 grep -qh '"result":"refused"' "$DIR"/jobs/*.json || fail "the refused requests are not in the helper's record"
 ok "every request, refused ones included, is in the helper's record ($JOBS files)"
+step "an update keeps the helper (the recreate reads the override)"
+encore update >"$WORK/update.out" 2>&1 || { cat "$WORK/update.out"; fail "encore update failed"; }
+cat "$WORK/update.out"
+expect_match "the helper still answers from inside the container after the update" "$(container_call status)" "^done: ok$"
 step "a run of the installer again keeps the helper (safe to repeat)"
 bash "$DEPLOY/install.sh" --yes --image "$IMAGE" --tag "$TAG" --name "CI music" --music-dir /srv/music >"$WORK/again.out" 2>&1 || { cat "$WORK/again.out"; fail "install.sh did not run twice"; }
 expect "the token is kept" "$(sed -n 's/^ENCORE_HELPER_TOKEN=//p' "$DIR/.env")" "$HTOKEN"

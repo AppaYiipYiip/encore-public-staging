@@ -337,7 +337,14 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: a
     ufw allow "${PORT}/tcp" >>"$LOG" 2>&1 && note "The computer's firewall now lets Encore's port (${PORT}) in."
 fi
 
-dc() { docker compose --project-directory "$DIR" "$@"; }
+# The helper's compose override is part of the install once `encore helper install` has written it: every recreate must read it or the socket mount, the group and the token vanish.
+dc() {
+    if [ -f "$DIR/compose.helper.yaml" ]; then
+        docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" "$@"
+    else
+        docker compose --project-directory "$DIR" "$@"
+    fi
+}
 # An earlier install whose accounts were locked with a key: never start the music server under another one (every sign-in would fail until the right key is back).
 if [ -f "$DIR/navidrome/.encore-password-key.sha256" ]; then
     mark="$(head -1 "$DIR/navidrome/.encore-password-key.sha256")"
