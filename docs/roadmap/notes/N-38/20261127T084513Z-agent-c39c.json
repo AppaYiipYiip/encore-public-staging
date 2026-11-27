@@ -1,0 +1,12 @@
+{
+ "id": "20261127T084513Z-agent-c39c",
+ "item": "N-38",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T08:45:13Z",
+ "type": "note",
+ "body": "FINDING (27 Nov 2026, from the real music server in CI, PR #164, run 45966636686): song_file.path for a LIBRARY row is NOT a location. Navidrome 0.64.2 reports for a song a `path` BUILT FROM ITS TAGS (Artist/Album/Title.opus); the scanner stores it as song_file.path. Evidence: a file at `Zxqv misc <x>/random-name-1234.opus` was reported as `Zxqv Artist <x>/Zxqv Album <x>/Zxqv Title <x>.opus`.\nWHAT IT BREAKS: (1) attach_file keeps the path a row already has, so a kept file whose row the scanner made first (between the music server finding it and the keeper's own link) keeps the built path for ever: keeper._own_file (B-110, needs source youtube + Encore/) cannot see it, the keeper's held-by-another test compares paths, cover_finder/album_pass select youtube rows by path. (2) pick_song's by-path branch can never match a kept file by a built path. (3) N-38's errand can only key a library file whose path names it at the size the music server reports: most library files get no key and behave as before. NOT FOUND: any writer beside a library row's path (cover_finder._folder_picture only writes under Encore/; one corner to check: an ARTIST CALLED \"Encore\" whose built path starts with `Encore/`).\nTRIGGER: before N-34's repair or N-26 slice 5, since both find files by path. FIX DIRECTION (investigate, do not guess): first check whether the pinned music server can report REAL paths to the server's own client (a real-path setting in its 0.64.2 source or config); only then the native song API (`GET /api/song/{id}`: path + libraryPath, the server already holds an admin login in navidrome_admin.py). Either way the fix lives in the link pass and the merge rule, plus a re-link of existing rows (and a test that a kept file's row keeps the keeper's real path whoever made the row first).",
+ "to": [
+  "agent"
+ ]
+}
