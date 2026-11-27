@@ -51,9 +51,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: shellcheck
         run: |
-          shellcheck server/encore_server/deploy/install.sh server/encore_server/deploy/encore
+          shellcheck server/encore_server/deploy/install.sh server/encore_server/deploy/encore server/encore_server/tests/e2e/install_e2e.sh
           bash -n server/encore_server/deploy/install.sh
           bash -n server/encore_server/deploy/encore
+          bash -n server/encore_server/tests/e2e/install_e2e.sh
 
   encore-server-navidrome:
     # The keeper, the scanner link and the refs against a real Navidrome (docs/tasks P2-01 acceptance).
@@ -64,3 +65,24 @@ jobs:
       - name: Real music server, real ffmpeg
         working-directory: server/encore_server
         run: docker compose -f tests/integration/compose.yaml up --build --abort-on-container-exit --exit-code-from tests
+
+  install-e2e:
+    # The REAL install, once per door, on a clean machine, against an image built from this change (the lesson of 27 Nov 2026: two defects of the first run in the browser were invisible
+    # to every stub test and found only by reading the install sequence). `install.sh` pulls the image the way a stranger's does, from a registry (a local one here), so the product has
+    # no test-only flag. Engineering proof of the sequence, NOT a walked row: P3-07's walk of both doors by hand is still owed.
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        door: [browser, headless]
+    steps:
+      - uses: actions/checkout@v7
+      - name: A local registry for the image
+        run: docker run -d --name registry -p 127.0.0.1:5000:5000 registry:2
+      - name: Build this change's image and push it there
+        run: |
+          docker build -t localhost:5000/encore-server:ci server/encore_server
+          docker push localhost:5000/encore-server:ci
+      - name: Install by the ${{ matrix.door }} door and walk the first run
+        run: sudo bash server/encore_server/tests/e2e/install_e2e.sh ${{ matrix.door }} localhost:5000/encore-server ci
