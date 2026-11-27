@@ -6,64 +6,19 @@
 /// same release is spelled differently by Deezer, MusicBrainz and file tags.
 library;
 
-const Map<String, String> _fold = {
-  'à': 'a',
-  'á': 'a',
-  'â': 'a',
-  'ã': 'a',
-  'ä': 'a',
-  'å': 'a',
-  'ā': 'a',
-  'ç': 'c',
-  'ć': 'c',
-  'č': 'c',
-  'è': 'e',
-  'é': 'e',
-  'ê': 'e',
-  'ë': 'e',
-  'ē': 'e',
-  'ę': 'e',
-  'ě': 'e',
-  'ì': 'i',
-  'í': 'i',
-  'î': 'i',
-  'ï': 'i',
-  'ī': 'i',
-  'ñ': 'n',
-  'ń': 'n',
-  'ň': 'n',
-  'ò': 'o',
-  'ó': 'o',
-  'ô': 'o',
-  'õ': 'o',
-  'ö': 'o',
-  'ø': 'o',
-  'ō': 'o',
-  'ù': 'u',
-  'ú': 'u',
-  'û': 'u',
-  'ü': 'u',
-  'ū': 'u',
-  'ů': 'u',
-  'ý': 'y',
-  'ÿ': 'y',
-  'š': 's',
-  'ś': 's',
-  'ß': 'ss',
-  'ž': 'z',
-  'ź': 'z',
-  'ż': 'z',
-  'ł': 'l',
-  'đ': 'd',
-  'ð': 'd',
-  'þ': 'th',
+import 'text_fold.dart';
+
+/// The phone's own looser reading of Latin names, on top of the shared fold (`textFold`): letters the fold leaves as they are because the SERVER's key must not merge them, which a search on the
+/// phone should ("Aeon" finds "Æon", "Thor" finds "Þór"). It is NOT part of identity: nothing here is written to the server.
+const Map<String, String> _looseLatin = {
   'æ': 'ae',
   'œ': 'oe',
-  '’': "'",
-  '‘': "'",
-  '“': '"',
-  '”': '"',
+  'þ': 'th',
+  'ð': 'd',
+  'đ': 'd',
 };
+
+final RegExp _looseLatinLetters = RegExp('[æœþðđ]');
 
 final RegExp _editionSuffix = RegExp(
   r'\s*[\(\[]?\s*(?:\d{4}\s+)?(?:remaster(?:ed)?(?: (?:version|edition))?|'
@@ -76,8 +31,14 @@ final RegExp _editionSuffix = RegExp(
 );
 
 /// Canonical comparison key for [input].
+///
+/// **One fold for every alphabet** (N-46, P2-25): the letters are folded by [textFold], the Dart twin of the server's fold (NFKC, case fold, the decorating marks removed by an allow-list, every
+/// digit ASCII, invisible characters gone), and the words are cut by [textWords] (a run of letters, digits and kept marks: a Hindi, Thai, Hebrew or Arabic word with its vowel signs and harakat is ONE
+/// word). The phone used to lower-case with the platform, fold a table of Latin accents and turn every character that is not a letter or a digit into a space, which split a word at every combining
+/// mark. What stays the phone's own and looser than the server's key: a leading "The", "&" as "and", the English edition words ([dropEdition]), and the ligatures and old Nordic letters of
+/// [_looseLatin].
 String normalizeForMatch(String input, {bool dropEdition = true}) {
-  var s = input.trim().toLowerCase();
+  var s = input.trim();
   if (dropEdition) {
     var previous = '';
     while (previous != s) {
@@ -85,15 +46,17 @@ String normalizeForMatch(String input, {bool dropEdition = true}) {
       s = s.replaceFirst(_editionSuffix, '');
     }
   }
-  final buffer = StringBuffer();
-  for (final rune in s.runes) {
-    final ch = String.fromCharCode(rune);
-    buffer.write(_fold[ch] ?? ch);
+  s = textFold(s);
+  if (s.contains(_looseLatinLetters)) {
+    final buffer = StringBuffer();
+    for (final rune in s.runes) {
+      final ch = String.fromCharCode(rune);
+      buffer.write(_looseLatin[ch] ?? ch);
+    }
+    s = buffer.toString();
   }
-  s = buffer.toString();
   s = s.replaceAll('&', ' and ');
-  s = s.replaceAll(RegExp(r"[^\p{L}\p{N}\s]", unicode: true), ' ');
-  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  s = textWords(s).join(' ');
   if (s.startsWith('the ')) s = s.substring(4);
   return s;
 }
