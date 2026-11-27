@@ -314,3 +314,33 @@ def test_the_artist_facts_migration_leaves_every_old_row_as_it_was_and_takes_a_b
     finally:
         copy.close()
     assert db.migrate(migrations=up_to_this_one) == [], "and a second run does nothing"
+
+
+def test_the_real_path_migration_marks_the_keepers_own_rows_checked_and_nobody_elses(tmp_path: Path) -> None:
+    """N-53 (0023): the keeper writes the only `youtube` rows, with the place it put the file at. They are checked by construction; the scanner's rows are not."""
+    db = Database(tmp_path / "encore.db")
+    db.migrate(version="before", migrations=[m for m in Database._migrations() if m[0] <= 22])
+    with db.tx() as conn:
+        for ref in ("sr_a", "sr_b", "sr_c"):
+            conn.execute(
+                "INSERT INTO song_ref (id, title, artists, norm_key, created_at) VALUES (?, 'T', '[\"X\"]', ?, 1)",
+                (ref, "k" + ref),
+            )
+        for file_id, ref, path, source in (
+            ("sf_kept", "sr_a", "Encore/X/A/A.opus", "youtube"),
+            ("sf_lib", "sr_b", "X/B/B.opus", "library"),
+            ("sf_odd", "sr_c", "Elsewhere/C.opus", "youtube"),
+        ):
+            conn.execute(
+                "INSERT INTO song_file (id, ref, path, source, preferred, added_at) VALUES (?, ?, ?, ?, 1, 1)",
+                (file_id, ref, path, source),
+            )
+
+    db.migrate(version="real-path")
+
+    with db.read() as conn:
+        marks = {
+            r["id"]: (r["path_real"], r["path_checked_at"])
+            for r in conn.execute("SELECT id, path_real, path_checked_at FROM song_file")
+        }
+    assert marks == {"sf_kept": (1, None), "sf_lib": (0, None), "sf_odd": (0, None)}

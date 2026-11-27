@@ -209,7 +209,16 @@ def kept_file(db: Database, music: Path, ref_id: str, relative: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"audio")
     with db.tx() as conn:
-        refs.attach_file(conn, ref_id, navidrome_song_id="nd-1", path=relative, codec="opus", bitrate_kbps=130, source="youtube")
+        refs.attach_file(
+            conn,
+            ref_id,
+            navidrome_song_id="nd-1",
+            path=relative,
+            codec="opus",
+            bitrate_kbps=130,
+            source="youtube",
+            path_real=True,
+        )
     return path
 
 
@@ -318,3 +327,38 @@ def test_a_song_without_a_video_is_not_announced(tmp_path: Path) -> None:
     with db.read() as conn:
         assert library.latest_cursor(conn, "pn_1") == before
     assert cover_of(db, ref) is None
+
+
+def test_a_picture_is_written_beside_a_checked_path_only(tmp_path: Path) -> None:
+    """N-53: a ref can hold the keeper's file (a checked place) AND a library row whose path is the music server's tag-built one, which for an artist called "Encore" starts with the server's own
+    folder name and can name a real folder. The finder writes a picture beside every row of the ref that has a path: only the checked one may get it."""
+    db = database(tmp_path)
+    music = tmp_path / "music"
+    song = liked(db, "Nude")
+    kept = kept_file(db, music, song, "Encore/Radiohead/In Rainbows/03 - Nude.opus")
+    lookalike = music / "Encore" / "Nude Album"  # a folder the Host has, which a tag-built path names
+    lookalike.mkdir(parents=True)
+    (lookalike / "Nude.opus").write_bytes(b"audio")
+    with db.tx() as conn:  # the scanner's row of the same song: library source, the built path, unchecked
+        refs.attach_file(conn, song, navidrome_song_id="nd-2", path="Encore/Nude Album/Nude.opus", codec="opus", bitrate_kbps=130)
+
+    CoverFinder(db, Catalogue({"Nude": PICTURE}), sleep=lambda _: None, music_dir=music, fetch=lambda url: b"jpeg").run_once()
+
+    assert (kept.parent / "cover.jpg").read_bytes() == b"jpeg", "the keeper's own file gets its album's picture"
+    assert not (lookalike / "cover.jpg").exists(), "an unchecked path is not a place to write beside"
+
+
+def test_a_picture_is_not_written_beside_a_checked_path_whose_file_is_gone(tmp_path: Path) -> None:
+    """The music server may keep a song's id when its file moves; the checked place is then stale. The finder takes the mark back instead of writing into the folder the file left."""
+    db = database(tmp_path)
+    music = tmp_path / "music"
+    song = liked(db, "Nude")
+    kept = kept_file(db, music, song, "Encore/Radiohead/In Rainbows/03 - Nude.opus")
+    kept.unlink()  # moved away; the folder is still there (other files)
+    (kept.parent / "07 - Reckoner.opus").write_bytes(b"audio")
+
+    CoverFinder(db, Catalogue({"Nude": PICTURE}), sleep=lambda _: None, music_dir=music, fetch=lambda url: b"jpeg").run_once()
+
+    assert not (kept.parent / "cover.jpg").exists()
+    with db.read() as conn:
+        assert conn.execute("SELECT path_real FROM song_file WHERE ref = ?", (song,)).fetchone()["path_real"] == 0

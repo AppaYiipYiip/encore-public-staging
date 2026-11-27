@@ -16,6 +16,7 @@ import pytest
 from encore_server import refs
 from encore_server.db import Database
 from encore_server.navidrome_admin import AdminUnavailable, NavidromeAdmin
+from encore_server.place import trusted_file
 from encore_server.real_paths import Pass, RealPaths
 
 
@@ -335,3 +336,138 @@ def test_song_places_says_so_when_the_music_server_refuses() -> None:
 
     with pytest.raises(AdminUnavailable):
         admin_with(handler).song_places(["a"])
+
+
+# ---------------------------------------------------------------------------------------------------------------------- review of #169
+
+
+def test_a_row_the_scanner_made_first_becomes_the_kept_file_the_keeper_kept(db: Database) -> None:
+    """The keeper's link takes over the place, the mark AND the source of a row the scanner made first: its own-file lookups and the repairs select `source = 'youtube'`."""
+    ref = one_ref(db, "Weird Fishes")
+    with db.tx() as conn:
+        refs.attach_file(
+            conn, ref, navidrome_song_id="nd1", path="Radiohead/In Rainbows/Weird Fishes.opus", codec="opus", bitrate_kbps=1
+        )
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/Radiohead/In Rainbows/Weird Fishes.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+    with db.read() as conn:
+        rows = conn.execute("SELECT path, path_real, source FROM song_file WHERE ref = ?", (ref,)).fetchall()
+
+    assert [(r["path"], r["path_real"], r["source"]) for r in rows] == [
+        ("Encore/Radiohead/In Rainbows/Weird Fishes.opus", 1, "youtube")
+    ]
+
+
+def test_the_scanner_never_turns_a_kept_file_into_a_library_one(db: Database) -> None:
+    ref = one_ref(db, "Weird Fishes")
+    with db.tx() as conn:
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+        refs.attach_file(conn, ref, navidrome_song_id="nd1", path="R/W.opus", codec="opus", bitrate_kbps=1, source="library")
+    with db.read() as conn:
+        row = conn.execute("SELECT source, path_real FROM song_file WHERE ref = ?", (ref,)).fetchone()
+
+    assert (row["source"], row["path_real"]) == ("youtube", 1)
+
+
+def checked_row(bench: Bench, real: str) -> tuple[str, str]:
+    ref, _ = bench.library_file(real)
+    assert bench.errand().run_once().resolved == 1
+    with bench.db.read() as conn:
+        return ref, str(conn.execute("SELECT id FROM song_file WHERE ref = ?", (ref,)).fetchone()["id"])
+
+
+def test_a_checked_path_that_names_a_file_is_trusted_and_left_as_it_is(bench: Bench) -> None:
+    ref, file_id = checked_row(bench, "Misc/a.opus")
+
+    assert trusted_file(bench.db, bench.music, file_id, "Misc/a.opus") == bench.music / "Misc" / "a.opus"
+    assert bench.row(ref)["path_real"] == 1
+
+
+def test_a_checked_path_that_names_no_file_any_more_is_not_trusted_and_the_errand_asks_again(bench: Bench) -> None:
+    """The music server may keep a song's id when its file moves, and nothing then resets the mark: the reader that finds no file takes it back."""
+    ref, file_id = checked_row(bench, "Misc/a.opus")
+    (bench.music / "Misc" / "a.opus").rename(bench.music / "Misc" / "moved.opus")
+
+    assert trusted_file(bench.db, bench.music, file_id, "Misc/a.opus") is None
+
+    row = bench.row(ref)
+    assert row["path_real"] == 0 and row["path_checked_at"] is None, "back to unverified, at the front of the queue"
+    bench.places.answers["nd1"] = "Misc/moved.opus"  # the music server says where it lies now
+    assert bench.errand().run_once().resolved == 1
+    assert (bench.row(ref)["path"], bench.row(ref)["path_real"]) == ("Misc/moved.opus", 1)
+
+
+def test_the_mark_is_not_taken_back_from_a_row_that_holds_another_path_now(bench: Bench) -> None:
+    ref, file_id = checked_row(bench, "Misc/a.opus")
+
+    assert trusted_file(bench.db, bench.music, file_id, "Some/old/path.opus") is None
+
+    assert bench.row(ref)["path_real"] == 1, "the keeper (or the errand) put a new place there meanwhile: not undone"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- follow-up (the advisor's review after #169)
+
+
+def test_two_copies_of_one_song_that_share_the_music_servers_tag_built_path_are_two_rows(db: Database) -> None:
+    """The music server builds a song's path from its TAGS, so two copies of one song (two folders, the same tags) report ONE path. `attach_file` matched a row by id OR by path: the second copy took
+    the first copy's row and overwrote its music-server id, the next pass flipped it back, and the served file alternated. A path is a way to match only when it is a REAL place."""
+    ref = one_ref(db, "Weird Fishes")
+    built = "Radiohead/In Rainbows/Weird Fishes.opus"
+    with db.tx() as conn:
+        refs.attach_file(conn, ref, navidrome_song_id="nd1", path=built, codec="opus", bitrate_kbps=128, meta={"size": 100})
+        refs.attach_file(conn, ref, navidrome_song_id="nd2", path=built, codec="opus", bitrate_kbps=128, meta={"size": 120})
+        refs.attach_file(
+            conn, ref, navidrome_song_id="nd1", path=built, codec="opus", bitrate_kbps=128, meta={"size": 100}
+        )  # the next pass
+    with db.read() as conn:
+        rows = conn.execute(
+            "SELECT navidrome_song_id, meta FROM song_file WHERE ref = ? ORDER BY navidrome_song_id", (ref,)
+        ).fetchall()
+
+    assert [r["navidrome_song_id"] for r in rows] == ["nd1", "nd2"], "two files, two rows, and each keeps its own id"
+
+
+def test_a_real_path_still_finds_the_row_of_the_same_file(db: Database) -> None:
+    """The keeper links a file it placed by its real place, also before the music server has an id for it."""
+    ref = one_ref(db, "Weird Fishes")
+    with db.tx() as conn:
+        first = refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id=None,
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+        again = refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+
+    assert first == again, "one row: found by the real place, then given its music-server id"

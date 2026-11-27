@@ -33,6 +33,7 @@ from .deezer import LookupUnavailable, NotInCatalogue, search_tracks, track_by_i
 from .ids import now_ms
 from .keeper.covers import cover_url_ok, fetch_cover, folder_wants_a_picture, write_folder_picture
 from .keeper.keeper import KEPT_FOLDER
+from .place import trusted_file
 from .textnorm import artist_key, is_unknown_artist
 
 log = logging.getLogger("encore_server.cover_finder")
@@ -230,15 +231,18 @@ class CoverFinder:
                 conn.execute("UPDATE song_ref SET cover_url = ?, cover_tried_at = ? WHERE id = ?", (url, now_ms(), ref_id))
                 # Everybody who has the song, and everybody browsing the server's files, learns it has a picture.
                 library.touch_ref_holders(conn, ref_id)
-                files = conn.execute("SELECT path FROM song_file WHERE ref = ?", (ref_id,)).fetchall()
+                files = conn.execute("SELECT id, path, path_real FROM song_file WHERE ref = ?", (ref_id,)).fetchall()
                 if files:
                     refs.touch_file(conn, ref_id)
-                folders = [str(f["path"]) for f in files if f["path"]]
+                # A picture is written beside a file only where the path is CHECKED (N-53): the scanner's path is the music server's tag-built one, and an artist called "Encore" would pass `Encore/`.
+                checked = [(str(f["id"]), str(f["path"])) for f in files if f["path"] and f["path_real"]]
             else:
                 conn.execute("UPDATE song_ref SET cover_tried_at = ? WHERE id = ?", (now_ms(), ref_id))
-                folders = []
-        for relative in folders:
-            self._folder_picture(relative, url)
+                checked = []
+        for file_id, relative in checked:
+            # The file must still be at its checked place (`place.trusted_file`: a moved file whose song id the music server kept is not written beside, and its mark is taken back).
+            if self._music is None or trusted_file(self._db, self._music, file_id, relative) is not None:
+                self._folder_picture(relative, url)
 
     def _folder_picture(self, relative: str, url: str | None) -> None:
         """A `cover.jpg` in the album folder of a file this server keeps ([write_folder_picture]: never outside `Encore/`, a folder that already has a picture is left as it is)."""
