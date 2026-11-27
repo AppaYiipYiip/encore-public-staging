@@ -1,0 +1,12 @@
+{
+ "id": "20261127T161511Z-agent-a8eb",
+ "item": "P3-06",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T16:15:11Z",
+ "type": "note",
+ "body": "27 Nov, lead (from P3-34): the admin routes and pages decide 'home or public' with is_public_request, i.e. from the connection address, which is the bridge gateway where Docker hides the visitor (B-56). See the P3-34 note for the full list; whether refuse_public should use netaddr.provably_home (and what a Windows Docker Desktop Host then does to open /admin) is for the advisor and the owner.",
+ "to": [
+  "agent"
+ ]
+}

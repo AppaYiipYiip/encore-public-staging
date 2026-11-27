@@ -60,7 +60,7 @@ def test_the_documents_table_and_the_manifest_list_the_same_add_ons() -> None:
 
 
 def test_only_built_add_ons_the_server_reads_at_start_have_a_setting() -> None:
-    assert {a.id for a in ADDONS if a.setting} == {"youtube", "catalogue", "album-pass"}
+    assert {a.id for a in ADDONS if a.setting} == {"youtube", "catalogue", "album-pass", "music-web-page"}
     assert all(not (a.setting and (a.planned or a.host_managed)) for a in ADDONS)
 
 
@@ -290,6 +290,38 @@ def test_the_command_refuses_with_the_same_sentences_and_says_what_it_needs(tmp_
             == 0
         )
         assert json.loads(ok.getvalue())["addon"]["state"] == "runs"
+
+
+def test_the_way_back_to_the_music_servers_web_page_is_the_command_the_changelog_names(tmp_path: Path) -> None:
+    """P3-34: the page is shut by default; `encore addon music-web-page runs --risk-version 1` and a restart bring it back. Without the risk version it is refused in words, with it the
+    choice is stored, and the next start runs with `music_web_page` true (and not before: the stored choice is read at start)."""
+    settings, app = make_app(tmp_path)
+    with TestClient(app, client=PROXY):
+        assert app.state.services.settings.music_web_page is False, "shut by default"
+        asked_err = io.StringIO()
+        assert cli.command(["addon", "set", "music-web-page", "runs"], settings=settings, out=io.StringIO(), err=asked_err) == 1
+        assert "Read the warning" in asked_err.getvalue(), "refused until the risk text was shown"
+        ok = io.StringIO()
+        assert (
+            cli.command(
+                ["addon", "set", "music-web-page", "runs", "--risk-version", "1", "--json"],
+                settings=settings,
+                out=ok,
+                err=io.StringIO(),
+            )
+            == 0
+        )
+        stored = json.loads(ok.getvalue())["addon"]
+        assert stored["state"] == "runs" and stored["restartNeeded"] is True, "stored; it takes effect at the next start"
+        assert app.state.services.settings.music_web_page is False, "the running server has not changed its mind"
+    _, again = make_app(tmp_path)
+    with TestClient(again, client=PROXY):
+        assert again.state.services.settings.music_web_page is True, "the next start runs with the page switched on"
+    _, third = make_app(tmp_path)
+    with TestClient(third, client=PROXY):
+        out = io.StringIO()
+        cli.command(["addon", "set", "music-web-page", "off", "--json"], settings=settings, out=out, err=io.StringIO())
+        assert json.loads(out.getvalue())["addon"]["state"] == "off", "and it can be shut again"
 
 
 def test_the_command_says_to_start_the_server_first_when_there_is_no_database(tmp_path: Path) -> None:

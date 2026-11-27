@@ -60,6 +60,10 @@ def music_server() -> FastAPI:
     async def echo(request: Request) -> dict[str, object]:
         return {"got": (await request.body()).decode(), "type": request.headers.get("content-type")}
 
+    @app.post("/rest/echo.view")
+    async def rest_echo(request: Request) -> dict[str, object]:
+        return {"got": (await request.body()).decode(), "type": request.headers.get("content-type")}
+
     @app.get("/rest/gone.view")
     def gone() -> Response:
         return Response("nope", status_code=404)
@@ -115,7 +119,7 @@ def test_a_head_request_has_headers_and_no_body(rig: tuple[TestClient, FastAPI])
 def test_a_post_body_and_its_type_arrive(rig: tuple[TestClient, FastAPI]) -> None:
     client, _ = rig
 
-    response = client.post("/api/user/echo", content='{"a": 1}', headers={"content-type": "application/json"})
+    response = client.post("/rest/echo.view", content='{"a": 1}', headers={"content-type": "application/json"})
 
     assert response.json() == {"got": '{"a": 1}', "type": "application/json"}
 
@@ -191,9 +195,19 @@ def test_the_first_account_address_is_never_passed_on_to_anybody(rig: tuple[Test
 
 
 def test_the_refusal_does_not_touch_the_addresses_around_it(rig: tuple[TestClient, FastAPI]) -> None:
-    client, upstream = rig
-    assert client.post("/auth/login", json={}).json() == {"token": "t"}
-    assert client.get("/auth/createAdminX").status_code == 404 and upstream.state.first_account_calls == [], (
-        "a different address is the music server's to answer"
-    )
+    """The matcher refuses that one address in any spelling and nothing else (the music server's other doors are shut by default now, P3-34, so this is asked of the matcher)."""
+    from encore_server.gateway import is_first_account_request
+
+    for neighbour in (
+        "auth/login",
+        "auth/createAdminX",
+        "auth/createAdmins",
+        "xauth/createAdmin",
+        "auth/createAdmin/x",
+        "api/user",
+        "rest/ping.view",
+        "",
+    ):
+        assert is_first_account_request(neighbour) is False, neighbour
+    client, _ = rig
     assert client.get("/rest/ping.view").status_code == 200
