@@ -16,6 +16,7 @@ from .. import __version__, host_status
 from ..auth import Principal
 from ..health import Facts, build
 from ..ids import now_ms
+from ..link_listing import held_back
 from .common import API_PREFIX, Services, _ok, _youtube_status, get_principal, refuse_public, require_owner, services
 
 log = logging.getLogger("encore_server.api")
@@ -53,6 +54,7 @@ def collect(svc: Services) -> Facts:
         people = conn.execute("SELECT COUNT(*) FROM person").fetchone()[0]
         devices = conn.execute("SELECT COUNT(*) FROM device WHERE revoked_at IS NULL").fetchone()[0]
         last = conn.execute("SELECT MAX(last_seen) FROM device").fetchone()[0]
+        missed, linked = held_back(conn)  # from the database: true between passes and after a restart (P3-33)
         midnight = local_midnight_ms(zone=svc.settings.time_zone)
         plays = conn.execute("SELECT COUNT(*) FROM play_event WHERE at >= ?", (midnight,)).fetchone()[0]
         imports = conn.execute("SELECT COUNT(*) FROM import WHERE state = 'done' AND updated_at >= ?", (midnight,)).fetchone()[0]
@@ -75,8 +77,8 @@ def collect(svc: Services) -> Facts:
         imports_today=int(imports),
         host=host_status.read(svc.settings.data_dir),
         clock_zone=zone_name(svc.settings.time_zone),
-        library_held_back=svc.linker.last.held_back if svc.linker is not None and svc.linker.last is not None else 0,
-        library_listed=svc.linker.last.seen if svc.linker is not None and svc.linker.last is not None else 0,
+        library_held_back=missed,
+        library_listed=linked - missed,
         helper=svc.helper.state() if svc.helper is not None else "missing",
     )
 

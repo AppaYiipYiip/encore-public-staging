@@ -11,6 +11,9 @@ files are linked never removes anything. A file that is listed again forgets tha
 
 from __future__ import annotations
 
+import pytest
+
+from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.ids import now_ms
 from encore_server.scanner import CONFIRM_AFTER_MS, LinkReport, link_library
@@ -159,3 +162,67 @@ def test_a_library_reorganised_under_new_ids_is_a_library_not_an_outage(db: Data
     with db.read() as conn:
         after = [tuple(r) for r in conn.execute("SELECT * FROM song_file ORDER BY id")]
     assert second.pruned == 0 and second.held_back == 0 and after == before, "the same listing, trusted again, changes nothing"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the review of #180: what Home and `encore status` say
+
+
+def test_the_count_of_held_back_files_is_read_from_the_database_not_from_the_last_pass(db: Database) -> None:
+    from encore_server.link_listing import held_back
+
+    linked(db, 10)
+    link_library(db, FakeLibrary([entry(n) for n in range(3)]), prune=True)  # an outage: 3 of 10 listed
+    with db.read() as conn:
+        assert held_back(conn) == (7, 10)
+
+    link_library(
+        db, FakeLibrary([entry(n) for n in range(3)]), prune=False
+    )  # the add-only pass a rescan brings: it reports nothing held back itself
+
+    with db.read() as conn:
+        assert held_back(conn) == (7, 10), "the warning does not disappear between hourly passes while the disk is still missing"
+
+
+def test_every_pass_forgets_the_misses_of_the_files_it_lists_also_the_pass_that_only_adds(db: Database) -> None:
+    linked(db, 10)
+    link_library(db, FakeLibrary([entry(n) for n in range(3)]), prune=True)
+
+    link_library(
+        db, FakeLibrary([entry(n) for n in range(10)]), prune=False
+    )  # the disk is back; the pass after the rescan only adds
+
+    assert all(v is None for v in missed(db).values()) and rows(db) == 10
+    from encore_server.link_listing import held_back
+
+    with db.read() as conn:
+        assert held_back(conn) == (0, 10)
+
+
+def test_a_pass_that_only_adds_never_removes_what_it_forgets_to_miss(db: Database) -> None:
+    linked(db, 10)
+    link_library(db, FakeLibrary([entry(n) for n in range(3)]), prune=True)
+    age_the_misses(db, CONFIRM_AFTER_MS + 1)
+
+    link_library(db, FakeLibrary([entry(n) for n in range(3)]), prune=False)
+
+    assert rows(db) == 10, "only a pass that prunes removes, and only a day after the first miss"
+
+
+def test_the_op_says_so_in_words_when_files_are_held_back_and_nothing_otherwise(
+    db: Database, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import io
+
+    from encore_server.ops.cli import command
+
+    settings = Settings(data_dir=db.path.parent)
+    quiet = io.StringIO()
+    assert command(["library", "--check"], settings=settings, out=quiet) == 0 and quiet.getvalue() == ""
+
+    linked(db, 10)
+    link_library(db, FakeLibrary([entry(0)]), prune=True)
+    said = io.StringIO()
+    assert command(["library", "--check"], settings=settings, out=said) == 0
+    assert (
+        "lists 1 of the 10 songs" in said.getvalue() and "Nothing was removed" in said.getvalue() and "mounted" in said.getvalue()
+    )
