@@ -23,6 +23,7 @@ import uvicorn
 
 from encore_server.api import create_app
 from encore_server.config import Settings
+from encore_server.helper import HelperAnswer
 from tests.conftest import FakeVerifier
 from tests.devtools import Browser, find_browser
 from tests.test_accounts import FakeAdmin
@@ -33,6 +34,25 @@ pytestmark = pytest.mark.skipif(
 )
 
 HOME = {"X-Forwarded-For": "192.168.1.9"}
+
+
+class FakeHelper:
+    """The helper as the pages meet it: what it answers is set by the test, and it remembers what it was asked."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+        self.answers: dict[str, HelperAnswer] = {}
+        self.present = True
+
+    def available(self) -> bool:
+        return self.present
+
+    def state(self) -> str:
+        return "ready" if self.present else "missing"
+
+    def call(self, action: str) -> HelperAnswer:
+        self.calls.append(action)
+        return self.answers.get(action, HelperAnswer(done="ok"))
 
 
 class Server:
@@ -74,7 +94,8 @@ def server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Server]:
         youtube=False,
         server_name="Our music",
     )
-    app = create_app(settings, verifier=verifier, navidrome_admin=admin)  # type: ignore[arg-type]
+    helper = FakeHelper()
+    app = create_app(settings, verifier=verifier, navidrome_admin=admin, helper=helper)  # type: ignore[arg-type]
     config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning")
     running = uvicorn.Server(config)
     thread = threading.Thread(target=running.run, daemon=True)
@@ -85,7 +106,9 @@ def server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Server]:
     assert running.started, "the test server did not start"
     port = running.servers[0].sockets[0].getsockname()[1]
     try:
-        yield Server(f"http://127.0.0.1:{port}", verifier, admin)
+        made = Server(f"http://127.0.0.1:{port}", verifier, admin)
+        made.helper = helper  # type: ignore[attr-defined]
+        yield made
     finally:
         running.should_exit = True
         running.force_exit = True
@@ -307,3 +330,82 @@ def test_the_first_run_page_makes_the_owner_and_lands_signed_in(fresh_server: Se
         browser.go(f"{server.base}/encore/setup")
         browser.wait("document.querySelector('.amain') || document.getElementById('user')")
         assert browser.js("location.pathname") == "/encore/admin"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- Backups and Away from home (slice 6b)
+
+
+def test_the_backups_page_lists_makes_and_never_offers_a_restore_button(server: Server) -> None:
+    helper = server.helper  # type: ignore[attr-defined]
+    helper.present = True
+    helper.calls.clear()
+    now = int(time.time())
+    helper.answers["backup.list"] = HelperAnswer(
+        items=[
+            ["computer", "encore-backup-1.tar.gz.age", "14000000", str(now - 3600), "locked"],
+            ["admin", "encore-backup-2.tar.gz.age", "15000000", str(now - 60), "locked"],
+            ["computer", "encore-backup-0.tar.gz", "9000000", str(now - 90000), "plain"],
+        ],
+        done="ok",
+    )
+    helper.answers["backup.make"] = HelperAnswer(done="A backup was made.")
+    with Browser(EXECUTABLE) as browser:  # type: ignore[arg-type]
+        sign_in_page(browser, server, "marwa", "pw-marwa")
+        browser.wait("document.querySelector('.arail')")
+        browser.click(".arail button", "Backups")
+        browser.wait("document.querySelectorAll('[data-backup]').length === 3")
+        page = browser.text(".amain")
+        assert "Backups" in page and page.count("Locked") == 2 and "Not locked" in page
+        assert "made from this page" in page and "made by the computer" in page and "15 MB" in page
+        assert "sudo encore restore FILE" in page and "never a button" in page, "restore is a command, in the drawn words"
+        assert browser.js("[...document.querySelectorAll('button')].some((b) => /restore/i.test(b.innerText))") is False
+        assert browser.js("location.hash") == "#/backups"
+        browser.js("document.getElementById('make-backup').click();")
+        browser.wait("document.querySelector('[role=status]').textContent === 'A backup was made.'")
+        assert helper.calls.count("backup.make") == 1
+        # a refusal in the helper's own words
+        helper.answers["backup.make"] = HelperAnswer(
+            failed="A backup was made a moment ago from the admin pages. Wait ten minutes, or make one at the computer: sudo encore backup"
+        )
+        browser.js("document.getElementById('make-backup').click();")
+        browser.wait("document.querySelector('.error').textContent.indexOf('Wait ten minutes') >= 0")
+        # without the helper: how to get it, and no button to press
+        helper.present = False
+        browser.click(".arail button", "Home")
+        browser.wait("document.querySelector('.hrow')")
+        assert "Not installed" in browser.text(".hlist") and "sudo encore helper install" in browser.text(".hlist")
+        browser.click(".arail button", "Backups")
+        browser.wait("document.querySelector('.card.need')")
+        assert "needs a small helper" in browser.text(".amain") and "sudo encore helper install" in browser.text(".amain")
+        assert browser.js("document.getElementById('make-backup').disabled") is True
+    helper.present = True
+
+
+def test_the_away_page_never_offers_to_set_tailscale_up_and_only_flips_a_set_up_one(server: Server) -> None:
+    helper = server.helper  # type: ignore[attr-defined]
+    helper.present = True
+    helper.calls.clear()
+    helper.answers["away.status"] = HelperAnswer(results={"tailscale": "signedout"}, done="ok")
+    helper.answers["away.on"] = HelperAnswer(done="The away address is on.")
+    with Browser(EXECUTABLE) as browser:  # type: ignore[arg-type]
+        sign_in_page(browser, server, "marwa", "pw-marwa")
+        browser.wait("document.querySelector('.arail')")
+        browser.click(".arail button", "Away from home")
+        browser.wait("document.querySelector('.card.need')")
+        page = browser.text(".amain")
+        assert (
+            "Tailscale says this computer is signed out" in page
+            and "sudo encore funnel on" in page
+            and "never from a page" in page
+        )
+        assert browser.js("!!document.getElementById('away-on') || !!document.getElementById('away-off')") is False
+        assert "away.on" not in helper.calls
+        # a Tailscale that is set up: one button
+        helper.answers["away.status"] = HelperAnswer(results={"tailscale": "ready"}, done="ok")
+        browser.click(".arail button", "Home")
+        browser.wait("document.querySelector('.hrow')")
+        browser.click(".arail button", "Away from home")
+        browser.wait("document.getElementById('away-on')")
+        browser.js("document.getElementById('away-on').click();")
+        browser.wait("document.querySelector('[role=status]').textContent.indexOf('The away address is on.') === 0")
+        assert "The server restarts" in browser.text("[role=status]") and helper.calls.count("away.on") == 1

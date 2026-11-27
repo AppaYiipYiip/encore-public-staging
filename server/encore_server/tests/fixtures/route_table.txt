@@ -67,6 +67,13 @@ GET /encore/api/v1/admin/session admin_session routes.admin_site
 GET /encore/api/v1/admin/addons list_addons routes.admin_addons
 PUT /encore/api/v1/admin/addons/{addon_id} put_addon routes.admin_addons
 GET /encore/api/v1/admin/health health routes.admin_health
+GET /encore/api/v1/admin/helper helper_state routes.admin_helper
+GET /encore/api/v1/admin/backups list_backups routes.admin_helper
+POST /encore/api/v1/admin/backups make_backup routes.admin_helper
+GET /encore/api/v1/admin/away away routes.admin_helper
+POST /encore/api/v1/admin/away/on away_on routes.admin_helper
+POST /encore/api/v1/admin/away/off away_off routes.admin_helper
+POST /encore/api/v1/admin/restart restart routes.admin_helper
 GET /encore/api/v1/setup/state setup_state routes.setup
 POST /encore/api/v1/setup/owner setup_owner routes.setup
 GET,HEAD /encore/stream/{ref_id} stream routes.media

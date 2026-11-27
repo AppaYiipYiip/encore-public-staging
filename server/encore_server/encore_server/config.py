@@ -57,6 +57,9 @@ class Settings:
     away_url: str = ""
     #: The setup code of a server whose owner is made in the browser (docs/36 section 2): empty once there is nobody to make (the headless door) or a code that is not well formed.
     setup_code: str = field(default="", repr=False)
+    #: The helper (docs/36 section 3): the socket the Encore server asks it through and the token that goes with it. Both come from the compose override `encore helper install` writes; empty: no helper.
+    helper_socket: str = ""
+    helper_token: str = field(default="", repr=False)
     #: Mean seconds between the background look-ups and downloads at YouTube (D-67): the Host picks 3 to 8 in `.env`, 4 by default; a test may set 0 (no pacing).
     youtube_pace_s: float = DEFAULT_PACE_S
     fault: str = ""
@@ -102,6 +105,8 @@ class Settings:
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
             home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
+            helper_socket=e.get("ENCORE_HELPER_SOCKET", "").strip(),
+            helper_token=e.get("ENCORE_HELPER_TOKEN", "").strip(),
             setup_code=setup_code.show(e.get("ENCORE_SETUP_CODE", ""))
             if setup_code.well_formed(e.get("ENCORE_SETUP_CODE", ""))
             else "",

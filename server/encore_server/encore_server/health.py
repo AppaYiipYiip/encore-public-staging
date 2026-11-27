@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .helper import CANNOT_OPEN
 from .host_status import HostStatus
 
 DAY_MS = 24 * 3600 * 1000
@@ -43,6 +44,9 @@ class Facts:
     host: HostStatus | None
     #: the name of the clock whose midnight starts "today" (the container's; the Host's own time zone is a later setting)
     clock_zone: str = "UTC"
+    #: The helper the admin pages ask for a backup or the away address: `ready`, `missing` (not installed: not a failure, the row says how to get it) or `cannot-open` (it is there and this
+    #: server may not open it: the Host must act).
+    helper: str = "missing"
 
 
 def _row(row_id: str, title: str, state: str, words: str, detail: str = "", **more: Any) -> dict[str, Any]:
@@ -239,6 +243,25 @@ def build(f: Facts) -> dict[str, Any]:
             )
         else:
             rows.append(_row("backup", "Last backup", "ok", "Made", detail, at=backup.at, locked=backup.locked))
+
+    # -- the helper (what the Backups and Away pages need)
+    if f.helper == "ready":
+        rows.append(
+            _row("helper", "Admin buttons", "ok", "Ready", "The admin pages can make a backup and switch the away address.")
+        )
+    elif f.helper == "cannot-open":
+        rows.append(_row("helper", "Admin buttons", "warn", "Cannot be opened", CANNOT_OPEN))
+        needs.append(_need("helper", "The admin pages cannot reach the helper.", CANNOT_OPEN))
+    else:
+        rows.append(
+            _row(
+                "helper",
+                "Admin buttons",
+                "off",
+                "Not installed",
+                "Until it is, the admin pages cannot make a backup or switch the away address. On the server computer run: sudo encore helper install",
+            )
+        )
 
     # -- this program
     rows.append(_row("encore", "Encore", "ok", f"Version {f.version}"))

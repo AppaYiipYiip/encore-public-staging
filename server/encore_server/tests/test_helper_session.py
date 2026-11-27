@@ -158,9 +158,12 @@ def test_every_hostile_line_is_refused_and_nothing_runs(tmp_path: Path) -> None:
         assert result.returncode == 0, name
         assert rig.nothing_ran(), name
         assert not pwned.exists(), f"{name}: an injected command ran"
-    assert {j["result"] for j in rig.jobs_of()} == {"refused"}, "every one of them is in the helper's own record"
-    assert len(rig.jobs_of()) == len(hostile("x"))
-    assert "refused" in rig.syslog.read_text(encoding="utf-8")
+    assert rig.jobs_of() == [], (
+        "a refusal is a line in the system log, never a job file: cheap requests must not compete with the records of changes"
+    )
+    assert rig.syslog.read_text(encoding="utf-8").count("-- refused ") == len(hostile("x")), (
+        "and every one of them is in the system log"
+    )
 
 
 def test_a_second_request_after_a_line_break_is_never_read(tmp_path: Path) -> None:
@@ -210,7 +213,7 @@ def test_status_answers_in_lines_and_the_helper_keeps_its_own_record(tmp_path: P
     keys = {ln.split(": ", 1)[1].split("=", 1)[0] for ln in out if ln.startswith("result: ")}
     assert keys == {"helper", "encoreServer", "musicServer", "away", "tailscale", "lastBackup"}
     assert all(ANSWER_LINE.match(ln) and len(ln) <= 310 and not re.search(r"[\x00-\x1f\x1b]", ln) for ln in out)
-    assert [j["action"] for j in rig.jobs_of()] == ["status"] and rig.jobs_of()[0]["result"] == "ok"
+    assert rig.jobs_of() == [], "a read leaves a line in the system log, not a job file"
     assert "status ok" in rig.syslog.read_text(encoding="utf-8")
 
 
@@ -489,3 +492,17 @@ def test_the_installers_own_dc_reads_the_helpers_override_too() -> None:
     assert len(re.findall(r"docker compose (?!version)", install)) == 2, (
         "only dc itself calls docker compose (once with the override, once without)"
     )
+
+
+def test_a_flood_of_cheap_requests_cannot_push_the_records_of_changes_out(tmp_path: Path) -> None:
+    """Review of #160: the job files were pruned to the newest 200 and refused requests and reads each wrote one, so 200 junk lines would have flushed every `backup.make` and `restart`
+    record: row 7 of the threat model ("it can omit its own line, not the helper's") was false for the job files. Now only changes write a job file."""
+    rig = Rig(tmp_path)
+    rig.ask(f"{TOKEN} backup.make\n")
+    before = rig.jobs_of()
+    assert [j["result"] for j in before] == ["started", "ok"]
+    for n in range(40):
+        rig.ask(f"{'W' * 40} status\n" if n % 2 else f"{TOKEN} backup.list\n")
+    assert rig.jobs_of() == before, "forty refused requests and reads left the change records exactly as they were"
+    script = (Path(__file__).resolve().parent.parent / "deploy" / "encore").read_text(encoding="utf-8")
+    assert "tail -n +2001" in script and "tail -n +201 " not in script, "and the cap is generous (2000 change records)"
