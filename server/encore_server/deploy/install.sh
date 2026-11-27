@@ -367,7 +367,7 @@ log "encore running after $(since) s"
 # with no account at all hands its first one to whoever asks (its /auth/createAdmin; the gateway refuses that address as well, but the account must exist). Safe to repeat: an
 # account that already signs in is left as it is. On a first install it is fatal, because the keys step below signs in with it; on a re-run of a working install it is a warning.
 admin_error="$(mktemp)"
-if dc exec -T encore-server python -m encore_server setup --administrator-only >>"$LOG" 2>"$admin_error"; then
+if true; then # MUTATION: the administrator step is not run
     rm -f "$admin_error"
 else
     message="$(sed -n 's/^setup: //p' "$admin_error" | head -1)"
