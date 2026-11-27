@@ -107,8 +107,8 @@ def test_a_tap_on_a_song_being_kept_moves_it_to_the_front(db: Database, rig: Rig
 def test_a_whole_download_asked_for_stands_behind_a_single_tap_even_when_it_is_longer_than_the_window(
     db: Database, rig: Rig
 ) -> None:
-    """B-62 and B-39 together: the scheduler looks at the first 200 queued items by (priority, age) before it shares the turn. If a 250-song download were
-    promoted to the level of a tap, the next person's tap would sit outside that window and wait for the whole download."""
+    """B-62: a whole download is promoted to the level of a download, not of a tap. At the level of a tap a person's own next tap would wait behind the rest of their download (inside
+    one priority a person's items go oldest first); the other person's tap is served by turn either way (B-39)."""
     *crowd, tap = make_refs(db, 251)  # (make_refs names songs by number, so asking twice would give the same songs again)
     big, small = make_person(db, "marwa"), make_person(db, "nina")
     for ref in crowd:
@@ -367,3 +367,125 @@ def test_the_worker_threads_pick_up_new_work_and_stop_when_asked(db: Database) -
     while time.time() < deadline and (scheduler.state_of("keep", ref) or {}).get("state") != "done":
         time.sleep(0.02)
     assert (scheduler.state_of("keep", ref) or {}).get("state") == "done"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- P3-32 (audit B-39): fair share at any queue size
+
+
+def queue_for(db: Database, rig: Rig, person: str, refs_: list[str]) -> None:
+    with db.tx() as conn:
+        for ref in refs_:
+            rig.clock.advance(0.001)
+            rig.scheduler.submit("keep", ref, person, conn=conn)
+
+
+def test_a_friends_twenty_run_within_the_first_hundred_behind_two_thousand_songs_of_another_person(
+    db: Database, rig: Rig
+) -> None:
+    """docs/07 section 6's own example at full size. The claim used to look at the first 200 queued items by (priority, age) before it shared the turn, so the second person's 20 sat at
+    positions 1,802 to 1,840. A person's queue is now chosen from by turn, whatever its length."""
+    everything = make_refs(db, 2020)
+    big, small = make_person(db, "marwa"), make_person(db, "nina")
+    queue_for(db, rig, big, everything[:2000])
+    queue_for(db, rig, small, everything[2000:])
+
+    for _ in range(100):
+        assert rig.scheduler.run_one("background")
+
+    ran = [ref for _, ref in rig.log]
+    assert set(everything[2000:]) <= set(ran), "nina's 20 are done before the hundredth item"
+    assert ran.index(everything[2000]) <= 1, "and the first of them runs second: turns alternate from the start"
+
+
+def test_a_person_whose_whole_queue_is_younger_than_the_window_still_gets_a_turn(db: Database, rig: Rig) -> None:
+    older = make_refs(db, 301)
+    *crowd, mine = older
+    big, small = make_person(db, "marwa"), make_person(db, "nina")
+    queue_for(db, rig, big, crowd)
+    queue_for(db, rig, small, [mine])
+
+    rig.scheduler.run_one("background")
+    rig.scheduler.run_one("background")
+
+    assert mine in [ref for _, ref in rig.log][:2]
+
+
+def test_three_people_take_turns_in_the_order_they_first_asked_and_each_is_served_oldest_item_first(
+    db: Database, rig: Rig
+) -> None:
+    six = make_refs(db, 6)
+    a, b, c = make_person(db, "ann"), make_person(db, "ben"), make_person(db, "cat")
+    queue_for(db, rig, a, six[:3])
+    queue_for(db, rig, b, six[3:4])
+    queue_for(db, rig, c, six[4:])
+
+    rig.scheduler.drain("background")
+
+    assert [ref for _, ref in rig.log] == [six[0], six[3], six[4], six[1], six[5], six[2]], (
+        "ann, ben, cat, then ann again, cat's last, ann's last"
+    )
+
+
+def test_an_item_two_people_want_is_served_on_the_turn_of_whoever_waited_longest(db: Database, rig: Rig) -> None:
+    first, second, shared = make_refs(db, 3)
+    a, b = make_person(db, "ann"), make_person(db, "ben")
+    queue_for(db, rig, a, [first])
+    queue_for(db, rig, b, [second])
+    rig.scheduler.run_one("background")  # ann is served
+    with db.tx() as conn:
+        rig.clock.advance(0.001)
+        rig.scheduler.submit("keep", shared, a, conn=conn)
+        rig.scheduler.submit("keep", shared, b, conn=conn)  # one piece of work, wanted by both
+
+    rig.scheduler.drain("background")
+
+    assert [ref for _, ref in rig.log] == [first, second, shared], (
+        "ben waited longest: his own item first, then the item they share"
+    )
+
+
+def test_a_worker_that_finds_nothing_to_do_never_takes_the_write_lock(
+    db: Database, rig: Rig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Idle workers used to start a write transaction every second, each; they read first and write only to claim."""
+
+    def refused(*args: object, **kwargs: object) -> None:
+        raise AssertionError("an idle claim took the write lock")
+
+    monkeypatch.setattr(db, "tx", refused)
+
+    assert rig.scheduler._claim("background") is None  # noqa: SLF001
+    assert rig.scheduler._claim("interactive") is None  # noqa: SLF001
+
+
+def test_a_claim_that_another_worker_won_first_runs_nothing_twice(
+    db: Database, rig: Rig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (ref,) = make_refs(db, 1)
+    queue_for(db, rig, make_person(db, "ann"), [ref])
+    real = rig.scheduler._pick  # noqa: SLF001
+    stolen: list[str] = []
+
+    def pick_then_lose_it(*args: object, **kwargs: object) -> object:
+        found = real(*args, **kwargs)
+        if found is not None and not stolen:
+            stolen.append("once")
+            with db.tx() as conn:  # the other worker claims the very item this one has just read
+                conn.execute("UPDATE work_item SET state = 'running' WHERE id = ?", (found["id"],))
+        return found
+
+    monkeypatch.setattr(rig.scheduler, "_pick", pick_then_lose_it)
+
+    assert rig.scheduler.run_one("background") is False
+    assert rig.log == [], "the item is the other worker's: this one did not run it"
+
+
+def test_a_pool_with_no_handler_gets_no_worker_threads(db: Database) -> None:
+    scheduler = Scheduler(db, {"keep": lambda item: None}, workers={"interactive": 2, "background": 1})
+    scheduler.start()
+    try:
+        names = sorted(t.name for t in scheduler._threads)  # noqa: SLF001
+    finally:
+        scheduler.stop()
+
+    assert names == ["work-background-0"], "the interactive pool has no handler here: no thread, no wake-up every second"

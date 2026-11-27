@@ -4,8 +4,8 @@
 * **Priorities, strictly in this order:** play, prepare, download, match, keep, measure. A tap on a song whose keep is queued
   promotes it to the front; a whole download asked for at once (a playlist, the liked songs, a saved release, Retry) promotes its songs
   to the level of `download`, behind a tap and ahead of every import and other background work (`PROMOTE_ONE`, `PROMOTE_MANY`).
-* **Fair share inside a priority:** the person who was served longest ago goes next, so a 2,000-song import cannot starve a friend's
-  20-song import.
+* **Fair share inside a priority:** the person who was served longest ago goes next, then that person's oldest item, whatever the length of anybody's queue (a 2,000-song import cannot
+  starve a friend's 20-song import: they take turns from the first song; audit B-39).
 * **Two pools.** `interactive` (play, prepare, download) never waits behind `background` (match, keep, measure).
 * **Resumes.** Items live in the database; one that was running when the server stopped is queued again at the next start.
 * **Stop.** Cancelling a person's work removes them from what they asked for; an item somebody else also wants keeps going for them.
@@ -33,8 +33,8 @@ log = logging.getLogger("encore_server.scheduler")
 PRIORITY = {"play": 0, "prepare": 1, "download": 2, "match": 3, "keep": 4, "measure": 5}
 #: How far a keep is promoted when somebody is waiting for it. ONE song a person is looking at (a tap) goes ahead of everything. A WHOLE download asked
 #: for at once (a playlist, the liked songs, a saved release, Retry: up to hundreds of songs) goes ahead of other people's imports and background work but
-#: BEHIND a tap: the claim looks at the first 200 items by (priority, age) before it shares the turn (B-39), so a download promoted to the level of a tap
-#: would stand in front of the next person's tap for as long as it lasts. A promotion only ever raises: a song somebody tapped stays where the tap put it.
+#: BEHIND a tap: inside one priority a person's items go oldest first, so a download promoted to the level of a tap would make that same person's next tap wait for
+#: the rest of their own download. A promotion only ever raises: a song somebody tapped stays where the tap put it.
 #: Only a tap also ends a pause before a retry; a download never does (`promote_many`).
 PROMOTE_ONE = 0
 PROMOTE_MANY = PRIORITY["download"]
@@ -304,42 +304,75 @@ class Scheduler:
             )
         return back
 
-    def _claim(self, pool: str) -> WorkItem | None:
-        """The next item for this pool, or none: best priority first, then the person served longest ago."""
-        kinds = [k for k, p in POOL.items() if p == pool and k in self._handlers]
-        if not kinds:
-            return None
+    def _handled_kinds(self, pool: str) -> list[str]:
+        return [k for k, p in POOL.items() if p == pool and k in self._handlers]
+
+    def _pick(self, kinds: list[str], now: int) -> sqlite3.Row | None:
+        """The next item for a pool, read and not yet claimed: **best priority first, then the person served longest ago, then that person's oldest item.**
+
+        Chosen from the people who are waiting, not from the first rows of the queue: the claim used to look at the first 200 items by (priority, age) before it shared the turn, so a second
+        person's 20 songs behind another's 2,000 sat at positions 1,802 to 1,840 (audit B-39). Now the question is asked per person in SQL (`GROUP BY person`, answered by `work_item_person`'s
+        index), so a queue of any length costs one pass over the people and one lookup of one item. An item several people want is that person's too, and is served on the turn of whoever has
+        waited longest. Work nobody asked for (no person) counts as a person of its own who was never served. Reads only: a worker that finds nothing never takes the write lock."""
         marks = ",".join("?" for _ in kinds)
-        now = self._now_ms()
-        with self._db.tx() as conn:
-            rows = conn.execute(
+        where = f"i.state = 'queued' AND i.next_try_at <= ? AND i.kind IN ({marks})"
+        with self._db.read() as conn:
+            row = conn.execute(f"SELECT MIN(i.priority) AS best FROM work_item i WHERE {where}", (now, *kinds)).fetchone()  # noqa: S608 - only placeholders are formatted in
+            if row is None or row["best"] is None:
+                return None
+            best = row["best"]
+            waiting: list[tuple[str | None, int]] = [
+                (str(r["person"]), int(r["oldest"]))
+                for r in conn.execute(
+                    f"SELECT wp.person AS person, MIN(i.created_at) AS oldest FROM work_item i JOIN work_item_person wp ON wp.item = i.id"  # noqa: S608
+                    f" WHERE {where} AND i.priority = ? GROUP BY wp.person",
+                    (now, *kinds, best),
+                )
+            ]
+            nobody = conn.execute(
+                f"SELECT MIN(i.created_at) AS oldest FROM work_item i WHERE {where} AND i.priority = ?"  # noqa: S608
+                f" AND NOT EXISTS (SELECT 1 FROM work_item_person wp WHERE wp.item = i.id)",
+                (now, *kinds, best),
+            ).fetchone()
+            if nobody is not None and nobody["oldest"] is not None:
+                waiting.append((None, int(nobody["oldest"])))
+            if not waiting:
+                return None
+            who, _ = min(waiting, key=lambda w: (self._served.get(w[0], 0.0) if w[0] is not None else 0.0, w[1]))
+            joined = "JOIN work_item_person wp ON wp.item = i.id AND wp.person = ?" if who is not None else ""
+            extra = "" if who is not None else " AND NOT EXISTS (SELECT 1 FROM work_item_person wp WHERE wp.item = i.id)"
+            found: sqlite3.Row | None = conn.execute(
                 f"SELECT i.id, i.kind, i.ref, i.priority, i.attempts, i.created_at,"  # noqa: S608 - only placeholders are formatted in
                 f" (SELECT group_concat(person) FROM work_item_person WHERE item = i.id) AS persons"
-                f" FROM work_item i WHERE i.state = 'queued' AND i.next_try_at <= ? AND i.kind IN ({marks})"
-                f" ORDER BY i.priority, i.created_at LIMIT 200",
-                (now, *kinds),
-            ).fetchall()
-            if not rows:
+                f" FROM work_item i {joined} WHERE {where} AND i.priority = ?{extra} ORDER BY i.created_at, i.id LIMIT 1",
+                ((who,) if who is not None else ()) + (now, *kinds, best),
+            ).fetchone()
+            return found
+
+    def _claim(self, pool: str) -> WorkItem | None:
+        """The next item for this pool, claimed, or none (see [_pick] for the order). **Read first, write only to claim**: the claim is one conditional update, so two workers that read the same
+        item cannot both take it (the loser looks again), and an idle worker never takes the write lock."""
+        kinds = self._handled_kinds(pool)
+        if not kinds:
+            return None
+        for _ in range(5):
+            now = self._now_ms()
+            chosen = self._pick(kinds, now)
+            if chosen is None:
                 return None
-            best = rows[0]["priority"]
-            level = [r for r in rows if r["priority"] == best]
-
-            def turn(row: sqlite3.Row) -> tuple[float, int]:
-                persons = [p for p in (row["persons"] or "").split(",") if p]
-                # An item several people want is served on the turn of whoever has waited longest.
-                last = min((self._served.get(p, 0.0) for p in persons), default=0.0)
-                return last, row["created_at"]
-
-            chosen = min(level, key=turn)
-            conn.execute(
-                "UPDATE work_item SET state = 'running', attempts = attempts + 1, updated_at = ? WHERE id = ?",
-                (now, chosen["id"]),
-            )
-        persons = tuple(p for p in (chosen["persons"] or "").split(",") if p)
-        self._turn += 1
-        for person in persons:
-            self._served[person] = float(self._turn)
-        return WorkItem(chosen["id"], chosen["kind"], chosen["ref"], chosen["priority"], chosen["attempts"] + 1, persons)
+            with self._db.tx() as conn:
+                taken = conn.execute(
+                    "UPDATE work_item SET state = 'running', attempts = attempts + 1, updated_at = ? WHERE id = ? AND state = 'queued'",
+                    (now, chosen["id"]),
+                )
+            if taken.rowcount != 1:
+                continue  # another worker took it between the read and the claim
+            persons = tuple(p for p in (chosen["persons"] or "").split(",") if p)
+            self._turn += 1
+            for person in persons:
+                self._served[person] = float(self._turn)
+            return WorkItem(chosen["id"], chosen["kind"], chosen["ref"], chosen["priority"], chosen["attempts"] + 1, persons)
+        return None
 
     def run_one(self, pool: str) -> bool:
         """Takes the next item of the pool and runs it here. `False` when there was nothing to do (tests drive the scheduler this way)."""
@@ -400,6 +433,8 @@ class Scheduler:
         self.recover()
         self._stopping = False
         for pool, count in self._workers.items():
+            if not self._handled_kinds(pool):
+                continue  # no handler for any kind of this pool (the server runs without one): a thread would only wake up every second to find nothing
             for n in range(count):
                 thread = threading.Thread(target=self._loop, args=(pool,), name=f"work-{pool}-{n}", daemon=True)
                 thread.start()
