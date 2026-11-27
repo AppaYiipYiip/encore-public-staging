@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.helper import ACTIONS, NOT_INSTALLED, HelperAnswer, HelperClient, HelperUnavailable
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 
 V1 = "/encore/api/v1"
 PROXY = ("10.0.0.2", 50000)
@@ -203,7 +203,7 @@ def test_every_route_is_the_owners_and_a_404_to_the_internet(
     assert send(f"{V1}{path}", headers=HOME).status_code == 401
     unknown = client.get(f"{V1}/nothing-here", headers=HOME).json()
     away = send(f"{V1}{path}", headers={**owner, **STRANGER})
-    assert away.status_code == 404 and away.json() == unknown
+    assert away.status_code == 404 and says(away.json()) == says(unknown)
     assert helper.calls == [], "the helper was never asked for a stranger, a member or nobody"
     assert send(f"{V1}{path}", headers=owner).status_code in (200, 409)
 

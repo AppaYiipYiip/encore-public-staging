@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from encore_server.sources.youtube.errors import DownloadError
-from tests.conftest import FakeVerifier, creds
+from tests.conftest import FakeVerifier, creds, says
 from tests.test_keep_progress import V1, Rig, buckets, build_rig, only
 
 LIKED_GROUP = {"kind": "liked", "id": "liked"}
@@ -102,7 +102,7 @@ def test_a_download_the_person_does_not_have_is_not_found_the_same_way_as_one_th
 
     for refused in (foreign, missing, unsaved):
         assert refused.status_code == 404 and refused.json()["error"]["code"] == "not_found"
-    assert foreign.json()["error"] == missing.json()["error"] == unsaved.json()["error"]
+    assert says(foreign.json())["error"] == says(missing.json())["error"] == says(unsaved.json())["error"]
     assert rig.svc.scheduler.state_of("keep", refs[0])["state"] == "failed", "and nothing was started for her"  # type: ignore[index]
 
 

@@ -22,7 +22,7 @@ from encore_server.api import create_app
 from encore_server.config import Settings
 from encore_server.db import Database
 from encore_server.ops import cli
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 
 V1 = "/encore/api/v1"
 HOME = {"X-Forwarded-For": "192.168.1.20"}
@@ -160,7 +160,7 @@ def test_a_member_and_a_stranger_and_the_internet_get_what_they_should(rig: Test
     assert rig.get(f"{V1}/admin/addons", headers=HOME).status_code == 401
     unknown = rig.get(f"{V1}/nothing-here", headers=STRANGER)
     for headers in (STRANGER, {**token(rig, "marwa"), **STRANGER}):  # the second is the owner's own token, used from the internet
-        assert rig.get(f"{V1}/admin/addons", headers=headers).json() == unknown.json()
+        assert says(rig.get(f"{V1}/admin/addons", headers=headers).json()) == says(unknown.json())
         assert rig.put(f"{V1}/admin/addons/youtube", json={"state": "off"}, headers=headers).status_code == 404
 
 

@@ -23,7 +23,7 @@ from encore_server.api import create_app
 from encore_server.auth import WEB_SESSION_IDLE_MS, WEB_SESSION_LIFETIME_MS, web_session_over
 from encore_server.config import Settings
 from encore_server.ids import now_ms
-from tests.conftest import FakeVerifier
+from tests.conftest import FakeVerifier, says
 
 V1 = "/encore/api/v1"
 PROXY = ("10.0.0.2", 50000)  # the connection comes from a proxy of ours, so X-Forwarded-For says who is asking
@@ -136,7 +136,7 @@ def test_the_files_of_the_site_are_served_with_the_same_policy(rig: TestClient, 
 def test_a_path_that_is_not_a_listed_file_is_the_same_404_as_any_unknown_route(rig: TestClient, path: str) -> None:
     unknown = rig.get("/encore/nothing-here", headers=HOME)
     answer = rig.get(f"/encore/web/{path}", headers=HOME)
-    assert answer.status_code == 404 and answer.json() == unknown.json()
+    assert answer.status_code == 404 and says(answer.json()) == says(unknown.json())
 
 
 @pytest.mark.parametrize(
@@ -178,7 +178,7 @@ def test_a_request_from_the_internet_gets_the_404_of_an_unknown_route_for_everyt
             {**STRANGER, "Authorization": "Bearer nonsense"},
         ):
             answer = rig.get(path, headers=headers, follow_redirects=False)
-            assert answer.status_code == 404 and answer.json() == unknown.json(), (path, headers)
+            assert answer.status_code == 404 and says(answer.json()) == says(unknown.json()), (path, headers)
     assert rig.head("/encore/admin", headers=STRANGER).status_code == 404
 
 
