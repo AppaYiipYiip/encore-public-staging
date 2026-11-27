@@ -63,13 +63,27 @@ class HelperClient:
 
     def available(self) -> bool:
         """Is there a helper to ask: the socket is there (a test client with its own connection is always)."""
-        return self._connect is not None or Path(self._path).exists()
+        if self._connect is not None:
+            return True
+        try:
+            Path(self._path).stat()
+        except FileNotFoundError:
+            return False
+        except PermissionError:
+            return True  # it is there and this process may not open it: `call` says so in words
+        except OSError:
+            return False
+        return True
 
     def call(self, action: str) -> HelperAnswer:
         if action not in ACTIONS:
             raise ValueError(f"not an action of the helper: {action!r}")
         try:
             sock = self._connect() if self._connect is not None else self._open()
+        except PermissionError as error:
+            raise HelperUnavailable(
+                "The server may not open the helper's socket (a permission). On the server computer run  sudo encore helper install  and then  sudo encore restart"
+            ) from error
         except (
             OSError,
             AttributeError,
@@ -98,7 +112,7 @@ class HelperClient:
         return _parse(data.decode("utf-8", "replace"))
 
     def _open(self) -> socket.socket:
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)  # type: ignore[attr-defined]
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)  # type: ignore[attr-defined,unused-ignore]
         try:
             sock.settimeout(5.0)
             sock.connect(self._path)

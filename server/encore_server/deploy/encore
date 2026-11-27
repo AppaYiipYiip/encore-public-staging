@@ -914,6 +914,7 @@ services:
     environment:
       ENCORE_HELPER_TOKEN: ${ENCORE_HELPER_TOKEN}
       ENCORE_HELPER_SOCKET: /run/encore/helper.sock
+      ENCORE_HELPER_GID: ${ENCORE_HELPER_GID}
     volumes:
       - /run/encore:/run/encore:ro
 COMPOSE

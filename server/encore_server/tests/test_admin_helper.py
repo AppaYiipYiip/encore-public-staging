@@ -318,3 +318,36 @@ def test_no_route_ever_asks_for_anything_but_a_listed_action_and_no_secret_is_re
         getattr(client, method)(f"{V1}{path}", headers=owner)
     assert set(helper.calls) <= ACTIONS and "restore.apply" not in helper.calls and "update.apply" not in helper.calls
     assert TOKEN not in json.dumps(audit_lines(client))
+
+
+def test_a_socket_this_process_may_not_open_is_there_but_says_so_in_words(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Found by the real-install job: the server process had lost the helper's group (the entrypoint reset its groups) and `Path.exists()` raised PermissionError, which made Home answer 500.
+    The helper is *there*; asking it is what explains."""
+    client = HelperClient(str(tmp_path / "helper.sock"), TOKEN)
+
+    def refuse(self: Path, *args: object, **kwargs: object) -> object:
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(Path, "stat", refuse)
+    assert client.available() is True, "never an exception"
+
+    def deny() -> socket.socket:
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(client, "_open", deny)
+    with pytest.raises(
+        HelperUnavailable, match="may not open the helper's socket.*sudo encore helper install.*sudo encore restart"
+    ):
+        client.call("status")
+
+
+def test_a_path_that_is_odd_is_simply_not_a_helper(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    client = HelperClient(str(tmp_path / "helper.sock"), TOKEN)
+
+    def odd(self: Path, *args: object, **kwargs: object) -> object:
+        raise OSError(5, "Input/output error")
+
+    monkeypatch.setattr(Path, "stat", odd)
+    assert client.available() is False

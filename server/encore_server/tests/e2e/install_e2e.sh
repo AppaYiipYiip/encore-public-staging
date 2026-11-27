@@ -241,6 +241,11 @@ expect_match "it is in the admin pool, apart from the computer's own" "$LIST" "^
 expect_match "and the computer's backup is still there" "$LIST" "^item: computer encore-backup-"
 [ -d "$DIR/backups/helper" ] || fail "no helper pool folder"
 expect "a second one inside ten minutes is refused in words" "$(container_call backup.make | grep -c 'Wait ten minutes')" 1
+step "the Encore server PROCESS itself (not a root exec) can open the helper: it holds the helper's group and no other"
+SOCKET_GID="$(stat -c %g /run/encore/helper.sock)"
+PROC="$(docker compose --project-directory "$DIR" exec -T encore-server sh -c "grep -E '^(Uid|Groups):' /proc/1/status")"
+expect_match "the server runs as uid 1000" "$PROC" "Uid:[[:space:]]+1000"
+expect "with the helper's group and no other (not root's group 0)" "$(printf '%s\n' "$PROC" | sed -n 's/^Groups:[[:space:]]*//p' | tr -d '[:space:]')" "$SOCKET_GID"
 step "what the container cannot do"
 expect_match "a wrong token is refused" "$(container_call status WRONGTOKENWRONGTOKENWRONGTOKENWRONGTOKEN)" "^failed: That request was refused.$"
 expect_match "restore is not on the list" "$(container_call restore.apply)" "^failed: That request was refused.$"
