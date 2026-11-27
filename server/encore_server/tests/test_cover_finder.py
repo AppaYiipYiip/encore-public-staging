@@ -209,7 +209,16 @@ def kept_file(db: Database, music: Path, ref_id: str, relative: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"audio")
     with db.tx() as conn:
-        refs.attach_file(conn, ref_id, navidrome_song_id="nd-1", path=relative, codec="opus", bitrate_kbps=130, source="youtube")
+        refs.attach_file(
+            conn,
+            ref_id,
+            navidrome_song_id="nd-1",
+            path=relative,
+            codec="opus",
+            bitrate_kbps=130,
+            source="youtube",
+            path_real=True,
+        )
     return path
 
 
@@ -318,3 +327,22 @@ def test_a_song_without_a_video_is_not_announced(tmp_path: Path) -> None:
     with db.read() as conn:
         assert library.latest_cursor(conn, "pn_1") == before
     assert cover_of(db, ref) is None
+
+
+def test_a_picture_is_written_beside_a_checked_path_only(tmp_path: Path) -> None:
+    """N-53: the scanner's path is the music server's tag-built one, not a location. An artist called "Encore" has a built path that starts with the server's own folder name; no picture is
+    written beside it until the real place has been checked."""
+    db = database(tmp_path)
+    music = tmp_path / "music"
+    song = liked(db, "Nude")
+    folder = music / "Encore" / "In Rainbows"
+    folder.mkdir(parents=True)
+    (folder / "03 - Nude.opus").write_bytes(b"audio")
+    with db.tx() as conn:  # the scanner's row: library source, the built path, unchecked
+        refs.attach_file(
+            conn, song, navidrome_song_id="nd-1", path="Encore/In Rainbows/03 - Nude.opus", codec="opus", bitrate_kbps=130
+        )
+
+    CoverFinder(db, Catalogue({"Nude": PICTURE}), sleep=lambda _: None, music_dir=music, fetch=lambda url: b"jpeg").run_once()
+
+    assert not (folder / "cover.jpg").exists(), "an unchecked path is not a place to write beside"

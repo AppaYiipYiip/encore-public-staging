@@ -23,10 +23,10 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import NamedTuple, Protocol
 
-from .audio_key import on_disk
 from .db import Database
 from .ids import now_ms
 from .navidrome_admin import AdminUnavailable
+from .place import on_disk
 
 log = logging.getLogger("encore_server.real_paths")
 
