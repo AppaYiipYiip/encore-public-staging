@@ -10,6 +10,7 @@ import logging
 import re
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -218,3 +219,42 @@ def test_a_request_with_no_plain_id_is_given_one_before_it_reaches_the_music_ser
 
     assert [ULID.match(seen["x-request-id"]) is not None for seen in upstream.state.seen[-2:]] == [True, True]
     assert upstream.state.seen[-1]["x-request-id"] != upstream.state.seen[-2]["x-request-id"]
+
+
+def test_a_phone_that_gives_up_before_the_answer_is_a_499_at_debug_never_a_failure_at_info(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A quick Next or a closed screen cancels the request: the phone's choice, not a failure of this server. The log a Host reads for real failures must not fill with fake ones."""
+    import asyncio
+
+    async def never_answers(scope: Any, receive: Any, send: Any) -> None:
+        await asyncio.sleep(3600)
+
+    async def go() -> None:
+        app = RequestIdMiddleware(never_answers)
+        scope = {"type": "http", "method": "GET", "path": "/encore/api/v1/refs/x/stream", "headers": []}
+        task = asyncio.create_task(app(scope, lambda: asyncio.sleep(0), lambda message: asyncio.sleep(0)))  # type: ignore[arg-type,return-value]
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    with caplog.at_level(logging.DEBUG, logger="encore_server.access"):
+        asyncio.run(go())
+
+    lines = [(r.levelno, r.getMessage()) for r in caplog.records if r.name == "encore_server.access"]
+    assert len(lines) == 1 and lines[0][0] == logging.DEBUG and "status=499" in lines[0][1], lines
+
+
+def test_the_device_the_app_names_today_is_the_device_of_the_line(caplog: pytest.LogCaptureFixture) -> None:
+    """The app sends its device id as `X-Encore-Device` (a plain `dv_...` id, not a credential); `X-Device-Id` wins when both are sent; a value that is not plain is not written."""
+    client = TestClient(tiny(), raise_server_exceptions=False)
+    with caplog.at_level(logging.INFO, logger="encore_server.access"):
+        client.get("/missing", headers={"X-Encore-Device": "dv_01JD5Q8Y2K7X9M4N6P1R3S5T7V"})
+        client.get("/missing", headers={"X-Encore-Device": "dv_old_device_id", "X-Device-Id": "dv_new_device_id"})
+        client.get("/missing", headers={"X-Encore-Device": "not plain at all!"})
+
+    lines = [r.getMessage() for r in caplog.records]
+    assert "device=dv_01JD5Q8Y2K7X9M4N6P1R3S5T7V" in lines[0]
+    assert "device=dv_new_device_id" in lines[1]
+    assert "device=-" in lines[2] and "plain" not in lines[2]
