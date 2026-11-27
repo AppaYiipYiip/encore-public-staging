@@ -25,6 +25,7 @@ from ..textnorm import (
     version_signature,
     words,
 )
+from .tagging import album_artist_of
 
 #: The folder of the songs that have no album. It is also what the planner falls back to for an album whose name cleans to nothing (`.`, `..`, `...`), so a folder with this
 #: name is SHARED by unrelated songs, whatever the album text said.
@@ -122,7 +123,7 @@ def plan_for_ref(root: Path, ref: dict[str, Any], suffix: str = ".opus") -> Plac
     album = ref.get("album")
     return plan_placement(
         root,
-        artist=ref.get("albumArtist") or ref["artists"][0],
+        artist=album_artist_of(ref),
         album=None if is_placeholder_album(album) else album,
         title=ref["title"],
         track=ref.get("trackNo"),

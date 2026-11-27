@@ -259,6 +259,7 @@ def new_keep_path(conn: sqlite3.Connection, item: Entry, verdict: Verdict, music
         "title": row["title"],
         "artists": json.loads(row["artists"]),
         "albumArtist": row["album_artist"],
+        "artistBasis": row["artist_basis"],
         "album": row["album"],
         "trackNo": row["track_no"],
         "discNo": row["disc_no"],

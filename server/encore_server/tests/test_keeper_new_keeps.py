@@ -730,6 +730,7 @@ def test_tags_of_a_ref_is_the_one_builder_of_a_files_tags() -> None:
         "artists": ["LANDMVRKS", "A Guest"],
         "album": "Hollow",
         "albumArtist": None,
+        "artistBasis": None,
         "trackNo": 3,
         "discNo": 1,
         "year": 2025,
@@ -748,24 +749,24 @@ def test_tags_of_a_ref_is_the_one_builder_of_a_files_tags() -> None:
         isrc="DEYO62300153",
         mbid=None,
     )
-    assert tags_of({"title": "T", "artists": ["A"]}).album is None
+    assert tags_of({"title": "T", "artists": ["A"], "artistBasis": None}).album is None
 
 
 @pytest.mark.parametrize("placeholder", ["[Unknown Album]", "Unknown Album", " [unknown album] ", "", None])
 def test_the_placeholder_album_is_no_album_in_the_tags_and_in_the_folder(tmp_path: Path, placeholder: str | None) -> None:
-    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "album": placeholder, "trackNo": None}
+    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "artistBasis": None, "album": placeholder, "trackNo": None}
     assert tags_of(ref).album is None
     assert plan_for_ref(tmp_path, ref).path == tmp_path / "LANDMVRKS" / "Singles" / "Creature.opus"
 
 
 def test_an_album_that_only_starts_like_the_placeholder_is_a_real_album(tmp_path: Path) -> None:
-    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "album": "Unknown Album Part Two", "trackNo": None}
+    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "artistBasis": None, "album": "Unknown Album Part Two", "trackNo": None}
     assert tags_of(ref).album == "Unknown Album Part Two"
     assert plan_for_ref(tmp_path, ref).path == tmp_path / "LANDMVRKS" / "Unknown Album Part Two" / "Creature.opus"
 
 
 def test_plan_for_ref_is_the_one_planner_of_a_files_place(tmp_path: Path) -> None:
-    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "album": ALBUM_TITLE, "trackNo": 2}
+    ref = {"title": "Creature", "artists": ["LANDMVRKS"], "artistBasis": None, "album": ALBUM_TITLE, "trackNo": 2}
     assert plan_for_ref(tmp_path, ref).path == tmp_path / "LANDMVRKS" / ALBUM_TITLE / "02 - Creature.opus"
     assert (
         plan_for_ref(tmp_path, {**ref, "album": None, "trackNo": None}).path

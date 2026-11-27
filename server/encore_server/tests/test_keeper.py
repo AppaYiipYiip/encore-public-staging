@@ -488,3 +488,54 @@ def test_the_apps_view_of_a_kept_file_carries_what_the_music_server_knows(rig: R
 
     meta = rig.ref(ref)["file"]["meta"]
     assert meta == {"albumId": "al-1", "artistId": "ar-1", "coverArt": "al-1", "suffix": "opus", "size": 4096}
+
+
+# ---------------------------------------------------------------------------------------------------------------------- N-26 slice 3: who a channel song's album is by
+
+
+@pytest.mark.parametrize("basis", ["channel", "unknown"])
+def test_n26_slice3_a_new_keep_of_a_song_whose_artist_is_a_channel_is_filed_and_tagged_under_unknown_artist(
+    rig: Rig, basis: str
+) -> None:
+    """Measured on the real music server (`tests/integration/test_channel_artists.py`): ALBUMARTIST = the channel made every channel an artist of its own in the Artists list; any other
+    album artist keeps it out. The song's ARTIST stays the channel, so the ref and the link to the song are unchanged."""
+    ref = rig.make_ref(artists=["KEXP"], title="Heartbeat", album=None, basis=basis, uploader="KEXP")
+
+    rig.keep(ref)
+
+    _, tags, _ = rig.tagged[-1]
+    assert (tags.artist, tags.artists, tags.album_artist) == ("KEXP", ("KEXP",), "Unknown Artist")
+    files = [f.relative_to(rig.music).as_posix() for f in (rig.music / "Encore").rglob("*.opus")]
+    assert files == ["Encore/Unknown Artist/Singles/Heartbeat.opus"], "the folder agrees with the tag: one definition"
+    assert rig.ref(ref)["artists"] == ["KEXP"] and "artistBasis" not in rig.ref(ref), (
+        "the ref is unchanged, and the basis is never an API field"
+    )
+
+
+def test_n26_slice3_a_performer_and_a_song_with_no_facts_are_filed_as_before(rig: Rig) -> None:
+    for basis in ("declared", "title", None):
+        ref = rig.make_ref(artists=["Radiohead"], title=f"Song {basis}", album="In Rainbows", basis=basis)
+        rig.keep(ref)
+        assert rig.tagged[-1][1].album_artist == "Radiohead"
+    assert {f.parent.parent.name for f in (rig.music / "Encore").rglob("*.opus")} == {"Radiohead"}
+
+
+def test_n26_slice3_an_album_artist_the_ref_has_is_used_even_for_a_channel_song(rig: Rig) -> None:
+    ref = rig.make_ref(artists=["KEXP"], title="Heartbeat", album="Live", basis="channel", albumArtist="Nneka")
+    rig.keep(ref)
+    assert rig.tagged[-1][1].album_artist == "Nneka"
+    assert [f.relative_to(rig.music).as_posix() for f in (rig.music / "Encore").rglob("*.opus")] == [
+        "Encore/Nneka/Live/Heartbeat.opus"
+    ]
+
+
+def test_n26_slice3_two_channel_songs_with_one_title_are_two_files_not_one(rig: Rig) -> None:
+    """They share one folder now (Unknown Artist/Singles): a second song must never be handed the first one's file."""
+    first = rig.make_ref(artists=["KEXP"], title="Intro", album=None, basis="channel", durationMs=100_000)
+    second = rig.make_ref(artists=["ARTE Concert"], title="Intro", album=None, basis="channel", durationMs=200_000)
+    assert first != second
+    rig.keep(first)
+    rig.keep(second)
+    files = sorted(f.name for f in (rig.music / "Encore" / "Unknown Artist" / "Singles").glob("*.opus"))
+    assert len(files) == 2, files
+    assert rig.ref(first)["file"]["navidromeSongId"] != rig.ref(second)["file"]["navidromeSongId"]
