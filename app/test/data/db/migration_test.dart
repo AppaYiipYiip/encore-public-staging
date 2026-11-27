@@ -83,7 +83,7 @@ void main() {
               'v10 (N-38): a copy made before remembers no old-formula key; the app treats that as nothing to compare');
       expect(downloads.single.taskId, isNull,
           reason:
-              'v11 (N-45): a row an older build made has no task name of its own; a task the downloader still holds for it keeps the old name, read as that rows attempt');
+              "v11 (N-45): a row an older build made has no task name of its own; a task the downloader still holds for it keeps the old name, read as that row's attempt");
 
       final pins = await db.select(db.pins).get();
       expect(pins.single.targetId, 'p1');

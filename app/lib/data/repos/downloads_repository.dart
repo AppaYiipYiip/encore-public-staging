@@ -646,11 +646,13 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           ));
 
   /// The task names the rows of this server hold (N-45): the manager reads the highest attempt number among them at its start.
+  /// Reads the one column: it runs at every start of the app, and a phone can hold thousands of downloads.
   Future<List<String>> taskIds() async {
-    final rows = await (_db.select(_db.downloads)
-          ..where((d) => d.serverId.equals(serverId) & d.taskId.isNotNull()))
-        .get();
-    return [for (final r in rows) r.taskId!];
+    final column = _db.downloads.taskId;
+    final query = _db.selectOnly(_db.downloads)
+      ..addColumns([column])
+      ..where(_db.downloads.serverId.equals(serverId) & column.isNotNull());
+    return [for (final r in await query.get()) r.read(column)!];
   }
 
   Future<void> markDone(

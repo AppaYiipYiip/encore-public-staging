@@ -698,6 +698,17 @@ class DownloadManager {
           qualityId: update.qualityId);
       return;
     }
+    // A completion nobody owed and NO newer attempt running (the download was switched off and on again off Wi-Fi or with no place free, so the new row
+    // only waits in the queue, or the newer attempt has ended): the file is a finished song and the song is done with it, as it was before N-45.
+    // Dropping it would download the song again in full, maybe over mobile data, while the finished file sat at the song's path with no row for it. The
+    // guards of [_onComplete] still hold for a row that already has its copy (a refresh, a song a newer attempt finished). Only when a newer attempt
+    // IS running is the word ignored: that attempt writes the same file and ends the song itself.
+    if (update.status == TransferStatus.complete &&
+        !_inFlight.contains(trackId)) {
+      await _onComplete(trackId, update.relativePath,
+          qualityId: update.qualityId);
+      return;
+    }
     Log.info('downloads',
         'ignored the ${update.status.name} word of an earlier attempt (${update.taskId}); $trackId is on ${_currentTaskId(row)}');
   }

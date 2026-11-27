@@ -174,6 +174,41 @@ void main() {
           reason: 'and the new attempt still ends as it should');
     });
 
+    test(
+        'N-45: a late completion of the old attempt still completes the song when NO newer attempt runs (the new row is only queued): a finished file is not downloaded again',
+        () async {
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      final old = transport.requestFor('t1');
+      expect(transport.started, hasLength(3));
+
+      // Off Wi-Fi nothing is started: the download is switched off and on again and the new row waits in the queue, with no task name of its own.
+      policy = const DownloadPolicy(wifiOnly: true, onWifi: false);
+      await repo.unpin(PinTargetType.album, 'al1');
+      await manager.reconcile(immediateRemoval: true);
+      await repo.pin(PinTargetType.album, 'al1', quality: AudioQuality.high);
+      await manager.reconcile();
+      expect((await row('t1')).state, DownloadState.queued);
+      expect(attemptsOf('t1'), hasLength(1), reason: 'nothing started again');
+
+      // The old attempt had finished the file when the cancel reached it: its word comes now.
+      transport.files['/app/${old.relativePath}'] = 4096;
+      transport.send(TransferUpdate(
+          taskId: old.taskId,
+          status: TransferStatus.complete,
+          relativePath: old.relativePath,
+          qualityId: old.qualityId));
+      await manager.settled();
+
+      final r = await row('t1');
+      expect(r.state, DownloadState.done,
+          reason:
+              'a finished file is the song: it was dropped and the song would be downloaded again in full, maybe over mobile data');
+      expect(r.quality, old.qualityId);
+      expect(attemptsOf('t1'), hasLength(1), reason: 'no second download');
+      expect(transport.deleted, isEmpty);
+    });
+
     test('N-45: the words of the new attempt still end it', () async {
       await switchedOffAndOn();
 
