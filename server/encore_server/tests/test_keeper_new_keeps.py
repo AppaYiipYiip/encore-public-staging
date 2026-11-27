@@ -786,7 +786,17 @@ def place(krig: KeepRig, relative: str, *, ref: str, source: str = "youtube", na
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(AUDIO)
     with krig.db.tx() as conn:
-        refs.attach_file(conn, ref, navidrome_song_id=navidrome, path=relative, codec="opus", bitrate_kbps=None, source=source)
+        # A row the keeper wrote is a CHECKED place (N-53: `path_real`): the keeper says where it put the file. A library row (the scanner's) never is, and is only found by its music-server id.
+        refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id=navidrome,
+            path=relative,
+            codec="opus",
+            bitrate_kbps=None,
+            source=source,
+            path_real=source == "youtube",
+        )
     return path
 
 
