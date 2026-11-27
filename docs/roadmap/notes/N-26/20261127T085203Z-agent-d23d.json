@@ -1,0 +1,12 @@
+{
+ "id": "20261127T085203Z-agent-d23d",
+ "item": "N-26",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T08:52:03Z",
+ "type": "note",
+ "body": "BEFORE ANY REPAIR THAT RETAGS OR MOVES KEPT FILES (this item's repair): read the two notes on N-38 and docs/tasks/N-38-audio-only-key.md section 3. (1) The audio-only key (merged, #164) must exist for every file the repair rewrites (audio_key_of before touching it) and the repair must call audio_key.carry in the transaction that records each rewrite; do not ship before the N-38 PHONE half (adopt by match) is in a released app, or every repaired song is downloaded again. (2) MEASURED 27 Nov: song_file.path of a library row is the music server's TAG-BUILT path, not a location, and attach_file keeps the path a row already has, so a kept file whose row the scanner made first can carry the built path: a repair that finds files by path must not trust it (the root-cause note on N-38 says what to check and the fix direction).",
+ "to": [
+  "agent"
+ ]
+}
