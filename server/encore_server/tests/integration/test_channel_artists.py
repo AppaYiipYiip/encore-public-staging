@@ -1,17 +1,25 @@
-"""N-26 slice 3, the proof: what the real music server (the pinned version) does with a song whose ARTIST is a YouTube channel, for each way the keeper could tag it.
+"""N-26 slice 3, the proof: what the real music server (the pinned version, 0.64.2) does with a song whose ARTIST is a YouTube channel, for each way the keeper could tag it.
 
-The question (docs/tasks/P2-songs-as-references.md, N-26 slice 3): an imported song whose artist is the uploading channel ("basis channel") must not make an artist page of its own, yet it must
-still be kept, linked and played. Which tags does the music server need for that? This file asks the music server itself, for every shape, and says what it answered.
+The question (docs/tasks/P2-songs-as-references.md, N-26 slice 3): an imported song whose artist is the uploading channel ("basis channel") must not make an artist of its own in the Artists
+list, yet it must still be kept, linked and played. MEASURED (27 Nov 2026, this file's first run printed every answer):
+
+* ALBUMARTIST = the channel (what the keeper wrote for EVERY song) or no ALBUMARTIST at all: the channel is listed by `getArtists` and its album is the channel's.
+* ALBUMARTIST = anything else (`Unknown Artist`, `Various Artists` with COMPILATION, a real performer): the channel is NOT in `getArtists` (that list is the album artists), the album
+  is listed under the album artist, and the song's own `artist` is still the channel (so the ref, the link by name and the match do not change).
+* What does NOT change: `search3` still finds the channel as an artist (the music server keeps an artist entity for a track artist); only the Artists list is cleaner.
+
+The second test runs the keeper's own code (`tags_of`, `write_tags`, `plan_for_ref`) over a ref whose basis is `channel` and lets the music server read the file it wrote.
 """
 
 from __future__ import annotations
 
-import json
 import secrets
 from typing import Any
 
 import pytest
 
+from encore_server.keeper.placement import plan_for_ref
+from encore_server.keeper.tagging import tags_of, write_tags
 from encore_server.navidrome import NavidromeClient
 from tests.integration.conftest import MUSIC, Rig, make_audio, scan_and_wait
 
@@ -35,22 +43,28 @@ def search(navidrome: NavidromeClient, query: str) -> dict[str, Any]:
     return (navidrome._call("search3", query=query, artistCount=20, albumCount=20, songCount=20) or {}).get("searchResult3") or {}
 
 
-# one folder and one file per shape: the keeper's layout is Encore/<folder>/<album>/<song>.<ext>
+# (the tags added to ARTIST = the channel) -> is the channel in the Artists list, and who is the album by
 SHAPES = {
-    "today: ALBUMARTIST = the channel": {"albumartist": "{c}"},
-    "no ALBUMARTIST tag at all": {},
-    "ALBUMARTIST = Unknown Artist": {"albumartist": "Unknown Artist"},
-    "ALBUMARTIST = Various Artists + COMPILATION": {"albumartist": "Various Artists", "compilation": "1"},
-    "ALBUMARTIST = the performer (control: a real artist)": {"albumartist": "{p}"},
+    "today: ALBUMARTIST = the channel": ({"albumartist": "{c}"}, True, "{c}"),
+    "no ALBUMARTIST tag at all": ({}, True, "{c}"),
+    "ALBUMARTIST = Unknown Artist": ({"albumartist": "Unknown Artist"}, False, "Unknown Artist"),
+    "ALBUMARTIST = Various Artists + COMPILATION": (
+        {"albumartist": "Various Artists", "compilation": "1"},
+        False,
+        "Various Artists",
+    ),
+    "ALBUMARTIST = a performer": ({"albumartist": "{p}"}, False, "{p}"),
 }
 
 
-def test_probe_what_the_music_server_does_with_each_way_of_tagging_a_channel_song(rig: Rig, navidrome: NavidromeClient) -> None:
-    channel_names: dict[str, str] = {}
+def test_the_artists_list_holds_the_album_artist_never_the_channel_unless_the_channel_is_the_album_artist(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
     performer = unique("Zxqv Performer")
-    for n, (label, extra) in enumerate(SHAPES.items()):
+    channels: dict[str, str] = {}
+    for n, (label, (extra, _, _)) in enumerate(SHAPES.items()):
         channel = unique(f"Zxqv Channel{n}")
-        channel_names[label] = channel
+        channels[label] = channel
         tags = {k: v.format(c=channel, p=performer) for k, v in extra.items()}
         make_audio(
             MUSIC / "Encore" / f"folder{n}-{channel}" / "[Unknown Album]" / "01 - Song.opus",
@@ -62,20 +76,43 @@ def test_probe_what_the_music_server_does_with_each_way_of_tagging_a_channel_son
         )
     scan_and_wait(navidrome)
     listed = artists_listed(navidrome)
-    report: dict[str, Any] = {
-        "performerListed": performer in listed,
-        "listedNames": sorted(n for n in listed if n.startswith("Zxqv") or n in ("Unknown Artist", "Various Artists")),
+    for label, (_, in_list, album_by) in SHAPES.items():
+        channel = channels[label]
+        found = search(navidrome, channel)
+        assert (channel in listed) is in_list, (label, "the channel in the Artists list", sorted(listed))
+        assert [(a.get("name"), a.get("artist")) for a in found.get("album") or []] == [
+            ("[Unknown Album]", album_by.format(c=channel, p=performer))
+        ], label
+        assert [s.get("artist") for s in found.get("song") or []] == [channel], (
+            f"{label}: the song's own artist stays the channel"
+        )
+        assert channel in [a.get("name") for a in found.get("artist") or []], (
+            f"{label}: search still finds the channel as an artist (measured)"
+        )
+    assert "Unknown Artist" in listed and "Various Artists" in listed and performer in listed
+
+
+def test_the_keepers_own_tags_for_a_channel_song_keep_the_channel_out_of_the_artists_list(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
+    channel = unique("Zxqv KEXP")
+    ref = {
+        "title": "Full Performance",
+        "artists": [channel],
+        "albumArtist": None,
+        "album": None,
+        "artistBasis": "channel",
+        "uploader": channel,
     }
-    for label, channel in channel_names.items():
-        hit = search(navidrome, channel)
-        songs = hit.get("song") or []
-        report[label] = {
-            "channelIsInGetArtists": channel in listed,
-            "artistHitsInSearch": [a.get("name") for a in hit.get("artist") or []],
-            "albumHitsInSearch": [(a.get("name"), a.get("artist")) for a in hit.get("album") or []],
-            "songFacts": [
-                {k: s.get(k) for k in ("title", "artist", "albumArtist", "album", "isCompilation") if k in s} for s in songs
-            ],
-        }
-    # the probe: it fails on purpose so that CI prints what the music server said
-    pytest.fail("N26_PROBE_BEGIN\n" + json.dumps(report, indent=1, ensure_ascii=False) + "\nN26_PROBE_END")
+    placement = plan_for_ref(MUSIC / "Encore", ref, ".opus")
+    audio = make_audio(placement.path)
+    assert placement.path.relative_to(MUSIC).as_posix() == "Encore/Unknown Artist/Singles/Full Performance.opus"
+    assert write_tags(audio, tags_of(ref)), "the keeper's own writer tagged the file"
+    scan_and_wait(navidrome)
+    listed = artists_listed(navidrome)
+    found = search(navidrome, channel)
+    assert channel not in listed, "the channel is not an artist of the Artists list"
+    assert "Unknown Artist" in listed
+    assert [s.get("artist") for s in found.get("song") or []] == [channel], (
+        "the song is still the channel's: the link by name is unchanged"
+    )

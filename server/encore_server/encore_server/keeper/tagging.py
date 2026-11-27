@@ -20,7 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..textnorm import is_placeholder_album
+from ..artist_basis import NOT_PERFORMERS
+from ..textnorm import UNKNOWN_ARTIST, is_placeholder_album
 from .process import Runner, run_command
 
 
@@ -43,6 +44,22 @@ class Tags:
     mbid: str | None = None
 
 
+def album_artist_of(ref: dict[str, Any]) -> str:
+    """Who a song's album is BY: the tag `ALBUMARTIST` and the folder under `Encore/`. THE one definition (the tags and the placement both ask it, so a file and its folder agree).
+
+    An album artist the ref has (the album pass stamped it, or the catalogue named it) is used. Otherwise the first artist, **except for a song whose artist is not a performer** (N-26: the
+    uploading channel, or nobody named): its album artist is `Unknown Artist`. Measured on the real music server (`tests/integration/test_channel_artists.py`): a song tagged with
+    ARTIST = a channel and ALBUMARTIST = anything else is NOT in the Artists list (`getArtists` lists album artists), where ALBUMARTIST = the channel (what the keeper wrote for every
+    song) made every channel an artist of its own. The song's ARTIST tag stays the channel: the ref, the link to the song and the match are unchanged. New keeps only: a file already on
+    the disk keeps the tags it has (retagging kept files is a repair, N-26 slice 5, and waits for the audio-only download key, N-38)."""
+    explicit = ref.get("albumArtist")
+    if explicit:
+        return str(explicit)
+    if ref.get("artistBasis") in NOT_PERFORMERS:
+        return UNKNOWN_ARTIST
+    return str(ref["artists"][0])
+
+
 def tags_of(ref: dict[str, Any]) -> Tags:
     """The tags of a song's file, from the song's ref (the API's shape). THE one builder: the keeper tags a new file with it (N-34 slice 3) and the repair of the files already
     kept (slice 5, N-26's artist rewrite) retags with it, so a file agrees with its ref by one definition. **The music server's placeholder (`[Unknown Album]`) is no album** and
@@ -53,7 +70,7 @@ def tags_of(ref: dict[str, Any]) -> Tags:
         artist=", ".join(ref["artists"]),
         artists=tuple(ref["artists"]),
         album=None if is_placeholder_album(album) else album,
-        album_artist=ref.get("albumArtist") or ref["artists"][0],
+        album_artist=album_artist_of(ref),
         track=ref.get("trackNo"),
         disc=ref.get("discNo"),
         year=ref.get("year"),

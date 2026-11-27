@@ -201,12 +201,16 @@ def canonical(conn: sqlite3.Connection, ref_id: str) -> str:
     return canonical_many(conn, [ref_id])[ref_id]
 
 
-def get_ref(conn: sqlite3.Connection, ref_id: str) -> dict[str, Any]:
-    """The song's ref. An id that was merged into another answers with the survivor (its `id` says which one)."""
+def get_ref(conn: sqlite3.Connection, ref_id: str, *, facts: bool = False) -> dict[str, Any]:
+    """The song's ref. An id that was merged into another answers with the survivor (its `id` says which one). With [facts] the dict also carries `artistBasis` and `uploader`
+    (N-26: who the artist is evidence of): for the server's own use (the keeper tags and files by them), never for an API answer, which does not have them."""
     row = conn.execute("SELECT * FROM song_ref WHERE id = ?", (canonical(conn, ref_id),)).fetchone()
     if row is None:
         raise ApiError("not_found", "That song is not known to this server.")
-    return row_to_ref(conn, row)
+    ref = row_to_ref(conn, row)
+    if facts:
+        ref = {**ref, "artistBasis": row["artist_basis"], "uploader": row["uploader"]}
+    return ref
 
 
 def ref_exists(conn: sqlite3.Connection, ref_id: str) -> bool:

@@ -172,7 +172,7 @@ class Keeper:
     def handle(self, item: WorkItem) -> None:
         """Keeps the song `item.ref`. Raises [GiveUp] or [Retry] as the scheduler understands them."""
         with self._db.read() as conn:
-            ref = refs.get_ref(conn, item.ref)
+            ref = refs.get_ref(conn, item.ref, facts=True)
         if self._linked(ref):
             return
         try:
@@ -320,7 +320,7 @@ class Keeper:
         """The song as the database has it now (cheap): a keep takes minutes, and the album pass may have stamped the song meanwhile."""
         try:
             with self._db.read() as conn:
-                return refs.get_ref(conn, ref["id"])
+                return refs.get_ref(conn, ref["id"], facts=True)
         except ApiError:
             return ref
 
