@@ -88,7 +88,7 @@ def test_when_everything_works_it_says_so_and_every_row_says_something() -> None
     )
     assert (
         row(answer, "today")["words"] == "212 songs played"
-        and row(answer, "today")["detail"] == "1 import finished. Counts only, never titles."
+        and row(answer, "today")["detail"] == "1 import finished. Counts only, never titles. Since midnight UTC."
     )
     assert all(r["state"] == "ok" for r in answer["rows"])
 
@@ -119,6 +119,10 @@ def test_the_key_of_the_away_address_warns_a_fortnight_ahead_and_after_it_ends()
     )
     far = build(facts(host=told(away_key_expires_at=NOW + 15 * DAY_MS)))
     assert far["needsYou"] == []
+    # the same, from a file that has gone quiet: the key's end is absolute, so it still warns, and says it may be out of date
+    quiet = build(facts(host=told(written_at=NOW - 3 * DAY_MS, away_key_expires_at=NOW + 4 * DAY_MS)))
+    assert quiet["needsYou"][0]["words"] == "The away-from-home key expires in 4 days."
+    assert "last reported 3 days ago" in quiet["needsYou"][0]["detail"] and "next backup" in quiet["needsYou"][0]["detail"]
 
 
 def test_an_address_that_is_not_set_up_is_not_a_problem_and_no_key_is_invented() -> None:
@@ -154,8 +158,22 @@ def test_the_backup_row_never_invents_what_only_the_computer_knows() -> None:
     assert nothing["needsYou"] == [] and nothing["summary"]["state"] == "good", (
         "not knowing is not a failure, and not 'all good' either: it is a row that says so"
     )
-    stale = build(facts(host=told(written_at=NOW - 2 * DAY_MS)))
-    assert row(stale, "backup")["state"] == "unknown", "a status the computer wrote two days ago is not trusted"
+    # A status the computer has not rewritten for a while is STILL USED (a time of a backup is absolute: an old file can only make a warning come early), and says how old it is.
+    stale = build(
+        facts(host=told(written_at=NOW - 2 * DAY_MS, last_backup=LastBackup(NOW - 2 * DAY_MS - 3600_000, 9_000_000, True)))
+    )
+    assert row(stale, "backup")["state"] == "ok" and row(stale, "backup")["detail"].endswith(
+        "The computer last reported 2 days ago."
+    )
+    assert stale["needsYou"] == []
+    failing = build(
+        facts(host=told(written_at=NOW - 4 * DAY_MS, last_backup=LastBackup(NOW - 4 * DAY_MS - 3600_000, 9_000_000, True)))
+    )
+    assert failing["summary"]["state"] == "needs" and failing["needsYou"][0]["words"] == "The last backup is 4 days old."
+    assert "Everything is working." not in failing["summary"]["words"], "a backup that stopped is never 'all good'"
+    assert row(failing, "backup")["state"] == "warn"
+    future = build(facts(host=told(written_at=NOW + 5 * DAY_MS)))
+    assert row(future, "backup")["state"] == "ok", "a file dated in the future (a clock that was behind) is still read"
     none_yet = build(facts(host=told(last_backup=None)))
     assert none_yet["needsYou"][0]["words"] == "There is no backup yet." and row(none_yet, "backup")["state"] == "warn"
     old = build(facts(host=told(last_backup=LastBackup(NOW - 5 * DAY_MS - 5, 9_000_000, False))))
@@ -176,7 +194,10 @@ def test_a_person_alone_and_a_server_nobody_used_are_said_in_words() -> None:
     assert (
         row(answer, "people")["words"] == "1 person" and row(answer, "people")["detail"] == "1 device. Nobody has signed in yet."
     )
-    assert row(answer, "today")["words"] == "1 song played" and row(answer, "today")["detail"] == "Counts only, never titles."
+    assert (
+        row(answer, "today")["words"] == "1 song played"
+        and row(answer, "today")["detail"] == "Counts only, never titles. Since midnight UTC."
+    )
     assert row(build(facts(last_sign_in=NOW - DAY_MS - 5)), "people")["detail"].endswith("The last sign-in was yesterday.")
     assert row(build(facts(last_sign_in=NOW - 12 * DAY_MS)), "people")["detail"].endswith("The last sign-in was 12 days ago.")
     assert row(build(facts(music_answers=None)), "music-server")["words"] == "Not set up"

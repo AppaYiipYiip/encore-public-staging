@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 
 HOST_STATUS_FILE = "host-status.json"
-#: What is told by the computer is trusted for this long (the nightly backup rewrites it every night, so a day and a half is a missed night).
+#: The nightly backup rewrites the file every night, so a file older than a day and a half has missed one. It is still READ (a time of a backup or of a key is absolute); Home
+#: only says how old the report is.
 FRESH_FOR_MS = 36 * 3600 * 1000
 #: A real file is a few hundred bytes.
 MAX_BYTES = 16 * 1024

@@ -90,7 +90,7 @@ function frame(me, serverName) {
       else button.removeAttribute("aria-current");
     }
     history.replaceState(null, "", "#/" + page.id);
-    const pages = { go, has: (name) => PAGES.some((p) => p.id === name) };
+    const pages = { go, has: (name) => PAGES.some((p) => p.id === name), label: (name) => (PAGES.find((p) => p.id === name) || {}).label || "" };
     try {
       const made = page.render(main, me.person, serverName, pages);
       if (made && typeof made.then === "function") {

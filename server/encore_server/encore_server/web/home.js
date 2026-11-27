@@ -16,8 +16,10 @@ function clock(ms) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-function checked(ms, now) {
-  const s = Math.max(0, Math.round((now - ms) / 1000));
+// "Last checked" is measured on THIS browser's clock from the moment the answer arrived, never against the server's clock: a laptop whose clock is a few minutes out would
+// otherwise say "47 minutes ago" on a fresh page (the same class of mistake as the picture tickets, B-115).
+function checked(arrivedAt, now) {
+  const s = Math.max(0, Math.round((now - arrivedAt) / 1000));
   return s < 20 ? "Last checked a moment ago." : `Last checked ${Math.round(s / 60) || 1} minutes ago.`;
 }
 
@@ -47,8 +49,8 @@ function rowNode(row) {
   );
 }
 
-function needNode(need, go) {
-  const open = need.page && go ? el("button", { type: "button", class: "small" }, "Open " + need.page) : null;
+function needNode(need, go, label) {
+  const open = need.page && go && label ? el("button", { type: "button", class: "small" }, "Open " + label) : null;
   if (open) open.addEventListener("click", () => go(need.page));
   return el("div", { class: "card need", role: "note" }, icon("alert"), el("div", { class: "tx" }, el("p", { class: "nm" }, need.words), el("p", { class: "muted" }, need.detail), open));
 }
@@ -58,16 +60,24 @@ export function renderHome(main, me, serverName, pages) {
   const body = el("div", {});
   const problem = el("p", { class: "error", role: "alert" });
   main.replaceChildren(head, problem, body);
+  let answer = null;
+  let arrivedAt = 0;
+
+  function paintSummary() {
+    if (answer) head.querySelector("#summary").textContent = `${answer.summary.words} ${checked(arrivedAt, Date.now())}`;
+  }
 
   async function load() {
     try {
-      const answer = await api("GET", "/admin/health");
+      answer = await api("GET", "/admin/health");
+      arrivedAt = Date.now();
       problem.textContent = "";
-      head.querySelector("#summary").textContent = `${answer.summary.words} ${checked(answer.summary.checkedAt, answer.serverTime || Date.now())}`;
+      paintSummary();
       const go = (id) => pages && pages.go && pages.has(id) && pages.go(id);
       const known = (id) => !!(pages && pages.has && pages.has(id));
+      const label = (id) => (known(id) && pages.label ? pages.label(id) : "");
       body.replaceChildren(
-        ...answer.needsYou.map((n) => needNode(known(n.page) ? n : { ...n, page: null }, go)),
+        ...answer.needsYou.map((n) => needNode(known(n.page) ? n : { ...n, page: null }, go, label(n.page))),
         el("div", { class: "card hlist" }, ...answer.rows.map(rowNode)),
       );
     } catch (error) {
@@ -79,5 +89,17 @@ export function renderHome(main, me, serverName, pages) {
   const timer = setInterval(() => {
     if (!document.hidden) load();
   }, REFRESH_MS);
-  return { stop: () => clearInterval(timer) };
+  const tick = setInterval(paintSummary, 10000);
+  // a tab that was in the background comes back with a fresh answer, not a minutes-old one
+  const visible = () => {
+    if (!document.hidden) load();
+  };
+  document.addEventListener("visibilitychange", visible);
+  return {
+    stop: () => {
+      clearInterval(timer);
+      clearInterval(tick);
+      document.removeEventListener("visibilitychange", visible);
+    },
+  };
 }

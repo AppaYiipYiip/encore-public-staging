@@ -67,6 +67,7 @@ def collect(svc: Services) -> Facts:
         plays_today=int(plays),
         imports_today=int(imports),
         host=host_status.read(svc.settings.data_dir),
+        clock_zone=time.strftime("%Z") or "UTC",
     )
 
 

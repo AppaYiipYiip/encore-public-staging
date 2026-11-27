@@ -41,6 +41,8 @@ class Facts:
     plays_today: int
     imports_today: int
     host: HostStatus | None
+    #: the name of the clock whose midnight starts "today" (the container's; the Host's own time zone is a later setting)
+    clock_zone: str = "UTC"
 
 
 def _row(row_id: str, title: str, state: str, words: str, detail: str = "", **more: Any) -> dict[str, Any]:
@@ -67,7 +69,13 @@ def _plural(n: int, one: str, many: str) -> str:
 def build(f: Facts) -> dict[str, Any]:
     needs: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
-    told = f.host is not None and f.host.fresh(f.now)
+    host = f.host
+    told = host is not None
+    # A status the computer has not rewritten for a while is STILL USED: when the last backup was made and when the key ends are absolute times, so an old file can only
+    # make a warning come early, never late. Hiding them behind "has not told Encore yet" would turn a failing backup into "Everything is working." It says how old it is.
+    quiet = ""
+    if host is not None and not host.fresh(f.now):
+        quiet = f" The computer last reported {_plural(max(1, int((f.now - host.written_at) // DAY_MS)), 'day', 'days')} ago."
     not_told = "This computer has not told Encore yet."
 
     # -- the music server
@@ -123,15 +131,17 @@ def build(f: Facts) -> dict[str, Any]:
         )
     else:
         days = None
-        if told and f.host is not None and f.host.away_key_expires_at is not None:
-            days = (f.host.away_key_expires_at - f.now) // DAY_MS
+        renewed = (quiet + " If you have made a new key since, this goes away at the next backup.") if quiet else ""
+        if host is not None and host.away_key_expires_at is not None:
+            days = (host.away_key_expires_at - f.now) // DAY_MS
         if days is not None and days < 0:
             rows.append(_row("away", "Away from home", "warn", "The key has expired", f.away_url, address=f.away_url))
             needs.append(
                 _need(
                     "away-key",
                     "The away-from-home key has expired.",
-                    "Phones outside your home stopped working. Make a new key at Tailscale and put it in Away from home.",
+                    "Phones outside your home stopped working. Make a new key at Tailscale and put it in Away from home."
+                    + renewed,
                     "away",
                 )
             )
@@ -150,12 +160,17 @@ def build(f: Facts) -> dict[str, Any]:
                 _need(
                     "away-key",
                     f"The away-from-home key expires in {_plural(int(days), 'day', 'days')}.",
-                    "Make a new key at Tailscale and put it in Away from home. Until then phones outside your home keep working; after that day they stop.",
+                    "Make a new key at Tailscale and put it in Away from home. Until then phones outside your home keep working; after that day they stop."
+                    + renewed,
                     "away",
                 )
             )
         else:
-            detail = f.away_url + (f" · the key lasts another {_plural(int(days), 'day', 'days')}." if days is not None else "")
+            detail = (
+                f.away_url
+                + (f" · the key lasts another {_plural(int(days), 'day', 'days')}." if days is not None else "")
+                + quiet
+            )
             rows.append(_row("away", "Away from home", "ok", "On", detail, address=f.away_url))
 
     # -- the disk
@@ -184,7 +199,7 @@ def build(f: Facts) -> dict[str, Any]:
         )
 
     # -- the last backup (a fact only the computer knows)
-    backup = f.host.last_backup if told and f.host is not None else None
+    backup = host.last_backup if host is not None else None
     if not told:
         rows.append(
             _row("backup", "Last backup", "unknown", not_told, "A backup is made every night, and now with: sudo encore backup.")
@@ -201,7 +216,7 @@ def build(f: Facts) -> dict[str, Any]:
         )
     else:
         age_days = (f.now - backup.at) // DAY_MS
-        detail = f"{_size(backup.bytes)}. " + ("Locked." if backup.locked else "Not locked: run sudo encore secure.")
+        detail = f"{_size(backup.bytes)}. " + ("Locked." if backup.locked else "Not locked: run sudo encore secure.") + quiet
         if age_days >= BACKUP_WARNING_DAYS:
             rows.append(
                 _row(
@@ -244,7 +259,7 @@ def build(f: Facts) -> dict[str, Any]:
             "Today",
             "ok",
             f"{_plural(f.plays_today, 'song', 'songs')} played",
-            f"{imports.strip()} Counts only, never titles.".strip(),
+            f"{imports.strip()} Counts only, never titles. Since midnight {f.clock_zone}.".strip(),
         )
     )
 
