@@ -112,6 +112,9 @@ class Scheduler:
         #: When each person was last given a turn (fair share). In memory: after a restart everybody starts equal.
         self._served: dict[str, float] = {}
         self._turn = 0
+        #: One claim at a time in this process (pick, claim, record the turn): two workers must not both read the same "served longest ago" person and give them two items in a row. The conditional
+        #: update in the claim stays as the guard against another process.
+        self._claim_lock = threading.Lock()
         self._cancelled: set[str] = set()
 
     def running(self) -> int:
@@ -307,19 +310,22 @@ class Scheduler:
     def _handled_kinds(self, pool: str) -> list[str]:
         return [k for k, p in POOL.items() if p == pool and k in self._handlers]
 
-    def _pick(self, kinds: list[str], now: int) -> sqlite3.Row | None:
-        """The next item for a pool, read and not yet claimed: **best priority first, then the person served longest ago, then that person's oldest item.**
+    def _pick(self, kinds: list[str], now: int) -> tuple[sqlite3.Row | None, bool]:
+        """The next item for a pool, read and not yet claimed, and whether to look again: **best priority first, then the person served longest ago, then that person's oldest item.**
 
         Chosen from the people who are waiting, not from the first rows of the queue: the claim used to look at the first 200 items by (priority, age) before it shared the turn, so a second
-        person's 20 songs behind another's 2,000 sat at positions 1,802 to 1,840 (audit B-39). Now the question is asked per person in SQL (`GROUP BY person`, answered by `work_item_person`'s
-        index), so a queue of any length costs one pass over the people and one lookup of one item. An item several people want is that person's too, and is served on the turn of whoever has
-        waited longest. Work nobody asked for (no person) counts as a person of its own who was never served. Reads only: a worker that finds nothing never takes the write lock."""
+        person's 20 songs behind another's 2,000 sat at positions 1,802 to 1,840 (audit B-39). Now the question is asked per person in SQL (`GROUP BY person` over `work_item_person`), so the length
+        of a queue does not change WHO is next. **What it costs, measured (Windows, SQLite, `Scheduler._claim`): 11 ms at 2,020 queued, 39 ms at 20,000 queued with 10,000 finished rows of the same
+        person, 105 ms at 60,000 queued with 30,000 finished**: it reads the queued rows of the best priority (all of them: the index `work_item_next` finds them, `work_item_person`'s primary key
+        answers each), and a keep is claimed every few seconds (the pace), so a claim is under 2% of the time between two. An item several people want is served on the turn of whoever has waited
+        longest; work nobody asked for (the person who asked was removed) counts as one more person, with a turn of its own. Reads only: a worker that finds nothing never takes the write lock.
+        The second answer is `True` when the item found was taken by another process between the two reads: look again."""
         marks = ",".join("?" for _ in kinds)
         where = f"i.state = 'queued' AND i.next_try_at <= ? AND i.kind IN ({marks})"
         with self._db.read() as conn:
             row = conn.execute(f"SELECT MIN(i.priority) AS best FROM work_item i WHERE {where}", (now, *kinds)).fetchone()  # noqa: S608 - only placeholders are formatted in
             if row is None or row["best"] is None:
-                return None
+                return None, False
             best = row["best"]
             waiting: list[tuple[str | None, int]] = [
                 (str(r["person"]), int(r["oldest"]))
@@ -337,9 +343,9 @@ class Scheduler:
             if nobody is not None and nobody["oldest"] is not None:
                 waiting.append((None, int(nobody["oldest"])))
             if not waiting:
-                return None
+                return None, True  # the queue had something a moment ago and has nothing for anybody now: look again
             # Ties are settled the way they always were: by age, then by the order the rows were written (never by a random id), then by the person's own id.
-            who, _ = min(waiting, key=lambda w: (self._served.get(w[0], 0.0) if w[0] is not None else 0.0, w[1], w[0] or ""))
+            who, _ = min(waiting, key=lambda w: (self._served.get(w[0] or "", 0.0), w[1], w[0] or ""))
             joined = "JOIN work_item_person wp ON wp.item = i.id AND wp.person = ?" if who is not None else ""
             extra = "" if who is not None else " AND NOT EXISTS (SELECT 1 FROM work_item_person wp WHERE wp.item = i.id)"
             found: sqlite3.Row | None = conn.execute(
@@ -348,32 +354,36 @@ class Scheduler:
                 f" FROM work_item i {joined} WHERE {where} AND i.priority = ?{extra} ORDER BY i.created_at, i.rowid LIMIT 1",
                 ((who,) if who is not None else ()) + (now, *kinds, best),
             ).fetchone()
-            return found
+            return found, found is None
 
     def _claim(self, pool: str) -> WorkItem | None:
-        """The next item for this pool, claimed, or none (see [_pick] for the order). **Read first, write only to claim**: the claim is one conditional update, so two workers that read the same
-        item cannot both take it (the loser looks again), and an idle worker never takes the write lock."""
+        """The next item for this pool, claimed, or none (see [_pick] for the order). **Read first, write only to claim**: the claim is one conditional update, so an idle worker never takes the
+        write lock, and an item another PROCESS took between the read and the claim is not run twice (the loser looks again). **One claim at a time in this process** (pick, claim, record the turn),
+        or two workers could both read the same person as "served longest ago" and give them two items in a row."""
         kinds = self._handled_kinds(pool)
         if not kinds:
             return None
-        for _ in range(5):
-            now = self._now_ms()
-            chosen = self._pick(kinds, now)
-            if chosen is None:
-                return None
-            with self._db.tx() as conn:
-                taken = conn.execute(
-                    "UPDATE work_item SET state = 'running', attempts = attempts + 1, updated_at = ? WHERE id = ? AND state = 'queued'",
-                    (now, chosen["id"]),
-                )
-            if taken.rowcount != 1:
-                continue  # another worker took it between the read and the claim
-            persons = tuple(p for p in (chosen["persons"] or "").split(",") if p)
-            self._turn += 1
-            for person in persons:
-                self._served[person] = float(self._turn)
-            return WorkItem(chosen["id"], chosen["kind"], chosen["ref"], chosen["priority"], chosen["attempts"] + 1, persons)
-        return None
+        with self._claim_lock:
+            for _ in range(5):
+                now = self._now_ms()
+                chosen, again = self._pick(kinds, now)
+                if chosen is None:
+                    if again:
+                        continue
+                    return None
+                with self._db.tx() as conn:
+                    taken = conn.execute(
+                        "UPDATE work_item SET state = 'running', attempts = attempts + 1, updated_at = ? WHERE id = ? AND state = 'queued'",
+                        (now, chosen["id"]),
+                    )
+                if taken.rowcount != 1:
+                    continue  # another process took it between the read and the claim
+                persons = tuple(p for p in (chosen["persons"] or "").split(",") if p)
+                self._turn += 1
+                for person in persons or ("",):  # work nobody asked for has a turn of its own, under the key ""
+                    self._served[person] = float(self._turn)
+                return WorkItem(chosen["id"], chosen["kind"], chosen["ref"], chosen["priority"], chosen["attempts"] + 1, persons)
+            return None
 
     def run_one(self, pool: str) -> bool:
         """Takes the next item of the pool and runs it here. `False` when there was nothing to do (tests drive the scheduler this way)."""

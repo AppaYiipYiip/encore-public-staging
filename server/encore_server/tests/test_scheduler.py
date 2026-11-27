@@ -458,7 +458,7 @@ def test_a_worker_that_finds_nothing_to_do_never_takes_the_write_lock(
     assert rig.scheduler._claim("interactive") is None  # noqa: SLF001
 
 
-def test_a_claim_that_another_worker_won_first_runs_nothing_twice(
+def test_a_claim_that_another_process_won_first_runs_nothing_twice(
     db: Database, rig: Rig, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (ref,) = make_refs(db, 1)
@@ -466,18 +466,113 @@ def test_a_claim_that_another_worker_won_first_runs_nothing_twice(
     real = rig.scheduler._pick  # noqa: SLF001
     stolen: list[str] = []
 
-    def pick_then_lose_it(*args: object, **kwargs: object) -> object:
-        found = real(*args, **kwargs)
+    def pick_then_lose_it(kinds: list[str], now: int) -> tuple[object, bool]:
+        found, again = real(kinds, now)
         if found is not None and not stolen:
             stolen.append("once")
-            with db.tx() as conn:  # the other worker claims the very item this one has just read
+            with db.tx() as conn:  # another process claims the very item this one has just read
                 conn.execute("UPDATE work_item SET state = 'running' WHERE id = ?", (found["id"],))
-        return found
+        return found, again
 
     monkeypatch.setattr(rig.scheduler, "_pick", pick_then_lose_it)
 
     assert rig.scheduler.run_one("background") is False
-    assert rig.log == [], "the item is the other worker's: this one did not run it"
+    assert rig.log == [], "the item is the other process's: this one did not run it"
+
+
+def test_when_the_item_found_was_taken_between_the_two_reads_the_claim_looks_again_not_gives_up(
+    db: Database, rig: Rig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    first, second = make_refs(db, 2)
+    queue_for(db, rig, make_person(db, "ann"), [first, second])
+    real = rig.scheduler._pick  # noqa: SLF001
+    lost: list[str] = []
+
+    def vanish_once(kinds: list[str], now: int) -> tuple[object, bool]:
+        if not lost:
+            lost.append("once")
+            return None, True  # the person's last item was taken by another process between the two reads
+        return real(kinds, now)
+
+    monkeypatch.setattr(rig.scheduler, "_pick", vanish_once)
+
+    assert rig.scheduler.run_one("background") is True and rig.log == [("keep", first)]
+
+
+def test_two_workers_in_one_process_never_give_one_person_two_turns_in_a_row_nor_lose_a_turn(db: Database, rig: Rig) -> None:
+    """The old pick was serialised by the write lock. Now two workers could both read the same person as served longest ago: one claim at a time in the process, and every item runs once."""
+    items = make_refs(db, 200)
+    ann, ben = make_person(db, "ann"), make_person(db, "ben")
+    queue_for(db, rig, ann, items[:100])
+    queue_for(db, rig, ben, items[100:])
+    taken: list[tuple[int, str]] = []
+    guard = threading.Lock()
+
+    def work() -> None:
+        while (item := rig.scheduler._claim("background")) is not None:  # noqa: SLF001
+            with guard:
+                taken.append((int(rig.scheduler._served[item.persons[0]]), item.persons[0]))  # noqa: SLF001
+            rig.scheduler._finish(item, "done", None, None)  # noqa: SLF001
+
+    threads = [threading.Thread(target=work) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+
+    assert len(taken) == 200 and rig.scheduler._turn == 200  # noqa: SLF001 - every item was claimed once, no turn was lost
+    assert sorted(person for _, person in taken).count(ann) == 100
+    with db.read() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM work_item WHERE state = 'done'").fetchone()["n"] == 200
+
+
+def test_work_nobody_asked_for_takes_turns_like_a_person_instead_of_always_going_first(db: Database, rig: Rig) -> None:
+    """A person removed from the server leaves work that nobody wants. It used to be 'never served' on every turn, ahead of everybody until it was gone."""
+    mine, orphans = make_refs(db, 6)[:3], make_refs(db, 6)[3:]
+    ann, gone = make_person(db, "ann"), make_person(db, "gone")
+    queue_for(db, rig, ann, mine)
+    queue_for(db, rig, gone, orphans)
+    with db.tx() as conn:
+        conn.execute("DELETE FROM work_item_person WHERE person = ?", (gone,))
+
+    rig.scheduler.drain("background")
+
+    assert [ref for _, ref in rig.log] == [mine[0], orphans[0], mine[1], orphans[1], mine[2], orphans[2]]
+
+
+def test_no_query_of_a_claim_reads_the_whole_work_table_by_scanning_it(
+    db: Database, rig: Rig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The index `work_item_next` finds the queued rows and `work_item_person`'s keys answer each; a claim that scanned `work_item` would grow with every finished item kept for a week."""
+    make_ready = make_refs(db, 30)
+    queue_for(db, rig, make_person(db, "ann"), make_ready[:20])
+    queue_for(db, rig, make_person(db, "ben"), make_ready[20:])
+    statements: list[str] = []
+    real_read = db.read
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def traced():  # type: ignore[no-untyped-def]
+        with real_read() as conn:
+            conn.set_trace_callback(statements.append)
+            try:
+                yield conn
+            finally:
+                conn.set_trace_callback(None)
+
+    monkeypatch.setattr(db, "read", traced)
+    assert rig.scheduler._claim("background") is not None  # noqa: SLF001
+    monkeypatch.undo()
+
+    selects = [s for s in statements if s.lstrip().upper().startswith("SELECT")]
+    assert len(selects) >= 3, selects
+    with db.read() as conn:
+        for sql in selects:
+            plan = [r["detail"] for r in conn.execute("EXPLAIN QUERY PLAN " + sql)]
+            assert not any(
+                d.startswith("SCAN") and ("work_item" in d or d.startswith("SCAN i")) and "USING" not in d for d in plan
+            ), (sql, plan)
 
 
 def test_a_pool_with_no_handler_gets_no_worker_threads(db: Database) -> None:
