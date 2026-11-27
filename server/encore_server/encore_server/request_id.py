@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextvars
 import logging
 import re
@@ -22,6 +23,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 HEADER = "x-request-id"
 DEVICE_HEADER = "x-device-id"
+#: What the app sends today (`encore_api.dart`): the phone's own device id (`dv_...`), a plain id and not a credential (the music server's login is what proves who asks). Read as the device when no
+#: `X-Device-Id` is sent, so the log names the device before the app's half of P1-19 exists.
+DEVICE_HEADER_TODAY = "x-encore-device"
 
 #: What an id may look like: the phone's ULIDs (26 characters) and any plain token of 8 to 64 characters. Nothing else is believed (no space, no punctuation a log reader could misread).
 PLAIN = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
@@ -79,7 +83,7 @@ class RequestIdMiddleware:
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
         rid = plain(headers.get(HEADER)) or new_id()
-        device = plain(headers.get(DEVICE_HEADER)) or "-"
+        device = plain(headers.get(DEVICE_HEADER)) or plain(headers.get(DEVICE_HEADER_TODAY)) or "-"
         scope.setdefault("state", {})["request_id"] = rid
         request_id_var.set(rid)
         device_var.set(device)
@@ -102,14 +106,17 @@ class RequestIdMiddleware:
             raise
         finally:
             took = int((time.monotonic() - began) * 1000)
-            self._write(scope, status or (500 if failed is not None else 0), took, device)
+            # A phone that gives up before the answer starts (a quick Next, a closed screen) cancels the request: that is the phone's choice, not a failure of this server. It is written at DEBUG as 499
+            # (the code nginx uses for it) so that the log a Host reads for real failures does not fill with fake ones.
+            gone = isinstance(failed, asyncio.CancelledError) and status == 0
+            self._write(scope, 499 if gone else status or (500 if failed is not None else 0), took, device, quiet=gone)
 
-    def _write(self, scope: Scope, status: int, took: int, device: str) -> None:
+    def _write(self, scope: Scope, status: int, took: int, device: str, *, quiet: bool = False) -> None:
         route: Any = scope.get("route")
         pattern = (
             getattr(route, "path", None) or "unmatched"
         )  # the route's own pattern: never the address as it was asked, so no id, name or token of the address reaches a line
-        level = logging.INFO if status >= 400 or took >= self._slow else logging.DEBUG
+        level = logging.INFO if (status >= 400 or took >= self._slow) and not quiet else logging.DEBUG
         if log.isEnabledFor(level):
             log.log(
                 level,
