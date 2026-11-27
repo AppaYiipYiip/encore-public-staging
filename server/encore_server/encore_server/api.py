@@ -12,7 +12,7 @@ import contextlib
 import importlib.util
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import httpx
@@ -73,6 +73,7 @@ from .routes import playback as playback_routes
 from .routes import playlists as playlists_routes
 from .routes import refs as refs_routes
 from .routes import session as session_routes
+from .routes import setup as setup_routes
 from .routes.common import (
     API_PREFIX,
     Services,
@@ -82,6 +83,7 @@ from .routes.common import (
 )
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
+from .setup import default_owner_account
 from .sources.youtube.pace import Pacer
 from .sources.youtube.rest import DbRestStore, Rest
 from .sources.youtube.source import YoutubeSource
@@ -209,6 +211,7 @@ def create_app(
     tools_active: Active | None = None,
     artist_lookup: ArtistLookup | None = None,
     catalogue: Catalogue | None = None,
+    make_owner_account: Callable[[Settings, dict[str, Any]], Any] | None = None,
 ) -> FastAPI:
     # FIRST of all, before a folder or a database is opened: a stored key is a function of the Unicode data of the Python that made it, so a server on a Python that is
     # not the pinned one (the image's, 3.12) does not start at all (P2-25; no setting turns this off). It would otherwise serve and write keys nothing ever re-checks.
@@ -376,6 +379,7 @@ def create_app(
         stream_key=stream_key,
         artist_finder=artist_finder,
         catalogue=catalogue,
+        make_owner_account=make_owner_account or default_owner_account,
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
@@ -394,6 +398,7 @@ def create_app(
         admin_site_routes,
         admin_addons_routes,
         admin_health_routes,
+        setup_routes,
     ):
         app.include_router(group.router)
     app.add_api_route("/encore/stream/{ref_id}", media_routes.stream, methods=["GET", "HEAD"])
@@ -404,6 +409,8 @@ def create_app(
     app.add_api_route("/encore/admin", admin_site_routes.admin_page, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_route("/encore/web/{path:path}", admin_site_routes.web_file, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_route("/admin", admin_site_routes.short_admin, methods=["GET", "HEAD"], include_in_schema=False)
+    app.add_api_route("/encore/setup", setup_routes.setup_page, methods=["GET", "HEAD"], include_in_schema=False)
+    app.add_api_route("/setup", setup_routes.short_setup, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_websocket_route("/encore/live", live_routes.live)
     gateway.mount(
         app, settings.navidrome_url, client=gateway_client, public=is_public_request, authorize_public=authorize_public_subsonic

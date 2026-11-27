@@ -42,16 +42,17 @@ It asks, in this order:
 | Question | What to answer |
 |----------|----------------|
 | What should this server be called? | Anything; people you invite see it. |
-| Your username / a password (twice) | Your own Encore login. 8 or more characters. |
 | Where is your music? | A folder with your music (Encore never changes your files; songs you keep from the web are saved in a folder called `Encore/` inside it), or press Enter for `/srv/music` and add music later. |
 | Install Docker? (only if it is missing; **asked last**, after the music folder) | Yes. Docker is what runs Encore. It takes a minute or two, so stay until it is done. |
 
-Then it downloads Encore, starts it and prints the address and your username to type into the app, the commands for looking after the server (there is no admin page in the browser yet), and what `encore funnel on` is for (optional; it needs a free Tailscale account). It prints no QR code: the one it used to print opened the music server's own page in a phone's browser and the app cannot scan it; a code that carries an Encore setup link comes with the pairing link (AUDIT F16).
+Then it downloads Encore, starts it and ends by showing a **link and a setup code** (the next step), the commands for looking after the server, and what `encore funnel on` is for (optional; it needs a free Tailscale account). It prints no QR code: the one it used to print opened the music server's own page in a phone's browser and the app cannot scan it; a code that carries an Encore setup link comes with the pairing link (AUDIT F16).
 
-**3. Sign in on the Encore app.** On a phone on the same Wi-Fi: Encore app, *Connect*, the address it printed (like `192.168.1.23:4533`),
-your username and your password. Your library arrives in a few seconds.
+**3. Make your account, in a browser.** Open the link the installer printed (like `http://192.168.1.23:4533/setup?code=7KQ-4MZ`) in a browser on the same network: a computer, or the phone itself. If the link does not open, go to the same address without `?code=...` and type the setup code. Choose your name, a username and a password (8 or more characters); *Create my account* signs you in to the admin pages. The code is only for this step and stops working once your account exists; `sudo encore status` shows the link again while it is still to do. (For an install nobody sits at, `--owner NAME` makes the account in the installer instead.)
 
-**4. Try the things that matter.**
+**4. Sign in on the Encore app.** On a phone on the same Wi-Fi: Encore app, *Connect*, the address the installer printed (like `192.168.1.23:4533`),
+the username and password you just made. Your library arrives in a few seconds.
+
+**5. Try the things that matter.**
 
 * Search for a song you do not have and play it (it streams from the web in a few seconds; playing does not save it).
 * Like a song, make a playlist; then open the app on a second phone with the same login: they show up there within a couple of seconds.
@@ -59,7 +60,7 @@ your username and your password. Your library arrives in a few seconds.
 * Import a playlist from Spotify or YouTube Music: **a short one, 10 songs or fewer**, please. Many look-ups in a row get your home internet
   address refused by YouTube for a day.
 
-**5. Use it away from home (optional, needs your Tailscale login).**
+**6. Use it away from home (optional, needs your Tailscale login).**
 
 ```
 encore funnel on
@@ -99,7 +100,7 @@ for songs), add the line `ENCORE_AUTO_TOOLS=0` to `/opt/encore/.env` and run `en
 ## If something goes wrong
 
 If the window is closed or the connection drops, the install carries on by itself; if the power goes or you press Ctrl-C, run the same two lines again:
-the installer notices that your account was not made yet and asks only for your username and password. Every message says what to do. The full record of an install is `/var/log/encore-install.log` (only the administrator can read it, so  `sudo cat /var/log/encore-install.log`; it never contains a password). Send me that
+the installer notices that your account was not made yet and shows the link and the setup code again (or, with `--owner`, asks only for your username and password). Every message says what to do. The full record of an install is `/var/log/encore-install.log` (only the administrator can read it, so  `sudo cat /var/log/encore-install.log`; it never contains a password). Send me that
 file and what you saw. To start over completely: `encore uninstall --everything`, then step 2 again.
 
 ## What is not in this test

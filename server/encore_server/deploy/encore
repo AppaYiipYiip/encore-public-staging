@@ -199,7 +199,7 @@ backup_tool() {
 }
 
 cmd_status() {
-    local version away
+    local version away link
     version="$(server_version)"
     say ""
     say "  ${BOLD}Encore${OFF} ${version:+$version }(version ${TAG:-$(env_value ENCORE_TAG)})"
@@ -210,6 +210,8 @@ cmd_status() {
     done
     if answers; then ok "It answers on port ${PORT}"; else printf '  %s✗%s It does not answer on port %s (try: encore logs)\n' "$RED" "$OFF" "$PORT"; fi
     if [ -f "$DIR/.setup-pending" ]; then printf '  %s✗%s The first install was cut short before your account was made: run the installer again (sudo bash install.sh).\n' "$RED" "$OFF"; fi
+    link="$(setup_link)"
+    if [ -n "$link" ]; then printf '  %s!%s Your account is not made yet. Open this link in a browser on your home network:  %s\n' "$BOLD" "$OFF" "$link"; fi
     say ""
     say "        On your home network:  $(host_ip):${PORT}"
     away="$(funnel_address)"
@@ -525,6 +527,29 @@ cmd_addon() {
     esac
 }
 
+# The setup page's link while the owner's account is still to be made in the browser (docs/36 section 2). Nothing when it is done, when there is no code, or when this user cannot
+# read the settings file (the code is as secret as the file: root's).
+setup_link() {
+    local code
+    code="$(env_value ENCORE_SETUP_CODE)"
+    if [ -n "$code" ] && [ ! -e "$DIR/data/setup-complete" ]; then printf 'http://%s:%s/setup?code=%s' "$(host_ip)" "$PORT" "$code"; fi
+}
+
+# Once the owner exists (the server leaves  data/setup-complete ) the setup code has done its work: take it out of the settings file, so a stale secret is not kept in it and in its
+# copies. The server ignores the code from the moment anybody exists, so a line that stays (this runs only as root, and at the next command) is harmless. Every other line is kept
+# exactly, the file is replaced in one step and stays private, and nothing is changed if the copy would be empty.
+tidy_setup_code() {
+    local tmp
+    [ -e "$DIR/data/setup-complete" ] && [ -n "$(env_value ENCORE_SETUP_CODE)" ] && [ -w "$DIR/.env" ] || return 0
+    tmp="$(mktemp "$DIR/.env.XXXXXX")" || return 0
+    if grep -v -e '^ENCORE_SETUP_CODE=' -e '^# Only until the owner' "$DIR/.env" >"$tmp" && [ -s "$tmp" ]; then
+        chmod 600 "$tmp"
+        mv -f -- "$tmp" "$DIR/.env"
+    else
+        rm -f -- "$tmp"
+    fi
+}
+
 # What this computer tells the server (docs/36 section 2, "Facts the server cannot see"): a small file in the data folder, written whenever something that changes these facts
 # was done here (a backup, a restore, the away address on or off, an update, the keys), and only READ by the server. The Encore container sees only /data and /music, so it
 # cannot know when the last backup was made, when the away address's key ends or whether the backup key was made. It holds no secret and no path outside the install, and the
@@ -706,6 +731,8 @@ cmd_uninstall() {
     rm -f /usr/local/bin/encore
     ok "Encore is removed"
 }
+
+tidy_setup_code || true
 
 case "${1:-help}" in
     status) cmd_status ;;

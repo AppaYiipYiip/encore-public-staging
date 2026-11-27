@@ -160,3 +160,9 @@ def command(
         return 2
     stdout.write(f"administrator={result.administrator}\nowner={result.owner}\n")
     return 0
+
+
+def default_owner_account(settings: Settings, owner: dict[str, Any]) -> SetupResult:
+    """What the browser's first-run step calls (`owner_setup`): the same steps as the command, with a wait for the music server short enough for a page to bear."""
+    wait_for_music_server(settings.navidrome_url, seconds=20.0)
+    return run_setup(settings, owner, wait=False)

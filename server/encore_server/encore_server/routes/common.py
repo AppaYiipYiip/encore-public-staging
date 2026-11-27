@@ -97,6 +97,8 @@ class Services:
     artist_finder: ArtistFinder | None = None
     #: What the phones' search, artist and album pages are answered from (P2-12): the one gate to the catalogue, its cache and its shapes.
     catalogue: Catalogue | None = None
+    #: Makes the music server's account for the owner of a server that is being set up in the browser (`setup.run_setup`; a test puts its own).
+    make_owner_account: Callable[[Settings, dict[str, Any]], Any] | None = None
 
 
 def services(request: Request) -> Services:

@@ -7,6 +7,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import setup_code
+
 
 def clean_url(text: str) -> str:
     """An address as phones should be told it: `http(s)://host[:port]` with nothing after it; anything else is "unknown"."""
@@ -53,6 +55,8 @@ class Settings:
     #: The addresses this server tells its phones about (docs/11 ADR-R40): the installer writes the home one, `encore funnel on` the away one. Empty: unknown.
     home_url: str = ""
     away_url: str = ""
+    #: The setup code of a server whose owner is made in the browser (docs/36 section 2): empty once there is nobody to make (the headless door) or a code that is not well formed.
+    setup_code: str = field(default="", repr=False)
     #: Mean seconds between the background look-ups and downloads at YouTube (D-67): the Host picks 3 to 8 in `.env`, 4 by default; a test may set 0 (no pacing).
     youtube_pace_s: float = DEFAULT_PACE_S
     fault: str = ""
@@ -98,6 +102,9 @@ class Settings:
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
             home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
+            setup_code=setup_code.show(e.get("ENCORE_SETUP_CODE", ""))
+            if setup_code.well_formed(e.get("ENCORE_SETUP_CODE", ""))
+            else "",
             youtube_pace_s=pace_from(e.get("ENCORE_YOUTUBE_PACE_S", "")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             catalogue=e.get("ENCORE_CATALOGUE", "1").strip().lower() not in ("0", "false", "no"),
