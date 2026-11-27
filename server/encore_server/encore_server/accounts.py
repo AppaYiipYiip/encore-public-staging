@@ -133,14 +133,17 @@ class Limiter:
 class LoginGuard:
     """Wrong guesses are **slowed**, never punished with a lock (AUDIT B1 and B2, docs/32 AC-21).
 
-    What is counted is a *wrong* answer, per name and address and per address, in a minute. A request that is about to be checked is refused first when
-    its address has been wrong too often, so a guesser is not allowed to keep asking the music server. Nothing here is ever held against a name on
-    its own: a stranger's wrong guesses from his address change nothing for the owner's phones, which are at another address, and a *correct*
-    login is never refused because of somebody else's wrong ones. Nobody is locked and no device is signed out by a guess.
+    What is counted is a *wrong* answer, per name and address, per address and (P3-34 slice 2a) per name wherever it comes from, in a minute. A request that is about to be
+    checked is refused first when it has been wrong too often, so a guesser is not allowed to keep asking the music server. Nobody is locked and no device is signed out by a
+    guess. **A device the server already knows is never refused** (`vouched`: a login the music server accepted within the day, see `NavidromeVerifier.vouched`): where Docker
+    hides the visitor's address everybody shares one address, and the owner's app must not be held up by a stranger's guesses; the exemption skips the refusals and never the check.
+    What is NOT exempt, and says so in words in docs/21: a new sign-in (a new phone) and an app that changes its salt on every call, while their account is under attack.
     """
 
     PAIR = (5, 60.0)
     ADDRESS = (30, 60.0)
+    #: Across all addresses: a guesser spread over many addresses is slowed for the name (one address alone can add five a minute, its pair limit, so it takes four to reach this).
+    ACCOUNT = (20, 60.0)
 
     def __init__(self, limiter: Limiter) -> None:
         self._limiter = limiter
@@ -149,10 +152,17 @@ class LoginGuard:
     def _pair(name: str, address: str) -> str:
         return f"guess:{name.strip().lower()[:64]}@{address}"
 
-    def refuse(self, name: str, address: str) -> None:
+    @staticmethod
+    def _account(name: str) -> str:
+        return f"guess-account:{name.strip().lower()[:64]}"
+
+    def refuse(self, name: str, address: str, *, vouched: bool = False) -> None:
+        if vouched:
+            return
         waits = [
             self._limiter.peek(self._pair(name, address), *self.PAIR),
             self._limiter.peek(f"guess-address:{address}", *self.ADDRESS),
+            self._limiter.peek(self._account(name), *self.ACCOUNT),
         ]
         wait = max((w for w in waits if w is not None), default=None)
         if wait is not None:
@@ -163,6 +173,7 @@ class LoginGuard:
     def failed(self, name: str, address: str) -> None:
         self._limiter.hit(self._pair(name, address), self.PAIR[1])
         self._limiter.hit(f"guess-address:{address}", self.ADDRESS[1])
+        self._limiter.hit(self._account(name), self.ACCOUNT[1])
 
 
 class Accounts:

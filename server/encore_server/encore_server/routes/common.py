@@ -188,7 +188,9 @@ def check_music_login(request: Request, user: str, subsonic: str, salt: str) -> 
         return
     address = client_address(request)
     guard = LoginGuard(limiter_of(request))
-    guard.refuse(user, address)
+    # A device the server already knows (a login the music server accepted within the day) is not refused by the guess limits; the music server still checks it just below.
+    vouched = getattr(svc.verifier, "vouched", None)
+    guard.refuse(user, address, vouched=bool(callable(vouched) and vouched(user, subsonic, salt)))
     _refuse_locked(svc, user)
     if not svc.verifier.verify(user, subsonic, salt):
         guard.failed(user, address)

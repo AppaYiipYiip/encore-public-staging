@@ -1,0 +1,12 @@
+{
+ "id": "20261127T165615Z-agent-2514",
+ "item": "P3-34",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T16:56:15Z",
+ "type": "note",
+ "body": "27 Nov, lead, SLICE 2 RULE AND SPLIT (decided with the advisor). A 'device the server already knows' is (1) an Encore DEVICE TOKEN (Bearer): it never goes through the login guard; and (2) a music-server token login (u,t,s) the music server ACCEPTED within the last day: remembered under an HMAC with a per-process key (no raw token, capped, cleared by forget(user), forgotten on restart). That memory only SKIPS THE REFUSALS (pair, address AND the new account limit); it never skips the music server's own check. Costs, stated in docs/21: a NEW sign-in (a new phone, POST auth/login) is slowed while its account is under attack; a third-party Subsonic app that changes its salt on every call (as the Subsonic docs advise) is never 'known' and is slowed while its account is under attack; a restart forgets the memory; the Encore app keeps one salt per install, so it is known. SPLIT: 2a = the account key + the longer memory on the doors already guarded (get_principal, public /rest, Encore auth/login), red-then-green test from the gateway address 172.19.0.1 with the clock past 10 minutes; 2b = home /rest counted from the music server's own ANSWER (JSON/XML with a small Content-Length only; everything else streams and counts as success; the error is passed through unchanged so p= is counted, not refused), AFTER a measurement of right/wrong, t/s and p=, json and XML, ping and stream/getCoverArt on Navidrome 0.64.2 in the encore-server-navidrome job; the refusal body is the only one we write, honouring f=. Slice 3 after.",
+ "to": [
+  "agent"
+ ]
+}
