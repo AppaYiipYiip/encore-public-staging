@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 
 from encore_server import audio_key, refs
-from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of, carry, ffmpeg_command
+from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of, carry, ffmpeg_command, on_disk
 from encore_server.db import Database
 
 HEX = "ab" * 32
@@ -221,8 +221,11 @@ def test_carry_moves_only_the_size_a_key_is_recorded_at_and_only_when_there_is_a
         sid = str(conn.execute("SELECT id FROM song_file").fetchone()["id"])
         carry(conn, sid, 14)
     with db.read() as conn:
-        row = conn.execute("SELECT audio_key, audio_key_size FROM song_file").fetchone()
+        row = conn.execute("SELECT audio_key, audio_key_size, meta FROM song_file").fetchone()
     assert (row["audio_key"], row["audio_key_size"]) == ("a1:" + "d" * 32, 14)
+    assert json.loads(row["meta"])["size"] == 14, (
+        "the music server's number moves with it, in the format a scan writes (so a scan of the same size changes nothing)"
+    )
     other = one_ref(db, "Other")
     with db.tx() as conn:
         refs.attach_file(conn, other, navidrome_song_id="nd2", path="q.opus", codec="opus", bitrate_kbps=1, meta={"size": 10})
@@ -248,7 +251,9 @@ class Bench:
         self.hashed: list[str] = []
         self.now = 0.0
 
-    def add(self, content: bytes = b"sound", *, name: str | None = None, preferred: bool = True) -> tuple[str, Path]:
+    def add(
+        self, content: bytes = b"sound", *, name: str | None = None, preferred: bool = True, stored: str | None = None
+    ) -> tuple[str, Path]:
         self.n += 1
         ref = one_ref(self.db, f"Song {self.n}")
         path = self.music / (name or f"Artist/Song {self.n}.opus")
@@ -259,7 +264,7 @@ class Bench:
                 conn,
                 ref,
                 navidrome_song_id=f"nd{self.n}",
-                path=path.relative_to(self.music).as_posix(),
+                path=stored or path.relative_to(self.music).as_posix(),
                 codec="opus",
                 bitrate_kbps=1,
                 meta={"size": len(content)},
@@ -416,3 +421,104 @@ def test_the_pass_takes_at_most_a_batch_and_a_budget_and_the_preferred_file_firs
     ).run_once()  # two files are keyed (30 s each); the third is over the 40 s budget
     assert result == (2, 0, 1), "the budget stops the pass; the rest waits for the next"
     assert bench.row(old)["audio_key"] is None, "the old copy is the one left"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- review of #164: the queue, the race, carry, the paths
+
+
+def test_a_file_that_cannot_be_found_never_keeps_the_others_from_their_turn(bench: Bench) -> None:
+    """Review of #164: rows the pass cannot resolve used to be taken first at every pass (preferred, newest), so enough of them filled every batch for ever."""
+    good, _ = bench.add(b"the one that can be keyed")
+    bad = []
+    for n in range(4):
+        ref = one_ref(bench.db, f"Unfindable {n}")
+        with bench.db.tx() as conn:
+            refs.attach_file(
+                conn, ref, navidrome_song_id=f"ndx{n}", path=f"Nowhere/{n}.opus", codec="opus", bitrate_kbps=1, meta={"size": 10}
+            )
+        bad.append(ref)
+
+    first = bench.keys(batch=3).run_once()
+    assert (first.made, first.left) == (0, 3), "the three newest are looked at, found nowhere and sent to the back"
+    second = bench.keys(batch=3).run_once()
+
+    assert second.made == 1 and bench.row(good)["audio_key"] is not None, "the next pass reaches the file that can be keyed"
+    assert [bench.row(ref)["audio_key"] for ref in bad] == [None] * 4
+
+
+def test_a_file_that_always_times_out_does_not_stop_every_pass_at_its_first_row(bench: Bench) -> None:
+    fine, _ = bench.add(b"fine song", name="Artist/Fine.opus")
+    stuck, _ = bench.add(b"stuck on a bad disk sector", name="Artist/Stuck.opus")
+
+    def stuck_on_one(path: Path) -> str:
+        if path.name == "Stuck.opus":
+            raise subprocess.TimeoutExpired("ffmpeg", 120)
+        return of_bytes(path)
+
+    first = bench.keys(hash_=stuck_on_one).run_once()
+    assert first.made == 0 and bench.row(fine)["audio_key"] is None, "the newest row stopped the first pass"
+    second = bench.keys(hash_=stuck_on_one).run_once()
+    assert second.made == 1 and bench.row(fine)["audio_key"] is not None and bench.row(stuck)["audio_key"] is None
+
+
+def test_a_key_the_keeper_linked_while_the_pass_was_hashing_is_not_overwritten(bench: Bench) -> None:
+    ref, path = bench.add(b"being kept right now")
+    keepers = "a1:" + "9" * 32
+
+    def keeper_links_meanwhile(p: Path) -> str:
+        with bench.db.tx() as conn:
+            refs.attach_file(
+                conn,
+                ref,
+                navidrome_song_id="nd1",
+                path=path.relative_to(bench.music).as_posix(),
+                codec="opus",
+                bitrate_kbps=1,
+                meta={"size": path.stat().st_size},
+                audio_key=keepers,
+                audio_key_size=path.stat().st_size,
+            )
+        return "a1:" + "0" * 32  # the pass's older answer
+
+    assert bench.keys(hash_=keeper_links_meanwhile).run_once().made == 0
+    assert bench.row(ref)["audio_key"] == keepers
+
+
+def test_a_server_tag_rewrite_that_carried_its_key_is_not_hashed_again_before_the_next_scan(bench: Bench) -> None:
+    """Review of #164: after `carry` the music server's `meta.size` still said the old size, so the errand took the file for one that changed behind the server's back and hashed it again; with a newer
+    ffmpeg (the image is rebuilt weekly) that could have moved a key phones hold."""
+    ref, path = bench.add(b"kept song")
+    bench.keys().run_once()
+    key = bench.row(ref)["audio_key"]
+    path.write_bytes(b"kept song" + b" + tags and a cover the repair wrote")  # the repair rewrote the file...
+    with bench.db.tx() as conn:  # ...and recorded it in the same step
+        carry(conn, str(conn.execute("SELECT id FROM song_file WHERE ref = ?", (ref,)).fetchone()["id"]), path.stat().st_size)
+    bench.hashed.clear()
+
+    assert bench.keys().run_once() == (0, 0, 0) and bench.hashed == [], "nothing is hashed before the scan has said anything"
+    assert bench.row(ref)["audio_key"] == key and file_of(bench.db, ref)["audioKey"] == key
+
+
+def test_a_path_is_relative_to_the_music_folder_and_only_an_absolute_one_is_looked_for_by_its_tail(tmp_path: Path) -> None:
+    music = tmp_path / "music"
+    song = music / "Artist" / "Album" / "01 - Song.opus"
+    song.parent.mkdir(parents=True)
+    song.write_bytes(b"x")
+    assert on_disk(music, "Artist/Album/01 - Song.opus") == song
+    assert on_disk(music, "Artist\\Album\\01 - Song.opus") == song, "a path written with backslashes"
+    assert on_disk(music, "/music/Artist/Album/01 - Song.opus") == song, "the music server's own root in front of it"
+    assert on_disk(music, "/mnt/library/music/Artist/Album/01 - Song.opus") == song
+    assert on_disk(music, "Album/01 - Song.opus") is None, (
+        "a RELATIVE path is not searched for: another song's file by the same tail must never be taken"
+    )
+    assert on_disk(music, "Artist/Album/Missing.opus") is None
+    assert on_disk(music, "../music/Artist/Album/01 - Song.opus") is None and on_disk(music, "") is None
+    outside = tmp_path / "secret.opus"
+    outside.write_bytes(b"x")
+    assert on_disk(music, "../secret.opus") is None and on_disk(music, "/etc/../secret.opus") is None
+
+
+def test_a_library_row_with_the_music_servers_absolute_path_is_still_keyed(bench: Bench) -> None:
+    ref, path = bench.add(b"a library song", stored="/music/Artist/Song 1.opus")
+
+    assert bench.keys().run_once().made == 1 and bench.row(ref)["audio_key"] == of_bytes(path)

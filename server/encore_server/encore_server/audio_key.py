@@ -28,6 +28,7 @@ pass); one `file_log` row a key made or changed, so that a phone learns it.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import shutil
@@ -35,11 +36,12 @@ import sqlite3
 import subprocess
 import time
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
 from . import refs
 from .db import Database
+from .ids import now_ms
 from .keeper.placement import inside
 
 log = logging.getLogger("encore_server.audio_key")
@@ -98,9 +100,35 @@ def audio_key_of(path: Path, *, runner: Runner = subprocess.run, timeout: float 
 
 
 def carry(conn: sqlite3.Connection, file_id: str, new_size: int) -> None:
-    """The server rewrote the TAGS of this file (it is [new_size] bytes now): the key is the same, so only the size it is recorded at moves. A key the file does not have yet stays unmade (the
+    """The server rewrote the TAGS of this file (it is [new_size] bytes now): the key is the same, so only the size it is recorded at moves, and the music server's size in the row's `meta` moves with it
+    (the next scan will say the same number), so that the errand does not take the file for one that changed behind the server's back and hash it again. A key the file does not have yet stays unmade (the
     pass will make it from the file as it is: it cannot be wrong, because the audio did not change). Call it in the same transaction that records the rewrite."""
-    conn.execute("UPDATE song_file SET audio_key_size = ? WHERE id = ? AND audio_key IS NOT NULL", (new_size, file_id))
+    row = conn.execute("SELECT meta FROM song_file WHERE id = ? AND audio_key IS NOT NULL", (file_id,)).fetchone()
+    if row is None:
+        return
+    meta = json.loads(row["meta"]) if row["meta"] else {}
+    meta["size"] = new_size
+    # the one format `refs.attach_file` writes, so that a scan reporting this size changes nothing (and tells no phone)
+    conn.execute(
+        "UPDATE song_file SET audio_key_size = ?, meta = ? WHERE id = ?",
+        (new_size, json.dumps(meta, separators=(",", ":"), sort_keys=True), file_id),
+    )
+
+
+def on_disk(music_dir: Path, stored: str) -> Path | None:
+    """The file a `song_file.path` names, or `None` (not there, or not inside the music folder).
+
+    A path made by the keeper, and the music server's own path when it is relative, is relative to the music folder and is taken as it is, never searched for. **A path the music server reports as ABSOLUTE
+    (or with the root of its own library in front, whose mount can differ from this server's) is looked for by its tail:** the longest tail that is a file under [music_dir]. Never `..`."""
+    parts = [part for part in PurePosixPath(stored.replace("\\", "/")).parts if part != "/"]
+    if not parts or any(part in ("..", ".") for part in parts):
+        return None
+    absolute = stored.replace("\\", "/").startswith("/")
+    for start in range(len(parts) if absolute else 1):
+        candidate = music_dir.joinpath(*parts[start:])
+        if inside(music_dir, candidate) and candidate.is_file():
+            return candidate
+    return None
 
 
 class Pass(NamedTuple):
@@ -112,11 +140,12 @@ class Pass(NamedTuple):
 
 
 #: The files that need a key: never keyed, or whose size is not the size the key was taken at (the music server's own number from the last scan, `meta.size`).
-#: Preferred files first (the ones a phone downloads), then the newest.
+#: The files the errand has NEVER looked at come first (NULL sorts first), then the one looked at longest ago: a file that is never found or never readable cannot keep the others from their turn.
+#: Within that, preferred files first (the ones a phone downloads), then the newest.
 _TODO = (
     "SELECT id, ref, path, audio_key, audio_key_size FROM song_file WHERE path IS NOT NULL"
     " AND (audio_key_size IS NULL OR audio_key_size != COALESCE(json_extract(meta, '$.size'), audio_key_size))"
-    " ORDER BY preferred DESC, added_at DESC, id LIMIT ?"
+    " ORDER BY audio_key_tried_at, preferred DESC, added_at DESC, id LIMIT ?"
 )
 
 
@@ -145,15 +174,17 @@ class AudioKeys:
             todo = conn.execute(_TODO, (self._batch,)).fetchall()
         began = self._clock()
         made = unreadable = left = 0
+        looked_at: list[str] = []  # the files this pass tried and did not key: they go to the back of the queue
         for index, row in enumerate(todo):
             if self._clock() - began > self._budget:
-                left += len(todo) - index
+                left += len(todo) - index  # not tried: they keep their place
                 break
-            path = self._music / str(row["path"])
+            path = on_disk(self._music, str(row["path"]))
+            if path is None:
+                left += 1  # not there (a disk not mounted for a minute, or a path that does not name a file here): nothing is remembered about it but that it was looked at
+                looked_at.append(str(row["id"]))
+                continue
             try:
-                if not inside(self._music, path) or not path.is_file():
-                    left += 1  # not there (a disk not mounted for a minute): nothing is remembered about it
-                    continue
                 size = path.stat().st_size
                 key, why = "", None
                 try:
@@ -162,9 +193,13 @@ class AudioKeys:
                     why = str(error)
                 if path.stat().st_size != size:
                     left += 1  # changed while it was read: the next pass takes it
+                    looked_at.append(str(row["id"]))
                     continue
             except (OSError, subprocess.TimeoutExpired) as error:
                 log.warning("the audio keys stop for this pass (%s): %s", type(error).__name__, error)
+                looked_at.append(
+                    str(row["id"])
+                )  # the one that stopped the pass goes to the back, so the next pass reaches the others
                 left += len(todo) - index
                 break
             if why is not None:
@@ -172,6 +207,11 @@ class AudioKeys:
                 log.warning("no audio key for %s: %s", row["path"], why)
             with self._db.tx() as conn:
                 made += self._record(conn, row, key, size)
+        if looked_at:
+            with self._db.tx() as conn:
+                conn.executemany(
+                    "UPDATE song_file SET audio_key_tried_at = ? WHERE id = ?", [(now_ms(), file_id) for file_id in looked_at]
+                )
         if made or unreadable:
             log.info(
                 "audio keys: %d made or changed, %d files could not be read, %d left for the next pass", made, unreadable, left
@@ -180,9 +220,13 @@ class AudioKeys:
 
     @staticmethod
     def _record(conn: sqlite3.Connection, row: sqlite3.Row, key: str, size: int) -> int:
-        """Records the key at the size it was taken at; tells the phones when the key SERVED changed (the first key, or another one). Returns 1 then, else 0."""
-        conn.execute("UPDATE song_file SET audio_key = ?, audio_key_size = ? WHERE id = ?", (key, size, row["id"]))
-        if (row["audio_key"] or "") == key:
+        """Records the key at the size it was taken at, **only if the row is still as the pass read it** (the keeper may have linked this very file a moment ago, with a key of its own: that one is not
+        overwritten with an older answer). Tells the phones when the key SERVED changed (the first key, or another one). Returns 1 then, else 0."""
+        done = conn.execute(
+            "UPDATE song_file SET audio_key = ?, audio_key_size = ?, audio_key_tried_at = ? WHERE id = ? AND audio_key IS ? AND audio_key_size IS ?",
+            (key, size, now_ms(), row["id"], row["audio_key"], row["audio_key_size"]),
+        )
+        if done.rowcount != 1 or (row["audio_key"] or "") == key:
             return 0
         refs.touch_file(conn, str(row["ref"]))
         return 1

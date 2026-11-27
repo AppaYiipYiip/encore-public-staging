@@ -15,7 +15,9 @@ from encore_server import refs
 from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of
 from encore_server.db import Database
 from encore_server.keeper.tagging import Tags, ffmpeg_args, write_tags
-from tests.integration.conftest import ffmpeg
+from encore_server.navidrome import NavidromeClient
+from encore_server.scanner import link_library
+from tests.integration.conftest import MUSIC, Rig, ffmpeg, scan_and_wait
 
 pytestmark = pytest.mark.integration
 
@@ -132,3 +134,37 @@ def test_the_hourly_errand_keys_a_library_on_the_real_ffmpeg_and_a_retag_makes_n
         assert int(conn.execute("SELECT COUNT(*) FROM file_log").fetchone()[0]) == news, (
             "no phone is told anything: nothing it holds changed"
         )
+
+
+def test_a_file_the_real_music_server_lists_is_found_on_the_disk_and_keyed_whatever_its_tags_say(
+    rig: Rig, navidrome: NavidromeClient
+) -> None:
+    """Review of #164: the errand resolves `song_file.path`, which is whatever the scanner stored from the music server's own `path`. If that were not a path under the music folder (a path built from the tags,
+    another library root) every library file would be 'not there' and never keyed, silently. Proved against the real music server, with a file whose folder and name disagree with its tags."""
+    import secrets
+
+    unique = secrets.token_hex(3)
+    song = tone(
+        MUSIC / f"Zxqv misc {unique}" / "random-name-1234.opus",
+        title=f"Zxqv Title {unique}",
+        artist=f"Zxqv Artist {unique}",
+        album=f"Zxqv Album {unique}",
+    )
+    scan_and_wait(navidrome)
+    link_library(rig.svc.db, navidrome)
+    with rig.svc.db.read() as conn:
+        row = conn.execute(
+            "SELECT f.id, f.path, f.audio_key FROM song_file f JOIN song_ref r ON r.id = f.ref WHERE r.title = ?",
+            (f"Zxqv Title {unique}",),
+        ).fetchone()
+    assert row is not None, "the library link made a ref and a file row for it"
+    stored = row["path"]
+
+    AudioKeys(rig.svc.db, MUSIC).run_once()
+
+    with rig.svc.db.read() as conn:
+        after = conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE id = ?", (row["id"],)).fetchone()
+    assert after["audio_key"] == audio_key_of(song), (
+        f"the music server's own path ({stored!r}) did not lead the errand to the file"
+    )
+    assert after["audio_key_size"] == song.stat().st_size
