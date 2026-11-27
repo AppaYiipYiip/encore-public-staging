@@ -13,7 +13,7 @@ import posixpath
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Protocol
-from urllib.parse import parse_qsl, unquote
+from urllib.parse import parse_qsl, unquote, urlencode
 
 import httpx
 from fastapi import FastAPI, Request
@@ -143,6 +143,38 @@ def mount(
     base = upstream.rstrip("/")
     http = client or httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0), follow_redirects=False)
 
+    async def judge_head(request: Request, login: Any, query: Pairs) -> None:
+        """A HEAD carries no body, so the gateway cannot read what the music server says about its login, and a HEAD says the same thing in its HEADERS (measured, 0.64.2: a wrong login is always
+        `application/json` of 194 bytes, 168 with gzip; every right answer differs in type or length): a guesser who sent only HEADs could tell a right password from a wrong one without ever being
+        counted. So a HEAD that carries a login is judged by a GET `ping` of the SAME login (the very values the HEAD carried), through the same guard, before the HEAD is passed on (P3-34 slice 2c).
+        It costs one tiny call, and a HEAD with a login is rare. A music server that does not answer the ping leaves the HEAD to be answered (or not) as it would have been."""
+        assert home_guard is not None
+        params = [(name, value) for name, value in query if name in ("u", "p", "t", "s")]
+        url = f"{base}/rest/ping.view?" + urlencode([*params, ("v", "1.16.1"), ("c", "encore-gateway"), ("f", "json")])
+        headers = {"accept-encoding": "identity", "x-forwarded-for": request.client.host if request.client else ""}
+        try:
+            answer = await http.send(http.build_request("GET", url, headers=headers), stream=True)
+        except httpx.HTTPError as error:
+            log.info("the music server did not answer the ping that judges a HEAD: %s", type(error).__name__)
+            return
+        try:
+            mode = subsonic_guard.how_to_read(
+                answer.status_code,
+                answer.headers.get("content-type", ""),
+                answer.headers.get("content-length"),
+                "chunked" in answer.headers.get("transfer-encoding", "").lower(),
+                answer.headers.get("content-encoding", "identity").strip().lower() not in ("", "identity"),
+            )
+            verdict = "unknown"
+            if mode == "read":
+                verdict = subsonic_guard.judge(b"".join([piece async for piece in answer.aiter_raw(_CHUNK)]))
+            elif mode == "accepted":
+                verdict = "accepted"
+            if verdict != "unknown":
+                await run_in_threadpool(home_guard.settle, request, login, refused=verdict == "refused")
+        finally:
+            await answer.aclose()
+
     @app.api_route("/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], include_in_schema=False)
     async def pass_on(path: str, request: Request) -> Response:
         if path.startswith("encore/") or path == "encore":
@@ -170,6 +202,8 @@ def mount(
                 if refusal is not None:
                     status, headers, content = refusal
                     return Response(content, status_code=status, headers=headers)
+                if request.method == "HEAD":
+                    await judge_head(request, login, query)
         elif web_page_open is None or not web_page_open(request):
             return _not_found(request)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
@@ -210,7 +244,7 @@ def mount(
         for keep in ("content-length", "content-encoding"):
             if keep in answer.headers:
                 out[keep] = answer.headers[keep]
-        if login is not None and home_guard is not None:
+        if login is not None and home_guard is not None and request.method != "HEAD":  # a HEAD was judged by its ping above
             # What the music server said about the login, decided on EVIDENCE (`subsonic_guard.how_to_read`): only a small, sized, uncompressed json or xml answer is read (a wrong login is always
             # exactly that, measured) and is a refusal, an acceptance (an ok, or an error that can only come after the login passed) or nothing we can tell; a song, a picture or a list far larger
             # than any refusal is an acceptance and streams untouched below. Anything else (compressed, chunked, an unknown type, a code 10) is neither counted nor remembered.

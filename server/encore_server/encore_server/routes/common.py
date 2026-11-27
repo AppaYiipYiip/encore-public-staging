@@ -206,12 +206,13 @@ async def authorize_public_subsonic(request: Request, login: subsonic_guard.Home
 
     [login] is the login the gateway read from the call the way the MUSIC SERVER reads it (the address and the form body; never an `X-Encore-*` header, which the music server ignores; a name given
     twice already refused): the login that is checked here is the one the music server will check, never a decoy (P3-34 slice 2b review)."""
-    if login is None or login.token.startswith("p:"):
+    # Only the shapes the apps of this server make (the music server takes any, and the home door counts any): a name of letters and digits, a 32-hex token, a salt of 4 to 64 letters and digits.
+    if login is None or subsonic_credentials({"u": login.user, "t": login.token, "s": login.salt}, {}) is None:
         raise ApiError(
             "unauthorized", "Sign in with a token login (u, t and s). A plain password is not accepted from the internet."
         )
     await run_in_threadpool(
-        _check_public_subsonic, request, login.user, login.token, login.salt
+        _check_public_subsonic, request, login.user, login.token.lower(), login.salt
     )  # asking the music server is a blocking call
 
 

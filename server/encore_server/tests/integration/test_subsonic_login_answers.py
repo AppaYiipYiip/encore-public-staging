@@ -268,10 +268,12 @@ def test_how_a_compressed_answer_a_form_post_login_and_a_repeated_name_are_answe
 # ---------------------------------------------------------------------------------------------------------------------------- HEAD: is it a password oracle? (P3-34 slice 2c)
 
 
-def ask_head(endpoint: str, pairs: list[tuple[str, str]], *, headers: dict[str, str] | None = None) -> dict[str, Any]:
+def ask_head(
+    endpoint: str, pairs: list[tuple[str, str]], *, headers: dict[str, str] | None = None, method: str = "HEAD"
+) -> dict[str, Any]:
     """One HEAD of `/rest/<endpoint>`: only what a HEAD carries (status, content type, content length, encoding): a guesser's whole view of the answer when the gateway cannot read a body."""
     url = f"{URL}/rest/{endpoint}?{urllib.parse.urlencode([('v', '1.16.1'), ('c', 'encore-measure'), *pairs])}"
-    request = urllib.request.Request(url, headers=headers or {}, method="HEAD")
+    request = urllib.request.Request(url, headers=headers or {}, method=method)
     try:
         with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - the throwaway music server of the test rig
             status, answer_headers = response.status, response.headers
@@ -331,6 +333,14 @@ def test_what_a_head_with_a_right_and_a_wrong_login_looks_like(
                         ask_head(endpoint, [*login(right, "headsalt2"), *extra], headers=headers),
                     )
                 )
+    for right in (True, False):  # the other method that carries no answer of its own to read
+        rows.append(
+            (
+                "OPTIONS ping",
+                f"{'RIGHT' if right else 'WRONG'} plain",
+                ask_head("ping.view", login(right, "headsalt4"), method="OPTIONS"),
+            )
+        )
     rows.append(
         (
             "GET stream, a real song",

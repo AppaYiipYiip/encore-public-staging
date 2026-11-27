@@ -16,8 +16,6 @@ import json
 import re
 from collections.abc import Mapping, Sequence
 
-from .auth import subsonic_credentials
-
 #: The Subsonic error codes that say "that login is no good" (the same set the verifier uses): wrong name or password (40), token authentication not supported for this account (41), a
 #: mechanism that is not supported (42, 43) and a wrong API key (44).
 LOGIN_REFUSED = frozenset({40, 41, 42, 43, 44})
@@ -35,7 +33,8 @@ READ_AT_MOST = 2048
 _MEDIA = ("audio/", "image/", "video/")
 
 _READABLE_TYPES = frozenset({"application/json", "application/xml", "text/xml", "application/javascript", "text/javascript"})
-_USER = re.compile(r"^[A-Za-z0-9._@-]{1,64}$")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+_MAX_NAME = 256
 _CALLBACK = re.compile(r"^[A-Za-z0-9_.$]{1,64}$")
 _XML_CODE = re.compile(rb'<error\b[^>]*\bcode="(\d+)"')
 
@@ -61,15 +60,20 @@ class HomeLogin:
 
 def login_of(query: Mapping[str, str], form: Mapping[str, str] | None = None) -> HomeLogin | None:
     """The login an app sent, or `None` for a call that carries none the guard can count (no name, no secret, an API key: this music server takes none): such a call is passed on untouched.
-    The query wins over a form body; a token login wins over a plain password."""
+
+    **The guard reads what the MUSIC SERVER reads, not what an app of this server would send** (P3-34 slice 2c): the first reader asked for a name of letters and digits, a 32-hex token, a salt of
+    4 to 64 letters and digits and a password of at most 256 characters, the shapes this server's own apps make, and a call outside them was passed on unchecked and uncounted: a free guess, though
+    the music server checks it all the same (it takes any name, any salt, any length). Now anything the music server would check is counted: a name without a control character, a token and a salt
+    of any shape (md5 of the password and the salt is compared, so a token that can never be right is just a wrong answer), a password of any length. A call that names one part of its login twice
+    never gets here (`is_ambiguous`), so the address and the form body are one set."""
     params = {**(form or {}), **query}
-    token_login = subsonic_credentials(params, {})
-    if token_login is not None:
-        user, token, salt = token_login
-        return HomeLogin(user, token, salt)
     user = params.get("u", "")
-    plain = params.get("p", "")
-    if _USER.match(user) and plain and len(plain) <= 256:
+    if not user or len(user) > _MAX_NAME or _CONTROL.search(user):
+        return None
+    token, salt, plain = params.get("t", ""), params.get("s", ""), params.get("p", "")
+    if token or salt:
+        return HomeLogin(user, token, salt)
+    if plain:
         return HomeLogin(user, "p:" + plain, "")
     return None
 
