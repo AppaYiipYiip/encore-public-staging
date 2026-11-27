@@ -421,3 +421,53 @@ def test_the_mark_is_not_taken_back_from_a_row_that_holds_another_path_now(bench
     assert trusted_file(bench.db, bench.music, file_id, "Some/old/path.opus") is None
 
     assert bench.row(ref)["path_real"] == 1, "the keeper (or the errand) put a new place there meanwhile: not undone"
+
+
+# ---------------------------------------------------------------------------------------------------------------------- follow-up (the advisor's review after #169)
+
+
+def test_two_copies_of_one_song_that_share_the_music_servers_tag_built_path_are_two_rows(db: Database) -> None:
+    """The music server builds a song's path from its TAGS, so two copies of one song (two folders, the same tags) report ONE path. `attach_file` matched a row by id OR by path: the second copy took
+    the first copy's row and overwrote its music-server id, the next pass flipped it back, and the served file alternated. A path is a way to match only when it is a REAL place."""
+    ref = one_ref(db, "Weird Fishes")
+    built = "Radiohead/In Rainbows/Weird Fishes.opus"
+    with db.tx() as conn:
+        refs.attach_file(conn, ref, navidrome_song_id="nd1", path=built, codec="opus", bitrate_kbps=128, meta={"size": 100})
+        refs.attach_file(conn, ref, navidrome_song_id="nd2", path=built, codec="opus", bitrate_kbps=128, meta={"size": 120})
+        refs.attach_file(
+            conn, ref, navidrome_song_id="nd1", path=built, codec="opus", bitrate_kbps=128, meta={"size": 100}
+        )  # the next pass
+    with db.read() as conn:
+        rows = conn.execute(
+            "SELECT navidrome_song_id, meta FROM song_file WHERE ref = ? ORDER BY navidrome_song_id", (ref,)
+        ).fetchall()
+
+    assert [r["navidrome_song_id"] for r in rows] == ["nd1", "nd2"], "two files, two rows, and each keeps its own id"
+
+
+def test_a_real_path_still_finds_the_row_of_the_same_file(db: Database) -> None:
+    """The keeper links a file it placed by its real place, also before the music server has an id for it."""
+    ref = one_ref(db, "Weird Fishes")
+    with db.tx() as conn:
+        first = refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id=None,
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+        again = refs.attach_file(
+            conn,
+            ref,
+            navidrome_song_id="nd1",
+            path="Encore/R/W.opus",
+            codec="opus",
+            bitrate_kbps=1,
+            source="youtube",
+            path_real=True,
+        )
+
+    assert first == again, "one row: found by the real place, then given its music-server id"

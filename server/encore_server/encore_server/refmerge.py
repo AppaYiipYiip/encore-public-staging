@@ -424,8 +424,13 @@ def _merge_files(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
     are merged key by key (a missing key never erases a known one: the survivor's only `coverArt` stays). Any other file simply moves over."""
     for theirs in conn.execute("SELECT * FROM song_file WHERE ref = ? ORDER BY added_at, rowid", (loser,)).fetchall():
         ours = conn.execute(
-            "SELECT * FROM song_file WHERE ref = ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
-            (survivor, theirs["navidrome_song_id"], theirs["path"]),
+            "SELECT * FROM song_file WHERE ref = ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (? = 1 AND path_real = 1 AND path IS NOT NULL AND path = ?))",
+            (
+                survivor,
+                theirs["navidrome_song_id"],
+                theirs["path_real"],
+                theirs["path"],
+            ),  # a path counts only where it is a real place on both sides (N-53)
         ).fetchone()
         if ours is None:
             conn.execute("UPDATE song_file SET ref = ?, preferred = 0 WHERE id = ?", (survivor, theirs["id"]))
@@ -439,6 +444,10 @@ def _merge_files(conn: sqlite3.Connection, survivor: str, loser: str) -> None:
         meta = _merge_meta(older["meta"], newer["meta"])
         if meta != ours["meta"]:
             updates["meta"] = meta
+        if ours["audio_key"] is None and theirs["audio_key"] is not None:
+            # The same file (the same music-server id, or the same real place): the key of its audio is the loser's (N-38). Never the other way: the survivor's own key stays.
+            updates["audio_key"] = theirs["audio_key"]
+            updates["audio_key_size"] = theirs["audio_key_size"]
         if updates:
             assignments = ", ".join(f"{column} = ?" for column in updates)
             conn.execute(f"UPDATE song_file SET {assignments} WHERE id = ?", (*updates.values(), ours["id"]))  # noqa: S608 - column names from the schema

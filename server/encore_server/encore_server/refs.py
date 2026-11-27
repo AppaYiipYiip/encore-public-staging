@@ -726,8 +726,10 @@ def attach_file(
     clear_missing(conn, ref_id)  # the server has a file of this song now: whatever was remembered about its absence is void
     existing = conn.execute(
         "SELECT id, navidrome_song_id, path, path_real, source, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
-        " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
-        (ref_id, navidrome_song_id, path),
+        " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (? = 1 AND path_real = 1 AND path IS NOT NULL AND path = ?))",
+        # A path is a way to find the row of the same file only when it is a REAL place on both sides (N-53): the music server builds a library song's path from its TAGS, so two copies of one song (two
+        # folders, the same tags) report one path, and matching by it made the second copy take the first copy's row and overwrite its id, every pass.
+        (ref_id, navidrome_song_id, 1 if path_real and path else 0, path),
     ).fetchone()
     if existing is not None:
         changed = False

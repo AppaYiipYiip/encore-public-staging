@@ -510,7 +510,9 @@ class Rehome:
 
     def _move(self, conn: sqlite3.Connection, file_id: str, ref: str, described: dict[str, Any] | None) -> _Moved:
         """Re-points one row, judged again against the state this transaction sees. `_CHANGED`: the row is not where the pass read it."""
-        row = conn.execute("SELECT id, ref, source, navidrome_song_id, path FROM song_file WHERE id = ?", (file_id,)).fetchone()
+        row = conn.execute(
+            "SELECT id, ref, source, navidrome_song_id, path, path_real FROM song_file WHERE id = ?", (file_id,)
+        ).fetchone()
         if row is None or row["ref"] != ref or row["source"] != "library":
             return _Moved(_CHANGED, origin=ref)
         verdict = self._decide(conn, file_id, ref, described)
@@ -520,8 +522,14 @@ class Rehome:
         target_ref = refs.resolve_keeping_identity(conn, verdict.item)
         target = str(target_ref["id"])
         twin = conn.execute(
-            "SELECT id FROM song_file WHERE ref = ? AND id <> ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
-            (target, file_id, row["navidrome_song_id"], row["path"]),
+            "SELECT id FROM song_file WHERE ref = ? AND id <> ? AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (? = 1 AND path_real = 1 AND path IS NOT NULL AND path = ?))",
+            (
+                target,
+                file_id,
+                row["navidrome_song_id"],
+                row["path_real"],
+                row["path"],
+            ),  # a path counts only where it is a real place on both sides (N-53)
         ).fetchone()
         if twin is not None:
             conn.execute("DELETE FROM song_file WHERE id = ?", (file_id,))
