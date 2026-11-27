@@ -193,6 +193,18 @@ for secret in "$PASSWORD" "$NEW_PASSWORD" "$KEY2"; do
 done
 ok "no secret in the audit log"
 
+step "the time zone: the zone data loads inside the BUILT IMAGE, and the server counts in the zone the installer wrote"
+# A slim image may have no operating-system zone data: the `tzdata` package is a dependency, and this is the proof that it is in the image a stranger pulls.
+docker compose --project-directory "$DIR" exec -T encore-server python -c "from zoneinfo import ZoneInfo; ZoneInfo('Europe/Paris'); ZoneInfo('Asia/Kolkata')"     || fail "a time zone does not load inside the image: the zone data is missing"
+ok "zone data loads inside the image"
+ZONE="$(grep -E '^ENCORE_TIME_ZONE=' "$DIR/.env" | head -1 | cut -d= -f2- || true)"
+if [ -n "$ZONE" ]; then
+    SEEN="$(docker compose --project-directory "$DIR" exec -T encore-server python -c "from encore_server.config import Settings; print(Settings.from_env().time_zone)")"
+    expect "the server counts in the zone the installer wrote" "$SEEN" "$ZONE"
+else
+    ok "this computer did not say its zone: the server counts in UTC"
+fi
+
 # ------------------------------------------------------------------------------------------------------------------------------------ the helper (docs/36 section 3)
 step "the helper: the socket, its owner and mode, and the token"
 [ -S /run/encore/helper.sock ] || fail "the helper's socket is not there"

@@ -177,6 +177,28 @@ make_setup_code() {
     printf '%s-%s' "${raw:0:3}" "${raw:3:3}"
 }
 
+# The computer's own time zone as an IANA name ("Europe/Paris"), for the admin Home's "since midnight": found the way the common systems say it, checked for plain characters only
+# (the server checks it for real and falls back to UTC with a line in its log). Nothing is printed when it cannot be found: the server then counts in UTC.
+detect_time_zone() {
+    local zone=""
+    zone="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+    [ -n "$zone" ] || zone="$(cat /etc/timezone 2>/dev/null || true)"
+    [ -n "$zone" ] || zone="$(readlink /etc/localtime 2>/dev/null | sed -n 's|.*/zoneinfo/||p' || true)"
+    case "$zone" in '' | *[!A-Za-z0-9_+./-]*) return 1 ;; esac
+    printf '%s' "$zone"
+}
+
+# Writes the computer's time zone into the settings file ONCE: a second run, and a Host's own edit, keep what is there.
+ensure_time_zone() {
+    local zone
+    [ -n "$(env_value ENCORE_TIME_ZONE)" ] && return 0
+    zone="$(detect_time_zone)" || return 0
+    {
+        echo "# The time zone \"today\" is counted in on the admin Home (an IANA name). Change it, then run: sudo encore restart"
+        echo "ENCORE_TIME_ZONE=$zone"
+    } >>"$DIR/.env"
+}
+
 # Makes sure the settings file has a setup code (once: a second run keeps the one that is there, so a link already shown still works).
 ensure_setup_code() {
     local code
@@ -315,6 +337,7 @@ if [ "$FRESH" = 1 ]; then
     chmod 600 "$DIR/.env"
     umask 022
 fi
+ensure_time_zone
 # An earlier install that was cut short before an account was made, finished in the browser now: the old marker is no longer true, the setup code is what opens the pages.
 if [ "$BROWSER_OWNER" = 1 ]; then
     rm -f "$DIR/.setup-pending"

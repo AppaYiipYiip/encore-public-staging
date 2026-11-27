@@ -14,6 +14,8 @@ dependencies = [
   "cryptography>=43",
   # The backups are encrypted to a public key kept on the computer (P3-30): age (X25519), the standard format, in Rust. MIT; abi3 wheels for Windows, x86-64 and aarch64 Linux.
   "pyrage>=1.2",
+  # The Host's time zone ("today" on Home is counted in it, N-53's neighbour): `zoneinfo` needs the zone data, and a slim container image may not have the operating system's. Public domain data.
+  "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
