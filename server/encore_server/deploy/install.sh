@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Encore installer (docs/tasks P3-05): installs the music server and the Encore server on this computer.
 #
-#   sudo bash install.sh                     asks what it needs (the owner's name and password, where the music is)
-#   sudo bash install.sh --yes --owner NAME  asks nothing it can do without; the password comes from ENCORE_OWNER_PASSWORD
+#   sudo bash install.sh                     asks what it needs (where the music is); your account is made afterwards, in the browser, with a setup code this screen shows
+#   sudo bash install.sh --yes --owner NAME  asks nothing it can do without and makes the account itself (an install nobody sits at); the password comes from ENCORE_OWNER_PASSWORD
 #
 # Running it again is safe: what is installed is kept and brought up to date. Everything it does is written to /var/log/encore-install.log;
 # nothing secret is printed or logged. It never touches other containers, the music folder's files, or any firewall rule except (when the
@@ -45,8 +45,8 @@ usage() {
 Usage: sudo bash install.sh [options]
 
   --yes                  do not ask; answer yes to installing what is missing
-  --owner NAME           the owner's username (3 to 32 letters, digits, . - _)
-  --owner-password-file F  read the owner's password from the first line of file F (for installs nobody sits at)
+  --owner NAME           make the owner's account here, with this username (3 to 32 letters, digits, . - _), instead of in the browser (for installs nobody sits at)
+  --owner-password-file F  read the owner's password from the first line of file F
   --name TEXT            the server's name, shown to people you invite (default: this computer's name)
   --music-dir PATH       where the music is, or will be (default /srv/music)
   --port N               the port the apps connect to (default 4533)
@@ -54,7 +54,7 @@ Usage: sudo bash install.sh [options]
   --image NAME           the server image (default ghcr.io/appayiipyiip/encore-server)
   --tag TAG              the image version (default main)
 
-The owner's password is asked for, or read from a file (--owner-password-file), or from ENCORE_OWNER_PASSWORD. For a private image, sign in to
+Without --owner, the account is made on a page you open afterwards (the link and a setup code are shown at the end). With --owner, the password is asked for, or read from a file (--owner-password-file), or from ENCORE_OWNER_PASSWORD. For a private image, sign in to
 GitHub first with  gh auth login --scopes read:packages  (the installer finds that login even under sudo), or give a token that may read
 packages in GH_TOKEN / GHCR_TOKEN.
 EOF
@@ -158,10 +158,35 @@ FRESH=1
 # between (power, Ctrl-C, a dropped connection), running the installer again finishes the job instead of leaving a server nobody can sign in to.
 PENDING=0
 [ -f "$DIR/.setup-pending" ] && PENDING=1
+# Who makes the owner's account (docs/36 section 2, "The first run is a takeover risk"). By default the person does, in the browser, with a setup code that only the
+# screen of this computer shows: nothing is asked here. `--owner NAME` is the other door (an install nobody sits at, a test rig): the installer makes the account as it
+# always did, and there is then no setup page.
 NEED_OWNER=0
-{ [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ]; } && NEED_OWNER=1
+BROWSER_OWNER=0
+if [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ]; then
+    if [ -n "$OWNER" ]; then NEED_OWNER=1; else BROWSER_OWNER=1; fi
+fi
 
 env_value() { grep -E "^$1=" "$DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+
+# The setup code: six characters of the 31 that cannot be mistaken for each other (no 0 O 1 I L), shown as 7KQ-4MZ. `tr` is closed by `head` and says so: that is not a failure.
+make_setup_code() {
+    local raw
+    raw="$(LC_ALL=C tr -dc '23456789ABCDEFGHJKMNPQRSTUVWXYZ' </dev/urandom | head -c 6 || true)"
+    [ "${#raw}" = 6 ] || return 1
+    printf '%s-%s' "${raw:0:3}" "${raw:3:3}"
+}
+
+# Makes sure the settings file has a setup code (once: a second run keeps the one that is there, so a link already shown still works).
+ensure_setup_code() {
+    local code
+    [ -n "$(env_value ENCORE_SETUP_CODE)" ] && return 0
+    code="$(make_setup_code)" || die "A setup code could not be made."
+    {
+        echo "# Only until the owner's account is made in the browser: the setup pages need it, the encore command takes it out afterwards."
+        echo "ENCORE_SETUP_CODE=$code"
+    } >>"$DIR/.env"
+}
 host_ip() {
     local ip
     ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i++) if ($i == "src") {print $(i + 1); exit}}')"
@@ -184,16 +209,18 @@ ask_owner() { # the owner's username and password, from the options or by asking
 if [ "$FRESH" = 0 ]; then
     PORT=$(env_value ENCORE_PORT); PORT=${PORT:-4533}
     MUSIC_DIR=$(env_value ENCORE_MUSIC_DIR); MUSIC_DIR=${MUSIC_DIR:-/srv/music}
-    if [ "$PENDING" = 1 ]; then
+    if [ "$PENDING" = 1 ] && [ "$NEED_OWNER" = 1 ]; then
         note "An earlier install here was cut short before your account was made: finishing it."
         say "  Choose the username and password for your account now. If you already chose them the first time, type the same ones."
         ask_owner
+    elif [ "$PENDING" = 1 ]; then
+        note "An earlier install here was cut short before your account was made: you make it in the browser, at the end of this."
     else
         note "Encore is already installed here: it is kept and brought up to date."
     fi
 else
     [ -n "$SERVER_NAME" ] || SERVER_NAME="$(ask 'What should this server be called?' "$(hostname)'s music")"
-    ask_owner
+    if [ "$NEED_OWNER" = 1 ]; then ask_owner; fi
     MUSIC_DIR="$(ask 'Where is your music? (a folder; Encore never changes your files)' "$MUSIC_DIR")"
     # The name goes into a settings file: leave out what that file treats as more than text.
     SERVER_NAME=${SERVER_NAME//[\$\"\`\'#\\]/}
@@ -272,7 +299,7 @@ if [ "$FRESH" = 1 ]; then
         die "$DIR/navidrome holds the accounts of an earlier install, locked with a key that was in the settings file ($DIR/.env) that is gone. Putting a new key here would lock everybody out for good. Restore the settings file from a backup (encore restore reads it), or move that folder away to start empty."
     fi
     umask 077
-    : >"$DIR/.setup-pending"
+    if [ "$NEED_OWNER" = 1 ]; then : >"$DIR/.setup-pending"; fi
     {
         echo "# Written by the Encore installer on $(date -u +%F). Keep this file private: it holds the music server's own password."
         echo "ENCORE_IMAGE=$IMAGE"
@@ -287,6 +314,11 @@ if [ "$FRESH" = 1 ]; then
     } >"$DIR/.env"
     chmod 600 "$DIR/.env"
     umask 022
+fi
+# An earlier install that was cut short before an account was made, finished in the browser now: the old marker is no longer true, the setup code is what opens the pages.
+if [ "$BROWSER_OWNER" = 1 ]; then
+    rm -f "$DIR/.setup-pending"
+    ensure_setup_code
 fi
 
 # The address phones are told for this computer on the home network (the server hands it to signed-in phones: docs/11 ADR-R40). Kept up to date on every run.
@@ -331,6 +363,20 @@ done
 ok "Encore is running"
 log "encore running after $(since) s"
 
+# The music server's own account for Encore, in EVERY install and on every run, whichever door makes the owner and before anything else can reach the music server: a music server
+# with no account at all hands its first one to whoever asks (its /auth/createAdmin; the gateway refuses that address as well, but the account must exist). Safe to repeat: an
+# account that already signs in is left as it is. On a first install it is fatal, because the keys step below signs in with it; on a re-run of a working install it is a warning.
+admin_error="$(mktemp)"
+if dc exec -T encore-server python -m encore_server setup --administrator-only >>"$LOG" 2>"$admin_error"; then
+    rm -f "$admin_error"
+else
+    message="$(sed -n 's/^setup: //p' "$admin_error" | head -1)"
+    rm -f "$admin_error"
+    [ -n "$message" ] || message="The music server's account for Encore could not be made. See the log."
+    if [ "$FRESH" = 1 ] || [ "$PENDING" = 1 ] || [ "$BROWSER_OWNER" = 1 ]; then die "$message"; fi
+    note "$message"
+fi
+
 if [ "$NEED_OWNER" = 1 ]; then
     # The owner's details go in on standard input from a file only this account can read, never on a command line.
     details="$(mktemp)"
@@ -368,18 +414,34 @@ fi
 
 HOST_IP="$(host_ip)"
 
+# The browser door: the account is made on a page, with the code only this screen shows (a re-run of the installer shows the same link again until it is done).
+SETUP_CODE="$(env_value ENCORE_SETUP_CODE)"
+SETUP_PENDING=0
+if [ -n "$SETUP_CODE" ] && [ ! -e "$DIR/data/setup-complete" ]; then SETUP_PENDING=1; fi
+
 say ""
-say "  ${BOLD}Encore is ready.${OFF} In the Encore app on your phone (on the same Wi-Fi), tap Connect and sign in with:"
-say ""
-say "        Address:   ${HOST_IP}:${PORT}"
-if [ "$NEED_OWNER" = 1 ]; then say "        Username:  ${OWNER}"; say "        Password:  the one you just chose"; fi
+if [ "$SETUP_PENDING" = 1 ]; then
+    say "  ${BOLD}Encore is installed. One step is left: make your account.${OFF} Open this link in a browser on this network (a computer or a phone):"
+    say ""
+    say "        http://${HOST_IP}:${PORT}/setup?code=${SETUP_CODE}"
+    say ""
+    say "  If the link does not open, go to  http://${HOST_IP}:${PORT}/setup  and type this setup code:  ${BOLD}${SETUP_CODE}${OFF}"
+    say "  The code is only for this step: it stops anybody else on your network from claiming the server before you. It stops working once your account exists."
+    say ""
+    say "  Then, in the Encore app on your phone (on the same Wi-Fi), tap Connect and sign in with the account you made. Address:  ${HOST_IP}:${PORT}"
+else
+    say "  ${BOLD}Encore is ready.${OFF} In the Encore app on your phone (on the same Wi-Fi), tap Connect and sign in with:"
+    say ""
+    say "        Address:   ${HOST_IP}:${PORT}"
+    if [ "$NEED_OWNER" = 1 ]; then say "        Username:  ${OWNER}"; say "        Password:  the one you just chose"; fi
+fi
 say ""
 # No QR code here: it used to encode the bare address, which a phone's camera opens in the browser as the music server's own page, not Encore,
 # and the app cannot scan it. A QR that carries an Encore setup link comes with the pairing link (docs/tasks AUDIT F16, P2-19 slice B).
 say "  Please do not open that address in a browser: it shows the music server's own page, not Encore."
 say "  The pages that look after the server are on your home network, in a browser on this network:"
 say ""
-say "        http://${HOST_IP}:${PORT}/admin      sign in with the owner account (people and invitations first; the rest is being built)"
+say "        http://${HOST_IP}:${PORT}/admin      sign in with the owner account (Home and People are there; the rest is being built)"
 say ""
 say "  The same things are commands on this computer:"
 say ""

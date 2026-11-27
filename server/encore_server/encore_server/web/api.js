@@ -12,12 +12,17 @@ export class Problem extends Error {
   }
 }
 
+// The first run (setup.js) is signed in by the server's own answer, which is a browser session like any other.
+export function keepSession(token) {
+  sessionStorage.setItem(KEY, token);
+}
+
 export function hasSession() {
   return sessionStorage.getItem(KEY) !== null;
 }
 
-export async function api(method, path, body) {
-  const headers = { Accept: "application/json" };
+export async function api(method, path, body, extraHeaders) {
+  const headers = { Accept: "application/json", ...(extraHeaders || {}) };
   const token = sessionStorage.getItem(KEY);
   if (token !== null) headers.Authorization = "Bearer " + token;
   if (body !== undefined) headers["Content-Type"] = "application/json";

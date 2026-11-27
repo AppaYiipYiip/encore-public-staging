@@ -64,6 +64,8 @@ services:
       # The addresses the server tells its phones (GET /encore/api/v1/server): the installer writes the first, `encore funnel on` the second.
       ENCORE_HOME_URL: ${ENCORE_HOME_URL:-}
       ENCORE_AWAY_URL: ${ENCORE_AWAY_URL:-}
+      # Only while the owner is made in the browser (docs/36 section 2): the installer writes it, the `encore` command takes it out once the owner exists.
+      ENCORE_SETUP_CODE: ${ENCORE_SETUP_CODE:-}
     ports:
       - "${ENCORE_PORT:-4533}:4533"
     volumes:

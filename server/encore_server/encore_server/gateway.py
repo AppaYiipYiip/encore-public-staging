@@ -9,7 +9,9 @@ own logins; nothing is added or removed here except what a proxy must (the hop-b
 from __future__ import annotations
 
 import logging
+import posixpath
 from collections.abc import AsyncIterator, Awaitable, Callable
+from urllib.parse import unquote
 
 import httpx
 from fastapi import FastAPI, Request
@@ -34,6 +36,21 @@ _HOP = frozenset(
     }
 )
 _CHUNK = 64 * 1024
+
+
+def is_first_account_request(path: str) -> bool:
+    """Is this the music server's "make the first administrator" address (`/auth/createAdmin`), however it is written? A music server with no accounts hands its first one to
+    whoever asks, so the gateway **never passes that address on, to anybody, from any network** (a second layer: the install makes the administrator before it ever lets the
+    server be reached, and Encore's own calls to the music server go to its internal address, never through here). The path is decoded as often as it changes (an address
+    written twice-encoded), its dots and doubled slashes resolved, and compared without regard to case or a trailing slash, so no spelling of it gets by."""
+    text = path
+    for _ in range(4):
+        decoded = unquote(text)
+        if decoded == text:
+            break
+        text = decoded
+    # normpath keeps a doubled leading slash ("//x" stays "//x"), so every leading slash goes first
+    return posixpath.normpath("/" + text.replace("\\", "/").lstrip("/")).lower().rstrip("/") == "/auth/createadmin"
 
 
 def _forward(headers: httpx.Headers | dict[str, str] | object) -> dict[str, str]:
@@ -66,6 +83,8 @@ def mount(
     async def pass_on(path: str, request: Request) -> Response:
         if path.startswith("encore/") or path == "encore":
             # An unknown route of our own is ours to say "not found" about, not Navidrome's.
+            return JSONResponse(ApiError("not_found").body(), status_code=404)
+        if is_first_account_request(path):
             return JSONResponse(ApiError("not_found").body(), status_code=404)
         if public is not None and public(request):
             if path != "rest" and not path.startswith("rest/"):

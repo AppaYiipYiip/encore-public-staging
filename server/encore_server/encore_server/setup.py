@@ -103,6 +103,22 @@ def ensure_administrator(
     )
 
 
+def run_administrator(settings: Settings, *, client: httpx.Client | None = None, wait: bool = True) -> str:
+    """Makes the music server's own administrator for this Encore server, once (`"created"`, or `"existing"` when it already signs in). **Every install does this, whichever
+    door makes the owner, as soon as the music server answers**: a music server with no account at all hands its first one to whoever asks (`/auth/createAdmin`), so it must
+    never be left empty while a Host has not yet made theirs (docs/36 section 2). [SetupError] says what to do when it cannot."""
+    if not (settings.navidrome_admin_user and settings.navidrome_admin_password):
+        raise SetupError(
+            "This install has no account for the music server (ENCORE_NAVIDROME_ADMIN_USER and _PASSWORD are not set)."
+        )
+    http = client or httpx.Client(timeout=15.0)
+    if wait:
+        wait_for_music_server(settings.navidrome_url, client=http)
+    return ensure_administrator(
+        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password, client=http
+    )
+
+
 def run_setup(settings: Settings, owner: dict[str, Any], *, client: httpx.Client | None = None, wait: bool = True) -> SetupResult:
     """Makes the music server's administrator and the owner's account; see the module's text. [SetupError] says what to do when it cannot."""
     try:
@@ -112,17 +128,9 @@ def run_setup(settings: Settings, owner: dict[str, Any], *, client: httpx.Client
         raise SetupError(error.message) from error
     shown = owner.get("name")
     display = shown.strip() if isinstance(shown, str) and shown.strip() else username
-    if not (settings.navidrome_admin_user and settings.navidrome_admin_password):
-        raise SetupError(
-            "This install has no account for the music server (ENCORE_NAVIDROME_ADMIN_USER and _PASSWORD are not set)."
-        )
 
     http = client or httpx.Client(timeout=15.0)
-    if wait:
-        wait_for_music_server(settings.navidrome_url, client=http)
-    administrator = ensure_administrator(
-        settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password, client=http
-    )
+    administrator = run_administrator(settings, client=http, wait=wait)
 
     admin = NavidromeAdmin(settings.navidrome_url, settings.navidrome_admin_user, settings.navidrome_admin_password, client=http)
     try:
@@ -143,9 +151,22 @@ def run_setup(settings: Settings, owner: dict[str, Any], *, client: httpx.Client
 
 
 def command(
-    stdin: TextIO = sys.stdin, stdout: TextIO = sys.stdout, stderr: TextIO = sys.stderr, settings: Settings | None = None
+    stdin: TextIO = sys.stdin,
+    stdout: TextIO = sys.stdout,
+    stderr: TextIO = sys.stderr,
+    settings: Settings | None = None,
+    *,
+    administrator_only: bool = False,
 ) -> int:
-    """`setup` on the command line: the owner as JSON on [stdin] (`username`, `password`, optional `name`). 0 when done, 2 for a sentence."""
+    """`setup` on the command line: the owner as JSON on [stdin] (`username`, `password`, optional `name`). 0 when done, 2 for a sentence. With [administrator_only]
+    (`setup --administrator-only`: nothing is read) only the music server's own administrator is made: what every install does, the owner being made in the browser."""
+    if administrator_only:
+        try:
+            stdout.write(f"administrator={run_administrator(settings or Settings.from_env())}\n")
+        except SetupError as error:
+            stderr.write(f"setup: {error}\n")
+            return 2
+        return 0
     try:
         owner = json.loads(stdin.read() or "{}")
         if not isinstance(owner, dict):
@@ -160,3 +181,9 @@ def command(
         return 2
     stdout.write(f"administrator={result.administrator}\nowner={result.owner}\n")
     return 0
+
+
+def default_owner_account(settings: Settings, owner: dict[str, Any]) -> SetupResult:
+    """What the browser's first-run step calls (`owner_setup`): the same steps as the command, with a wait for the music server short enough for a page to bear."""
+    wait_for_music_server(settings.navidrome_url, seconds=20.0)
+    return run_setup(settings, owner, wait=False)

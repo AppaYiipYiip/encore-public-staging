@@ -12,7 +12,7 @@ import httpx
 import pytest
 
 from encore_server.config import Settings
-from encore_server.setup import SetupError, command, ensure_administrator, run_setup, wait_for_music_server
+from encore_server.setup import SetupError, command, ensure_administrator, run_administrator, run_setup, wait_for_music_server
 
 URL = "http://navidrome.test:4533"
 ADMIN, ADMIN_PW = "encore-admin", "generated-admin-secret-123"
@@ -234,3 +234,53 @@ def test_the_command_asks_for_json_when_it_gets_something_else(text: str) -> Non
     assert command(io.StringIO(text), out, err, settings()) == 2
     assert "JSON" in err.getvalue() or "3 to 32" in err.getvalue()
     assert out.getvalue() == ""
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the administrator alone (the browser door)
+
+
+def test_the_administrator_alone_is_made_and_nobody_else() -> None:
+    """The browser door makes the owner later, on a page. The music server's own account is made at install: a music server with no account at all gives its first to whoever asks."""
+    server = FakeMusicServer()
+
+    assert run_administrator(settings(), client=server.client, wait=False) == "created"
+    assert server.users == {ADMIN: (ADMIN_PW, True)}, "no owner, no other account"
+    assert run_administrator(settings(), client=server.client, wait=False) == "existing", "safe to repeat"
+    assert server.users == {ADMIN: (ADMIN_PW, True)}
+
+
+def test_a_music_server_that_has_its_administrator_refuses_the_first_account_call_to_anybody() -> None:
+    """What makes the first-account address worthless to a stranger once the install is done: the real server refuses it after the first account (the fake does the same)."""
+    server = FakeMusicServer()
+    run_administrator(settings(), client=server.client, wait=False)
+    stranger = server.client.post(f"{URL}/auth/createAdmin", json={"username": "mallory", "password": "x" * 12})
+    assert stranger.status_code == 403 and "mallory" not in server.users
+
+
+def test_the_owner_made_later_in_the_browser_finds_the_administrator_already_there() -> None:
+    server = FakeMusicServer()
+    run_administrator(settings(), client=server.client, wait=False)
+    result = run_setup(settings(), OWNER, client=server.client, wait=False)
+    assert (result.administrator, result.owner) == ("existing", "created")
+
+
+def test_the_command_can_make_only_the_administrator_and_reads_nothing() -> None:
+    server = FakeMusicServer()
+    out, err = io.StringIO(), io.StringIO()
+    import encore_server.setup as setup_module
+
+    original = setup_module.httpx.Client
+    setup_module.httpx.Client = lambda *a, **k: server.client  # type: ignore[assignment, misc]
+    try:
+        code = command(io.StringIO("this is never read"), out, err, settings(), administrator_only=True)
+    finally:
+        setup_module.httpx.Client = original  # type: ignore[misc]
+    assert code == 0, err.getvalue()
+    assert out.getvalue() == "administrator=created\n" and list(server.users) == [ADMIN]
+    assert ADMIN_PW not in out.getvalue() + err.getvalue()
+
+
+def test_the_administrator_only_command_says_what_is_wrong_in_a_sentence() -> None:
+    out, err = io.StringIO(), io.StringIO()
+    assert command(io.StringIO(""), out, err, settings(navidrome_admin_password=""), administrator_only=True) == 2
+    assert "no account for the music server" in err.getvalue() and out.getvalue() == ""

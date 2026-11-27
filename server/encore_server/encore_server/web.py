@@ -14,7 +14,7 @@ from pathlib import Path
 WEB_DIR = Path(__file__).resolve().parent / "web"
 
 #: One page per address, named by the route that serves it.
-PAGES = {"admin": "admin.html"}
+PAGES = {"admin": "admin.html", "setup": "setup.html"}
 
 #: What a script, a stylesheet or a font may be asked for as (never a page, never anything else in the folder).
 ASSET_TYPES = {

@@ -14,6 +14,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -207,3 +208,87 @@ def test_the_sign_in_the_people_page_an_invitation_a_lock_and_a_removal_in_a_rea
         assert bad == [], bad
         unexpected = [line for line in browser.logs if line.startswith("[error]") and "401" not in line]
         assert unexpected == [], unexpected
+
+
+# ---------------------------------------------------------------------------------------------------------------------- the first run (slice 5a)
+
+
+@pytest.fixture()
+def fresh_server(tmp_path: Path) -> Iterator[Server]:
+    """A server that has nobody yet and a setup code, as a Host's is after the installer; the music server's account maker is the test one."""
+    verifier = FakeVerifier()
+    admin = FakeAdmin(verifier)
+    calls: list[dict[str, Any]] = []
+
+    def make_account(settings: Settings, owner: dict[str, Any]) -> Any:
+        calls.append(owner)
+        verifier.passwords[owner["username"]] = owner["password"]
+        verifier.admins.add(owner["username"])
+
+    settings = Settings(
+        data_dir=tmp_path / "data",
+        music_dir=tmp_path / "music",
+        navidrome_url="http://navidrome.invalid",
+        youtube=False,
+        server_name="Our music",
+        setup_code="7KQ-4MZ",
+    )
+    app = create_app(settings, verifier=verifier, navidrome_admin=admin, make_owner_account=make_account)  # type: ignore[arg-type]
+    running = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning"))
+    thread = threading.Thread(target=running.run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 15
+    while not running.started and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert running.started, "the test server did not start"
+    port = running.servers[0].sockets[0].getsockname()[1]
+    server = Server(f"http://127.0.0.1:{port}", verifier, admin)
+    server.calls = calls  # type: ignore[attr-defined]
+    try:
+        yield server
+    finally:
+        running.should_exit = True
+        running.force_exit = True
+        thread.join(timeout=5)
+
+
+def fill(browser: Browser, **values: str) -> None:
+    for element, value in values.items():
+        browser.js(f"document.getElementById({json.dumps(element)}).value = {json.dumps(value)};")
+
+
+def test_the_first_run_page_makes_the_owner_and_lands_signed_in(fresh_server: Server) -> None:
+    server = fresh_server
+    with Browser(EXECUTABLE) as browser:  # type: ignore[arg-type]
+        # a link with a wrong code asks for the right one, in words, and the code is not left in the address bar
+        browser.go(f"{server.base}/encore/setup?code=AAA-AAA")
+        browser.wait("document.getElementById('code')")
+        assert browser.js("location.search") == "" and "setup code is not right" in browser.text(".login")
+        # the right one, typed the way a person types it
+        fill(browser, code="7kq 4mz")
+        browser.js("document.querySelector('form').requestSubmit();")
+        browser.wait("document.getElementById('user')")
+        assert "Welcome to Encore" in browser.text(".login") and "Our music" in browser.text(".login")
+        # the two passwords differ: told so, nothing made
+        fill(browser, name="Riley", user="riley", password="correct horse", again="correct horsf")
+        browser.js("document.querySelector('form').requestSubmit();")
+        browser.wait("document.querySelector('.error').textContent.length > 0")
+        assert "not the same" in browser.text(".error") and server.calls == []  # type: ignore[attr-defined]
+        # a name that is not allowed is refused by the server in words
+        fill(browser, user="ri", password="correct horse", again="correct horse")
+        browser.js("document.querySelector('form').requestSubmit();")
+        browser.wait("document.querySelector('.error').textContent.length > 0")
+        assert server.calls == []  # type: ignore[attr-defined]
+        # a good one: the owner is made and the Host lands on Home, signed in
+        fill(browser, user="riley")
+        browser.js("document.querySelector('form').requestSubmit();")
+        browser.wait("document.querySelector('.hrow')")
+        assert browser.text(".amain h1") == "Home"
+        assert "Everything is working." in browser.text(".ahead") or "need" in browser.text(".ahead")
+        assert [c["username"] for c in server.calls] == ["riley"]  # type: ignore[attr-defined]
+        assert browser.js("sessionStorage.getItem('encore.admin.token') !== null") is True
+        assert "Riley" in browser.text(".srv"), "signed in as the name given"
+        # the page is closed for ever: it sends the Host to the admin pages
+        browser.go(f"{server.base}/encore/setup")
+        browser.wait("document.querySelector('.amain') || document.getElementById('user')")
+        assert browser.js("location.pathname") == "/encore/admin"
