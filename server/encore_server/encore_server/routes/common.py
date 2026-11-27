@@ -32,6 +32,7 @@ from ..catalogue import Catalogue
 from ..config import Settings
 from ..db import Database
 from ..errors import ApiError
+from ..helper import HelperClient
 from ..identity import ServerIdentity
 from ..ids import is_id, now_ms
 from ..imports.service import ImportService
@@ -99,6 +100,8 @@ class Services:
     catalogue: Catalogue | None = None
     #: Makes the music server's account for the owner of a server that is being set up in the browser (`setup.run_setup`; a test puts its own).
     make_owner_account: Callable[[Settings, dict[str, Any]], Any] | None = None
+    #: The helper (docs/36 section 3): what the admin pages ask of the computer; `None` when this install has none.
+    helper: HelperClient | None = None
 
 
 def services(request: Request) -> Services:

@@ -255,6 +255,24 @@ if docker compose --project-directory "$DIR" exec -T encore-server test -e /var/
 ok "the Docker socket is in no container"
 if docker compose --project-directory "$DIR" exec -T encore-server sh -c 'command -v docker' >/dev/null 2>&1; then fail "there is a docker command in the container"; fi
 ok "no docker command in the container"
+step "the admin routes, as the owner's browser calls them, through the helper's real socket"
+auth=(-H "Authorization: Bearer $TOKEN")
+expect "GET admin/helper: installed" "$(curl -s "$API/admin/helper" "${auth[@]}" | jq -r '.installed')" true
+BACKUPS="$(curl -s "$API/admin/backups" "${auth[@]}")"
+expect "GET admin/backups: installed" "$(printf '%s' "$BACKUPS" | jq -r '.installed')" true
+expect "the admin pool and the computer's own are listed apart" "$(printf '%s' "$BACKUPS" | jq -r '[.items[].pool] | unique | join(",")')" "admin,computer"
+expect "the restore command is told, not offered" "$(printf '%s' "$BACKUPS" | jq -r '.restore')" "sudo encore restore FILE"
+MAKE_CODE="$(curl -s -o "$WORK/make.out" -w '%{http_code}' -X POST "$API/admin/backups" "${auth[@]}")"
+expect "POST admin/backups inside ten minutes is a 409" "$MAKE_CODE" 409
+expect_match "in the helper's own words" "$(jq -r '.error.message' "$WORK/make.out")" "Wait ten minutes"
+AWAY="$(curl -s "$API/admin/away" "${auth[@]}")"
+expect "GET admin/away: no Tailscale on this computer" "$(printf '%s' "$AWAY" | jq -r '.tailscale')" missing
+ON_CODE="$(curl -s -o "$WORK/on.out" -w '%{http_code}' -X POST "$API/admin/away/on" "${auth[@]}")"
+expect "POST admin/away/on is a 409" "$ON_CODE" 409
+expect_match "that sends the Host to the terminal" "$(jq -r '.error.message' "$WORK/on.out")" "Set up the away address once at the computer: sudo encore funnel on"
+HEALTH="$(curl -s "$API/admin/health" "${auth[@]}")"
+expect "Home says the helper is ready" "$(printf '%s' "$HEALTH" | jq -r '.rows[] | select(.id == "helper") | .state')" ok
+expect "a refusal is in the audit log, with who asked" "$(docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" exec -T encore-server python -c "import sqlite3; print(sum(1 for r in sqlite3.connect('/data/encore.db').execute(\"select detail from audit_log where kind = 'helper' and detail like 'away.on was asked from the admin pages by riley: refused:%'\")))")" 1
 step "the helper's own record"
 JOBS="$(find "$DIR/jobs" -name "*.json" | wc -l)"
 [ "$JOBS" -ge 5 ] || fail "the helper wrote only $JOBS job files"

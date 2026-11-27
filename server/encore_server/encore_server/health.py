@@ -43,6 +43,8 @@ class Facts:
     host: HostStatus | None
     #: the name of the clock whose midnight starts "today" (the container's; the Host's own time zone is a later setting)
     clock_zone: str = "UTC"
+    #: Can the admin pages ask the computer for a backup or the away address (the helper's socket is there)? Not a failure when it is not: the row says how to get it.
+    helper_ready: bool = False
 
 
 def _row(row_id: str, title: str, state: str, words: str, detail: str = "", **more: Any) -> dict[str, Any]:
@@ -239,6 +241,22 @@ def build(f: Facts) -> dict[str, Any]:
             )
         else:
             rows.append(_row("backup", "Last backup", "ok", "Made", detail, at=backup.at, locked=backup.locked))
+
+    # -- the helper (what the Backups and Away pages need)
+    if f.helper_ready:
+        rows.append(
+            _row("helper", "Admin buttons", "ok", "Ready", "The admin pages can make a backup and switch the away address.")
+        )
+    else:
+        rows.append(
+            _row(
+                "helper",
+                "Admin buttons",
+                "off",
+                "Not installed",
+                "Until it is, the admin pages cannot make a backup or switch the away address. On the server computer run: sudo encore helper install",
+            )
+        )
 
     # -- this program
     rows.append(_row("encore", "Encore", "ok", f"Version {f.version}"))

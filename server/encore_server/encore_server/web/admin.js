@@ -2,6 +2,8 @@
 // comes from the server (a name, a sentence) is written into the page as text, never as markup.
 import { Problem, api, hasSession, signIn, signOut } from "/encore/web/api.js";
 import { el, icon } from "/encore/web/dom.js";
+import { renderAway } from "/encore/web/away.js";
+import { renderBackups } from "/encore/web/backups.js";
 import { renderHome } from "/encore/web/home.js";
 import { renderPeople } from "/encore/web/people.js";
 
@@ -51,6 +53,8 @@ function signInPage(message) {
 const PAGES = [
   { id: "home", label: "Home", icon: "home", render: renderHome },
   { id: "people", label: "People", icon: "people", render: renderPeople },
+  { id: "away", label: "Away from home", icon: "globe", render: renderAway },
+  { id: "backups", label: "Backups", icon: "backup", render: renderBackups },
 ];
 
 function frame(me, serverName) {

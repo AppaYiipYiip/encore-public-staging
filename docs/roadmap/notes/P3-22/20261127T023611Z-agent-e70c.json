@@ -1,0 +1,12 @@
+{
+ "id": "20261127T023611Z-agent-e70c",
+ "item": "P3-22",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T02:36:11Z",
+ "type": "note",
+ "body": "W-09 frames that CONTRADICT the helper's threat model (docs/36 section 3, merged in #158) - decide before the owner approves them, or redraw:\n(1) \"Backups, locked, with Restore as a button\" + \"putting one back\" + \"restoring\": a Restore button on a page means the owner's BACKUP KEY (the secret half, kept nowhere by design, P3-30) would be typed into a page and travel browser -> Encore server -> helper. A compromised Encore server (it parses yt-dlp/ffmpeg/Deezer data; the realistic attacker) would read the one secret that opens every backup. The older W-04 frame says the same thing the other way: \"how to restore (a command on the server, never a button, so nobody restores by mistake)\". RECOMMENDATION: keep W-04's version (restore = `sudo encore restore FILE` at the computer, which asks for the key); the page lists, makes a backup and says how. The slice 6b Backups page is built exactly that way. If the owner insists on a button, the minimum safe form is a button that SHOWS the command (copy button), not one that sends the key.\n(2) \"Away from home, the page runs the steps\": the page may only switch Funnel on/off for a Tailscale that is ALREADY installed and signed in. Installing Tailscale (a third-party installer run as root) and signing in (`tailscale up` prints a link that joins the computer to the tailnet of WHOEVER completes it) stay at the terminal (`sudo encore funnel on`): through a page, code in the Encore container or a stolen owner session could hand the host to the attacker's own tailnet. RECOMMENDATION: the wizard's page 6 and the Away page SHOW the one command for the setup step and run only the switch. Built that way in slice 6b.\n(3) W-09's \"Updates, with an Update button\": update.* waits for P3-27 (a release channel the helper can verify) and P3-14 (automatic rollback); the Updates page shows what runs and the command until then.\nThe advisor decides on the owner's behalf (D-59); this note is so the pink item on P3-22 is approved or redrawn knowing it.",
+ "to": [
+  "owner"
+ ]
+}

@@ -68,6 +68,7 @@ def collect(svc: Services) -> Facts:
         imports_today=int(imports),
         host=host_status.read(svc.settings.data_dir),
         clock_zone=time.strftime("%Z") or "UTC",
+        helper_ready=svc.helper is not None and svc.helper.available(),
     )
 
 

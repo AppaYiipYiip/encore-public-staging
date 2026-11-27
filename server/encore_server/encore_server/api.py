@@ -45,6 +45,7 @@ from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
 from .deezer import DeezerClient, Gate
 from .errors import ApiError
+from .helper import HelperClient
 from .host_settings import HostSettings, overlay
 from .identity import load_or_create
 from .imports.service import ImportService
@@ -60,6 +61,7 @@ from .quiet import InFlight, InFlightMiddleware
 from .ref_janitor import RefJanitor
 from .routes import admin_addons as admin_addons_routes
 from .routes import admin_health as admin_health_routes
+from .routes import admin_helper as admin_helper_routes
 from .routes import admin_site as admin_site_routes
 from .routes import catalogue as catalogue_routes
 from .routes import imports as imports_routes
@@ -212,6 +214,7 @@ def create_app(
     artist_lookup: ArtistLookup | None = None,
     catalogue: Catalogue | None = None,
     make_owner_account: Callable[[Settings, dict[str, Any]], Any] | None = None,
+    helper: HelperClient | None = None,
 ) -> FastAPI:
     # FIRST of all, before a folder or a database is opened: a stored key is a function of the Unicode data of the Python that made it, so a server on a Python that is
     # not the pinned one (the image's, 3.12) does not start at all (P2-25; no setting turns this off). It would otherwise serve and write keys nothing ever re-checks.
@@ -380,6 +383,7 @@ def create_app(
         artist_finder=artist_finder,
         catalogue=catalogue,
         make_owner_account=make_owner_account or default_owner_account,
+        helper=helper or HelperClient.from_settings(settings),
     )
     app.add_middleware(InFlightMiddleware, tracker=in_flight)
     app.add_middleware(BodyLimit)
@@ -398,6 +402,7 @@ def create_app(
         admin_site_routes,
         admin_addons_routes,
         admin_health_routes,
+        admin_helper_routes,
         setup_routes,
     ):
         app.include_router(group.router)

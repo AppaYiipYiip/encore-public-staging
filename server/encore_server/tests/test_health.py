@@ -58,6 +58,7 @@ def facts(**more: object) -> Facts:
         plays_today=212,
         imports_today=1,
         host=told(),
+        helper_ready=True,
     )
     return replace(base, **more)  # type: ignore[arg-type]
 
@@ -76,7 +77,17 @@ def test_when_everything_works_it_says_so_and_every_row_says_something() -> None
         and answer["summary"]["words"] == "Everything is working."
         and answer["needsYou"] == []
     )
-    assert [r["id"] for r in answer["rows"]] == ["music-server", "youtube", "away", "disk", "backup", "encore", "people", "today"]
+    assert [r["id"] for r in answer["rows"]] == [
+        "music-server",
+        "youtube",
+        "away",
+        "disk",
+        "backup",
+        "helper",
+        "encore",
+        "people",
+        "today",
+    ]
     assert row(answer, "music-server")["words"] == "Working"
     assert row(answer, "away")["detail"] == "https://our-music.tail1234.ts.net · the key lasts another 82 days."
     assert row(answer, "disk")["words"] == "412 GB free" and row(answer, "disk")["detail"] == "Room for about 74,909 songs."
@@ -310,7 +321,17 @@ def test_the_owner_gets_the_home_page_and_nobody_else_does(rig: tuple[TestClient
     answer = client.get(f"{V1}/admin/health", headers=owner)
     assert answer.status_code == 200
     body = answer.json()
-    assert [r["id"] for r in body["rows"]] == ["music-server", "youtube", "away", "disk", "backup", "encore", "people", "today"]
+    assert [r["id"] for r in body["rows"]] == [
+        "music-server",
+        "youtube",
+        "away",
+        "disk",
+        "backup",
+        "helper",
+        "encore",
+        "people",
+        "today",
+    ]
     assert row(body, "people")["words"] == "1 person"
     assert row(body, "backup")["state"] == "unknown", "no computer has told the server anything yet"
     member = sign_in(client, "nina")
@@ -372,3 +393,12 @@ def test_a_full_disk_on_this_computer_is_a_thing_that_needs_the_host(
     )
     body = client.get(f"{V1}/admin/health", headers=owner).json()
     assert row(body, "disk")["state"] == "unknown" and body["needsYou"] == []
+
+
+def test_the_helper_row_says_whether_the_admin_pages_can_make_a_backup_and_is_never_a_need() -> None:
+    off = build(facts(helper_ready=False))
+    assert row(off, "helper")["state"] == "off" and row(off, "helper")["words"] == "Not installed"
+    assert "sudo encore helper install" in row(off, "helper")["detail"]
+    assert off["needsYou"] == [] and off["summary"]["state"] == "good", "a missing helper is not a failure"
+    ready = build(facts())
+    assert row(ready, "helper")["state"] == "ok" and row(ready, "helper")["words"] == "Ready"
