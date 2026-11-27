@@ -14,10 +14,10 @@
 /// (`test/fixtures/text/fold-cases.json`): hand-written rows plus digests of
 /// the fold of every code point and of 20,000 seeded strings.
 ///
-/// **Slice 1 of P2-25 ships it unwired**: nothing calls it yet. The phone's
-/// `normalizeForMatch` and the offline index's word rule move onto it in the
-/// follow-up (docs/tasks/P2-songs-as-references.md, P2-25 part 11), which is a
-/// behaviour change on its own.
+/// **Wired in N-46 (27 Nov 2026)**: the phone's `normalizeForMatch` (so the
+/// search scores, the typo scan, the cover fallbacks, the request and alert
+/// matching) runs on it; the offline index's word rule (P2-12 slice 8, held
+/// by D-51) is the one caller still to move.
 library;
 
 import 'package:meta/meta.dart';
