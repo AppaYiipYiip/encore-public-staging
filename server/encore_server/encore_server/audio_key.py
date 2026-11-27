@@ -16,7 +16,7 @@ would need its own prefix (`a2:`), and the phone's adopt-by-match rule (the task
 * **A new keep**: right after the keeper has tagged and placed the file (`keeper._link`), so a song is served with its key from the first moment (`attach_file`).
 * **A file the library link found** (an imported library, a file put there by hand), and **a file whose size changed behind the server's back**: [AudioKeys.run_once], an errand of the hourly
   library link, at most [BATCH] files and [BUDGET_S] seconds a pass, preferred files first, never at a priority that competes with playing. **Only a row whose stored path names a file of exactly the size the music
-  server reports for it is keyed** (see [on_disk]): for a library file the stored path is the music server's tag-built one, so most library rows are never keyed and keep behaving as before.
+  server reports for it is keyed** (see `place.trusted_file`): for a library file the stored path is the music server's tag-built one, so most library rows are never keyed and keep behaving as before.
 * **A server's own tag rewrite** (the repairs to come) must call [carry] after the rewrite, in the same step: it records the NEW size against the SAME key, so the pass does not hash the file again
   and a change of ffmpeg's version cannot change a key the phones hold. A repair that forgets costs only the hashing (the pass finds the same key again), never a key change.
 
@@ -43,7 +43,7 @@ from typing import NamedTuple
 from . import refs
 from .db import Database
 from .ids import now_ms
-from .keeper.placement import inside
+from .place import trusted_file
 
 log = logging.getLogger("encore_server.audio_key")
 
@@ -116,19 +116,6 @@ def carry(conn: sqlite3.Connection, file_id: str, new_size: int) -> None:
     )
 
 
-def on_disk(music_dir: Path, stored: str) -> Path | None:
-    """The file a `song_file.path` names, or `None` (not there, or not inside the music folder).
-
-    **A stored path is a location only for the files the keeper placed. For a library file it is the music server's own `path`, which the real music server (0.64.2, measured in the integration job) builds
-    from the TAGS (`Artist/Album/Title.opus`), not from where the file lies.** So a path that names a file proves nothing about it: the caller still checks the size against the one the music server
-    reports for that very row before it trusts the file (the keeper's own rows, and a library laid out exactly as its tags say, pass; any other library row finds no file and has no key)."""
-    parts = stored.replace("\\", "/")
-    if not parts or any(part in ("..", ".") for part in parts.split("/")):
-        return None
-    candidate = music_dir / parts
-    return candidate if inside(music_dir, candidate) and candidate.is_file() else None
-
-
 class Pass(NamedTuple):
     """What one pass did: keys made or changed, files ffmpeg could not read, files left for the next pass (not on the disk, or changed while read, or over the budget)."""
 
@@ -177,7 +164,9 @@ class AudioKeys:
             if self._clock() - began > self._budget:
                 left += len(todo) - index  # not tried: they keep their place
                 break
-            path = on_disk(self._music, str(row["path"]))
+            path = trusted_file(
+                self._db, self._music, str(row["id"]), str(row["path"])
+            )  # a checked path that names no file is taken back (N-53)
             if path is None:
                 left += 1  # not there (a disk not mounted for a minute, or a path that does not name a file here): nothing is remembered about it but that it was looked at
                 looked_at.append(str(row["id"]))

@@ -15,8 +15,9 @@ from typing import Any
 import pytest
 
 from encore_server import audio_key, refs
-from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of, carry, ffmpeg_command, on_disk
+from encore_server.audio_key import AudioKeys, Unreadable, audio_key_of, carry, ffmpeg_command
 from encore_server.db import Database
+from encore_server.place import on_disk
 
 HEX = "ab" * 32
 
@@ -383,6 +384,11 @@ def test_what_is_not_on_the_disk_or_not_in_the_music_folder_is_left_and_never_re
     done_ = bench.keys().run_once()
 
     assert (done_.made, done_.left) == (0, 2) and bench.hashed == [], "a path that leaves the music folder is never read"
+    with bench.db.read() as conn:
+        marks = {r["ref"]: r["path_real"] for r in conn.execute("SELECT ref, path_real FROM song_file")}
+    assert marks[gone] == 0 and marks[ref] == 0, (
+        "a checked path that names no file (gone, or leaving the folder) is not trusted any more: the errand asks the music server again"
+    )
     assert bench.row(gone)["audio_key"] is None and bench.row(ref)["audio_key"] is None
 
 

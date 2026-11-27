@@ -613,6 +613,11 @@ def test_n38_the_key_is_the_keepers_even_when_the_scanner_made_the_row_first_wit
     placed = next((rig.music / "Encore").rglob("*.opus"))
     assert rig.ref(ref)["file"]["audioKey"] == rig.make_key(placed)
     with rig.db.read() as conn:
-        rows = conn.execute("SELECT path, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchall()
+        rows = conn.execute("SELECT path, path_real, source, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchall()
     assert len(rows) == 1, "one row"
-    assert rows[0]["audio_key_size"] == placed.stat().st_size, "keyed at the size the keeper placed, whatever path won"
+    assert rows[0]["audio_key_size"] == placed.stat().st_size, "keyed at the size the keeper placed"
+    # N-53: the keeper's link takes over the row the scanner made first: its real place, the checked mark and the kept source (the own-file lookups and the repairs select `youtube`).
+    assert (rows[0]["path"], rows[0]["path_real"], rows[0]["source"]) == (placed.relative_to(rig.music).as_posix(), 1, "youtube")
+    assert rig.keeper._own_file(rig.ref(ref)) == placed, (
+        "a re-keep finds the file it kept instead of fetching it again (the B-110 hole)"
+    )

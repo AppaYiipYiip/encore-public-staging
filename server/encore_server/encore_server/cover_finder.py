@@ -230,10 +230,11 @@ class CoverFinder:
                 conn.execute("UPDATE song_ref SET cover_url = ?, cover_tried_at = ? WHERE id = ?", (url, now_ms(), ref_id))
                 # Everybody who has the song, and everybody browsing the server's files, learns it has a picture.
                 library.touch_ref_holders(conn, ref_id)
-                files = conn.execute("SELECT path FROM song_file WHERE ref = ?", (ref_id,)).fetchall()
+                files = conn.execute("SELECT path, path_real FROM song_file WHERE ref = ?", (ref_id,)).fetchall()
                 if files:
                     refs.touch_file(conn, ref_id)
-                folders = [str(f["path"]) for f in files if f["path"]]
+                # A picture is written beside a file only where the path is CHECKED (N-53): the scanner's path is the music server's tag-built one, and an artist called "Encore" would pass `Encore/`.
+                folders = [str(f["path"]) for f in files if f["path"] and f["path_real"]]
             else:
                 conn.execute("UPDATE song_ref SET cover_tried_at = ? WHERE id = ?", (now_ms(), ref_id))
                 folders = []

@@ -725,17 +725,21 @@ def attach_file(
     meta_json = json.dumps(meta, separators=(",", ":"), sort_keys=True) if meta else None
     clear_missing(conn, ref_id)  # the server has a file of this song now: whatever was remembered about its absence is void
     existing = conn.execute(
-        "SELECT id, navidrome_song_id, path, path_real, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
+        "SELECT id, navidrome_song_id, path, path_real, source, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
         " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
         (ref_id, navidrome_song_id, path),
     ).fetchone()
     if existing is not None:
         changed = False
-        place, checked = (path, 1) if path_real and path else (existing["path"] or path, existing["path_real"])
+        # The keeper's own link (it says where the file really is) takes over a row the scanner made first: the place, the mark AND the source, so the row is the kept file it is (the keeper's own-file
+        # lookups and the repairs select `source = 'youtube'`). Only the keeper writes that source, and it links only files under its own folder.
+        keepers = bool(path_real and path)
+        place, checked = (path, 1) if keepers else (existing["path"] or path, existing["path_real"])
         merged = (
             navidrome_song_id or existing["navidrome_song_id"],
             place,
             checked,
+            source if keepers else existing["source"],
             codec or existing["codec"],
             bitrate_kbps if bitrate_kbps is not None else existing["bitrate_kbps"],
             meta_json or existing["meta"],
@@ -744,12 +748,13 @@ def attach_file(
             existing["navidrome_song_id"],
             existing["path"],
             existing["path_real"],
+            existing["source"],
             existing["codec"],
             existing["bitrate_kbps"],
             existing["meta"],
         ):
             conn.execute(
-                "UPDATE song_file SET navidrome_song_id = ?, path = ?, path_real = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
+                "UPDATE song_file SET navidrome_song_id = ?, path = ?, path_real = ?, source = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
                 (*merged, existing["id"]),
             )
             changed = True
