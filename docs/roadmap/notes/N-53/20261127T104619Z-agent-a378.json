@@ -1,0 +1,12 @@
+{
+ "id": "20261127T104619Z-agent-a378",
+ "item": "N-53",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T10:46:19Z",
+ "type": "note",
+ "body": "CORRECTION (27 Nov 2026): the item's state and the PR text of #169 say 'merged', but #169 reached main with only its FIRST commit (I merged while the review commit was still in its gate and read the checks of the previous push). The review commit and the follow-up reached main in #172 (main e3818338): the keeper's link takes the youtube source, place.trusted_file for every reader, the cover finder through trusted_file, the migration backfill of the keeper's rows, and a path matches two rows only where it is a REAL place on both sides (attach_file, refmerge, rehome; two copies of one song with the same tags share the music server's tag-built path: reproduced and fixed). Nothing was deployed in between. Built, not walked; the walk on the release-candidate pair is owed. Lesson saved: compare the PR head sha with the checks' sha before any merge.",
+ "to": [
+  "agent"
+ ]
+}
