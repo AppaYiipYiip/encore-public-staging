@@ -45,6 +45,7 @@ from .cover_finder import CoverFinder, deezer_lookup
 from .db import Database
 from .deezer import DeezerClient, Gate
 from .errors import ApiError
+from .host_settings import HostSettings, overlay
 from .identity import load_or_create
 from .imports.service import ImportService
 from .imports.watch import ImportWatch
@@ -57,6 +58,7 @@ from .notifications import Notifications
 from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
 from .ref_janitor import RefJanitor
+from .routes import admin_addons as admin_addons_routes
 from .routes import admin_site as admin_site_routes
 from .routes import catalogue as catalogue_routes
 from .routes import imports as imports_routes
@@ -213,6 +215,9 @@ def create_app(
     settings = settings or Settings.from_env()
     database = db or Database(settings.db_path)
     database.migrate(version=__version__)
+    # The Host's stored choices for the add-ons are put over the environment's settings once, here, and what the server is doing is recorded (docs/35 section 4).
+    settings = overlay(settings, database)
+    HostSettings(database).record_boot(settings)
     # Right after the migrations and before anything else runs (no thread has started, no request can come), the stored keys that are not what the fold makes now are
     # rewritten (P2-25: a song in another alphabet was the key `||`; the plan runs at every start, so the keys of a rollback image are caught too), with its own backup, in
     # one transaction, never stopping the server from starting. The songs the old library scan made twice (N-11) are NOT merged here any more (N-47, audit B-138): a merge
@@ -386,6 +391,7 @@ def create_app(
         playback_routes,
         catalogue_routes,
         admin_site_routes,
+        admin_addons_routes,
     ):
         app.include_router(group.router)
     app.add_api_route("/encore/stream/{ref_id}", media_routes.stream, methods=["GET", "HEAD"])

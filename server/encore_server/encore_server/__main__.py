@@ -29,6 +29,7 @@ USAGE = """usage: python -m encore_server [command]
   (no command)   run the server (what the container does)
   setup          the first-install steps (reads its details from standard input)
   backup         copy the databases (`encore backup` uses it)
+  op             a Host's operation, the command door (`encore addon` uses it)
 """
 
 
@@ -39,13 +40,17 @@ def main(argv: list[str] | None = None) -> None:
     if args[:1] in (["--help"], ["-h"], ["help"]):
         sys.stdout.write(USAGE)
         raise SystemExit(0)
-    if args and args[0] not in ("setup", "backup"):
+    if args and args[0] not in ("setup", "backup", "op"):
         sys.stderr.write(f"encore_server: do not understand {args[0]!r}\n\n{USAGE}")
         raise SystemExit(2)
     if args[:1] == ["setup"]:
         from .setup import command
 
         raise SystemExit(command())
+    if args[:1] == ["op"]:
+        from .ops.cli import command as op_command
+
+        raise SystemExit(op_command(args[1:]))
     if args[:1] == ["backup"]:
         from .backup import command as backup_command
 

@@ -266,3 +266,12 @@ def test_secure_is_in_the_help_text_and_the_dispatch(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert "encore secure" in result.stdout and "backup key" in result.stdout.lower()
     assert re.search(r"^\s{4}secure\) shift; cmd_secure", SCRIPT, flags=re.M)
+
+
+def test_the_addon_command_runs_the_operation_inside_the_container_and_is_in_the_help() -> None:
+    """The command door of docs/36 section 1: `encore addon` is `python -m encore_server op addon ...` run in the Encore container, so the page and the command run one function."""
+    command = SCRIPT[SCRIPT.index("cmd_addon() {") : SCRIPT.index("# `encore secure`: the two keys")]
+    assert "dc exec -T encore-server python -m encore_server op addon list" in command
+    assert 'dc exec -T encore-server python -m encore_server op addon set "$id" "$@"' in command
+    assert "Use:  encore addon list" in command and re.search(r"^\s{4}addon\) shift; cmd_addon", SCRIPT, flags=re.M)
+    assert "encore addon list | ID STATE" in SCRIPT.split("set -Eeuo")[0]
