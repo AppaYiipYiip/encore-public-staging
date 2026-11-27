@@ -3,7 +3,7 @@
 The proof of ownership is **being at the computer**: these functions run only from `encore reset-password` and `encore recovery-key`, which need root there, and no route calls them (a
 button inside pages cannot help a person who cannot sign in). Each is one operation on the database and the music server, and each leaves an audit line.
 
-* [reset_password]: a new password for anybody. The music server's password is changed first, so a failure changes nothing here; then, in one transaction, every device of the person is
+* [reset_password]: a new password for anybody. The music server's password is changed first, so a failure there changes nothing here (a failure of this server's own part, a database that does not answer, is said in a sentence that tells the person to run it again: safe); then, in one transaction, every device of the person is
   signed out (a live connection notices within 25 seconds and closes), a lock and the count of wrong tries are cleared, and the audit line is written. For an owner with a recovery key the
   key is asked: a wrong one is refused, a right one is recorded ("with the recovery key"), none is allowed for root at the computer and recorded too ("without"). **An owner's key is
   replaced by every reset**, and the new one is returned once: the old one has been typed on a terminal and is spent.
@@ -73,19 +73,26 @@ def reset_password(
         raise ApiError("server_busy", "This server has no account for the music server, so it cannot change a password.")
     admin.set_password(username, secret)  # first: if the music server refuses, nothing else changed
     used_key = keyed and given
-    with db.tx() as conn:
-        ended = conn.execute(
-            "UPDATE device SET revoked_at = ? WHERE person = ? AND revoked_at IS NULL", (now_ms(), person["id"])
-        ).rowcount
-        conn.execute("UPDATE person SET failed_logins = 0, locked = 0 WHERE id = ?", (person["id"],))
-        new_key = recovery.store(conn, person["id"]) if is_owner else None
-        how = "with the recovery key" if used_key else ("without the recovery key" if keyed else "from the server computer")
-        audit.record(
-            conn,
-            "reset_password",
-            username,
-            f"The password of {username} was reset at the server computer ({how}); {ended} signed-in device{'s' if ended != 1 else ''} signed out.",
-        )
+    try:
+        with db.tx() as conn:
+            ended = conn.execute(
+                "UPDATE device SET revoked_at = ? WHERE person = ? AND revoked_at IS NULL", (now_ms(), person["id"])
+            ).rowcount
+            conn.execute("UPDATE person SET failed_logins = 0, locked = 0 WHERE id = ?", (person["id"],))
+            new_key = recovery.store(conn, person["id"]) if is_owner else None
+            how = "with the recovery key" if used_key else ("without the recovery key" if keyed else "from the server computer")
+            audit.record(
+                conn,
+                "reset_password",
+                username,
+                f"The password of {username} was reset at the server computer ({how}); {ended} signed-in device{'s' if ended != 1 else ''} signed out.",
+            )
+    except sqlite3.Error as error:
+        # The music server has the new password already; only this server's own part did not happen. Doing the same again is safe (the same password, the same steps).
+        raise ApiError(
+            "server_busy",
+            f"The password of {username} was changed at the music server, but this server could not sign the devices out (its database did not answer). Run the same command again: that is safe.",
+        ) from error
     return {"name": username, "role": person["role"], "usedKey": used_key, "devicesEnded": ended, "recoveryKey": new_key}
 
 

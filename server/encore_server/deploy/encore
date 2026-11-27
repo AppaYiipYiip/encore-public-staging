@@ -612,7 +612,7 @@ show_new_recovery_key() {
 
 cmd_reset_password() {
     need_root reset-password
-    local name="" pwfile="" keyfile="" state first="" second="" key="" details message out newkey ended
+    local name="" pwfile="" keyfile="" state first="" second="" key="" details message out newkey ended infoerr
     while [ $# -gt 0 ]; do
         case "$1" in
             --password-file) pwfile="${2:?--password-file needs a file}"; shift 2 ;;
@@ -622,13 +622,21 @@ cmd_reset_password() {
         esac
     done
     [ -n "$name" ] || die "Use:  encore reset-password NAME   (NAME is the person's username, the one they sign in with)"
-    state="$(dc exec -T encore-server python -m encore_server op reset-password "$name" --info 2>&1)" || die "${state:-Encore is not running: start it with  sudo encore start}"
+    infoerr="$(mktemp)"
+    if ! state="$(dc exec -T encore-server python -m encore_server op reset-password "$name" --info </dev/null 2>"$infoerr")"; then
+        message="$(tail -n 1 "$infoerr")"
+        rm -f "$infoerr"
+        die "${message:-Encore is not running: start it with  sudo encore start}"
+    fi
+    rm -f "$infoerr"
     if [ -n "$pwfile" ]; then
         [ -r "$pwfile" ] || die "The password file $pwfile cannot be read."
         first="$(head -n 1 "$pwfile")"; second="$first"
         if [ -n "$keyfile" ]; then
             [ -r "$keyfile" ] || die "The recovery key file $keyfile cannot be read."
             key="$(head -n 1 "$keyfile")"
+        elif [ "$state" = owner-with-key ]; then
+            note "Going on without the recovery key (none was given); the audit log says so."
         fi
     else
         [ -t 0 ] || die "This asks for the new password: run it in a terminal, or give  --password-file FILE  (the first line of the file)."
@@ -647,7 +655,7 @@ cmd_reset_password() {
     chmod 600 "$details"
     printf '{"password":"%s","recoveryKey":"%s"}' "$(json_string "$first")" "$(json_string "$key")" >"$details"
     if ! out="$(dc exec -T encore-server python -m encore_server op reset-password "$name" <"$details" 2>"$details.err")"; then
-        message="$(head -n 1 "$details.err")"
+        message="$(tail -n 1 "$details.err")"
         rm -f "$details" "$details.err"
         die "${message:-The password could not be changed. Nothing was changed. See: encore logs}"
     fi
@@ -664,8 +672,14 @@ cmd_reset_password() {
 # `encore recovery-key [NAME]`: a new recovery key for an owner (one made before keys existed, or one who lost theirs); the password is not touched. Shown once, here.
 cmd_recovery_key() {
     need_root recovery-key
-    local out message newkey who
-    out="$(dc exec -T encore-server python -m encore_server op recovery-key "$@" 2>&1)" || { message="$(printf '%s\n' "$out" | head -n 1)"; die "${message:-Encore is not running: start it with  sudo encore start}"; }
+    local out message newkey who keyerr
+    keyerr="$(mktemp)"
+    if ! out="$(dc exec -T encore-server python -m encore_server op recovery-key "$@" </dev/null 2>"$keyerr")"; then
+        message="$(tail -n 1 "$keyerr")"
+        rm -f "$keyerr"
+        die "${message:-Encore is not running: start it with  sudo encore start}"
+    fi
+    rm -f "$keyerr"
     newkey="$(printf '%s\n' "$out" | sed -n 's/^recovery-key=//p' | head -1)"
     who="$(printf '%s\n' "$out" | sed -n 's/^name=//p' | head -1)"
     [ -n "$newkey" ] || die "The server did not make a key. See: encore logs"

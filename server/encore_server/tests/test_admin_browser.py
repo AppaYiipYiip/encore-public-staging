@@ -107,6 +107,11 @@ def test_the_sign_in_the_people_page_an_invitation_a_lock_and_a_removal_in_a_rea
         browser.go(f"{server.base}/encore/admin")
         browser.wait("document.getElementById('user')")
         assert "Sign in with the account you made" in browser.text()
+        browser.go(f"{server.base}/encore/admin")
+        browser.wait("document.getElementById('user')")
+        assert "sudo encore reset-password YOURUSERNAME" in browser.text(".login"), (
+            "a person who cannot sign in is told where to go"
+        )
         sign_in_page(browser, server, "marwa", "not-the-password")
         browser.wait("document.querySelector('.error') && document.querySelector('.error').innerText.length > 0")
         assert "was not accepted" in browser.text(".error")

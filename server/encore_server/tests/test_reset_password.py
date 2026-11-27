@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import json
+import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -214,6 +215,28 @@ def test_every_refusal_is_in_words_and_changes_nothing(world: World) -> None:
     with pytest.raises(ApiError, match="same as the name"):
         ops_reset.reset_password(world.db, world.admin, "nina-lopez", "NINA-LOPEZ")  # type: ignore[arg-type]
     assert world.admin.passwords == [] and world.alive(token) and world.audit() == []
+
+
+def test_a_database_that_does_not_answer_after_the_music_server_changed_is_a_sentence_and_the_rerun_is_safe(world: World) -> None:
+    """Found in review: the music server already had the new password and the devices were still signed in, and the person saw a traceback."""
+    world.verifier.passwords["nina"] = "pw-nina"
+    token = world.sign_in("nina")
+    real = world.db
+
+    class Failing:
+        def __getattr__(self, name: str) -> Any:
+            return getattr(real, name)
+
+        def tx(self) -> Any:
+            raise sqlite3.OperationalError("database is locked")
+
+    with pytest.raises(
+        ApiError, match="changed at the music server, but this server could not sign the devices out.*Run the same command again"
+    ):
+        ops_reset.reset_password(Failing(), world.admin, "nina", "a brand new password")  # type: ignore[arg-type]
+    assert world.admin.passwords == [("nina", "a brand new password")] and world.alive(token)
+    again = ops_reset.reset_password(world.db, world.admin, "nina", "a brand new password")  # type: ignore[arg-type]
+    assert again["devicesEnded"] == 1 and not world.alive(token)
 
 
 def test_a_name_is_found_without_regard_to_case_when_only_one_matches(world: World) -> None:

@@ -27,12 +27,14 @@ op=("${args[@]:$((i + 1))}")
 echo "ARGS: ${op[*]}" >>"$FAKE_OPLOG"
 case "${op[*]}" in
     *--info*)
+        [ "${FAKE_NOISE:-}" = 1 ] && echo "WARN: a compose or Python warning on standard error" >&2
         if [ "${op[1]}" = nobody ]; then echo 'There is nobody called "nobody" on this server.' >&2; exit 1; fi
         echo "$FAKE_STATE"
         ;;
     reset-password*)
         input="$(cat)"
         echo "STDIN: $input" >>"$FAKE_OPLOG"
+        [ "${FAKE_NOISE:-}" = 1 ] && echo "WARN: a warning before the answer" >&2
         if [ "${FAKE_REFUSE:-}" = 1 ]; then echo "That recovery key is not right." >&2; exit 1; fi
         echo "name=${op[1]}"; echo "devicesEnded=2"; echo "usedKey=false"
         if [ "$FAKE_STATE" != member ]; then echo "recovery-key=ABCD-EFGH-JKMN-PQRS-TUVW"; fi
@@ -153,3 +155,24 @@ def test_the_help_and_the_dispatcher_know_both_commands(tmp_path: Path) -> None:
     install, _, _ = rig(tmp_path)
     helptext = install.encore("help").stdout
     assert re.search(r"encore reset-password NAME", helptext) and re.search(r"encore recovery-key \[NAME\]", helptext)
+
+
+def test_a_warning_on_standard_error_does_not_change_what_the_script_asks_or_says(tmp_path: Path) -> None:
+    """Found in review: `--info` was read with stderr merged into the value it is compared with, so any warning line made an owner with a key look like nobody: the key was never asked and the audit line said "without"."""
+    install, env, oplog = rig(tmp_path, "owner-with-key")
+    pw = write(tmp_path / "pw", "another long password\n")
+    keyfile = write(tmp_path / "key", "wxyz-wxyz-wxyz-wxyz-wxyz\n")
+    noisy = {**env, "FAKE_NOISE": "1"}
+    with_key = install.encore("reset-password", "riley", "--password-file", pw, "--recovery-key-file", keyfile, extra_env=noisy)
+    assert with_key.returncode == 0 and '"recoveryKey":"wxyz-wxyz-wxyz-wxyz-wxyz"' in oplog.read_text(encoding="utf-8")
+    assert "Going on without" not in with_key.stdout
+    # an owner with a key and no key given: said in words, and still recognised through the noise
+    without = install.encore("reset-password", "riley", "--password-file", pw, extra_env=noisy)
+    assert (
+        without.returncode == 0 and "Going on without the recovery key (none was given); the audit log says so." in without.stdout
+    )
+    # the sentence of a refusal is the LAST line the server said, not a warning that came first
+    refused = install.encore("reset-password", "riley", "--password-file", pw, extra_env={**noisy, "FAKE_REFUSE": "1"})
+    assert refused.returncode == 1 and "That recovery key is not right." in refused.stderr and "WARN" not in refused.stderr
+    key_made = install.encore("recovery-key", extra_env={**noisy, "FAKE_STATE": "owner"})
+    assert key_made.returncode == 0 and key_made.stdout.count(NEW_KEY) == 1

@@ -348,11 +348,5 @@
   "evidence": "built in the P3-30 PR: password key made by the installer and update (measured on a throwaway Navidrome 0.64.2, docs/evidence e08), backups locked to a public key (age), restore with the key; tests: test_backup_encryption, test_deploy_keys, test_deploy_flow (the real script + the real tool, Docker stood in); not walked on a real install (P3-07)",
   "at": "2026-11-26T19:49:30Z",
   "by": "Claude"
- },
- "P3-16": {
-  "state": "built",
-  "evidence": "PR for P3-16: encore reset-password NAME and encore recovery-key (ops/reset.py, recovery.py, audit_log, migration 0021); 21 tests on the real database (member, owner with right/wrong/no key, nothing changed on any failure, devices signed out, key replaced), 13 shell flow tests, the first-run page shows the key once in a real browser. NOT walked: needs a real install (P3-07).",
-  "at": "2026-11-27T00:57:48Z",
-  "by": "Claude"
  }
 }

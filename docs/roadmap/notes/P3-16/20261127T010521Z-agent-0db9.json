@@ -1,0 +1,12 @@
+{
+ "id": "20261127T010521Z-agent-0db9",
+ "item": "P3-16",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T01:05:21Z",
+ "type": "note",
+ "body": "P3-16, state after PR #155 (the command door): NOT done as an item; `mark built` was withdrawn on review because the item's own text asks for more than the command.\nBUILT in #155: `sudo encore reset-password NAME` (anybody; an owner's recovery key is asked, a wrong one refused, none allowed for root and recorded), `sudo encore recovery-key`, the key made with the owner in the wizard and shown once, `audit_log`, the admin sign-in page tells where to go.\nOWED, each with its trigger:\n1. The APP's sign-in says where to find the way back (\"the app's sign-in says where to find it\", task text): app change, a drawing first (no screen is coded before its drawing exists). Trigger: next app slice that touches sign-in.\n2. The BUTTON door (D-61, P3-21): the same operation behind the appliance console's own menu; the proof is the console. Trigger: P3-21/P3-23 (button installer / appliance).\n3. The NOTIFICATION to the owner's other signed-in devices (\"a password was reset from the server computer\"): needs a NEW notification kind and the phone must know a kind before it is sent (docs/17's list of kinds is closed: release, jam, invite_used, import_done). Until then the audit line is the record. Trigger: the next notifications slice (app + docs/17 + KINDS together).\n4. STOP-GAP with a cost: the running server remembers an accepted Subsonic login for ten minutes (auth.py) and the reset runs in another process, so an OLD password may still be let in by a music app for up to ten minutes (phones' device tokens end at once). Proper fix: a `credentials_epoch` the verifier checks (a person column read with the cached yes), with the Settings/Security work; removal trigger = that item. The command prints the sentence meanwhile.\n5. Owners made BEFORE keys existed (every existing install, VM 108's owner included) are never told they have none: add a one-line hint to `encore status` (\"no recovery key yet: sudo encore recovery-key\") - needs the server's answer, so an `op` status call. Small; do with the next `encore` command change.\nDo not mark P3-16 built until 1 (or the owner narrows the item) and 2 are decided; the owner's page shows what is true.",
+ "to": [
+  "owner"
+ ]
+}
