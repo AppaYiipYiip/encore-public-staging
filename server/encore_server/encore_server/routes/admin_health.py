@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import shutil
 import time
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -21,10 +23,15 @@ log = logging.getLogger("encore_server.api")
 router = APIRouter(prefix=API_PREFIX)
 
 
-def local_midnight_ms(now: float | None = None) -> int:
-    """The start of today by the server's own clock (the Host's computer's: counts of "today" are the Host's today)."""
-    t = time.localtime(now)
-    return int(time.mktime((t.tm_year, t.tm_mon, t.tm_mday, 0, 0, 0, 0, 0, -1)) * 1000)
+def local_midnight_ms(now: float | None = None, zone: str = "UTC") -> int:
+    """The start of today in the Host's time zone (`Settings.time_zone`): counts of "today" are the Host's today, also on a day the clocks change and in a zone with a half-hour offset."""
+    moment = datetime.fromtimestamp(time.time() if now is None else now, ZoneInfo(zone))
+    return int(moment.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
+
+
+def zone_name(zone: str, now: float | None = None) -> str:
+    """How the zone is called on Home right now: its short name (CET, CEST, IST), else the IANA name."""
+    return datetime.fromtimestamp(time.time() if now is None else now, ZoneInfo(zone)).tzname() or zone
 
 
 def free_bytes(svc: Services) -> int | None:
@@ -46,7 +53,7 @@ def collect(svc: Services) -> Facts:
         people = conn.execute("SELECT COUNT(*) FROM person").fetchone()[0]
         devices = conn.execute("SELECT COUNT(*) FROM device WHERE revoked_at IS NULL").fetchone()[0]
         last = conn.execute("SELECT MAX(last_seen) FROM device").fetchone()[0]
-        midnight = local_midnight_ms()
+        midnight = local_midnight_ms(zone=svc.settings.time_zone)
         plays = conn.execute("SELECT COUNT(*) FROM play_event WHERE at >= ?", (midnight,)).fetchone()[0]
         imports = conn.execute("SELECT COUNT(*) FROM import WHERE state = 'done' AND updated_at >= ?", (midnight,)).fetchone()[0]
     tools_state = (svc.tools.status().get("ytDlp") or {}).get("state") if svc.tools is not None else None
@@ -67,7 +74,7 @@ def collect(svc: Services) -> Facts:
         plays_today=int(plays),
         imports_today=int(imports),
         host=host_status.read(svc.settings.data_dir),
-        clock_zone=time.strftime("%Z") or "UTC",
+        clock_zone=zone_name(svc.settings.time_zone),
         helper=svc.helper.state() if svc.helper is not None else "missing",
     )
 

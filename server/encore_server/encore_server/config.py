@@ -2,12 +2,32 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from . import setup_code
+
+log = logging.getLogger("encore_server.config")
+
+
+def clean_time_zone(text: str) -> str:
+    """The Host's time zone as an IANA name the server can really load (`zoneinfo`), else `UTC`. Empty is UTC without a word; a name that does not load is UTC with one line in the log (the zone data
+    is the `tzdata` package's, so a name that is right loads on any image)."""
+    name = text.strip()
+    if not name:
+        return "UTC"
+    try:
+        ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        log.warning(
+            "ENCORE_TIME_ZONE=%r is not a time zone this server knows (use a name such as Europe/Paris): counting in UTC", name
+        )
+        return "UTC"
+    return name
 
 
 def clean_url(text: str) -> str:
@@ -55,6 +75,8 @@ class Settings:
     #: The addresses this server tells its phones about (docs/11 ADR-R40): the installer writes the home one, `encore funnel on` the away one. Empty: unknown.
     home_url: str = ""
     away_url: str = ""
+    #: The time zone "today" is counted in on the admin Home (`ENCORE_TIME_ZONE`, an IANA name; the installer writes the computer's own). UTC when it is empty or not a zone this server knows.
+    time_zone: str = "UTC"
     #: The setup code of a server whose owner is made in the browser (docs/36 section 2): empty once there is nobody to make (the headless door) or a code that is not well formed.
     setup_code: str = field(default="", repr=False)
     #: The helper (docs/36 section 3): the socket the Encore server asks it through and the token that goes with it. Both come from the compose override `encore helper install` writes; empty: no helper.
@@ -105,6 +127,7 @@ class Settings:
             auto_tools=e.get("ENCORE_AUTO_TOOLS", "1").strip().lower() not in ("0", "false", "no"),
             home_url=clean_url(e.get("ENCORE_HOME_URL", "")),
             away_url=clean_url(e.get("ENCORE_AWAY_URL", "")),
+            time_zone=clean_time_zone(e.get("ENCORE_TIME_ZONE", "")),
             helper_socket=e.get("ENCORE_HELPER_SOCKET", "").strip(),
             helper_token=e.get("ENCORE_HELPER_TOKEN", "").strip(),
             setup_code=setup_code.show(e.get("ENCORE_SETUP_CODE", ""))

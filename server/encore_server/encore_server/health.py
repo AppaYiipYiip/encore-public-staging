@@ -42,7 +42,7 @@ class Facts:
     plays_today: int
     imports_today: int
     host: HostStatus | None
-    #: the name of the clock whose midnight starts "today" (the container's; the Host's own time zone is a later setting)
+    #: the name of the Host's time zone (`Settings.time_zone`) whose midnight starts "today"
     clock_zone: str = "UTC"
     #: The helper the admin pages ask for a backup or the away address: `ready`, `missing` (not installed: not a failure, the row says how to get it) or `cannot-open` (it is there and this
     #: server may not open it: the Host must act).
