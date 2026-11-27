@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import shutil
+import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +14,7 @@ import httpx
 import pytest
 
 from encore_server import deezer, library, refs
+from encore_server.audio_key import Unreadable
 from encore_server.cover_finder import deezer_lookup
 from encore_server.db import Database
 from encore_server.deezer import DeezerClient, Gate, LookupUnavailable
@@ -104,6 +108,8 @@ class Rig:
         self.cover_unavailable = False
         self.cover_asked: list[tuple[str, str, str | None]] = []
         self.cover_lengths: list[int | None] = []
+        self.key_breaks: Exception | None = None
+        self.while_keying: Callable[[], None] | None = None
 
         def write_tags(path: Path, tags: Tags, cover: bytes | None = None) -> bool:
             self.tagged.append((path.suffix, tags, cover))
@@ -121,12 +127,21 @@ class Rig:
             tmp / "work",
             runner=fake_ffmpeg,
             write_tags_=write_tags,
+            audio_key_=self.make_key,
             fetch_cover_=lambda url: b"cover-bytes" if url else None,
             find_cover_=self.find_cover,
             on_changed=self.told.append,
             sleep=sleep,
             clock=lambda: self.now,
         )
+
+    def make_key(self, path: Path) -> str:
+        """What `audio_key.audio_key_of` is to the keeper, without a program: a hash of the bytes (the real one is proved on the real ffmpeg in the integration job)."""
+        if self.while_keying is not None:
+            self.while_keying()
+        if self.key_breaks is not None:
+            raise self.key_breaks
+        return "a1:" + hashlib.sha256(path.read_bytes()).hexdigest()[:32]
 
     def find_cover(self, artist: str, title: str, album: str | None, *, length_ms: int | None = None) -> str | None:
         self.cover_asked.append((artist, title, album))
@@ -539,3 +554,65 @@ def test_n26_slice3_two_channel_songs_with_one_title_are_two_files_not_one(rig: 
     files = sorted(f.name for f in (rig.music / "Encore" / "Unknown Artist" / "Singles").glob("*.opus"))
     assert len(files) == 2, files
     assert rig.ref(first)["file"]["navidromeSongId"] != rig.ref(second)["file"]["navidromeSongId"]
+
+
+# ---------------------------------------------------------------------------------------------------------------------- N-38: the audio-only key of a new keep
+
+
+def test_n38_a_new_keep_is_served_with_the_audio_key_of_the_file_it_placed(rig: Rig) -> None:
+    ref = rig.make_ref()
+
+    rig.keep(ref)
+
+    placed = next((rig.music / "Encore").rglob("*.opus"))
+    assert rig.ref(ref)["file"]["audioKey"] == rig.make_key(placed), "the key of the file as it lies on the disk, tagged"
+    with rig.db.read() as conn:
+        row = conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchone()
+    assert row["audio_key_size"] == placed.stat().st_size, "recorded at the size the keeper placed"
+
+
+@pytest.mark.parametrize(
+    "error", [Unreadable("no audio stream"), FileNotFoundError("ffmpeg"), subprocess.TimeoutExpired("ffmpeg", 1)]
+)
+def test_n38_a_key_that_cannot_be_made_does_not_fail_the_keep(rig: Rig, error: Exception) -> None:
+    """The song is kept and playable; the hourly errand makes the key later (`audio_key.AudioKeys`), and until then the phone does what it did."""
+    rig.key_breaks = error
+    ref = rig.make_ref()
+
+    rig.keep(ref)
+
+    kept = rig.ref(ref)["file"]
+    assert kept["navidromeSongId"] == "nd-1" and "audioKey" not in kept
+    with rig.db.read() as conn:
+        row = conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchone()
+    assert (row["audio_key"], row["audio_key_size"]) == (None, None), (
+        "nothing is remembered as if it were an answer about the file"
+    )
+
+
+def test_n38_the_key_is_the_keepers_even_when_the_scanner_made_the_row_first_with_the_music_servers_built_path(rig: Rig) -> None:
+    """Review of #164, measured: a library row's path is the music server's tag-built one, and `attach_file` keeps the path a row has, so a file the scanner linked between the music server finding the file and
+    the keeper's own `_link` carries the built path for ever. The key does not depend on any path: the keeper makes it from the file it holds and writes it by the row's id."""
+    ref = rig.make_ref()
+
+    def the_scanner_gets_there_first() -> None:
+        with rig.db.tx() as conn:
+            refs.attach_file(
+                conn,
+                ref,
+                navidrome_song_id="nd-1",
+                path="Radiohead/In Rainbows/Weird Fishes - Arpeggi.opus",
+                codec="opus",
+                bitrate_kbps=1,
+                meta={"size": 1},
+            )
+
+    rig.while_keying = the_scanner_gets_there_first
+    rig.keep(ref)
+
+    placed = next((rig.music / "Encore").rglob("*.opus"))
+    assert rig.ref(ref)["file"]["audioKey"] == rig.make_key(placed)
+    with rig.db.read() as conn:
+        rows = conn.execute("SELECT path, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchall()
+    assert len(rows) == 1, "one row"
+    assert rows[0]["audio_key_size"] == placed.stat().st_size, "keyed at the size the keeper placed, whatever path won"

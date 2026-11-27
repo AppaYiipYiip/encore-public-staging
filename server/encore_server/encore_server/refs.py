@@ -127,7 +127,7 @@ def _cover(value: object) -> str | None:
 def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
     """The API's shape of a ref, with the server's copy of the song when there is one."""
     file_row = conn.execute(
-        "SELECT id, navidrome_song_id, codec, bitrate_kbps, meta FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC LIMIT 1",
+        "SELECT id, navidrome_song_id, codec, bitrate_kbps, meta, audio_key FROM song_file WHERE ref = ? ORDER BY preferred DESC, added_at DESC LIMIT 1",
         (row["id"],),
     ).fetchone()
     ref: dict[str, Any] = {
@@ -158,6 +158,10 @@ def row_to_ref(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
             "meta": json.loads(file_row["meta"]) if file_row["meta"] else {},
         },
     }
+    # The audio-only key (N-38): what a phone compares to know a downloaded copy is still the same sound, whatever happened to the tags. Absent, not null, until the server has made one
+    # (and for a file ffmpeg cannot read): an app from before this field reads nothing new, and the new app falls back to what it did.
+    if file_row is not None and file_row["audio_key"]:
+        ref["file"]["audioKey"] = file_row["audio_key"]
     # A song the server already knows it cannot get (N-13): only while the memory is believed, and never for a song the server has a file of (it plays).
     # Absent, not null, when there is none: an app from before this field reads nothing new, and the new app treats it as optional.
     unavailable = missing.public(missing.standing_of(row, now_ms())) if file_row is None else None
@@ -709,19 +713,22 @@ def attach_file(
     bitrate_kbps: int | None,
     source: str = "library",
     meta: dict[str, Any] | None = None,
+    audio_key: str | None = None,
+    audio_key_size: int | None = None,
 ) -> str:
-    """The server has (or now keeps) a copy of this song. Replacing a file changes only this: likes and playlists never move.
+    """The server has (or now keeps) a copy of this song. [audio_key] (with the size it was taken at) is the keeper's own, made from the file it just placed (`audio_key.py`). Replacing a file changes only this: likes and playlists never move.
     Attaching what is already attached changes nothing (and writes nothing to the feed), so a scan can run as often as it likes."""
     if not ref_exists(conn, ref_id):
         raise ApiError("not_found", "That song is not known to this server.")
     meta_json = json.dumps(meta, separators=(",", ":"), sort_keys=True) if meta else None
     clear_missing(conn, ref_id)  # the server has a file of this song now: whatever was remembered about its absence is void
     existing = conn.execute(
-        "SELECT id, navidrome_song_id, path, codec, bitrate_kbps, meta FROM song_file WHERE ref = ?"
+        "SELECT id, navidrome_song_id, path, codec, bitrate_kbps, meta, audio_key, audio_key_size FROM song_file WHERE ref = ?"
         " AND ((navidrome_song_id IS NOT NULL AND navidrome_song_id = ?) OR (path IS NOT NULL AND path = ?))",
         (ref_id, navidrome_song_id, path),
     ).fetchone()
     if existing is not None:
+        changed = False
         merged = (
             navidrome_song_id or existing["navidrome_song_id"],
             existing["path"] or path,
@@ -740,14 +747,23 @@ def attach_file(
                 "UPDATE song_file SET navidrome_song_id = ?, path = ?, codec = ?, bitrate_kbps = ?, meta = ? WHERE id = ?",
                 (*merged, existing["id"]),
             )
+            changed = True
+        if audio_key is not None and (audio_key, audio_key_size) != (existing["audio_key"], existing["audio_key_size"]):
+            conn.execute(
+                "UPDATE song_file SET audio_key = ?, audio_key_size = ? WHERE id = ?", (audio_key, audio_key_size, existing["id"])
+            )
+            changed = changed or audio_key != (
+                existing["audio_key"] or ""
+            )  # the same key at another size (a tag rewrite) tells no phone anything
+        if changed:
             touch_file(conn, ref_id)
         return str(existing["id"])
     file_id = new_id("sf")
     conn.execute("UPDATE song_file SET preferred = 0 WHERE ref = ?", (ref_id,))
     conn.execute(
-        "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta)"
-        " VALUES (?,?,?,?,?,?,?,1,?,?)",
-        (file_id, ref_id, navidrome_song_id, path, codec, bitrate_kbps, source, now_ms(), meta_json),
+        "INSERT INTO song_file (id, ref, navidrome_song_id, path, codec, bitrate_kbps, source, preferred, added_at, meta, audio_key, audio_key_size)"
+        " VALUES (?,?,?,?,?,?,?,1,?,?,?,?)",
+        (file_id, ref_id, navidrome_song_id, path, codec, bitrate_kbps, source, now_ms(), meta_json, audio_key, audio_key_size),
     )
     touch_file(conn, ref_id)
     return file_id
