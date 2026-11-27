@@ -1276,5 +1276,19 @@
    }
   ],
   "from": "agent"
+ },
+ "N-53": {
+  "kind": "plumbing",
+  "title": "Behind the scenes: the server knows where a library song's file really lies",
+  "note": "Found 27 Nov 2026 by the CI of N-38 on the real music server: the `path` its Subsonic API reports for a song is built from the TAGS (Artist/Album/Title.opus), not where the file lies, and the scanner stores it as song_file.path. So for a library row the path is not a location, and a kept file whose row the scanner made first keeps the built path (attach_file keeps the path a row has). MEASURED (probe, same day): the music server's NATIVE API gives the real place: GET /api/song/{id} and GET /api/song?id=a&id=b return the library-relative path, libraryPath and libraryId (the real-path setting of the Subsonic API is off by default, global and a security trade-off: not to be counted on in a stranger's music server). Fix: a song_file.path_real mark, an hourly errand that asks the native API (the server already signs in as the administrator) and stores the real path for rows not yet checked, the keeper's own real path winning over the scanner's, and every reader of the path trusting only a checked one. Gates the audio-key errand for library files, N-34's repair and N-26 slice 5. Server only.",
+  "proposal": true,
+  "size": "M",
+  "needs": [
+   {
+    "id": "N-38",
+    "mark": "b"
+   }
+  ],
+  "from": "agent"
  }
 }

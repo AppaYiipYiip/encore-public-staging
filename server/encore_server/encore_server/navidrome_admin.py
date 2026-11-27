@@ -9,8 +9,9 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -123,6 +124,25 @@ class NavidromeAdmin:
     def find(self, username: str) -> dict[str, Any] | None:
         wanted = username.strip().lower()
         return next((u for u in self.users() if str(u.get("userName", "")).lower() == wanted), None)
+
+    #: How many ids one `song_places` question names.
+    PLACES_CHUNK = 100
+
+    def song_places(self, ids: Sequence[str]) -> dict[str, str]:
+        """Where the music server says each song's FILE lies, relative to the library it is in (N-53): music-server song id -> path. A song it does not know is absent from the answer.
+
+        The native API, not the Subsonic one: the Subsonic `path` is built from the song's tags (measured on 0.64.2), and the setting that makes it real is off by default and global. Measured on the same
+        server: `GET /api/song?id=a&id=b` answers a list of songs, each with `id`, `path`, `libraryPath` and `libraryId`. A music server that stops answering this way gives an empty answer, never a wrong
+        one: the caller treats an id that is absent as unresolved."""
+        found: dict[str, str] = {}
+        wanted = [str(i) for i in ids if i]
+        for start in range(0, len(wanted), self.PLACES_CHUNK):
+            query = "&".join(f"id={quote(i, safe='')}" for i in wanted[start : start + self.PLACES_CHUNK])
+            body = self.call("GET", f"/api/song?{query}")
+            for song in body if isinstance(body, list) else []:
+                if isinstance(song, dict) and song.get("id") and isinstance(song.get("path"), str) and song["path"]:
+                    found[str(song["id"])] = song["path"]
+        return found
 
     def libraries(self) -> list[int]:
         found = self.call("GET", "/api/library")

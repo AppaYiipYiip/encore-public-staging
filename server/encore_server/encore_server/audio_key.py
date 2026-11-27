@@ -141,7 +141,7 @@ class Pass(NamedTuple):
 #: The files the errand has NEVER looked at come first (NULL sorts first), then the one looked at longest ago: a file that is never found or never readable cannot keep the others from their turn.
 #: Within that, preferred files first (the ones a phone downloads), then the newest.
 _TODO = (
-    "SELECT id, ref, path, audio_key, audio_key_size, json_extract(meta, '$.size') AS seen_size FROM song_file WHERE path IS NOT NULL"
+    "SELECT id, ref, path, audio_key, audio_key_size, json_extract(meta, '$.size') AS seen_size FROM song_file WHERE path IS NOT NULL AND path_real = 1"
     " AND (audio_key_size IS NULL OR audio_key_size != COALESCE(json_extract(meta, '$.size'), audio_key_size))"
     " ORDER BY audio_key_tried_at, preferred DESC, added_at DESC, id LIMIT ?"
 )
