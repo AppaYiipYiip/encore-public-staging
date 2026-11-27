@@ -1,6 +1,6 @@
 # N-38: a song whose tags the server rewrites stays downloaded on the phone
 
-*Status: SERVER HALF built (27 Nov 2026; built, not walked). PHONE HALF owed (specified below; needs the app suite). Trigger that makes it urgent: BEFORE any repair that rewrites the tags of kept files ships (N-34, N-26 slice 5). Rule 1 of the standing rules: the cost of the quick answer (every repair makes every phone fetch every repaired song again) is a cost to the future, so this is built first.*
+*Status: SERVER HALF merged (#164, 27 Nov 2026) and PHONE HALF built (this change; built, not walked: it needs the pair of a server that serves keys and a phone that downloaded songs before, then a tag rewrite, to be walked). Trigger that makes it urgent: BEFORE any repair that rewrites the tags of kept files ships (N-34, N-26 slice 5). Rule 1 of the standing rules: the cost of the quick answer (every repair makes every phone fetch every repaired song again) is a cost to the future, so this is built first.*
 
 ## 1. The problem, with the proof
 
@@ -41,7 +41,7 @@ The size is there for a reason (a replaced or re-encoded file must be fetched ag
 
 A PR that rewrites the tags of files already kept (N-34's repair, N-26 slice 5, any later retag) **must**: (1) make sure every file it will rewrite HAS a key before it touches the file (`audio_key_of`, stored like the errand does), (2) call `audio_key.carry` in the transaction that records each rewrite, (3) not ship until the phone half below has been in the released app (board note on the item, walked), and (4) say in its description how many files it rewrites and which of them had no key. A test in that PR shows a rewrite leaves `file.audioKey` as it was.
 
-## 4. The PHONE half (owed; its own PR with the app suite)
+## 4. The PHONE half (BUILT 27 Nov 2026, not walked)
 
 1. `EncoreFile.audioKey` (`String?`, from `file.audioKey`).
 2. `refAudioKey(ref)`: when the ref has `file.audioKey` the key is that string (it starts with `a1:`); otherwise the old hash, unchanged. `Tracks.audioKey` stores what it returns, as today.

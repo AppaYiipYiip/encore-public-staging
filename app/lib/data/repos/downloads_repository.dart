@@ -5,6 +5,7 @@ import '../../core/clock.dart';
 import '../../domain/audio_quality.dart';
 import '../db/app_database.dart';
 import '../downloads/download_planner.dart';
+import '../sync/fingerprint.dart';
 
 /// What a "Download" toggle can point at.
 enum PinTargetType { playlist, album, artist, liked, track }
@@ -487,7 +488,10 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
       if (type == null) continue;
       final quality = AudioQuality.byId(pin.quality);
       final rows = await _db.customSelect(
-        'SELECT m.id AS id, t.audio_key AS audio_key '
+        'SELECT m.id AS id, t.audio_key AS audio_key, t.size AS size, '
+        't.suffix AS suffix, t.bit_rate AS bit_rate, '
+        't.duration_sec AS duration_sec, t.sampling_rate AS sampling_rate, '
+        't.bit_depth AS bit_depth '
         'FROM (${_membersSql(type)}) m '
         'JOIN tracks t ON t.server_id = ?1 AND t.id = m.id '
         'AND t.deleted_at_ms IS NULL AND t.missing = 0',
@@ -507,6 +511,15 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
           trackId: id,
           quality: best.id,
           audioKey: row.read<String?>('audio_key') ?? '',
+          // The old-formula key of the same columns: what a copy made before the server served keys is compared with (N-38).
+          legacyAudioKey: legacyAudioKey(
+            size: row.read<int?>('size'),
+            suffix: row.read<String?>('suffix'),
+            bitRate: row.read<int?>('bit_rate'),
+            durationSec: row.read<int?>('duration_sec'),
+            samplingRate: row.read<int?>('sampling_rate'),
+            bitDepth: row.read<int?>('bit_depth'),
+          ),
           held: held.contains(id),
         );
       }
@@ -566,6 +579,15 @@ SELECT t.id AS id, t.title AS title, t.artist AS artist, d.last_error AS error
       }
       for (final id in plan.toRefresh) {
         await queue(id, keepFile: true);
+      }
+      for (final entry in plan.toAdopt.entries) {
+        // Only a copy that is still a finished one; its state, file and quality are not touched.
+        await (_db.update(_db.downloads)
+              ..where((d) =>
+                  d.serverId.equals(serverId) &
+                  d.trackId.equals(entry.key) &
+                  d.state.equals(DownloadState.done)))
+            .write(DownloadsCompanion(sourceAudioKey: Value(entry.value)));
       }
       if (plan.toOrphan.isNotEmpty) {
         await (_db.update(_db.downloads)
