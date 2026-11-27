@@ -15,6 +15,7 @@ class EncoreFile {
     this.codec,
     this.bitrateKbps,
     this.meta = const {},
+    this.audioKey,
   });
 
   factory EncoreFile.fromJson(Map<String, dynamic> json) => EncoreFile(
@@ -23,6 +24,7 @@ class EncoreFile {
         codec: readString(json['codec']),
         bitrateKbps: readInt(json['bitrateKbps']),
         meta: readMap(json['meta']) ?? const {},
+        audioKey: readString(json['audioKey']),
       );
 
   final String id;
@@ -32,6 +34,10 @@ class EncoreFile {
   final String? codec;
   final int? bitrateKbps;
   final Map<String, dynamic> meta;
+
+  /// The server's key of the file's AUDIO (N-38, docs/17): `a1:` and 32 hex digits, the hash of the audio stream, never the tags, the cover or the container. Absent
+  /// (null) until the server has made one, for a file it cannot read, and on a server from before it. See `refAudioKey` for what the app does with it.
+  final String? audioKey;
 
   String? get albumId => readString(meta['albumId']);
   String? get artistId => readString(meta['artistId']);

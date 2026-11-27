@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../domain/audio_quality.dart';
 import '../db/app_database.dart';
+import '../sync/fingerprint.dart';
 
 /// What a pin asks for one track.
 class DesiredDownload {
@@ -9,6 +10,7 @@ class DesiredDownload {
     required this.trackId,
     required this.quality,
     this.audioKey = '',
+    this.legacyAudioKey = '',
     this.held = false,
   });
 
@@ -19,6 +21,10 @@ class DesiredDownload {
 
   /// Current `Tracks.audioKey` (empty when unknown).
   final String audioKey;
+
+  /// What the key of this track's file would be by the app's OLD formula (it contains the file's size), from the same columns: what a copy downloaded before the server
+  /// served keys is checked against, so that it is not downloaded again because the formula changed (N-38, [downloadAudioKeyVerdict]).
+  final String legacyAudioKey;
 
   /// Every pin that wants this song is stopped by the person (N-39): the song stays desired, so it is never orphaned and its file is never deleted, but
   /// it is not queued, refreshed or tried again until a pin that wants it goes on.
@@ -33,6 +39,7 @@ class DownloadPlan {
     this.toOrphan = const [],
     this.toRescue = const [],
     this.toDelete = const [],
+    this.toAdopt = const {},
   });
 
   /// Missing (or failed and due for retry) -> start a download.
@@ -51,17 +58,23 @@ class DownloadPlan {
   /// Grace over (or user removed the pin) -> delete file and row.
   final List<String> toDelete;
 
+  /// A downloaded copy that is current and carries the old kind of key while the server now serves a key of the audio: the copy stays, its row takes the new key
+  /// (track id -> the key). Nothing is fetched (N-38).
+  final Map<String, String> toAdopt;
+
   bool get isEmpty =>
       toQueue.isEmpty &&
       toRefresh.isEmpty &&
       toOrphan.isEmpty &&
       toRescue.isEmpty &&
-      toDelete.isEmpty;
+      toDelete.isEmpty &&
+      toAdopt.isEmpty;
 
   @override
   String toString() => 'DownloadPlan(queue: ${toQueue.length}, '
       'refresh: ${toRefresh.length}, orphan: ${toOrphan.length}, '
-      'rescue: ${toRescue.length}, delete: ${toDelete.length})';
+      'rescue: ${toRescue.length}, delete: ${toDelete.length}, '
+      'adopt: ${toAdopt.length})';
 }
 
 /// Download state values stored in `Downloads.state`.
@@ -100,6 +113,7 @@ DownloadPlan planDownloads({
   final toOrphan = <String>[];
   final toRescue = <String>[];
   final toDelete = <String>[];
+  final toAdopt = <String, String>{};
 
   // Exponential back-off: 5 min, 10, 20, ... capped at 6 h.
   int backoffMs(int attempts) =>
@@ -118,10 +132,16 @@ DownloadPlan planDownloads({
 
     switch (row.state) {
       case DownloadState.done:
-        final changed = row.stale ||
-            (want.audioKey.isNotEmpty &&
-                row.sourceAudioKey.isNotEmpty &&
-                row.sourceAudioKey != want.audioKey);
+        final verdict = downloadAudioKeyVerdict(
+          stored: row.sourceAudioKey,
+          live: want.audioKey,
+          liveLegacy: want.legacyAudioKey,
+        );
+        final changed = row.stale || verdict == AudioKeyVerdict.changed;
+        // The copy is the file it was when it was downloaded: keep it and give its row the key the server serves now (no fetch, no state change).
+        if (!changed && verdict == AudioKeyVerdict.adopt) {
+          toAdopt[id] = want.audioKey;
+        }
         // A refresh that did not arrive leaves the copy playable and counts an attempt: the next try waits the back-off of a failed download,
         // so a refresh that keeps failing is not started again at every network change, sync or pin edit.
         final mayTry = row.attempts == 0 ||
@@ -160,6 +180,7 @@ DownloadPlan planDownloads({
     toOrphan: toOrphan,
     toRescue: toRescue,
     toDelete: toDelete,
+    toAdopt: toAdopt,
   );
 }
 

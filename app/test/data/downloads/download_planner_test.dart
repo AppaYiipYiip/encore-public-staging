@@ -31,8 +31,14 @@ DownloadRow row(
     );
 
 DesiredDownload want(String id,
-        {String audioKey = 'k1', String quality = 'opus160'}) =>
-    DesiredDownload(trackId: id, quality: quality, audioKey: audioKey);
+        {String audioKey = 'k1',
+        String legacyAudioKey = '',
+        String quality = 'opus160'}) =>
+    DesiredDownload(
+        trackId: id,
+        quality: quality,
+        audioKey: audioKey,
+        legacyAudioKey: legacyAudioKey);
 
 void main() {
   const now = 100 * _hour;
@@ -381,6 +387,87 @@ void main() {
 
     test('a first refresh (no failure yet) starts at once, as before', () {
       expect(refreshed(0, attempts: 0), ['a']);
+    });
+  });
+  group('the audio key of the server (N-38)', () {
+    const served = 'a1:0123456789abcdef0123456789abcdef';
+    const other = 'a1:ffffffffffffffffffffffffffffffff';
+
+    DownloadPlan plan(String stored, String live, {String legacy = ''}) =>
+        planDownloads(
+          desired: {'a': want('a', audioKey: live, legacyAudioKey: legacy)},
+          existing: {'a': row('a', sourceAudioKey: stored)},
+          nowMs: now,
+        );
+
+    test(
+        'a copy made under the old kind of key, whose file is as it was, adopts the new key and is not fetched',
+        () {
+      final p = plan('old1', served, legacy: 'old1');
+      expect(p.toRefresh, isEmpty);
+      expect(p.toAdopt, {'a': served});
+      expect(p.isEmpty, isFalse, reason: 'the adoption is a thing to write');
+    });
+
+    test(
+        'a copy made under the old kind of key, whose file is not as it was, is fetched again',
+        () {
+      final p = plan('old1', served, legacy: 'old2');
+      expect(p.toRefresh, ['a']);
+      expect(p.toAdopt, isEmpty);
+    });
+
+    test(
+        'the same key of the audio is the same copy, however the file was tagged',
+        () {
+      final p = plan(served, served, legacy: 'whatever-the-size-is-now');
+      expect(p.isEmpty, isTrue);
+    });
+
+    test('another key of the audio is another sound', () {
+      expect(plan(served, other).toRefresh, ['a']);
+    });
+
+    test('a key from another way of making keys is never compared', () {
+      final p = plan(served, 'a2:0123456789abcdef0123456789abcdef');
+      expect(p.toRefresh, isEmpty);
+      expect(p.toAdopt, isEmpty);
+    });
+
+    test('a server that stops serving a key does not make the copy stale', () {
+      final p = plan(served, 'old1', legacy: 'old1');
+      expect(p.isEmpty, isTrue);
+    });
+
+    test('two keys of the old kind that differ are a changed file, as before',
+        () {
+      expect(plan('old1', 'old2').toRefresh, ['a']);
+    });
+
+    test('nothing to compare is no change, as before', () {
+      expect(plan('', served).isEmpty, isTrue);
+      expect(plan('old1', '').isEmpty, isTrue);
+    });
+
+    test('a copy flagged stale is fetched whatever the keys say', () {
+      final p = planDownloads(
+        desired: {'a': want('a', audioKey: served, legacyAudioKey: 'old1')},
+        existing: {'a': row('a', sourceAudioKey: 'old1', stale: true)},
+        nowMs: now,
+      );
+      expect(p.toRefresh, ['a']);
+      expect(p.toAdopt, isEmpty);
+    });
+
+    test('only a finished copy is adopted', () {
+      final p = planDownloads(
+        desired: {'a': want('a', audioKey: served, legacyAudioKey: 'old1')},
+        existing: {
+          'a': row('a', sourceAudioKey: 'old1', state: DownloadState.failed)
+        },
+        nowMs: now,
+      );
+      expect(p.toAdopt, isEmpty);
     });
   });
 }
