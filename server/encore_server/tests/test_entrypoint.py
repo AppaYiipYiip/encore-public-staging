@@ -60,12 +60,12 @@ def test_with_a_helper_the_server_keeps_that_one_group_and_no_other(tmp_path: Pa
     )
 
 
-@pytest.mark.parametrize("gid", ["12;touch x", "abc", "1 2", "-1", "0x10", "12\n34"])
+@pytest.mark.parametrize("gid", ["12;touch x", "abc", "1 2", "-1", "0x10", "12" + chr(10) + "34", "0", "00", "007"])
 def test_a_group_id_that_is_not_a_number_is_never_used(tmp_path: Path, gid: str) -> None:
     done, calls = run(tmp_path, "0", gid)
     assert done.returncode == 0
     assert calls == ["--reuid=1000 --regid=1000 --clear-groups the-server --flag"]
-    assert "not a number" in done.stderr
+    assert "not a usable group number" in done.stderr
 
 
 def test_when_it_is_not_started_as_root_it_just_runs_the_command(tmp_path: Path) -> None:

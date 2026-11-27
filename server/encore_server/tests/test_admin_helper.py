@@ -146,6 +146,9 @@ class FakeHelper:
     def available(self) -> bool:
         return self.present
 
+    def state(self) -> str:
+        return "ready" if self.present else "missing"
+
     def call(self, action: str) -> HelperAnswer:
         self.calls.append(action)
         if self.raises is not None:
@@ -332,6 +335,7 @@ def test_a_socket_this_process_may_not_open_is_there_but_says_so_in_words(
 
     monkeypatch.setattr(Path, "stat", refuse)
     assert client.available() is True, "never an exception"
+    assert client.state() == "cannot-open", 'not "ready": Home must not say so'
 
     def deny() -> socket.socket:
         raise PermissionError(13, "Permission denied")
@@ -351,3 +355,36 @@ def test_a_path_that_is_odd_is_simply_not_a_helper(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(Path, "stat", odd)
     assert client.available() is False
+
+
+def test_a_socket_that_is_there_but_not_writable_for_this_process_is_not_ready(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Review of #160: connecting to a unix socket needs write permission on the socket, so that is the honest test of "ready"."""
+    sock = tmp_path / "helper.sock"
+    sock.write_text("", encoding="utf-8")  # a path that exists; the test only asks about permission
+    client = HelperClient(str(sock), TOKEN)
+    monkeypatch.setattr("encore_server.helper.os.access", lambda path, mode: True)
+    assert client.state() == "ready"
+    monkeypatch.setattr("encore_server.helper.os.access", lambda path, mode: False)
+    assert client.state() == "cannot-open" and client.available() is True
+    assert HelperClient(str(tmp_path / "missing.sock"), TOKEN).state() == "missing"
+
+
+def test_a_change_that_takes_long_says_it_may_still_be_running() -> None:
+    """Review of #160: a backup of a big library can outlast the client's wait; the page must not say it failed."""
+    from encore_server.helper import TIMEOUTS
+
+    assert TIMEOUTS["backup.make"] > 90, "a backup gets longer than a read, and less than the helper session's own 300 seconds"
+    assert TIMEOUTS["backup.make"] < 300
+
+    def connect() -> socket.socket:
+        ours, theirs = socket.socketpair()
+        theirs.close()  # nothing ever comes: the read times out
+        ours.settimeout(0.05)
+        return ours
+
+    client = HelperClient("x", TOKEN, timeout=0.05, connect=connect)
+    with pytest.raises(HelperUnavailable) as raised:
+        client.call("status")
+    assert raised.value.message  # a closed connection with no answer is an unfinished answer

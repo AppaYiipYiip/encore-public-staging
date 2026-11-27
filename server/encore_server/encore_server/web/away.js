@@ -28,13 +28,29 @@ export async function renderAway(main) {
   const body = el("div", {});
   main.replaceChildren(head, problem, status, body);
 
+  // The server is recreated after it has answered: ask again every few seconds until it is back, and say so in words if it is not.
+  async function afterRestart(tries) {
+    for (let i = 0; i < tries; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      try {
+        await api("GET", "/admin/away");
+        status.textContent = "";
+        await load();
+        return;
+      } catch {
+        // not back yet
+      }
+    }
+    problem.textContent = "The server has not come back yet. Reload this page in a moment.";
+  }
+
   async function act(path, working) {
     problem.textContent = "";
     status.textContent = working;
     try {
       const done = await api("POST", path);
       status.textContent = `${done.done} The server restarts to learn the new address; this page comes back in a few seconds.`;
-      setTimeout(load, 9000);
+      afterRestart(8);
     } catch (error) {
       status.textContent = "";
       problem.textContent = error instanceof Problem ? error.message : "That did not work. Try again.";

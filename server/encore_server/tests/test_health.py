@@ -58,7 +58,7 @@ def facts(**more: object) -> Facts:
         plays_today=212,
         imports_today=1,
         host=told(),
-        helper_ready=True,
+        helper="ready",
     )
     return replace(base, **more)  # type: ignore[arg-type]
 
@@ -396,9 +396,20 @@ def test_a_full_disk_on_this_computer_is_a_thing_that_needs_the_host(
 
 
 def test_the_helper_row_says_whether_the_admin_pages_can_make_a_backup_and_is_never_a_need() -> None:
-    off = build(facts(helper_ready=False))
+    off = build(facts(helper="missing"))
     assert row(off, "helper")["state"] == "off" and row(off, "helper")["words"] == "Not installed"
     assert "sudo encore helper install" in row(off, "helper")["detail"]
     assert off["needsYou"] == [] and off["summary"]["state"] == "good", "a missing helper is not a failure"
     ready = build(facts())
     assert row(ready, "helper")["state"] == "ok" and row(ready, "helper")["words"] == "Ready"
+
+
+def test_a_helper_that_is_there_but_cannot_be_opened_is_not_ready_and_needs_the_host() -> None:
+    """Review of #160: the server lost the helper's group, and Home said "Ready" while every page answered the permission sentence: false text in the one case the row exists to catch."""
+    stuck = build(facts(helper="cannot-open"))
+    assert row(stuck, "helper")["state"] == "warn" and row(stuck, "helper")["words"] == "Cannot be opened"
+    assert (
+        "sudo encore helper install" in row(stuck, "helper")["detail"] and "sudo encore restart" in row(stuck, "helper")["detail"]
+    )
+    assert [n["id"] for n in stuck["needsYou"]] == ["helper"] and stuck["summary"]["state"] == "needs"
+    assert row(stuck, "helper")["words"] != "Ready"

@@ -7,6 +7,7 @@ answer is trusted beyond its shape: a line that is not one of the four kinds is 
 
 from __future__ import annotations
 
+import os
 import socket
 import time
 from collections.abc import Callable
@@ -18,6 +19,9 @@ from .config import Settings
 #: The whole list (docs/36 section 3). Restore and update are not here on purpose.
 ACTIONS = frozenset({"status", "backup.make", "backup.list", "away.status", "away.on", "away.off", "restart"})
 MAX_ANSWER_BYTES = 64 * 1024
+#: A change may take longer than a read (a backup of a big library); each stays under the helper session's own limit of 300 seconds.
+TIMEOUTS = {"backup.make": 240.0}
+CANNOT_OPEN = "The server may not open the helper's socket (a permission). On the server computer run  sudo encore helper install  and then  sudo encore restart"
 NOT_INSTALLED = (
     "The admin pages cannot do this until the helper is installed: on the server computer run  sudo encore helper install"
 )
@@ -61,19 +65,24 @@ class HelperClient:
             else None
         )
 
-    def available(self) -> bool:
-        """Is there a helper to ask: the socket is there (a test client with its own connection is always)."""
+    def state(self) -> str:
+        """`missing` (no socket: no helper), `cannot-open` (it is there and this process may not write to it, so may not connect: a lost group) or `ready`. Never raises."""
         if self._connect is not None:
-            return True
+            return "ready"
         try:
             Path(self._path).stat()
         except FileNotFoundError:
-            return False
+            return "missing"
         except PermissionError:
-            return True  # it is there and this process may not open it: `call` says so in words
+            return "cannot-open"
         except OSError:
-            return False
-        return True
+            return "missing"
+        # connecting to a unix socket needs write permission on the socket itself
+        return "ready" if os.access(self._path, os.W_OK) else "cannot-open"
+
+    def available(self) -> bool:
+        """Is there a helper to ask (even one this process cannot open: asking explains)."""
+        return self.state() != "missing"
 
     def call(self, action: str) -> HelperAnswer:
         if action not in ACTIONS:
@@ -81,28 +90,33 @@ class HelperClient:
         try:
             sock = self._connect() if self._connect is not None else self._open()
         except PermissionError as error:
-            raise HelperUnavailable(
-                "The server may not open the helper's socket (a permission). On the server computer run  sudo encore helper install  and then  sudo encore restart"
-            ) from error
+            raise HelperUnavailable(CANNOT_OPEN) from error
         except (
             OSError,
             AttributeError,
         ) as error:  # no such socket (a computer without the helper; a platform without unix sockets)
             raise HelperUnavailable() from error
-        deadline = time.monotonic() + self._timeout
+        limit = TIMEOUTS.get(action, self._timeout)
+        deadline = time.monotonic() + limit
         data = b""
         try:
-            sock.settimeout(self._timeout)
+            sock.settimeout(limit)
             sock.sendall(f"{self._token} {action}\n".encode("ascii"))
             while len(data) < MAX_ANSWER_BYTES:
                 if time.monotonic() > deadline:
-                    raise HelperUnavailable("The helper took too long to answer.")
+                    raise HelperUnavailable(
+                        "The helper took too long to answer. It may still be running: look again in a minute."
+                    )
                 chunk = sock.recv(4096)
                 if not chunk:
                     break
                 data += chunk
         except HelperUnavailable:
             raise
+        except TimeoutError as error:
+            raise HelperUnavailable(
+                "The helper took too long to answer. It may still be running: look again in a minute."
+            ) from error
         except OSError as error:
             raise HelperUnavailable(
                 "The helper did not answer. Is it running? sudo systemctl status encore-helper.socket"

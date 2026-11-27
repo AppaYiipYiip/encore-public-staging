@@ -47,6 +47,9 @@ class FakeHelper:
     def available(self) -> bool:
         return self.present
 
+    def state(self) -> str:
+        return "ready" if self.present else "missing"
+
     def call(self, action: str) -> HelperAnswer:
         self.calls.append(action)
         return self.answers.get(action, HelperAnswer(done="ok"))

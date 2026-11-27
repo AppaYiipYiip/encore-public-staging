@@ -278,11 +278,13 @@ expect_match "that sends the Host to the terminal" "$(jq -r '.error.message' "$W
 HEALTH="$(curl -s "$API/admin/health" "${auth[@]}")"
 expect "Home says the helper is ready" "$(printf '%s' "$HEALTH" | jq -r '.rows[] | select(.id == "helper") | .state')" ok
 expect "a refusal is in the audit log, with who asked" "$(docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" exec -T encore-server python -c "import sqlite3; print(sum(1 for r in sqlite3.connect('/data/encore.db').execute(\"select detail from audit_log where kind = 'helper' and detail like 'away.on was asked from the admin pages by riley: refused:%'\")))")" 1
-step "the helper's own record"
-JOBS="$(find "$DIR/jobs" -name "*.json" | wc -l)"
-[ "$JOBS" -ge 5 ] || fail "the helper wrote only $JOBS job files"
-grep -qh '"result":"refused"' "$DIR"/jobs/*.json || fail "the refused requests are not in the helper's record"
-ok "every request, refused ones included, is in the helper's record ($JOBS files)"
+step "the helper's own record: the changes in job files, every request in the system log"
+CHANGES="$(grep -l '"action":"backup.make"' "$DIR"/jobs/*.json | wc -l)"
+[ "$CHANGES" -ge 2 ] || fail "the backup left only $CHANGES job records (started and ok are both expected)"
+if grep -qh '"result":"refused"' "$DIR"/jobs/*.json; then fail "a refusal is in the job files: cheap requests could push the records of changes out"; fi
+LOGGED="$(journalctl -t encore-helper --no-pager 2>/dev/null | grep -c 'refused' || true)"
+[ "$LOGGED" -ge 3 ] || fail "the refused requests are not in the system log (found $LOGGED)"
+ok "changes are in the job files ($CHANGES for the backup), refusals only in the system log ($LOGGED)"
 step "an update keeps the helper (the recreate reads the override)"
 encore update >"$WORK/update.out" 2>&1 || { cat "$WORK/update.out"; fail "encore update failed"; }
 cat "$WORK/update.out"

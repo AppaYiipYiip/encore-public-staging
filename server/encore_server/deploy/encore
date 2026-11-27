@@ -735,7 +735,10 @@ HELPER_TMPFILES_DIR="${ENCORE_TMPFILES_DIR:-/etc/tmpfiles.d}"
 
 # One line of the answer, and never more than one: no line break, no control character, at most 300 characters.
 helper_say() { printf '%s\n' "$(printf '%s' "$1" | tr -d '\000-\037' | cut -c1-300)" 2>/dev/null || true; }
-# The helper's own record of a request (the authoritative one: outside every container), and a line in the system log.
+# The helper's own record has two parts, so that cheap requests can never push the records of real changes out (review of #160: 200 junk lines would have flushed them):
+#  * a line in the SYSTEM LOG for every request, refused ones and reads included (`helper_note`): journald keeps it, outside every container;
+#  * a JOB FILE for a request that CHANGES something (`helper_job`: started, then ok / failed / busy), kept up to 2000.
+helper_note() { logger -t encore-helper -- "$1 $2" 2>/dev/null || true; }
 HELPER_SEQ=0
 helper_job() {
     local at
@@ -744,12 +747,11 @@ helper_job() {
     mkdir -p "$HELPER_JOBS" 2>/dev/null && chmod 700 "$HELPER_JOBS" 2>/dev/null || true
     printf '{"at":%s,"action":"%s","result":"%s"}\n' "$at" "$1" "$2" >"$HELPER_JOBS/$at-$$-$HELPER_SEQ-$1.json" 2>/dev/null || true
     logger -t encore-helper -- "$1 $2" 2>/dev/null || true
-    # the newest 200 records are kept
-    find "$HELPER_JOBS" -maxdepth 1 -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -rn | tail -n +201 | cut -d' ' -f2- | while IFS= read -r old; do rm -f -- "$old"; done
+    # the newest 2000 change records are kept
+    find "$HELPER_JOBS" -maxdepth 1 -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -rn | tail -n +2001 | cut -d' ' -f2- | while IFS= read -r old; do rm -f -- "$old"; done
 }
 helper_refuse() {
-    logger -t encore-helper -- "refused: $1" 2>/dev/null || true
-    helper_job refused refused
+    helper_note refused "$1"
     helper_say "failed: That request was refused."
 }
 # The sentence a failed action said, for the page: the last line that `die` wrote, without its marks.
@@ -784,7 +786,7 @@ helper_status() {
     helper_say "result: tailscale=$(helper_tailscale_state)"
     helper_say "result: lastBackup=${newest:+$(stat -c %Y "$newest")}"
     helper_say "done: ok"
-    helper_job status ok
+    helper_note status ok
 }
 helper_backup_list() {
     local pool file label
@@ -796,7 +798,7 @@ helper_backup_list() {
         done < <(backups_in "$pool")
     done
     helper_say "done: ok"
-    helper_job backup.list ok
+    helper_note backup.list ok
 }
 helper_restart() {
     local out
@@ -843,7 +845,7 @@ cmd_helper_session() {
             helper_say "result: address=$(funnel_address)"
             helper_say "result: tailscale=$(helper_tailscale_state)"
             helper_say "done: ok"
-            helper_job away.status ok
+            helper_note away.status ok
             ;;
         backup.make) helper_run backup.make "A backup was made." cmd_backup --quiet --pool=helper ;;
         away.on) helper_run away.on "The away address is on." helper_funnel_on ;;

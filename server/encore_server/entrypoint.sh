@@ -19,7 +19,8 @@ if [ "$(id -u)" = "0" ]; then
     # drop the group the compose file gave this container, and `--keep-groups` would keep root's own group 0 as well: the id is named, and it must be a number.
     case "${ENCORE_HELPER_GID:-}" in
         "") exec setpriv --reuid=1000 --regid=1000 --clear-groups "$@" ;;
-        *[!0-9]*) echo "entrypoint: ENCORE_HELPER_GID is not a number: the helper's group is not used" >&2; exec setpriv --reuid=1000 --regid=1000 --clear-groups "$@" ;;
+        # not a number, or 0 / a number that starts with 0: root's group is never the helper's (a wrong .env must not hand the server group 0)
+        *[!0-9]* | 0*) echo "entrypoint: ENCORE_HELPER_GID is not a usable group number: the helper's group is not used" >&2; exec setpriv --reuid=1000 --regid=1000 --clear-groups "$@" ;;
         *) exec setpriv --reuid=1000 --regid=1000 --groups="$ENCORE_HELPER_GID" "$@" ;;
     esac
 fi
