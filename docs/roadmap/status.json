@@ -348,5 +348,17 @@
   "evidence": "built in the P3-30 PR: password key made by the installer and update (measured on a throwaway Navidrome 0.64.2, docs/evidence e08), backups locked to a public key (age), restore with the key; tests: test_backup_encryption, test_deploy_keys, test_deploy_flow (the real script + the real tool, Docker stood in); not walked on a real install (P3-07)",
   "at": "2026-11-26T19:49:30Z",
   "by": "Claude"
+ },
+ "N-38": {
+  "state": "built",
+  "evidence": "Server half #164 + phone half #166 + fix #167 merged 27 Nov 2026: audio-only key proved on the real ffmpeg (Opus, FLAC, AAC in MP4, MP3), the phone adopts by match (planner table, manager-level test, and a test through the real pull and the sync's own stale marking); not walked",
+  "at": "2026-11-27T10:07:06Z",
+  "by": "Claude"
+ },
+ "N-53": {
+  "state": "built",
+  "evidence": "PR #169 merged 27 Nov 2026: the native API names the real place (measured on the real music server 0.64.2), path_real + errand + trusted_file; integration job proves the finding, 105 ids whole, a moved file found again; not walked",
+  "at": "2026-11-27T10:07:06Z",
+  "by": "Claude"
  }
 }
