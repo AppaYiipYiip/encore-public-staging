@@ -1673,11 +1673,16 @@ def test_a_pass_that_finishes_with_nothing_to_move_spends_the_copy_of_the_failed
     other way) it COMPLETES that attempt without taking or reusing a copy: the pending record must not stay, or a later fold change, which fills the worklist again, would reuse
     this copy, taken before the state of that day."""
     tags = song("nd-1", "حبيتك بالصيف", "فيروز")
+    # P3-33: a pass that lists fewer than half of the linked files is an outage and removes nothing at once. The library has a second file the music server keeps listing, so that "the file was
+    # removed" is a library with one file fewer, not a music folder that is not there.
+    other_tags = song("nd-2", "Another song", "Another artist")
 
     def build(c: sqlite3.Connection) -> None:
         add_ref(c, SELF, "كيفك إنت", ["فيروز"], old=False, duration_ms=200_000)
         add_file(c, SELF, "nd-1", song=tags)
         add_ref(c, OTHER, "حبيتك بالصيف", ["فيروز"], old=False, duration_ms=200_000)
+        add_ref(c, rid("sr", 9), "Another song", ["Another artist"], old=False, duration_ms=200_000)
+        add_file(c, rid("sr", 9), "nd-2", song=other_tags)
 
     make_world(db, build)
     listed(db, SELF)
@@ -1687,13 +1692,15 @@ def test_a_pass_that_finishes_with_nothing_to_move_spends_the_copy_of_the_failed
         raise RuntimeError("the disk is full")
 
     monkeypatch.setattr(library, "touch_ref_holders", disk_full)
-    failed = link_library(db, Music([tags]))
+    failed = link_library(db, Music([tags, other_tags]))
     monkeypatch.setattr(library, "touch_ref_holders", real)
     assert failed.rehome is not None and failed.rehome.failed is True
     (first,) = copies(db)
     assert setting(db, rehome.BACKUP_PENDING_SETTING) == first.name
 
-    finished = link_library(db, Music([]))  # the music server no longer lists the file: nothing to move, the pass completes
+    finished = link_library(
+        db, Music([other_tags])
+    )  # the music server no longer lists the file: nothing to move, the pass completes
 
     assert (
         finished.rehome is not None and finished.rehome.failed is False and finished.rehome.moved == 0 and worklist(db) == set()

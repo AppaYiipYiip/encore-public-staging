@@ -44,6 +44,10 @@ class Facts:
     host: HostStatus | None
     #: the name of the Host's time zone (`Settings.time_zone`) whose midnight starts "today"
     clock_zone: str = "UTC"
+    #: Files the library link kept although the music server did not list them in its last pass (P3-33): a music folder that looks empty or partly missing (a disk or share that is not mounted).
+    #: `library_listed` is how many the same pass did find.
+    library_held_back: int = 0
+    library_listed: int = 0
     #: The helper the admin pages ask for a backup or the away address: `ready`, `missing` (not installed: not a failure, the row says how to get it) or `cannot-open` (it is there and this
     #: server may not open it: the Host must act).
     helper: str = "missing"
@@ -96,6 +100,25 @@ def build(f: Facts) -> dict[str, Any]:
         rows.append(_row("music-server", "Music server", "ok", "Working"))
     else:
         rows.append(_row("music-server", "Music server", "unknown", "Not set up", "Encore has no music server to ask."))
+
+    # -- the music folder (P3-33)
+    if f.library_held_back > 0:
+        rows.append(
+            _row(
+                "library",
+                "Music folder",
+                "warn",
+                "Looks empty or partly missing",
+                f"The music server lists {_plural(f.library_listed, 'song', 'songs')} and not {_plural(f.library_held_back, 'other', 'others')} this server knows. Nothing was removed.",
+            )
+        )
+        needs.append(
+            _need(
+                "library",
+                "The music folder looks empty or partly missing.",
+                "Is the disk or network share it lives on mounted? Nothing was removed, and when the music is back everything is as it was. A file that stays missing for a day while the rest is listed is removed.",
+            )
+        )
 
     # -- songs from YouTube
     if f.youtube_state == "off":

@@ -95,6 +95,12 @@ def world(seed: int) -> dict[str, Any]:
                     "added": 5000 + n if r.random() < 0.7 else 5000 + r.randint(1, 20),
                 }
             )
+    # P3-33: a pass that lists fewer than half of the linked files is an outage, not a library (the link then removes nothing at once, `scanner.PLAUSIBLE_SHARE`). These worlds are libraries
+    # whose unlisted files are really gone: enough of the files are listed for the pass to be trusted.
+    for gone in [f for f in files_ if not f["listed"]]:
+        if sum(1 for f in files_ if f["listed"]) * 2 >= len(files_):
+            break
+        gone["listed"] = True
     if not any(x["worklist"] for x in refs_):
         refs_[0]["worklist"] = True
     order = list(range(len(files_)))

@@ -75,6 +75,8 @@ def collect(svc: Services) -> Facts:
         imports_today=int(imports),
         host=host_status.read(svc.settings.data_dir),
         clock_zone=zone_name(svc.settings.time_zone),
+        library_held_back=svc.linker.last.held_back if svc.linker is not None and svc.linker.last is not None else 0,
+        library_listed=svc.linker.last.seen if svc.linker is not None and svc.linker.last is not None else 0,
         helper=svc.helper.state() if svc.helper is not None else "missing",
     )
 
