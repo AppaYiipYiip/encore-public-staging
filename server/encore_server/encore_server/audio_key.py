@@ -15,7 +15,8 @@ would need its own prefix (`a2:`), and the phone's adopt-by-match rule (the task
 
 * **A new keep**: right after the keeper has tagged and placed the file (`keeper._link`), so a song is served with its key from the first moment (`attach_file`).
 * **A file the library link found** (an imported library, a file put there by hand), and **a file whose size changed behind the server's back**: [AudioKeys.run_once], an errand of the hourly
-  library link, at most [BATCH] files and [BUDGET_S] seconds a pass, preferred files first, never at a priority that competes with playing. A library is keyed over a few passes, nobody waits for it.
+  library link, at most [BATCH] files and [BUDGET_S] seconds a pass, preferred files first, never at a priority that competes with playing. **Only a row whose stored path names a file of exactly the size the music
+  server reports for it is keyed** (see [on_disk]): for a library file the stored path is the music server's tag-built one, so most library rows are never keyed and keep behaving as before.
 * **A server's own tag rewrite** (the repairs to come) must call [carry] after the rewrite, in the same step: it records the NEW size against the SAME key, so the pass does not hash the file again
   and a change of ffmpeg's version cannot change a key the phones hold. A repair that forgets costs only the hashing (the pass finds the same key again), never a key change.
 
@@ -36,7 +37,7 @@ import sqlite3
 import subprocess
 import time
 from collections.abc import Callable
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import NamedTuple
 
 from . import refs
@@ -118,17 +119,14 @@ def carry(conn: sqlite3.Connection, file_id: str, new_size: int) -> None:
 def on_disk(music_dir: Path, stored: str) -> Path | None:
     """The file a `song_file.path` names, or `None` (not there, or not inside the music folder).
 
-    A path made by the keeper, and the music server's own path when it is relative, is relative to the music folder and is taken as it is, never searched for. **A path the music server reports as ABSOLUTE
-    (or with the root of its own library in front, whose mount can differ from this server's) is looked for by its tail:** the longest tail that is a file under [music_dir]. Never `..`."""
-    parts = [part for part in PurePosixPath(stored.replace("\\", "/")).parts if part != "/"]
-    if not parts or any(part in ("..", ".") for part in parts):
+    **A stored path is a location only for the files the keeper placed. For a library file it is the music server's own `path`, which the real music server (0.64.2, measured in the integration job) builds
+    from the TAGS (`Artist/Album/Title.opus`), not from where the file lies.** So a path that names a file proves nothing about it: the caller still checks the size against the one the music server
+    reports for that very row before it trusts the file (the keeper's own rows, and a library laid out exactly as its tags say, pass; any other library row finds no file and has no key)."""
+    parts = stored.replace("\\", "/")
+    if not parts or any(part in ("..", ".") for part in parts.split("/")):
         return None
-    absolute = stored.replace("\\", "/").startswith("/")
-    for start in range(len(parts) if absolute else 1):
-        candidate = music_dir.joinpath(*parts[start:])
-        if inside(music_dir, candidate) and candidate.is_file():
-            return candidate
-    return None
+    candidate = music_dir / parts
+    return candidate if inside(music_dir, candidate) and candidate.is_file() else None
 
 
 class Pass(NamedTuple):
@@ -143,7 +141,7 @@ class Pass(NamedTuple):
 #: The files the errand has NEVER looked at come first (NULL sorts first), then the one looked at longest ago: a file that is never found or never readable cannot keep the others from their turn.
 #: Within that, preferred files first (the ones a phone downloads), then the newest.
 _TODO = (
-    "SELECT id, ref, path, audio_key, audio_key_size FROM song_file WHERE path IS NOT NULL"
+    "SELECT id, ref, path, audio_key, audio_key_size, json_extract(meta, '$.size') AS seen_size FROM song_file WHERE path IS NOT NULL"
     " AND (audio_key_size IS NULL OR audio_key_size != COALESCE(json_extract(meta, '$.size'), audio_key_size))"
     " ORDER BY audio_key_tried_at, preferred DESC, added_at DESC, id LIMIT ?"
 )
@@ -186,6 +184,12 @@ class AudioKeys:
                 continue
             try:
                 size = path.stat().st_size
+                if row["seen_size"] is not None and size != row["seen_size"]:
+                    # Not the file the music server means (a library path is built from the tags, so two copies of an album share one), or a file retagged on disk and not scanned yet: either way
+                    # it is not hashed for this row. A scan that reports its size lets a later pass take it.
+                    left += 1
+                    looked_at.append(str(row["id"]))
+                    continue
                 key, why = "", None
                 try:
                     key = self._hash(path)

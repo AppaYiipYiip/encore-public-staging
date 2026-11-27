@@ -499,26 +499,39 @@ def test_a_server_tag_rewrite_that_carried_its_key_is_not_hashed_again_before_th
     assert bench.row(ref)["audio_key"] == key and file_of(bench.db, ref)["audioKey"] == key
 
 
-def test_a_path_is_relative_to_the_music_folder_and_only_an_absolute_one_is_looked_for_by_its_tail(tmp_path: Path) -> None:
+def test_a_stored_path_is_taken_as_it_is_inside_the_music_folder_and_never_searched_for(tmp_path: Path) -> None:
     music = tmp_path / "music"
     song = music / "Artist" / "Album" / "01 - Song.opus"
     song.parent.mkdir(parents=True)
     song.write_bytes(b"x")
     assert on_disk(music, "Artist/Album/01 - Song.opus") == song
-    assert on_disk(music, "Artist\\Album\\01 - Song.opus") == song, "a path written with backslashes"
-    assert on_disk(music, "/music/Artist/Album/01 - Song.opus") == song, "the music server's own root in front of it"
-    assert on_disk(music, "/mnt/library/music/Artist/Album/01 - Song.opus") == song
+    assert on_disk(music, "Artist" + chr(92) + "Album" + chr(92) + "01 - Song.opus") == song, "a path written with backslashes"
+    assert on_disk(music, str(song)) == song, "an absolute path that IS a location inside the music folder"
     assert on_disk(music, "Album/01 - Song.opus") is None, (
-        "a RELATIVE path is not searched for: another song's file by the same tail must never be taken"
+        "never found by its tail: another song's file by the same tail must never be taken"
     )
-    assert on_disk(music, "Artist/Album/Missing.opus") is None
-    assert on_disk(music, "../music/Artist/Album/01 - Song.opus") is None and on_disk(music, "") is None
+    assert on_disk(music, "/music/Artist/Album/01 - Song.opus") is None, "nor a root that is not this one's"
+    assert on_disk(music, "Artist/Album/Missing.opus") is None and on_disk(music, "") is None
     outside = tmp_path / "secret.opus"
     outside.write_bytes(b"x")
-    assert on_disk(music, "../secret.opus") is None and on_disk(music, "/etc/../secret.opus") is None
+    assert on_disk(music, "../secret.opus") is None and on_disk(music, str(outside)) is None
 
 
-def test_a_library_row_with_the_music_servers_absolute_path_is_still_keyed(bench: Bench) -> None:
-    ref, path = bench.add(b"a library song", stored="/music/Artist/Song 1.opus")
+def test_a_file_whose_size_is_not_the_one_the_music_server_reports_for_that_row_is_never_hashed(bench: Bench) -> None:
+    """Review of #164, measured on the real music server: a library row's path is built from the tags, so it can name ANOTHER song's file (two copies of an album share one built path) or a file that was
+    retagged on the disk and not scanned yet. Only a file of exactly the reported size is the row's file."""
+    ref, path = bench.add(b"the file that is really at this path")
+    bench.scan_says_size(ref, 999)  # the music server means a file of another size
 
+    first = bench.keys().run_once()
+
+    assert (first.made, first.left) == (0, 1) and bench.hashed == [] and bench.row(ref)["audio_key"] is None
+    bench.scan_says_size(ref, path.stat().st_size)  # a scan has seen the file as it is
+    assert bench.keys().run_once().made == 1
+
+
+def test_a_row_with_no_size_from_the_music_server_is_keyed_when_the_path_names_a_file(bench: Bench) -> None:
+    ref, path = bench.add(b"a keeper row the music server never described")
+    with bench.db.tx() as conn:
+        conn.execute("UPDATE song_file SET meta = NULL WHERE ref = ?", (ref,))
     assert bench.keys().run_once().made == 1 and bench.row(ref)["audio_key"] == of_bytes(path)

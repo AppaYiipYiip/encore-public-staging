@@ -6,6 +6,7 @@ import hashlib
 import logging
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -108,6 +109,7 @@ class Rig:
         self.cover_asked: list[tuple[str, str, str | None]] = []
         self.cover_lengths: list[int | None] = []
         self.key_breaks: Exception | None = None
+        self.while_keying: Callable[[], None] | None = None
 
         def write_tags(path: Path, tags: Tags, cover: bytes | None = None) -> bool:
             self.tagged.append((path.suffix, tags, cover))
@@ -135,6 +137,8 @@ class Rig:
 
     def make_key(self, path: Path) -> str:
         """What `audio_key.audio_key_of` is to the keeper, without a program: a hash of the bytes (the real one is proved on the real ffmpeg in the integration job)."""
+        if self.while_keying is not None:
+            self.while_keying()
         if self.key_breaks is not None:
             raise self.key_breaks
         return "a1:" + hashlib.sha256(path.read_bytes()).hexdigest()[:32]
@@ -584,3 +588,31 @@ def test_n38_a_key_that_cannot_be_made_does_not_fail_the_keep(rig: Rig, error: E
     assert (row["audio_key"], row["audio_key_size"]) == (None, None), (
         "nothing is remembered as if it were an answer about the file"
     )
+
+
+def test_n38_the_key_is_the_keepers_even_when_the_scanner_made_the_row_first_with_the_music_servers_built_path(rig: Rig) -> None:
+    """Review of #164, measured: a library row's path is the music server's tag-built one, and `attach_file` keeps the path a row has, so a file the scanner linked between the music server finding the file and
+    the keeper's own `_link` carries the built path for ever. The key does not depend on any path: the keeper makes it from the file it holds and writes it by the row's id."""
+    ref = rig.make_ref()
+
+    def the_scanner_gets_there_first() -> None:
+        with rig.db.tx() as conn:
+            refs.attach_file(
+                conn,
+                ref,
+                navidrome_song_id="nd-1",
+                path="Radiohead/In Rainbows/Weird Fishes - Arpeggi.opus",
+                codec="opus",
+                bitrate_kbps=1,
+                meta={"size": 1},
+            )
+
+    rig.while_keying = the_scanner_gets_there_first
+    rig.keep(ref)
+
+    placed = next((rig.music / "Encore").rglob("*.opus"))
+    assert rig.ref(ref)["file"]["audioKey"] == rig.make_key(placed)
+    with rig.db.read() as conn:
+        rows = conn.execute("SELECT path, audio_key_size FROM song_file WHERE ref = ?", (ref,)).fetchall()
+    assert len(rows) == 1, "one row"
+    assert rows[0]["audio_key_size"] == placed.stat().st_size, "keyed at the size the keeper placed, whatever path won"

@@ -7,7 +7,9 @@ music folder holds. That is the whole promise of the key (a repair that rewrites
 
 from __future__ import annotations
 
+import secrets
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -136,35 +138,43 @@ def test_the_hourly_errand_keys_a_library_on_the_real_ffmpeg_and_a_retag_makes_n
         )
 
 
-def test_a_file_the_real_music_server_lists_is_found_on_the_disk_and_keyed_whatever_its_tags_say(
+def stored_row(rig: Rig, title: str) -> Any:
+    with rig.svc.db.read() as conn:
+        return conn.execute(
+            "SELECT f.id, f.path, f.audio_key, f.audio_key_tried_at FROM song_file f JOIN song_ref r ON r.id = f.ref WHERE r.title = ?",
+            (title,),
+        ).fetchone()
+
+
+def test_the_music_servers_path_for_a_library_file_is_built_from_its_tags_so_only_a_file_where_its_tags_say_is_keyed(
     rig: Rig, navidrome: NavidromeClient
 ) -> None:
-    """Review of #164: the errand resolves `song_file.path`, which is whatever the scanner stored from the music server's own `path`. If that were not a path under the music folder (a path built from the tags,
-    another library root) every library file would be 'not there' and never keyed, silently. Proved against the real music server, with a file whose folder and name disagree with its tags."""
-    import secrets
-
+    """MEASURED on the real music server (0.64.2, 27 Nov 2026): the `path` it reports for a song is built from the TAGS (`Artist/Album/Title.opus`), not the place the file lies. The scanner stores that
+    path as `song_file.path`, so for a library file it is not a location. The errand takes a stored path as a location (relative to the music folder) and keys a file only when it has the size the music
+    server reports for the row: a file laid out exactly as its tags say is keyed, any other library file is not (and keeps behaving as before: a retag outside the server re-downloads once)."""
     unique = secrets.token_hex(3)
-    song = tone(
-        MUSIC / f"Zxqv misc {unique}" / "random-name-1234.opus",
-        title=f"Zxqv Title {unique}",
-        artist=f"Zxqv Artist {unique}",
-        album=f"Zxqv Album {unique}",
+    artist, album = f"Zxqv Artist {unique}", f"Zxqv Album {unique}"
+    elsewhere = tone(
+        MUSIC / f"Zxqv misc {unique}" / "random-name-1234.opus", title=f"Zxqv Elsewhere {unique}", artist=artist, album=album
+    )
+    where_tags_say = tone(
+        MUSIC / artist / album / f"Zxqv Placed {unique}.opus", title=f"Zxqv Placed {unique}", artist=artist, album=album
     )
     scan_and_wait(navidrome)
     link_library(rig.svc.db, navidrome)
-    with rig.svc.db.read() as conn:
-        row = conn.execute(
-            "SELECT f.id, f.path, f.audio_key FROM song_file f JOIN song_ref r ON r.id = f.ref WHERE r.title = ?",
-            (f"Zxqv Title {unique}",),
-        ).fetchone()
-    assert row is not None, "the library link made a ref and a file row for it"
-    stored = row["path"]
+    lost, found = stored_row(rig, f"Zxqv Elsewhere {unique}"), stored_row(rig, f"Zxqv Placed {unique}")
+    assert lost is not None and found is not None, "the library link made a row for both"
+    assert lost["path"] != elsewhere.relative_to(MUSIC).as_posix(), (
+        f"the music server reports {lost['path']!r} for a file that lies at {elsewhere.relative_to(MUSIC).as_posix()!r}: if this ever flips, it now reports real paths and the real-path item can go"
+    )
+    assert found["path"] == where_tags_say.relative_to(MUSIC).as_posix()
 
     AudioKeys(rig.svc.db, MUSIC).run_once()
 
-    with rig.svc.db.read() as conn:
-        after = conn.execute("SELECT audio_key, audio_key_size FROM song_file WHERE id = ?", (row["id"],)).fetchone()
-    assert after["audio_key"] == audio_key_of(song), (
-        f"the music server's own path ({stored!r}) did not lead the errand to the file"
+    lost, found = stored_row(rig, f"Zxqv Elsewhere {unique}"), stored_row(rig, f"Zxqv Placed {unique}")
+    assert found["audio_key"] == audio_key_of(where_tags_say), (
+        "a file where its tags say it is: its path is a location, and the size agrees"
     )
-    assert after["audio_key_size"] == song.stat().st_size
+    assert lost["audio_key"] is None and lost["audio_key_tried_at"] is not None, (
+        "no key for the other, and it was looked at (it goes to the back of the queue)"
+    )
