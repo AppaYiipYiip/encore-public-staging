@@ -44,7 +44,7 @@ they share one HTTP client, one database, one auth check, one config.
 
 | Module | Owns | Talks to | Replaces (old) |
 |--------|------|----------|----------------|
-| `gateway` | One port; routes `/encore/*` to modules, proxies the rest to Navidrome (Subsonic API, covers, streams, Navidrome's own web UI for tinkerers); authenticates every request once | Navidrome (internal network) | Six ports, `ServiceFinder`, the "one answer" endpoint |
+| `gateway` | One port; routes `/encore/*` to modules, proxies the rest to Navidrome (Subsonic API, covers, streams; Navidrome's own web page, sign-in and `/api` are shut for everybody unless the Host switched `music-web-page` on and the visitor is PROVED to be on the home network, P3-34); authenticates every request once | Navidrome (internal network) | Six ports, `ServiceFinder`, the "one answer" endpoint |
 | `accounts` | Sign-in (checks the password with Navidrome once), **device tokens** (long-lived, revocable, per device), device names | Navidrome native API | Subsonic tokens with the password kept on the phone |
 | `library` | Per person: likes, playlists, saved albums/artists, play history. Entries are **song refs** (§3) | `catalogue`, `keeper`, mirror to Navidrome | Navidrome as the store; "pending likes"; "instant playlist"; "upgrade map" |
 | `playback` | Per person: current song ref, position, queue, context, repeat/shuffle, **active device lease** | `live` | nothing (new requirement) |

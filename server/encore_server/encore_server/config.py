@@ -88,6 +88,9 @@ class Settings:
     #: The catalogue (Deezer's public search, docs/11 ADR-R47): this server asks it for pictures and answers its phones' search, artist and album pages from
     #: it. Off (`ENCORE_CATALOGUE=0`), no request is ever opened to it, the feature is not listed, and the pictures finders skip without remembering a miss.
     catalogue: bool = True
+    #: P3-34 (audit B-56): the music server's OWN web page, sign-in and `/api` through this server's address. Shut by default for everybody; on, they open only to a visitor the
+    #: server can PROVE is on the home network (`netaddr.provably_home`). The Subsonic API (`/rest`) is the apps' door and is not governed by this.
+    music_web_page: bool = False
     #: N-34, the album pass and the keeper's question about a NEW keep (which album is this song on): `ENCORE_ALBUM_PASS=0` stops BOTH (nothing is asked of the catalogue for an album and
     #: nothing is stamped); it is NOT `ENCORE_CATALOGUE=0`, which also stops the pictures and the catalogue's pages. A stamp is permanent and reaches the Host's disk through a later keep, so a
     #: Host who does not want it can say so.
@@ -136,6 +139,7 @@ class Settings:
             youtube_pace_s=pace_from(e.get("ENCORE_YOUTUBE_PACE_S", "")),
             fault=e.get("ENCORE_FAULT", "").strip(),
             catalogue=e.get("ENCORE_CATALOGUE", "1").strip().lower() not in ("0", "false", "no"),
+            music_web_page=e.get("ENCORE_MUSIC_WEB_PAGE", "0").strip().lower() in ("1", "true", "yes"),
             album_pass=e.get("ENCORE_ALBUM_PASS", "1").strip().lower() not in ("0", "false", "no"),
             keep=e.get("ENCORE_KEEP", "1").strip().lower() not in ("0", "false", "no"),
             workers=e.get("ENCORE_WORKERS", "1").strip().lower() not in ("0", "false", "no"),

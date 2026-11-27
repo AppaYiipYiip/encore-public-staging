@@ -12,6 +12,7 @@ from . import (
     lossless,
     lyrics,
     music_server,
+    music_web_page,
     recommendations,
     youtube,
 )
@@ -22,6 +23,7 @@ ADDONS: tuple[AddOn, ...] = (
     catalogue.ADDON,
     album_pass.ADDON,
     music_server.ADDON,
+    music_web_page.ADDON,
     lossless.ADDON,
     away.ADDON,
     backups.ADDON,

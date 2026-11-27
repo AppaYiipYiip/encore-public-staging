@@ -60,7 +60,7 @@ def test_the_documents_table_and_the_manifest_list_the_same_add_ons() -> None:
 
 
 def test_only_built_add_ons_the_server_reads_at_start_have_a_setting() -> None:
-    assert {a.id for a in ADDONS if a.setting} == {"youtube", "catalogue", "album-pass"}
+    assert {a.id for a in ADDONS if a.setting} == {"youtube", "catalogue", "album-pass", "music-web-page"}
     assert all(not (a.setting and (a.planned or a.host_managed)) for a in ADDONS)
 
 

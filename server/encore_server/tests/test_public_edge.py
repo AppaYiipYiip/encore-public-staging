@@ -349,9 +349,14 @@ def test_the_subsonic_api_still_reaches_the_music_server_from_the_internet(rig: 
     assert answer.status_code == 200 and answer.text == "NAVIDROME"
 
 
-def test_on_the_home_network_the_music_servers_page_is_still_there(rig: Rig) -> None:
-    assert rig.client.get("/app/", headers={"X-Forwarded-For": "192.168.1.30"}).text == "NAVIDROME"
-    assert rig.client.get("/auth/login").text == "NAVIDROME", "no forwarded address at all: the connection is a private one"
+def test_on_the_home_network_the_music_servers_page_is_shut_too_until_the_host_switches_it_on(rig: Rig) -> None:
+    """P3-34 (audit B-56): "private" is no proof of "home" where Docker hides the visitor's address, so the page is shut to everybody by default; the switch and the proof that
+    opens it are in `test_music_web_page_door.py`."""
+    for headers in ({"X-Forwarded-For": "192.168.1.30"}, {}):
+        for path in ("/app/", "/auth/login"):
+            answer = rig.client.get(path, headers=headers)
+            assert answer.status_code == 404 and answer.json()["error"]["code"] == "not_found", (path, headers)
+    assert not rig.music.asked
 
 
 def test_a_request_that_arrives_by_the_away_address_is_public_whatever_it_says_about_itself(rig: Rig) -> None:

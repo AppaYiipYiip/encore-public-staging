@@ -25,6 +25,7 @@ from . import (
     deezer,
     gateway,
     keyrepair,
+    netaddr,
     refs,
     textnorm,
 )
@@ -86,6 +87,7 @@ from .routes.common import (
     _youtube_status,
     authorize_public_subsonic,
     is_public_request,
+    music_web_page_open,
 )
 from .scanner import LibraryLinker
 from .scheduler import Scheduler
@@ -390,6 +392,7 @@ def create_app(
         keep_watch=keep_watch,
         import_watch=import_watch,
         stream_key=stream_key,
+        own_network=netaddr.read_own_network(),
         artist_finder=artist_finder,
         catalogue=catalogue,
         make_owner_account=make_owner_account or default_owner_account,
@@ -431,7 +434,12 @@ def create_app(
     app.add_api_route("/setup", setup_routes.short_setup, methods=["GET", "HEAD"], include_in_schema=False)
     app.add_api_websocket_route("/encore/live", live_routes.live)
     gateway.mount(
-        app, settings.navidrome_url, client=gateway_client, public=is_public_request, authorize_public=authorize_public_subsonic
+        app,
+        settings.navidrome_url,
+        client=gateway_client,
+        public=is_public_request,
+        authorize_public=authorize_public_subsonic,
+        web_page_open=music_web_page_open,
     )
 
     @app.exception_handler(ApiError)

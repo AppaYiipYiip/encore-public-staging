@@ -66,12 +66,15 @@ def mount(
     client: httpx.AsyncClient | None = None,
     public: Callable[[Request], bool] | None = None,
     authorize_public: Callable[[Request], Awaitable[None]] | None = None,
+    web_page_open: Callable[[Request], bool] | None = None,
 ) -> None:
     """Adds the catch-all route that passes everything not handled by this server to [upstream]. Call it after every other route.
 
-    A request that comes in from the public internet ([public] says so) is passed on only for the Subsonic API (`/rest/...`), which is all the app
-    and the Subsonic apps people already use ask for. The music server's own web page, its sign-in and its `/api` stay on the home network: through
-    Funnel they would put a second, unguarded front door on the internet (AUDIT B12).
+    **The music server's own web page, its sign-in and its `/api` are shut by default, for everybody** (P3-34, audit B-56): they answer the 404 of an unknown route of ours, unless
+    [web_page_open] says the visitor may (the Host switched the page on and the server can PROVE the visitor is at home: a private address is not proof where Docker hides the
+    visitor's address). Without [web_page_open] they are always shut. Everything else a client of the music server asks for is the Subsonic API (`/rest/...`), which is all the
+    app and the Subsonic apps people already use ask for. Before, they were passed to anything that looked private: through a port forward to a Docker Desktop host they would
+    have put a second, unguarded front door on the internet (AUDIT B12, B-56).
 
     The Subsonic API that is left is guarded as well (AUDIT B12b): [authorize_public] is awaited for such a request before anything is passed on,
     and raises an `ApiError` to refuse it. Without it the music server would be the only door where wrong passwords are not slowed (measured:
@@ -87,11 +90,11 @@ def mount(
             return JSONResponse(ApiError("not_found").body(), status_code=404)
         if is_first_account_request(path):
             return JSONResponse(ApiError("not_found").body(), status_code=404)
-        if public is not None and public(request):
-            if path != "rest" and not path.startswith("rest/"):
-                return JSONResponse(ApiError("not_found").body(), status_code=404)
-            if authorize_public is not None:
+        if path == "rest" or path.startswith("rest/"):
+            if public is not None and public(request) and authorize_public is not None:
                 await authorize_public(request)  # raises ApiError: the app's handler answers in the usual envelope
+        elif web_page_open is None or not web_page_open(request):
+            return JSONResponse(ApiError("not_found").body(request_id_of(request)), status_code=404)
         url = f"{base}/{path}" + (f"?{request.url.query}" if request.url.query else "")
         headers = _forward(request.headers)
         # httpx would ask for gzip when the phone did not; the phone's own choice is what the music server must see.

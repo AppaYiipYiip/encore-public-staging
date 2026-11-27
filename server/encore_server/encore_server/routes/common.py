@@ -102,6 +102,9 @@ class Services:
     make_owner_account: Callable[[Settings, dict[str, Any]], Any] | None = None
     #: The helper (docs/36 section 3): what the admin pages ask of the computer; `None` when this install has none.
     helper: HelperClient | None = None
+    #: The server's own gateways and addresses, read once at start (`netaddr.read_own_network`); `None` when it cannot read them. What lets the server tell a visitor from the
+    #: gateway that hides one (P3-34): without it no direct visitor is proved to be at home.
+    own_network: netaddr.OwnNetwork | None = None
 
 
 def services(request: Request) -> Services:
@@ -262,14 +265,32 @@ def client_address(request: Request) -> str:
     return netaddr.client_address(peer, request.headers.get("x-forwarded-for"), extra)
 
 
+def _by_the_away_address(request: Request) -> bool:
+    """Did the request come in under the away address (the name the internet reaches this server by)? Then the visitor is the internet, whatever address the connection shows."""
+    away = services(request).settings.away_url
+    host = (request.headers.get("host") or "").rsplit(":", 1)[0].lower() if "]" not in (request.headers.get("host") or "") else ""
+    return bool(away and host and host == (urlparse(away).hostname or "").lower())
+
+
 def is_public_request(request: Request) -> bool:
     """Did this request come in from the public internet (through the away address, or from an address that is not ours)? The gateway lets such a
     request reach only the Subsonic API of the music server (AUDIT B12)."""
-    away = services(request).settings.away_url
-    host = (request.headers.get("host") or "").rsplit(":", 1)[0].lower() if "]" not in (request.headers.get("host") or "") else ""
-    if away and host and host == (urlparse(away).hostname or "").lower():
+    if _by_the_away_address(request):
         return True
     return netaddr.is_public(client_address(request))
+
+
+def music_web_page_open(request: Request) -> bool:
+    """May this visitor open the music server's own web page, sign-in and `/api` through the gateway? (P3-34, audit B-56.) Only when the Host switched `music-web-page` on AND the
+    server can PROVE the visitor is on the home network (`netaddr.provably_home`): a private address is not proof, because where Docker hides the visitor's address everybody
+    arrives from the network's own gateway. Never for a request under the away address."""
+    svc = services(request)
+    if not svc.settings.music_web_page or _by_the_away_address(request):
+        return False
+    peer = request.client.host if request.client else None
+    return netaddr.provably_home(
+        peer, request.headers.get("x-forwarded-for"), svc.own_network, netaddr.networks(svc.settings.trusted_proxies)
+    )
 
 
 def accounts_of(request: Request) -> Accounts:
