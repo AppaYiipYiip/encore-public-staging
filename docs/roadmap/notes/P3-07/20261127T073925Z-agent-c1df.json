@@ -1,0 +1,12 @@
+{
+ "id": "20261127T073925Z-agent-c1df",
+ "item": "P3-07",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T07:39:25Z",
+ "type": "note",
+ "body": "FOR THE OWNER (one decision, exact steps): the real proof of the install doors (PRs #153-#161: the setup page with its code, reset-password, the helper, Backups, Away) is a walk by hand on a CLEAN computer. The CI job `install-e2e` already runs the real installer on a clean machine for both doors (browser and headless) on every pull request, and found real defects, but it is NOT the definition of pass (docs/RELEASE-CANDIDATE.md). Nothing here was walked.\nCHOOSE ONE (the advisor recommends A):\nA) \"Yes, make a new test VM.\" I create VM 109 `encore-install-walk` on your Proxmox host (2 cores, 4 GB memory, 25 GB disk, Ubuntu Server 24.04 cloud image, the house bridge). It DESTROYS NOTHING (a new machine). I walk both doors as a person would (the guide, then the browser, then the phone), write the result as a board note, and STOP the VM afterwards (it keeps the disk). Cost: 25 GB of disk and 4 GB of memory while it runs. To do this I need your word in chat (\"yes, VM 109\") because it is a write on your homelab; the undo is `qm stop 109 && qm destroy 109 --purge`, logged in local/homelab-changes-<date>.md.\nB) \"Wipe VM 108 and use it.\" VM 108 is the old test server: it holds the frozen test pair's data and the test accounts. A fresh install on it DESTROYS those (its Encore database, its music-server accounts, its backups folder). Not recommended: it was the record of the test week.\nC) \"Not now.\" The walk then waits; everything else continues, and every row stays \"built, not walked\".\nNothing breaks if you do not answer.",
+ "to": [
+  "owner"
+ ]
+}

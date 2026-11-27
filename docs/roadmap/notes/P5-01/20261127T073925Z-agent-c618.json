@@ -1,0 +1,12 @@
+{
+ "id": "20261127T073925Z-agent-c618",
+ "item": "P5-01",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T07:39:25Z",
+ "type": "note",
+ "body": "FOR THE OWNER (one decision): P3-27 (the update channel that only moves when someone decides), then P3-14 (updates that undo themselves) and the Update button, wait on P5-01, the release key (docs/12-app-signing-key.md, decision D-10 agreed 21 Oct). I did NOT create the key: making a signing key and putting it in GitHub's secrets is creating an access key, which needs your explicit word.\nHOW THIS GOES (about 5 minutes of yours):\n1. You say in chat: \"yes, make the release key\".\n2. I run `keytool -genkeypair` (RSA 4096, 30 years, alias `encore`) in a private folder outside the repository, add the keystore (base64) and its two passwords to the repository's GitHub Actions SECRETS with `gh secret set`, write `release.yml` (signs APKs on `v*` tags, attaches them with SHA-256 checksums, pushes the server images), and prove it on a throwaway tag. If `gh` is refused the secrets step, I give you the three exact clicks instead (Settings > Secrets and variables > Actions > New repository secret, three names, three values from a file).\n3. YOUR ONLY PART: I put ONE backup of the keystore and the passwords in `FOR-THE-OWNER\\release-key-backup\\` (outside git). You copy that folder to a USB stick or your password manager and delete it from the PC. If the account is ever lost, that copy is the only way back; without it every phone must uninstall Encore (downloads lost).\n4. COST YOU ACCEPT (already agreed in D-10): the first build signed with it needs you and your friend to reinstall the app once (playlists and likes live on the server; only downloads re-download).\nWhy now: P3-27 stops installed servers from following whatever was merged last (audit B-2), which is a safety need before any stranger installs. Nothing breaks if you do not answer.",
+ "to": [
+  "owner"
+ ]
+}

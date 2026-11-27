@@ -1,0 +1,12 @@
+{
+ "id": "20261127T073926Z-agent-5dac",
+ "item": "P0-16",
+ "role": "agent",
+ "by": "lead (claude, admin pages)",
+ "at": "2026-11-27T07:39:26Z",
+ "type": "note",
+ "body": "P0-16 (\"Make GitHub's checks run again\") is resolved: the repository is public (13 Nov 2026) and Actions are free, so every pull request has run the full set of checks since (the server job with ruff, mypy and the whole suite, the real-Navidrome job, the shell checks, the secrets scan, the documents checks, and since 27 Nov the real-install job for both doors). Example: PR #161's run, all green. Nothing is waiting on billing any more. The owner may close the item.",
+ "to": [
+  "owner"
+ ]
+}
