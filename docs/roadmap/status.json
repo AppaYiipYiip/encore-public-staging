@@ -372,5 +372,11 @@
   "evidence": "Server (#104 #110 #115 #118: the one fold, the rekey, the rehome, the dry run on a copy of the real database) and phone (N-46 #177: normalizeForMatch on the Dart twin of the fold) both merged by 27 Nov 2026, each proved by tests (the shared fixture over every code point, real non-Latin names); NOT deployed and NOT walked: the first real deploy (backup first, Python 3.12, read the dry-run report) and the walk of an Arabic song on the owner's phone are owed",
   "at": "2026-11-27T11:53:14Z",
   "by": "Claude"
+ },
+ "P3-32": {
+  "state": "built",
+  "evidence": "PR #179: the claim chooses by person in SQL; the audit probe fair-share prints nina's 20 at positions 2..40 (was 1,802 to 1,840) and PASS; tests/test_scheduler.py holds docs/07 section 6's example at full size, the claim's lock, look-again, nobody-turn and query-plan rules; the cost of a claim is measured (11 ms at 2,020 queued, 39 ms at 20,000, 105 ms at 60,000); not walked",
+  "at": "2026-11-27T12:15:30Z",
+  "by": "Claude"
  }
 }
