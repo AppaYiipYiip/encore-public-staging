@@ -338,13 +338,14 @@ class Scheduler:
                 waiting.append((None, int(nobody["oldest"])))
             if not waiting:
                 return None
-            who, _ = min(waiting, key=lambda w: (self._served.get(w[0], 0.0) if w[0] is not None else 0.0, w[1]))
+            # Ties are settled the way they always were: by age, then by the order the rows were written (never by a random id), then by the person's own id.
+            who, _ = min(waiting, key=lambda w: (self._served.get(w[0], 0.0) if w[0] is not None else 0.0, w[1], w[0] or ""))
             joined = "JOIN work_item_person wp ON wp.item = i.id AND wp.person = ?" if who is not None else ""
             extra = "" if who is not None else " AND NOT EXISTS (SELECT 1 FROM work_item_person wp WHERE wp.item = i.id)"
             found: sqlite3.Row | None = conn.execute(
                 f"SELECT i.id, i.kind, i.ref, i.priority, i.attempts, i.created_at,"  # noqa: S608 - only placeholders are formatted in
                 f" (SELECT group_concat(person) FROM work_item_person WHERE item = i.id) AS persons"
-                f" FROM work_item i {joined} WHERE {where} AND i.priority = ?{extra} ORDER BY i.created_at, i.id LIMIT 1",
+                f" FROM work_item i {joined} WHERE {where} AND i.priority = ?{extra} ORDER BY i.created_at, i.rowid LIMIT 1",
                 ((who,) if who is not None else ()) + (now, *kinds, best),
             ).fetchone()
             return found
