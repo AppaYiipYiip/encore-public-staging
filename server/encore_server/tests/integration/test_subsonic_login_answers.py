@@ -103,7 +103,9 @@ def test_a_wrong_login_is_a_small_json_or_xml_answer_with_a_length_and_an_error_
                     "text/javascript",
                     "application/javascript",
                 )
-                if not (got["status"] == 200 and small and json_or_xml and got["code"] in LOGIN_REFUSED):
+                # Measured on 0.64.2: a bogus API key is not a login attempt at all (code 10, a parameter is missing): this music server takes no API keys, so there is nothing to guess through it.
+                refused = LOGIN_REFUSED | ({10} if kind == "apiKey" else set())
+                if not (got["status"] == 200 and small and json_or_xml and got["code"] in refused):
                     problems.append(f"{kind} / {endpoint} / {fmt}: {got}")
 
     with capsys.disabled():
