@@ -2,6 +2,7 @@
 // comes from the server (a name, a sentence) is written into the page as text, never as markup.
 import { Problem, api, hasSession, signIn, signOut } from "/encore/web/api.js";
 import { el, icon } from "/encore/web/dom.js";
+import { renderHome } from "/encore/web/home.js";
 import { renderPeople } from "/encore/web/people.js";
 
 const app = document.getElementById("app");
@@ -44,32 +45,64 @@ function signInPage(message) {
   user.focus();
 }
 
-// The pages that exist. The rail lists only these: a page that is not built is not a dead button.
-const PAGES = [{ id: "people", label: "People", icon: "people", render: renderPeople }];
+// The pages that exist, in the order of the rail. The rail lists only these: a page that is not built is not a dead button. A page's render may return `{stop}` (a timer
+// to clear when the Host goes elsewhere).
+const PAGES = [
+  { id: "home", label: "Home", icon: "home", render: renderHome },
+  { id: "people", label: "People", icon: "people", render: renderPeople },
+];
 
 function frame(me, serverName) {
   const main = el("main", { class: "amain" });
   const out = el("button", { type: "button", class: "navi" }, icon("logout"), el("span", {}, "Sign out"));
   out.addEventListener("click", async () => {
+    stop();
     await signOut();
     signInPage("");
   });
-  const nav = PAGES.map((page) =>
-    el("button", { type: "button", class: "navi", "aria-current": "page" }, icon(page.icon), el("span", {}, page.label)),
-  );
+  const buttons = PAGES.map((page) => {
+    const button = el("button", { type: "button", class: "navi" }, icon(page.icon), el("span", {}, page.label));
+    button.addEventListener("click", () => go(page.id));
+    return [page, button];
+  });
   const rail = el(
     "aside",
     { class: "arail" },
     el("div", { class: "brand-x" }, el("span", {}, "Encore"), el("span", { class: "tagadm" }, "ADMIN")),
-    ...nav,
+    ...buttons.map(([, button]) => button),
     el("span", { class: "sp" }),
     out,
     el("div", { class: "srv" }, el("span", { class: "nm" }, serverName), el("span", { class: "sm" }, `Signed in as ${me.person.name}`)),
   );
   show(el("div", { class: "adm" }, rail, main));
-  PAGES[0].render(main, me.person, serverName).catch(() => {
-    main.replaceChildren(el("p", { class: "error" }, "This page did not load. Reload it to try again."));
-  });
+
+  let current = null;
+  function stop() {
+    if (current && current.stop) current.stop();
+    current = null;
+  }
+  // The page is named in the address (#/people), so a reload and a link come back to the same page.
+  function go(id) {
+    const page = PAGES.find((p) => p.id === id) || PAGES[0];
+    stop();
+    for (const [p, button] of buttons) {
+      if (p === page) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    }
+    history.replaceState(null, "", "#/" + page.id);
+    const pages = { go, has: (name) => PAGES.some((p) => p.id === name), label: (name) => (PAGES.find((p) => p.id === name) || {}).label || "" };
+    try {
+      const made = page.render(main, me.person, serverName, pages);
+      if (made && typeof made.then === "function") {
+        made.catch(() => main.replaceChildren(el("p", { class: "error" }, "This page did not load. Reload it to try again.")));
+      } else {
+        current = made;
+      }
+    } catch {
+      main.replaceChildren(el("p", { class: "error" }, "This page did not load. Reload it to try again."));
+    }
+  }
+  go(window.location.hash.replace(/^#\//, ""));
 }
 
 async function serverName() {

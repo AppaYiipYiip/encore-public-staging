@@ -59,6 +59,7 @@ from .prepare import Preparer
 from .quiet import InFlight, InFlightMiddleware
 from .ref_janitor import RefJanitor
 from .routes import admin_addons as admin_addons_routes
+from .routes import admin_health as admin_health_routes
 from .routes import admin_site as admin_site_routes
 from .routes import catalogue as catalogue_routes
 from .routes import imports as imports_routes
@@ -392,6 +393,7 @@ def create_app(
         catalogue_routes,
         admin_site_routes,
         admin_addons_routes,
+        admin_health_routes,
     ):
         app.include_router(group.router)
     app.add_api_route("/encore/stream/{ref_id}", media_routes.stream, methods=["GET", "HEAD"])

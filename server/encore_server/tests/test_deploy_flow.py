@@ -11,17 +11,21 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import os
 import re
 import sqlite3
 import subprocess
 import sys
 import tarfile
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
+from encore_server import host_status
 from encore_server.backup import decrypt_file, new_key, parse_secret_key
+from encore_server.ids import now_ms
 from tests.test_deploy_scripts import BASH, DEPLOY
 
 pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
@@ -483,3 +487,88 @@ def test_the_installer_tells_the_host_where_the_admin_pages_are() -> None:
     install = (DEPLOY / "install.sh").read_text(encoding="utf-8")
     assert "There is no Encore admin page" not in install
     assert "http://${HOST_IP}:${PORT}/admin" in install
+
+
+def test_a_backup_tells_the_server_what_only_the_computer_knows(tmp_path: Path) -> None:
+    """The container sees only /data and /music: the computer leaves host-status.json in /data (docs/36 section 2) and the server reads it as the Home page's facts."""
+    install = Install(tmp_path, KEY_A, "told")
+    public, _ = new_key()
+    install.lock_with(public)
+    install.set_env(install.env + "ENCORE_AWAY_URL=https://our-music.tail1234.ts.net\n")
+    assert install.encore("backup", "--quiet").returncode == 0
+    data = install.root / "data"
+    assert json.loads((data / "host-status.json").read_text(encoding="utf-8"))["writtenAt"] > 0
+    status = host_status.read(data)
+    assert status is not None and status.fresh(now_ms() + 1000)
+    assert status.last_backup is not None and status.last_backup.locked is True and status.last_backup.bytes > 0
+    assert abs(status.last_backup.at - now_ms()) < 120_000
+    assert status.away_address == "https://our-music.tail1234.ts.net" and status.away_key_expires_at is None, (
+        "no tailscale here: no invented expiry"
+    )
+    assert status.backup_key_made_at is not None
+    assert not list(data.glob(".host-status-*")), "no half-written file is left"
+
+
+def test_a_plain_backup_is_told_as_not_locked_and_an_odd_address_is_never_written(tmp_path: Path) -> None:
+    install = Install(tmp_path, KEY_A, "odd")
+    pwned = tmp_path / "pwned"
+    poisons = (
+        f"https://x.example/$(touch {msys(pwned)})",
+        f"https://x.example/`touch {msys(pwned)}`",
+        f"https://x.example/;touch {msys(pwned)};",
+        'https://x.example/"}',
+    )
+    for poison in poisons:
+        install.set_env(install.env + f"ENCORE_AWAY_URL={poison}\n")
+        assert install.encore("backup", "--quiet").returncode == 0
+        raw = json.loads((install.root / "data" / "host-status.json").read_text(encoding="utf-8"))
+        assert raw["lastBackup"]["locked"] is False and "away" not in raw and "backupKey" not in raw, poison
+    assert not pwned.exists(), "nothing in the address was ever run"
+
+
+FAKE_TAILSCALE_STATUS = {
+    "Version": "1.80.0",
+    "BackendState": "Running",
+    "Self": {"ID": "n1", "HostName": "server", "Online": True},
+    "Peer": {"nodekey:a": {"ID": "n2", "HostName": "phone", "KeyExpiry": "2031-01-01T00:00:00Z"}},
+}
+
+
+def install_fake_tailscale(install: Install, self_expiry: str | None) -> None:
+    """A `tailscale` on this computer's PATH that answers `status --json` as the real one lays it out: Self first, then the Peer map, whose own KeyExpiry must never be taken."""
+    status = {**FAKE_TAILSCALE_STATUS, "Self": {**FAKE_TAILSCALE_STATUS["Self"], "KeyExpiry": self_expiry}}
+    body = json.dumps(status, indent=2)
+    script = '#!/usr/bin/env bash\nif [ "$1 $2" = "status --json" ]; then cat <<\'JSON\'\n' + body + "\nJSON\nelse exit 0; fi\n"
+    (install.bin / "tailscale").write_text(script, encoding="utf-8", newline="\n")
+    (install.bin / "tailscale").chmod(0o755)
+
+
+def test_the_away_key_expiry_comes_from_tailscale_on_this_computer(tmp_path: Path) -> None:
+    """The Tailscale that gives the away address runs on the host (`encore funnel`), so its key's end is read there and told to the server: the Home page's 'key expires in N days'."""
+    install = Install(tmp_path, KEY_A, "tskey")
+    install.set_env(install.env + "ENCORE_AWAY_URL=https://our-music.tail1234.ts.net\n")
+    ends = datetime.now(UTC).replace(microsecond=0) + timedelta(days=40)
+    install_fake_tailscale(install, ends.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    assert install.encore("backup", "--quiet").returncode == 0
+    status = host_status.read(install.root / "data")
+    assert status is not None and status.away_address == "https://our-music.tail1234.ts.net"
+    assert status.away_key_expires_at == int(ends.timestamp()) * 1000, "the node's own key, not a peer's"
+
+
+def test_a_key_that_never_expires_is_not_given_the_expiry_of_a_peer(tmp_path: Path) -> None:
+    install = Install(tmp_path, KEY_A, "tsnull")
+    install.set_env(install.env + "ENCORE_AWAY_URL=https://our-music.tail1234.ts.net\n")
+    install_fake_tailscale(install, None)
+    assert install.encore("backup", "--quiet").returncode == 0
+    status = host_status.read(install.root / "data")
+    assert status is not None and status.away_address is not None and status.away_key_expires_at is None
+
+
+def test_update_restore_and_secure_write_the_status_too(tmp_path: Path) -> None:
+    install = Install(tmp_path, KEY_A, "all")
+    assert install.encore("secure", "--installer").returncode == 0
+    assert host_status.read(install.root / "data") is not None
+    status_file = install.root / "data" / "host-status.json"
+    status_file.unlink()
+    assert install.encore("update").returncode == 0
+    assert host_status.read(install.root / "data") is not None, "update writes it"
