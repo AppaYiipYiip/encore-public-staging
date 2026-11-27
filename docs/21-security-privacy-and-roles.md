@@ -68,13 +68,24 @@ The server's logs never contain song titles tied to a person (only ids), passwor
   password for everyone behind it: the memory is what keeps the owner's app answering then. **At home on `/rest` (P3-34 slice 2b)** the music server, not this one, checks a login, and the apps that send a plain password (`p=`, `p=enc:`) must keep working, so the gateway does not
   check it: it **counts the music server's own answers**. A call that carries a login (a token, `p=` or `p=enc:`, in the address or in a form body) is refused BEFORE it is passed on, with
   HTTP 429 and a `Retry-After`, in a small Subsonic answer of its own (error code 0, in the format the app asked for: xml, `f=json`, `f=jsonp` with its callback), when its name, its address or its
-  account has had too many wrong answers, unless it is a device the server already knows; and after the music server answers, a **small, sized json or xml answer with a login-refused code**
-  (40 to 44) is a wrong guess and is counted. Measured on Navidrome 0.64.2 (the log of PR 186): a wrong login is ALWAYS HTTP 200 with a `Content-Length` of 194 to 241 bytes, never chunked, whatever
-  the form of the credential, the format and the endpoint; so only an answer of at most 2,048 bytes, sized, of a json or xml type, is ever read, and a song, a picture, a large list or an
-  answer without a length streams untouched and counts as accepted. A right login that asks for something that is not there (code 70) is never a guess. A 200 that is not a refusal is the music
-  server accepting the login, and the login becomes a device the server knows (the same memory as above); a login the music server later refuses loses it. An API key is not a login on this music server
-  (it answers code 10), so there is nothing to count. **What it costs:** a music app that makes a new salt for every call, or sends a plain password, is "known" only by that exact credential (a
-  plain password is the same every time, so such an app IS known; a fresh salt every call is never) and is slowed while its account is under attack; the answer it gets is still a Subsonic answer.
+  account has had too many wrong answers, unless it is a device the server already knows; and after the music server answers, a **small, sized, uncompressed json or xml answer with a
+  login-refused code** (40 to 44) is a wrong guess and is counted. Measured on Navidrome 0.64.2 (the logs of PRs 186 and 187): a wrong login is ALWAYS HTTP 200 with a `Content-Length` of 194 to 241
+  bytes, never chunked, whatever the form of the credential, the format and the endpoint, **but it is gzip-compressed (168 to 195 bytes) for a client that asks for it, so a call whose login is counted
+  is passed on asking for plain answers** (a list at home comes back a few kilobytes larger; a song is never compressed). A song, a picture, or a json or xml answer larger than the largest
+  refusal is **positive evidence** that the login passed. **A login is a known device only on positive evidence**: an `ok`, an error that can only come after the login passed (50, 60, 70: the
+  right login that asks for something that is not there is never a guess), a song, a picture or a large list. An answer that could not be read (compressed, without a length, chunked, of an unknown
+  type) or that says a parameter was missing (code 10: the login was never looked at) is **unknown: neither counted nor remembered**. A login is remembered on its **second** accepted
+  sighting, not its first, so an app that makes a new salt for every call (as the Subsonic documentation says) can never fill the memory or push the owner's entry out. A login the music server
+  later refuses loses its entry. An API key is not a login on this music server (it answers code 10), so there is nothing to count.
+  **One reader for both doors.** The guard counts one login and the music server checks one login, so both must be the same one. Measured on 0.64.2: a login in a form body is read, **a value in
+  the body beats one in the address, and of a name given more than once the FIRST wins** (a Python reader takes the last). A `/rest` call that names `u`, `p`, `t`, `s` or `apiKey` more than once,
+  in the address and the body, or carries two kinds of secret (a token and a plain password), or has a multipart body, is refused with HTTP 400 and a Subsonic answer of code 10, at home and from the
+  internet alike; real apps never send one. The login that the internet door checks is the one read this way (the address and the form body; **never an `X-Encore-*` header**, which the music
+  server ignores). Before, a visitor with one valid account could put their own login where the door looked and a guess at somebody else's where the music server looked.
+  **What it costs:** a music app that makes a new salt for every call is never "known" and is slowed while its account is under attack (a plain password is the same every time, so such an app IS
+  known from its second call); the answer it gets is still a Subsonic answer. A music server that compresses its answers whatever the client asks, or sends them without a length, leaves the guard
+  with nothing to count (it fails safe: nobody is refused and nobody is vouched for). **Not covered:** a `HEAD` call carries no answer to read, so a guesser could still try passwords with it at
+  home uncounted (the public door covers it from the internet); a board note tracks it.
 * At home, traffic may be plain HTTP on the Wi-Fi: acceptable only because no password crosses it after pairing; HTTPS at home with a
   certificate pinned by the pairing QR is planned (H30, P5).
 

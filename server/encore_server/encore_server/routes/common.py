@@ -199,16 +199,20 @@ def check_music_login(request: Request, user: str, subsonic: str, salt: str) -> 
         raise ApiError("unauthorized", "The music server did not accept that login.")
 
 
-async def authorize_public_subsonic(request: Request) -> None:
+async def authorize_public_subsonic(request: Request, login: subsonic_guard.HomeLogin | None) -> None:
     """A call to the Subsonic API that comes from the internet is signed in like any other call to this server (AUDIT B12b). Only the token login
     (`u`, `t`, `s`) is understood: a plain password (`p=`, `p=enc:`) or an API key is refused, because a password a stranger can try without limit
-    is exactly what this guard exists to stop (docs/21: Subsonic apps that send only `p=` cannot sign in through the public address)."""
-    creds = subsonic_credentials(dict(request.query_params.items()), dict(request.headers.items()))
-    if creds is None:
+    is exactly what this guard exists to stop (docs/21: Subsonic apps that send only `p=` cannot sign in through the public address).
+
+    [login] is the login the gateway read from the call the way the MUSIC SERVER reads it (the address and the form body; never an `X-Encore-*` header, which the music server ignores; a name given
+    twice already refused): the login that is checked here is the one the music server will check, never a decoy (P3-34 slice 2b review)."""
+    if login is None or login.token.startswith("p:"):
         raise ApiError(
             "unauthorized", "Sign in with a token login (u, t and s). A plain password is not accepted from the internet."
         )
-    await run_in_threadpool(_check_public_subsonic, request, *creds)  # asking the music server is a blocking call
+    await run_in_threadpool(
+        _check_public_subsonic, request, login.user, login.token, login.salt
+    )  # asking the music server is a blocking call
 
 
 def _check_public_subsonic(request: Request, user: str, subsonic: str, salt: str) -> None:
@@ -303,9 +307,6 @@ class HomeLoginGuard:
     `p=enc:`, in the address or in a form body) is refused, in the format the app asked for, when its name, address or account has had too many wrong answers, unless it is a device this
     server already knows (a login the music server accepted within the day: the memory of `NavidromeVerifier.vouched`, which this renews and drops from what the gateway SEES). AFTER: a small,
     sized json or xml answer with a login-refused code is a wrong guess and is counted; anything else that is a 200 or a 206 is the music server accepting the login."""
-
-    def login_of(self, request: Request, form: dict[str, str] | None) -> subsonic_guard.HomeLogin | None:
-        return subsonic_guard.login_of(dict(request.query_params.items()), form)
 
     def refuse(self, request: Request, login: subsonic_guard.HomeLogin) -> tuple[int, dict[str, str], bytes] | None:
         """The refusal to answer instead of passing the call on, or `None` to pass it on."""

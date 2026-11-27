@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from .auth import subsonic_credentials
 
@@ -22,8 +22,17 @@ from .auth import subsonic_credentials
 #: mechanism that is not supported (42, 43) and a wrong API key (44).
 LOGIN_REFUSED = frozenset({40, 41, 42, 43, 44})
 
+#: The Subsonic error codes that can only come AFTER the login passed: the user may not do that (50), the trial is over (60), there is no such thing (70). Code 10 ("a parameter is missing") is
+#: NOT one of them: the login was never looked at.
+POST_LOGIN_CODES = frozenset({50, 60, 70})
+
+#: The names an app logs in with. One that is named twice in a call is ambiguous (see [is_ambiguous]).
+LOGIN_NAMES = frozenset({"u", "p", "t", "s", "apiKey"})
+
 #: The most bytes of an answer the gateway will read. A wrong-login answer is about two hundred.
 READ_AT_MOST = 2048
+
+_MEDIA = ("audio/", "image/", "video/")
 
 _READABLE_TYPES = frozenset({"application/json", "application/xml", "text/xml", "application/javascript", "text/javascript"})
 _USER = re.compile(r"^[A-Za-z0-9._@-]{1,64}$")
@@ -63,6 +72,74 @@ def login_of(query: Mapping[str, str], form: Mapping[str, str] | None = None) ->
     if _USER.match(user) and plain and len(plain) <= 256:
         return HomeLogin(user, "p:" + plain, "")
     return None
+
+
+def is_ambiguous(query: Sequence[tuple[str, str]], form: Sequence[tuple[str, str]] | None = None) -> bool:
+    """Does the call name a part of its login (`u`, `p`, `t`, `s`, `apiKey`) more than once, in the address or in the form body or in both, or carry two kinds of secret (a token AND a plain
+    password)? The guard counts ONE login and the music server checks ONE login; given two values of one name two readers may pick two different ones (measured on 0.64.2: the FIRST of a
+    repeated name wins, and a value in the body beats one in the address; a Python reader takes the last), and a decoy in the one the guard reads would leave the real one unchecked and
+    uncounted. Real apps never do it, so such a call is refused rather than guessed at."""
+    seen: set[str] = set()
+    for name, _ in [*query, *(form or [])]:
+        if name in LOGIN_NAMES:
+            if name in seen:
+                return True
+            seen.add(name)
+    # Two KINDS of secret in one call (a token and a plain password, an API key and anything): the music server picks one, the guard may pick the other.
+    return sum(1 for kind in (("t", "s"), ("p",), ("apiKey",)) if seen.intersection(kind)) > 1
+
+
+def read_login(query: Sequence[tuple[str, str]], form: Sequence[tuple[str, str]] | None = None) -> HomeLogin | None:
+    """The login of a call whose names are NOT ambiguous: from the address and the body, never from a header (the music server reads none)."""
+    return login_of(dict(query), dict(form) if form is not None else None)
+
+
+def how_to_read(status: int, content_type: str, content_length: str | None, chunked: bool, encoded: bool) -> str:
+    """What the gateway does with the answer to a call that carried a login: `"read"` (a small sized json or xml answer: read it and judge it), `"accepted"` (positive evidence that the login
+    passed, without reading: a song or a picture, or a json or xml answer far too large to be a refusal) or `"unknown"` (neither counted nor remembered). The absence of a refusal is NOT evidence:
+    an answer that could not be read (compressed, unsized, chunked) may well have been one."""
+    if status not in (200, 206):
+        return "unknown"
+    kind = content_type.split(";")[0].strip().lower()
+    if kind.startswith(_MEDIA):
+        return "accepted"
+    if kind not in _READABLE_TYPES:
+        return "unknown"
+    try:
+        size = int(content_length) if content_length is not None else -1
+    except ValueError:
+        size = -1
+    if size > READ_AT_MOST:
+        return "accepted"  # a wrong-login answer is about two hundred bytes, compressed or not (measured)
+    if status == 200 and not encoded and not chunked and is_readable(status, content_type, content_length, chunked):
+        return "read"
+    return "unknown"
+
+
+def judge(body: bytes) -> str:
+    """What a small answer says about the login: `"refused"` (a code in 40 to 44), `"accepted"` (an ok, or a code that can only come after the login passed) or `"unknown"` (anything else,
+    code 10 among it: a parameter was missing, the login was never looked at)."""
+    code = refusal_code(body)
+    if code in LOGIN_REFUSED:
+        return "refused"
+    if code in POST_LOGIN_CODES:
+        return "accepted"
+    if code is None and _is_ok(body):
+        return "accepted"
+    return "unknown"
+
+
+def _is_ok(body: bytes) -> bool:
+    if re.search(rb'<subsonic-response\b[^>]*\bstatus="ok"', body):
+        return True
+    text = body.decode("utf-8", "replace")
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        return False
+    try:
+        return bool(json.loads(text[start : end + 1])["subsonic-response"]["status"] == "ok")
+    except (ValueError, KeyError, TypeError):
+        return False
 
 
 def is_readable(status: int, content_type: str, content_length: str | None, chunked: bool) -> bool:
@@ -107,13 +184,14 @@ def format_of(params: Mapping[str, str]) -> tuple[str, str]:
     return "xml", ""
 
 
-def refusal_body(fmt: str, callback: str, message: str) -> tuple[bytes, str]:
-    """The one answer this server writes itself at the home door: a Subsonic error of its own (code 0, never a login error) in the format the app asked for, and its content type."""
+def refusal_body(fmt: str, callback: str, message: str, code: int = 0) -> tuple[bytes, str]:
+    """The one answer this server writes itself at the home door: a Subsonic error of its own (code 0, or 10 for a call that names its login twice; never a login error) in the format the app
+    asked for, and its content type."""
     safe = message.replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
     if fmt == "xml":
         text = (
             '<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1" type="encore">'
-            f'<error code="0" message="{safe}"></error></subsonic-response>'
+            f'<error code="{code}" message="{safe}"></error></subsonic-response>'
         )
         return text.encode(), "application/xml"
     inner = json.dumps(
@@ -122,7 +200,7 @@ def refusal_body(fmt: str, callback: str, message: str) -> tuple[bytes, str]:
                 "status": "failed",
                 "version": "1.16.1",
                 "type": "encore",
-                "error": {"code": 0, "message": message},
+                "error": {"code": code, "message": message},
             }
         },
         separators=(",", ":"),

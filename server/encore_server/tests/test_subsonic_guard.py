@@ -164,3 +164,113 @@ def test_the_refusal_is_a_small_subsonic_answer_in_the_format_asked_for(
         "an error answer of its own (code 0), never a login error: it is not counted when it comes back through a client's retry"
     )
     assert guard.is_login_refusal(body) is False
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ review of 2b (the advisor)
+
+JSON_10 = JSON_40.replace(b'"code":40', b'"code":10').replace(b"Wrong username or password", b"Required parameter is missing")
+
+
+@pytest.mark.parametrize(
+    ("status", "content_type", "length", "chunked", "encoded", "expected"),
+    [
+        # a small sized json or xml answer, as sent: read it
+        (200, "application/json", "194", False, False, "read"),
+        (200, "application/xml", "241", False, False, "read"),
+        # positive evidence the login passed WITHOUT reading: a song, a picture, a list far larger than any refusal
+        (200, "audio/ogg", None, True, False, "accepted"),
+        (206, "audio/mpeg", "9000", False, False, "accepted"),
+        (200, "image/jpeg", None, True, False, "accepted"),
+        (200, "application/json", "51234", False, False, "accepted"),
+        (200, "application/xml", "9001", False, False, "accepted"),
+        # compressed: a refusal cannot be read, a large body cannot be one
+        (200, "application/json", "150", False, True, "unknown"),
+        (200, "application/json", "51234", False, True, "accepted"),
+        # no evidence either way: neither counted nor remembered
+        (200, "application/json", None, False, False, "unknown"),
+        (200, "application/json", "194", True, False, "unknown"),
+        (200, "application/octet-stream", "194", False, False, "unknown"),
+        (200, "text/html", "194", False, False, "unknown"),
+        (200, "", "194", False, False, "unknown"),
+        (500, "application/json", "194", False, False, "unknown"),
+        (404, "audio/ogg", "194", False, False, "unknown"),
+        (401, "image/jpeg", None, False, False, "unknown"),
+        (200, "application/json", "nonsense", False, False, "unknown"),
+    ],
+)
+def test_what_the_gateway_does_with_an_answer_is_decided_on_evidence_not_on_the_absence_of_a_refusal(
+    status: int, content_type: str, length: str | None, chunked: bool, encoded: bool, expected: str
+) -> None:
+    assert guard.how_to_read(status, content_type, length, chunked, encoded) == expected
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        (XML_40, "refused"),
+        (JSON_40, "refused"),
+        (JSONP_40, "refused"),
+        (JSON_OK, "accepted"),
+        (XML_OK, "accepted"),
+        (JSON_70, "accepted"),
+        (JSON_40.replace(b'"code":40', b'"code":50'), "accepted"),
+        (JSON_40.replace(b'"code":40', b'"code":60'), "accepted"),
+        # NOT evidence of a login that passed: a missing parameter (10), a version (20, 30), a generic error (0), a page, nothing
+        (JSON_10, "unknown"),
+        (JSON_40.replace(b'"code":40', b'"code":0'), "unknown"),
+        (JSON_40.replace(b'"code":40', b'"code":20'), "unknown"),
+        (JSON_40.replace(b'"code":40', b'"code":30'), "unknown"),
+        (b"", "unknown"),
+        (b"<html></html>", "unknown"),
+    ],
+)
+def test_a_small_answer_is_a_refusal_an_acceptance_or_nothing_we_can_tell(body: bytes, expected: str) -> None:
+    """Code 10 ("a parameter is missing") means the login was never checked: it must never make a login a known device."""
+    assert guard.judge(body) == expected
+
+
+@pytest.mark.parametrize(
+    ("query", "form", "expected"),
+    [
+        ([("u", "marwa"), ("p", "x")], None, False),
+        ([("u", "marwa"), ("t", "a" * 32), ("s", "salt1234")], None, False),
+        ([("u", "marwa"), ("u", "decoy"), ("p", "x")], None, True),
+        ([("u", "marwa"), ("p", "x"), ("p", "y")], None, True),
+        ([("u", "marwa"), ("t", "a" * 32), ("t", "b" * 32), ("s", "salt1234")], None, True),
+        ([("u", "marwa"), ("t", "a" * 32), ("s", "salt1234"), ("s", "salt5678")], None, True),
+        ([("u", "marwa"), ("apiKey", "k"), ("apiKey", "j")], None, True),
+        (
+            [("u", "marwa"), ("p", "x")],
+            [("u", "marwa"), ("p", "x")],
+            True,
+        ),  # the same name in the address AND the body: which does the music server read?
+        ([("u", "marwa")], [("p", "x")], False),  # one name in each place, each once
+        ([], [("u", "marwa"), ("u", "decoy")], True),
+        (
+            [("v", "1.16.1"), ("v", "1.15.0"), ("u", "marwa"), ("p", "x")],
+            None,
+            False,
+        ),  # a repeated NAME that is not a login name is the music server's own business
+        ([("id", "1"), ("id", "2"), ("u", "marwa"), ("p", "x")], None, False),
+    ],
+)
+def test_a_login_named_twice_is_ambiguous_because_two_readers_could_pick_two_different_ones(
+    query: list[tuple[str, str]], form: list[tuple[str, str]] | None, expected: bool
+) -> None:
+    """The guard counts one login; the music server checks one login; if the call names a part of it twice they may not be the same one (a decoy). Real apps never do this."""
+    assert guard.is_ambiguous(query, form) is expected
+
+
+def test_the_login_is_read_from_the_address_and_the_body_only_never_from_a_header() -> None:
+    assert guard.read_login([("u", "marwa"), ("p", "x")], None) == guard.HomeLogin("marwa", "p:x", "")
+    assert guard.read_login([], [("u", "marwa"), ("t", "c" * 32), ("s", "salt1234")]) == guard.HomeLogin(
+        "marwa", "c" * 32, "salt1234"
+    )
+    assert guard.read_login([("u", "marwa")], [("p", "x")]) == guard.HomeLogin("marwa", "p:x", "")
+
+
+def test_the_refusal_for_a_repeated_name_is_a_subsonic_answer_with_code_10() -> None:
+    body, kind = guard.refusal_body("json", "", "Send your name and password once.", code=10)
+
+    assert kind == "application/json" and guard.refusal_code(body) == 10
+    assert guard.judge(body) == "unknown", "and it is never taken for a login that passed"

@@ -65,6 +65,12 @@ class Music:
     def __init__(self) -> None:
         self.passwords = {"marwa": "pw-marwa", "nina": "pw-nina", "mia": "pw-mia"}
         self.asked: list[tuple[str, str]] = []
+        self.encodings: list[str] = []  # the Accept-Encoding of each call that reached it
+        #: What a music server (a newer one, another one) might do that 0.64.2 was measured NOT to: compress an answer, send it without a length, ignore a login in a form body.
+        self.compress = False  # compresses every small answer, asked or not
+        self.compress_when_asked = False  # like the real one: only for a client that sends Accept-Encoding: gzip
+        self.unsized = False
+        self.ignores_form_bodies = False
 
     def good(self, params: dict[str, str]) -> bool:
         password = self.passwords.get(params.get("u", ""))
@@ -78,11 +84,46 @@ class Music:
         return given == password
 
     def handle(self, request: httpx.Request) -> httpx.Response:
-        params = (
-            {**dict(parse_qsl(request.content.decode())), **dict(request.url.params)}
-            if request.method == "POST"
-            else dict(request.url.params)
-        )
+        # Read the way the real music server does (measured on 0.64.2): the form body first, then the address, and of a name given more than once the FIRST wins.
+        pairs: list[tuple[str, str]] = []
+        if (
+            request.method in ("POST", "PUT", "PATCH")
+            and not self.ignores_form_bodies
+            and "x-www-form-urlencoded" in request.headers.get("content-type", "")
+        ):
+            pairs += parse_qsl(request.content.decode(), keep_blank_values=True)
+        pairs += list(request.url.params.multi_items())
+        params: dict[str, str] = {}
+        for name, value in pairs:
+            params.setdefault(name, value)
+        self.encodings.append(request.headers.get("accept-encoding", ""))
+        return self.misbehave(self.answer_for(request, params))
+
+    def misbehave(self, response: httpx.Response) -> httpx.Response:
+        """The answer as this music server sends it: as measured, or compressed, or without a length."""
+        content = response.read() if not response.is_stream_consumed else b""
+        if len(content) < 2048 and (self.compress or (self.compress_when_asked and "gzip" in self.encodings[-1])):
+            import gzip
+
+            packed = gzip.compress(content)
+            return httpx.Response(
+                200,
+                headers={
+                    "content-type": response.headers["content-type"],
+                    "content-encoding": "gzip",
+                    "content-length": str(len(packed)),
+                },
+                stream=httpx.ByteStream(packed),
+            )
+        if self.unsized and len(content) < 2048:
+            return httpx.Response(
+                200,
+                headers={"content-type": response.headers["content-type"], "transfer-encoding": "chunked"},
+                stream=httpx.ByteStream(content),
+            )
+        return httpx.Response(response.status_code, headers=dict(response.headers), stream=httpx.ByteStream(content))
+
+    def answer_for(self, request: httpx.Request, params: dict[str, str]) -> httpx.Response:
         endpoint = request.url.path.rsplit("/", 1)[-1]
         self.asked.append((endpoint, params.get("u", "")))
         if "u" not in params:
@@ -221,9 +262,8 @@ def test_a_correct_plain_password_login_at_home_works_when_nobody_is_guessing_an
 
 
 def test_the_owners_accepted_login_keeps_getting_answers_through_an_attack_from_the_shared_address(rig: Rig) -> None:
-    assert (
-        rig.token_call("marwa", "pw-marwa").json()["subsonic-response"]["status"] == "ok"
-    )  # accepted: now a device the server knows
+    for _ in range(2):  # accepted twice: a login is a device the server knows from its second sighting
+        assert rig.token_call("marwa", "pw-marwa").json()["subsonic-response"]["status"] == "ok"
     rig.clock[0] += 700
     rig.attack_the_address()
     assert rig.token_call("nina", "pw-nina", salt="neverseen").status_code == 429, (
@@ -236,7 +276,8 @@ def test_the_owners_accepted_login_keeps_getting_answers_through_an_attack_from_
 
 
 def test_a_plain_password_app_the_music_server_accepted_is_known_too(rig: Rig) -> None:
-    assert rig.plain_call("marwa", "pw-marwa").json()["subsonic-response"]["status"] == "ok"
+    for _ in range(2):
+        assert rig.plain_call("marwa", "pw-marwa").json()["subsonic-response"]["status"] == "ok"
     rig.attack_the_address()
 
     assert rig.plain_call("marwa", "pw-marwa").status_code == 200
@@ -245,6 +286,7 @@ def test_a_plain_password_app_the_music_server_accepted_is_known_too(rig: Rig) -
 
 def test_a_known_login_the_music_server_now_refuses_is_counted_and_loses_its_exemption(rig: Rig) -> None:
     """The password was changed at the music server: the old credential is a guess like any other from now on."""
+    assert rig.token_call("marwa", "pw-marwa").status_code == 200
     assert rig.token_call("marwa", "pw-marwa").status_code == 200
     rig.music.passwords["marwa"] = "changed"
 
@@ -365,3 +407,205 @@ def test_the_guard_runs_in_a_worker_thread_never_on_the_event_loop(rig: Rig, mon
     assert rig.token_call("marwa", "wrong", salt="aaaa0001").status_code == 200  # a wrong one: refuse, then settle (counted)
 
     assert through == ["refuse", "settle", "refuse", "settle"]
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ review of 2b (the advisor)
+
+
+def accepted_twice(rig: Rig, user: str = "marwa", password: str = "pw-marwa") -> None:
+    """A login is a device the server knows from its SECOND accepted sighting."""
+    for _ in range(2):
+        assert rig.token_call(user, password).json()["subsonic-response"]["status"] == "ok"
+
+
+def vouched(rig: Rig, user: str = "marwa", password: str = "pw-marwa") -> bool:
+    return rig.verifier.vouched(user, subsonic_token(password, "salt1234"), "salt1234")
+
+
+def test_a_guesser_who_asks_for_gzip_is_still_counted_because_the_gateway_asks_the_music_server_for_plain_answers(
+    rig: Rig,
+) -> None:
+    """Measured on 0.64.2: it compresses its answers for a client that asks, and a compressed refusal cannot be read. The calls whose login is counted go upstream with identity."""
+    rig.music.compress_when_asked = True
+
+    answers = [
+        rig.token_call("marwa", f"guess-{i}", salt=f"salt{i:04d}", headers={"Accept-Encoding": "gzip"}).status_code
+        for i in range(60)
+    ]
+
+    assert answers[:5] == [200] * 5 and set(answers[5:]) == {429}
+    assert rig.reached("marwa") == 5
+    assert all("gzip" not in asked for asked in rig.music.encodings), (
+        "no call that carried a login was sent upstream asking for compression"
+    )
+
+
+@pytest.mark.parametrize("misbehaviour", ["compress", "unsized"])
+def test_a_refusal_the_gateway_cannot_read_is_neither_counted_nor_taken_for_a_login_that_passed(
+    rig: Rig, misbehaviour: str
+) -> None:
+    """A music server that compresses anyway, or sends no length: what it says about a login is unknown, and unknown is not an acceptance. The same wrong login, twice, does not become a device the
+    server knows, and forty wrong guesses under the owner's name leave the owner's own entry where it was."""
+    accepted_twice(rig)
+    setattr(rig.music, misbehaviour, True)
+
+    for i in range(40):
+        rig.token_call("marwa", f"guess-{i % 2}", salt="samesalt", headers={"Accept-Encoding": "gzip"})
+
+    assert not rig.verifier.vouched("marwa", subsonic_token("guess-0", "samesalt"), "samesalt"), (
+        "a refusal that was not read is not an acceptance"
+    )
+    assert vouched(rig), "the owner's entry is still there"
+    assert len(rig.verifier._vouched) == 1  # noqa: SLF001
+
+
+def test_a_form_login_the_music_server_does_not_read_is_never_a_known_device(rig: Rig) -> None:
+    """The music server answers code 10 ("a parameter is missing"): the login was never looked at, which is not an acceptance."""
+    rig.music.ignores_form_bodies = True
+
+    for _ in range(3):
+        got = rig.client.post("/rest/ping.view", data={"u": "marwa", "p": "pw-marwa", "f": "json"})
+        assert got.json()["subsonic-response"]["error"]["code"] == 10
+
+    assert rig.verifier.vouched("marwa", "p:pw-marwa", "") is False
+
+
+def test_a_decoy_name_does_not_hide_the_name_the_music_server_checks(rig: Rig) -> None:
+    """Measured on 0.64.2: of a repeated name the FIRST wins. A reader that takes the last would count `decoy` while the music server checks `marwa`, and marwa's limit would never move."""
+    for i in range(100):
+        got = rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("p", f"guess-{i}"), ("u", f"decoy{i}"), ("f", "json")])
+        assert got.status_code == 400
+        assert got.json()["subsonic-response"]["error"]["code"] == 10, "a Subsonic answer, in the format that was asked for"
+
+    assert rig.reached("marwa") == 0 and rig.reached() == 0, "none of them was passed on"
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "p twice",
+        "t twice",
+        "s twice",
+        "token and plain password",
+        "api key and a password",
+        "u in the address and in the body",
+        "p in the address and in the body",
+        "u twice in the body",
+        "multipart",
+        "put with a body twice",
+    ],
+)
+def test_a_call_that_names_its_login_twice_or_in_two_ways_is_refused_in_the_subsonic_format(rig: Rig, case: str) -> None:
+    token = subsonic_token("pw-marwa", "salt1234")
+    base = [("f", "json"), ("v", "1.16.1"), ("c", "app")]
+    form = {"Content-Type": "application/x-www-form-urlencoded"}
+    sent: httpx.Response
+    if case == "p twice":
+        sent = rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("p", "a"), ("p", "b"), *base])
+    elif case == "t twice":
+        sent = rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("t", token), ("t", token), ("s", "salt1234"), *base])
+    elif case == "s twice":
+        sent = rig.client.get(
+            "/rest/ping.view", params=[("u", "marwa"), ("t", token), ("s", "salt1234"), ("s", "salt5678"), *base]
+        )
+    elif case == "token and plain password":
+        sent = rig.client.get(
+            "/rest/ping.view", params=[("u", "marwa"), ("t", token), ("s", "salt1234"), ("p", "pw-marwa"), *base]
+        )
+    elif case == "api key and a password":
+        sent = rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("apiKey", "k"), ("p", "pw-marwa"), *base])
+    elif case == "u in the address and in the body":
+        sent = rig.client.post("/rest/ping.view?u=marwa&f=json", data={"u": "nina", "p": "pw-nina"})
+    elif case == "p in the address and in the body":
+        sent = rig.client.post("/rest/ping.view?u=marwa&p=guess&f=json", data={"p": "pw-marwa"})
+    elif case == "u twice in the body":
+        sent = rig.client.post("/rest/ping.view?f=json", content="u=marwa&u=nina&p=x", headers=form)
+    elif case == "multipart":
+        sent = rig.client.post("/rest/ping.view?f=json", files={"u": (None, "marwa"), "p": (None, "pw-marwa")})
+    else:
+        sent = rig.client.put("/rest/ping.view?f=json", content="u=marwa&u=nina&p=x", headers=form)
+
+    assert sent.status_code == 400, case
+    assert sent.json()["subsonic-response"]["error"]["code"] == 10
+    assert rig.reached() == 0
+
+
+def test_a_name_that_is_not_part_of_the_login_may_repeat_and_one_login_may_be_split_between_the_address_and_the_body(
+    rig: Rig,
+) -> None:
+    ok = rig.client.get("/rest/ping.view", params=[("u", "marwa"), ("p", "pw-marwa"), ("f", "json"), ("id", "1"), ("id", "2")])
+    split = rig.client.post("/rest/ping.view?u=marwa&f=json", data={"p": "pw-marwa"})
+
+    assert ok.json()["subsonic-response"]["status"] == "ok"
+    assert split.json()["subsonic-response"]["status"] == "ok"
+
+
+def test_a_form_login_is_counted_whichever_method_carries_it(rig: Rig) -> None:
+    for method in ("POST", "PUT", "PATCH"):
+        for i in range(8):
+            rig.client.request(method, "/rest/ping.view", data={"u": "marwa", "p": f"{method}-guess-{i}", "f": "json"})
+
+    assert rig.reached("marwa") <= 5, "the limit holds across the three methods"
+
+
+def test_two_hundred_calls_with_a_fresh_salt_each_leave_the_owners_known_device_alone(rig: Rig) -> None:
+    """An app that follows the documentation makes a new salt for every call. None of them is remembered (each is seen once); the owner's entry is not pushed out and no row is written."""
+    accepted_twice(rig)
+
+    for i in range(200):
+        assert rig.token_call("marwa", "pw-marwa", salt=f"fresh{i:05d}").status_code == 200
+
+    assert vouched(rig)
+    assert len(rig.verifier._vouched) == 1  # noqa: SLF001
+
+
+# ------------------------------------------------------------------------------------------------------------------------ the public door reads the same login
+
+
+PUBLIC = {"X-Forwarded-For": "203.0.113.9"}
+
+
+def test_from_the_internet_a_login_in_the_address_that_the_music_server_does_not_read_first_is_refused(rig: Rig) -> None:
+    """One valid account is enough to get through a door that reads a different login than the music server: put your own token where the door looks and the victim's guess where the music server
+    looks. Read the way the music server reads, that call names `u` twice and is refused, and the guess never reaches it."""
+    mine = subsonic_token("pw-nina", "salt1234")
+
+    got = rig.client.get(
+        "/rest/ping.view",
+        params=[("u", "marwa"), ("p", "guess"), ("u", "nina"), ("t", mine), ("s", "salt1234"), ("f", "json")],
+        headers=PUBLIC,
+    )
+
+    assert got.status_code == 400 and got.json()["subsonic-response"]["error"]["code"] == 10
+    assert rig.reached("marwa") == 0
+
+
+def test_from_the_internet_a_login_in_the_body_that_the_door_does_not_read_is_refused_too(rig: Rig) -> None:
+    mine = subsonic_token("pw-nina", "salt1234")
+
+    got = rig.client.post(f"/rest/ping.view?u=nina&t={mine}&s=salt1234&f=json", data={"u": "marwa", "p": "guess"}, headers=PUBLIC)
+
+    assert got.status_code == 400
+    assert rig.reached("marwa") == 0
+
+
+def test_from_the_internet_a_login_in_the_x_encore_headers_is_no_login_on_the_music_servers_api(rig: Rig) -> None:
+    """The music server ignores those headers, so a door that read them was judging a login nobody would check."""
+    got = rig.client.get(
+        "/rest/ping.view?f=json",
+        headers={
+            **PUBLIC,
+            "X-Encore-User": "marwa",
+            "X-Encore-Token": subsonic_token("pw-marwa", "salt1234"),
+            "X-Encore-Salt": "salt1234",
+        },
+    )
+
+    assert got.status_code == 401
+    assert rig.reached() == 0
+
+
+def test_from_the_internet_a_right_token_login_in_the_address_still_works(rig: Rig) -> None:
+    got = rig.token_call("marwa", "pw-marwa", headers=PUBLIC)
+
+    assert got.status_code == 200 and got.json()["subsonic-response"]["status"] == "ok"
