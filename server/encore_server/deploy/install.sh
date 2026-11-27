@@ -337,7 +337,14 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: a
     ufw allow "${PORT}/tcp" >>"$LOG" 2>&1 && note "The computer's firewall now lets Encore's port (${PORT}) in."
 fi
 
-dc() { docker compose --project-directory "$DIR" "$@"; }
+# The helper's compose override is part of the install once `encore helper install` has written it: every recreate must read it or the socket mount, the group and the token vanish.
+dc() {
+    if [ -f "$DIR/compose.helper.yaml" ]; then
+        docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" -f "$DIR/compose.helper.yaml" "$@"
+    else
+        docker compose --project-directory "$DIR" "$@"
+    fi
+}
 # An earlier install whose accounts were locked with a key: never start the music server under another one (every sign-in would fail until the right key is back).
 if [ -f "$DIR/navidrome/.encore-password-key.sha256" ]; then
     mark="$(head -1 "$DIR/navidrome/.encore-password-key.sha256")"
@@ -399,6 +406,12 @@ fi
 # Its output is NOT redirected to the log: the secret half goes to this screen only.
 if ! /usr/local/bin/encore secure --installer; then
     die "The keys of this install could not be made. Run  sudo encore secure  to try again."
+fi
+
+# The helper (docs/36 section 3): a socket that only the Encore server's container can open, through which the admin pages may make a backup or switch the away address on or off, and
+# nothing else. Not fatal: Encore works without it (those buttons then say how to get it).
+if ! /usr/local/bin/encore helper install >>"$LOG" 2>&1; then
+    note "The admin pages cannot make a backup or switch the away address until you run  sudo encore helper install  (see the log). Everything else works."
 fi
 
 # A copy of the accounts, playlists and likes every night (switched off for good by  encore autobackup off ), and one right now.
