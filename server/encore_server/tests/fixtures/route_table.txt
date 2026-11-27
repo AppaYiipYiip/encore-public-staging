@@ -49,6 +49,7 @@ DELETE /encore/api/v1/playlists/{playlist_id} delete_playlist routes.playlists
 POST /encore/api/v1/playlists/{playlist_id}/entries add_entries routes.playlists
 DELETE /encore/api/v1/playlists/{playlist_id}/entries remove_entries routes.playlists
 PUT /encore/api/v1/playlists/{playlist_id}/order reorder_playlist routes.playlists
+GET /encore/api/v1/me/plays my_plays routes.playlists
 POST /encore/api/v1/plays post_play routes.playlists
 POST /encore/api/v1/imports create_import routes.imports
 GET /encore/api/v1/imports list_imports routes.imports
